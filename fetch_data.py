@@ -1,10 +1,8 @@
 #!/usr/bin/env python3
 """Pulls live sentiment data and writes data.json for the dashboard.
 
-Source: CNN Fear & Greed Index public API (production.dataviz.cnn.io).
-It happens to publish the same five factors this dashboard models
-(volatility, put/call, breadth, momentum, credit demand), each with a
-current score, a raw value, and ~1yr of history we use for percentile rank.
+Source: CNN Fear & Greed Index public API (production.dataviz.cnn.io) for
+the five sentiment factors, and Yahoo Finance for the S&P 500 index level.
 """
 
 import json
@@ -18,9 +16,9 @@ from zoneinfo import ZoneInfo
 import certifi
 
 CNN_URL = "https://production.dataviz.cnn.io/index/fearandgreed/graphdata"
-SPY_URLS = [
-    "https://query2.finance.yahoo.com/v8/finance/chart/SPY?range=1d&interval=1d",
-    "https://query1.finance.yahoo.com/v8/finance/chart/SPY?range=1d&interval=1d",
+SP500_URLS = [
+    "https://query2.finance.yahoo.com/v8/finance/chart/%5EGSPC?range=1d&interval=1d",
+    "https://query1.finance.yahoo.com/v8/finance/chart/%5EGSPC?range=1d&interval=1d",
 ]
 OUT_PATH = Path(__file__).parent / "data.json"
 HISTORY_PATH = Path(__file__).parent / "history.json"
@@ -91,9 +89,9 @@ def fetch_raw():
     return fetch_json(CNN_URL, referer="https://www.cnn.com/markets/fear-and-greed")
 
 
-def fetch_spy_price():
+def fetch_sp500_price():
     last_error = None
-    for url in SPY_URLS:
+    for url in SP500_URLS:
         for attempt in range(3):
             try:
                 payload = fetch_json(url, accept_json=False)
@@ -101,7 +99,7 @@ def fetch_spy_price():
             except Exception as exc:  # noqa: BLE001 - retry/fall through to next mirror
                 last_error = exc
                 time.sleep(2 * (attempt + 1))
-    print(f"Warning: could not fetch SPY price ({last_error}); reusing last known value")
+    print(f"Warning: could not fetch S&P 500 price ({last_error}); reusing last known value")
     return None
 
 
@@ -156,18 +154,18 @@ def main():
     OUT_PATH.write_text(json.dumps(data, indent=2))
     print(f"Wrote {OUT_PATH} — composite={composite}")
 
-    spy_price = fetch_spy_price()
-    append_history(now_et, composite, spy_price)
+    sp500_price = fetch_sp500_price()
+    append_history(now_et, composite, sp500_price)
 
 
-def append_history(now_et, composite, spy_price):
+def append_history(now_et, composite, sp500_price):
     history = json.loads(HISTORY_PATH.read_text()) if HISTORY_PATH.exists() else []
     today = now_et.strftime("%Y-%m-%d")
 
-    if spy_price is None and history:
-        spy_price = history[-1]["spy"]
+    if sp500_price is None and history:
+        sp500_price = history[-1]["sp500"]
 
-    entry = {"date": today, "optimism": composite, "spy": spy_price}
+    entry = {"date": today, "optimism": composite, "sp500": sp500_price}
     if history and history[-1]["date"] == today:
         history[-1] = entry
     else:

@@ -110,6 +110,24 @@ h1{
 }
 
 
+.score-box{
+
+ cursor:pointer;
+ border-radius:8px;
+ padding:6px;
+ margin:-6px;
+ transition:background 0.15s;
+
+}
+
+
+.score-box:hover{
+
+ background:var(--card-hover);
+
+}
+
+
 .score{
 
  font-family:var(--serif);
@@ -544,7 +562,7 @@ Loading...
 <div class="hero">
 
 
-<div>
+<div class="score-box" id="scoreBox">
 
 <div class="score" id="score">
 --
@@ -673,6 +691,12 @@ Waiting for data...
 const DATA_URL = "https://raw.githubusercontent.com/michaeljstevenson/marketdashboard/main/data.json";
 const HISTORY_URL = "https://raw.githubusercontent.com/michaeljstevenson/marketdashboard/main/history.json";
 
+const LINE_COLOR = "#ffffff";
+const SP500_LINE_COLOR = "#8b9199";
+
+let LATEST_COMPOSITE = null;
+let LATEST_HISTORY = [];
+
 
 async function loadData(){
 
@@ -683,6 +707,8 @@ async function loadData(){
   if(!res.ok) throw new Error("HTTP " + res.status);
 
   const data = await res.json();
+
+  LATEST_COMPOSITE = data.composite;
 
   renderDashboard(data);
 
@@ -699,6 +725,8 @@ async function loadData(){
   if(res.ok){
 
    const history = await res.json();
+
+   LATEST_HISTORY = history;
 
    renderHistoryChart(history);
 
@@ -880,6 +908,9 @@ renderComponents(data.components);
 
 
 }
+
+
+document.getElementById("scoreBox").addEventListener("click", openCompositeModal);
 
 
 let COMPONENTS_BY_ID = {};
@@ -1069,7 +1100,43 @@ function openModal(id){
  document.getElementById("modalOverlay").classList.add("open");
 
 
- renderModalChart(item);
+ renderModalChart(history => history.map(p=>p.date), history => history.map(p=>p.value), item.history || []);
+
+}
+
+
+function openCompositeModal(){
+
+
+ if(LATEST_COMPOSITE === null) return;
+
+
+ const regime = getRegime(LATEST_COMPOSITE);
+
+ const scores = LATEST_HISTORY.map(p=>p.optimism);
+
+ const percentile = scores.length
+  ? Math.round(100 * scores.filter(s=>s <= LATEST_COMPOSITE).length / scores.length)
+  : null;
+
+
+ document.getElementById("modalTitle").textContent = "Market Optimism Index";
+
+ document.getElementById("modalValue").textContent = regime.label;
+
+ document.getElementById("modalScore").textContent = LATEST_COMPOSITE + "/100";
+
+ document.getElementById("modalScore").style.color = regime.color;
+
+ document.getElementById("modalPercentile").textContent = percentile !== null ? percentile + "th" : "--";
+
+ document.getElementById("modalDesc").textContent = generateSignal(LATEST_COMPOSITE);
+
+
+ document.getElementById("modalOverlay").classList.add("open");
+
+
+ renderModalChart(h => h.map(p=>p.date), h => h.map(p=>p.optimism), LATEST_HISTORY);
 
 }
 
@@ -1098,17 +1165,13 @@ document.addEventListener("keydown", e=>{
 });
 
 
-function renderModalChart(item){
+function renderModalChart(getLabels, getValues, history){
 
 
  if(modalChart){ modalChart.destroy(); modalChart = null; }
 
 
- const history = item.history || [];
-
  const ctx = document.getElementById("modalChartCanvas").getContext("2d");
-
- const regime = getRegime(item.score);
 
 
  modalChart = new Chart(ctx, {
@@ -1117,17 +1180,15 @@ function renderModalChart(item){
 
   data:{
 
-   labels: history.map(p=>p.date),
+   labels: getLabels(history),
 
    datasets:[{
 
-    label: item.name,
+    data: getValues(history),
 
-    data: history.map(p=>p.value),
+    borderColor: LINE_COLOR,
 
-    borderColor: regime.color,
-
-    backgroundColor: regime.color,
+    backgroundColor: LINE_COLOR,
 
     borderWidth:2,
 
@@ -1183,7 +1244,7 @@ function renderModalChart(item){
 ======================================================
  HISTORY CHART
 
- history.json is a list of {date, optimism, spy} entries,
+ history.json is a list of {date, optimism, sp500} entries,
  appended to by fetch_data.py over time.
 ======================================================
 */
@@ -1224,7 +1285,13 @@ data:
 historyData.map(x=>x.optimism),
 
 
+borderColor: LINE_COLOR,
+
+backgroundColor: LINE_COLOR,
+
 borderWidth:2,
+
+pointRadius:0,
 
 yAxisID:"sentiment"
 
@@ -1235,13 +1302,19 @@ yAxisID:"sentiment"
 
 {
 
-label:"SPY Price",
+label:"S&P 500 Index",
 
 data:
-historyData.map(x=>x.spy),
+historyData.map(x=>x.sp500),
 
+
+borderColor: SP500_LINE_COLOR,
+
+backgroundColor: SP500_LINE_COLOR,
 
 borderWidth:2,
+
+pointRadius:0,
 
 yAxisID:"price"
 
