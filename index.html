@@ -688,8 +688,11 @@ Waiting for data...
 */
 
 
-const DATA_URL = "https://raw.githubusercontent.com/michaeljstevenson/marketdashboard/main/data.json";
-const HISTORY_URL = "https://raw.githubusercontent.com/michaeljstevenson/marketdashboard/main/history.json";
+// api.github.com's contents endpoint isn't CDN-cached like raw.githubusercontent.com,
+// so it reflects new commits immediately instead of serving a stale cached copy.
+const DATA_URL = "https://api.github.com/repos/michaeljstevenson/marketdashboard/contents/data.json?ref=main";
+const HISTORY_URL = "https://api.github.com/repos/michaeljstevenson/marketdashboard/contents/history.json?ref=main";
+const GITHUB_RAW_HEADERS = {"Accept": "application/vnd.github.raw"};
 
 const LINE_COLOR = "#ffffff";
 const SP500_LINE_COLOR = "#5b9bd5";
@@ -702,7 +705,7 @@ async function loadData(){
 
  try{
 
-  const res = await fetch(DATA_URL + "?t=" + Date.now(), {cache:"no-store"});
+  const res = await fetch(DATA_URL + "&t=" + Date.now(), {cache:"no-store", headers: GITHUB_RAW_HEADERS});
 
   if(!res.ok) throw new Error("HTTP " + res.status);
 
@@ -720,7 +723,7 @@ async function loadData(){
 
  try{
 
-  const res = await fetch(HISTORY_URL + "?t=" + Date.now(), {cache:"no-store"});
+  const res = await fetch(HISTORY_URL + "&t=" + Date.now(), {cache:"no-store", headers: GITHUB_RAW_HEADERS});
 
   if(res.ok){
 
