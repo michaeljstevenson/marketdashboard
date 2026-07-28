@@ -678,7 +678,7 @@ async function loadData(){
 
  try{
 
-  const res = await fetch(DATA_URL, {cache:"no-store"});
+  const res = await fetch(DATA_URL + "?t=" + Date.now(), {cache:"no-store"});
 
   if(!res.ok) throw new Error("HTTP " + res.status);
 
@@ -694,7 +694,7 @@ async function loadData(){
 
  try{
 
-  const res = await fetch(HISTORY_URL, {cache:"no-store"});
+  const res = await fetch(HISTORY_URL + "?t=" + Date.now(), {cache:"no-store"});
 
   if(res.ok){
 
