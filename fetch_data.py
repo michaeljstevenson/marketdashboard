@@ -113,10 +113,14 @@ def percentile_rank(history, latest_value):
     return round(100 * below / len(values))
 
 
+HISTORY_POINTS = 180  # ~6 months of daily points, kept compact for the browser
+
+
 def build_component(raw, spec):
     cat = raw[spec["cnn_key"]]
     history = cat.get("data", [])
     latest_value = history[-1]["y"] if history else None
+    trimmed = history[-HISTORY_POINTS:]
     return {
         "id": spec["id"],
         "name": spec["name"],
@@ -126,6 +130,13 @@ def build_component(raw, spec):
         "score": round(cat["score"], 1),
         "weight": spec["weight"],
         "description": spec["description"],
+        "history": [
+            {
+                "date": datetime.fromtimestamp(point["x"] / 1000, tz=timezone.utc).strftime("%Y-%m-%d"),
+                "value": round(point["y"], 3),
+            }
+            for point in trimmed
+        ],
     }
 
 
