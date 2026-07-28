@@ -1,0 +1,914 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<meta charset="UTF-8">
+<title>Market Optimism Index</title>
+
+<style>
+
+:root{
+  --bg:#14181c;
+  --card:#1c2127;
+  --card-hover:#20262d;
+  --ink:#eae6da;
+  --muted:#8b9199;
+  --hair:#2b3138;
+
+  --fear:#6f8fac;
+  --neutral:#7c828a;
+  --greed:#d98a3d;
+  --extreme:#b56f2a;
+
+  --serif:'Iowan Old Style','Palatino Linotype',Georgia,serif;
+  --mono:'SF Mono','JetBrains Mono',ui-monospace,Menlo,monospace;
+  --sans:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+}
+
+
+*{
+ box-sizing:border-box;
+}
+
+
+body{
+ margin:0;
+ background:var(--bg);
+ color:var(--ink);
+ font-family:var(--sans);
+ padding:30px 20px 60px;
+}
+
+
+.container{
+ max-width:1100px;
+ margin:auto;
+}
+
+
+/* HEADER */
+
+.header{
+
+ display:flex;
+ justify-content:space-between;
+ align-items:flex-end;
+
+ border-bottom:1px solid var(--hair);
+
+ padding-bottom:18px;
+ margin-bottom:25px;
+
+}
+
+
+h1{
+
+ font-family:var(--serif);
+ font-size:30px;
+ font-weight:400;
+ margin:0;
+
+}
+
+
+.subtitle{
+
+ color:var(--muted);
+ font-size:13px;
+ margin-top:6px;
+
+}
+
+
+.updated{
+
+ color:var(--muted);
+ font-size:12px;
+
+}
+
+
+/* HERO */
+
+
+.hero{
+
+ display:grid;
+ grid-template-columns:260px 1fr;
+ gap:30px;
+
+ background:var(--card);
+
+ border:1px solid var(--hair);
+ border-radius:12px;
+
+ padding:25px;
+
+ margin-bottom:25px;
+
+}
+
+
+.score{
+
+ font-family:var(--serif);
+ font-size:70px;
+ line-height:1;
+
+}
+
+
+.regime{
+
+ font-size:18px;
+ margin-top:10px;
+
+}
+
+
+.description{
+
+ color:var(--muted);
+ line-height:1.6;
+ margin-top:15px;
+
+}
+
+
+
+/* SIGNAL */
+
+.signal-box{
+
+ background:#171b20;
+
+ border-left:3px solid var(--greed);
+
+ padding:15px;
+
+ margin-top:20px;
+
+}
+
+
+
+.signal-title{
+
+ font-size:12px;
+ text-transform:uppercase;
+ color:var(--muted);
+
+}
+
+
+.signal-text{
+
+ margin-top:5px;
+
+}
+
+
+/* GRID */
+
+
+.grid{
+
+ display:grid;
+ grid-template-columns:repeat(2,1fr);
+
+ gap:16px;
+
+}
+
+
+.card{
+
+ background:var(--card);
+
+ border:1px solid var(--hair);
+
+ border-radius:10px;
+
+ padding:18px;
+
+}
+
+
+.card-header{
+
+ display:flex;
+ justify-content:space-between;
+
+}
+
+
+.card-name{
+
+ font-size:15px;
+ font-weight:500;
+
+}
+
+
+.metric{
+
+ font-family:var(--mono);
+ font-size:22px;
+
+ margin-top:10px;
+
+}
+
+
+.meta{
+
+ color:var(--muted);
+ font-size:12px;
+
+ margin-top:5px;
+
+}
+
+
+
+.bar{
+
+ height:7px;
+ background:var(--hair);
+
+ margin-top:15px;
+
+ border-radius:5px;
+
+ overflow:hidden;
+
+}
+
+
+
+.fill{
+
+ height:100%;
+
+}
+
+
+
+.contribution{
+
+ margin-top:15px;
+
+ display:flex;
+ justify-content:space-between;
+
+ color:var(--muted);
+
+ font-size:12px;
+
+}
+
+
+
+/* CHART PLACEHOLDER */
+
+
+.chart{
+
+ height:300px;
+
+ margin-top:25px;
+
+ background:var(--card);
+
+ border:1px solid var(--hair);
+
+ border-radius:10px;
+
+ display:flex;
+
+ justify-content:center;
+
+ align-items:center;
+
+ color:var(--muted);
+
+}
+
+
+
+.error-banner{
+
+ background:#2a1c1c;
+ border:1px solid #5a3030;
+ color:#e0a0a0;
+ border-radius:8px;
+ padding:12px 15px;
+ margin-bottom:20px;
+ font-size:13px;
+ display:none;
+
+}
+
+
+
+@media(max-width:700px){
+
+.hero{
+
+ grid-template-columns:1fr;
+
+}
+
+
+.grid{
+
+ grid-template-columns:1fr;
+
+}
+
+
+}
+
+
+</style>
+</head>
+<body>
+
+<div class="container">
+
+
+<div class="header">
+
+<div>
+
+<h1>Market Optimism Index</h1>
+
+<div class="subtitle">
+Multi-factor sentiment model | 0 = Extreme Fear | 100 = Extreme Optimism
+</div>
+
+</div>
+
+
+<div class="updated" id="updated">
+Loading...
+</div>
+
+
+</div>
+
+
+<div class="error-banner" id="errorBanner"></div>
+
+
+<div class="hero">
+
+
+<div>
+
+<div class="score" id="score">
+--
+</div>
+
+
+<div class="regime" id="regime">
+Loading...
+</div>
+
+
+</div>
+
+
+
+<div>
+
+
+<div class="description">
+
+Composite investor sentiment reading based on options positioning,
+volatility expectations, market breadth, momentum, and credit conditions.
+
+</div>
+
+
+<div class="signal-box">
+
+
+<div class="signal-title">
+Market Interpretation
+</div>
+
+
+<div class="signal-text" id="signal">
+
+Waiting for data...
+
+</div>
+
+
+</div>
+
+
+</div>
+
+
+</div>
+
+
+<div class="grid" id="components"></div>
+
+
+<div class="chart">
+
+<canvas id="historyChart"></canvas>
+
+</div>
+
+
+</div>
+
+
+<script>
+
+
+/*
+======================================================
+ DATA LAYER
+
+ Live data is fetched from data.json, which is regenerated
+ by fetch_data.py on a schedule (market open, midday, close).
+ See fetch_data.py for the source (CNN Fear & Greed Index API).
+======================================================
+*/
+
+
+const DATA_URL = "data.json";
+const HISTORY_URL = "history.json";
+
+
+async function loadData(){
+
+ try{
+
+  const res = await fetch(DATA_URL, {cache:"no-store"});
+
+  if(!res.ok) throw new Error("HTTP " + res.status);
+
+  const data = await res.json();
+
+  renderDashboard(data);
+
+ }catch(err){
+
+  showError("Couldn't load data.json (" + err.message + "). Run fetch_data.py to generate it.");
+
+ }
+
+ try{
+
+  const res = await fetch(HISTORY_URL, {cache:"no-store"});
+
+  if(res.ok){
+
+   const history = await res.json();
+
+   renderHistoryChart(history);
+
+  }
+
+ }catch(err){
+
+  // history is optional; chart just stays empty
+
+ }
+
+}
+
+
+function showError(message){
+
+ const banner = document.getElementById("errorBanner");
+
+ banner.textContent = message;
+
+ banner.style.display = "block";
+
+}
+
+
+
+/*
+======================================================
+ SCORING ENGINE
+======================================================
+*/
+
+
+function getRegime(score){
+
+
+if(score < 20)
+
+return {
+label:"Extreme Fear",
+color:"var(--fear)"
+};
+
+
+if(score < 40)
+
+return {
+label:"Fear",
+color:"var(--fear)"
+};
+
+
+
+if(score < 60)
+
+return {
+label:"Neutral",
+color:"var(--neutral)"
+};
+
+
+
+if(score < 80)
+
+return {
+label:"Optimism",
+color:"var(--greed)"
+};
+
+
+
+return {
+label:"Extreme Optimism",
+color:"var(--extreme)"
+};
+
+
+}
+
+
+
+
+
+function generateSignal(score){
+
+
+if(score < 25)
+
+return "Investor pessimism is historically elevated. Previous similar environments have often produced favorable forward returns.";
+
+
+
+if(score < 45)
+
+return "Fear remains present. Sentiment is cautious but not at panic levels.";
+
+
+
+if(score < 65)
+
+return "Market psychology is balanced. No major sentiment extreme detected.";
+
+
+
+if(score < 80)
+
+return "Investors are optimistic. Monitor for increasing complacency.";
+
+
+
+return "Extreme optimism detected. Expectations may be vulnerable to disappointment.";
+
+
+
+}
+
+
+
+
+/*
+======================================================
+ RENDER DASHBOARD
+======================================================
+*/
+
+
+function renderDashboard(data){
+
+
+
+const composite = data.composite;
+
+
+
+const regime =
+getRegime(composite);
+
+
+
+document.getElementById("score")
+.textContent =
+composite;
+
+
+
+document.getElementById("score")
+.style.color =
+regime.color;
+
+
+
+document.getElementById("regime")
+.textContent =
+regime.label;
+
+
+
+document.getElementById("regime")
+.style.color =
+regime.color;
+
+
+
+document.getElementById("signal")
+.textContent =
+generateSignal(composite);
+
+
+
+document.getElementById("updated")
+.textContent =
+"Updated: "
++
+data.timestamp;
+
+
+
+renderComponents(data.components);
+
+
+}
+
+
+
+
+function renderComponents(components){
+
+
+const container =
+document.getElementById("components");
+
+
+
+container.innerHTML="";
+
+
+
+components.forEach(item=>{
+
+
+const regime =
+getRegime(item.score);
+
+
+
+container.innerHTML += `
+
+
+<div class="card">
+
+
+<div class="card-header">
+
+
+<div class="card-name">
+
+${item.name}
+
+</div>
+
+
+<div>
+
+${item.score}/100
+
+</div>
+
+
+</div>
+
+
+
+<div class="metric">
+
+${item.value}
+
+</div>
+
+
+<div class="meta">
+
+${item.unit}
+
+</div>
+
+
+
+<div class="bar">
+
+<div
+class="fill"
+
+style="
+width:${item.score}%;
+
+background:${regime.color};
+
+">
+
+</div>
+
+</div>
+
+
+
+<div class="contribution">
+
+
+<span>
+
+Historical percentile:
+${item.percentile}%
+
+</span>
+
+
+<span>
+
+Weight:
+${item.weight}%
+
+</span>
+
+
+</div>
+
+
+
+<div class="meta">
+
+${item.description}
+
+</div>
+
+
+
+</div>
+
+
+`;
+
+
+
+});
+
+
+}
+
+
+
+/*
+======================================================
+ HISTORY CHART
+
+ history.json is a list of {date, optimism, spy} entries,
+ appended to by fetch_data.py over time.
+======================================================
+*/
+
+
+function renderHistoryChart(historyData){
+
+
+const ctx =
+document
+.getElementById("historyChart")
+.getContext("2d");
+
+
+
+new Chart(ctx, {
+
+
+type:"line",
+
+
+data:{
+
+
+labels:
+historyData.map(x=>x.date),
+
+
+
+datasets:[
+
+
+{
+
+label:"Optimism Index",
+
+data:
+historyData.map(x=>x.optimism),
+
+
+borderWidth:2,
+
+yAxisID:"sentiment"
+
+
+},
+
+
+
+{
+
+label:"SPY Price",
+
+data:
+historyData.map(x=>x.spy),
+
+
+borderWidth:2,
+
+yAxisID:"price"
+
+
+}
+
+
+]
+
+
+},
+
+
+
+options:{
+
+
+responsive:true,
+
+
+interaction:{
+mode:"index",
+intersect:false
+},
+
+
+scales:{
+
+
+sentiment:{
+
+position:"left",
+
+min:0,
+
+max:100
+
+},
+
+
+price:{
+
+position:"right"
+
+}
+
+
+}
+
+
+
+}
+
+
+
+});
+
+
+}
+
+loadData();
+
+
+</script>
+
+</body>
+</html>

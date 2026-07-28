@@ -1,0 +1,57 @@
+{
+  "timestamp": "July 28, 2026 03:39 PM ET",
+  "fetched_at_utc": "2026-07-28T19:39:02.120929+00:00",
+  "composite": 36,
+  "components": [
+    {
+      "id": "vix",
+      "name": "VIX Volatility",
+      "value": 18.24,
+      "unit": "index",
+      "percentile": 65,
+      "score": 50,
+      "weight": 20,
+      "description": "Low volatility usually reflects investor confidence."
+    },
+    {
+      "id": "putcall",
+      "name": "Equity Put/Call Ratio",
+      "value": 0.81,
+      "unit": "ratio",
+      "percentile": 84,
+      "score": 33.2,
+      "weight": 20,
+      "description": "Low put demand indicates bullish positioning."
+    },
+    {
+      "id": "breadth",
+      "name": "Market Breadth",
+      "value": 850.17,
+      "unit": "advance/decline volume",
+      "percentile": 5,
+      "score": 19.6,
+      "weight": 20,
+      "description": "Measures participation beneath the headline index."
+    },
+    {
+      "id": "momentum",
+      "name": "Price Momentum",
+      "value": 7437.55,
+      "unit": "S&P 500 vs 125-day avg",
+      "percentile": 87,
+      "score": 31.2,
+      "weight": 20,
+      "description": "Strong price trends increase investor optimism."
+    },
+    {
+      "id": "credit",
+      "name": "Credit Conditions",
+      "value": 1.3,
+      "unit": "HY bond spread proxy",
+      "percentile": 32,
+      "score": 46.8,
+      "weight": 20,
+      "description": "Narrow credit spreads suggest risk appetite."
+    }
+  ]
+}
