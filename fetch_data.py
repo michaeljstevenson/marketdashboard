@@ -7,6 +7,7 @@ the five sentiment factors, and Yahoo Finance for the S&P 500 index level.
 
 import json
 import ssl
+import subprocess
 import time
 import urllib.request
 from datetime import datetime, timezone
@@ -19,6 +20,10 @@ CNN_URL = "https://production.dataviz.cnn.io/index/fearandgreed/graphdata"
 SP500_URLS = [
     "https://query2.finance.yahoo.com/v8/finance/chart/%5EGSPC?range=1d&interval=1d",
     "https://query1.finance.yahoo.com/v8/finance/chart/%5EGSPC?range=1d&interval=1d",
+]
+SP500_HISTORY_URLS = [
+    "https://query2.finance.yahoo.com/v8/finance/chart/%5EGSPC?range=1y&interval=1d",
+    "https://query1.finance.yahoo.com/v8/finance/chart/%5EGSPC?range=1y&interval=1d",
 ]
 OUT_PATH = Path(__file__).parent / "data.json"
 HISTORY_PATH = Path(__file__).parent / "history.json"
@@ -89,18 +94,83 @@ def fetch_raw():
     return fetch_json(CNN_URL, referer="https://www.cnn.com/markets/fear-and-greed")
 
 
+def fetch_json_via_curl(url):
+    """Yahoo Finance's endpoint 429s on urllib's TLS fingerprint but not curl's, so shell out."""
+    result = subprocess.run(
+        ["curl", "-s", "-A", USER_AGENT, url],
+        capture_output=True, text=True, timeout=20, check=True,
+    )
+    return json.loads(result.stdout)
+
+
 def fetch_sp500_price():
     last_error = None
     for url in SP500_URLS:
         for attempt in range(3):
             try:
-                payload = fetch_json(url, accept_json=False)
+                payload = fetch_json_via_curl(url)
                 return round(payload["chart"]["result"][0]["meta"]["regularMarketPrice"], 2)
             except Exception as exc:  # noqa: BLE001 - retry/fall through to next mirror
                 last_error = exc
                 time.sleep(2 * (attempt + 1))
     print(f"Warning: could not fetch S&P 500 price ({last_error}); reusing last known value")
     return None
+
+
+def fetch_sp500_history():
+    last_error = None
+    for url in SP500_HISTORY_URLS:
+        for attempt in range(3):
+            try:
+                payload = fetch_json_via_curl(url)
+                result = payload["chart"]["result"][0]
+                timestamps = result["timestamp"]
+                closes = result["indicators"]["quote"][0]["close"]
+                return {
+                    datetime.fromtimestamp(ts, tz=timezone.utc).strftime("%Y-%m-%d"): round(close, 2)
+                    for ts, close in zip(timestamps, closes)
+                    if close is not None
+                }
+            except Exception as exc:  # noqa: BLE001 - retry/fall through to next mirror
+                last_error = exc
+                time.sleep(4 * (attempt + 1))
+    print(f"Warning: could not fetch S&P 500 history ({last_error})")
+    return {}
+
+
+def backfill_history():
+    """Rebuild history.json from CNN's own composite score history plus S&P 500 daily closes.
+
+    We only have raw factor *values* historically (not 0-100 scores) for our
+    5-factor composite, and reproducing CNN's internal score normalization
+    isn't practical, so this uses CNN's own overall Fear & Greed score history
+    as the composite proxy for backfilled dates. Same 0-100 scale, same source.
+    """
+    raw = fetch_raw()
+    composite_history = raw["fear_and_greed_historical"]["data"][-HISTORY_POINTS:]
+    sp500_by_date = fetch_sp500_history()
+
+    sp500_dates_sorted = sorted(sp500_by_date)
+
+    def nearest_sp500(date_str):
+        if date_str in sp500_by_date:
+            return sp500_by_date[date_str]
+        earlier = [d for d in sp500_dates_sorted if d <= date_str]
+        return sp500_by_date[earlier[-1]] if earlier else None
+
+    by_date = {}
+    for point in composite_history:
+        date_str = datetime.fromtimestamp(point["x"] / 1000, tz=timezone.utc).strftime("%Y-%m-%d")
+        by_date[date_str] = {
+            "date": date_str,
+            "optimism": round(point["y"]),
+            "sp500": nearest_sp500(date_str),
+        }
+
+    history = [by_date[d] for d in sorted(by_date)]
+
+    HISTORY_PATH.write_text(json.dumps(history, indent=2))
+    print(f"Backfilled {HISTORY_PATH} — {len(history)} days")
 
 
 def percentile_rank(history, latest_value):
@@ -176,4 +246,8 @@ def append_history(now_et, composite, sp500_price):
 
 
 if __name__ == "__main__":
-    main()
+    import sys
+    if "--backfill" in sys.argv:
+        backfill_history()
+    else:
+        main()
