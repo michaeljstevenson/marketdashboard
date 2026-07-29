@@ -81,10 +81,53 @@ h1{
 }
 
 
+.updated-row{
+
+ display:flex;
+ align-items:center;
+ gap:10px;
+
+}
+
+
 .updated{
 
  color:var(--muted);
  font-size:12px;
+
+}
+
+
+.refresh-btn{
+
+ background:none;
+ border:1px solid var(--hair);
+ color:var(--muted);
+ font-size:15px;
+ width:26px;
+ height:26px;
+ border-radius:6px;
+ cursor:pointer;
+ line-height:1;
+ display:flex;
+ align-items:center;
+ justify-content:center;
+ transition:background 0.15s, color 0.15s, transform 0.4s;
+
+}
+
+
+.refresh-btn:hover{
+
+ background:var(--card-hover);
+ color:var(--ink);
+
+}
+
+
+.refresh-btn.spinning{
+
+ transform:rotate(360deg);
 
 }
 
@@ -605,8 +648,14 @@ Multi-factor sentiment model | 0 = Extreme Fear | 100 = Extreme Optimism
 </div>
 
 
+<div class="updated-row">
+
+<button class="refresh-btn" id="refreshBtn" title="Refresh data">&#8635;</button>
+
 <div class="updated" id="updated">
 Loading...
+</div>
+
 </div>
 
 
@@ -1661,6 +1710,31 @@ position:"right"
 
 
 }
+
+document.getElementById("refreshBtn").addEventListener("click", async () => {
+
+ const btn = document.getElementById("refreshBtn");
+
+ btn.disabled = true;
+
+ btn.classList.add("spinning");
+
+ try{
+
+  SP500_LONG_HISTORY_CACHE = null;
+
+  await loadData();
+
+ }finally{
+
+  btn.disabled = false;
+
+  setTimeout(() => btn.classList.remove("spinning"), 400);
+
+ }
+
+});
+
 
 loadData();
 
