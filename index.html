@@ -1352,13 +1352,13 @@ function renderCalcBox(item){
 
  box.innerHTML = `
 
-<div class="calc-title">How this score is calculated</div>
+<div class="calc-title">Calculation:</div>
 
 <div class="calc-row"><span class="calc-row-label">${rawLabel}</span><span class="calc-row-value">${calc.value}</span></div>
 
 <div class="calc-row"><span class="calc-row-label">${calc.window}-day moving average</span><span class="calc-row-value">${calc.ma.toFixed(3)}</span></div>
 
-<div class="calc-row"><span class="calc-row-label">Ratio (reading &divide; MA)</span><span class="calc-row-value">${calc.ratio}</span></div>
+<div class="calc-row"><span class="calc-row-label">Ratio (reading / MA)</span><span class="calc-row-value">${calc.ratio}</span></div>
 
 <div class="calc-row"><span class="calc-row-label">Percentile of that ratio</span><span class="calc-row-value">${calc.ratioPercentile}th</span></div>
 
@@ -1624,7 +1624,7 @@ function renderCompositeCalcBox(){
 
  box.innerHTML = `
 
-<div class="calc-title">How this composite is calculated</div>
+<div class="calc-title">Calculation:</div>
 
 ${rows}
 
