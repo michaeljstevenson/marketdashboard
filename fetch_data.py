@@ -10,7 +10,7 @@ import ssl
 import subprocess
 import time
 import urllib.request
-from datetime import datetime, timezone
+from datetime import date, datetime, timezone
 from pathlib import Path
 from zoneinfo import ZoneInfo
 
@@ -27,6 +27,11 @@ SP500_HISTORY_URLS = [
 ]
 OUT_PATH = Path(__file__).parent / "data.json"
 HISTORY_PATH = Path(__file__).parent / "history.json"
+SP500_LONG_PATH = Path(__file__).parent / "sp500_long_history.json"
+
+LONG_HISTORY_WEEKLY_START = date(1980, 1, 1)
+LONG_HISTORY_WEEKLY_END = date(2020, 12, 31)
+LONG_HISTORY_DAILY_START = date(2021, 1, 1)
 
 COMPONENTS = [
     {
@@ -138,6 +143,72 @@ def fetch_sp500_history():
     return {}
 
 
+SP500_RANGE_URLS = [
+    "https://query2.finance.yahoo.com/v8/finance/chart/%5EGSPC",
+    "https://query1.finance.yahoo.com/v8/finance/chart/%5EGSPC",
+]
+
+
+def fetch_sp500_range(interval, period1, period2):
+    """Fetch S&P 500 closes between two dates at the given interval (e.g. '1d', '1wk')."""
+    period1_ts = int(datetime.combine(period1, datetime.min.time(), tzinfo=timezone.utc).timestamp())
+    period2_ts = int(datetime.combine(period2, datetime.min.time(), tzinfo=timezone.utc).timestamp())
+    last_error = None
+    for base_url in SP500_RANGE_URLS:
+        url = f"{base_url}?period1={period1_ts}&period2={period2_ts}&interval={interval}"
+        for attempt in range(3):
+            try:
+                payload = fetch_json_via_curl(url)
+                result = payload["chart"]["result"][0]
+                timestamps = result["timestamp"]
+                closes = result["indicators"]["quote"][0]["close"]
+                return [
+                    {
+                        "date": datetime.fromtimestamp(ts, tz=timezone.utc).strftime("%Y-%m-%d"),
+                        "value": round(close, 2),
+                    }
+                    for ts, close in zip(timestamps, closes)
+                    if close is not None
+                ]
+            except Exception as exc:  # noqa: BLE001 - retry/fall through to next mirror
+                last_error = exc
+                time.sleep(4 * (attempt + 1))
+    print(f"Warning: could not fetch S&P 500 range {period1}..{period2} ({last_error})")
+    return []
+
+
+def backfill_sp500_long_history():
+    """One-time build of a long-run S&P 500 series: weekly 1980-2020, daily since 2021.
+
+    This is independent of history.json's own sp500 field (which pairs with the
+    Optimism Index and only goes back as far as CNN's sentiment history does).
+    This series exists purely so the Price Momentum chart can show a long-run
+    price context that isn't limited by how far back sentiment data reaches.
+    """
+    weekly = fetch_sp500_range("1wk", LONG_HISTORY_WEEKLY_START, LONG_HISTORY_WEEKLY_END)
+    daily = fetch_sp500_range("1d", LONG_HISTORY_DAILY_START, date.today())
+
+    merged = weekly + daily
+    SP500_LONG_PATH.write_text(json.dumps(merged, indent=2))
+    print(f"Backfilled {SP500_LONG_PATH} — {len(merged)} points ({len(weekly)} weekly + {len(daily)} daily)")
+
+
+def append_sp500_long_history(now_et, sp500_price):
+    if not SP500_LONG_PATH.exists() or sp500_price is None:
+        return
+
+    long_history = json.loads(SP500_LONG_PATH.read_text())
+    today = now_et.strftime("%Y-%m-%d")
+
+    entry = {"date": today, "value": sp500_price}
+    if long_history and long_history[-1]["date"] == today:
+        long_history[-1] = entry
+    else:
+        long_history.append(entry)
+
+    SP500_LONG_PATH.write_text(json.dumps(long_history, indent=2))
+
+
 def backfill_history():
     """Rebuild history.json from CNN's own composite score history plus S&P 500 daily closes.
 
@@ -226,6 +297,7 @@ def main():
 
     sp500_price = fetch_sp500_price()
     append_history(now_et, composite, sp500_price)
+    append_sp500_long_history(now_et, sp500_price)
 
 
 def append_history(now_et, composite, sp500_price):
@@ -249,5 +321,7 @@ if __name__ == "__main__":
     import sys
     if "--backfill" in sys.argv:
         backfill_history()
+    elif "--sp500-long-backfill" in sys.argv:
+        backfill_sp500_long_history()
     else:
         main()

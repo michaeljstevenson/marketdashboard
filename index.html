@@ -692,7 +692,24 @@ Waiting for data...
 // so it reflects new commits immediately instead of serving a stale cached copy.
 const DATA_URL = "https://api.github.com/repos/michaeljstevenson/marketdashboard/contents/data.json?ref=main";
 const HISTORY_URL = "https://api.github.com/repos/michaeljstevenson/marketdashboard/contents/history.json?ref=main";
+const SP500_LONG_HISTORY_URL = "https://api.github.com/repos/michaeljstevenson/marketdashboard/contents/sp500_long_history.json?ref=main";
 const GITHUB_RAW_HEADERS = {"Accept": "application/vnd.github.raw"};
+
+let SP500_LONG_HISTORY_CACHE = null;
+
+async function loadSP500LongHistory(){
+
+ if(SP500_LONG_HISTORY_CACHE) return SP500_LONG_HISTORY_CACHE;
+
+ const res = await fetch(SP500_LONG_HISTORY_URL + "&t=" + Date.now(), {cache:"no-store", headers: GITHUB_RAW_HEADERS});
+
+ if(!res.ok) throw new Error("HTTP " + res.status);
+
+ SP500_LONG_HISTORY_CACHE = await res.json();
+
+ return SP500_LONG_HISTORY_CACHE;
+
+}
 
 const LINE_COLOR = "#ffffff";
 const SP500_LINE_COLOR = "#5b9bd5";
@@ -1107,11 +1124,32 @@ function openModal(id){
 
  if(item.id === "momentum"){
 
-  const values = history.map(p=>p.value);
+  renderMomentumModal();
 
-  const ma125 = movingAverage(values, 125);
+ }else{
 
   renderModalChartMulti(history.map(p=>p.date), [
+
+   { label: item.name, data: history.map(p=>p.value), color: LINE_COLOR },
+
+  ]);
+
+ }
+
+}
+
+
+async function renderMomentumModal(){
+
+ try{
+
+  const longHistory = await loadSP500LongHistory();
+
+  const values = longHistory.map(p=>p.value);
+
+  const ma125 = movingAverageByCalendarDays(longHistory, 182);
+
+  renderModalChartMulti(longHistory.map(p=>p.date), [
 
    { label: "S&P 500", data: values, color: LINE_COLOR },
 
@@ -1119,11 +1157,19 @@ function openModal(id){
 
   ]);
 
- }else{
+ }catch(err){
+
+  const item = COMPONENTS_BY_ID["momentum"];
+
+  const history = item.history || [];
+
+  const values = history.map(p=>p.value);
 
   renderModalChartMulti(history.map(p=>p.date), [
 
-   { label: item.name, data: history.map(p=>p.value), color: LINE_COLOR },
+   { label: "S&P 500", data: values, color: LINE_COLOR },
+
+   { label: "125-day MA", data: movingAverage(values, 125), color: SP500_LINE_COLOR },
 
   ]);
 
@@ -1143,6 +1189,50 @@ function movingAverage(values, window){
   return slice.reduce((sum, v) => sum + v, 0) / window;
 
  });
+
+}
+
+
+// 125 trading days is roughly 182 calendar days; averaging over a calendar
+// window (rather than a fixed point count) keeps the MA meaningful across
+// the weekly-then-daily sampling change in the long-run S&P 500 series.
+function movingAverageByCalendarDays(points, windowDays){
+
+ const dates = points.map(p => new Date(p.date + "T00:00:00Z").getTime());
+
+ const dayMs = 24 * 60 * 60 * 1000;
+
+ let start = 0;
+
+ let sum = 0;
+
+ let count = 0;
+
+ const result = new Array(points.length).fill(null);
+
+ for(let i = 0; i < points.length; i++){
+
+  sum += points[i].value;
+
+  count++;
+
+  while(dates[i] - dates[start] > windowDays * dayMs){
+
+   sum -= points[start].value;
+
+   count--;
+
+   start++;
+
+  }
+
+  const spanDays = (dates[i] - dates[start]) / dayMs;
+
+  result[i] = spanDays >= windowDays * 0.9 ? sum / count : null;
+
+ }
+
+ return result;
 
 }
 
