@@ -46,6 +46,8 @@ const COMPONENTS = [
     weight: 25,
     invert: false,
     description: "Breadth running above its trend reflects broad market participation.",
+    details:
+      "Market breadth measures how many stocks are participating in a market move, not just how the headline index is performing. It tracks the cumulative volume flowing into advancing stocks versus declining stocks — a rising line means gains are broad-based across many stocks, while a falling line can signal a rally is being carried by just a few large names, or that a decline is spreading beneath the surface.\n\nThis dashboard scores breadth by comparing today's reading to its own 50-day moving average. When breadth is running above its recent trend, more stocks are meaningfully participating in the market's direction, which tends to reflect confidence. When it's running below trend, participation is narrowing — often an early warning sign that a rally is more fragile than the index price alone suggests.",
   },
   {
     id: "credit",
@@ -55,6 +57,8 @@ const COMPONENTS = [
     weight: 25,
     invert: false,
     description: "Junk bond demand running above its trend indicates risk appetite.",
+    details:
+      "Credit Conditions tracks demand for high-yield (\"junk\") bonds relative to safer investment-grade debt. Junk bonds carry more default risk, so investors only chase them aggressively when they're feeling confident about the economy and corporate health; when fear rises, capital typically rotates out of junk bonds and into safer assets first — often before that caution shows up in stock prices.\n\nBecause credit investors are generally more risk-averse and tend to reprice risk earlier than equity markets, this factor is treated as one of the more forward-looking signals here (and weighted accordingly). The score compares today's junk bond demand to its own 50-day average: demand running above trend suggests risk appetite is increasing, while demand falling below trend can flag credit stress starting to build.",
   },
   {
     id: "vix",
@@ -64,6 +68,8 @@ const COMPONENTS = [
     weight: 20,
     invert: true,
     description: "Elevated volatility relative to its recent trend reflects investor fear.",
+    details:
+      "The VIX (often called the market's \"fear gauge\") measures how much volatility options traders expect in the S&P 500 over the next 30 days, derived from the prices they're willing to pay for options. It doesn't measure what already happened — it measures what the market is bracing for, which makes it forward-looking rather than a reflection of past price action.\n\nRather than using the VIX's raw level (which drifts up and down with the broader volatility regime over months and years), this dashboard compares today's VIX to its own 50-day moving average. A VIX spiking well above its recent trend signals rising fear and uncertainty; a VIX sitting below its recent trend suggests calm, complacent conditions.",
   },
   {
     id: "putcall",
@@ -73,6 +79,8 @@ const COMPONENTS = [
     weight: 15,
     invert: true,
     description: "A rising put/call ratio relative to trend indicates bearish positioning.",
+    details:
+      "This factor tracks the ratio of put options (bets that a stock or index will fall) to call options (bets that it will rise) being traded across equities. When investors are nervous, they buy more puts to hedge or speculate on declines, pushing the ratio up; when they're confident, call buying dominates and the ratio falls.\n\nThe raw ratio is noisy day to day — a meaningful share of options volume comes from institutional hedging rather than pure directional bets — so this dashboard smooths it by comparing today's ratio to its own 50-day average. A ratio running above trend leans bearish/fearful; a ratio running below trend leans bullish.",
   },
   {
     id: "momentum",
@@ -82,6 +90,8 @@ const COMPONENTS = [
     weight: 15,
     invert: false,
     description: "Strong price trends relative to the recent average increase investor optimism.",
+    details:
+      "Price Momentum compares the S&P 500's current price to its own 90-day moving average, a simple trend-following signal: when the index is trading above its recent average, the market is in an established uptrend, which tends to coincide with optimism; when it's trading below, the trend has turned down.\n\nBecause this reading is derived directly from price — the same thing sentiment is meant to help explain — it's treated as a lagging, confirming signal here rather than a leading one, and is weighted accordingly. The score itself is based on the S&P 500's own momentum reading ranked against its longer history, while the number displayed on the card uses live SPY price data for timeliness.",
   },
 ];
 

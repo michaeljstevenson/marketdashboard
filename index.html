@@ -606,6 +606,8 @@ h1{
 
  font-size:14px;
 
+ white-space:pre-line;
+
 }
 
 
@@ -1301,7 +1303,7 @@ function openModal(id){
 
  document.getElementById("modalPercentile").textContent = item.percentile + "th";
 
- document.getElementById("modalDesc").textContent = item.description;
+ document.getElementById("modalDesc").textContent = item.details || item.description;
 
  renderCalcBox(item);
 
