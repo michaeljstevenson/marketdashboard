@@ -790,19 +790,18 @@ Waiting for data...
 ======================================================
  DATA LAYER
 
- Live data is fetched from data.json, which is regenerated
- by fetch_data.py on a schedule (market open, midday, close).
- See fetch_data.py for the source (CNN Fear & Greed Index API).
+ Data is computed live on every request by Netlify Functions
+ (netlify/functions/data.js, netlify/functions/momentum-history.js),
+ which fetch CNN's Fear & Greed API and Yahoo Finance server-side
+ (CORS blocks calling those APIs directly from the browser) and
+ return fresh JSON. No scheduled job or stored snapshot involved —
+ every page load and every refresh-button click recomputes from scratch.
 ======================================================
 */
 
 
-// api.github.com's contents endpoint isn't CDN-cached like raw.githubusercontent.com,
-// so it reflects new commits immediately instead of serving a stale cached copy.
-const DATA_URL = "https://api.github.com/repos/michaeljstevenson/marketdashboard/contents/data.json?ref=main";
-const HISTORY_URL = "https://api.github.com/repos/michaeljstevenson/marketdashboard/contents/history.json?ref=main";
-const SP500_LONG_HISTORY_URL = "https://api.github.com/repos/michaeljstevenson/marketdashboard/contents/sp500_long_history.json?ref=main";
-const GITHUB_RAW_HEADERS = {"Accept": "application/vnd.github.raw"};
+const DATA_URL = "/api/data";
+const MOMENTUM_HISTORY_URL = "/api/momentum-history";
 
 let SP500_LONG_HISTORY_CACHE = null;
 
@@ -810,7 +809,7 @@ async function loadSP500LongHistory(){
 
  if(SP500_LONG_HISTORY_CACHE) return SP500_LONG_HISTORY_CACHE;
 
- const res = await fetch(SP500_LONG_HISTORY_URL + "&t=" + Date.now(), {cache:"no-store", headers: GITHUB_RAW_HEADERS});
+ const res = await fetch(MOMENTUM_HISTORY_URL, {cache:"no-store"});
 
  if(!res.ok) throw new Error("HTTP " + res.status);
 
@@ -831,7 +830,7 @@ async function loadData(){
 
  try{
 
-  const res = await fetch(DATA_URL + "&t=" + Date.now(), {cache:"no-store", headers: GITHUB_RAW_HEADERS});
+  const res = await fetch(DATA_URL, {cache:"no-store"});
 
   if(!res.ok) throw new Error("HTTP " + res.status);
 
@@ -839,31 +838,15 @@ async function loadData(){
 
   LATEST_COMPOSITE = data.composite;
 
+  LATEST_HISTORY = data.history || [];
+
   renderDashboard(data);
 
- }catch(err){
-
-  showError("Couldn't load data.json (" + err.message + "). Run fetch_data.py to generate it.");
-
- }
-
- try{
-
-  const res = await fetch(HISTORY_URL + "&t=" + Date.now(), {cache:"no-store", headers: GITHUB_RAW_HEADERS});
-
-  if(res.ok){
-
-   const history = await res.json();
-
-   LATEST_HISTORY = history;
-
-   renderHistoryChart(history);
-
-  }
+  renderHistoryChart(LATEST_HISTORY);
 
  }catch(err){
 
-  // history is optional; chart just stays empty
+  showError("Couldn't load live data (" + err.message + "). The /api/data function may be unreachable.");
 
  }
 
