@@ -1,9 +1,14 @@
-// Live sentiment + market data for the dashboard, computed fresh on every request.
-// Port of fetch_data.py's logic to run as a Netlify Function (server-side, so no
-// CORS issue reaching CNN/Yahoo — browsers can't call those APIs directly).
+// Live sentiment + market data for the dashboard, computed fresh (subject to
+// edge caching, see Cache-Control below) on every request.
+//
+// S&P 500 price data comes from Alpha Vantage's SPY ETF series, not a true
+// index feed: Yahoo Finance (which has the real index) blocks Netlify's IP
+// range, and Alpha Vantage's free tier only covers traded securities, not
+// raw index levels (that needs a paid plan). SPY tracks the S&P 500 index
+// almost exactly (~1:10 scale), so it's used as the practical substitute.
 
 const CNN_URL = "https://production.dataviz.cnn.io/index/fearandgreed/graphdata";
-const SP500_CHART_URL = "https://query2.finance.yahoo.com/v8/finance/chart/%5EGSPC";
+const ALPHA_VANTAGE_URL = "https://www.alphavantage.co/query";
 const USER_AGENT =
   "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0 Safari/537.36";
 
@@ -38,7 +43,7 @@ const COMPONENTS = [
     id: "momentum",
     cnnKey: "market_momentum_sp500",
     name: "Price Momentum",
-    unit: "S&P 500 vs 125-day avg",
+    unit: "SPY vs 125-day avg",
     weight: 20,
     description: "Strong price trends increase investor optimism.",
   },
@@ -66,17 +71,20 @@ function fetchCnn() {
   });
 }
 
-function fetchSP500Range(interval, period1, period2) {
-  const url = `${SP500_CHART_URL}?period1=${period1}&period2=${period2}&interval=${interval}`;
-  return fetchJson(url, { "User-Agent": USER_AGENT }).then((payload) => {
-    const result = payload.chart.result[0];
-    const timestamps = result.timestamp || [];
-    const closes = result.indicators.quote[0].close || [];
-    return timestamps
-      .map((ts, i) => ({ date: toDateStr(ts * 1000), value: closes[i] }))
-      .filter((p) => p.value !== null && p.value !== undefined)
-      .map((p) => ({ date: p.date, value: round(p.value, 2) }));
-  });
+async function fetchSpyDaily(apiKey, outputsize) {
+  const url = `${ALPHA_VANTAGE_URL}?function=TIME_SERIES_DAILY&symbol=SPY&outputsize=${outputsize}&apikey=${apiKey}`;
+  const payload = await fetchJson(url, { "User-Agent": USER_AGENT });
+
+  const series = payload["Time Series (Daily)"];
+  if (!series) {
+    throw new Error(
+      "Alpha Vantage response missing daily series: " + (payload.Note || payload.Information || payload.error_message || JSON.stringify(payload).slice(0, 200))
+    );
+  }
+
+  return Object.entries(series)
+    .map(([date, day]) => ({ date, value: round(parseFloat(day["4. close"]), 2) }))
+    .sort((a, b) => (a.date < b.date ? -1 : 1));
 }
 
 function toDateStr(ms) {
@@ -126,14 +134,13 @@ function computeMomentumVsMA(sp500Price, sp500Daily) {
 
 exports.handler = async () => {
   try {
-    const now = new Date();
-    const nowSec = Math.floor(now.getTime() / 1000);
-    const daysAgo220 = nowSec - 220 * 24 * 60 * 60; // buffer past 125 trading days
+    const apiKey = process.env.ALPHAVANTAGE_API_KEY;
+    if (!apiKey) throw new Error("ALPHAVANTAGE_API_KEY environment variable is not set");
 
-    const [raw, sp500Daily] = await Promise.all([
-      fetchCnn(),
-      fetchSP500Range("1d", daysAgo220, nowSec),
-    ]);
+    const now = new Date();
+
+    const [raw, spyFull] = await Promise.all([fetchCnn(), fetchSpyDaily(apiKey, "compact")]);
+    const spyDaily = spyFull.slice(-220); // buffer past 125 trading days
 
     const components = COMPONENTS.map((spec) => buildComponent(raw, spec));
     const composite = Math.round(
@@ -141,24 +148,24 @@ exports.handler = async () => {
         components.reduce((sum, c) => sum + c.weight, 0)
     );
 
-    const sp500Price = sp500Daily.length ? sp500Daily[sp500Daily.length - 1].value : null;
+    const spyPrice = spyDaily.length ? spyDaily[spyDaily.length - 1].value : null;
     const momentum = components.find((c) => c.id === "momentum");
-    const vsMa = computeMomentumVsMA(sp500Price, sp500Daily);
+    const vsMa = computeMomentumVsMA(spyPrice, spyDaily);
     if (vsMa !== null) {
       momentum.value = vsMa;
       momentum.unit = "% vs 125-day MA";
     }
 
-    // Optimism-vs-S&P-500 history: CNN's own composite score history (same
-    // proxy rationale as the old backfill script) paired with S&P 500 closes.
+    // Optimism-vs-SPY history: CNN's own composite score history (same proxy
+    // rationale as the old backfill script) paired with SPY closes.
     const compositeHistory = (raw.fear_and_greed_historical.data || []).slice(-HISTORY_POINTS);
-    const sp500ByDate = new Map(sp500Daily.map((p) => [p.date, p.value]));
-    const sp500DatesSorted = sp500Daily.map((p) => p.date).sort();
+    const spyByDate = new Map(spyDaily.map((p) => [p.date, p.value]));
+    const spyDatesSorted = spyDaily.map((p) => p.date).sort();
 
-    function nearestSP500(dateStr) {
-      if (sp500ByDate.has(dateStr)) return sp500ByDate.get(dateStr);
-      const earlier = sp500DatesSorted.filter((d) => d <= dateStr);
-      return earlier.length ? sp500ByDate.get(earlier[earlier.length - 1]) : null;
+    function nearestSpy(dateStr) {
+      if (spyByDate.has(dateStr)) return spyByDate.get(dateStr);
+      const earlier = spyDatesSorted.filter((d) => d <= dateStr);
+      return earlier.length ? spyByDate.get(earlier[earlier.length - 1]) : null;
     }
 
     const historyByDate = new Map();
@@ -167,7 +174,7 @@ exports.handler = async () => {
       historyByDate.set(dateStr, {
         date: dateStr,
         optimism: Math.round(point.y),
-        sp500: nearestSP500(dateStr),
+        spy: nearestSpy(dateStr),
       });
     }
     const history = [...historyByDate.keys()].sort().map((d) => historyByDate.get(d));
@@ -192,7 +199,10 @@ exports.handler = async () => {
       statusCode: 200,
       headers: {
         "Content-Type": "application/json",
-        "Cache-Control": "no-store",
+        // Cached at the edge to stay well within Alpha Vantage's 25 req/day
+        // free-tier limit — a refresh within this window serves the cached
+        // response rather than triggering a new upstream call.
+        "Cache-Control": "public, max-age=7200",
         "Access-Control-Allow-Origin": "*",
       },
       body: JSON.stringify(data),
@@ -200,7 +210,7 @@ exports.handler = async () => {
   } catch (err) {
     return {
       statusCode: 502,
-      headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" },
+      headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*", "Cache-Control": "no-store" },
       body: JSON.stringify({ error: err.message }),
     };
   }

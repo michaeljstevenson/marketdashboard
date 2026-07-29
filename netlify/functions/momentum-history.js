@@ -1,63 +1,57 @@
-// Long-run S&P 500 series for the Price Momentum modal's chart: weekly closes
-// 1980-2020, daily since 2021. Computed live, fetched lazily by the frontend
-// only when that modal opens (it's a much bigger payload than the main /data
-// endpoint's needs).
+// Long-run SPY series for the Price Momentum modal's chart. Uses Alpha
+// Vantage's SPY daily series (free tier covers ~20+ years) since Yahoo
+// Finance — which has true S&P 500 index data going back to 1980 — blocks
+// Netlify's IP range. See data.js for the fuller explanation.
 
-const SP500_CHART_URL = "https://query2.finance.yahoo.com/v8/finance/chart/%5EGSPC";
+const ALPHA_VANTAGE_URL = "https://www.alphavantage.co/query";
 const USER_AGENT =
   "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0 Safari/537.36";
-
-const WEEKLY_START = Date.UTC(1980, 0, 1) / 1000;
-const WEEKLY_END = Date.UTC(2020, 11, 31) / 1000;
-const DAILY_START = Date.UTC(2021, 0, 1) / 1000;
-
-function toDateStr(ms) {
-  return new Date(ms).toISOString().slice(0, 10);
-}
 
 function round(n, digits) {
   const f = 10 ** digits;
   return Math.round(n * f) / f;
 }
 
-async function fetchRange(interval, period1, period2) {
-  const url = `${SP500_CHART_URL}?period1=${period1}&period2=${period2}&interval=${interval}`;
+async function fetchSpyDailyFull(apiKey) {
+  const url = `${ALPHA_VANTAGE_URL}?function=TIME_SERIES_DAILY&symbol=SPY&outputsize=full&apikey=${apiKey}`;
   const res = await fetch(url, { headers: { "User-Agent": USER_AGENT } });
-  if (!res.ok) throw new Error(`HTTP ${res.status} for ${url}`);
+  if (!res.ok) throw new Error(`HTTP ${res.status} for Alpha Vantage`);
   const payload = await res.json();
-  const result = payload.chart.result[0];
-  const timestamps = result.timestamp || [];
-  const closes = result.indicators.quote[0].close || [];
-  return timestamps
-    .map((ts, i) => ({ date: toDateStr(ts * 1000), value: closes[i] }))
-    .filter((p) => p.value !== null && p.value !== undefined)
-    .map((p) => ({ date: p.date, value: round(p.value, 2) }));
+
+  const series = payload["Time Series (Daily)"];
+  if (!series) {
+    throw new Error(
+      "Alpha Vantage response missing daily series: " + (payload.Note || payload.Information || payload.error_message || JSON.stringify(payload).slice(0, 200))
+    );
+  }
+
+  return Object.entries(series)
+    .map(([date, day]) => ({ date, value: round(parseFloat(day["4. close"]), 2) }))
+    .sort((a, b) => (a.date < b.date ? -1 : 1));
 }
 
 exports.handler = async () => {
   try {
-    const nowSec = Math.floor(Date.now() / 1000);
+    const apiKey = process.env.ALPHAVANTAGE_API_KEY;
+    if (!apiKey) throw new Error("ALPHAVANTAGE_API_KEY environment variable is not set");
 
-    const [weekly, daily] = await Promise.all([
-      fetchRange("1wk", WEEKLY_START, WEEKLY_END),
-      fetchRange("1d", DAILY_START, nowSec),
-    ]);
-
-    const merged = [...weekly, ...daily];
+    const series = await fetchSpyDailyFull(apiKey);
 
     return {
       statusCode: 200,
       headers: {
         "Content-Type": "application/json",
-        "Cache-Control": "public, max-age=3600",
+        // This barely changes intraday and Alpha Vantage's free tier has a
+        // tight daily quota, so cache generously at the edge.
+        "Cache-Control": "public, max-age=21600",
         "Access-Control-Allow-Origin": "*",
       },
-      body: JSON.stringify(merged),
+      body: JSON.stringify(series),
     };
   } catch (err) {
     return {
       statusCode: 502,
-      headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" },
+      headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*", "Cache-Control": "no-store" },
       body: JSON.stringify({ error: err.message }),
     };
   }

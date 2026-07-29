@@ -1346,7 +1346,7 @@ function renderMomentumRange(rangeKey){
 
  renderModalChartMulti(dates.slice(startIndex), [
 
-  { label: "S&P 500", data: values.slice(startIndex), color: LINE_COLOR },
+  { label: "SPY", data: values.slice(startIndex), color: LINE_COLOR },
 
   { label: "125-day MA", data: ma.slice(startIndex), color: SP500_LINE_COLOR },
 
@@ -1371,8 +1371,7 @@ function movingAverage(values, window){
 
 
 // 125 trading days is roughly 182 calendar days; averaging over a calendar
-// window (rather than a fixed point count) keeps the MA meaningful across
-// the weekly-then-daily sampling change in the long-run S&P 500 series.
+// window (rather than a fixed point count) is robust to weekends/holidays.
 function movingAverageByCalendarDays(points, windowDays){
 
  const dates = points.map(p => new Date(p.date + "T00:00:00Z").getTime());
@@ -1563,7 +1562,7 @@ function renderModalChartMulti(labels, series){
 ======================================================
  HISTORY CHART
 
- history.json is a list of {date, optimism, sp500} entries,
+ data.history is a list of {date, optimism, spy} entries,
  appended to by fetch_data.py over time.
 ======================================================
 */
@@ -1621,10 +1620,10 @@ yAxisID:"sentiment"
 
 {
 
-label:"S&P 500 Index",
+label:"SPY",
 
 data:
-historyData.map(x=>x.sp500),
+historyData.map(x=>x.spy),
 
 
 borderColor: SP500_LINE_COLOR,
