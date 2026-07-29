@@ -126,29 +126,39 @@ function percentileRank(values, latestValue) {
 // Computes a self-derived 0-100 score for every date in `points` that has
 // enough trailing history for a moving average: today's (or that day's)
 // reading relative to its own trailing MA, ranked against that ratio's
-// entire history. Returns [{x, score}], aligned to points[window-1..].
-// Uses a single full-sample ranking (not an expanding/point-in-time window),
-// so historical scores here are internally consistent but not exactly what
-// would have been shown live on that past date.
+// entire history. Returns [{x, score, value, ma, ratio, ratioPercentile}],
+// aligned to points[window-1..]. Uses a single full-sample ranking (not an
+// expanding/point-in-time window), so historical scores here are internally
+// consistent but not exactly what would have been shown live on that date.
 function computeRelativeScoreSeries(points, window, invert) {
   const values = points.map((p) => p.y);
   if (values.length < window) return [];
 
+  const mas = [];
   const ratios = [];
   for (let i = window - 1; i < values.length; i++) {
     const slice = values.slice(i - window + 1, i + 1);
     const ma = slice.reduce((sum, v) => sum + v, 0) / window;
+    mas.push(ma);
     ratios.push(values[i] / ma);
   }
 
   const sortedRatios = [...ratios].sort((a, b) => a - b);
-  const scores = ratios.map((r) => {
-    const below = sortedRatios.filter((x) => x <= r).length;
-    const pct = (100 * below) / sortedRatios.length;
-    return round(invert ? 100 - pct : pct, 1);
+  const rankedPoints = points.slice(window - 1).map((p, idx) => {
+    const ratio = ratios[idx];
+    const below = sortedRatios.filter((x) => x <= ratio).length;
+    const ratioPercentile = round((100 * below) / sortedRatios.length, 1);
+    return {
+      x: p.x,
+      value: p.y,
+      ma: mas[idx],
+      ratio,
+      ratioPercentile,
+      score: round(invert ? 100 - ratioPercentile : ratioPercentile, 1),
+    };
   });
 
-  return points.slice(window - 1).map((p, idx) => ({ x: p.x, score: scores[idx] }));
+  return rankedPoints;
 }
 
 function buildComponent(raw, spec) {
@@ -158,7 +168,7 @@ function buildComponent(raw, spec) {
   const trimmed = history.slice(-HISTORY_POINTS);
 
   const scoreSeries = computeRelativeScoreSeries(history, SCORE_MA_WINDOW, spec.invert);
-  const latestScore = scoreSeries.length ? scoreSeries[scoreSeries.length - 1].score : null;
+  const latest = scoreSeries.length ? scoreSeries[scoreSeries.length - 1] : null;
 
   return {
     id: spec.id,
@@ -166,13 +176,23 @@ function buildComponent(raw, spec) {
     value: latestValue !== null ? round(latestValue, 2) : null,
     unit: spec.unit,
     percentile: latestValue !== null ? percentileRank(history.map((p) => p.y), latestValue) : null,
-    score: latestScore !== null ? latestScore : 50,
+    score: latest ? latest.score : 50,
     weight: spec.weight,
     description: spec.description,
     history: trimmed.map((p) => ({
       date: toDateStr(p.x),
       value: round(p.y, 3),
     })),
+    calc: latest
+      ? {
+          window: SCORE_MA_WINDOW,
+          invert: spec.invert,
+          value: round(latest.value, 3),
+          ma: round(latest.ma, 3),
+          ratio: round(latest.ratio, 4),
+          ratioPercentile: latest.ratioPercentile,
+        }
+      : null,
     scoreSeries, // used to build the composite history below; stripped before response
   };
 }

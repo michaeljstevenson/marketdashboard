@@ -609,6 +609,98 @@ h1{
 }
 
 
+.calc-box{
+
+ background:#171b20;
+
+ border:1px solid var(--hair);
+
+ border-radius:8px;
+
+ padding:14px 16px;
+
+ margin-top:16px;
+
+ display:none;
+
+}
+
+
+.calc-box.visible{
+
+ display:block;
+
+}
+
+
+.calc-title{
+
+ font-size:11px;
+
+ text-transform:uppercase;
+
+ color:var(--muted);
+
+ margin-bottom:10px;
+
+}
+
+
+.calc-row{
+
+ display:flex;
+
+ justify-content:space-between;
+
+ font-family:var(--mono);
+
+ font-size:12.5px;
+
+ padding:4px 0;
+
+ border-bottom:1px solid var(--hair);
+
+}
+
+
+.calc-row:last-child{
+
+ border-bottom:none;
+
+}
+
+
+.calc-row-label{
+
+ color:var(--muted);
+
+}
+
+
+.calc-row-value{
+
+ color:var(--ink);
+
+}
+
+
+.calc-formula{
+
+ margin-top:10px;
+
+ padding-top:10px;
+
+ border-top:1px solid var(--hair);
+
+ font-family:var(--mono);
+
+ font-size:12.5px;
+
+ color:var(--ink);
+
+}
+
+
 @media(max-width:700px){
 
 .hero{
@@ -776,6 +868,9 @@ Waiting for data...
 
 
 <div class="modal-desc" id="modalDesc"></div>
+
+
+<div class="calc-box" id="calcBox"></div>
 
 
 </div>
@@ -1208,6 +1303,8 @@ function openModal(id){
 
  document.getElementById("modalDesc").textContent = item.description;
 
+ renderCalcBox(item);
+
 
  document.getElementById("modalOverlay").classList.add("open");
 
@@ -1229,6 +1326,49 @@ function openModal(id){
   ]);
 
  }
+
+}
+
+
+function renderCalcBox(item){
+
+ const box = document.getElementById("calcBox");
+
+ const calc = item.calc;
+
+ if(!calc){
+
+  box.classList.remove("visible");
+
+  box.innerHTML = "";
+
+  return;
+
+ }
+
+ const direction = calc.invert ? "above" : "below";
+
+ const rawLabel = item.id === "momentum" ? "S&P 500 momentum reading" : item.name + " reading";
+
+ box.innerHTML = `
+
+<div class="calc-title">How this score is calculated</div>
+
+<div class="calc-row"><span class="calc-row-label">${rawLabel}</span><span class="calc-row-value">${calc.value}</span></div>
+
+<div class="calc-row"><span class="calc-row-label">${calc.window}-day moving average</span><span class="calc-row-value">${calc.ma.toFixed(3)}</span></div>
+
+<div class="calc-row"><span class="calc-row-label">Ratio (reading &divide; MA)</span><span class="calc-row-value">${calc.ratio}</span></div>
+
+<div class="calc-row"><span class="calc-row-label">Percentile of that ratio</span><span class="calc-row-value">${calc.ratioPercentile}th</span></div>
+
+<div class="calc-row"><span class="calc-row-label">Direction</span><span class="calc-row-value">${calc.invert ? "higher ratio = more fear" : "higher ratio = more greed"}</span></div>
+
+<div class="calc-formula">${calc.invert ? "score = 100 &minus; percentile" : "score = percentile"} = ${item.score}/100</div>
+
+`;
+
+ box.classList.add("visible");
 
 }
 
@@ -1441,6 +1581,8 @@ function openCompositeModal(){
 
  document.getElementById("modalDesc").textContent = generateSignal(LATEST_COMPOSITE);
 
+ renderCompositeCalcBox();
+
 
  document.getElementById("modalOverlay").classList.add("open");
 
@@ -1452,6 +1594,45 @@ function openCompositeModal(){
   { label: "Optimism Index", data: LATEST_HISTORY.map(p=>p.optimism), color: LINE_COLOR },
 
  ]);
+
+}
+
+
+function renderCompositeCalcBox(){
+
+ const box = document.getElementById("calcBox");
+
+ const items = Object.values(COMPONENTS_BY_ID);
+
+ if(!items.length){
+
+  box.classList.remove("visible");
+
+  box.innerHTML = "";
+
+  return;
+
+ }
+
+ const totalWeight = items.reduce((sum,i)=>sum+i.weight,0);
+
+ const rows = items.map(i => `
+
+<div class="calc-row"><span class="calc-row-label">${i.name} (weight ${i.weight}%)</span><span class="calc-row-value">${i.score}/100</span></div>
+
+`).join("");
+
+ box.innerHTML = `
+
+<div class="calc-title">How this composite is calculated</div>
+
+${rows}
+
+<div class="calc-formula">weighted average of the 5 scores above = ${LATEST_COMPOSITE}/100</div>
+
+`;
+
+ box.classList.add("visible");
 
 }
 
