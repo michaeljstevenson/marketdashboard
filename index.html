@@ -1103,7 +1103,46 @@ function openModal(id){
  document.getElementById("modalOverlay").classList.add("open");
 
 
- renderModalChart(history => history.map(p=>p.date), history => history.map(p=>p.value), item.history || []);
+ const history = item.history || [];
+
+ if(item.id === "momentum"){
+
+  const values = history.map(p=>p.value);
+
+  const ma125 = movingAverage(values, 125);
+
+  renderModalChartMulti(history.map(p=>p.date), [
+
+   { label: "S&P 500", data: values, color: LINE_COLOR },
+
+   { label: "125-day MA", data: ma125, color: SP500_LINE_COLOR },
+
+  ]);
+
+ }else{
+
+  renderModalChartMulti(history.map(p=>p.date), [
+
+   { label: item.name, data: history.map(p=>p.value), color: LINE_COLOR },
+
+  ]);
+
+ }
+
+}
+
+
+function movingAverage(values, window){
+
+ return values.map((_, i) => {
+
+  if(i < window - 1) return null;
+
+  const slice = values.slice(i - window + 1, i + 1);
+
+  return slice.reduce((sum, v) => sum + v, 0) / window;
+
+ });
 
 }
 
@@ -1139,7 +1178,11 @@ function openCompositeModal(){
  document.getElementById("modalOverlay").classList.add("open");
 
 
- renderModalChart(h => h.map(p=>p.date), h => h.map(p=>p.optimism), LATEST_HISTORY);
+ renderModalChartMulti(LATEST_HISTORY.map(p=>p.date), [
+
+  { label: "Optimism Index", data: LATEST_HISTORY.map(p=>p.optimism), color: LINE_COLOR },
+
+ ]);
 
 }
 
@@ -1168,7 +1211,7 @@ document.addEventListener("keydown", e=>{
 });
 
 
-function renderModalChart(getLabels, getValues, history){
+function renderModalChartMulti(labels, series){
 
 
  if(modalChart){ modalChart.destroy(); modalChart = null; }
@@ -1183,23 +1226,27 @@ function renderModalChart(getLabels, getValues, history){
 
   data:{
 
-   labels: getLabels(history),
+   labels: labels,
 
-   datasets:[{
+   datasets: series.map(s => ({
 
-    data: getValues(history),
+    label: s.label,
 
-    borderColor: LINE_COLOR,
+    data: s.data,
 
-    backgroundColor: LINE_COLOR,
+    borderColor: s.color,
+
+    backgroundColor: s.color,
 
     borderWidth:2,
 
     pointRadius:0,
 
+    spanGaps: true,
+
     tension:0.25,
 
-   }]
+   })),
 
   },
 
@@ -1211,7 +1258,7 @@ function renderModalChart(getLabels, getValues, history){
 
    plugins:{
 
-    legend:{ display:false }
+    legend:{ display: series.length > 1, labels:{ color:"#8b9199" } }
 
    },
 
