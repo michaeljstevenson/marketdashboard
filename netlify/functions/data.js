@@ -197,6 +197,7 @@ function buildComponent(raw, spec) {
     score: latest ? latest.score : 50,
     weight: spec.weight,
     description: spec.description,
+    details: spec.details,
     history: trimmed.map((p) => ({
       date: toDateStr(p.x),
       value: round(p.y, 3),
