@@ -1,6 +1,6 @@
 {
-  "timestamp": "July 28, 2026 04:54 PM ET",
-  "fetched_at_utc": "2026-07-28T20:54:53.500087+00:00",
+  "timestamp": "July 28, 2026 08:26 PM ET",
+  "fetched_at_utc": "2026-07-29T00:26:07.613250+00:00",
   "composite": 37,
   "components": [
     {
@@ -746,10 +746,6 @@
       "description": "Low put demand indicates bullish positioning.",
       "history": [
         {
-          "date": "2025-11-04",
-          "value": 0.679
-        },
-        {
           "date": "2025-11-05",
           "value": 0.687
         },
@@ -1464,6 +1460,10 @@
         {
           "date": "2026-07-28",
           "value": 0.815
+        },
+        {
+          "date": "2026-07-28",
+          "value": 0.815
         }
       ]
     },
@@ -1472,15 +1472,11 @@
       "name": "Market Breadth",
       "value": 853.31,
       "unit": "advance/decline volume",
-      "percentile": 5,
+      "percentile": 6,
       "score": 20.2,
       "weight": 20,
       "description": "Measures participation beneath the headline index.",
       "history": [
-        {
-          "date": "2025-11-04",
-          "value": 1050.011
-        },
         {
           "date": "2025-11-05",
           "value": 1027.075
@@ -2196,14 +2192,18 @@
         {
           "date": "2026-07-28",
           "value": 853.314
+        },
+        {
+          "date": "2026-07-28",
+          "value": 853.314
         }
       ]
     },
     {
       "id": "momentum",
       "name": "Price Momentum",
-      "value": 7428.78,
-      "unit": "S&P 500 vs 125-day avg",
+      "value": 4.17,
+      "unit": "% vs 125-day MA",
       "percentile": 86,
       "score": 30.4,
       "weight": 20,
@@ -2942,10 +2942,6 @@
       "description": "Narrow credit spreads suggest risk appetite.",
       "history": [
         {
-          "date": "2025-11-04",
-          "value": 1.516
-        },
-        {
           "date": "2025-11-05",
           "value": 1.387
         },
@@ -3656,6 +3652,10 @@
         {
           "date": "2026-07-27",
           "value": 1.296
+        },
+        {
+          "date": "2026-07-28",
+          "value": 1.299
         },
         {
           "date": "2026-07-28",

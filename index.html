@@ -487,11 +487,68 @@ h1{
 }
 
 
+.modal-chart-controls{
+
+ display:flex;
+
+ gap:6px;
+
+ margin-top:22px;
+
+}
+
+
+.modal-chart-controls:empty{
+
+ margin-top:0;
+
+}
+
+
+.range-btn{
+
+ background:#171b20;
+
+ border:1px solid var(--hair);
+
+ color:var(--muted);
+
+ font-size:12px;
+
+ padding:4px 10px;
+
+ border-radius:6px;
+
+ cursor:pointer;
+
+}
+
+
+.range-btn:hover{
+
+ color:var(--ink);
+
+ border-color:#3a424b;
+
+}
+
+
+.range-btn.active{
+
+ background:var(--card-hover);
+
+ color:var(--ink);
+
+ border-color:#3a424b;
+
+}
+
+
 .modal-chart{
 
  height:220px;
 
- margin-top:22px;
+ margin-top:10px;
 
 }
 
@@ -659,6 +716,9 @@ Waiting for data...
 </div>
 
 </div>
+
+
+<div class="modal-chart-controls" id="modalChartControls"></div>
 
 
 <div class="modal-chart">
@@ -1119,6 +1179,8 @@ function openModal(id){
 
  document.getElementById("modalOverlay").classList.add("open");
 
+ document.getElementById("modalChartControls").innerHTML = "";
+
 
  const history = item.history || [];
 
@@ -1139,23 +1201,38 @@ function openModal(id){
 }
 
 
+const MOMENTUM_RANGES = [
+
+ { key: "1Y", days: 365 },
+
+ { key: "5Y", days: 365 * 5 },
+
+ { key: "10Y", days: 365 * 10 },
+
+ { key: "Max", days: null },
+
+];
+
+const MOMENTUM_DEFAULT_RANGE = "5Y";
+
+let MOMENTUM_SERIES = null; // {dates, values, ma} over the full available history
+
+
 async function renderMomentumModal(){
 
  try{
 
   const longHistory = await loadSP500LongHistory();
 
-  const values = longHistory.map(p=>p.value);
+  MOMENTUM_SERIES = {
 
-  const ma125 = movingAverageByCalendarDays(longHistory, 182);
+   dates: longHistory.map(p=>p.date),
 
-  renderModalChartMulti(longHistory.map(p=>p.date), [
+   values: longHistory.map(p=>p.value),
 
-   { label: "S&P 500", data: values, color: LINE_COLOR },
+   ma: movingAverageByCalendarDays(longHistory, 182),
 
-   { label: "125-day MA", data: ma125, color: SP500_LINE_COLOR },
-
-  ]);
+  };
 
  }catch(err){
 
@@ -1165,15 +1242,83 @@ async function renderMomentumModal(){
 
   const values = history.map(p=>p.value);
 
-  renderModalChartMulti(history.map(p=>p.date), [
+  MOMENTUM_SERIES = {
 
-   { label: "S&P 500", data: values, color: LINE_COLOR },
+   dates: history.map(p=>p.date),
 
-   { label: "125-day MA", data: movingAverage(values, 125), color: SP500_LINE_COLOR },
+   values: values,
 
-  ]);
+   ma: movingAverage(values, 125),
+
+  };
 
  }
+
+ renderRangeButtons();
+
+ renderMomentumRange(MOMENTUM_DEFAULT_RANGE);
+
+}
+
+
+function renderRangeButtons(){
+
+ const container = document.getElementById("modalChartControls");
+
+ container.innerHTML = "";
+
+ MOMENTUM_RANGES.forEach(r => {
+
+  const btn = document.createElement("button");
+
+  btn.className = "range-btn" + (r.key === MOMENTUM_DEFAULT_RANGE ? " active" : "");
+
+  btn.textContent = r.key;
+
+  btn.addEventListener("click", () => {
+
+   container.querySelectorAll(".range-btn").forEach(b => b.classList.remove("active"));
+
+   btn.classList.add("active");
+
+   renderMomentumRange(r.key);
+
+  });
+
+  container.appendChild(btn);
+
+ });
+
+}
+
+
+function renderMomentumRange(rangeKey){
+
+ if(!MOMENTUM_SERIES) return;
+
+ const range = MOMENTUM_RANGES.find(r => r.key === rangeKey);
+
+ const { dates, values, ma } = MOMENTUM_SERIES;
+
+ let startIndex = 0;
+
+ if(range.days){
+
+  const cutoff = Date.now() - range.days * 24 * 60 * 60 * 1000;
+
+  startIndex = dates.findIndex(d => new Date(d + "T00:00:00Z").getTime() >= cutoff);
+
+  if(startIndex === -1) startIndex = 0;
+
+ }
+
+ renderModalChartMulti(dates.slice(startIndex), [
+
+  { label: "S&P 500", data: values.slice(startIndex), color: LINE_COLOR },
+
+  { label: "125-day MA", data: ma.slice(startIndex), color: SP500_LINE_COLOR },
+
+ ]);
 
 }
 
@@ -1266,6 +1411,8 @@ function openCompositeModal(){
 
 
  document.getElementById("modalOverlay").classList.add("open");
+
+ document.getElementById("modalChartControls").innerHTML = "";
 
 
  renderModalChartMulti(LATEST_HISTORY.map(p=>p.date), [

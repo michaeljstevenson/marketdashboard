@@ -279,10 +279,37 @@ def build_component(raw, spec):
     }
 
 
+def compute_momentum_vs_ma(sp500_price):
+    """Express Price Momentum's value as % above/below the 125-trading-day MA.
+
+    Uses the long-run daily S&P 500 series (sp500_long_history.json) rather
+    than CNN's own momentum values, since we need an actual daily-close MA.
+    """
+    if sp500_price is None or not SP500_LONG_PATH.exists():
+        return None
+
+    long_history = json.loads(SP500_LONG_PATH.read_text())
+    daily_points = [p for p in long_history if p["date"] >= LONG_HISTORY_DAILY_START.isoformat()]
+    last_125 = daily_points[-125:]
+    if len(last_125) < 125:
+        return None
+
+    ma125 = sum(p["value"] for p in last_125) / len(last_125)
+    return round((sp500_price / ma125 - 1) * 100, 2)
+
+
 def main():
     raw = fetch_raw()
     components = [build_component(raw, spec) for spec in COMPONENTS]
     composite = round(sum(c["score"] * c["weight"] for c in components) / sum(c["weight"] for c in components))
+
+    sp500_price = fetch_sp500_price()
+
+    momentum = next(c for c in components if c["id"] == "momentum")
+    vs_ma = compute_momentum_vs_ma(sp500_price)
+    if vs_ma is not None:
+        momentum["value"] = vs_ma
+        momentum["unit"] = "% vs 125-day MA"
 
     now_et = datetime.now(ZoneInfo("America/New_York"))
     data = {
@@ -295,7 +322,6 @@ def main():
     OUT_PATH.write_text(json.dumps(data, indent=2))
     print(f"Wrote {OUT_PATH} — composite={composite}")
 
-    sp500_price = fetch_sp500_price()
     append_history(now_et, composite, sp500_price)
     append_sp500_long_history(now_et, sp500_price)
 
