@@ -125,6 +125,30 @@ function buildComponent(raw, spec) {
   };
 }
 
+// Volatility's score is computed ourselves (not passed through from CNN):
+// today's VIX relative to its own 50-day moving average, then ranked against
+// that same ratio's history. A VIX running hot relative to its recent trend
+// means elevated fear (lower score); running cool relative to trend means
+// complacency/confidence (higher score).
+function computeVixScore(vixHistory) {
+  const values = vixHistory.map((p) => p.y);
+  if (values.length < 51) return null;
+
+  const ratios = [];
+  for (let i = 49; i < values.length; i++) {
+    const window = values.slice(i - 49, i + 1);
+    const ma50 = window.reduce((sum, v) => sum + v, 0) / 50;
+    ratios.push(values[i] / ma50);
+  }
+
+  const latestRatio = ratios[ratios.length - 1];
+  const sorted = [...ratios].sort((a, b) => a - b);
+  const below = sorted.filter((r) => r <= latestRatio).length;
+  const percentileOfRatio = (100 * below) / sorted.length;
+
+  return round(100 - percentileOfRatio, 1); // higher ratio (more fear) -> lower score
+}
+
 // 90 rather than the conventional 125 trading days: Alpha Vantage's free
 // tier caps daily history at 100 points, which isn't quite enough for a
 // true 125-day window.
@@ -147,6 +171,11 @@ exports.handler = async () => {
     const [raw, spyDaily] = await Promise.all([fetchCnn(), fetchSpyDaily(apiKey, "compact")]);
 
     const components = COMPONENTS.map((spec) => buildComponent(raw, spec));
+
+    const vixComponent = components.find((c) => c.id === "vix");
+    const vixScore = computeVixScore(raw.market_volatility_vix.data || []);
+    if (vixScore !== null) vixComponent.score = vixScore;
+
     const composite = Math.round(
       components.reduce((sum, c) => sum + c.score * c.weight, 0) /
         components.reduce((sum, c) => sum + c.weight, 0)
