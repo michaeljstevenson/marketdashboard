@@ -29,6 +29,14 @@ const SCORE_MA_WINDOW = 50; // trading days, applied consistently across all 5 f
 // bond demand, and price momentum running hot above trend is bullish.
 // Directions verified empirically against CNN's own current fear/greed
 // ratings for each factor (value-vs-MA sign vs. CNN's rating sign).
+// Weights are tilted rather than equal: Credit and Breadth are structural/
+// leading signals (credit markets tend to react before equity sentiment
+// fully turns; breadth reveals whether participation is broad or narrow
+// underneath the headline index). Volatility is forward-looking by
+// construction (derived from options-implied future volatility). Put/Call
+// and Momentum are weighted down — put/call is noisier day-to-day (partly
+// institutional hedging, not pure sentiment), and momentum is lagging by
+// nature (derived from the same price action sentiment is meant to explain).
 const COMPONENTS = [
   {
     id: "vix",
@@ -44,7 +52,7 @@ const COMPONENTS = [
     cnnKey: "put_call_options",
     name: "Equity Put/Call Ratio",
     unit: "ratio",
-    weight: 20,
+    weight: 15,
     invert: true,
     description: "A rising put/call ratio relative to trend indicates bearish positioning.",
   },
@@ -53,7 +61,7 @@ const COMPONENTS = [
     cnnKey: "stock_price_breadth",
     name: "Market Breadth",
     unit: "advance/decline volume",
-    weight: 20,
+    weight: 25,
     invert: false,
     description: "Breadth running above its trend reflects broad market participation.",
   },
@@ -62,7 +70,7 @@ const COMPONENTS = [
     cnnKey: "market_momentum_sp500",
     name: "Price Momentum",
     unit: "index", // overwritten with "% vs 90-day MA" once SPY data resolves
-    weight: 20,
+    weight: 15,
     invert: false,
     description: "Strong price trends relative to the recent average increase investor optimism.",
   },
@@ -71,7 +79,7 @@ const COMPONENTS = [
     cnnKey: "junk_bond_demand",
     name: "Credit Conditions",
     unit: "index",
-    weight: 20,
+    weight: 25,
     invert: false,
     description: "Junk bond demand running above its trend indicates risk appetite.",
   },
