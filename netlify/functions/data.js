@@ -18,7 +18,7 @@ const COMPONENTS = [
   {
     id: "vix",
     cnnKey: "market_volatility_vix",
-    name: "VIX Volatility",
+    name: "Volatility",
     unit: "index",
     weight: 20,
     description: "Low volatility usually reflects investor confidence.",
