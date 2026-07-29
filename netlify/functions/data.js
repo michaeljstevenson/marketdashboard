@@ -39,6 +39,24 @@ const SCORE_MA_WINDOW = 50; // trading days, applied consistently across all 5 f
 // nature (derived from the same price action sentiment is meant to explain).
 const COMPONENTS = [
   {
+    id: "breadth",
+    cnnKey: "stock_price_breadth",
+    name: "Market Breadth",
+    unit: "advance/decline volume",
+    weight: 25,
+    invert: false,
+    description: "Breadth running above its trend reflects broad market participation.",
+  },
+  {
+    id: "credit",
+    cnnKey: "junk_bond_demand",
+    name: "Credit Conditions",
+    unit: "index",
+    weight: 25,
+    invert: false,
+    description: "Junk bond demand running above its trend indicates risk appetite.",
+  },
+  {
     id: "vix",
     cnnKey: "market_volatility_vix",
     name: "Volatility",
@@ -57,15 +75,6 @@ const COMPONENTS = [
     description: "A rising put/call ratio relative to trend indicates bearish positioning.",
   },
   {
-    id: "breadth",
-    cnnKey: "stock_price_breadth",
-    name: "Market Breadth",
-    unit: "advance/decline volume",
-    weight: 25,
-    invert: false,
-    description: "Breadth running above its trend reflects broad market participation.",
-  },
-  {
     id: "momentum",
     cnnKey: "market_momentum_sp500",
     name: "Price Momentum",
@@ -73,15 +82,6 @@ const COMPONENTS = [
     weight: 15,
     invert: false,
     description: "Strong price trends relative to the recent average increase investor optimism.",
-  },
-  {
-    id: "credit",
-    cnnKey: "junk_bond_demand",
-    name: "Credit Conditions",
-    unit: "index",
-    weight: 25,
-    invert: false,
-    description: "Junk bond demand running above its trend indicates risk appetite.",
   },
 ];
 
