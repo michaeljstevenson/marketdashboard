@@ -1,7 +1,8 @@
-// Long-run SPY series for the Price Momentum modal's chart. Uses Alpha
-// Vantage's SPY daily series (free tier covers ~20+ years) since Yahoo
-// Finance — which has true S&P 500 index data going back to 1980 — blocks
-// Netlify's IP range. See data.js for the fuller explanation.
+// SPY series for the Price Momentum modal's chart. Yahoo Finance has true
+// S&P 500 index data going back to 1980, but blocks Netlify's IP range.
+// Alpha Vantage's free tier works from Netlify but caps daily history at
+// 100 points (~4-5 months) — outputsize=full requires a paid plan. See
+// data.js for the fuller explanation.
 
 const ALPHA_VANTAGE_URL = "https://www.alphavantage.co/query";
 const USER_AGENT =
@@ -12,8 +13,8 @@ function round(n, digits) {
   return Math.round(n * f) / f;
 }
 
-async function fetchSpyDailyFull(apiKey) {
-  const url = `${ALPHA_VANTAGE_URL}?function=TIME_SERIES_DAILY&symbol=SPY&outputsize=full&apikey=${apiKey}`;
+async function fetchSpyDaily(apiKey) {
+  const url = `${ALPHA_VANTAGE_URL}?function=TIME_SERIES_DAILY&symbol=SPY&outputsize=compact&apikey=${apiKey}`;
   const res = await fetch(url, { headers: { "User-Agent": USER_AGENT } });
   if (!res.ok) throw new Error(`HTTP ${res.status} for Alpha Vantage`);
   const payload = await res.json();
@@ -35,7 +36,7 @@ exports.handler = async () => {
     const apiKey = process.env.ALPHAVANTAGE_API_KEY;
     if (!apiKey) throw new Error("ALPHAVANTAGE_API_KEY environment variable is not set");
 
-    const series = await fetchSpyDailyFull(apiKey);
+    const series = await fetchSpyDaily(apiKey);
 
     return {
       statusCode: 200,

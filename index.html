@@ -1233,19 +1233,20 @@ function openModal(id){
 }
 
 
+// Alpha Vantage's free tier caps daily history at ~100 points (~4-5 months),
+// so range options are necessarily short compared to the earlier 1980-2020
+// Yahoo-backed version.
 const MOMENTUM_RANGES = [
 
- { key: "1Y", days: 365 },
+ { key: "1M", days: 30 },
 
- { key: "5Y", days: 365 * 5 },
-
- { key: "10Y", days: 365 * 10 },
+ { key: "3M", days: 90 },
 
  { key: "Max", days: null },
 
 ];
 
-const MOMENTUM_DEFAULT_RANGE = "5Y";
+const MOMENTUM_DEFAULT_RANGE = "Max";
 
 let MOMENTUM_SERIES = null; // {dates, values, ma} over the full available history
 
@@ -1262,7 +1263,7 @@ async function renderMomentumModal(){
 
    values: longHistory.map(p=>p.value),
 
-   ma: movingAverageByCalendarDays(longHistory, 182),
+   ma: movingAverageByCalendarDays(longHistory, 126),
 
   };
 
@@ -1280,7 +1281,7 @@ async function renderMomentumModal(){
 
    values: values,
 
-   ma: movingAverage(values, 125),
+   ma: movingAverage(values, 90),
 
   };
 
@@ -1348,7 +1349,7 @@ function renderMomentumRange(rangeKey){
 
   { label: "SPY", data: values.slice(startIndex), color: LINE_COLOR },
 
-  { label: "125-day MA", data: ma.slice(startIndex), color: SP500_LINE_COLOR },
+  { label: "90-day MA", data: ma.slice(startIndex), color: SP500_LINE_COLOR },
 
  ]);
 

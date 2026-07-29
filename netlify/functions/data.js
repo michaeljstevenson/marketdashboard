@@ -43,7 +43,7 @@ const COMPONENTS = [
     id: "momentum",
     cnnKey: "market_momentum_sp500",
     name: "Price Momentum",
-    unit: "SPY vs 125-day avg",
+    unit: "index", // overwritten with "% vs 90-day MA" once SPY data resolves
     weight: 20,
     description: "Strong price trends increase investor optimism.",
   },
@@ -125,11 +125,16 @@ function buildComponent(raw, spec) {
   };
 }
 
-function computeMomentumVsMA(sp500Price, sp500Daily) {
-  if (sp500Price === null || sp500Daily.length < 125) return null;
-  const last125 = sp500Daily.slice(-125);
-  const ma125 = last125.reduce((sum, p) => sum + p.value, 0) / last125.length;
-  return round((sp500Price / ma125 - 1) * 100, 2);
+// 90 rather than the conventional 125 trading days: Alpha Vantage's free
+// tier caps daily history at 100 points, which isn't quite enough for a
+// true 125-day window.
+const MA_WINDOW = 90;
+
+function computeMomentumVsMA(spyPrice, spyDaily) {
+  if (spyPrice === null || spyDaily.length < MA_WINDOW) return null;
+  const window = spyDaily.slice(-MA_WINDOW);
+  const ma = window.reduce((sum, p) => sum + p.value, 0) / window.length;
+  return round((spyPrice / ma - 1) * 100, 2);
 }
 
 exports.handler = async () => {
@@ -139,8 +144,7 @@ exports.handler = async () => {
 
     const now = new Date();
 
-    const [raw, spyFull] = await Promise.all([fetchCnn(), fetchSpyDaily(apiKey, "compact")]);
-    const spyDaily = spyFull.slice(-220); // buffer past 125 trading days
+    const [raw, spyDaily] = await Promise.all([fetchCnn(), fetchSpyDaily(apiKey, "compact")]);
 
     const components = COMPONENTS.map((spec) => buildComponent(raw, spec));
     const composite = Math.round(
@@ -153,7 +157,7 @@ exports.handler = async () => {
     const vsMa = computeMomentumVsMA(spyPrice, spyDaily);
     if (vsMa !== null) {
       momentum.value = vsMa;
-      momentum.unit = "% vs 125-day MA";
+      momentum.unit = `% vs ${MA_WINDOW}-day MA`;
     }
 
     // Optimism-vs-SPY history: CNN's own composite score history (same proxy
