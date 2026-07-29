@@ -1,11 +1,19 @@
 // Live sentiment + market data for the dashboard, computed fresh (subject to
 // edge caching, see Cache-Control below) on every request.
 //
-// S&P 500 price data comes from Alpha Vantage's SPY ETF series, not a true
-// index feed: Yahoo Finance (which has the real index) blocks Netlify's IP
-// range, and Alpha Vantage's free tier only covers traded securities, not
-// raw index levels (that needs a paid plan). SPY tracks the S&P 500 index
-// almost exactly (~1:10 scale), so it's used as the practical substitute.
+// Every factor score below is computed by us — none of CNN's own per-factor
+// or composite scores are used. Only the raw underlying values (VIX level,
+// put/call ratio, breadth reading, junk bond demand reading, S&P momentum
+// reading) come from CNN's Fear & Greed API; everything derived from them
+// (scores, percentiles, the composite, and its history) is our own math:
+// each factor's current reading relative to its own 50-day moving average,
+// ranked against that ratio's own history.
+//
+// S&P 500 price data (Price Momentum's displayed value) comes from Alpha
+// Vantage's SPY ETF series, not a true index feed: Yahoo Finance (which has
+// the real index) blocks Netlify's IP range, and Alpha Vantage's free tier
+// only covers traded securities, not raw index levels (needs a paid plan).
+// SPY tracks the S&P 500 index almost exactly (~1:10 scale).
 
 const CNN_URL = "https://production.dataviz.cnn.io/index/fearandgreed/graphdata";
 const ALPHA_VANTAGE_URL = "https://www.alphavantage.co/query";
@@ -13,7 +21,14 @@ const USER_AGENT =
   "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0 Safari/537.36";
 
 const HISTORY_POINTS = 180; // ~6 months, kept compact for the browser
+const SCORE_MA_WINDOW = 50; // trading days, applied consistently across all 5 factors
 
+// invert: true means "reading above its own MA" = fear (lower score) —
+// e.g. VIX and put/call spiking above trend is bearish. false means
+// "reading above its own MA" = greed (higher score) — e.g. breadth, junk
+// bond demand, and price momentum running hot above trend is bullish.
+// Directions verified empirically against CNN's own current fear/greed
+// ratings for each factor (value-vs-MA sign vs. CNN's rating sign).
 const COMPONENTS = [
   {
     id: "vix",
@@ -21,7 +36,8 @@ const COMPONENTS = [
     name: "Volatility",
     unit: "index",
     weight: 20,
-    description: "Low volatility usually reflects investor confidence.",
+    invert: true,
+    description: "Elevated volatility relative to its recent trend reflects investor fear.",
   },
   {
     id: "putcall",
@@ -29,7 +45,8 @@ const COMPONENTS = [
     name: "Equity Put/Call Ratio",
     unit: "ratio",
     weight: 20,
-    description: "Low put demand indicates bullish positioning.",
+    invert: true,
+    description: "A rising put/call ratio relative to trend indicates bearish positioning.",
   },
   {
     id: "breadth",
@@ -37,7 +54,8 @@ const COMPONENTS = [
     name: "Market Breadth",
     unit: "advance/decline volume",
     weight: 20,
-    description: "Measures participation beneath the headline index.",
+    invert: false,
+    description: "Breadth running above its trend reflects broad market participation.",
   },
   {
     id: "momentum",
@@ -45,15 +63,17 @@ const COMPONENTS = [
     name: "Price Momentum",
     unit: "index", // overwritten with "% vs 90-day MA" once SPY data resolves
     weight: 20,
-    description: "Strong price trends increase investor optimism.",
+    invert: false,
+    description: "Strong price trends relative to the recent average increase investor optimism.",
   },
   {
     id: "credit",
     cnnKey: "junk_bond_demand",
     name: "Credit Conditions",
-    unit: "HY bond spread proxy",
+    unit: "index",
     weight: 20,
-    description: "Narrow credit spreads suggest risk appetite.",
+    invert: false,
+    description: "Junk bond demand running above its trend indicates risk appetite.",
   },
 ];
 
@@ -96,11 +116,39 @@ function round(n, digits) {
   return Math.round(n * f) / f;
 }
 
-function percentileRank(history, latestValue) {
-  const values = history.map((p) => p.y).sort((a, b) => a - b);
-  if (!values.length) return null;
-  const below = values.filter((v) => v <= latestValue).length;
-  return Math.round((100 * below) / values.length);
+function percentileRank(values, latestValue) {
+  const sorted = [...values].sort((a, b) => a - b);
+  if (!sorted.length) return null;
+  const below = sorted.filter((v) => v <= latestValue).length;
+  return Math.round((100 * below) / sorted.length);
+}
+
+// Computes a self-derived 0-100 score for every date in `points` that has
+// enough trailing history for a moving average: today's (or that day's)
+// reading relative to its own trailing MA, ranked against that ratio's
+// entire history. Returns [{x, score}], aligned to points[window-1..].
+// Uses a single full-sample ranking (not an expanding/point-in-time window),
+// so historical scores here are internally consistent but not exactly what
+// would have been shown live on that past date.
+function computeRelativeScoreSeries(points, window, invert) {
+  const values = points.map((p) => p.y);
+  if (values.length < window) return [];
+
+  const ratios = [];
+  for (let i = window - 1; i < values.length; i++) {
+    const slice = values.slice(i - window + 1, i + 1);
+    const ma = slice.reduce((sum, v) => sum + v, 0) / window;
+    ratios.push(values[i] / ma);
+  }
+
+  const sortedRatios = [...ratios].sort((a, b) => a - b);
+  const scores = ratios.map((r) => {
+    const below = sortedRatios.filter((x) => x <= r).length;
+    const pct = (100 * below) / sortedRatios.length;
+    return round(invert ? 100 - pct : pct, 1);
+  });
+
+  return points.slice(window - 1).map((p, idx) => ({ x: p.x, score: scores[idx] }));
 }
 
 function buildComponent(raw, spec) {
@@ -109,49 +157,31 @@ function buildComponent(raw, spec) {
   const latestValue = history.length ? history[history.length - 1].y : null;
   const trimmed = history.slice(-HISTORY_POINTS);
 
+  const scoreSeries = computeRelativeScoreSeries(history, SCORE_MA_WINDOW, spec.invert);
+  const latestScore = scoreSeries.length ? scoreSeries[scoreSeries.length - 1].score : null;
+
   return {
     id: spec.id,
     name: spec.name,
     value: latestValue !== null ? round(latestValue, 2) : null,
     unit: spec.unit,
-    percentile: latestValue !== null ? percentileRank(history, latestValue) : null,
-    score: round(cat.score, 1),
+    percentile: latestValue !== null ? percentileRank(history.map((p) => p.y), latestValue) : null,
+    score: latestScore !== null ? latestScore : 50,
     weight: spec.weight,
     description: spec.description,
     history: trimmed.map((p) => ({
       date: toDateStr(p.x),
       value: round(p.y, 3),
     })),
+    scoreSeries, // used to build the composite history below; stripped before response
   };
-}
-
-// Volatility's score is computed ourselves (not passed through from CNN):
-// today's VIX relative to its own 50-day moving average, then ranked against
-// that same ratio's history. A VIX running hot relative to its recent trend
-// means elevated fear (lower score); running cool relative to trend means
-// complacency/confidence (higher score).
-function computeVixScore(vixHistory) {
-  const values = vixHistory.map((p) => p.y);
-  if (values.length < 51) return null;
-
-  const ratios = [];
-  for (let i = 49; i < values.length; i++) {
-    const window = values.slice(i - 49, i + 1);
-    const ma50 = window.reduce((sum, v) => sum + v, 0) / 50;
-    ratios.push(values[i] / ma50);
-  }
-
-  const latestRatio = ratios[ratios.length - 1];
-  const sorted = [...ratios].sort((a, b) => a - b);
-  const below = sorted.filter((r) => r <= latestRatio).length;
-  const percentileOfRatio = (100 * below) / sorted.length;
-
-  return round(100 - percentileOfRatio, 1); // higher ratio (more fear) -> lower score
 }
 
 // 90 rather than the conventional 125 trading days: Alpha Vantage's free
 // tier caps daily history at 100 points, which isn't quite enough for a
-// true 125-day window.
+// true 125-day window. This only affects Price Momentum's *displayed*
+// value/unit (live SPY data); its score uses CNN's deeper index-level
+// history via computeRelativeScoreSeries above, same as the other factors.
 const MA_WINDOW = 90;
 
 function computeMomentumVsMA(spyPrice, spyDaily) {
@@ -172,15 +202,6 @@ exports.handler = async () => {
 
     const components = COMPONENTS.map((spec) => buildComponent(raw, spec));
 
-    const vixComponent = components.find((c) => c.id === "vix");
-    const vixScore = computeVixScore(raw.market_volatility_vix.data || []);
-    if (vixScore !== null) vixComponent.score = vixScore;
-
-    const composite = Math.round(
-      components.reduce((sum, c) => sum + c.score * c.weight, 0) /
-        components.reduce((sum, c) => sum + c.weight, 0)
-    );
-
     const spyPrice = spyDaily.length ? spyDaily[spyDaily.length - 1].value : null;
     const momentum = components.find((c) => c.id === "momentum");
     const vsMa = computeMomentumVsMA(spyPrice, spyDaily);
@@ -189,28 +210,51 @@ exports.handler = async () => {
       momentum.unit = `% vs ${MA_WINDOW}-day MA`;
     }
 
-    // Optimism-vs-SPY history: CNN's own composite score history (same proxy
-    // rationale as the old backfill script) paired with SPY closes.
-    const compositeHistory = (raw.fear_and_greed_historical.data || []).slice(-HISTORY_POINTS);
+    const composite = Math.round(
+      components.reduce((sum, c) => sum + c.score * c.weight, 0) /
+        components.reduce((sum, c) => sum + c.weight, 0)
+    );
+
+    // Composite history: our own weighted average of each factor's
+    // self-computed score series, date-aligned, paired with SPY closes.
+    // (Replaces the earlier version, which used CNN's own blended score
+    // across CNN's 7 factors as a proxy — no longer needed now that we can
+    // compute a real historical composite from our own per-factor scores.)
+    const totalWeight = COMPONENTS.reduce((sum, c) => sum + c.weight, 0);
+    const compositeByDate = new Map();
+    for (const comp of components) {
+      const weight = COMPONENTS.find((c) => c.id === comp.id).weight;
+      for (const point of comp.scoreSeries) {
+        const dateStr = toDateStr(point.x);
+        const entry = compositeByDate.get(dateStr) || { weightedSum: 0, weightSeen: 0 };
+        entry.weightedSum += point.score * weight;
+        entry.weightSeen += weight;
+        compositeByDate.set(dateStr, entry);
+      }
+    }
+
     const spyByDate = new Map(spyDaily.map((p) => [p.date, p.value]));
     const spyDatesSorted = spyDaily.map((p) => p.date).sort();
-
     function nearestSpy(dateStr) {
       if (spyByDate.has(dateStr)) return spyByDate.get(dateStr);
       const earlier = spyDatesSorted.filter((d) => d <= dateStr);
       return earlier.length ? spyByDate.get(earlier[earlier.length - 1]) : null;
     }
 
-    const historyByDate = new Map();
-    for (const point of compositeHistory) {
-      const dateStr = toDateStr(point.x);
-      historyByDate.set(dateStr, {
-        date: dateStr,
-        optimism: Math.round(point.y),
-        spy: nearestSpy(dateStr),
+    const history = [...compositeByDate.keys()]
+      .sort()
+      .filter((d) => compositeByDate.get(d).weightSeen === totalWeight) // only dates all 5 factors covered
+      .slice(-HISTORY_POINTS)
+      .map((d) => {
+        const entry = compositeByDate.get(d);
+        return {
+          date: d,
+          optimism: Math.round(entry.weightedSum / entry.weightSeen),
+          spy: nearestSpy(d),
+        };
       });
-    }
-    const history = [...historyByDate.keys()].sort().map((d) => historyByDate.get(d));
+
+    for (const comp of components) delete comp.scoreSeries; // internal-only
 
     const data = {
       timestamp: now.toLocaleString("en-US", {
