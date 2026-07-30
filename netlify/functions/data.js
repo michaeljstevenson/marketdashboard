@@ -15,6 +15,8 @@
 // only covers traded securities, not raw index levels (needs a paid plan).
 // SPY tracks the S&P 500 index almost exactly (~1:10 scale).
 
+const { MANUAL_SERIES } = require("./manual-data");
+
 const CNN_URL = "https://production.dataviz.cnn.io/index/fearandgreed/graphdata";
 const ALPHA_VANTAGE_URL = "https://www.alphavantage.co/query";
 const USER_AGENT =
@@ -37,13 +39,19 @@ const SCORE_MA_WINDOW = 50; // trading days, applied consistently across all 5 f
 // and Momentum are weighted down — put/call is noisier day-to-day (partly
 // institutional hedging, not pure sentiment), and momentum is lagging by
 // nature (derived from the same price action sentiment is meant to explain).
+// Weights below sum to 70 (daily/live factors) + 30 (the 3 manual factors
+// defined in MANUAL_COMPONENTS, 10% each) = 100. Original ratios among
+// these 5 preserved, scaled down from 100 to 70 to make room for the
+// manual factors — see MANUAL_COMPONENTS for why those are capped at 10%
+// each (lower frequency, human-updated data shouldn't dominate a live
+// composite the way daily-refreshed factors do).
 const COMPONENTS = [
   {
     id: "breadth",
     cnnKey: "stock_price_breadth",
     name: "Market Breadth",
     unit: "advance/decline volume",
-    weight: 25,
+    weight: 18,
     invert: false,
     description: "Breadth running above its trend reflects broad market participation.",
     details:
@@ -54,7 +62,7 @@ const COMPONENTS = [
     cnnKey: "junk_bond_demand",
     name: "Credit Conditions",
     unit: "index",
-    weight: 25,
+    weight: 18,
     invert: false,
     description: "Junk bond demand running above its trend indicates risk appetite.",
     details:
@@ -65,7 +73,7 @@ const COMPONENTS = [
     cnnKey: "market_volatility_vix",
     name: "Volatility",
     unit: "index",
-    weight: 20,
+    weight: 14,
     invert: true,
     description: "Elevated volatility relative to its recent trend reflects investor fear.",
     details:
@@ -76,7 +84,7 @@ const COMPONENTS = [
     cnnKey: "put_call_options",
     name: "Equity Put/Call Ratio",
     unit: "ratio",
-    weight: 15,
+    weight: 10,
     invert: true,
     description: "A rising put/call ratio relative to trend indicates bearish positioning.",
     details:
@@ -87,13 +95,93 @@ const COMPONENTS = [
     cnnKey: "market_momentum_sp500",
     name: "Price Momentum",
     unit: "index", // overwritten with "% vs 90-day MA" once SPY data resolves
-    weight: 15,
+    weight: 10,
     invert: false,
     description: "Strong price trends relative to the recent average increase investor optimism.",
     details:
       "Price Momentum compares the S&P 500's current price to its own 90-day moving average, a simple trend-following signal: when the index is trading above its recent average, the market is in an established uptrend, which tends to coincide with optimism; when it's trading below, the trend has turned down.\n\nBecause this reading is derived directly from price — the same thing sentiment is meant to help explain — it's treated as a lagging, confirming signal here rather than a leading one, and is weighted accordingly. The score itself is based on the S&P 500's own momentum reading ranked against its longer history, while the number displayed on the card uses live SPY price data for timeliness.",
   },
 ];
+
+// Manually-updated factors (see manual-data.js for sourcing and the
+// update procedure). Each has its own trailing-average window sized to
+// how much history is actually available, since none of these started
+// with 50+ data points the way the CNN-sourced factors did — the window
+// (and the statistical meaningfulness of the resulting percentile) grows
+// as more readings are appended over time. invert:false for all three:
+// rising margin debt, inflows, and rising valuations vs. their own trend
+// all read as increasing risk appetite/greed here.
+const MANUAL_COMPONENTS = [
+  {
+    id: "margindebt",
+    manualKey: "marginDebt",
+    name: "Margin Debt Growth",
+    weight: 10,
+    invert: false,
+    window: 6,
+    periodLabel: "month",
+    description: "Margin debt growing faster than its trend signals rising leverage and risk appetite.",
+    details:
+      "Margin debt is money investors borrow against their brokerage accounts to buy more securities than their cash alone would allow. It tends to expand when investors are confident and reaching for more upside, and to contract sharply when fear rises and leveraged positions get unwound or forced out (margin calls).\n\nThis dashboard scores margin debt by comparing the latest month's reading to its own trailing 6-month average. Debt running above that trend suggests leverage — and risk appetite — is building; debt falling below it suggests deleveraging. Because FINRA only publishes this monthly and blocks automated fetching, this factor is updated by hand and carries a smaller (10%) weight than the daily live factors.",
+  },
+  {
+    id: "fundflows",
+    manualKey: "fundFlows",
+    name: "Equity Fund Flows",
+    weight: 10,
+    invert: false,
+    window: 4,
+    periodLabel: "week",
+    description: "Equity fund inflows running above trend reflect investors putting new money to work.",
+    details:
+      "This factor tracks ICI's weekly estimate of net cash flowing into (or out of) U.S. long-term equity mutual funds. Sustained inflows mean investors are actively committing new money to stocks; sustained outflows mean they're pulling money out, often a sign of caution or profit-taking.\n\nThe score compares the latest week's net flow to its own trailing 4-week average. Flows running above trend (more inflow, or less outflow, than usual) lean toward optimism; flows running below trend lean toward caution. ICI's site blocks automated fetching, so this factor is updated by hand weekly and carries a smaller (10%) weight than the daily live factors.",
+  },
+  {
+    id: "forwardpe",
+    manualKey: "forwardPE",
+    name: "Forward P/E",
+    weight: 10,
+    invert: false,
+    window: 2,
+    periodLabel: "reading",
+    description: "A forward P/E running above trend reflects rising valuations and investor optimism about future earnings.",
+    details:
+      "The forward P/E ratio compares the S&P 500's price to analysts' consensus earnings estimate for the next 12 months — a measure of how much investors are willing to pay today for expected future profits. Rising valuations typically reflect optimism about growth; falling valuations often reflect caution or reduced growth expectations.\n\nThis factor compares the latest reading to its own short trailing average. There's no free live index-level source for this figure (Alpha Vantage's data only covers individual stocks, not indices), so it's updated by hand from FactSet's free weekly Earnings Insight report and carries a smaller (10%) weight than the daily live factors.",
+  },
+];
+
+function buildManualComponent(spec) {
+  const series = MANUAL_SERIES[spec.manualKey];
+  const history = series.history.map((p, i) => ({ x: i, y: p.value })); // synthetic x, dates aren't epoch ms here
+  const latestValue = history.length ? history[history.length - 1].y : null;
+
+  const scoreSeries = computeRelativeScoreSeries(history, spec.window, spec.invert);
+  const latest = scoreSeries.length ? scoreSeries[scoreSeries.length - 1] : null;
+
+  return {
+    id: spec.id,
+    name: spec.name,
+    value: latestValue,
+    unit: series.unit,
+    percentile: latestValue !== null ? percentileRank(history.map((p) => p.y), latestValue) : null,
+    score: latest ? latest.score : 50,
+    weight: spec.weight,
+    description: spec.description,
+    details: spec.details,
+    history: series.history.map((p) => ({ date: p.date, value: p.value })),
+    calc: latest
+      ? {
+          window: spec.window,
+          periodLabel: spec.periodLabel,
+          invert: spec.invert,
+          value: round(latest.value, 3),
+          ma: round(latest.ma, 3),
+          ratio: round(latest.ratio, 4),
+          ratioPercentile: latest.ratioPercentile,
+        }
+      : null,
+  };
+}
 
 async function fetchJson(url, headers) {
   const res = await fetch(url, { headers });
@@ -205,6 +293,7 @@ function buildComponent(raw, spec) {
     calc: latest
       ? {
           window: SCORE_MA_WINDOW,
+          periodLabel: "day",
           invert: spec.invert,
           value: round(latest.value, 3),
           ma: round(latest.ma, 3),
@@ -239,7 +328,9 @@ exports.handler = async () => {
 
     const [raw, spyDaily] = await Promise.all([fetchCnn(), fetchSpyDaily(apiKey, "compact")]);
 
-    const components = COMPONENTS.map((spec) => buildComponent(raw, spec));
+    const dailyComponents = COMPONENTS.map((spec) => buildComponent(raw, spec));
+    const manualComponents = MANUAL_COMPONENTS.map((spec) => buildManualComponent(spec));
+    const components = [...dailyComponents, ...manualComponents];
 
     const spyPrice = spyDaily.length ? spyDaily[spyDaily.length - 1].value : null;
     const momentum = components.find((c) => c.id === "momentum");
@@ -259,9 +350,13 @@ exports.handler = async () => {
     // (Replaces the earlier version, which used CNN's own blended score
     // across CNN's 7 factors as a proxy — no longer needed now that we can
     // compute a real historical composite from our own per-factor scores.)
+    // Manual factors are excluded from this historical chart: their history
+    // uses coarse month/week date strings rather than real trading-day
+    // epoch timestamps, so they can't be date-aligned with the daily CNN
+    // series here. They still count toward the live composite score above.
     const totalWeight = COMPONENTS.reduce((sum, c) => sum + c.weight, 0);
     const compositeByDate = new Map();
-    for (const comp of components) {
+    for (const comp of dailyComponents) {
       const weight = COMPONENTS.find((c) => c.id === comp.id).weight;
       for (const point of comp.scoreSeries) {
         const dateStr = toDateStr(point.x);

@@ -1358,7 +1358,7 @@ function renderCalcBox(item){
 
 <div class="calc-row"><span class="calc-row-label">${rawLabel}</span><span class="calc-row-value">${calc.value}</span></div>
 
-<div class="calc-row"><span class="calc-row-label">${calc.window}-day moving average</span><span class="calc-row-value">${calc.ma.toFixed(3)}</span></div>
+<div class="calc-row"><span class="calc-row-label">${calc.window}-${calc.periodLabel || "day"} moving average</span><span class="calc-row-value">${calc.ma.toFixed(3)}</span></div>
 
 <div class="calc-row"><span class="calc-row-label">Ratio (reading / MA)</span><span class="calc-row-value">${calc.ratio}</span></div>
 
@@ -1630,7 +1630,7 @@ function renderCompositeCalcBox(){
 
 ${rows}
 
-<div class="calc-formula">weighted average of the 5 scores above = ${LATEST_COMPOSITE}/100</div>
+<div class="calc-formula">weighted average of the ${items.length} scores above = ${LATEST_COMPOSITE}/100</div>
 
 `;
 
