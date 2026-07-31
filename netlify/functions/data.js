@@ -53,6 +53,7 @@ const COMPONENTS = [
     unit: "advance/decline volume",
     weight: 18,
     invert: false,
+    source: { name: "CNN Fear & Greed Index", url: "https://www.cnn.com/markets/fear-and-greed" },
     description: "Breadth running above its trend reflects broad market participation.",
     details:
       "Market breadth measures how many stocks are participating in a market move, not just how the headline index is performing. It tracks the cumulative volume flowing into advancing stocks versus declining stocks — a rising line means gains are broad-based across many stocks, while a falling line can signal a rally is being carried by just a few large names, or that a decline is spreading beneath the surface.\n\nThis dashboard scores breadth by comparing today's reading to its own 50-day moving average. When breadth is running above its recent trend, more stocks are meaningfully participating in the market's direction, which tends to reflect confidence. When it's running below trend, participation is narrowing — often an early warning sign that a rally is more fragile than the index price alone suggests.",
@@ -64,6 +65,7 @@ const COMPONENTS = [
     unit: "index",
     weight: 18,
     invert: false,
+    source: { name: "CNN Fear & Greed Index", url: "https://www.cnn.com/markets/fear-and-greed" },
     description: "Junk bond demand running above its trend indicates risk appetite.",
     details:
       "Credit Conditions tracks demand for high-yield (\"junk\") bonds relative to safer investment-grade debt. Junk bonds carry more default risk, so investors only chase them aggressively when they're feeling confident about the economy and corporate health; when fear rises, capital typically rotates out of junk bonds and into safer assets first — often before that caution shows up in stock prices.\n\nBecause credit investors are generally more risk-averse and tend to reprice risk earlier than equity markets, this factor is treated as one of the more forward-looking signals here (and weighted accordingly). The score compares today's junk bond demand to its own 50-day average: demand running above trend suggests risk appetite is increasing, while demand falling below trend can flag credit stress starting to build.",
@@ -75,6 +77,7 @@ const COMPONENTS = [
     unit: "index",
     weight: 14,
     invert: true,
+    source: { name: "CNN Fear & Greed Index", url: "https://www.cnn.com/markets/fear-and-greed" },
     description: "Elevated volatility relative to its recent trend reflects investor fear.",
     details:
       "The VIX (often called the market's \"fear gauge\") measures how much volatility options traders expect in the S&P 500 over the next 30 days, derived from the prices they're willing to pay for options. It doesn't measure what already happened — it measures what the market is bracing for, which makes it forward-looking rather than a reflection of past price action.\n\nRather than using the VIX's raw level (which drifts up and down with the broader volatility regime over months and years), this dashboard compares today's VIX to its own 50-day moving average. A VIX spiking well above its recent trend signals rising fear and uncertainty; a VIX sitting below its recent trend suggests calm, complacent conditions.",
@@ -86,6 +89,7 @@ const COMPONENTS = [
     unit: "ratio",
     weight: 10,
     invert: true,
+    source: { name: "CNN Fear & Greed Index", url: "https://www.cnn.com/markets/fear-and-greed" },
     description: "A rising put/call ratio relative to trend indicates bearish positioning.",
     details:
       "This factor tracks the ratio of put options (bets that a stock or index will fall) to call options (bets that it will rise) being traded across equities. When investors are nervous, they buy more puts to hedge or speculate on declines, pushing the ratio up; when they're confident, call buying dominates and the ratio falls.\n\nThe raw ratio is noisy day to day — a meaningful share of options volume comes from institutional hedging rather than pure directional bets — so this dashboard smooths it by comparing today's ratio to its own 50-day average. A ratio running above trend leans bearish/fearful; a ratio running below trend leans bullish.",
@@ -97,6 +101,7 @@ const COMPONENTS = [
     unit: "index", // overwritten with "% vs 90-day MA" once SPY data resolves
     weight: 10,
     invert: false,
+    source: { name: "CNN Fear & Greed Index (score) / Alpha Vantage SPY (displayed price)", url: "https://www.cnn.com/markets/fear-and-greed" },
     description: "Strong price trends relative to the recent average increase investor optimism.",
     details:
       "Price Momentum compares the S&P 500's current price to its own 90-day moving average, a simple trend-following signal: when the index is trading above its recent average, the market is in an established uptrend, which tends to coincide with optimism; when it's trading below, the trend has turned down.\n\nBecause this reading is derived directly from price — the same thing sentiment is meant to help explain — it's treated as a lagging, confirming signal here rather than a leading one, and is weighted accordingly. The score itself is based on the S&P 500's own momentum reading ranked against its longer history, while the number displayed on the card uses live SPY price data for timeliness.",
@@ -120,6 +125,7 @@ const MANUAL_COMPONENTS = [
     invert: false,
     window: 6,
     periodLabel: "month",
+    source: { name: "FINRA Margin Statistics", url: "https://www.finra.org/rules-guidance/key-topics/margin-accounts/margin-statistics" },
     description: "Margin debt growing faster than its trend signals rising leverage and risk appetite.",
     details:
       "Margin debt is money investors borrow against their brokerage accounts to buy more securities than their cash alone would allow. It tends to expand when investors are confident and reaching for more upside, and to contract sharply when fear rises and leveraged positions get unwound or forced out (margin calls).\n\nThis dashboard scores margin debt by comparing the latest month's reading to its own trailing 6-month average. Debt running above that trend suggests leverage — and risk appetite — is building; debt falling below it suggests deleveraging. Because FINRA only publishes this monthly and blocks automated fetching, this factor is updated by hand and carries a smaller (10%) weight than the daily live factors.",
@@ -132,6 +138,7 @@ const MANUAL_COMPONENTS = [
     invert: false,
     window: 4,
     periodLabel: "week",
+    source: { name: "ICI Estimated Long-Term Mutual Fund Flows", url: "https://www.ici.org/research/stats/flows" },
     description: "Equity fund inflows running above trend reflect investors putting new money to work.",
     details:
       "This factor tracks ICI's weekly estimate of net cash flowing into (or out of) U.S. long-term equity mutual funds. Sustained inflows mean investors are actively committing new money to stocks; sustained outflows mean they're pulling money out, often a sign of caution or profit-taking.\n\nThe score compares the latest week's net flow to its own trailing 4-week average. Flows running above trend (more inflow, or less outflow, than usual) lean toward optimism; flows running below trend lean toward caution. ICI's site blocks automated fetching, so this factor is updated by hand weekly and carries a smaller (10%) weight than the daily live factors.",
@@ -144,6 +151,7 @@ const MANUAL_COMPONENTS = [
     invert: false,
     window: 2,
     periodLabel: "reading",
+    source: { name: "FactSet Earnings Insight", url: "https://insight.factset.com/topic/earnings" },
     description: "A forward P/E running above trend reflects rising valuations and investor optimism about future earnings.",
     details:
       "The forward P/E ratio compares the S&P 500's price to analysts' consensus earnings estimate for the next 12 months — a measure of how much investors are willing to pay today for expected future profits. Rising valuations typically reflect optimism about growth; falling valuations often reflect caution or reduced growth expectations.\n\nThis factor compares the latest reading to its own short trailing average. There's no free live index-level source for this figure (Alpha Vantage's data only covers individual stocks, not indices), so it's updated by hand from FactSet's free weekly Earnings Insight report and carries a smaller (10%) weight than the daily live factors.",
@@ -166,6 +174,7 @@ function buildManualComponent(spec) {
     percentile: latestValue !== null ? percentileRank(history.map((p) => p.y), latestValue) : null,
     score: latest ? latest.score : 50,
     weight: spec.weight,
+    source: spec.source,
     description: spec.description,
     details: spec.details,
     history: series.history.map((p) => ({ date: p.date, value: p.value })),
@@ -284,6 +293,7 @@ function buildComponent(raw, spec) {
     percentile: latestValue !== null ? percentileRank(history.map((p) => p.y), latestValue) : null,
     score: latest ? latest.score : 50,
     weight: spec.weight,
+    source: spec.source,
     description: spec.description,
     details: spec.details,
     history: trimmed.map((p) => ({

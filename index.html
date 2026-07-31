@@ -305,6 +305,30 @@ h1{
 }
 
 
+.source{
+
+ margin-top:8px;
+
+}
+
+
+.source a{
+
+ color:var(--muted);
+ font-size:11px;
+ text-decoration:none;
+ border-bottom:1px dotted var(--muted);
+
+}
+
+
+.source a:hover{
+
+ color:var(--ink);
+
+}
+
+
 
 .bar{
 
@@ -871,6 +895,8 @@ Waiting for data...
 
 <div class="modal-desc" id="modalDesc"></div>
 
+<div class="source" id="modalSource"></div>
+
 
 <div class="calc-box" id="calcBox"></div>
 
@@ -1242,7 +1268,7 @@ ${item.description}
 
 </div>
 
-
+${item.source ? `<div class="source"><a href="${item.source.url}" target="_blank" rel="noopener" onclick="event.stopPropagation()">Source: ${item.source.name}</a></div>` : ""}
 
 </div>
 
@@ -1304,6 +1330,10 @@ function openModal(id){
  document.getElementById("modalPercentile").textContent = item.percentile + "th";
 
  document.getElementById("modalDesc").textContent = item.details || item.description;
+
+ document.getElementById("modalSource").innerHTML = item.source
+  ? `<a href="${item.source.url}" target="_blank" rel="noopener">Source: ${item.source.name}</a>`
+  : "";
 
  renderCalcBox(item);
 
@@ -1582,6 +1612,8 @@ function openCompositeModal(){
  document.getElementById("modalPercentile").textContent = percentile !== null ? percentile + "th" : "--";
 
  document.getElementById("modalDesc").textContent = generateSignal(LATEST_COMPOSITE);
+
+ document.getElementById("modalSource").innerHTML = "";
 
  renderCompositeCalcBox();
 
