@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Coming Soon — Michael J. Stevenson</title>
+
+<style>
+
+:root{
+  --bg:#14181c;
+  --card:#1c2127;
+  --ink:#eae6da;
+  --muted:#8b9199;
+  --hair:#2b3138;
+  --greed:#d98a3d;
+
+  --serif:'Iowan Old Style','Palatino Linotype',Georgia,serif;
+  --sans:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+}
+
+*{ box-sizing:border-box; }
+
+body{
+ margin:0;
+ background:var(--bg);
+ color:var(--ink);
+ font-family:var(--sans);
+ min-height:100vh;
+ display:flex;
+ flex-direction:column;
+}
+
+.sitenav{
+ padding:16px 24px;
+ border-bottom:1px solid var(--hair);
+}
+
+.sitenav a{
+ color:var(--ink);
+ font-family:var(--serif);
+ font-size:17px;
+ text-decoration:none;
+}
+
+.center{
+ flex:1;
+ display:flex;
+ align-items:center;
+ justify-content:center;
+ text-align:center;
+ padding:40px 24px;
+}
+
+.eyebrow{
+ display:inline-block;
+ border:1px solid var(--hair);
+ color:var(--muted);
+ font-size:11px;
+ letter-spacing:0.5px;
+ text-transform:uppercase;
+ padding:5px 10px;
+ border-radius:5px;
+ margin-bottom:22px;
+}
+
+h1{
+ font-family:var(--serif);
+ font-weight:400;
+ font-size:36px;
+ margin:0 0 16px;
+}
+
+p{
+ color:var(--muted);
+ font-size:15px;
+ max-width:440px;
+ margin:0 auto 30px;
+ line-height:1.6;
+}
+
+.btn{
+ display:inline-block;
+ padding:11px 20px;
+ border-radius:7px;
+ font-size:14px;
+ text-decoration:none;
+ border:1px solid var(--hair);
+ color:var(--ink);
+}
+
+</style>
+</head>
+<body>
+
+<nav class="sitenav">
+<a href="/">Michael J. Stevenson, CAIA<span style="font-size:0.6em; vertical-align:super;">&reg;</span></a>
+</nav>
+
+<div class="center">
+<div>
+<div class="eyebrow">In Development</div>
+<h1 id="pageTitle">Research Project</h1>
+<p>This project is still in progress. Check back soon for the live dashboard.</p>
+<a class="btn" href="/">← Back to homepage</a>
+</div>
+</div>
+
+<script>
+const params = new URLSearchParams(window.location.search);
+const title = params.get("title");
+if(title){
+ document.getElementById("pageTitle").textContent = title;
+ document.title = title + " (Coming Soon) — Michael J. Stevenson";
+}
+</script>
+
+</body>
+</html>

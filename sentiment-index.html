@@ -1,0 +1,2090 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<meta charset="UTF-8">
+<title>U.S. Market Sentiment Index</title>
+
+<style>
+
+:root{
+  --bg:#14181c;
+  --card:#1c2127;
+  --card-hover:#20262d;
+  --ink:#eae6da;
+  --muted:#8b9199;
+  --hair:#2b3138;
+
+  --fear:#6f8fac;
+  --neutral:#7c828a;
+  --greed:#d98a3d;
+  --extreme:#b56f2a;
+
+  --serif:'Iowan Old Style','Palatino Linotype',Georgia,serif;
+  --mono:'SF Mono','JetBrains Mono',ui-monospace,Menlo,monospace;
+  --sans:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+}
+
+
+*{
+ box-sizing:border-box;
+}
+
+
+body{
+ margin:0;
+ background:var(--bg);
+ color:var(--ink);
+ font-family:var(--sans);
+}
+
+/* SITE NAV (shared with homepage) */
+
+.sitenav{
+ display:flex;
+ align-items:center;
+ justify-content:space-between;
+ padding:16px 24px;
+ border-bottom:1px solid var(--hair);
+ position:relative;
+ z-index:50;
+}
+
+.sitenav .brand{
+ font-family:var(--serif);
+ font-size:17px;
+ color:var(--ink);
+ text-decoration:none;
+ letter-spacing:0.3px;
+}
+
+.navlinks{
+ display:flex;
+ gap:26px;
+ align-items:center;
+}
+
+.navlinks > a{
+ color:var(--muted);
+ font-size:13px;
+ text-decoration:none;
+ padding:6px 0;
+}
+
+.navlinks > a:hover, .navlinks > a.active{ color:var(--ink); }
+
+.navdrop{ position:relative; }
+
+.navdrop > .navlabel{
+ color:var(--muted);
+ font-size:13px;
+ cursor:default;
+ padding:6px 0;
+ user-select:none;
+}
+
+.navdrop:hover > .navlabel{ color:var(--ink); }
+
+.navdrop .dropdown{
+ display:none;
+ position:absolute;
+ top:100%;
+ left:0;
+ background:var(--card);
+ border:1px solid var(--hair);
+ border-radius:8px;
+ padding:8px 0;
+ min-width:230px;
+ margin-top:12px;
+ box-shadow:0 10px 30px rgba(0,0,0,0.45);
+}
+
+.navdrop:hover .dropdown{ display:block; }
+
+.dropdown a{
+ display:block;
+ padding:9px 16px;
+ color:var(--muted);
+ text-decoration:none;
+ font-size:13px;
+}
+
+.dropdown a:hover{
+ background:var(--card-hover);
+ color:var(--ink);
+}
+
+@media (max-width:720px){
+ .navlinks{ display:none; }
+}
+
+.container{
+ padding:30px 20px 60px;
+}
+
+
+.container{
+ max-width:1100px;
+ margin:auto;
+}
+
+
+/* HEADER */
+
+.header{
+
+ display:flex;
+ justify-content:space-between;
+ align-items:flex-end;
+
+ border-bottom:1px solid var(--hair);
+
+ padding-bottom:18px;
+ margin-bottom:25px;
+
+}
+
+
+h1{
+
+ font-family:var(--serif);
+ font-size:30px;
+ font-weight:400;
+ margin:0;
+
+}
+
+
+.subtitle{
+
+ color:var(--muted);
+ font-size:13px;
+ margin-top:6px;
+
+}
+
+
+.updated-row{
+
+ display:flex;
+ align-items:center;
+ gap:10px;
+
+}
+
+
+.updated{
+
+ color:var(--muted);
+ font-size:12px;
+
+}
+
+
+.refresh-btn{
+
+ background:none;
+ border:1px solid var(--hair);
+ color:var(--muted);
+ font-size:15px;
+ width:26px;
+ height:26px;
+ border-radius:6px;
+ cursor:pointer;
+ line-height:1;
+ display:flex;
+ align-items:center;
+ justify-content:center;
+ transition:background 0.15s, color 0.15s, transform 0.4s;
+
+}
+
+
+.refresh-btn:hover{
+
+ background:var(--card-hover);
+ color:var(--ink);
+
+}
+
+
+.refresh-btn.spinning{
+
+ transform:rotate(360deg);
+
+}
+
+
+/* HERO */
+
+
+.hero{
+
+ display:grid;
+ grid-template-columns:260px 1fr;
+ gap:30px;
+
+ background:var(--card);
+
+ border:1px solid var(--hair);
+ border-radius:12px;
+
+ padding:25px;
+
+ margin-bottom:25px;
+
+}
+
+
+.score-box{
+
+ cursor:pointer;
+ border-radius:8px;
+ padding:6px;
+ margin:-6px;
+ transition:background 0.15s;
+
+}
+
+
+.score-box:hover{
+
+ background:var(--card-hover);
+
+}
+
+
+.score{
+
+ font-family:var(--serif);
+ font-size:70px;
+ line-height:1;
+
+}
+
+
+.regime{
+
+ font-size:18px;
+ margin-top:10px;
+
+}
+
+
+.description{
+
+ color:var(--muted);
+ line-height:1.6;
+ margin-top:15px;
+
+}
+
+
+
+/* SIGNAL */
+
+.signal-box{
+
+ background:#171b20;
+
+ border-left:3px solid var(--greed);
+
+ padding:15px;
+
+ margin-top:20px;
+
+}
+
+
+
+.signal-title{
+
+ font-size:12px;
+ text-transform:uppercase;
+ color:var(--muted);
+
+}
+
+
+.signal-text{
+
+ margin-top:5px;
+
+}
+
+
+/* GRID */
+
+
+.grid{
+
+ display:grid;
+ grid-template-columns:repeat(2,1fr);
+
+ gap:16px;
+
+}
+
+
+.card{
+
+ background:var(--card);
+
+ border:1px solid var(--hair);
+
+ border-radius:10px;
+
+ padding:18px;
+
+ cursor:pointer;
+
+ transition:background 0.15s, border-color 0.15s;
+
+}
+
+
+.card:hover{
+
+ background:var(--card-hover);
+
+ border-color:#3a424b;
+
+}
+
+
+.card-header{
+
+ display:flex;
+ justify-content:space-between;
+
+}
+
+
+.card-name{
+
+ font-size:15px;
+ font-weight:500;
+
+}
+
+
+.metric{
+
+ font-family:var(--mono);
+ font-size:22px;
+
+ margin-top:10px;
+
+}
+
+
+.meta{
+
+ color:var(--muted);
+ font-size:12px;
+
+ margin-top:5px;
+
+}
+
+
+.source{
+
+ margin-top:8px;
+
+}
+
+
+.source a{
+
+ color:var(--muted);
+ font-size:11px;
+ text-decoration:none;
+ border-bottom:1px dotted var(--muted);
+
+}
+
+
+.source a:hover{
+
+ color:var(--ink);
+
+}
+
+
+
+.bar{
+
+ height:7px;
+ background:var(--hair);
+
+ margin-top:15px;
+
+ border-radius:5px;
+
+ overflow:hidden;
+
+}
+
+
+
+.fill{
+
+ height:100%;
+
+}
+
+
+
+.contribution{
+
+ margin-top:15px;
+
+ display:flex;
+ justify-content:space-between;
+
+ color:var(--muted);
+
+ font-size:12px;
+
+}
+
+
+
+/* CHART PLACEHOLDER */
+
+
+.chart{
+
+ height:300px;
+
+ margin-top:25px;
+
+ background:var(--card);
+
+ border:1px solid var(--hair);
+
+ border-radius:10px;
+
+ display:flex;
+
+ justify-content:center;
+
+ align-items:center;
+
+ color:var(--muted);
+
+}
+
+
+
+.error-banner{
+
+ background:#2a1c1c;
+ border:1px solid #5a3030;
+ color:#e0a0a0;
+ border-radius:8px;
+ padding:12px 15px;
+ margin-bottom:20px;
+ font-size:13px;
+ display:none;
+
+}
+
+
+
+/* MODAL */
+
+
+.modal-overlay{
+
+ display:none;
+
+ position:fixed;
+
+ inset:0;
+
+ background:rgba(10,12,15,0.7);
+
+ align-items:center;
+
+ justify-content:center;
+
+ padding:20px;
+
+ z-index:100;
+
+}
+
+
+.modal-overlay.open{
+
+ display:flex;
+
+}
+
+
+.modal{
+
+ background:var(--card);
+
+ border:1px solid var(--hair);
+
+ border-radius:12px;
+
+ padding:28px;
+
+ max-width:620px;
+
+ width:100%;
+
+ max-height:85vh;
+
+ overflow-y:auto;
+
+}
+
+
+.modal-header{
+
+ display:flex;
+
+ justify-content:space-between;
+
+ align-items:flex-start;
+
+}
+
+
+.modal-title{
+
+ font-family:var(--serif);
+
+ font-size:24px;
+
+}
+
+
+.modal-close{
+
+ background:none;
+
+ border:none;
+
+ color:var(--muted);
+
+ font-size:22px;
+
+ cursor:pointer;
+
+ line-height:1;
+
+ padding:0 0 0 15px;
+
+}
+
+
+.modal-close:hover{
+
+ color:var(--ink);
+
+}
+
+
+.modal-stats{
+
+ display:grid;
+
+ grid-template-columns:repeat(3,1fr);
+
+ gap:12px;
+
+ margin-top:18px;
+
+}
+
+
+.modal-stat{
+
+ background:#171b20;
+
+ border-radius:8px;
+
+ padding:12px;
+
+}
+
+
+.modal-stat-label{
+
+ color:var(--muted);
+
+ font-size:11px;
+
+ text-transform:uppercase;
+
+}
+
+
+.modal-stat-value{
+
+ font-family:var(--mono);
+
+ font-size:20px;
+
+ margin-top:4px;
+
+}
+
+
+.modal-chart-controls{
+
+ display:flex;
+
+ gap:6px;
+
+ margin-top:22px;
+
+}
+
+
+.modal-chart-controls:empty{
+
+ margin-top:0;
+
+}
+
+
+.range-btn{
+
+ background:#171b20;
+
+ border:1px solid var(--hair);
+
+ color:var(--muted);
+
+ font-size:12px;
+
+ padding:4px 10px;
+
+ border-radius:6px;
+
+ cursor:pointer;
+
+}
+
+
+.range-btn:hover{
+
+ color:var(--ink);
+
+ border-color:#3a424b;
+
+}
+
+
+.range-btn.active{
+
+ background:var(--card-hover);
+
+ color:var(--ink);
+
+ border-color:#3a424b;
+
+}
+
+
+.modal-chart{
+
+ height:220px;
+
+ margin-top:10px;
+
+}
+
+
+.modal-desc{
+
+ color:var(--muted);
+
+ line-height:1.6;
+
+ margin-top:18px;
+
+ font-size:14px;
+
+ white-space:pre-line;
+
+}
+
+
+.calc-box{
+
+ background:#171b20;
+
+ border:1px solid var(--hair);
+
+ border-radius:8px;
+
+ padding:14px 16px;
+
+ margin-top:16px;
+
+ display:none;
+
+}
+
+
+.calc-box.visible{
+
+ display:block;
+
+}
+
+
+.calc-title{
+
+ font-size:11px;
+
+ text-transform:uppercase;
+
+ color:var(--muted);
+
+ margin-bottom:10px;
+
+}
+
+
+.calc-row{
+
+ display:flex;
+
+ justify-content:space-between;
+
+ font-family:var(--mono);
+
+ font-size:12.5px;
+
+ padding:4px 0;
+
+ border-bottom:1px solid var(--hair);
+
+}
+
+
+.calc-row:last-child{
+
+ border-bottom:none;
+
+}
+
+
+.calc-row-label{
+
+ color:var(--muted);
+
+}
+
+
+.calc-row-value{
+
+ color:var(--ink);
+
+}
+
+
+.calc-formula{
+
+ margin-top:10px;
+
+ padding-top:10px;
+
+ border-top:1px solid var(--hair);
+
+ font-family:var(--mono);
+
+ font-size:12.5px;
+
+ color:var(--ink);
+
+}
+
+
+@media(max-width:700px){
+
+.hero{
+
+ grid-template-columns:1fr;
+
+}
+
+
+.grid{
+
+ grid-template-columns:1fr;
+
+}
+
+
+}
+
+
+</style>
+</head>
+<body>
+
+<nav class="sitenav">
+<a class="brand" href="/">Michael J. Stevenson, CAIA<span style="font-size:0.6em; vertical-align:super;">&reg;</span></a>
+<div class="navlinks">
+<a href="/sentiment-index.html" class="active">Sentiment Index</a>
+
+<div class="navdrop">
+<span class="navlabel">Markets &amp; Macro ▾</span>
+<div class="dropdown">
+<a href="/coming-soon.html?title=Yield%20Curve%20Monitor">Yield Curve Monitor</a>
+<a href="/coming-soon.html?title=Credit%20Spread%20Dashboard">Credit Spread Dashboard</a>
+<a href="/coming-soon.html?title=Global%20Liquidity%20Tracker">Global Liquidity Tracker</a>
+<a href="/coming-soon.html?title=Recession%20Probability%20Model">Recession Probability Model</a>
+<a href="/coming-soon.html?title=Inflation%20Nowcast">Inflation Nowcast</a>
+</div>
+</div>
+
+<div class="navdrop">
+<span class="navlabel">Equities ▾</span>
+<div class="dropdown">
+<a href="/coming-soon.html?title=Sector%20Rotation%20Tracker">Sector Rotation Tracker</a>
+<a href="/coming-soon.html?title=Valuation%20Dashboard">Valuation Dashboard</a>
+<a href="/coming-soon.html?title=Earnings%20Revision%20Tracker">Earnings Revision Tracker</a>
+<a href="/coming-soon.html?title=Market%20Breadth%20Deep-Dive">Market Breadth Deep-Dive</a>
+<a href="/coming-soon.html?title=Concentration%20Risk%20Monitor">Concentration Risk Monitor</a>
+</div>
+</div>
+
+<div class="navdrop">
+<span class="navlabel">Rates &amp; Credit ▾</span>
+<div class="dropdown">
+<a href="/coming-soon.html?title=Fed%20Policy%20Tracker">Fed Policy Tracker</a>
+<a href="/coming-soon.html?title=Real%20Yields%20Dashboard">Real Yields Dashboard</a>
+</div>
+</div>
+
+<div class="navdrop">
+<span class="navlabel">Alternative &amp; Cross-Asset ▾</span>
+<div class="dropdown">
+<a href="/coming-soon.html?title=Cross-Asset%20Risk%20Dashboard">Cross-Asset Risk Dashboard</a>
+<a href="/coming-soon.html?title=Commodity%20Cycle%20Tracker">Commodity Cycle Tracker</a>
+<a href="/coming-soon.html?title=Currency%20Strength%20Index">Currency Strength Index</a>
+</div>
+</div>
+
+<div class="navdrop">
+<span class="navlabel">Behavioral &amp; Positioning ▾</span>
+<div class="dropdown">
+<a href="/coming-soon.html?title=Options%20Positioning%20Monitor">Options Positioning Monitor</a>
+<a href="/coming-soon.html?title=Retail%20vs.%20Institutional%20Flow%20Tracker">Retail vs. Institutional Flow Tracker</a>
+<a href="/coming-soon.html?title=IPO%20%26%20SPAC%20Activity%20Tracker">IPO &amp; SPAC Activity Tracker</a>
+</div>
+</div>
+
+<div class="navdrop">
+<span class="navlabel">Thematic ▾</span>
+<div class="dropdown">
+<a href="/coming-soon.html?title=AI%20Capex%20Tracker">AI Capex Tracker</a>
+<a href="/coming-soon.html?title=Housing%20Market%20Monitor">Housing Market Monitor</a>
+</div>
+</div>
+
+</div>
+</nav>
+
+<div class="container">
+
+
+<div class="header">
+
+<div>
+
+<h1>U.S. Market Sentiment Index</h1>
+
+<div class="subtitle">
+Multi-factor sentiment model | 0 = Extreme Fear | 100 = Extreme Optimism
+</div>
+
+</div>
+
+
+<div class="updated-row">
+
+<button class="refresh-btn" id="refreshBtn" title="Refresh data">&#8635;</button>
+
+<div class="updated" id="updated">
+Loading...
+</div>
+
+</div>
+
+
+</div>
+
+
+<div class="error-banner" id="errorBanner"></div>
+
+
+<div class="hero">
+
+
+<div class="score-box" id="scoreBox">
+
+<div class="score" id="score">
+--
+</div>
+
+
+<div class="regime" id="regime">
+Loading...
+</div>
+
+
+</div>
+
+
+
+<div>
+
+
+<div class="description">
+
+Composite investor sentiment reading based on options positioning,
+volatility expectations, market breadth, momentum, and credit conditions.
+
+</div>
+
+
+<div class="signal-box">
+
+
+<div class="signal-title">
+Market Interpretation
+</div>
+
+
+<div class="signal-text" id="signal">
+
+Waiting for data...
+
+</div>
+
+
+</div>
+
+
+</div>
+
+
+</div>
+
+
+<div class="grid" id="components"></div>
+
+
+<div class="chart">
+
+<canvas id="historyChart"></canvas>
+
+</div>
+
+
+</div>
+
+
+<div class="modal-overlay" id="modalOverlay">
+
+<div class="modal">
+
+<div class="modal-header">
+
+<div>
+<div class="modal-title" id="modalTitle">--</div>
+</div>
+
+<button class="modal-close" id="modalClose">&times;</button>
+
+</div>
+
+
+<div class="modal-stats">
+
+<div class="modal-stat">
+<div class="modal-stat-label">Current Value</div>
+<div class="modal-stat-value" id="modalValue">--</div>
+</div>
+
+<div class="modal-stat">
+<div class="modal-stat-label">Sentiment Score</div>
+<div class="modal-stat-value" id="modalScore">--</div>
+</div>
+
+<div class="modal-stat">
+<div class="modal-stat-label">Percentile Rank</div>
+<div class="modal-stat-value" id="modalPercentile">--</div>
+</div>
+
+</div>
+
+
+<div class="modal-chart-controls" id="modalChartControls"></div>
+
+
+<div class="modal-chart">
+<canvas id="modalChartCanvas"></canvas>
+</div>
+
+
+<div class="modal-desc" id="modalDesc"></div>
+
+<div class="source" id="modalSource"></div>
+
+
+<div class="calc-box" id="calcBox"></div>
+
+
+</div>
+
+</div>
+
+
+<script>
+
+
+/*
+======================================================
+ DATA LAYER
+
+ Data is computed live on every request by Netlify Functions
+ (netlify/functions/data.js, netlify/functions/momentum-history.js),
+ which fetch CNN's Fear & Greed API and Yahoo Finance server-side
+ (CORS blocks calling those APIs directly from the browser) and
+ return fresh JSON. No scheduled job or stored snapshot involved —
+ every page load and every refresh-button click recomputes from scratch.
+======================================================
+*/
+
+
+const DATA_URL = "/api/data";
+const MOMENTUM_HISTORY_URL = "/api/momentum-history";
+
+let SP500_LONG_HISTORY_CACHE = null;
+
+async function loadSP500LongHistory(){
+
+ if(SP500_LONG_HISTORY_CACHE) return SP500_LONG_HISTORY_CACHE;
+
+ const res = await fetch(MOMENTUM_HISTORY_URL, {cache:"no-store"});
+
+ if(!res.ok) throw new Error("HTTP " + res.status);
+
+ SP500_LONG_HISTORY_CACHE = await res.json();
+
+ return SP500_LONG_HISTORY_CACHE;
+
+}
+
+const LINE_COLOR = "#ffffff";
+const SP500_LINE_COLOR = "#5b9bd5";
+
+let LATEST_COMPOSITE = null;
+let LATEST_HISTORY = [];
+
+
+async function loadData(){
+
+ try{
+
+  const res = await fetch(DATA_URL, {cache:"no-store"});
+
+  if(!res.ok) throw new Error("HTTP " + res.status);
+
+  const data = await res.json();
+
+  LATEST_COMPOSITE = data.composite;
+
+  LATEST_HISTORY = data.history || [];
+
+  renderDashboard(data);
+
+  renderHistoryChart(LATEST_HISTORY);
+
+ }catch(err){
+
+  showError("Couldn't load live data (" + err.message + "). The /api/data function may be unreachable.");
+
+ }
+
+}
+
+
+function showError(message){
+
+ const banner = document.getElementById("errorBanner");
+
+ banner.textContent = message;
+
+ banner.style.display = "block";
+
+}
+
+
+
+/*
+======================================================
+ SCORING ENGINE
+======================================================
+*/
+
+
+function getRegime(score){
+
+
+if(score < 20)
+
+return {
+label:"Extreme Fear",
+color:"var(--fear)"
+};
+
+
+if(score < 40)
+
+return {
+label:"Fear",
+color:"var(--fear)"
+};
+
+
+
+if(score < 60)
+
+return {
+label:"Neutral",
+color:"var(--neutral)"
+};
+
+
+
+if(score < 80)
+
+return {
+label:"Optimism",
+color:"var(--greed)"
+};
+
+
+
+return {
+label:"Extreme Optimism",
+color:"var(--extreme)"
+};
+
+
+}
+
+
+
+
+
+function generateSignal(score){
+
+
+if(score < 25)
+
+return "Investor pessimism is historically elevated. Previous similar environments have often produced favorable forward returns.";
+
+
+
+if(score < 45)
+
+return "Fear remains present. Sentiment is cautious but not at panic levels.";
+
+
+
+if(score < 65)
+
+return "Market psychology is balanced. No major sentiment extreme detected.";
+
+
+
+if(score < 80)
+
+return "Investors are optimistic. Monitor for increasing complacency.";
+
+
+
+return "Extreme optimism detected. Expectations may be vulnerable to disappointment.";
+
+
+
+}
+
+
+
+
+/*
+======================================================
+ RENDER DASHBOARD
+======================================================
+*/
+
+
+function renderDashboard(data){
+
+
+
+const composite = data.composite;
+
+
+
+const regime =
+getRegime(composite);
+
+
+
+document.getElementById("score")
+.textContent =
+composite;
+
+
+
+document.getElementById("score")
+.style.color =
+regime.color;
+
+
+
+document.getElementById("regime")
+.textContent =
+regime.label;
+
+
+
+document.getElementById("regime")
+.style.color =
+regime.color;
+
+
+
+document.getElementById("signal")
+.textContent =
+generateSignal(composite);
+
+
+
+document.getElementById("updated")
+.textContent =
+"Updated: "
++
+data.timestamp;
+
+
+
+renderComponents(data.components);
+
+
+}
+
+
+document.getElementById("scoreBox").addEventListener("click", openCompositeModal);
+
+
+let COMPONENTS_BY_ID = {};
+
+
+
+
+function renderComponents(components){
+
+
+const container =
+document.getElementById("components");
+
+
+
+container.innerHTML="";
+
+
+COMPONENTS_BY_ID = {};
+
+
+
+components.forEach(item=>{
+
+
+COMPONENTS_BY_ID[item.id] = item;
+
+
+const regime =
+getRegime(item.score);
+
+
+
+container.innerHTML += `
+
+
+<div class="card" data-id="${item.id}">
+
+
+<div class="card-header">
+
+
+<div class="card-name">
+
+${item.name}
+
+</div>
+
+
+<div>
+
+${item.score}/100
+
+</div>
+
+
+</div>
+
+
+
+<div class="metric">
+
+${item.value}
+
+</div>
+
+
+<div class="meta">
+
+${item.unit}
+
+</div>
+
+
+
+<div class="bar">
+
+<div
+class="fill"
+
+style="
+width:${item.score}%;
+
+background:${regime.color};
+
+">
+
+</div>
+
+</div>
+
+
+
+<div class="contribution">
+
+
+<span>
+
+Historical percentile:
+${item.percentile}%
+
+</span>
+
+
+<span>
+
+Weight:
+${item.weight}%
+
+</span>
+
+
+</div>
+
+
+
+<div class="meta">
+
+${item.description}
+
+</div>
+
+${item.source ? `<div class="source"><a href="${item.source.url}" target="_blank" rel="noopener" onclick="event.stopPropagation()">Source: ${item.source.name}</a></div>` : ""}
+
+</div>
+
+
+`;
+
+
+
+});
+
+
+attachCardHandlers();
+
+
+}
+
+
+
+/*
+======================================================
+ COMPONENT MODAL
+======================================================
+*/
+
+
+let modalChart = null;
+
+
+function attachCardHandlers(){
+
+ document.querySelectorAll(".card").forEach(card=>{
+
+  card.addEventListener("click", ()=> openModal(card.dataset.id));
+
+ });
+
+}
+
+
+function openModal(id){
+
+
+ const item = COMPONENTS_BY_ID[id];
+
+ if(!item) return;
+
+
+ const regime = getRegime(item.score);
+
+
+ document.getElementById("modalTitle").textContent = item.name;
+
+ document.getElementById("modalValue").textContent = item.value + " " + item.unit;
+
+ document.getElementById("modalScore").textContent = item.score + "/100";
+
+ document.getElementById("modalScore").style.color = regime.color;
+
+ document.getElementById("modalPercentile").textContent = item.percentile + "th";
+
+ document.getElementById("modalDesc").textContent = item.details || item.description;
+
+ document.getElementById("modalSource").innerHTML = item.source
+  ? `<a href="${item.source.url}" target="_blank" rel="noopener">Source: ${item.source.name}</a>`
+  : "";
+
+ renderCalcBox(item);
+
+
+ document.getElementById("modalOverlay").classList.add("open");
+
+ document.getElementById("modalChartControls").innerHTML = "";
+
+
+ const history = item.history || [];
+
+ if(item.id === "momentum"){
+
+  renderMomentumModal();
+
+ }else{
+
+  renderModalChartMulti(history.map(p=>p.date), [
+
+   { label: item.name, data: history.map(p=>p.value), color: LINE_COLOR },
+
+  ]);
+
+ }
+
+}
+
+
+function renderCalcBox(item){
+
+ const box = document.getElementById("calcBox");
+
+ const calc = item.calc;
+
+ if(!calc){
+
+  box.classList.remove("visible");
+
+  box.innerHTML = "";
+
+  return;
+
+ }
+
+ const direction = calc.invert ? "above" : "below";
+
+ const rawLabel = item.id === "momentum" ? "S&P 500 Price" : item.name + " reading";
+
+ box.innerHTML = `
+
+<div class="calc-title">Calculation:</div>
+
+<div class="calc-row"><span class="calc-row-label">${rawLabel}</span><span class="calc-row-value">${calc.value}</span></div>
+
+<div class="calc-row"><span class="calc-row-label">${calc.window}-${calc.periodLabel || "day"} moving average</span><span class="calc-row-value">${calc.ma.toFixed(3)}</span></div>
+
+<div class="calc-row"><span class="calc-row-label">Ratio (reading / MA)</span><span class="calc-row-value">${calc.ratio}</span></div>
+
+<div class="calc-row"><span class="calc-row-label">Percentile of that ratio</span><span class="calc-row-value">${calc.ratioPercentile}th</span></div>
+
+<div class="calc-row"><span class="calc-row-label">Direction</span><span class="calc-row-value">${calc.invert ? "higher ratio = more fear" : "higher ratio = more greed"}</span></div>
+
+<div class="calc-formula">${calc.invert ? "score = 100 &minus; percentile" : "score = percentile"} = ${item.score}/100</div>
+
+`;
+
+ box.classList.add("visible");
+
+}
+
+
+// Alpha Vantage's free tier caps daily history at ~100 points (~4-5 months),
+// so range options are necessarily short compared to the earlier 1980-2020
+// Yahoo-backed version.
+const MOMENTUM_RANGES = [
+
+ { key: "1M", days: 30 },
+
+ { key: "3M", days: 90 },
+
+ { key: "Max", days: null },
+
+];
+
+const MOMENTUM_DEFAULT_RANGE = "Max";
+
+let MOMENTUM_SERIES = null; // {dates, values, ma} over the full available history
+
+
+async function renderMomentumModal(){
+
+ try{
+
+  const longHistory = await loadSP500LongHistory();
+
+  MOMENTUM_SERIES = {
+
+   dates: longHistory.map(p=>p.date),
+
+   values: longHistory.map(p=>p.value),
+
+   ma: movingAverageByCalendarDays(longHistory, 126),
+
+  };
+
+ }catch(err){
+
+  const item = COMPONENTS_BY_ID["momentum"];
+
+  const history = item.history || [];
+
+  const values = history.map(p=>p.value);
+
+  MOMENTUM_SERIES = {
+
+   dates: history.map(p=>p.date),
+
+   values: values,
+
+   ma: movingAverage(values, 90),
+
+  };
+
+ }
+
+ renderRangeButtons();
+
+ renderMomentumRange(MOMENTUM_DEFAULT_RANGE);
+
+}
+
+
+function renderRangeButtons(){
+
+ const container = document.getElementById("modalChartControls");
+
+ container.innerHTML = "";
+
+ MOMENTUM_RANGES.forEach(r => {
+
+  const btn = document.createElement("button");
+
+  btn.className = "range-btn" + (r.key === MOMENTUM_DEFAULT_RANGE ? " active" : "");
+
+  btn.textContent = r.key;
+
+  btn.addEventListener("click", () => {
+
+   container.querySelectorAll(".range-btn").forEach(b => b.classList.remove("active"));
+
+   btn.classList.add("active");
+
+   renderMomentumRange(r.key);
+
+  });
+
+  container.appendChild(btn);
+
+ });
+
+}
+
+
+function renderMomentumRange(rangeKey){
+
+ if(!MOMENTUM_SERIES) return;
+
+ const range = MOMENTUM_RANGES.find(r => r.key === rangeKey);
+
+ const { dates, values, ma } = MOMENTUM_SERIES;
+
+ let startIndex = 0;
+
+ if(range.days){
+
+  const cutoff = Date.now() - range.days * 24 * 60 * 60 * 1000;
+
+  startIndex = dates.findIndex(d => new Date(d + "T00:00:00Z").getTime() >= cutoff);
+
+  if(startIndex === -1) startIndex = 0;
+
+ }
+
+ renderModalChartMulti(dates.slice(startIndex), [
+
+  { label: "SPY", data: values.slice(startIndex), color: LINE_COLOR },
+
+  { label: "90-day MA", data: ma.slice(startIndex), color: SP500_LINE_COLOR },
+
+ ]);
+
+}
+
+
+function movingAverage(values, window){
+
+ return values.map((_, i) => {
+
+  if(i < window - 1) return null;
+
+  const slice = values.slice(i - window + 1, i + 1);
+
+  return slice.reduce((sum, v) => sum + v, 0) / window;
+
+ });
+
+}
+
+
+// 125 trading days is roughly 182 calendar days; averaging over a calendar
+// window (rather than a fixed point count) is robust to weekends/holidays.
+function movingAverageByCalendarDays(points, windowDays){
+
+ const dates = points.map(p => new Date(p.date + "T00:00:00Z").getTime());
+
+ const dayMs = 24 * 60 * 60 * 1000;
+
+ let start = 0;
+
+ let sum = 0;
+
+ let count = 0;
+
+ const result = new Array(points.length).fill(null);
+
+ for(let i = 0; i < points.length; i++){
+
+  sum += points[i].value;
+
+  count++;
+
+  while(dates[i] - dates[start] > windowDays * dayMs){
+
+   sum -= points[start].value;
+
+   count--;
+
+   start++;
+
+  }
+
+  const spanDays = (dates[i] - dates[start]) / dayMs;
+
+  result[i] = spanDays >= windowDays * 0.9 ? sum / count : null;
+
+ }
+
+ return result;
+
+}
+
+
+function openCompositeModal(){
+
+
+ if(LATEST_COMPOSITE === null) return;
+
+
+ const regime = getRegime(LATEST_COMPOSITE);
+
+ const scores = LATEST_HISTORY.map(p=>p.optimism);
+
+ const percentile = scores.length
+  ? Math.round(100 * scores.filter(s=>s <= LATEST_COMPOSITE).length / scores.length)
+  : null;
+
+
+ document.getElementById("modalTitle").textContent = "U.S. Market Sentiment Index";
+
+ document.getElementById("modalValue").textContent = regime.label;
+
+ document.getElementById("modalScore").textContent = LATEST_COMPOSITE + "/100";
+
+ document.getElementById("modalScore").style.color = regime.color;
+
+ document.getElementById("modalPercentile").textContent = percentile !== null ? percentile + "th" : "--";
+
+ document.getElementById("modalDesc").textContent = generateSignal(LATEST_COMPOSITE);
+
+ document.getElementById("modalSource").innerHTML = "";
+
+ renderCompositeCalcBox();
+
+
+ document.getElementById("modalOverlay").classList.add("open");
+
+ document.getElementById("modalChartControls").innerHTML = "";
+
+
+ renderModalChartMulti(LATEST_HISTORY.map(p=>p.date), [
+
+  { label: "Optimism Index", data: LATEST_HISTORY.map(p=>p.optimism), color: LINE_COLOR },
+
+ ]);
+
+}
+
+
+function renderCompositeCalcBox(){
+
+ const box = document.getElementById("calcBox");
+
+ const items = Object.values(COMPONENTS_BY_ID);
+
+ if(!items.length){
+
+  box.classList.remove("visible");
+
+  box.innerHTML = "";
+
+  return;
+
+ }
+
+ const totalWeight = items.reduce((sum,i)=>sum+i.weight,0);
+
+ const rows = items.map(i => `
+
+<div class="calc-row"><span class="calc-row-label">${i.name} (weight ${i.weight}%)</span><span class="calc-row-value">${i.score}/100</span></div>
+
+`).join("");
+
+ box.innerHTML = `
+
+<div class="calc-title">Calculation:</div>
+
+${rows}
+
+<div class="calc-formula">weighted average of the ${items.length} scores above = ${LATEST_COMPOSITE}/100</div>
+
+`;
+
+ box.classList.add("visible");
+
+}
+
+
+function closeModal(){
+
+ document.getElementById("modalOverlay").classList.remove("open");
+
+ if(modalChart){ modalChart.destroy(); modalChart = null; }
+
+}
+
+
+document.getElementById("modalClose").addEventListener("click", closeModal);
+
+document.getElementById("modalOverlay").addEventListener("click", e=>{
+
+ if(e.target.id === "modalOverlay") closeModal();
+
+});
+
+document.addEventListener("keydown", e=>{
+
+ if(e.key === "Escape") closeModal();
+
+});
+
+
+function renderModalChartMulti(labels, series){
+
+
+ if(modalChart){ modalChart.destroy(); modalChart = null; }
+
+
+ const ctx = document.getElementById("modalChartCanvas").getContext("2d");
+
+
+ modalChart = new Chart(ctx, {
+
+  type:"line",
+
+  data:{
+
+   labels: labels,
+
+   datasets: series.map(s => ({
+
+    label: s.label,
+
+    data: s.data,
+
+    borderColor: s.color,
+
+    backgroundColor: s.color,
+
+    borderWidth:2,
+
+    pointRadius:0,
+
+    spanGaps: true,
+
+    tension:0.25,
+
+   })),
+
+  },
+
+  options:{
+
+   responsive:true,
+
+   maintainAspectRatio:false,
+
+   plugins:{
+
+    legend:{ display: series.length > 1, labels:{ color:"#8b9199" } }
+
+   },
+
+   scales:{
+
+    x:{
+
+     ticks:{ maxTicksLimit:6, color:"#8b9199" },
+
+     grid:{ color:"#2b3138" }
+
+    },
+
+    y:{
+
+     ticks:{ color:"#8b9199" },
+
+     grid:{ color:"#2b3138" }
+
+    }
+
+   }
+
+  }
+
+ });
+
+}
+
+
+
+/*
+======================================================
+ HISTORY CHART
+
+ data.history is a list of {date, optimism, spy} entries,
+ appended to by fetch_data.py over time.
+======================================================
+*/
+
+
+function renderHistoryChart(historyData){
+
+
+const ctx =
+document
+.getElementById("historyChart")
+.getContext("2d");
+
+
+
+new Chart(ctx, {
+
+
+type:"line",
+
+
+data:{
+
+
+labels:
+historyData.map(x=>x.date),
+
+
+
+datasets:[
+
+
+{
+
+label:"Optimism Index",
+
+data:
+historyData.map(x=>x.optimism),
+
+
+borderColor: LINE_COLOR,
+
+backgroundColor: LINE_COLOR,
+
+borderWidth:2,
+
+pointRadius:0,
+
+yAxisID:"sentiment"
+
+
+},
+
+
+
+{
+
+label:"SPY",
+
+data:
+historyData.map(x=>x.spy),
+
+
+borderColor: SP500_LINE_COLOR,
+
+backgroundColor: SP500_LINE_COLOR,
+
+borderWidth:2,
+
+pointRadius:0,
+
+yAxisID:"price"
+
+
+}
+
+
+]
+
+
+},
+
+
+
+options:{
+
+
+responsive:true,
+
+
+interaction:{
+mode:"index",
+intersect:false
+},
+
+
+scales:{
+
+
+sentiment:{
+
+position:"left",
+
+min:0,
+
+max:100
+
+},
+
+
+price:{
+
+position:"right"
+
+}
+
+
+}
+
+
+
+}
+
+
+
+});
+
+
+}
+
+document.getElementById("refreshBtn").addEventListener("click", async () => {
+
+ const btn = document.getElementById("refreshBtn");
+
+ btn.disabled = true;
+
+ btn.classList.add("spinning");
+
+ try{
+
+  SP500_LONG_HISTORY_CACHE = null;
+
+  await loadData();
+
+ }finally{
+
+  btn.disabled = false;
+
+  setTimeout(() => btn.classList.remove("spinning"), 400);
+
+ }
+
+});
+
+
+loadData();
+
+
+</script>
+
+</body>
+</html>
