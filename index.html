@@ -120,8 +120,38 @@ a{ color:inherit; }
 .ticker-note{
  font-size:10px;
  color:var(--muted);
- padding:4px 24px 6px;
+ padding:4px 24px 2px;
  text-align:right;
+}
+
+.macro-row{
+ display:flex;
+ flex-wrap:wrap;
+ gap:0;
+ font-family:var(--mono);
+ font-size:12px;
+ border-top:1px solid var(--hair);
+}
+
+.macro-item{
+ display:flex;
+ align-items:baseline;
+ gap:8px;
+ padding:8px 20px;
+ border-right:1px solid var(--hair);
+ white-space:nowrap;
+}
+
+.macro-label{
+ color:var(--muted);
+ letter-spacing:0.5px;
+ text-transform:uppercase;
+ font-size:10px;
+}
+
+.macro-value{
+ color:var(--ink);
+ font-weight:600;
 }
 
 /* HERO */
@@ -381,8 +411,14 @@ footer{
 
 <div class="ticker-wrap">
 <script type="module" src="https://widgets.tradingview-widget.com/w/en/tv-ticker-tape.js"></script>
-<tv-ticker-tape symbols="SP:SPX,TVC:IXIC,AMEX:URTH,TVC:DXY,TVC:USOIL,ECONOMICS:USINTR,TVC:US10Y,TVC:US03MY"></tv-ticker-tape>
-<div class="ticker-note">MSCI World Index shown via its iShares ETF tracker (URTH) — no free direct index feed available.</div>
+<tv-ticker-tape theme="dark" symbols="AMEX:SPY,NASDAQ:ONEQ,AMEX:URTH,AMEX:UUP,AMEX:USO"></tv-ticker-tape>
+<div class="ticker-note">Shown via ETF trackers where no free direct index feed exists — SPY (S&amp;P 500), ONEQ (NASDAQ Composite), URTH (MSCI World Index), UUP (US Dollar Index), USO (WTI Crude Oil).</div>
+<div class="macro-row" id="macroRow">
+<div class="macro-item"><span class="macro-label">Fed Funds Rate</span><span class="macro-value" id="mFedFunds">—</span></div>
+<div class="macro-item"><span class="macro-label">10Yr Treasury Yield</span><span class="macro-value" id="mUs10y">—</span></div>
+<div class="macro-item"><span class="macro-label">3Mo Treasury Yield</span><span class="macro-value" id="mUs03m">—</span></div>
+<div class="macro-item"><span class="macro-label">10Yr–3Mo Spread</span><span class="macro-value" id="mSpread">—</span></div>
+</div>
 </div>
 
 <div class="hero">
@@ -471,6 +507,21 @@ footer{
 </div>
 
 <footer>Independent Research. Not investment Advice.</footer>
+
+<script>
+(async function(){
+ try{
+  const res = await fetch("/api/macro", { cache: "no-store" });
+  const m = await res.json();
+  document.getElementById("mFedFunds").textContent = m.fedFunds !== null ? m.fedFunds + "%" : "n/a";
+  document.getElementById("mUs10y").textContent = m.us10y !== null ? m.us10y + "%" : "n/a";
+  document.getElementById("mUs03m").textContent = m.us03m !== null ? m.us03m + "%" : "n/a";
+  document.getElementById("mSpread").textContent = m.spread !== null ? (m.spread >= 0 ? "+" : "") + m.spread + "%" : "n/a";
+ }catch(e){
+  document.getElementById("macroRow").style.display = "none";
+ }
+})();
+</script>
 
 </body>
 </html>
