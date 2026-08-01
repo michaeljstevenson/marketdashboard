@@ -117,36 +117,6 @@ a{ color:inherit; }
  border-bottom:1px solid var(--hair);
 }
 
-.macro-row{
- display:flex;
- flex-wrap:wrap;
- gap:0;
- font-family:var(--mono);
- font-size:12px;
- border-top:1px solid var(--hair);
-}
-
-.macro-item{
- display:flex;
- align-items:baseline;
- gap:8px;
- padding:8px 20px;
- border-right:1px solid var(--hair);
- white-space:nowrap;
-}
-
-.macro-label{
- color:var(--muted);
- letter-spacing:0.5px;
- text-transform:uppercase;
- font-size:10px;
-}
-
-.macro-value{
- color:var(--ink);
- font-weight:600;
-}
-
 /* HERO */
 
 .hero{
@@ -405,11 +375,6 @@ footer{
 <div class="ticker-wrap">
 <script type="module" src="https://widgets.tradingview-widget.com/w/en/tv-ticker-tape.js"></script>
 <tv-ticker-tape theme="dark" hide-chart item-size="compact" symbols="FOREXCOM:SPXUSD,FOREXCOM:NSXUSD,AMEX:VIXY,ECONOMICS:USINTR,AMEX:URTH,AMEX:USO,NASDAQ:NVDA,NASDAQ:AAPL,NASDAQ:GOOG,NASDAQ:MSFT,NASDAQ:AMZN,NYSE:JPM,NASDAQ:MU,NYSE:V,NYSE:JNJ,NYSE:BAC,NASDAQ:SPCX,NASDAQ:META,NASDAQ:TSLA,NASDAQ:QCOM,NASDAQ:INTC,NYSE:IBM,NASDAQ:PLTR"></tv-ticker-tape>
-<div class="macro-row" id="macroRow">
-<div class="macro-item"><span class="macro-label">10Yr Treasury Yield</span><span class="macro-value" id="mUs10y">—</span></div>
-<div class="macro-item"><span class="macro-label">3Mo Treasury Yield</span><span class="macro-value" id="mUs03m">—</span></div>
-<div class="macro-item"><span class="macro-label">10Yr–3Mo Spread</span><span class="macro-value" id="mSpread">—</span></div>
-</div>
 </div>
 
 <div class="hero">
@@ -498,20 +463,6 @@ footer{
 </div>
 
 <footer>Independent Research. Not investment Advice.</footer>
-
-<script>
-(async function(){
- try{
-  const res = await fetch("/api/macro", { cache: "no-store" });
-  const m = await res.json();
-  document.getElementById("mUs10y").textContent = m.us10y !== null ? m.us10y + "%" : "n/a";
-  document.getElementById("mUs03m").textContent = m.us03m !== null ? m.us03m + "%" : "n/a";
-  document.getElementById("mSpread").textContent = m.spread !== null ? (m.spread >= 0 ? "+" : "") + m.spread + "%" : "n/a";
- }catch(e){
-  document.getElementById("macroRow").style.display = "none";
- }
-})();
-</script>
 
 </body>
 </html>
