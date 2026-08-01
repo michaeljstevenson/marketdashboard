@@ -411,10 +411,9 @@ footer{
 
 <div class="ticker-wrap">
 <script type="module" src="https://widgets.tradingview-widget.com/w/en/tv-tickers.js"></script>
-<tv-tickers theme="dark" hide-chart symbols="AMEX:SPY,NASDAQ:ONEQ,AMEX:URTH,AMEX:UUP,AMEX:USO"></tv-tickers>
-<div class="ticker-note">Shown via ETF trackers where no free direct index feed exists — SPY (S&amp;P 500), ONEQ (NASDAQ Composite), URTH (MSCI World Index), UUP (US Dollar Index), USO (WTI Crude Oil).</div>
+<tv-tickers theme="dark" hide-chart symbols="AMEX:SPY,NASDAQ:ONEQ,AMEX:URTH,AMEX:USO,ECONOMICS:USINTR"></tv-tickers>
+<div class="ticker-note">Shown via ETF trackers where no free direct index feed exists — SPY (S&amp;P 500), ONEQ (NASDAQ Composite), URTH (MSCI World Index), USO (WTI Crude Oil).</div>
 <div class="macro-row" id="macroRow">
-<div class="macro-item"><span class="macro-label">Fed Funds Rate</span><span class="macro-value" id="mFedFunds">—</span></div>
 <div class="macro-item"><span class="macro-label">10Yr Treasury Yield</span><span class="macro-value" id="mUs10y">—</span></div>
 <div class="macro-item"><span class="macro-label">3Mo Treasury Yield</span><span class="macro-value" id="mUs03m">—</span></div>
 <div class="macro-item"><span class="macro-label">10Yr–3Mo Spread</span><span class="macro-value" id="mSpread">—</span></div>
@@ -513,7 +512,6 @@ footer{
  try{
   const res = await fetch("/api/macro", { cache: "no-store" });
   const m = await res.json();
-  document.getElementById("mFedFunds").textContent = m.fedFunds !== null ? m.fedFunds + "%" : "n/a";
   document.getElementById("mUs10y").textContent = m.us10y !== null ? m.us10y + "%" : "n/a";
   document.getElementById("mUs03m").textContent = m.us03m !== null ? m.us03m + "%" : "n/a";
   document.getElementById("mSpread").textContent = m.spread !== null ? (m.spread >= 0 ? "+" : "") + m.spread + "%" : "n/a";

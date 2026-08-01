@@ -1,8 +1,9 @@
-// Macro stats (Fed funds rate, Treasury yields) shown alongside the
-// homepage ticker. These are daily-cadence economic series, not something
-// that needs sub-hour freshness, so this is cached for 24h — keeps total
-// Alpha Vantage usage low and comfortably within the free tier's 25
-// requests/day cap alongside the sentiment index's own usage in data.js.
+// Treasury yields shown alongside the homepage ticker (Fed funds rate is
+// covered by the TradingView ticker widget itself via ECONOMICS:USINTR,
+// but TradingView's free embed blocks TVC:US10Y/US03MY, so those two
+// still come from here). Daily-cadence data, so this is cached for 24h -
+// keeps Alpha Vantage usage low and within the free tier's 25/day cap
+// alongside the sentiment index's own usage in data.js.
 //
 // The 10Yr-3Mo spread is computed here rather than fetched: it's the
 // classic recession-warning indicator (inversion = 10Yr below 3Mo).
@@ -36,15 +37,12 @@ exports.handler = async () => {
     if (!apiKey) throw new Error("ALPHAVANTAGE_API_KEY environment variable is not set");
 
     // Sequential with a delay: Alpha Vantage's free tier caps bursts at
-    // 1 request/second, and firing these three in parallel trips that.
-    const fedFunds = await fetchSeries(apiKey, "function=FEDERAL_FUNDS_RATE&interval=daily");
-    await sleep(1100);
+    // 1 request/second, and firing these in parallel trips that.
     const us10y = await fetchSeries(apiKey, "function=TREASURY_YIELD&interval=daily&maturity=10year");
     await sleep(1100);
     const us03m = await fetchSeries(apiKey, "function=TREASURY_YIELD&interval=daily&maturity=3month");
 
     const data = {
-      fedFunds: round(fedFunds, 2),
       us10y: round(us10y, 2),
       us03m: round(us03m, 2),
       spread: round(us10y - us03m, 2),
