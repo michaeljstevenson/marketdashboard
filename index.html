@@ -117,13 +117,6 @@ a{ color:inherit; }
  border-bottom:1px solid var(--hair);
 }
 
-.ticker-note{
- font-size:10px;
- color:var(--muted);
- padding:4px 24px 2px;
- text-align:right;
-}
-
 .macro-row{
  display:flex;
  flex-wrap:wrap;
@@ -410,9 +403,8 @@ footer{
 </nav>
 
 <div class="ticker-wrap">
-<script type="module" src="https://widgets.tradingview-widget.com/w/en/tv-tickers.js"></script>
-<tv-tickers theme="dark" hide-chart symbols="FOREXCOM:SPXUSD,FOREXCOM:NSXUSD,AMEX:VIXY,ECONOMICS:USINTR,AMEX:URTH,AMEX:USO,NASDAQ:NVDA,NASDAQ:AAPL,NASDAQ:GOOG,NASDAQ:MSFT,NASDAQ:AMZN,NYSE:JPM,NASDAQ:MU,NYSE:V,NYSE:JNJ,NYSE:BAC,NASDAQ:SPCX,NASDAQ:META,NASDAQ:TSLA,NASDAQ:QCOM,NASDAQ:INTC,NYSE:IBM,NASDAQ:PLTR"></tv-tickers>
-<div class="ticker-note">Shown via ETF/futures trackers where no free direct index feed exists — VIXY (VIX), URTH (MSCI World Index), USO (WTI Crude Oil).</div>
+<script type="module" src="https://widgets.tradingview-widget.com/w/en/tv-ticker-tape.js"></script>
+<tv-ticker-tape theme="dark" hide-chart symbols="FOREXCOM:SPXUSD,FOREXCOM:NSXUSD,AMEX:VIXY,ECONOMICS:USINTR,AMEX:URTH,AMEX:USO,NASDAQ:NVDA,NASDAQ:AAPL,NASDAQ:GOOG,NASDAQ:MSFT,NASDAQ:AMZN,NYSE:JPM,NASDAQ:MU,NYSE:V,NYSE:JNJ,NYSE:BAC,NASDAQ:SPCX,NASDAQ:META,NASDAQ:TSLA,NASDAQ:QCOM,NASDAQ:INTC,NYSE:IBM,NASDAQ:PLTR"></tv-ticker-tape>
 <div class="macro-row" id="macroRow">
 <div class="macro-item"><span class="macro-label">10Yr Treasury Yield</span><span class="macro-value" id="mUs10y">—</span></div>
 <div class="macro-item"><span class="macro-label">3Mo Treasury Yield</span><span class="macro-value" id="mUs03m">—</span></div>
