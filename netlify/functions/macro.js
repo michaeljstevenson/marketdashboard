@@ -26,16 +26,22 @@ function round(n, digits) {
   return Math.round(n * f) / f;
 }
 
+function sleep(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
 exports.handler = async () => {
   try {
     const apiKey = process.env.ALPHAVANTAGE_API_KEY;
     if (!apiKey) throw new Error("ALPHAVANTAGE_API_KEY environment variable is not set");
 
-    const [fedFunds, us10y, us03m] = await Promise.all([
-      fetchSeries(apiKey, "function=FEDERAL_FUNDS_RATE&interval=daily"),
-      fetchSeries(apiKey, "function=TREASURY_YIELD&interval=daily&maturity=10year"),
-      fetchSeries(apiKey, "function=TREASURY_YIELD&interval=daily&maturity=3month"),
-    ]);
+    // Sequential with a delay: Alpha Vantage's free tier caps bursts at
+    // 1 request/second, and firing these three in parallel trips that.
+    const fedFunds = await fetchSeries(apiKey, "function=FEDERAL_FUNDS_RATE&interval=daily");
+    await sleep(1100);
+    const us10y = await fetchSeries(apiKey, "function=TREASURY_YIELD&interval=daily&maturity=10year");
+    await sleep(1100);
+    const us03m = await fetchSeries(apiKey, "function=TREASURY_YIELD&interval=daily&maturity=3month");
 
     const data = {
       fedFunds: round(fedFunds, 2),
