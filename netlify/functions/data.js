@@ -485,19 +485,28 @@ exports.handler = async () => {
 
     const now = new Date();
 
-    // Sequential, not Promise.all: Alpha Vantage trips a burst-rate
-    // detector when multiple requests land concurrently, even on this
-    // premium key (same issue hit in ticker.js and volatility.js).
+    // Sequential with a gap, not Promise.all: Alpha Vantage trips a
+    // burst-rate detector ("no more than 5 requests per second") when
+    // multiple requests land concurrently OR too close together even
+    // when awaited one at a time - fast-resolving calls can still land
+    // under 200ms apart otherwise. Same issue hit in ticker.js and
+    // volatility.js, but those only had 2-3 calls to space out.
     const spxDaily = await fetchIndexDaily(apiKey, "SPX");
+    await sleep(300);
     const vixDaily = await fetchIndexDaily(apiKey, "VIX");
+    await sleep(300);
     // "compact" (~100 trading days) rather than "full" for these four -
     // still plenty for a 50-day MA and a real percentile sample, and
     // keeps total request latency down given how many sequential Alpha
     // Vantage calls this function already makes per run.
     const spyDaily = await fetchStockDaily(apiKey, "SPY", "compact");
+    await sleep(300);
     const rspDaily = await fetchStockDaily(apiKey, "RSP", "compact");
+    await sleep(300);
     const hygDaily = await fetchStockDaily(apiKey, "HYG", "compact");
+    await sleep(300);
     const lqdDaily = await fetchStockDaily(apiKey, "LQD", "compact");
+    await sleep(300);
 
     const spxTradingDates = spxDaily.map((p) => toDateStr(p.x));
     const putCallPoints = await fetchPutCallWindow(apiKey, "SPY", spxTradingDates);
