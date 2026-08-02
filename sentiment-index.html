@@ -1529,11 +1529,9 @@ function renderCalcBox(item){
 
 <div class="calc-row"><span class="calc-row-label">Ratio (reading / MA)</span><span class="calc-row-value">${calc.ratio}</span></div>
 
-<div class="calc-row"><span class="calc-row-label">Percentile of that ratio</span><span class="calc-row-value">${calc.ratioPercentile}th</span></div>
-
 <div class="calc-row"><span class="calc-row-label">Direction</span><span class="calc-row-value">${calc.invert ? "higher ratio = more fear" : "higher ratio = more greed"}</span></div>
 
-<div class="calc-formula">${calc.invert ? "score = 100 &minus; percentile" : "score = percentile"} = ${item.score}/100</div>
+<div class="calc-formula">score = ${item.score}/100</div>
 
 `;
 
