@@ -4,7 +4,7 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Realized vs. Implied Volatility — Michael J. Stevenson</title>
+<title>Implied vs. Realized Volatility — Michael J. Stevenson</title>
 
 <style>
 
@@ -348,7 +348,7 @@ h1{
 
 <div class="header">
 <div>
-<h1>Realized vs. Implied Volatility</h1>
+<h1>Implied vs. Realized Volatility</h1>
 <div class="subtitle">S&amp;P 500 realized volatility (20-day annualized) against the VIX's implied volatility — the gap between what's actually happened and what options traders expect.</div>
 </div>
 <div class="updated" id="updated">Loading...</div>
@@ -418,18 +418,18 @@ async function init(){
     labels: data.history.map(p => p.date),
     datasets: [
      {
-      label: "Realized Volatility",
-      data: data.history.map(p => p.realized),
-      borderColor: LINE_COLOR,
-      backgroundColor: LINE_COLOR,
-      borderWidth: 2,
-      pointRadius: 0,
-     },
-     {
       label: "Implied Volatility (VIX)",
       data: data.history.map(p => p.implied),
       borderColor: IMPLIED_COLOR,
       backgroundColor: IMPLIED_COLOR,
+      borderWidth: 2,
+      pointRadius: 0,
+     },
+     {
+      label: "Realized Volatility",
+      data: data.history.map(p => p.realized),
+      borderColor: LINE_COLOR,
+      backgroundColor: LINE_COLOR,
       borderWidth: 2,
       pointRadius: 0,
      },
