@@ -441,11 +441,12 @@ exports.handler = async () => {
 
     const now = new Date();
 
-    const [raw, spyDaily, spxDaily] = await Promise.all([
-      fetchCnn(),
-      fetchSpyDaily(apiKey, "compact"),
-      fetchIndexDaily(apiKey, "SPX"),
-    ]);
+    // CNN is a separate host so it's fine to run alongside the Alpha
+    // Vantage calls, but the two Alpha Vantage calls must not run
+    // concurrently with each other - that trips its burst-rate detector
+    // (same issue hit in ticker.js and volatility.js).
+    const [raw, spyDaily] = await Promise.all([fetchCnn(), fetchSpyDaily(apiKey, "compact")]);
+    const spxDaily = await fetchIndexDaily(apiKey, "SPX");
 
     const dailyComponents = [...COMPONENTS.map((spec) => buildComponent(raw, spec)), buildRealizedVolComponent(spxDaily)];
     const manualComponents = MANUAL_COMPONENTS.map((spec) => buildManualComponent(spec));

@@ -60,10 +60,10 @@ exports.handler = async () => {
     const apiKey = process.env.ALPHAVANTAGE_API_KEY;
     if (!apiKey) throw new Error("ALPHAVANTAGE_API_KEY environment variable is not set");
 
-    const [spx, vix] = await Promise.all([
-      fetchIndexDaily(apiKey, "SPX"),
-      fetchIndexDaily(apiKey, "VIX"),
-    ]);
+    // Sequential, not Promise.all: firing both at once trips Alpha
+    // Vantage's burst-rate detector (same issue hit in ticker.js).
+    const spx = await fetchIndexDaily(apiKey, "SPX");
+    const vix = await fetchIndexDaily(apiKey, "VIX");
 
     const realizedSeries = computeRealizedVolSeries(spx, REALIZED_VOL_WINDOW);
     const vixByDate = new Map(vix.map((v) => [v.date, v.close]));
