@@ -175,9 +175,16 @@ async function fetchStockDaily(apiKey, symbol, outputsize) {
 }
 
 // Divides two same-shaped {x, y} series (numerator by date / denominator by
-// nearest-prior date) and rebases the result to start at 100 — see the
-// file header for why. Used for both Market Breadth (RSP/SPY) and Credit
-// Conditions (HYG/LQD).
+// nearest-prior date) and rebases the result to 100 at the start of the
+// displayed window (HISTORY_POINTS back from the end), not the start of
+// the full multi-year fetched series — see the file header for why
+// "normalized" matters here. Rebasing by any constant factor doesn't
+// change the score/percentile math at all (ratio-to-own-MA is scale-
+// invariant), so this choice only affects what's displayed: anchoring to
+// a point from decades ago (RSP goes back to 2003) can leave the current
+// reading looking like 25 or 30 instead of a value near 100, which
+// defeats the point of normalizing it in the first place. Used for both
+// Market Breadth (RSP/SPY) and Credit Conditions (HYG/LQD).
 function computeNormalizedRatioSeries(numerator, denominator) {
   const denomByDate = new Map(denominator.map((p) => [toDateStr(p.x), p.y]));
   const denomDatesSorted = denominator.map((p) => toDateStr(p.x)).sort();
@@ -196,7 +203,8 @@ function computeNormalizedRatioSeries(numerator, denominator) {
     .filter(Boolean);
 
   if (!raw.length) return [];
-  const base = raw[0].y;
+  const baseIndex = Math.max(0, raw.length - HISTORY_POINTS);
+  const base = raw[baseIndex].y;
   return raw.map((p) => ({ x: p.x, y: (p.y / base) * 100 }));
 }
 
