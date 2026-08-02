@@ -9,11 +9,14 @@
 // each factor's current reading relative to its own 50-day moving average,
 // ranked against that ratio's own history.
 //
-// S&P 500 price data (Price Momentum's displayed value) comes from Alpha
-// Vantage's SPY ETF series, not a true index feed: Yahoo Finance (which has
-// the real index) blocks Netlify's IP range, and Alpha Vantage's free tier
-// only covers traded securities, not raw index levels (needs a paid plan).
-// SPY tracks the S&P 500 index almost exactly (~1:10 scale).
+// Price Momentum's displayed value still comes from Alpha Vantage's SPY
+// ETF series rather than the real index (SPY tracks the S&P 500 almost
+// exactly, ~1:10 scale) — a holdover from before this key had premium
+// index-data access. Realized Volatility below is the first factor to use
+// real S&P 500 index-level OHLC (via INDEX_DATA), now that the key
+// supports it; migrating Price Momentum and the composite history's SPY
+// overlay to the same real data is a reasonable future cleanup, not done
+// here to keep this change scoped to realized volatility.
 
 const { MANUAL_SERIES } = require("./manual-data");
 
@@ -23,28 +26,30 @@ const USER_AGENT =
   "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0 Safari/537.36";
 
 const HISTORY_POINTS = 180; // ~6 months, kept compact for the browser
-const SCORE_MA_WINDOW = 50; // trading days, applied consistently across all 5 factors
+const SCORE_MA_WINDOW = 50; // trading days, applied consistently across all daily factors
 
 // invert: true means "reading above its own MA" = fear (lower score) —
-// e.g. VIX and put/call spiking above trend is bearish. false means
-// "reading above its own MA" = greed (higher score) — e.g. breadth, junk
-// bond demand, and price momentum running hot above trend is bullish.
-// Directions verified empirically against CNN's own current fear/greed
-// ratings for each factor (value-vs-MA sign vs. CNN's rating sign).
-// Weights are tilted rather than equal: Credit and Breadth are structural/
-// leading signals (credit markets tend to react before equity sentiment
-// fully turns; breadth reveals whether participation is broad or narrow
-// underneath the headline index). Volatility is forward-looking by
-// construction (derived from options-implied future volatility). Put/Call
-// and Momentum are weighted down — put/call is noisier day-to-day (partly
-// institutional hedging, not pure sentiment), and momentum is lagging by
-// nature (derived from the same price action sentiment is meant to explain).
-// Weights below sum to 70 (daily/live factors) + 30 (the 3 manual factors
-// defined in MANUAL_COMPONENTS, 10% each) = 100. Original ratios among
-// these 5 preserved, scaled down from 100 to 70 to make room for the
-// manual factors — see MANUAL_COMPONENTS for why those are capped at 10%
-// each (lower frequency, human-updated data shouldn't dominate a live
-// composite the way daily-refreshed factors do).
+// e.g. Implied Volatility and put/call spiking above trend is bearish.
+// false means "reading above its own MA" = greed (higher score) — e.g.
+// breadth, junk bond demand, and price momentum running hot above trend
+// is bullish. Directions verified empirically against CNN's own current
+// fear/greed ratings for each factor (value-vs-MA sign vs. CNN's rating
+// sign). Weights are tilted rather than equal: Credit and Breadth are
+// structural/leading signals (credit markets tend to react before equity
+// sentiment fully turns; breadth reveals whether participation is broad
+// or narrow underneath the headline index). Put/Call and Momentum are
+// weighted down — put/call is noisier day-to-day (partly institutional
+// hedging, not pure sentiment), and momentum is lagging by nature
+// (derived from the same price action sentiment is meant to explain).
+// Implied and Realized Volatility are weighted evenly at 7% each — two
+// views (forward-looking options pricing vs. backward-looking actual
+// price swings) on the same underlying phenomenon, deliberately balanced
+// rather than favoring either. See REALIZED_VOL_SPEC below for that one.
+// Weights sum to 70 (breadth 18 + credit 18 + implied vol 7 + put/call 10
+// + momentum 10 + realized vol 7) + 30 (the 3 manual factors defined in
+// MANUAL_COMPONENTS, 10% each) = 100 — see MANUAL_COMPONENTS for why
+// those are capped at 10% each (lower frequency, human-updated data
+// shouldn't dominate a live composite the way daily-refreshed factors do).
 const COMPONENTS = [
   {
     id: "breadth",
@@ -73,14 +78,14 @@ const COMPONENTS = [
   {
     id: "vix",
     cnnKey: "market_volatility_vix",
-    name: "Volatility",
+    name: "Implied Volatility",
     unit: "index",
-    weight: 14,
+    weight: 7,
     invert: true,
     source: { name: "CNN Fear & Greed Index", url: "https://www.cnn.com/markets/fear-and-greed" },
-    description: "Elevated volatility relative to its recent trend reflects investor fear.",
+    description: "Elevated implied volatility relative to its recent trend reflects investor fear.",
     details:
-      "The VIX (often called the market's \"fear gauge\") measures how much volatility options traders expect in the S&P 500 over the next 30 days, derived from the prices they're willing to pay for options. It doesn't measure what already happened — it measures what the market is bracing for, which makes it forward-looking rather than a reflection of past price action.\n\nRather than using the VIX's raw level (which drifts up and down with the broader volatility regime over months and years), this dashboard compares today's VIX to its own 50-day moving average. A VIX spiking well above its recent trend signals rising fear and uncertainty; a VIX sitting below its recent trend suggests calm, complacent conditions.",
+      "The VIX (often called the market's \"fear gauge\") measures how much volatility options traders expect in the S&P 500 over the next 30 days, derived from the prices they're willing to pay for options. It doesn't measure what already happened — it measures what the market is bracing for, which is why it's called implied (rather than realized) volatility, and why it's forward-looking rather than a reflection of past price action. See the Realized Volatility factor for the backward-looking counterpart to this one.\n\nRather than using the VIX's raw level (which drifts up and down with the broader volatility regime over months and years), this dashboard compares today's VIX to its own 50-day moving average. A VIX spiking well above its recent trend signals rising fear and uncertainty; a VIX sitting below its recent trend suggests calm, complacent conditions.",
   },
   {
     id: "putcall",
@@ -157,6 +162,106 @@ const MANUAL_COMPONENTS = [
       "The forward P/E ratio compares the S&P 500's price to analysts' consensus earnings estimate for the next 12 months — a measure of how much investors are willing to pay today for expected future profits. Rising valuations typically reflect optimism about growth; falling valuations often reflect caution or reduced growth expectations.\n\nThis factor compares the latest reading to its own short trailing average. There's no free live index-level source for this figure (Alpha Vantage's data only covers individual stocks, not indices), so it's updated by hand from FactSet's free weekly Earnings Insight report and carries a smaller (10%) weight than the daily live factors.",
   },
 ];
+
+// Realized Volatility: the backward-looking counterpart to Implied
+// Volatility (VIX) above. Tracks the S&P 500's own 14-day Average True
+// Range (ATR), expressed as a % of price so it's comparable across price
+// regimes (raw dollar ATR would show a spurious uptrend simply because
+// the index is ~9x higher than in 1997, regardless of actual volatility).
+// Needs real index-level OHLC, only available now via Alpha Vantage's
+// premium INDEX_DATA endpoint — SPY's ETF data has no daily high/low
+// granular enough for this. Scored the same way as every other factor:
+// today's ATR% vs. its own 50-day average, ranked against its full
+// history. invert:true, same logic as Implied Volatility: ATR spiking
+// above trend means realized price swings are widening — fear, not greed.
+const REALIZED_VOL_SPEC = {
+  id: "realizedvol",
+  name: "Realized Volatility",
+  unit: "% of price (ATR-14)",
+  weight: 7,
+  invert: true,
+  atrWindow: 14,
+  source: { name: "Alpha Vantage — S&P 500 Index (SPX)", url: "https://www.alphavantage.co/" },
+  description: "A rising 14-day Average True Range relative to trend signals widening realized price swings.",
+  details:
+    "Realized volatility measures how much the S&P 500 has actually been moving, in contrast to Implied Volatility (the VIX), which measures what options traders expect it to move. This factor uses the 14-day Average True Range (ATR) — the average of each day's true trading range (accounting for gaps) over the last 14 trading days — expressed as a percentage of the index's price so it stays comparable across different price levels and eras.\n\nThe score compares today's ATR% to its own 50-day average, ranked against its full history back to 1997. ATR running above trend means the index has genuinely been swinging more than usual — realized fear rather than merely anticipated fear. Because realized and implied volatility usually move together but can diverge (implied often runs above realized as a risk premium), watching both side by side reveals when the market's expectations and its actual behavior are out of sync.",
+};
+
+async function fetchIndexDaily(apiKey, symbol) {
+  const url = `${ALPHA_VANTAGE_URL}?function=INDEX_DATA&symbol=${symbol}&interval=daily&apikey=${apiKey}`;
+  const payload = await fetchJson(url, { "User-Agent": USER_AGENT });
+
+  const data = payload.data;
+  if (!data || !data.length) {
+    throw new Error(
+      `Alpha Vantage INDEX_DATA missing data for ${symbol}: ` + (payload.Note || payload.Information || payload.error || JSON.stringify(payload).slice(0, 200))
+    );
+  }
+
+  return data
+    .map((d) => ({
+      x: Date.parse(d.date),
+      open: parseFloat(d.open),
+      high: parseFloat(d.high),
+      low: parseFloat(d.low),
+      close: parseFloat(d.close),
+    }))
+    .sort((a, b) => a.x - b.x);
+}
+
+function computeAtrPercentSeries(bars, window) {
+  const trueRanges = bars.map((bar, i) => {
+    if (i === 0) return bar.high - bar.low;
+    const prevClose = bars[i - 1].close;
+    return Math.max(bar.high - bar.low, Math.abs(bar.high - prevClose), Math.abs(bar.low - prevClose));
+  });
+
+  const points = [];
+  for (let i = window - 1; i < bars.length; i++) {
+    const slice = trueRanges.slice(i - window + 1, i + 1);
+    const atr = slice.reduce((sum, v) => sum + v, 0) / window;
+    points.push({ x: bars[i].x, y: (atr / bars[i].close) * 100 });
+  }
+  return points;
+}
+
+function buildRealizedVolComponent(spxDaily) {
+  const atrPoints = computeAtrPercentSeries(spxDaily, REALIZED_VOL_SPEC.atrWindow);
+  const latestValue = atrPoints.length ? atrPoints[atrPoints.length - 1].y : null;
+  const trimmed = atrPoints.slice(-HISTORY_POINTS);
+
+  const scoreSeries = computeRelativeScoreSeries(atrPoints, SCORE_MA_WINDOW, REALIZED_VOL_SPEC.invert);
+  const latest = scoreSeries.length ? scoreSeries[scoreSeries.length - 1] : null;
+
+  return {
+    id: REALIZED_VOL_SPEC.id,
+    name: REALIZED_VOL_SPEC.name,
+    value: latestValue !== null ? round(latestValue, 2) : null,
+    unit: REALIZED_VOL_SPEC.unit,
+    percentile: latestValue !== null ? percentileRank(atrPoints.map((p) => p.y), latestValue) : null,
+    score: latest ? latest.score : 50,
+    weight: REALIZED_VOL_SPEC.weight,
+    source: REALIZED_VOL_SPEC.source,
+    description: REALIZED_VOL_SPEC.description,
+    details: REALIZED_VOL_SPEC.details,
+    history: trimmed.map((p) => ({
+      date: toDateStr(p.x),
+      value: round(p.y, 3),
+    })),
+    calc: latest
+      ? {
+          window: SCORE_MA_WINDOW,
+          periodLabel: "day",
+          invert: REALIZED_VOL_SPEC.invert,
+          value: round(latest.value, 3),
+          ma: round(latest.ma, 3),
+          ratio: round(latest.ratio, 4),
+          ratioPercentile: latest.ratioPercentile,
+        }
+      : null,
+    scoreSeries,
+  };
+}
 
 function buildManualComponent(spec) {
   const series = MANUAL_SERIES[spec.manualKey];
@@ -336,9 +441,13 @@ exports.handler = async () => {
 
     const now = new Date();
 
-    const [raw, spyDaily] = await Promise.all([fetchCnn(), fetchSpyDaily(apiKey, "compact")]);
+    const [raw, spyDaily, spxDaily] = await Promise.all([
+      fetchCnn(),
+      fetchSpyDaily(apiKey, "compact"),
+      fetchIndexDaily(apiKey, "SPX"),
+    ]);
 
-    const dailyComponents = COMPONENTS.map((spec) => buildComponent(raw, spec));
+    const dailyComponents = [...COMPONENTS.map((spec) => buildComponent(raw, spec)), buildRealizedVolComponent(spxDaily)];
     const manualComponents = MANUAL_COMPONENTS.map((spec) => buildManualComponent(spec));
     const components = [...dailyComponents, ...manualComponents];
 
@@ -364,10 +473,11 @@ exports.handler = async () => {
     // uses coarse month/week date strings rather than real trading-day
     // epoch timestamps, so they can't be date-aligned with the daily CNN
     // series here. They still count toward the live composite score above.
-    const totalWeight = COMPONENTS.reduce((sum, c) => sum + c.weight, 0);
+    const DAILY_SPECS = [...COMPONENTS, REALIZED_VOL_SPEC];
+    const totalWeight = DAILY_SPECS.reduce((sum, c) => sum + c.weight, 0);
     const compositeByDate = new Map();
     for (const comp of dailyComponents) {
-      const weight = COMPONENTS.find((c) => c.id === comp.id).weight;
+      const weight = DAILY_SPECS.find((c) => c.id === comp.id).weight;
       for (const point of comp.scoreSeries) {
         const dateStr = toDateStr(point.x);
         const entry = compositeByDate.get(dateStr) || { weightedSum: 0, weightSeen: 0 };
@@ -387,7 +497,7 @@ exports.handler = async () => {
 
     const history = [...compositeByDate.keys()]
       .sort()
-      .filter((d) => compositeByDate.get(d).weightSeen === totalWeight) // only dates all 5 factors covered
+      .filter((d) => compositeByDate.get(d).weightSeen === totalWeight) // only dates all daily factors covered
       .slice(-HISTORY_POINTS)
       .map((d) => {
         const entry = compositeByDate.get(d);
@@ -420,9 +530,8 @@ exports.handler = async () => {
       statusCode: 200,
       headers: {
         "Content-Type": "application/json",
-        // Cached at the edge to stay well within Alpha Vantage's 25 req/day
-        // free-tier limit — a refresh within this window serves the cached
-        // response rather than triggering a new upstream call.
+        // Cached at the edge for 2 hours — this data doesn't need to be
+        // fresher than that, and it keeps upstream call volume low.
         "Cache-Control": "public, max-age=7200",
         "Access-Control-Allow-Origin": "*",
       },
