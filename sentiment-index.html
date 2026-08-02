@@ -599,7 +599,7 @@ h1{
 
  display:grid;
 
- grid-template-columns:repeat(3,1fr);
+ grid-template-columns:repeat(2,1fr);
 
  gap:12px;
 
@@ -1029,11 +1029,6 @@ Waiting for data...
 <div class="modal-stat-value" id="modalScore">--</div>
 </div>
 
-<div class="modal-stat">
-<div class="modal-stat-label">Percentile Rank</div>
-<div class="modal-stat-value" id="modalPercentile">--</div>
-</div>
-
 </div>
 
 
@@ -1396,14 +1391,6 @@ background:${regime.color};
 
 <span>
 
-Historical percentile:
-${item.percentile}%
-
-</span>
-
-
-<span>
-
 Weight:
 ${item.weight}%
 
@@ -1478,8 +1465,6 @@ function openModal(id){
  document.getElementById("modalScore").textContent = item.score + "/100";
 
  document.getElementById("modalScore").style.color = regime.color;
-
- document.getElementById("modalPercentile").textContent = item.percentile + "th";
 
  document.getElementById("modalDesc").textContent = item.details || item.description;
 
@@ -1746,13 +1731,6 @@ function openCompositeModal(){
 
  const regime = getRegime(LATEST_COMPOSITE);
 
- const scores = LATEST_HISTORY.map(p=>p.optimism);
-
- const percentile = scores.length
-  ? Math.round(100 * scores.filter(s=>s <= LATEST_COMPOSITE).length / scores.length)
-  : null;
-
-
  document.getElementById("modalTitle").textContent = "U.S. Market Sentiment Index";
 
  document.getElementById("modalValue").textContent = regime.label;
@@ -1760,8 +1738,6 @@ function openCompositeModal(){
  document.getElementById("modalScore").textContent = LATEST_COMPOSITE + "/100";
 
  document.getElementById("modalScore").style.color = regime.color;
-
- document.getElementById("modalPercentile").textContent = percentile !== null ? percentile + "th" : "--";
 
  document.getElementById("modalDesc").textContent = generateSignal(LATEST_COMPOSITE);
 
