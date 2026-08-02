@@ -78,21 +78,39 @@ async function fetchFedFunds() {
   };
 }
 
+function sleep(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+// Firing all ~23 calls at once trips Alpha Vantage's per-second burst
+// limit even on the premium key (confirmed empirically - 5 concurrent
+// succeeded, 17 concurrent had roughly half fail). Batching in groups of
+// 5 with a short pause between batches stays under that ceiling.
+async function batched(tasks, batchSize, delayMs) {
+  const results = [];
+  for (let i = 0; i < tasks.length; i += batchSize) {
+    const batch = tasks.slice(i, i + batchSize).map((fn) => fn());
+    results.push(...(await Promise.all(batch)));
+    if (i + batchSize < tasks.length) await sleep(delayMs);
+  }
+  return results;
+}
+
 exports.handler = async () => {
   try {
     if (!process.env.ALPHAVANTAGE_API_KEY) throw new Error("ALPHAVANTAGE_API_KEY environment variable is not set");
 
-    const [spx, comp, vix, urth, wti, fedFunds, ...stocks] = await Promise.all([
-      fetchIndex("SPX", "S&P 500"),
-      fetchIndex("COMP", "NASDAQ Composite"),
-      fetchIndex("VIX", "VIX"),
-      fetchQuote("URTH", "MSCI World Index (URTH)"),
-      fetchWti(),
-      fetchFedFunds(),
-      ...STOCKS.map((s) => fetchQuote(s, s)),
-    ]);
+    const tasks = [
+      () => fetchIndex("SPX", "S&P 500"),
+      () => fetchIndex("COMP", "NASDAQ Composite"),
+      () => fetchIndex("VIX", "VIX"),
+      () => fetchFedFunds(),
+      () => fetchQuote("URTH", "MSCI World Index (URTH)"),
+      () => fetchWti(),
+      ...STOCKS.map((s) => () => fetchQuote(s, s)),
+    ];
 
-    const items = [spx, comp, vix, fedFunds, urth, wti, ...stocks];
+    const items = await batched(tasks, 5, 800);
 
     return {
       statusCode: 200,
