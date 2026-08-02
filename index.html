@@ -539,6 +539,15 @@ footer{
   const html = items.map(renderItem).join("");
   track.innerHTML = html + html;
 
+  // The CSS animation starts running the moment the page loads, against
+  // an empty (zero-width) track - once real content is injected here,
+  // the browser doesn't always re-sync the animation to the new width
+  // on its own (looks "stuck" until something forces a repaint, like
+  // hovering). Restarting the animation explicitly fixes it.
+  track.style.animation = "none";
+  void track.offsetWidth; // force reflow
+  track.style.animation = "";
+
  }catch(e){
   track.innerHTML = `<span class="ticker-item"><span class="t-label">Market data unavailable</span></span>`;
  }
