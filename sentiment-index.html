@@ -1067,10 +1067,10 @@ Waiting for data...
 
  Data is computed live on every request by Netlify Functions
  (netlify/functions/data.js, netlify/functions/momentum-history.js),
- which fetch CNN's Fear & Greed API and Yahoo Finance server-side
- (CORS blocks calling those APIs directly from the browser) and
- return fresh JSON. No scheduled job or stored snapshot involved —
- every page load and every refresh-button click recomputes from scratch.
+ which fetch Alpha Vantage server-side (CORS blocks calling it directly
+ from the browser) and return fresh JSON. No scheduled job or stored
+ snapshot involved — every page load and every refresh-button click
+ recomputes from scratch.
 ======================================================
 */
 
@@ -1988,7 +1988,7 @@ yAxisID:"sentiment"
 
 {
 
-label:"SPY",
+label:"S&P 500",
 
 data:
 historyData.map(x=>x.spy),
