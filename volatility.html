@@ -1,0 +1,460 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Realized vs. Implied Volatility — Michael J. Stevenson</title>
+
+<style>
+
+:root{
+  --bg:#14181c;
+  --card:#1c2127;
+  --card-hover:#20262d;
+  --ink:#eae6da;
+  --muted:#8b9199;
+  --hair:#2b3138;
+
+  --fear:#6f8fac;
+  --neutral:#7c828a;
+  --greed:#d98a3d;
+  --extreme:#b56f2a;
+
+  --serif:'Iowan Old Style','Palatino Linotype',Georgia,serif;
+  --mono:'SF Mono','JetBrains Mono',ui-monospace,Menlo,monospace;
+  --sans:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+}
+
+*{ box-sizing:border-box; }
+
+body{
+ margin:0;
+ background:var(--bg);
+ color:var(--ink);
+ font-family:var(--sans);
+}
+
+a{ color:inherit; }
+
+/* SITE NAV (shared with homepage) */
+
+.sitenav{
+ display:flex;
+ align-items:center;
+ justify-content:space-between;
+ padding:16px 24px;
+ border-bottom:1px solid var(--hair);
+ position:relative;
+ z-index:50;
+}
+
+.sitenav .brand{
+ font-family:var(--serif);
+ font-size:17px;
+ color:var(--ink);
+ text-decoration:none;
+ letter-spacing:0.3px;
+}
+
+.navlinks{
+ display:flex;
+ gap:26px;
+ align-items:center;
+}
+
+.navlinks > a{
+ color:var(--muted);
+ font-size:13px;
+ text-decoration:none;
+ padding:6px 0;
+}
+
+.navlinks > a:hover, .navlinks > a.active{ color:var(--ink); }
+
+.navdrop{ position:relative; }
+
+.navdrop > .navlabel{
+ color:var(--muted);
+ font-size:13px;
+ cursor:default;
+ padding:6px 0;
+ user-select:none;
+}
+
+.navdrop:hover > .navlabel{ color:var(--ink); }
+
+.navdrop .dropdown{
+ display:none;
+ position:absolute;
+ top:100%;
+ left:0;
+ background:var(--card);
+ border:1px solid var(--hair);
+ border-radius:8px;
+ padding:8px 0;
+ min-width:230px;
+ margin-top:12px;
+ box-shadow:0 10px 30px rgba(0,0,0,0.45);
+}
+
+.navdrop:hover .dropdown{ display:block; }
+
+.dropdown a{
+ display:block;
+ padding:9px 16px;
+ color:var(--muted);
+ text-decoration:none;
+ font-size:13px;
+}
+
+.dropdown a:hover{
+ background:var(--card-hover);
+ color:var(--ink);
+}
+
+.dropdown a.active{ color:var(--greed); }
+
+@media (max-width:720px){
+ .navlinks{ display:none; }
+}
+
+.container{
+ max-width:1000px;
+ margin:auto;
+ padding:30px 20px 60px;
+}
+
+/* HEADER */
+
+.header{
+ display:flex;
+ justify-content:space-between;
+ align-items:flex-end;
+ border-bottom:1px solid var(--hair);
+ padding-bottom:18px;
+ margin-bottom:25px;
+ flex-wrap:wrap;
+ gap:12px;
+}
+
+h1{
+ font-family:var(--serif);
+ font-size:28px;
+ font-weight:400;
+ margin:0;
+}
+
+.subtitle{
+ color:var(--muted);
+ font-size:13px;
+ margin-top:6px;
+ max-width:560px;
+}
+
+.updated{
+ color:var(--muted);
+ font-size:12px;
+}
+
+/* STAT ROW */
+
+.stat-grid{
+ display:grid;
+ grid-template-columns:repeat(3,1fr);
+ gap:16px;
+ margin-bottom:30px;
+}
+
+.stat-card{
+ background:var(--card);
+ border:1px solid var(--hair);
+ border-radius:10px;
+ padding:20px;
+}
+
+.stat-label{
+ color:var(--muted);
+ font-size:12px;
+ text-transform:uppercase;
+ letter-spacing:0.04em;
+ margin-bottom:8px;
+}
+
+.stat-value{
+ font-family:var(--mono);
+ font-size:30px;
+}
+
+.stat-note{
+ color:var(--muted);
+ font-size:12px;
+ margin-top:6px;
+}
+
+.stat-value.spread-pos{ color:var(--greed); }
+.stat-value.spread-neg{ color:var(--fear); }
+
+/* CHART */
+
+.chart-box{
+ background:var(--card);
+ border:1px solid var(--hair);
+ border-radius:12px;
+ padding:20px;
+ margin-bottom:30px;
+}
+
+.chart-box h2{
+ font-family:var(--serif);
+ font-weight:400;
+ font-size:18px;
+ margin:0 0 16px;
+}
+
+.chart-canvas-wrap{
+ height:340px;
+}
+
+/* EXPLAINER */
+
+.explainer{
+ background:var(--card);
+ border:1px solid var(--hair);
+ border-radius:12px;
+ padding:24px 26px;
+}
+
+.explainer h2{
+ font-family:var(--serif);
+ font-weight:400;
+ font-size:18px;
+ margin:0 0 12px;
+}
+
+.explainer p{
+ color:var(--muted);
+ font-size:14px;
+ line-height:1.7;
+ margin:0 0 14px;
+}
+
+.explainer p:last-child{ margin-bottom:0; }
+
+.explainer .source{
+ margin-top:16px;
+ font-size:11px;
+}
+
+.explainer .source a{
+ color:var(--muted);
+ text-decoration:none;
+ border-bottom:1px dotted var(--muted);
+}
+
+.explainer .source a:hover{ color:var(--ink); }
+
+.error-banner{
+ background:#2a1c1c;
+ border:1px solid #5a3030;
+ color:#e0a0a0;
+ border-radius:8px;
+ padding:12px 15px;
+ margin-bottom:20px;
+ font-size:13px;
+ display:none;
+}
+
+@media (max-width:720px){
+ .stat-grid{ grid-template-columns:1fr; }
+}
+
+</style>
+</head>
+<body>
+
+<nav class="sitenav">
+<a class="brand" href="/">Michael J. Stevenson, CAIA<span style="font-size:0.6em; vertical-align:super;">&reg;</span></a>
+<div class="navlinks">
+<a href="/sentiment-index.html">Sentiment Index</a>
+
+<div class="navdrop">
+<span class="navlabel">Markets &amp; Macro ▾</span>
+<div class="dropdown">
+<a href="/volatility.html" class="active">Realized vs. Implied Volatility</a>
+<a href="/coming-soon.html?title=Yield%20Curve%20Monitor">Yield Curve Monitor</a>
+<a href="/coming-soon.html?title=Credit%20Spread%20Dashboard">Credit Spread Dashboard</a>
+<a href="/coming-soon.html?title=Global%20Liquidity%20Tracker">Global Liquidity Tracker</a>
+<a href="/coming-soon.html?title=Recession%20Probability%20Model">Recession Probability Model</a>
+<a href="/coming-soon.html?title=Inflation%20Nowcast">Inflation Nowcast</a>
+</div>
+</div>
+
+<div class="navdrop">
+<span class="navlabel">Equities ▾</span>
+<div class="dropdown">
+<a href="/coming-soon.html?title=Sector%20Rotation%20Tracker">Sector Rotation Tracker</a>
+<a href="/coming-soon.html?title=Valuation%20Dashboard">Valuation Dashboard</a>
+<a href="/coming-soon.html?title=Earnings%20Revision%20Tracker">Earnings Revision Tracker</a>
+<a href="/coming-soon.html?title=Market%20Breadth%20Deep-Dive">Market Breadth Deep-Dive</a>
+<a href="/coming-soon.html?title=Concentration%20Risk%20Monitor">Concentration Risk Monitor</a>
+</div>
+</div>
+
+<div class="navdrop">
+<span class="navlabel">Rates &amp; Credit ▾</span>
+<div class="dropdown">
+<a href="/coming-soon.html?title=Fed%20Policy%20Tracker">Fed Policy Tracker</a>
+<a href="/coming-soon.html?title=Real%20Yields%20Dashboard">Real Yields Dashboard</a>
+</div>
+</div>
+
+<div class="navdrop">
+<span class="navlabel">Alternative &amp; Cross-Asset ▾</span>
+<div class="dropdown">
+<a href="/coming-soon.html?title=Cross-Asset%20Risk%20Dashboard">Cross-Asset Risk Dashboard</a>
+<a href="/coming-soon.html?title=Commodity%20Cycle%20Tracker">Commodity Cycle Tracker</a>
+<a href="/coming-soon.html?title=Currency%20Strength%20Index">Currency Strength Index</a>
+</div>
+</div>
+
+<div class="navdrop">
+<span class="navlabel">Behavioral &amp; Positioning ▾</span>
+<div class="dropdown">
+<a href="/coming-soon.html?title=Options%20Positioning%20Monitor">Options Positioning Monitor</a>
+<a href="/coming-soon.html?title=Retail%20vs.%20Institutional%20Flow%20Tracker">Retail vs. Institutional Flow Tracker</a>
+<a href="/coming-soon.html?title=IPO%20%26%20SPAC%20Activity%20Tracker">IPO &amp; SPAC Activity Tracker</a>
+</div>
+</div>
+
+<div class="navdrop">
+<span class="navlabel">Thematic ▾</span>
+<div class="dropdown">
+<a href="/coming-soon.html?title=AI%20Capex%20Tracker">AI Capex Tracker</a>
+<a href="/coming-soon.html?title=Housing%20Market%20Monitor">Housing Market Monitor</a>
+</div>
+</div>
+
+</div>
+</nav>
+
+<div class="container">
+
+<div class="error-banner" id="errorBanner"></div>
+
+<div class="header">
+<div>
+<h1>Realized vs. Implied Volatility</h1>
+<div class="subtitle">S&amp;P 500 realized volatility (20-day annualized) against the VIX's implied volatility — the gap between what's actually happened and what options traders expect.</div>
+</div>
+<div class="updated" id="updated">Loading...</div>
+</div>
+
+<div class="stat-grid">
+<div class="stat-card">
+<div class="stat-label">Realized Volatility (20d, ann.)</div>
+<div class="stat-value" id="statRealized">—</div>
+<div class="stat-note">S&amp;P 500 actual price swings</div>
+</div>
+<div class="stat-card">
+<div class="stat-label">Implied Volatility (VIX)</div>
+<div class="stat-value" id="statImplied">—</div>
+<div class="stat-note">Options-priced 30-day expectation</div>
+</div>
+<div class="stat-card">
+<div class="stat-label">Volatility Risk Premium</div>
+<div class="stat-value" id="statSpread">—</div>
+<div class="stat-note" id="spreadNote">Implied minus realized</div>
+</div>
+</div>
+
+<div class="chart-box">
+<h2>Last 6 months</h2>
+<div class="chart-canvas-wrap">
+<canvas id="volChart"></canvas>
+</div>
+</div>
+
+<div class="explainer">
+<h2>How to read this</h2>
+<p>Realized volatility measures how much the S&amp;P 500 has <em>actually</em> moved over the trailing 20 trading days — the standard deviation of daily log returns, annualized. Implied volatility (the VIX) measures what options traders are <em>pricing in</em> for the next 30 days, derived from the premiums they're willing to pay.</p>
+<p>These two usually move together, but the gap between them — the volatility risk premium — is rarely zero. Implied volatility tends to sit above realized most of the time: option sellers demand compensation for the risk they're taking on, so options are, on average, priced slightly rich relative to what volatility actually turns out to be. A widening premium can reflect rising hedging demand or anticipation of an upcoming event (an earnings season, a Fed meeting); a shrinking or negative premium — implied trading below realized — is unusual and typically shows up after a volatility spike has already passed through realized measures but options markets haven't caught up, or during periods of unusual complacency.</p>
+<div class="source">Source: <a href="https://www.alphavantage.co/" target="_blank" rel="noopener">Alpha Vantage — S&amp;P 500 Index (SPX) &amp; CBOE Volatility Index (VIX)</a></div>
+</div>
+
+</div>
+
+<script>
+const LINE_COLOR = "#d98a3d";
+const IMPLIED_COLOR = "#6f8fac";
+
+async function init(){
+ try{
+  const res = await fetch("/api/volatility", { cache: "no-store" });
+  const data = await res.json();
+  if (!res.ok || data.error) throw new Error(data.error || "failed to load");
+
+  document.getElementById("updated").textContent = "Updated: " + data.timestamp;
+
+  const latest = data.latest;
+  document.getElementById("statRealized").textContent = latest.realized + "%";
+  document.getElementById("statImplied").textContent = latest.implied + "%";
+
+  const spreadEl = document.getElementById("statSpread");
+  spreadEl.textContent = (latest.spread >= 0 ? "+" : "") + latest.spread + "%";
+  spreadEl.classList.add(latest.spread >= 0 ? "spread-pos" : "spread-neg");
+  document.getElementById("spreadNote").textContent = latest.spread >= 0
+   ? "Implied running above realized — the typical pattern"
+   : "Implied running below realized — unusual";
+
+  const ctx = document.getElementById("volChart").getContext("2d");
+  new Chart(ctx, {
+   type: "line",
+   data: {
+    labels: data.history.map(p => p.date),
+    datasets: [
+     {
+      label: "Realized Volatility",
+      data: data.history.map(p => p.realized),
+      borderColor: LINE_COLOR,
+      backgroundColor: LINE_COLOR,
+      borderWidth: 2,
+      pointRadius: 0,
+     },
+     {
+      label: "Implied Volatility (VIX)",
+      data: data.history.map(p => p.implied),
+      borderColor: IMPLIED_COLOR,
+      backgroundColor: IMPLIED_COLOR,
+      borderWidth: 2,
+      pointRadius: 0,
+     },
+    ],
+   },
+   options: {
+    responsive: true,
+    maintainAspectRatio: false,
+    interaction: { mode: "index", intersect: false },
+    plugins: {
+     legend: { labels: { color: "#8b9199", font: { size: 11 } } },
+    },
+    scales: {
+     x: { ticks: { color: "#8b9199", maxTicksLimit: 8 }, grid: { color: "#2b3138" } },
+     y: { ticks: { color: "#8b9199", callback: v => v + "%" }, grid: { color: "#2b3138" } },
+    },
+   },
+  });
+
+ }catch(e){
+  const banner = document.getElementById("errorBanner");
+  banner.textContent = "Couldn't load volatility data: " + e.message;
+  banner.style.display = "block";
+  document.getElementById("updated").textContent = "";
+ }
+}
+
+init();
+</script>
+
+</body>
+</html>
