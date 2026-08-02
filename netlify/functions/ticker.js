@@ -17,11 +17,27 @@ const STOCKS = [
   "SPCX", "META", "TSLA", "QCOM", "INTC", "IBM", "PLTR",
 ];
 
-async function fetchJson(params) {
+function sleep(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+// Alpha Vantage returns rate-limit errors as HTTP 200 with an
+// {"error": {...}} body, not a non-2xx status, so res.ok alone can't
+// detect them. Retries once after a pause since these are transient
+// per-second burst blips, not persistent failures.
+async function fetchJson(params, attempt = 1) {
   const apiKey = process.env.ALPHAVANTAGE_API_KEY;
   const res = await fetch(`${ALPHA_VANTAGE_URL}?${params}&apikey=${apiKey}`);
-  if (!res.ok) throw new Error(`HTTP ${res.status} for ${params}`);
-  return res.json();
+  const payload = res.ok ? await res.json() : null;
+  const isRateLimited = !res.ok || payload.error || payload.Note || payload.Information;
+  if (isRateLimited) {
+    if (attempt < 2) {
+      await sleep(1000);
+      return fetchJson(params, attempt + 1);
+    }
+    throw new Error(`Failed after retries for ${params}: ${payload ? JSON.stringify(payload).slice(0, 150) : `HTTP ${res.status}`}`);
+  }
+  return payload;
 }
 
 function round(n, digits) {
@@ -76,10 +92,6 @@ async function fetchFedFunds() {
     changePercent: null,
     isRate: true,
   };
-}
-
-function sleep(ms) {
-  return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
 // Firing all ~23 calls at once trips Alpha Vantage's per-second burst

@@ -506,17 +506,31 @@ footer{
 <script>
 (async function(){
  const track = document.getElementById("tickerTrack");
- try{
+
+ async function fetchItems(){
   const res = await fetch("/api/ticker", { cache: "no-store" });
   const data = await res.json();
-  const items = data.items || [];
+  if (!res.ok || !data.items || !data.items.length) throw new Error(data.error || "empty ticker response");
+  return data.items;
+ }
 
-  function renderItem(i){
-   const changeHtml = i.changePercent === null
-    ? ""
-    : `<span class="t-change ${i.changePercent >= 0 ? "up" : "down"}">${i.changePercent >= 0 ? "▲" : "▼"} ${Math.abs(i.changePercent)}%</span>`;
-   const valueText = i.isRate ? i.value + "%" : i.value;
-   return `<span class="ticker-item"><span class="t-label">${i.label}</span><span class="t-value">${valueText}</span>${changeHtml}</span>`;
+ function renderItem(i){
+  const changeHtml = i.changePercent === null
+   ? ""
+   : `<span class="t-change ${i.changePercent >= 0 ? "up" : "down"}">${i.changePercent >= 0 ? "▲" : "▼"} ${Math.abs(i.changePercent)}%</span>`;
+  const valueText = i.isRate ? i.value + "%" : i.value;
+  return `<span class="ticker-item"><span class="t-label">${i.label}</span><span class="t-value">${valueText}</span>${changeHtml}</span>`;
+ }
+
+ try{
+  let items;
+  try{
+   items = await fetchItems();
+  }catch(firstErr){
+   // One retry: the backend occasionally hits a transient Alpha Vantage
+   // rate-limit blip, and responses aren't cached when that happens.
+   await new Promise(r => setTimeout(r, 1500));
+   items = await fetchItems();
   }
 
   // Rendered twice back-to-back so the -50% translateX loop is seamless.
