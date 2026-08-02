@@ -29,7 +29,7 @@ const ALPHA_VANTAGE_URL = "https://www.alphavantage.co/query";
 const USER_AGENT =
   "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0 Safari/537.36";
 
-const HISTORY_POINTS = 180; // ~6 months, kept compact for the browser
+const HISTORY_POINTS = 504; // ~2 trading years - enough to span a full market cycle or two
 const SCORE_MA_WINDOW = 50; // trading days, applied to every factor with enough history for it
 
 async function fetchJson(url) {
@@ -495,17 +495,18 @@ exports.handler = async () => {
     await sleep(300);
     const vixDaily = await fetchIndexDaily(apiKey, "VIX");
     await sleep(300);
-    // "compact" (~100 trading days) rather than "full" for these four -
-    // still plenty for a 50-day MA and a real percentile sample, and
-    // keeps total request latency down given how many sequential Alpha
-    // Vantage calls this function already makes per run.
-    const spyDaily = await fetchStockDaily(apiKey, "SPY", "compact");
+    // "full" rather than "compact": the earlier compact (~100-day) choice
+    // was about request latency, not payload safety - the real fix for
+    // burst-rate errors was the explicit spacing above, so full history
+    // is safe here too, and unlocks a proper multi-year chart for these
+    // two factors instead of bottlenecking the composite history below.
+    const spyDaily = await fetchStockDaily(apiKey, "SPY", "full");
     await sleep(300);
-    const rspDaily = await fetchStockDaily(apiKey, "RSP", "compact");
+    const rspDaily = await fetchStockDaily(apiKey, "RSP", "full");
     await sleep(300);
-    const hygDaily = await fetchStockDaily(apiKey, "HYG", "compact");
+    const hygDaily = await fetchStockDaily(apiKey, "HYG", "full");
     await sleep(300);
-    const lqdDaily = await fetchStockDaily(apiKey, "LQD", "compact");
+    const lqdDaily = await fetchStockDaily(apiKey, "LQD", "full");
     await sleep(300);
 
     const spxTradingDates = spxDaily.map((p) => toDateStr(p.x));
