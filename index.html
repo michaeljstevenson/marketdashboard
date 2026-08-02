@@ -446,12 +446,12 @@ footer{
 <div class="category-card">
 <h4>Markets &amp; Macro</h4>
 <ul>
-<li><a href="/volatility.html">Realized vs. Implied Volatility</a></li>
-<li><a href="/coming-soon.html?title=Yield%20Curve%20Monitor">Yield Curve Monitor<span class="soon">soon</span></a></li>
-<li><a href="/coming-soon.html?title=Credit%20Spread%20Dashboard">Credit Spread Dashboard<span class="soon">soon</span></a></li>
-<li><a href="/coming-soon.html?title=Global%20Liquidity%20Tracker">Global Liquidity Tracker<span class="soon">soon</span></a></li>
+<li><a href="/volatility.html">Implied vs. Realized Volatility</a></li>
+<li><a href="/coming-soon.html?title=Yield%20Curve%20Monitor">Yield Curves<span class="soon">soon</span></a></li>
+<li><a href="/coming-soon.html?title=Credit%20Spread%20Dashboard">Credit Spreads<span class="soon">soon</span></a></li>
+<li><a href="/coming-soon.html?title=Global%20Liquidity%20Tracker">Global Liquidity<span class="soon">soon</span></a></li>
 <li><a href="/coming-soon.html?title=Recession%20Probability%20Model">Recession Probability Model<span class="soon">soon</span></a></li>
-<li><a href="/coming-soon.html?title=Inflation%20Nowcast">Inflation Nowcast<span class="soon">soon</span></a></li>
+<li><a href="/coming-soon.html?title=Inflation%20Nowcast">Inflation<span class="soon">soon</span></a></li>
 </ul>
 </div>
 
@@ -469,7 +469,7 @@ footer{
 <div class="category-card">
 <h4>Rates &amp; Credit</h4>
 <ul>
-<li><a href="/coming-soon.html?title=Fed%20Policy%20Tracker">Fed Policy Tracker<span class="soon">soon</span></a></li>
+<li><a href="/coming-soon.html?title=Fed%20Policy%20Tracker">Monetary Policy Tracker<span class="soon">soon</span></a></li>
 <li><a href="/coming-soon.html?title=Real%20Yields%20Dashboard">Real Yields Dashboard<span class="soon">soon</span></a></li>
 </ul>
 </div>
@@ -477,9 +477,9 @@ footer{
 <div class="category-card">
 <h4>Alternative &amp; Cross-Asset</h4>
 <ul>
-<li><a href="/coming-soon.html?title=Cross-Asset%20Risk%20Dashboard">Cross-Asset Risk Dashboard<span class="soon">soon</span></a></li>
-<li><a href="/coming-soon.html?title=Commodity%20Cycle%20Tracker">Commodity Cycle Tracker<span class="soon">soon</span></a></li>
-<li><a href="/coming-soon.html?title=Currency%20Strength%20Index">Currency Strength Index<span class="soon">soon</span></a></li>
+<li><a href="/coming-soon.html?title=Cross-Asset%20Risk%20Dashboard">Cross-Asset Risk<span class="soon">soon</span></a></li>
+<li><a href="/coming-soon.html?title=Commodity%20Cycle%20Tracker">Commodity Cycle<span class="soon">soon</span></a></li>
+<li><a href="/coming-soon.html?title=Currency%20Strength%20Index">Currency Strength<span class="soon">soon</span></a></li>
 </ul>
 </div>
 
@@ -487,8 +487,8 @@ footer{
 <h4>Behavioral &amp; Positioning</h4>
 <ul>
 <li><a href="/coming-soon.html?title=Options%20Positioning%20Monitor">Options Positioning Monitor<span class="soon">soon</span></a></li>
-<li><a href="/coming-soon.html?title=Retail%20vs.%20Institutional%20Flow%20Tracker">Retail vs. Institutional Flow Tracker<span class="soon">soon</span></a></li>
-<li><a href="/coming-soon.html?title=IPO%20%26%20SPAC%20Activity%20Tracker">IPO &amp; SPAC Activity Tracker<span class="soon">soon</span></a></li>
+<li><a href="/coming-soon.html?title=Retail%20vs.%20Institutional%20Flow%20Tracker">Retail vs. Institutional Flow<span class="soon">soon</span></a></li>
+<li><a href="/coming-soon.html?title=IPO%20%26%20SPAC%20Activity%20Tracker">IPO &amp; IPO Activity Tracker<span class="soon">soon</span></a></li>
 </ul>
 </div>
 
@@ -529,13 +529,10 @@ footer{
   try{
    items = await fetchItems();
   }catch(firstErr){
-   // One retry: the backend occasionally hits a transient Alpha Vantage
-   // rate-limit blip, and responses aren't cached when that happens.
    await new Promise(r => setTimeout(r, 1500));
    items = await fetchItems();
   }
 
-  // Rendered twice back-to-back so the -50% translateX loop is seamless.
   const html = items.map(renderItem).join("");
   track.innerHTML = html + html;
 
