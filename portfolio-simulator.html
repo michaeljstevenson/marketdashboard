@@ -274,6 +274,13 @@ h1{
  font-size:24px;
 }
 
+.stat-value-real{
+ font-family:var(--mono);
+ font-size:14px;
+ color:var(--muted);
+ margin-top:2px;
+}
+
 .stat-note{
  color:var(--muted);
  font-size:12px;
@@ -282,6 +289,39 @@ h1{
 
 .stat-value.good{ color:var(--greed); }
 .stat-value.bad{ color:var(--fear); }
+
+.chart-subhead{
+ color:var(--muted);
+ font-size:13px;
+ font-family:var(--sans);
+ font-weight:400;
+}
+
+.chart-legend-custom{
+ display:flex;
+ gap:20px;
+ margin-bottom:14px;
+ flex-wrap:wrap;
+}
+
+.chart-legend-custom span{
+ display:flex;
+ align-items:center;
+ gap:6px;
+ color:var(--muted);
+ font-size:12px;
+}
+
+.chart-legend-custom .swatch{
+ display:inline-block;
+ width:12px;
+ height:3px;
+ border-radius:2px;
+}
+
+.swatch-green{ background:#5a9d6f; }
+.swatch-red{ background:#c0564f; }
+.swatch-median{ background:var(--ink); height:2px; }
 
 @media (max-width:720px){
  .stat-grid{ grid-template-columns:1fr 1fr; }
@@ -481,6 +521,12 @@ h1{
 <input type="number" id="inSims" value="3000" min="100" max="10000" step="100">
 </div>
 
+<div class="field">
+<label for="inInflation">Assumed Inflation Rate (%/yr)</label>
+<input type="number" id="inInflation" value="3" min="0" max="15" step="0.1">
+<div class="hint">Used to discount ending balances to today's dollars</div>
+</div>
+
 </div>
 
 <div class="form-actions">
@@ -495,16 +541,19 @@ h1{
 <div class="stat-card">
 <div class="stat-label">Median Ending Balance</div>
 <div class="stat-value" id="statMedian">—</div>
+<div class="stat-value-real" id="statMedianReal">—</div>
 <div class="stat-note">50th percentile outcome</div>
 </div>
 <div class="stat-card">
 <div class="stat-label">10th Percentile</div>
 <div class="stat-value" id="statP10">—</div>
+<div class="stat-value-real" id="statP10Real">—</div>
 <div class="stat-note">Poor-outcome scenario</div>
 </div>
 <div class="stat-card">
 <div class="stat-label">90th Percentile</div>
 <div class="stat-value" id="statP90">—</div>
+<div class="stat-value-real" id="statP90Real">—</div>
 <div class="stat-note">Strong-outcome scenario</div>
 </div>
 <div class="stat-card">
@@ -515,7 +564,12 @@ h1{
 </div>
 
 <div class="chart-box">
-<h2>Simulated balance over time (percentile bands)</h2>
+<h2>Simulated balance over time <span class="chart-subhead" id="chartSubhead"></span></h2>
+<div class="chart-legend-custom">
+<span><i class="swatch swatch-green"></i>Successful trials</span>
+<span><i class="swatch swatch-red"></i>Failed trials (depleted)</span>
+<span><i class="swatch swatch-median"></i>Median path</span>
+</div>
 <div class="chart-canvas-wrap">
 <canvas id="simChart"></canvas>
 </div>
@@ -526,8 +580,9 @@ h1{
 <div class="explainer">
 <h2>How this works</h2>
 <p>Instead of assuming returns follow a fixed bell curve, this simulator uses a <strong>historical bootstrap</strong>: for every simulated year, it randomly draws one actual year's return (with replacement) from real U.S. S&amp;P 500 and 10-year Treasury bond annual returns spanning 1928&ndash;2025, then blends the two according to your equity/bond allocation. Running this thousands of times produces a distribution of plausible outcomes shaped by history's actual mix of booms, crashes, and recoveries &mdash; including real historical shocks like 1931, 2008, and 2022 &mdash; rather than a distribution that assumes returns are smoothly and independently random.</p>
-<p>Each run applies your annual contribution during the accumulation years, then switches to your annual withdrawal for the remaining years of the horizon. <strong>Success rate</strong> is the share of simulated runs that never hit a zero balance during the withdrawal phase. The percentile bands on the chart show, at each year, the range of simulated balances across all runs &mdash; the median (50th percentile) line, the 25th&ndash;75th percentile band, and the 10th&ndash;90th percentile band.</p>
-<p><strong>Limitations:</strong> withdrawal and contribution amounts are held constant in nominal dollars (no inflation adjustment); only two asset classes are modeled (broad U.S. equities and 10-year Treasuries); historical bootstrap resampling assumes each year's return is independent, when real returns can show some year-to-year momentum or mean reversion; and past returns, however real, are not a guarantee of future results. This tool is for illustrative research purposes only and is not personalized investment advice.</p>
+<p>Each run applies your annual contribution during the accumulation years, then switches to your annual withdrawal for the remaining years of the horizon. <strong>Success rate</strong> is the share of simulated runs that never hit a zero balance during the withdrawal phase. Ending balances are shown two ways: in <strong>future (nominal) dollars</strong> &mdash; the actual simulated balance in the dollars of that future year &mdash; and in <strong>today's (real) dollars</strong>, discounted back by your assumed inflation rate compounded over the horizon, so you can judge purchasing power rather than a raw dollar figure that's been inflated away.</p>
+<p>The chart plots a sample of individual simulated paths (&ldquo;spaghetti lines&rdquo;) rather than summary bands, colored by outcome: green paths never hit zero during the withdrawal phase, red paths were depleted. The bold line is the median path across all simulations. Showing individual trials makes it easier to see the actual shape and volatility of outcomes &mdash; how abruptly a bad sequence of early returns can compound into ruin, versus how a strong early stretch compounds into outsized balances &mdash; something summary percentile bands can obscure.</p>
+<p><strong>Limitations:</strong> inflation is applied as a single constant assumed rate for discounting purposes only &mdash; your nominal contribution and withdrawal amounts are still held constant in nominal dollars each year, not grown with inflation, and actual future inflation will vary year to year rather than compound smoothly; only two asset classes are modeled (broad U.S. equities and 10-year Treasuries); historical bootstrap resampling assumes each year's return is independent, when real returns can show some year-to-year momentum or mean reversion; and past returns, however real, are not a guarantee of future results. This tool is for illustrative research purposes only and is not personalized investment advice.</p>
 <div class="source">Source: <a href="https://pages.stern.nyu.edu/~adamodar/New_Home_Page/datafile/histretSP.html" target="_blank" rel="noopener">NYU Stern (Aswath Damodaran) &mdash; Historical Returns on Stocks, Bonds and Bills, 1928&ndash;2025</a></div>
 </div>
 
@@ -577,6 +632,11 @@ function percentile(sortedArr, p){
  return sortedArr[lo] + (sortedArr[hi] - sortedArr[lo]) * (idx - lo);
 }
 
+// Cap on individual paths actually drawn on the spaghetti chart, for
+// browser performance and legibility — stats (percentiles, success rate)
+// are still computed from the full simulation count regardless.
+const MAX_SPAGHETTI_LINES = 120;
+
 function runSimulation(){
  const starting = parseFloat(document.getElementById("inStarting").value) || 0;
  const equityPct = Math.min(100, Math.max(0, parseFloat(document.getElementById("inEquity").value) || 0)) / 100;
@@ -586,13 +646,16 @@ function runSimulation(){
  const contribution = parseFloat(document.getElementById("inContribution").value) || 0;
  const withdrawal = parseFloat(document.getElementById("inWithdrawal").value) || 0;
  const numSims = Math.min(10000, Math.max(100, Math.round(parseFloat(document.getElementById("inSims").value) || 1000)));
+ const inflationRate = Math.max(0, parseFloat(document.getElementById("inInflation").value) || 0) / 100;
 
  const n = SP500_RETURNS.length;
  const hasWithdrawalPhase = accumYears < horizon;
+ const currentYear = new Date().getFullYear();
 
  // paths[year] = array of balances across all sims at that year
  const paths = Array.from({length: horizon + 1}, () => new Array(numSims));
  const finalBalances = new Array(numSims);
+ const succeeded = new Array(numSims);
  let successCount = 0;
 
  for(let s = 0; s < numSims; s++){
@@ -619,26 +682,26 @@ function runSimulation(){
   }
 
   finalBalances[s] = balance;
+  succeeded[s] = !depleted;
   if(!depleted) successCount++;
  }
 
- // Percentile bands per year
  const years = [];
- const p10 = [], p25 = [], p50 = [], p75 = [], p90 = [];
- for(let y = 0; y <= horizon; y++){
-  const sorted = paths[y].slice().sort((a,b) => a - b);
-  years.push(y);
-  p10.push(percentile(sorted, 0.10));
-  p25.push(percentile(sorted, 0.25));
-  p50.push(percentile(sorted, 0.50));
-  p75.push(percentile(sorted, 0.75));
-  p90.push(percentile(sorted, 0.90));
- }
+ for(let y = 0; y <= horizon; y++) years.push(y);
 
  const sortedFinal = finalBalances.slice().sort((a,b) => a - b);
- document.getElementById("statMedian").textContent = "$" + fmtMoney(percentile(sortedFinal, 0.50));
- document.getElementById("statP10").textContent = "$" + fmtMoney(percentile(sortedFinal, 0.10));
- document.getElementById("statP90").textContent = "$" + fmtMoney(percentile(sortedFinal, 0.90));
+ const realFactor = Math.pow(1 + inflationRate, horizon); // discounts nominal -> today's dollars
+
+ const median = percentile(sortedFinal, 0.50);
+ const p10v = percentile(sortedFinal, 0.10);
+ const p90v = percentile(sortedFinal, 0.90);
+
+ document.getElementById("statMedian").textContent = "$" + fmtMoney(median);
+ document.getElementById("statMedianReal").textContent = "Today's $: " + "$" + fmtMoney(median / realFactor);
+ document.getElementById("statP10").textContent = "$" + fmtMoney(p10v);
+ document.getElementById("statP10Real").textContent = "Today's $: " + "$" + fmtMoney(p10v / realFactor);
+ document.getElementById("statP90").textContent = "$" + fmtMoney(p90v);
+ document.getElementById("statP90Real").textContent = "Today's $: " + "$" + fmtMoney(p90v / realFactor);
 
  const successRate = (successCount / numSims) * 100;
  const successEl = document.getElementById("statSuccess");
@@ -653,45 +716,84 @@ function runSimulation(){
   successNote.textContent = "No withdrawal phase in this horizon";
  }
 
- renderChart(years, p10, p25, p50, p75, p90);
+ document.getElementById("chartSubhead").textContent =
+  "(" + currentYear + "–" + (currentYear + horizon) + ", nominal dollars)";
+
+ // Sample a subset of paths to actually draw, prioritizing a mix of both
+ // outcomes so a high (or low) success rate doesn't hide the other color.
+ const successIdx = [], failIdx = [];
+ for(let s = 0; s < numSims; s++) (succeeded[s] ? successIdx : failIdx).push(s);
+ function sample(arr, count){
+  const copy = arr.slice();
+  for(let i = copy.length - 1; i > 0; i--){
+   const j = Math.floor(Math.random() * (i + 1));
+   [copy[i], copy[j]] = [copy[j], copy[i]];
+  }
+  return copy.slice(0, count);
+ }
+ const halfCap = Math.floor(MAX_SPAGHETTI_LINES / 2);
+ const drawIdx = [
+  ...sample(successIdx, Math.min(successIdx.length, halfCap)),
+  ...sample(failIdx, Math.min(failIdx.length, halfCap)),
+ ];
+
+ const p50 = years.map(y => percentile(paths[y].slice().sort((a,b) => a - b), 0.50));
+
+ renderChart(years, currentYear, paths, drawIdx, succeeded, p50);
  document.getElementById("results").classList.add("show");
 }
 
 let simChart = null;
 
-function renderChart(years, p10, p25, p50, p75, p90){
+function renderChart(years, currentYear, paths, drawIdx, succeeded, p50){
  const ctx = document.getElementById("simChart").getContext("2d");
  if(simChart) simChart.destroy();
 
- const BAND_OUTER = "rgba(111,143,172,0.12)";
- const BAND_INNER = "rgba(217,138,61,0.18)";
- const MEDIAN_COLOR = "#d98a3d";
+ const GREEN = "rgba(90,157,111,0.35)";
+ const RED = "rgba(192,86,79,0.35)";
+ const MEDIAN_COLOR = "#eae6da";
+
+ const spaghettiDatasets = drawIdx.map(s => ({
+  data: years.map(y => paths[y][s]),
+  borderColor: succeeded[s] ? GREEN : RED,
+  borderWidth: 1,
+  pointRadius: 0,
+  pointHitRadius: 0,
+  fill: false,
+  order: 2,
+  _spaghetti: true,
+ }));
+
+ const medianDataset = {
+  label: "Median",
+  data: p50,
+  borderColor: MEDIAN_COLOR,
+  backgroundColor: MEDIAN_COLOR,
+  borderWidth: 2.5,
+  pointRadius: 0,
+  fill: false,
+  order: 1,
+ };
 
  simChart = new Chart(ctx, {
   type: "line",
   data: {
-   labels: years.map(y => "Yr " + y),
-   datasets: [
-    { label: "90th percentile", data: p90, borderWidth: 0, pointRadius: 0, backgroundColor: BAND_OUTER, fill: "+1" },
-    { label: "75th percentile", data: p75, borderWidth: 0, pointRadius: 0, backgroundColor: BAND_INNER, fill: "+1" },
-    { label: "Median", data: p50, borderColor: MEDIAN_COLOR, backgroundColor: MEDIAN_COLOR, borderWidth: 2, pointRadius: 0, fill: false },
-    { label: "25th percentile", data: p25, borderWidth: 0, pointRadius: 0, backgroundColor: BAND_INNER, fill: "-1" },
-    { label: "10th percentile", data: p10, borderWidth: 0, pointRadius: 0, backgroundColor: BAND_OUTER, fill: "-1" },
-   ],
+   labels: years.map(y => String(currentYear + y)),
+   datasets: [...spaghettiDatasets, medianDataset],
   },
   options: {
    responsive: true,
    maintainAspectRatio: false,
-   interaction: { mode: "index", intersect: false },
+   animation: false,
+   // "point"/intersect:true instead of "nearest"/intersect:false — with
+   // 100+ overlapping line datasets, nearest-mode hit-testing scans every
+   // dataset on every mousemove and was hanging the browser tab. Point
+   // mode only hit-tests whatever's directly under the cursor.
+   interaction: { mode: "point", intersect: true },
    plugins: {
-    legend: {
-     labels: {
-      color: "#8b9199",
-      font: { size: 11 },
-      filter: item => item.text === "Median",
-     },
-    },
+    legend: { display: false },
     tooltip: {
+     filter: item => !item.dataset._spaghetti,
      callbacks: {
       label: ctx => ctx.dataset.label + ": $" + fmtMoney(ctx.parsed.y),
      },
