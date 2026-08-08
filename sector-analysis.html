@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Sector Performance — Michael J. Stevenson</title>
@@ -199,6 +200,63 @@ h1{
 .legend-note{
  color:var(--muted);
  font-size:12px;
+}
+
+/* CHART */
+
+.chart-box{
+ background:var(--card);
+ border:1px solid var(--hair);
+ border-radius:12px;
+ padding:20px;
+ margin-bottom:30px;
+}
+
+.chart-box-header{
+ display:flex;
+ justify-content:space-between;
+ align-items:center;
+ flex-wrap:wrap;
+ gap:10px;
+ margin-bottom:16px;
+}
+
+.chart-box h2{
+ font-family:var(--serif);
+ font-weight:400;
+ font-size:18px;
+ margin:0;
+}
+
+.range-controls{
+ display:flex;
+ gap:6px;
+}
+
+.range-btn{
+ background:#171b20;
+ border:1px solid var(--hair);
+ color:var(--muted);
+ font-size:12px;
+ font-family:var(--sans);
+ padding:4px 10px;
+ border-radius:6px;
+ cursor:pointer;
+}
+
+.range-btn:hover{
+ color:var(--ink);
+ border-color:#3a424b;
+}
+
+.range-btn.active{
+ background:var(--card-hover);
+ color:var(--greed);
+ border-color:var(--greed);
+}
+
+.chart-canvas-wrap{
+ height:420px;
 }
 
 /* TABLE */
@@ -450,6 +508,16 @@ tbody td:nth-child(2){
 </table>
 </div>
 
+<div class="chart-box">
+<div class="chart-box-header">
+<h2>Performance over time (rebased to 100)</h2>
+<div class="range-controls" id="rangeControls"></div>
+</div>
+<div class="chart-canvas-wrap">
+<canvas id="sectorChart"></canvas>
+</div>
+</div>
+
 <div class="explainer">
 <div class="source">Source: <a href="https://www.alphavantage.co/" target="_blank" rel="noopener">Alpha Vantage — SPDR Select Sector ETFs &amp; SPY</a></div>
 </div>
@@ -497,6 +565,8 @@ async function init(){
   }
 
   render();
+  renderRangeButtons();
+  renderChartRange(DEFAULT_RANGE);
 
  }catch(e){
   showError("Couldn't load sector data (" + e.message + "). The /api/sector-performance function may be unreachable.");
@@ -593,6 +663,118 @@ document.querySelectorAll("thead th").forEach(th => {
   th.addEventListener("click", () => sortBy(key));
  }
 });
+
+const SERIES_COLORS = {
+ SPY: "#eae6da",
+ XLK: "#d98a3d",
+ XLF: "#6f8fac",
+ XLV: "#8e7cc3",
+ XLE: "#c0564f",
+ XLI: "#5a9d6f",
+ XLY: "#e0b04f",
+ XLP: "#4fb0c0",
+ XLU: "#b56f2a",
+ XLB: "#9a9a9a",
+ XLRE: "#c77dbd",
+ XLC: "#4f7ae0",
+};
+
+const CHART_RANGES = [
+ { key: "1M", days: 30 },
+ { key: "3M", days: 90 },
+ { key: "6M", days: 182 },
+ { key: "1Y", days: 365 },
+ { key: "Max", days: null },
+];
+const DEFAULT_RANGE = "1Y";
+
+let sectorChart = null;
+
+function renderRangeButtons(){
+ const container = document.getElementById("rangeControls");
+ container.innerHTML = "";
+ CHART_RANGES.forEach(r => {
+  const btn = document.createElement("button");
+  btn.className = "range-btn" + (r.key === DEFAULT_RANGE ? " active" : "");
+  btn.textContent = r.key;
+  btn.addEventListener("click", () => {
+   container.querySelectorAll(".range-btn").forEach(b => b.classList.remove("active"));
+   btn.classList.add("active");
+   renderChartRange(r.key);
+  });
+  container.appendChild(btn);
+ });
+}
+
+// Every series is rebased to 100 at the first date within the selected
+// range, since raw ETF prices aren't comparable across sectors (XLK ~$188
+// vs. XLRE ~$45) — rebasing makes relative performance visually readable
+// regardless of each ETF's absolute price level.
+function renderChartRange(rangeKey){
+ if(!RAW) return;
+ const range = CHART_RANGES.find(r => r.key === rangeKey);
+
+ const benchmarkHistory = RAW.benchmark.history || [];
+ if(!benchmarkHistory.length) return;
+
+ let dates = benchmarkHistory.map(h => h.date);
+ if(range.days){
+  const lastDate = new Date(dates[dates.length - 1] + "T00:00:00Z");
+  const cutoff = lastDate.getTime() - range.days * 24 * 60 * 60 * 1000;
+  const startIdx = dates.findIndex(d => new Date(d + "T00:00:00Z").getTime() >= cutoff);
+  dates = startIdx === -1 ? dates : dates.slice(startIdx);
+ }
+
+ const allSeries = [
+  { ticker: RAW.benchmark.ticker, history: RAW.benchmark.history, dashed: true },
+  ...RAW.sectors.map(s => ({ ticker: s.ticker, history: s.history, dashed: false })),
+ ];
+
+ const datasets = allSeries.map(s => {
+  const map = new Map((s.history || []).map(h => [h.date, h.close]));
+  const firstDate = dates.find(d => map.has(d));
+  const base = firstDate !== undefined ? map.get(firstDate) : null;
+  const data = dates.map(d => {
+   const c = map.get(d);
+   return (c === undefined || base === null) ? null : Math.round((c / base) * 10000) / 100;
+  });
+  const color = SERIES_COLORS[s.ticker] || "#8b9199";
+  return {
+   label: s.ticker,
+   data,
+   borderColor: color,
+   backgroundColor: color,
+   borderWidth: s.dashed ? 2 : 1.5,
+   borderDash: s.dashed ? [4, 3] : [],
+   pointRadius: 0,
+   fill: false,
+  };
+ });
+
+ const ctx = document.getElementById("sectorChart").getContext("2d");
+ if(sectorChart) sectorChart.destroy();
+ sectorChart = new Chart(ctx, {
+  type: "line",
+  data: { labels: dates, datasets },
+  options: {
+   responsive: true,
+   maintainAspectRatio: false,
+   interaction: { mode: "index", intersect: false },
+   plugins: {
+    legend: { labels: { color: "#8b9199", font: { size: 11 }, boxWidth: 12 } },
+    tooltip: {
+     callbacks: {
+      label: ctx => ctx.dataset.label + ": " + (ctx.parsed.y === null ? "—" : ctx.parsed.y),
+     },
+    },
+   },
+   scales: {
+    x: { ticks: { color: "#8b9199", maxTicksLimit: 8 }, grid: { color: "#2b3138" } },
+    y: { ticks: { color: "#8b9199" }, grid: { color: "#2b3138" } },
+   },
+  },
+ });
+}
 
 init();
 </script>

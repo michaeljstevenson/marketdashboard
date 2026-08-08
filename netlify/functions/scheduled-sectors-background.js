@@ -1,7 +1,10 @@
 // Scheduled Background Function (see [functions."scheduled-sectors-background"]
 // in netlify.toml) that computes performance across the 11 SPDR sector ETFs
 // plus SPY as a benchmark, across a range of standard timeframes, and writes
-// the result to Netlify Blobs for sector-performance.js to serve.
+// the result to Netlify Blobs for sector-performance.js to serve. Also
+// carries a trimmed ~2-year daily close history per ticker (reusing the
+// full history already fetched for the return calculations, no extra API
+// calls) for the sector-analysis.html performance chart.
 //
 // Named with the "-background" suffix for the same reason as
 // scheduled-breadth-background.js: fetching full daily history for 12
@@ -23,6 +26,8 @@
 // total returns, not price-only returns.
 
 const { getSectorStore, BLOB_KEY } = require("./sector-blob-store");
+
+const HISTORY_POINTS = 504; // ~2 trading years, same convention as data.js
 
 const ALPHA_VANTAGE_URL = "https://www.alphavantage.co/query";
 const USER_AGENT =
@@ -168,7 +173,7 @@ exports.handler = async () => {
     for (const { ticker } of allTickers) {
       try {
         const closes = await fetchDailyCloses(apiKey, ticker);
-        computed.set(ticker, computeReturns(closes));
+        computed.set(ticker, { returns: computeReturns(closes), history: closes.slice(-HISTORY_POINTS) });
       } catch (err) {
         console.error(`scheduled-sectors-background: ${ticker} failed: ${err.message}`);
       }
@@ -176,21 +181,24 @@ exports.handler = async () => {
     }
     console.log(`scheduled-sectors-background: fetched ${computed.size}/${allTickers.length} tickers`);
 
-    const benchmarkResult = computed.get(BENCHMARK.ticker);
-    if (!benchmarkResult) throw new Error("Benchmark (SPY) failed to load — cannot compute relative performance");
+    const benchmark = computed.get(BENCHMARK.ticker);
+    if (!benchmark) throw new Error("Benchmark (SPY) failed to load — cannot compute relative performance");
+
+    const roundReturns = (returns) =>
+      Object.fromEntries(Object.entries(returns).map(([k, v]) => [k, v === null ? null : Math.round(v * 100) / 100]));
+    const roundHistory = (history) => history.map((h) => ({ date: h.date, close: Math.round(h.close * 100) / 100 }));
 
     const sectors = SECTORS.map(({ ticker, name }) => {
-      const result = computed.get(ticker);
-      if (!result) return null;
+      const entry = computed.get(ticker);
+      if (!entry) return null;
       return {
         ticker,
         name,
-        asOfDate: result.asOfDate,
-        latestClose: Math.round(result.latestClose * 100) / 100,
-        returns: Object.fromEntries(
-          Object.entries(result.returns).map(([k, v]) => [k, v === null ? null : Math.round(v * 100) / 100])
-        ),
-        relative: relativeReturns(result.returns, benchmarkResult.returns),
+        asOfDate: entry.returns.asOfDate,
+        latestClose: Math.round(entry.returns.latestClose * 100) / 100,
+        returns: roundReturns(entry.returns.returns),
+        relative: relativeReturns(entry.returns.returns, benchmark.returns.returns),
+        history: roundHistory(entry.history),
       };
     }).filter(Boolean);
 
@@ -199,11 +207,10 @@ exports.handler = async () => {
       benchmark: {
         ticker: BENCHMARK.ticker,
         name: BENCHMARK.name,
-        asOfDate: benchmarkResult.asOfDate,
-        latestClose: Math.round(benchmarkResult.latestClose * 100) / 100,
-        returns: Object.fromEntries(
-          Object.entries(benchmarkResult.returns).map(([k, v]) => [k, v === null ? null : Math.round(v * 100) / 100])
-        ),
+        asOfDate: benchmark.returns.asOfDate,
+        latestClose: Math.round(benchmark.returns.latestClose * 100) / 100,
+        returns: roundReturns(benchmark.returns.returns),
+        history: roundHistory(benchmark.history),
       },
       sectors,
     };
