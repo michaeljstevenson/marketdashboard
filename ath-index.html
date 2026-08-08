@@ -211,7 +211,43 @@ h1{
  font-family:var(--serif);
  font-weight:400;
  font-size:18px;
- margin:0 0 16px;
+ margin:0;
+}
+
+.chart-box-header{
+ display:flex;
+ justify-content:space-between;
+ align-items:center;
+ flex-wrap:wrap;
+ gap:10px;
+ margin-bottom:16px;
+}
+
+.range-controls{
+ display:flex;
+ gap:6px;
+}
+
+.range-btn{
+ background:#171b20;
+ border:1px solid var(--hair);
+ color:var(--muted);
+ font-size:12px;
+ font-family:var(--sans);
+ padding:4px 10px;
+ border-radius:6px;
+ cursor:pointer;
+}
+
+.range-btn:hover{
+ color:var(--ink);
+ border-color:#3a424b;
+}
+
+.range-btn.active{
+ background:var(--card-hover);
+ color:var(--greed);
+ border-color:var(--greed);
 }
 
 .chart-canvas-wrap{
@@ -411,7 +447,10 @@ h1{
 </div>
 
 <div class="chart-box">
+<div class="chart-box-header">
 <h2>% of sample at all-time highs, over time</h2>
+<div class="range-controls" id="rangeControls"></div>
+</div>
 <div class="chart-canvas-wrap">
 <canvas id="athChart"></canvas>
 </div>
@@ -465,45 +504,92 @@ async function init(){
    tickerGrid.innerHTML = '<span class="ticker-empty">No names in the sample are at an all-time high today.</span>';
   }
 
-  const rows = (data.rows || []).slice(-2520); // ~10 trading years
-  const ctx = document.getElementById("athChart").getContext("2d");
-  new Chart(ctx, {
-   type: "line",
-   data: {
-    labels: rows.map(r => r.date),
-    datasets: [{
-     label: "% at all-time highs",
-     data: rows.map(r => r.pctAtHighs),
-     borderColor: LINE_COLOR,
-     backgroundColor: LINE_COLOR,
-     borderWidth: 2,
-     pointRadius: 0,
-     fill: false,
-    }],
-   },
-   options: {
-    responsive: true,
-    maintainAspectRatio: false,
-    interaction: { mode: "index", intersect: false },
-    plugins: {
-     legend: { display: false },
-     tooltip: {
-      callbacks: {
-       label: ctx => "% at ATH: " + (ctx.parsed.y === null ? "—" : ctx.parsed.y + "%"),
-      },
-     },
-    },
-    scales: {
-     x: { ticks: { color: "#8b9199", maxTicksLimit: 8 }, grid: { color: "#2b3138" } },
-     y: { ticks: { color: "#8b9199", callback: v => v + "%" }, grid: { color: "#2b3138" }, beginAtZero: true },
-    },
-   },
-  });
+  ALL_ROWS = data.rows || [];
+  renderRangeButtons();
+  renderChartRange(DEFAULT_RANGE);
 
  }catch(e){
   showError("Couldn't load all-time-high data (" + e.message + "). The /api/breadth-internals function may be unreachable.");
   document.getElementById("updated").textContent = "";
  }
+}
+
+let ALL_ROWS = [];
+let athChart = null;
+
+const RANGES = [
+ { key: "1M", days: 30 },
+ { key: "3M", days: 90 },
+ { key: "6M", days: 182 },
+ { key: "1Y", days: 365 },
+ { key: "5Y", days: 365 * 5 },
+ { key: "10Y", days: 365 * 10 },
+ { key: "Max", days: null },
+];
+const DEFAULT_RANGE = "1Y";
+
+function renderRangeButtons(){
+ const container = document.getElementById("rangeControls");
+ container.innerHTML = "";
+ RANGES.forEach(r => {
+  const btn = document.createElement("button");
+  btn.className = "range-btn" + (r.key === DEFAULT_RANGE ? " active" : "");
+  btn.textContent = r.key;
+  btn.addEventListener("click", () => {
+   container.querySelectorAll(".range-btn").forEach(b => b.classList.remove("active"));
+   btn.classList.add("active");
+   renderChartRange(r.key);
+  });
+  container.appendChild(btn);
+ });
+}
+
+function renderChartRange(rangeKey){
+ if(!ALL_ROWS.length) return;
+ const range = RANGES.find(r => r.key === rangeKey);
+
+ let rows = ALL_ROWS;
+ if(range.days){
+  const lastDate = new Date(ALL_ROWS[ALL_ROWS.length - 1].date + "T00:00:00Z");
+  const cutoff = lastDate.getTime() - range.days * 24 * 60 * 60 * 1000;
+  const startIndex = ALL_ROWS.findIndex(r => new Date(r.date + "T00:00:00Z").getTime() >= cutoff);
+  rows = startIndex === -1 ? ALL_ROWS : ALL_ROWS.slice(startIndex);
+ }
+
+ const ctx = document.getElementById("athChart").getContext("2d");
+ if(athChart) athChart.destroy();
+ athChart = new Chart(ctx, {
+  type: "line",
+  data: {
+   labels: rows.map(r => r.date),
+   datasets: [{
+    label: "% at all-time highs",
+    data: rows.map(r => r.pctAtHighs),
+    borderColor: LINE_COLOR,
+    backgroundColor: LINE_COLOR,
+    borderWidth: 2,
+    pointRadius: 0,
+    fill: false,
+   }],
+  },
+  options: {
+   responsive: true,
+   maintainAspectRatio: false,
+   interaction: { mode: "index", intersect: false },
+   plugins: {
+    legend: { display: false },
+    tooltip: {
+     callbacks: {
+      label: ctx => "% at ATH: " + (ctx.parsed.y === null ? "—" : ctx.parsed.y + "%"),
+     },
+    },
+   },
+   scales: {
+    x: { ticks: { color: "#8b9199", maxTicksLimit: 8 }, grid: { color: "#2b3138" } },
+    y: { ticks: { color: "#8b9199", callback: v => v + "%" }, grid: { color: "#2b3138" }, beginAtZero: true },
+   },
+  },
+ });
 }
 
 init();
