@@ -13,9 +13,9 @@
 //   Equity Put/Call     — SPY's full-chain options put/call ratio (HISTORICAL_PUT_CALL_RATIO).
 //   Credit Conditions   — HYG (high-yield) vs. LQD (investment-grade) price ratio, normalized.
 //   Market Breadth      — three real advance/decline internals (A-D line, net new 52-week
-//                         highs/lows, % above 200-day SMA) computed daily across a ~100-name
-//                         liquid S&P 500 sample by scheduled-breadth.js and read from Netlify
-//                         Blobs here (see breadth-constituents.js / scheduled-breadth.js).
+//                         highs/lows, % above 200-day SMA) computed daily across the full
+//                         S&P 500 constituent list by scheduled-breadth-background.js and
+//                         read from Netlify Blobs here (see breadth-constituents.js).
 //
 // "Normalized" for Credit Conditions means its ratio series is rebased to start at 100, so the
 // displayed value reads as a clean index level rather than a raw price ratio (e.g. 0.847) that's
@@ -364,7 +364,7 @@ function buildRealizedVolComponent(spxDaily) {
 // MANUAL_COMPONENTS for why those are capped at 10% each.
 // Market Breadth: three real internals — cumulative advance/decline line,
 // net new 52-week highs vs. lows, and % of constituents above their own
-// 200-day SMA — computed daily across a ~100-name liquid S&P 500 sample by
+// 200-day SMA — computed daily across the full S&P 500 constituent list by
 // scheduled-breadth.js and stored in Netlify Blobs (see
 // breadth-constituents.js and scheduled-breadth.js). This replaced an
 // earlier RSP/SPY price-ratio proxy now that real advance/decline data is
@@ -377,10 +377,10 @@ const BREADTH_ADLINE_SPEC = {
   unit: "cumulative net advances",
   weight: 6,
   invert: false,
-  source: { name: "Alpha Vantage — ~100-name S&P 500 sample", url: "https://www.alphavantage.co/" },
+  source: { name: "Alpha Vantage — S&P 500 constituents", url: "https://www.alphavantage.co/" },
   description: "A rising advance/decline line relative to trend reflects broad-based participation in the market's direction.",
   details:
-    "The advance/decline (A-D) line is a running cumulative total of (stocks that closed up today) minus (stocks that closed down today), across a liquid ~100-name sample of the S&P 500. It's one of the oldest breadth measures: if the line keeps climbing alongside the index, gains are broad-based; if the index rises while the A-D line stalls or falls, a shrinking number of stocks are carrying the market higher — a classic warning sign of a fragile, narrow rally.\n\nThe score compares today's cumulative level to its own 50-day moving average, ranked against its full history since this factor started tracking.",
+    "The advance/decline (A-D) line is a running cumulative total of (stocks that closed up today) minus (stocks that closed down today), across the S&P 500. It's one of the oldest breadth measures: if the line keeps climbing alongside the index, gains are broad-based; if the index rises while the A-D line stalls or falls, a shrinking number of stocks are carrying the market higher — a classic warning sign of a fragile, narrow rally.\n\nThe score compares today's cumulative level to its own 50-day moving average, ranked against its full history since this factor started tracking.",
 };
 
 const BREADTH_HILO_SPEC = {
@@ -389,7 +389,7 @@ const BREADTH_HILO_SPEC = {
   unit: "net new 52-wk highs",
   weight: 6,
   invert: false,
-  source: { name: "Alpha Vantage — ~100-name S&P 500 sample", url: "https://www.alphavantage.co/" },
+  source: { name: "Alpha Vantage — S&P 500 constituents", url: "https://www.alphavantage.co/" },
   description: "More stocks making fresh 52-week highs than lows, relative to trend, reflects broad market strength.",
   details:
     "This factor tracks the net count of stocks in the sample making new 52-week highs minus those making new 52-week lows, each trading day. A market where far more names are hitting new highs than new lows is healthy and broadly participating; a market where new lows start outnumbering new highs — even if the headline index is still near its own highs — often signals internal deterioration before it shows up in the index level.\n\nThe score compares today's net reading to its own 50-day moving average, ranked against its full history since this factor started tracking.",
@@ -401,10 +401,10 @@ const BREADTH_PCT200_SPEC = {
   unit: "% of sample",
   weight: 6,
   invert: false,
-  source: { name: "Alpha Vantage — ~100-name S&P 500 sample", url: "https://www.alphavantage.co/" },
+  source: { name: "Alpha Vantage — S&P 500 constituents", url: "https://www.alphavantage.co/" },
   description: "A larger share of stocks trading above their own 200-day average relative to trend reflects broad participation in the uptrend.",
   details:
-    "This factor tracks the percentage of the sampled ~100 S&P 500 names trading above their own 200-day simple moving average — a standard long-term trend gauge applied stock-by-stock rather than to the index as a whole. A high and rising reading means most individual stocks are in their own long-term uptrends; a falling reading means fewer stocks are, even if a handful of mega-caps keep the headline index elevated.\n\nThe score compares today's reading to its own 50-day moving average, ranked against its full history since this factor started tracking.",
+    "This factor tracks the percentage of S&P 500 constituents trading above their own 200-day simple moving average — a standard long-term trend gauge applied stock-by-stock rather than to the index as a whole. A high and rising reading means most individual stocks are in their own long-term uptrends; a falling reading means fewer stocks are, even if a handful of mega-caps keep the headline index elevated.\n\nThe score compares today's reading to its own 50-day moving average, ranked against its full history since this factor started tracking.",
 };
 
 const CREDIT_SPEC = {

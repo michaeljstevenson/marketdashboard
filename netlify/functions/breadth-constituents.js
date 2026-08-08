@@ -1,21 +1,80 @@
-// Sample of ~100 liquid S&P 500 constituents used to compute real market
-// breadth internals (advance/decline, new highs/lows, % above 200-day SMA).
-// Not the full index — a liquid, sector-diverse sample is a standard
-// practical substitute when the full 500-name list isn't worth the API
-// budget (each name costs one Alpha Vantage call per scheduled run).
-// Shared by scheduled-breadth.js.
+// Full S&P 500 constituent list (503 tickers — 500 companies, several
+// with dual share classes: GOOGL/GOOG, BRK.B, FOX/FOXA, NWS/NWSA).
+//
+// Sourced from the "datasets/s-and-p-500-companies" public GitHub dataset
+// (https://github.com/datasets/s-and-p-500-companies), pulled 2026-08-08.
+// Spot-checked against several recent 2025-2026 index changes (EchoStar's
+// addition, the Honeywell Aerospace and FedEx Freight spinoffs, DuPont's
+// Qnity electronics spinoff, the Paramount-Skydance merger) to confirm it
+// was current as of that date, not a stale snapshot. A prior version of
+// this file was a hand-picked ~100-name "liquid sample" built from
+// general knowledge rather than sourced from any actual S&P 500
+// constituent feed — replaced here with the real, full list per request.
+//
+// This list will drift out of date as the index changes (additions,
+// removals, ticker changes) — there's no live feed wired up to keep it
+// current automatically. Re-pull from the same source periodically, or
+// replace with a live index-constituent API if one becomes available on
+// the current Alpha Vantage plan. A wrong or delisted ticker here fails
+// gracefully (see the per-symbol try/catch in
+// scheduled-breadth-background.js) rather than breaking the whole job.
+//
+// Used by scheduled-breadth-background.js to compute market breadth
+// internals (advance/decline, new highs/lows, % above 200-day SMA, % at
+// all-time highs) across the real index rather than a sample.
 
 const BREADTH_CONSTITUENTS = [
-  "AAPL", "MSFT", "AMZN", "NVDA", "GOOGL", "GOOG", "META", "BRK.B", "AVGO", "TSLA",
-  "JPM", "LLY", "V", "UNH", "XOM", "MA", "PG", "COST", "HD", "MRK",
-  "ABBV", "CVX", "PEP", "KO", "ADBE", "WMT", "BAC", "CRM", "MCD", "TMO",
-  "ACN", "CSCO", "NFLX", "ABT", "LIN", "AMD", "DHR", "WFC", "DIS", "TXN",
-  "PM", "VZ", "CMCSA", "INTU", "COP", "AMGN", "NEE", "IBM", "UNP", "RTX",
-  "LOW", "HON", "SPGI", "QCOM", "BA", "CAT", "GE", "ELV", "PFE", "AMAT",
-  "DE", "SBUX", "PLD", "ISRG", "BKNG", "GS", "MDT", "BLK", "T", "ADI",
-  "GILD", "MS", "TJX", "AXP", "C", "LRCX", "VRTX", "MMC", "SYK", "SCHW",
-  "REGN", "ADP", "CB", "ETN", "PGR", "MU", "ZTS", "BSX", "CI", "SO",
-  "PANW", "FI", "BDX", "MO", "APD", "DUK", "ITW", "SLB", "EOG", "CME",
+  "A", "AAPL", "ABBV", "ABNB", "ABT", "ACGL", "ACN", "ADBE", "ADI", "ADM",
+  "ADP", "ADSK", "AEE", "AEP", "AES", "AFL", "AIG", "AIZ", "AJG", "AKAM",
+  "ALB", "ALGN", "ALL", "ALLE", "AMAT", "AMCR", "AMD", "AME", "AMGN", "AMP",
+  "AMT", "AMZN", "ANET", "AON", "AOS", "APA", "APD", "APH", "APO", "APP",
+  "APTV", "ARE", "ARES", "ATO", "AVB", "AVGO", "AVY", "AWK", "AXON", "AXP",
+  "AZO", "BA", "BAC", "BALL", "BAX", "BBY", "BDX", "BEN", "BF.B", "BG",
+  "BIIB", "BKNG", "BKR", "BLDR", "BLK", "BMY", "BNY", "BR", "BRK.B", "BRO",
+  "BSX", "BX", "BXP", "C", "CAH", "CARR", "CASY", "CAT", "CB", "CBOE",
+  "CBRE", "CCI", "CCL", "CDNS", "CDW", "CEG", "CF", "CFG", "CHD", "CHRW",
+  "CHTR", "CI", "CIEN", "CINF", "CL", "CLX", "CMCSA", "CME", "CMG", "CMI",
+  "CMS", "CNC", "CNP", "COF", "COHR", "COIN", "COO", "COP", "COR", "COST",
+  "CPAY", "CPRT", "CPT", "CRH", "CRL", "CRM", "CRWD", "CSCO", "CSGP", "CSX",
+  "CTAS", "CTSH", "CTVA", "CVNA", "CVS", "CVX", "D", "DAL", "DASH", "DD",
+  "DDOG", "DE", "DECK", "DELL", "DG", "DGX", "DHI", "DHR", "DIS", "DLR",
+  "DLTR", "DOC", "DOV", "DOW", "DPZ", "DRI", "DTE", "DUK", "DVA", "DVN",
+  "DXCM", "EBAY", "ECHO", "ECL", "ED", "EFX", "EG", "EIX", "EL", "ELV",
+  "EME", "EMR", "EOG", "EQIX", "EQR", "EQT", "ERIE", "ES", "ESS", "ETN",
+  "ETR", "EVRG", "EW", "EXC", "EXE", "EXPD", "EXPE", "EXR", "F", "FANG",
+  "FAST", "FCX", "FDS", "FDX", "FDXF", "FE", "FERG", "FFIV", "FICO", "FIS",
+  "FISV", "FITB", "FIX", "FLEX", "FOX", "FOXA", "FRT", "FSLR", "FTNT", "FTV",
+  "GD", "GDDY", "GE", "GEHC", "GEN", "GEV", "GILD", "GIS", "GL", "GLW",
+  "GM", "GNRC", "GOOG", "GOOGL", "GPC", "GPN", "GRMN", "GS", "GWW", "HAL",
+  "HAS", "HBAN", "HCA", "HD", "HIG", "HII", "HLT", "HON", "HONA", "HOOD",
+  "HPE", "HPQ", "HRL", "HSIC", "HST", "HSY", "HUBB", "HUM", "HWM", "IBKR",
+  "IBM", "ICE", "IDXX", "IEX", "IFF", "INCY", "INTC", "INTU", "INVH", "IP",
+  "IQV", "IR", "IRM", "ISRG", "IT", "ITW", "IVZ", "J", "JBHT", "JBL",
+  "JCI", "JKHY", "JNJ", "JPM", "KDP", "KEY", "KEYS", "KHC", "KIM", "KKR",
+  "KLAC", "KMB", "KMI", "KO", "KR", "KVUE", "L", "LDOS", "LEN", "LH",
+  "LHX", "LII", "LIN", "LITE", "LLY", "LMT", "LNT", "LOW", "LRCX", "LULU",
+  "LUV", "LVS", "LYB", "LYV", "MA", "MAA", "MAR", "MAS", "MCD", "MCHP",
+  "MCK", "MCO", "MDLZ", "MDT", "MET", "META", "MGM", "MKC", "MLM", "MMM",
+  "MNST", "MO", "MOS", "MPC", "MPWR", "MRK", "MRNA", "MRSH", "MRVL", "MS",
+  "MSCI", "MSFT", "MSI", "MTB", "MTD", "MU", "NCLH", "NDAQ", "NDSN", "NEE",
+  "NEM", "NFLX", "NI", "NKE", "NOC", "NOW", "NRG", "NSC", "NTAP", "NTRS",
+  "NUE", "NVDA", "NVR", "NWS", "NWSA", "NXPI", "O", "ODFL", "OKE", "OMC",
+  "ON", "ORCL", "ORLY", "OTIS", "OXY", "PANW", "PAYX", "PCAR", "PCG", "PEG",
+  "PEP", "PFE", "PFG", "PG", "PGR", "PH", "PHM", "PKG", "PLD", "PLTR",
+  "PM", "PNC", "PNR", "PNW", "PODD", "PPG", "PPL", "PRU", "PSA", "PSKY",
+  "PSX", "PTC", "PWR", "PYPL", "Q", "QCOM", "RCL", "REG", "REGN", "RF",
+  "RJF", "RL", "RMD", "ROK", "ROL", "ROP", "ROST", "RSG", "RTX", "RVTY",
+  "SBAC", "SBUX", "SCHW", "SHW", "SJM", "SLB", "SMCI", "SNA", "SNDK", "SNPS",
+  "SO", "SOLV", "SPG", "SPGI", "SRE", "STE", "STLD", "STT", "STX", "STZ",
+  "SW", "SWK", "SWKS", "SYF", "SYK", "SYY", "T", "TAP", "TDG", "TDY",
+  "TECH", "TEL", "TER", "TFC", "TGT", "TJX", "TKO", "TMO", "TMUS", "TPL",
+  "TPR", "TRGP", "TRMB", "TROW", "TRV", "TSCO", "TSLA", "TSN", "TT", "TTD",
+  "TTWO", "TXN", "TXT", "TYL", "UAL", "UBER", "UDR", "UHS", "ULTA", "UNH",
+  "UNP", "UPS", "URI", "USB", "V", "VEEV", "VICI", "VLO", "VLTO", "VMC",
+  "VRSK", "VRSN", "VRT", "VRTX", "VST", "VTR", "VTRS", "VZ", "WAB", "WAT",
+  "WBD", "WDAY", "WDC", "WEC", "WELL", "WFC", "WM", "WMB", "WMT", "WRB",
+  "WSM", "WST", "WTW", "WY", "WYNN", "XEL", "XOM", "XYL", "XYZ", "YUM",
+  "ZBH", "ZBRA", "ZTS",
 ];
 
 module.exports = { BREADTH_CONSTITUENTS };

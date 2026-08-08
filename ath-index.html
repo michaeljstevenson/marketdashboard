@@ -387,7 +387,7 @@ h1{
 <div class="header">
 <div>
 <h1>Stocks at All-Time Highs</h1>
-<div class="subtitle">Share of a liquid ~100-name S&amp;P 500 sample currently trading at an all-time high (split- and dividend-adjusted), and the running history of that share over time.</div>
+<div class="subtitle">Share of the S&amp;P 500 currently trading at an all-time high (split- and dividend-adjusted), and the running history of that share over time.</div>
 </div>
 <div class="updated" id="updated">Loading...</div>
 </div>
@@ -426,10 +426,10 @@ h1{
 
 <div class="explainer">
 <h2>How to read this</h2>
-<p>This tracks the same liquid ~100-name S&amp;P 500 sample used elsewhere on this site for market breadth internals (advance/decline line, new highs/lows, % above 200-day SMA) — not the full 500 names, and not equal-weighted to match the index. It's a useful proxy for participation breadth, not a precise index-level statistic.</p>
+<p>This tracks the same S&amp;P 500 constituent list used elsewhere on this site for market breadth internals (advance/decline line, new highs/lows, % above 200-day SMA). The list itself is a periodically-refreshed static snapshot rather than a live index feed, so it can drift slightly out of date on additions, removals, or ticker changes — see breadth-constituents.js for details.</p>
 <p>A name counts as being at an all-time high when its most recent close is at or above every prior close in Alpha Vantage's available daily history for that symbol — which for most of these long-listed, liquid names reaches back to the 1990s, but isn't guaranteed to extend all the way to a company's actual IPO in every case. Prices are split- and dividend-adjusted, so a historical stock split or dividend payment doesn't create a false ceiling a stock can never climb back above.</p>
 <p>A high reading means strength is broad — many names participating, not just a handful of mega-caps carrying the market. A reading near zero doesn't necessarily mean a bear market; it can simply mean the market has pulled back from a recent peak across the board, which is normal even in an uptrend.</p>
-<div class="source">Source: <a href="https://www.alphavantage.co/" target="_blank" rel="noopener">Alpha Vantage — ~100-name S&amp;P 500 sample</a></div>
+<div class="source">Source: <a href="https://www.alphavantage.co/" target="_blank" rel="noopener">Alpha Vantage — S&amp;P 500 constituents</a></div>
 </div>
 
 </div>
