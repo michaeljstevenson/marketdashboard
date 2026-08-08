@@ -683,6 +683,7 @@ const CHART_RANGES = [
  { key: "1M", days: 30 },
  { key: "3M", days: 90 },
  { key: "6M", days: 182 },
+ { key: "YTD", ytd: true },
  { key: "1Y", days: 365 },
  { key: "Max", days: null },
 ];
@@ -718,7 +719,12 @@ function renderChartRange(rangeKey){
  if(!benchmarkHistory.length) return;
 
  let dates = benchmarkHistory.map(h => h.date);
- if(range.days){
+ if(range.ytd){
+  const lastDate = new Date(dates[dates.length - 1] + "T00:00:00Z");
+  const cutoff = Date.UTC(lastDate.getUTCFullYear(), 0, 1);
+  const startIdx = dates.findIndex(d => new Date(d + "T00:00:00Z").getTime() >= cutoff);
+  dates = startIdx === -1 ? dates : dates.slice(startIdx);
+ }else if(range.days){
   const lastDate = new Date(dates[dates.length - 1] + "T00:00:00Z");
   const cutoff = lastDate.getTime() - range.days * 24 * 60 * 60 * 1000;
   const startIdx = dates.findIndex(d => new Date(d + "T00:00:00Z").getTime() >= cutoff);
