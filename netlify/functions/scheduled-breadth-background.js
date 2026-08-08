@@ -17,8 +17,8 @@
 // correction from Alpha Vantage doesn't leave the blob out of sync), and
 // affordable since it only runs once a day, not per page load.
 
-const { getStore } = require("@netlify/blobs");
 const { BREADTH_CONSTITUENTS } = require("./breadth-constituents");
+const { getBreadthStore, BLOB_KEY } = require("./breadth-blob-store");
 
 const ALPHA_VANTAGE_URL = "https://www.alphavantage.co/query";
 const USER_AGENT =
@@ -26,8 +26,6 @@ const USER_AGENT =
 
 const SMA_WINDOW = 200;
 const HIGH_LOW_WINDOW = 252; // ~52 trading weeks
-const BLOB_STORE = "breadth";
-const BLOB_KEY = "internals.json";
 
 function sleep(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
@@ -150,7 +148,7 @@ exports.handler = async () => {
       rows,
     };
 
-    const store = getStore(BLOB_STORE);
+    const store = getBreadthStore();
     await store.setJSON(BLOB_KEY, payload);
 
     return {

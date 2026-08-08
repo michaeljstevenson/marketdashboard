@@ -4,14 +4,11 @@
 // makes no Alpha Vantage calls — it just reads the pre-computed blob, so
 // it's fast and cheap regardless of page-load volume.
 
-const { getStore } = require("@netlify/blobs");
-
-const BLOB_STORE = "breadth";
-const BLOB_KEY = "internals.json";
+const { getBreadthStore, BLOB_KEY } = require("./breadth-blob-store");
 
 exports.handler = async () => {
   try {
-    const store = getStore(BLOB_STORE);
+    const store = getBreadthStore();
     const payload = await store.get(BLOB_KEY, { type: "json" });
 
     if (!payload) {

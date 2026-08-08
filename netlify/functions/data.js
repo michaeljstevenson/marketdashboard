@@ -22,11 +22,8 @@
 // hard to interpret at a glance. Rebasing by a constant factor doesn't change the score math at
 // all (ratio-to-own-MA is scale-invariant), so this only affects display.
 
-const { getStore } = require("@netlify/blobs");
 const { MANUAL_SERIES } = require("./manual-data");
-
-const BREADTH_BLOB_STORE = "breadth";
-const BREADTH_BLOB_KEY = "internals.json";
+const { getBreadthStore, BLOB_KEY: BREADTH_BLOB_KEY } = require("./breadth-blob-store");
 
 const ALPHA_VANTAGE_URL = "https://www.alphavantage.co/query";
 const USER_AGENT =
@@ -147,7 +144,7 @@ function buildSeriesComponent(points, spec) {
 // than an HTTP round-trip to breadth-internals.js, since both run in the
 // same Netlify Functions environment.
 async function fetchBreadthInternals() {
-  const store = getStore(BREADTH_BLOB_STORE);
+  const store = getBreadthStore();
   const payload = await store.get(BREADTH_BLOB_KEY, { type: "json" });
   if (!payload || !payload.rows || !payload.rows.length) {
     throw new Error("Breadth internals blob not yet populated — scheduled-breadth hasn't run yet");
