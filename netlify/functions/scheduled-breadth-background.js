@@ -83,6 +83,7 @@ function computeNameFlags(closes) {
 }
 
 exports.handler = async () => {
+  console.log(`scheduled-breadth-background: starting, ${BREADTH_CONSTITUENTS.length} symbols`);
   try {
     const apiKey = process.env.ALPHAVANTAGE_API_KEY;
     if (!apiKey) throw new Error("ALPHAVANTAGE_API_KEY environment variable is not set");
@@ -92,10 +93,15 @@ exports.handler = async () => {
     // when awaited one at a time.
     const perNameFlags = new Map();
     for (const symbol of BREADTH_CONSTITUENTS) {
-      const closes = await fetchDailyCloses(apiKey, symbol);
-      perNameFlags.set(symbol, computeNameFlags(closes));
+      try {
+        const closes = await fetchDailyCloses(apiKey, symbol);
+        perNameFlags.set(symbol, computeNameFlags(closes));
+      } catch (err) {
+        console.error(`scheduled-breadth-background: ${symbol} failed: ${err.message}`);
+      }
       await sleep(300);
     }
+    console.log(`scheduled-breadth-background: fetched ${perNameFlags.size}/${BREADTH_CONSTITUENTS.length} symbols`);
 
     // Union of every date any name reported, so a single missing/delisted
     // name mid-history doesn't collapse the whole date range.
@@ -150,12 +156,14 @@ exports.handler = async () => {
 
     const store = getBreadthStore();
     await store.setJSON(BLOB_KEY, payload);
+    console.log(`scheduled-breadth-background: wrote ${rows.length} rows to blob`);
 
     return {
       statusCode: 200,
       body: JSON.stringify({ ok: true, rows: rows.length }),
     };
   } catch (err) {
+    console.error(`scheduled-breadth-background: FAILED: ${err.message}`);
     return {
       statusCode: 502,
       body: JSON.stringify({ error: err.message }),
