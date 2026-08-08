@@ -1,0 +1,218 @@
+// Scheduled Background Function (see [functions."scheduled-sectors-background"]
+// in netlify.toml) that computes performance across the 11 SPDR sector ETFs
+// plus SPY as a benchmark, across a range of standard timeframes, and writes
+// the result to Netlify Blobs for sector-performance.js to serve.
+//
+// Named with the "-background" suffix for the same reason as
+// scheduled-breadth-background.js: fetching full daily history for 12
+// symbols sequentially (with required inter-call spacing to avoid Alpha
+// Vantage's burst limiter) takes well over the ~30s a standard function
+// gets, so this needs a Background Function's up-to-15-minute window.
+//
+// Runs once daily after the close. Each run re-fetches full daily history
+// for every ticker (TIME_SERIES_DAILY, outputsize=full) and recomputes
+// every return from scratch rather than incrementally, for the same
+// reasons as the breadth job: simpler and self-healing.
+
+const { getSectorStore, BLOB_KEY } = require("./sector-blob-store");
+
+const ALPHA_VANTAGE_URL = "https://www.alphavantage.co/query";
+const USER_AGENT =
+  "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0 Safari/537.36";
+
+// The 11 SPDR sector ETFs, plus SPY as the market-cap-weighted S&P 500
+// benchmark used for relative (excess-return) performance.
+const SECTORS = [
+  { ticker: "XLK", name: "Technology" },
+  { ticker: "XLF", name: "Financials" },
+  { ticker: "XLV", name: "Health Care" },
+  { ticker: "XLE", name: "Energy" },
+  { ticker: "XLI", name: "Industrials" },
+  { ticker: "XLY", name: "Consumer Discretionary" },
+  { ticker: "XLP", name: "Consumer Staples" },
+  { ticker: "XLU", name: "Utilities" },
+  { ticker: "XLB", name: "Materials" },
+  { ticker: "XLRE", name: "Real Estate" },
+  { ticker: "XLC", name: "Communication Services" },
+];
+const BENCHMARK = { ticker: "SPY", name: "S&P 500" };
+
+function sleep(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+async function fetchJson(url) {
+  const res = await fetch(url, { headers: { "User-Agent": USER_AGENT } });
+  if (!res.ok) throw new Error(`HTTP ${res.status} for ${url}`);
+  return res.json();
+}
+
+async function fetchDailyCloses(apiKey, symbol) {
+  const payload = await fetchJson(
+    `${ALPHA_VANTAGE_URL}?function=TIME_SERIES_DAILY&symbol=${symbol}&outputsize=full&apikey=${apiKey}`
+  );
+  const series = payload["Time Series (Daily)"];
+  if (!series) {
+    throw new Error(
+      `Alpha Vantage TIME_SERIES_DAILY missing data for ${symbol}: ` +
+        (payload.Note || payload.Information || payload.error_message || JSON.stringify(payload).slice(0, 200))
+    );
+  }
+  return Object.entries(series)
+    .map(([date, day]) => ({ date, close: parseFloat(day["4. close"]) }))
+    .sort((a, b) => (a.date < b.date ? -1 : 1));
+}
+
+function addMonths(dateObj, months) {
+  const d = new Date(dateObj);
+  d.setUTCMonth(d.getUTCMonth() + months);
+  return d;
+}
+
+function toDateStr(d) {
+  return d.toISOString().slice(0, 10);
+}
+
+function startOfMonth(d) {
+  return new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), 1));
+}
+
+function startOfQuarter(d) {
+  const q = Math.floor(d.getUTCMonth() / 3);
+  return new Date(Date.UTC(d.getUTCFullYear(), q * 3, 1));
+}
+
+function startOfYear(d) {
+  return new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
+}
+
+// Finds the closing price on the latest trading day on or before
+// targetDateStr. closes must be sorted ascending by date. Since lookback
+// windows here span at most ~20 years of daily data, a backward linear
+// scan is simple and fast enough for a once-a-day background job.
+function closeOnOrBefore(closes, targetDateStr) {
+  for (let i = closes.length - 1; i >= 0; i--) {
+    if (closes[i].date <= targetDateStr) return closes[i];
+  }
+  return null;
+}
+
+function pctChange(latest, base) {
+  if (base === null || base === undefined || base === 0) return null;
+  return (latest / base - 1) * 100;
+}
+
+// Computes every standard timeframe return for one ticker's close series,
+// anchored to its own latest available trading day.
+function computeReturns(closes) {
+  if (!closes.length) return null;
+  const latest = closes[closes.length - 1];
+  const latestDate = new Date(latest.date + "T00:00:00Z");
+
+  const prev1d = closes.length >= 2 ? closes[closes.length - 2] : null;
+  const prev1w = closeOnOrBefore(closes.slice(0, -1), toDateStr(new Date(latestDate.getTime() - 7 * 86400000)));
+
+  const mtdBase = closeOnOrBefore(closes, toDateStr(new Date(startOfMonth(latestDate).getTime() - 86400000)));
+  const qtdBase = closeOnOrBefore(closes, toDateStr(new Date(startOfQuarter(latestDate).getTime() - 86400000)));
+  const ytdBase = closeOnOrBefore(closes, toDateStr(new Date(startOfYear(latestDate).getTime() - 86400000)));
+
+  const m1Base = closeOnOrBefore(closes, toDateStr(addMonths(latestDate, -1)));
+  const m3Base = closeOnOrBefore(closes, toDateStr(addMonths(latestDate, -3)));
+  const m6Base = closeOnOrBefore(closes, toDateStr(addMonths(latestDate, -6)));
+  const y1Base = closeOnOrBefore(closes, toDateStr(addMonths(latestDate, -12)));
+
+  return {
+    asOfDate: latest.date,
+    latestClose: latest.close,
+    returns: {
+      d1: pctChange(latest.close, prev1d ? prev1d.close : null),
+      w1: pctChange(latest.close, prev1w ? prev1w.close : null),
+      mtd: pctChange(latest.close, mtdBase ? mtdBase.close : null),
+      qtd: pctChange(latest.close, qtdBase ? qtdBase.close : null),
+      ytd: pctChange(latest.close, ytdBase ? ytdBase.close : null),
+      m1: pctChange(latest.close, m1Base ? m1Base.close : null),
+      m3: pctChange(latest.close, m3Base ? m3Base.close : null),
+      m6: pctChange(latest.close, m6Base ? m6Base.close : null),
+      y1: pctChange(latest.close, y1Base ? y1Base.close : null),
+    },
+  };
+}
+
+function relativeReturns(sectorReturns, benchmarkReturns) {
+  const rel = {};
+  for (const key of Object.keys(sectorReturns)) {
+    const s = sectorReturns[key];
+    const b = benchmarkReturns[key];
+    rel[key] = s === null || b === null ? null : Math.round((s - b) * 100) / 100;
+  }
+  return rel;
+}
+
+exports.handler = async () => {
+  console.log(`scheduled-sectors-background: starting, ${SECTORS.length} sectors + benchmark`);
+  try {
+    const apiKey = process.env.ALPHAVANTAGE_API_KEY;
+    if (!apiKey) throw new Error("ALPHAVANTAGE_API_KEY environment variable is not set");
+
+    const allTickers = [BENCHMARK, ...SECTORS];
+    const computed = new Map();
+
+    for (const { ticker } of allTickers) {
+      try {
+        const closes = await fetchDailyCloses(apiKey, ticker);
+        computed.set(ticker, computeReturns(closes));
+      } catch (err) {
+        console.error(`scheduled-sectors-background: ${ticker} failed: ${err.message}`);
+      }
+      await sleep(300);
+    }
+    console.log(`scheduled-sectors-background: fetched ${computed.size}/${allTickers.length} tickers`);
+
+    const benchmarkResult = computed.get(BENCHMARK.ticker);
+    if (!benchmarkResult) throw new Error("Benchmark (SPY) failed to load — cannot compute relative performance");
+
+    const sectors = SECTORS.map(({ ticker, name }) => {
+      const result = computed.get(ticker);
+      if (!result) return null;
+      return {
+        ticker,
+        name,
+        asOfDate: result.asOfDate,
+        latestClose: Math.round(result.latestClose * 100) / 100,
+        returns: Object.fromEntries(
+          Object.entries(result.returns).map(([k, v]) => [k, v === null ? null : Math.round(v * 100) / 100])
+        ),
+        relative: relativeReturns(result.returns, benchmarkResult.returns),
+      };
+    }).filter(Boolean);
+
+    const payload = {
+      generated_at_utc: new Date().toISOString(),
+      benchmark: {
+        ticker: BENCHMARK.ticker,
+        name: BENCHMARK.name,
+        asOfDate: benchmarkResult.asOfDate,
+        latestClose: Math.round(benchmarkResult.latestClose * 100) / 100,
+        returns: Object.fromEntries(
+          Object.entries(benchmarkResult.returns).map(([k, v]) => [k, v === null ? null : Math.round(v * 100) / 100])
+        ),
+      },
+      sectors,
+    };
+
+    const store = getSectorStore();
+    await store.setJSON(BLOB_KEY, payload);
+    console.log(`scheduled-sectors-background: wrote ${sectors.length} sectors to blob`);
+
+    return {
+      statusCode: 200,
+      body: JSON.stringify({ ok: true, sectors: sectors.length }),
+    };
+  } catch (err) {
+    console.error(`scheduled-sectors-background: FAILED: ${err.message}`);
+    return {
+      statusCode: 502,
+      body: JSON.stringify({ error: err.message }),
+    };
+  }
+};
