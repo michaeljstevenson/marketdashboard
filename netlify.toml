@@ -27,5 +27,9 @@
   to = "/.netlify/functions/breadth-internals"
   status = 200
 
-[functions."scheduled-breadth"]
-  schedule = "30 21 * * 1-5"
+[functions."scheduled-breadth-background"]
+  # 20:30 UTC = 4:30pm EDT (summer). Shifts to 3:30pm during EST (winter,
+  # roughly Nov-Mar) since Netlify's cron runs in UTC with no DST
+  # awareness — adjust to 21:30 for winter-accurate timing if that hour
+  # drift matters, though either is safely after the 4:00pm ET close.
+  schedule = "30 20 * * 1-5"

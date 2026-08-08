@@ -1,8 +1,14 @@
-// Scheduled function (see [functions."scheduled-breadth"] in netlify.toml)
-// that computes real market breadth internals — advances/declines, 52-week
-// new highs/lows, and % of constituents above their 200-day SMA — across a
-// sample of liquid S&P 500 names, and writes the result to Netlify Blobs
-// for breadth-internals.js to serve.
+// Scheduled function (see [functions."scheduled-breadth-background"] in
+// netlify.toml) that computes real market breadth internals —
+// advances/declines, 52-week new highs/lows, and % of constituents above
+// their 200-day SMA — across a sample of liquid S&P 500 names, and writes
+// the result to Netlify Blobs for breadth-internals.js to serve.
+//
+// Named with the "-background" suffix so Netlify runs it as a Background
+// Function (up to 15 minutes) instead of a standard function (~30s) — a
+// first attempt as a standard function got killed mid-run every time,
+// since ~100 sequential Alpha Vantage calls (each pulling a symbol's full
+// daily history) plus the required inter-call spacing takes well over 30s.
 //
 // Runs once daily after the close. Each run re-fetches full daily history
 // for every constituent (TIME_SERIES_DAILY, outputsize=full) and recomputes
