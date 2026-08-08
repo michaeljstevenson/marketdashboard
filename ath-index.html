@@ -4,7 +4,7 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Implied vs. Realized Volatility — Michael J. Stevenson</title>
+<title>Stocks at All-Time Highs — Michael J. Stevenson</title>
 
 <style>
 
@@ -188,6 +188,7 @@ h1{
 .stat-value{
  font-family:var(--mono);
  font-size:30px;
+ color:var(--greed);
 }
 
 .stat-note{
@@ -195,9 +196,6 @@ h1{
  font-size:12px;
  margin-top:6px;
 }
-
-.stat-value.spread-pos{ color:var(--greed); }
-.stat-value.spread-neg{ color:var(--fear); }
 
 /* CHART */
 
@@ -217,7 +215,45 @@ h1{
 }
 
 .chart-canvas-wrap{
- height:340px;
+ height:300px;
+}
+
+/* TICKER LIST */
+
+.ticker-box{
+ background:var(--card);
+ border:1px solid var(--hair);
+ border-radius:12px;
+ padding:24px 26px;
+ margin-bottom:30px;
+}
+
+.ticker-box h2{
+ font-family:var(--serif);
+ font-weight:400;
+ font-size:18px;
+ margin:0 0 16px;
+}
+
+.ticker-grid{
+ display:flex;
+ flex-wrap:wrap;
+ gap:8px;
+}
+
+.ticker-chip{
+ background:rgba(217,138,61,0.14);
+ border:1px solid rgba(217,138,61,0.35);
+ color:var(--greed);
+ border-radius:6px;
+ padding:6px 12px;
+ font-family:var(--mono);
+ font-size:13px;
+}
+
+.ticker-empty{
+ color:var(--muted);
+ font-size:13px;
 }
 
 /* EXPLAINER */
@@ -286,7 +322,7 @@ h1{
 <div class="navdrop">
 <span class="navlabel">Markets &amp; Macro ▾</span>
 <div class="dropdown">
-<a href="/volatility.html" class="active">Implied vs. Realized Volatility</a>
+<a href="/volatility.html">Implied vs. Realized Volatility</a>
 <a href="/coming-soon.html?title=Yield%20Curves">Yield Curves</a>
 <a href="/coming-soon.html?title=Credit%20Spreads">Credit Spreads</a>
 <a href="/coming-soon.html?title=Global%20Liquidity">Global Liquidity</a>
@@ -299,7 +335,7 @@ h1{
 <span class="navlabel">Equities ▾</span>
 <div class="dropdown">
 <a href="/sector-analysis.html">Sector Performance</a>
-<a href="/ath-index.html">Stocks at All-Time Highs</a>
+<a href="/ath-index.html" class="active">Stocks at All-Time Highs</a>
 <a href="/coming-soon.html?title=Valuations">Valuations</a>
 <a href="/coming-soon.html?title=Earnings%20Revisions">Earnings Revisions</a>
 <a href="/coming-soon.html?title=Market%20Breadth">Market Breadth</a>
@@ -350,111 +386,122 @@ h1{
 
 <div class="header">
 <div>
-<h1>Implied vs. Realized Volatility</h1>
-<div class="subtitle">S&amp;P 500 realized volatility (20-day annualized) against the VIX's implied volatility — the gap between what's actually happened and what options traders expect.</div>
+<h1>Stocks at All-Time Highs</h1>
+<div class="subtitle">Share of a liquid ~100-name S&amp;P 500 sample currently trading at an all-time high (split- and dividend-adjusted), and the running history of that share over time.</div>
 </div>
 <div class="updated" id="updated">Loading...</div>
 </div>
 
 <div class="stat-grid">
 <div class="stat-card">
-<div class="stat-label">Realized Volatility (20d, ann.)</div>
-<div class="stat-value" id="statRealized">—</div>
-<div class="stat-note">S&amp;P 500 actual price swings</div>
+<div class="stat-label">At All-Time Highs</div>
+<div class="stat-value" id="statCount">—</div>
+<div class="stat-note" id="statCountNote">of sample</div>
 </div>
 <div class="stat-card">
-<div class="stat-label">Implied Volatility (VIX)</div>
-<div class="stat-value" id="statImplied">—</div>
-<div class="stat-note">Options-priced 30-day expectation</div>
+<div class="stat-label">% of Sample</div>
+<div class="stat-value" id="statPct">—</div>
+<div class="stat-note">Higher means broader strength across the sample, not just headline-index-level names</div>
 </div>
 <div class="stat-card">
-<div class="stat-label">Volatility Risk Premium</div>
-<div class="stat-value" id="statSpread">—</div>
-<div class="stat-note" id="spreadNote">Implied minus realized</div>
+<div class="stat-label">As Of</div>
+<div class="stat-value" id="statDate" style="font-size:20px;">—</div>
+<div class="stat-note">Most recent trading day</div>
 </div>
 </div>
 
 <div class="chart-box">
-<h2>Last 6 months</h2>
+<h2>% of sample at all-time highs, over time</h2>
 <div class="chart-canvas-wrap">
-<canvas id="volChart"></canvas>
+<canvas id="athChart"></canvas>
+</div>
+</div>
+
+<div class="ticker-box">
+<h2>Currently at all-time highs</h2>
+<div class="ticker-grid" id="tickerGrid">
+<span class="ticker-empty">Loading&hellip;</span>
 </div>
 </div>
 
 <div class="explainer">
 <h2>How to read this</h2>
-<p>Realized volatility measures how much the S&amp;P 500 has <em>actually</em> moved over the trailing 20 trading days — the standard deviation of daily log returns, annualized. Implied volatility (the VIX) measures what options traders are <em>pricing in</em> for the next 30 days, derived from the premiums they're willing to pay.</p>
-<p>These two usually move together, but the gap between them — the volatility risk premium — is rarely zero. Implied volatility tends to sit above realized most of the time: option sellers demand compensation for the risk they're taking on, so options are, on average, priced slightly rich relative to what volatility actually turns out to be. A widening premium can reflect rising hedging demand or anticipation of an upcoming event (an earnings season, a Fed meeting); a shrinking or negative premium — implied trading below realized — is unusual and typically shows up after a volatility spike has already passed through realized measures but options markets haven't caught up, or during periods of unusual complacency.</p>
-<div class="source">Source: <a href="https://www.alphavantage.co/" target="_blank" rel="noopener">Alpha Vantage — S&amp;P 500 Index (SPX) &amp; CBOE Volatility Index (VIX)</a></div>
+<p>This tracks the same liquid ~100-name S&amp;P 500 sample used elsewhere on this site for market breadth internals (advance/decline line, new highs/lows, % above 200-day SMA) — not the full 500 names, and not equal-weighted to match the index. It's a useful proxy for participation breadth, not a precise index-level statistic.</p>
+<p>A name counts as being at an all-time high when its most recent close is at or above every prior close in Alpha Vantage's available daily history for that symbol — which for most of these long-listed, liquid names reaches back to the 1990s, but isn't guaranteed to extend all the way to a company's actual IPO in every case. Prices are split- and dividend-adjusted, so a historical stock split or dividend payment doesn't create a false ceiling a stock can never climb back above.</p>
+<p>A high reading means strength is broad — many names participating, not just a handful of mega-caps carrying the market. A reading near zero doesn't necessarily mean a bear market; it can simply mean the market has pulled back from a recent peak across the board, which is normal even in an uptrend.</p>
+<div class="source">Source: <a href="https://www.alphavantage.co/" target="_blank" rel="noopener">Alpha Vantage — ~100-name S&amp;P 500 sample</a></div>
 </div>
 
 </div>
 
 <script>
 const LINE_COLOR = "#d98a3d";
-const IMPLIED_COLOR = "#6f8fac";
+
+function showError(message){
+ const banner = document.getElementById("errorBanner");
+ banner.textContent = message;
+ banner.style.display = "block";
+}
 
 async function init(){
  try{
-  const res = await fetch("/api/volatility", { cache: "no-store" });
+  const res = await fetch("/api/breadth-internals", { cache: "no-store" });
   const data = await res.json();
-  if (!res.ok || data.error) throw new Error(data.error || "failed to load");
+  if(!res.ok || data.error) throw new Error(data.error || "failed to load");
 
-  document.getElementById("updated").textContent = "Updated: " + data.timestamp;
+  const summary = data.athSummary;
+  if(!summary) throw new Error("all-time-high summary not available in this data");
 
-  const latest = data.latest;
-  document.getElementById("statRealized").textContent = latest.realized + "%";
-  document.getElementById("statImplied").textContent = latest.implied + "%";
+  document.getElementById("updated").textContent = "Generated " + new Date(data.generated_at_utc).toLocaleString();
+  document.getElementById("statCount").textContent = summary.count;
+  document.getElementById("statCountNote").textContent = "of " + summary.total + " in sample";
+  document.getElementById("statPct").textContent = (summary.pct === null ? "—" : summary.pct + "%");
+  document.getElementById("statDate").textContent = summary.asOfDate;
 
-  const spreadEl = document.getElementById("statSpread");
-  spreadEl.textContent = (latest.spread >= 0 ? "+" : "") + latest.spread + "%";
-  spreadEl.classList.add(latest.spread >= 0 ? "spread-pos" : "spread-neg");
-  document.getElementById("spreadNote").textContent = latest.spread >= 0
-   ? "Implied running above realized — the typical pattern"
-   : "Implied running below realized — unusual";
+  const tickerGrid = document.getElementById("tickerGrid");
+  if(summary.tickers.length){
+   tickerGrid.innerHTML = summary.tickers.map(t => `<span class="ticker-chip">${t}</span>`).join("");
+  }else{
+   tickerGrid.innerHTML = '<span class="ticker-empty">No names in the sample are at an all-time high today.</span>';
+  }
 
-  const ctx = document.getElementById("volChart").getContext("2d");
+  const rows = (data.rows || []).slice(-756); // ~3 trading years
+  const ctx = document.getElementById("athChart").getContext("2d");
   new Chart(ctx, {
    type: "line",
    data: {
-    labels: data.history.map(p => p.date),
-    datasets: [
-     {
-      label: "Implied Volatility (VIX)",
-      data: data.history.map(p => p.implied),
-      borderColor: IMPLIED_COLOR,
-      backgroundColor: IMPLIED_COLOR,
-      borderWidth: 2,
-      pointRadius: 0,
-     },
-     {
-      label: "Realized Volatility",
-      data: data.history.map(p => p.realized),
-      borderColor: LINE_COLOR,
-      backgroundColor: LINE_COLOR,
-      borderWidth: 2,
-      pointRadius: 0,
-     },
-    ],
+    labels: rows.map(r => r.date),
+    datasets: [{
+     label: "% at all-time highs",
+     data: rows.map(r => r.pctAtHighs),
+     borderColor: LINE_COLOR,
+     backgroundColor: LINE_COLOR,
+     borderWidth: 2,
+     pointRadius: 0,
+     fill: false,
+    }],
    },
    options: {
     responsive: true,
     maintainAspectRatio: false,
     interaction: { mode: "index", intersect: false },
     plugins: {
-     legend: { labels: { color: "#8b9199", font: { size: 11 } } },
+     legend: { display: false },
+     tooltip: {
+      callbacks: {
+       label: ctx => "% at ATH: " + (ctx.parsed.y === null ? "—" : ctx.parsed.y + "%"),
+      },
+     },
     },
     scales: {
      x: { ticks: { color: "#8b9199", maxTicksLimit: 8 }, grid: { color: "#2b3138" } },
-     y: { ticks: { color: "#8b9199", callback: v => v + "%" }, grid: { color: "#2b3138" } },
+     y: { ticks: { color: "#8b9199", callback: v => v + "%" }, grid: { color: "#2b3138" }, beginAtZero: true },
     },
    },
   });
 
  }catch(e){
-  const banner = document.getElementById("errorBanner");
-  banner.textContent = "Couldn't load volatility data: " + e.message;
-  banner.style.display = "block";
+  showError("Couldn't load all-time-high data (" + e.message + "). The /api/breadth-internals function may be unreachable.");
   document.getElementById("updated").textContent = "";
  }
 }

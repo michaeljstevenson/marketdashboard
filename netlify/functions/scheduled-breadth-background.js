@@ -1,8 +1,9 @@
 // Scheduled function (see [functions."scheduled-breadth-background"] in
 // netlify.toml) that computes real market breadth internals —
-// advances/declines, 52-week new highs/lows, and % of constituents above
-// their 200-day SMA — across a sample of liquid S&P 500 names, and writes
-// the result to Netlify Blobs for breadth-internals.js to serve.
+// advances/declines, 52-week new highs/lows, % of constituents above
+// their 200-day SMA, and % at all-time highs — across a sample of liquid
+// S&P 500 names, and writes the result to Netlify Blobs for
+// breadth-internals.js to serve.
 //
 // Named with the "-background" suffix so Netlify runs it as a Background
 // Function (up to 15 minutes) instead of a standard function (~30s) — a
@@ -11,11 +12,20 @@
 // daily history) plus the required inter-call spacing takes well over 30s.
 //
 // Runs once daily after the close. Each run re-fetches full daily history
-// for every constituent (TIME_SERIES_DAILY, outputsize=full) and recomputes
-// the whole series from scratch, rather than incrementally appending one
-// day — simpler and self-healing (a missed run or a mid-series data
-// correction from Alpha Vantage doesn't leave the blob out of sync), and
-// affordable since it only runs once a day, not per page load.
+// for every constituent (TIME_SERIES_DAILY_ADJUSTED, outputsize=full) and
+// recomputes the whole series from scratch, rather than incrementally
+// appending one day — simpler and self-healing (a missed run or a
+// mid-series data correction from Alpha Vantage doesn't leave the blob
+// out of sync), and affordable since it only runs once a day, not per
+// page load.
+//
+// Uses the split/dividend-adjusted close, not the raw close — the same
+// fix applied to scheduled-sectors-background.js after discovering
+// TIME_SERIES_DAILY doesn't retroactively adjust historical prices for
+// splits. That's especially critical for all-time-high detection here: an
+// unadjusted pre-split price looks artificially high forever afterward,
+// permanently (and wrongly) blocking a stock from ever registering a new
+// all-time high again.
 
 const { BREADTH_CONSTITUENTS } = require("./breadth-constituents");
 const { getBreadthStore, BLOB_KEY } = require("./breadth-blob-store");
@@ -39,23 +49,31 @@ async function fetchJson(url) {
 
 async function fetchDailyCloses(apiKey, symbol) {
   const payload = await fetchJson(
-    `${ALPHA_VANTAGE_URL}?function=TIME_SERIES_DAILY&symbol=${symbol}&outputsize=full&apikey=${apiKey}`
+    `${ALPHA_VANTAGE_URL}?function=TIME_SERIES_DAILY_ADJUSTED&symbol=${symbol}&outputsize=full&apikey=${apiKey}`
   );
   const series = payload["Time Series (Daily)"];
   if (!series) {
     throw new Error(
-      `Alpha Vantage TIME_SERIES_DAILY missing data for ${symbol}: ` +
+      `Alpha Vantage TIME_SERIES_DAILY_ADJUSTED missing data for ${symbol}: ` +
         (payload.Note || payload.Information || payload.error_message || JSON.stringify(payload).slice(0, 200))
     );
   }
   return Object.entries(series)
-    .map(([date, day]) => ({ date, close: parseFloat(day["4. close"]) }))
+    .map(([date, day]) => ({ date, close: parseFloat(day["5. adjusted close"]) }))
     .sort((a, b) => (a.date < b.date ? -1 : 1));
 }
 
-// For a single name's closes, returns a map date -> { up, newHigh, newLow, above200sma }.
+// For a single name's closes, returns a map date -> { up, newHigh, newLow,
+// above200sma, atHigh }. atHigh means today's close is at or above every
+// prior close in the fetched history — i.e. a new all-time high as far
+// back as Alpha Vantage's daily data goes for that symbol (which for most
+// of these liquid, long-listed names reaches back to the 1990s or the
+// symbol's IPO, whichever is later — see the "all-time" caveat on the
+// ath-index.html page).
 function computeNameFlags(closes) {
   const flags = new Map();
+  let runningMax = closes.length ? closes[0].close : -Infinity;
+
   for (let i = 1; i < closes.length; i++) {
     const { date, close } = closes[i];
     const prevClose = closes[i - 1].close;
@@ -72,11 +90,15 @@ function computeNameFlags(closes) {
       above200sma = close > sma;
     }
 
+    const atHigh = close >= runningMax;
+    runningMax = Math.max(runningMax, close);
+
     flags.set(date, {
       up: close > prevClose,
       newHigh: close >= windowHigh,
       newLow: close <= windowLow,
       above200sma,
+      atHigh,
     });
   }
   return flags;
@@ -118,6 +140,7 @@ exports.handler = async () => {
       let newLows = 0;
       let above200 = 0;
       let smaCoverage = 0;
+      let atHighs = 0;
 
       for (const flags of perNameFlags.values()) {
         const f = flags.get(date);
@@ -130,8 +153,10 @@ exports.handler = async () => {
           smaCoverage++;
           if (f.above200sma) above200++;
         }
+        if (f.atHigh) atHighs++;
       }
 
+      const coverage = advances + declines;
       return {
         date,
         advances,
@@ -139,6 +164,8 @@ exports.handler = async () => {
         newHighs,
         newLows,
         pctAbove200sma: smaCoverage ? Math.round((above200 / smaCoverage) * 1000) / 10 : null,
+        atHighs,
+        pctAtHighs: coverage ? Math.round((atHighs / coverage) * 1000) / 10 : null,
       };
     });
 
@@ -148,10 +175,31 @@ exports.handler = async () => {
       return { ...row, adLine: cumulative };
     });
 
+    // Snapshot of exactly which names are at an all-time high as of the
+    // latest date, for display as a list (the daily rows above only carry
+    // the aggregate count/percentage, not which names).
+    const latestDate = sortedDates[sortedDates.length - 1];
+    const athTickers = [];
+    let athCoverage = 0;
+    for (const [symbol, flags] of perNameFlags.entries()) {
+      const f = flags.get(latestDate);
+      if (!f) continue;
+      athCoverage++;
+      if (f.atHigh) athTickers.push(symbol);
+    }
+    athTickers.sort();
+
     const payload = {
       generated_at_utc: new Date().toISOString(),
       constituentCount: BREADTH_CONSTITUENTS.length,
       rows,
+      athSummary: {
+        asOfDate: latestDate,
+        count: athTickers.length,
+        total: athCoverage,
+        pct: athCoverage ? Math.round((athTickers.length / athCoverage) * 1000) / 10 : null,
+        tickers: athTickers,
+      },
     };
 
     const store = getBreadthStore();
