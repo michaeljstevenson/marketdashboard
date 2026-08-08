@@ -12,18 +12,21 @@
 //   Price Momentum      — the real S&P 500 (SPX) price vs. its own 90-day MA (INDEX_DATA).
 //   Equity Put/Call     — SPY's full-chain options put/call ratio (HISTORICAL_PUT_CALL_RATIO).
 //   Credit Conditions   — HYG (high-yield) vs. LQD (investment-grade) price ratio, normalized.
-//   Market Breadth      — RSP (equal-weight S&P 500) vs. SPY (cap-weight) price ratio, normalized.
-//                         No direct advance/decline data exists on Alpha Vantage; this ratio is
-//                         a standard real-world participation proxy — rising means gains are
-//                         broadening beyond mega-caps, falling means narrowing leadership — but
-//                         it's a genuine methodology substitution, not a like-for-like swap.
+//   Market Breadth      — three real advance/decline internals (A-D line, net new 52-week
+//                         highs/lows, % above 200-day SMA) computed daily across a ~100-name
+//                         liquid S&P 500 sample by scheduled-breadth.js and read from Netlify
+//                         Blobs here (see breadth-constituents.js / scheduled-breadth.js).
 //
-// "Normalized" for Credit Conditions and Market Breadth means each ratio series is rebased to
-// start at 100, so the displayed value reads as a clean index level rather than a raw price
-// ratio (e.g. 0.847) that's hard to interpret at a glance. Rebasing by a constant factor doesn't
-// change the score math at all (ratio-to-own-MA is scale-invariant), so this only affects display.
+// "Normalized" for Credit Conditions means its ratio series is rebased to start at 100, so the
+// displayed value reads as a clean index level rather than a raw price ratio (e.g. 0.847) that's
+// hard to interpret at a glance. Rebasing by a constant factor doesn't change the score math at
+// all (ratio-to-own-MA is scale-invariant), so this only affects display.
 
+const { getStore } = require("@netlify/blobs");
 const { MANUAL_SERIES } = require("./manual-data");
+
+const BREADTH_BLOB_STORE = "breadth";
+const BREADTH_BLOB_KEY = "internals.json";
 
 const ALPHA_VANTAGE_URL = "https://www.alphavantage.co/query";
 const USER_AGENT =
@@ -138,6 +141,31 @@ function buildSeriesComponent(points, spec) {
   };
 }
 
+// Reads the pre-computed breadth internals blob (written daily by
+// scheduled-breadth.js) and splits it into the three {x, y} point series
+// the breadth specs above each need. Called directly via getStore rather
+// than an HTTP round-trip to breadth-internals.js, since both run in the
+// same Netlify Functions environment.
+async function fetchBreadthInternals() {
+  const store = getStore(BREADTH_BLOB_STORE);
+  const payload = await store.get(BREADTH_BLOB_KEY, { type: "json" });
+  if (!payload || !payload.rows || !payload.rows.length) {
+    throw new Error("Breadth internals blob not yet populated — scheduled-breadth hasn't run yet");
+  }
+
+  const adLinePoints = [];
+  const hiLoPoints = [];
+  const pct200Points = [];
+  for (const row of payload.rows) {
+    const x = Date.parse(row.date);
+    adLinePoints.push({ x, y: row.adLine });
+    hiLoPoints.push({ x, y: row.newHighs - row.newLows });
+    if (row.pctAbove200sma !== null) pct200Points.push({ x, y: row.pctAbove200sma });
+  }
+
+  return { adLinePoints, hiLoPoints, pct200Points };
+}
+
 async function fetchIndexDaily(apiKey, symbol) {
   const payload = await fetchJson(`${ALPHA_VANTAGE_URL}?function=INDEX_DATA&symbol=${symbol}&interval=daily&apikey=${apiKey}`);
 
@@ -181,10 +209,9 @@ async function fetchStockDaily(apiKey, symbol, outputsize) {
 // "normalized" matters here. Rebasing by any constant factor doesn't
 // change the score/percentile math at all (ratio-to-own-MA is scale-
 // invariant), so this choice only affects what's displayed: anchoring to
-// a point from decades ago (RSP goes back to 2003) can leave the current
-// reading looking like 25 or 30 instead of a value near 100, which
-// defeats the point of normalizing it in the first place. Used for both
-// Market Breadth (RSP/SPY) and Credit Conditions (HYG/LQD).
+// a point from decades ago can leave the current reading looking like 25
+// or 30 instead of a value near 100, which defeats the point of
+// normalizing it in the first place. Used for Credit Conditions (HYG/LQD).
 function computeNormalizedRatioSeries(numerator, denominator) {
   const denomByDate = new Map(denominator.map((p) => [toDateStr(p.x), p.y]));
   const denomDatesSorted = denominator.map((p) => toDateStr(p.x)).sort();
@@ -338,16 +365,49 @@ function buildRealizedVolComponent(spxDaily) {
 // + implied vol 7 + put/call 10 + momentum 10 + realized vol 7) + 30 (the
 // 3 manual factors defined in MANUAL_COMPONENTS, 10% each) = 100 — see
 // MANUAL_COMPONENTS for why those are capped at 10% each.
-const BREADTH_SPEC = {
-  id: "breadth",
-  name: "Market Breadth",
-  unit: "index (normalized)",
-  weight: 18,
+// Market Breadth: three real internals — cumulative advance/decline line,
+// net new 52-week highs vs. lows, and % of constituents above their own
+// 200-day SMA — computed daily across a ~100-name liquid S&P 500 sample by
+// scheduled-breadth.js and stored in Netlify Blobs (see
+// breadth-constituents.js and scheduled-breadth.js). This replaced an
+// earlier RSP/SPY price-ratio proxy now that real advance/decline data is
+// available; the combined 18% weight (6% each) matches what that single
+// proxy factor carried before, so the composite's overall weighting shape
+// is unchanged — see the comment above for how all weights sum to 100.
+const BREADTH_ADLINE_SPEC = {
+  id: "breadthadline",
+  name: "Advance/Decline Line",
+  unit: "cumulative net advances",
+  weight: 6,
   invert: false,
-  source: { name: "Alpha Vantage — RSP vs. SPY", url: "https://www.alphavantage.co/" },
-  description: "Broader participation (equal-weight outperforming cap-weight) relative to trend reflects healthier market breadth.",
+  source: { name: "Alpha Vantage — ~100-name S&P 500 sample", url: "https://www.alphavantage.co/" },
+  description: "A rising advance/decline line relative to trend reflects broad-based participation in the market's direction.",
   details:
-    "Market breadth measures how many stocks are participating in a market move, not just how the headline index is performing. There's no direct advance/decline feed available here, so this factor uses the ratio of RSP (an equal-weight S&P 500 fund, where every constituent counts the same) to SPY (the standard cap-weighted fund, dominated by the largest names) as a real-world participation proxy: when the ratio rises, the average stock is keeping pace with or beating the mega-cap-heavy index, meaning gains are broad-based; when it falls, a handful of giant companies are carrying the index while the average stock lags.\n\nThe ratio is rebased to start at 100 so it reads as a clean index rather than a small decimal. The score compares today's reading to its own 50-day moving average: breadth running above trend suggests broadening, healthier participation; breadth running below trend suggests narrowing leadership — often an early warning that a rally is more fragile than the index price alone suggests.",
+    "The advance/decline (A-D) line is a running cumulative total of (stocks that closed up today) minus (stocks that closed down today), across a liquid ~100-name sample of the S&P 500. It's one of the oldest breadth measures: if the line keeps climbing alongside the index, gains are broad-based; if the index rises while the A-D line stalls or falls, a shrinking number of stocks are carrying the market higher — a classic warning sign of a fragile, narrow rally.\n\nThe score compares today's cumulative level to its own 50-day moving average, ranked against its full history since this factor started tracking.",
+};
+
+const BREADTH_HILO_SPEC = {
+  id: "breadthhilo",
+  name: "New Highs vs. Lows",
+  unit: "net new 52-wk highs",
+  weight: 6,
+  invert: false,
+  source: { name: "Alpha Vantage — ~100-name S&P 500 sample", url: "https://www.alphavantage.co/" },
+  description: "More stocks making fresh 52-week highs than lows, relative to trend, reflects broad market strength.",
+  details:
+    "This factor tracks the net count of stocks in the sample making new 52-week highs minus those making new 52-week lows, each trading day. A market where far more names are hitting new highs than new lows is healthy and broadly participating; a market where new lows start outnumbering new highs — even if the headline index is still near its own highs — often signals internal deterioration before it shows up in the index level.\n\nThe score compares today's net reading to its own 50-day moving average, ranked against its full history since this factor started tracking.",
+};
+
+const BREADTH_PCT200_SPEC = {
+  id: "breadthpct200",
+  name: "% Above 200-day SMA",
+  unit: "% of sample",
+  weight: 6,
+  invert: false,
+  source: { name: "Alpha Vantage — ~100-name S&P 500 sample", url: "https://www.alphavantage.co/" },
+  description: "A larger share of stocks trading above their own 200-day average relative to trend reflects broad participation in the uptrend.",
+  details:
+    "This factor tracks the percentage of the sampled ~100 S&P 500 names trading above their own 200-day simple moving average — a standard long-term trend gauge applied stock-by-stock rather than to the index as a whole. A high and rising reading means most individual stocks are in their own long-term uptrends; a falling reading means fewer stocks are, even if a handful of mega-caps keep the headline index elevated.\n\nThe score compares today's reading to its own 50-day moving average, ranked against its full history since this factor started tracking.",
 };
 
 const CREDIT_SPEC = {
@@ -493,55 +553,88 @@ exports.handler = async () => {
 
     const now = new Date();
 
+    // Each upstream fetch is wrapped so one failing source (e.g. an
+    // Alpha Vantage entitlement change on INDEX_DATA) degrades only the
+    // factors that depend on it, rather than 502ing the whole response —
+    // most factors here (credit, breadth internals, put/call, the 3
+    // manual factors) have nothing to do with SPX/VIX and should still
+    // render. Warnings are collected and surfaced to the frontend instead
+    // of thrown, unless every single factor ends up unavailable.
+    const warnings = [];
+    async function safe(label, fn) {
+      try {
+        return await fn();
+      } catch (err) {
+        warnings.push(`${label}: ${err.message}`);
+        return null;
+      }
+    }
+
     // Sequential with a gap, not Promise.all: Alpha Vantage trips a
     // burst-rate detector ("no more than 5 requests per second") when
     // multiple requests land concurrently OR too close together even
     // when awaited one at a time - fast-resolving calls can still land
     // under 200ms apart otherwise. Same issue hit in ticker.js and
     // volatility.js, but those only had 2-3 calls to space out.
-    const spxDaily = await fetchIndexDaily(apiKey, "SPX");
+    const spxDaily = await safe("Price Momentum / Realized Volatility (SPX)", () => fetchIndexDaily(apiKey, "SPX"));
     await sleep(300);
-    const vixDaily = await fetchIndexDaily(apiKey, "VIX");
+    const vixDaily = await safe("Implied Volatility (VIX)", () => fetchIndexDaily(apiKey, "VIX"));
     await sleep(300);
     // "full" rather than "compact": the earlier compact (~100-day) choice
     // was about request latency, not payload safety - the real fix for
     // burst-rate errors was the explicit spacing above, so full history
     // is safe here too, and unlocks a proper multi-year chart for these
     // two factors instead of bottlenecking the composite history below.
-    const spyDaily = await fetchStockDaily(apiKey, "SPY", "full");
+    const hygDaily = await safe("Credit Conditions (HYG)", () => fetchStockDaily(apiKey, "HYG", "full"));
     await sleep(300);
-    const rspDaily = await fetchStockDaily(apiKey, "RSP", "full");
-    await sleep(300);
-    const hygDaily = await fetchStockDaily(apiKey, "HYG", "full");
-    await sleep(300);
-    const lqdDaily = await fetchStockDaily(apiKey, "LQD", "full");
+    const lqdDaily = await safe("Credit Conditions (LQD)", () => fetchStockDaily(apiKey, "LQD", "full"));
     await sleep(300);
 
-    const spxTradingDates = spxDaily.map((p) => toDateStr(p.x));
-    const putCallPoints = await fetchPutCallWindow(apiKey, "SPY", spxTradingDates);
+    const putCallPoints = spxDaily
+      ? await safe("Equity Put/Call Ratio", () => fetchPutCallWindow(apiKey, "SPY", spxDaily.map((p) => toDateStr(p.x))))
+      : null;
+    if (!spxDaily) warnings.push("Equity Put/Call Ratio: skipped, depends on SPX trading dates which failed to load");
 
-    const breadthPoints = computeNormalizedRatioSeries(rspDaily, spyDaily);
-    const creditPoints = computeNormalizedRatioSeries(hygDaily, lqdDaily);
-    const vixPoints = vixDaily.map((p) => ({ x: p.x, y: p.close }));
+    const breadthInternals = await safe("Market Breadth", () => fetchBreadthInternals());
 
-    const chartComponents = [
-      buildSeriesComponent(breadthPoints, BREADTH_SPEC),
-      buildSeriesComponent(creditPoints, CREDIT_SPEC),
-      buildSeriesComponent(vixPoints, VIX_SPEC),
-      buildMomentumComponent(spxDaily),
-      buildRealizedVolComponent(spxDaily),
-    ];
+    const chartComponents = [];
+    if (breadthInternals) {
+      chartComponents.push(buildSeriesComponent(breadthInternals.adLinePoints, BREADTH_ADLINE_SPEC));
+      chartComponents.push(buildSeriesComponent(breadthInternals.hiLoPoints, BREADTH_HILO_SPEC));
+      chartComponents.push(buildSeriesComponent(breadthInternals.pct200Points, BREADTH_PCT200_SPEC));
+    }
+    if (hygDaily && lqdDaily) {
+      chartComponents.push(buildSeriesComponent(computeNormalizedRatioSeries(hygDaily, lqdDaily), CREDIT_SPEC));
+    }
+    if (vixDaily) {
+      chartComponents.push(buildSeriesComponent(vixDaily.map((p) => ({ x: p.x, y: p.close })), VIX_SPEC));
+    }
+    if (spxDaily) {
+      chartComponents.push(buildMomentumComponent(spxDaily));
+      chartComponents.push(buildRealizedVolComponent(spxDaily));
+    }
     const dailyComponents = chartComponents; // alias kept for the history-merge loop below
-    const putCallComponent = buildPutCallComponent(putCallPoints);
+    const putCallComponent = putCallPoints ? buildPutCallComponent(putCallPoints) : null;
     const manualComponents = MANUAL_COMPONENTS.map((spec) => buildManualComponent(spec));
 
     // Ordered by weight, descending, so the cards render heaviest-first.
-    const componentsById = new Map([...chartComponents, putCallComponent, ...manualComponents].map((c) => [c.id, c]));
+    // Missing factors (upstream fetch failed) are simply absent, not
+    // null placeholders — the frontend only ever sees factors that
+    // actually loaded.
+    const componentsById = new Map(
+      [...chartComponents, ...(putCallComponent ? [putCallComponent] : []), ...manualComponents].map((c) => [c.id, c])
+    );
     const components = [
-      "breadth", "credit", "putcall", "momentum",
+      "credit", "breadthadline", "breadthhilo", "breadthpct200", "putcall", "momentum",
       "vix", "realizedvol",
       "margindebt", "fundflows", "forwardpe",
-    ].map((id) => componentsById.get(id));
+    ]
+      .map((id) => componentsById.get(id))
+      .filter(Boolean);
+
+    if (!components.length) {
+      throw new Error("All factors failed to load" + (warnings.length ? ": " + warnings.join("; ") : ""));
+    }
 
     const composite = Math.round(
       components.reduce((sum, c) => sum + c.score * c.weight, 0) /
@@ -555,7 +648,12 @@ exports.handler = async () => {
     // rather than real trading-day epoch timestamps, and put/call's
     // fetchable history is too short (see PUTCALL_SPEC) — both still
     // count toward the live composite score above, just not this chart.
-    const CHART_SPECS = [BREADTH_SPEC, CREDIT_SPEC, VIX_SPEC, MOMENTUM_SPEC, REALIZED_VOL_SPEC];
+    const CHART_SPECS_ALL = [
+      BREADTH_ADLINE_SPEC, BREADTH_HILO_SPEC, BREADTH_PCT200_SPEC,
+      CREDIT_SPEC, VIX_SPEC, MOMENTUM_SPEC, REALIZED_VOL_SPEC,
+    ];
+    const loadedChartIds = new Set(dailyComponents.map((c) => c.id));
+    const CHART_SPECS = CHART_SPECS_ALL.filter((spec) => loadedChartIds.has(spec.id));
     const totalWeight = CHART_SPECS.reduce((sum, c) => sum + c.weight, 0);
     const compositeByDate = new Map();
     for (const comp of dailyComponents) {
@@ -569,8 +667,8 @@ exports.handler = async () => {
       }
     }
 
-    const spxCloseByDate = new Map(spxDaily.map((p) => [toDateStr(p.x), p.close]));
-    const spxDatesSorted = spxDaily.map((p) => toDateStr(p.x)).sort();
+    const spxCloseByDate = spxDaily ? new Map(spxDaily.map((p) => [toDateStr(p.x), p.close])) : new Map();
+    const spxDatesSorted = spxDaily ? spxDaily.map((p) => toDateStr(p.x)).sort() : [];
     function nearestSpx(dateStr) {
       if (spxCloseByDate.has(dateStr)) return spxCloseByDate.get(dateStr);
       const earlier = spxDatesSorted.filter((d) => d <= dateStr);
@@ -606,6 +704,7 @@ exports.handler = async () => {
       composite,
       components,
       history,
+      warnings, // non-fatal: factors that failed to load and were excluded from the composite above
     };
 
     return {

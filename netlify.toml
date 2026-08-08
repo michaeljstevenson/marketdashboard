@@ -21,3 +21,11 @@
   from = "/api/volatility"
   to = "/.netlify/functions/volatility"
   status = 200
+
+[[redirects]]
+  from = "/api/breadth-internals"
+  to = "/.netlify/functions/breadth-internals"
+  status = 200
+
+[functions."scheduled-breadth"]
+  schedule = "30 21 * * 1-5"

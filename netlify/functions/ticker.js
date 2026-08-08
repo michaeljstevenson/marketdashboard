@@ -98,10 +98,18 @@ async function fetchFedFunds() {
 // limit even on the premium key (confirmed empirically - 5 concurrent
 // succeeded, 17 concurrent had roughly half fail). Batching in groups of
 // 5 with a short pause between batches stays under that ceiling.
+//
+// Each task is wrapped so a single failing symbol (delisted ticker,
+// transient API hiccup, or an endpoint the current key isn't entitled to
+// — e.g. INDEX_DATA) drops just that item instead of failing the whole
+// batch: 23 independent quotes have nothing to do with each other, and
+// one bad one shouldn't blank out the other 22.
 async function batched(tasks, batchSize, delayMs) {
   const results = [];
   for (let i = 0; i < tasks.length; i += batchSize) {
-    const batch = tasks.slice(i, i + batchSize).map((fn) => fn());
+    const batch = tasks.slice(i, i + batchSize).map((fn) =>
+      fn().catch((err) => ({ __failed: true, message: err.message }))
+    );
     results.push(...(await Promise.all(batch)));
     if (i + batchSize < tasks.length) await sleep(delayMs);
   }
@@ -122,7 +130,13 @@ exports.handler = async () => {
       ...STOCKS.map((s) => () => fetchQuote(s, s)),
     ];
 
-    const items = await batched(tasks, 5, 800);
+    const results = await batched(tasks, 5, 800);
+    const items = results.filter((r) => !r.__failed);
+    const warnings = results.filter((r) => r.__failed).map((r) => r.message);
+
+    if (!items.length) {
+      throw new Error("All ticker items failed to load" + (warnings.length ? ": " + warnings.join("; ") : ""));
+    }
 
     return {
       statusCode: 200,
@@ -131,7 +145,7 @@ exports.handler = async () => {
         "Cache-Control": "public, max-age=60",
         "Access-Control-Allow-Origin": "*",
       },
-      body: JSON.stringify({ items }),
+      body: JSON.stringify({ items, warnings }),
     };
   } catch (err) {
     return {
