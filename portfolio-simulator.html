@@ -518,7 +518,7 @@ h1{
 
 <div class="field">
 <label for="inSims">Number of Simulations</label>
-<input type="number" id="inSims" value="3000" min="100" max="10000" step="100">
+<input type="number" id="inSims" value="1500" min="100" max="1500" step="100">
 </div>
 
 <div class="field">
@@ -645,7 +645,7 @@ function runSimulation(){
  const accumYears = Math.max(0, Math.round(parseFloat(document.getElementById("inAccumYears").value) || 0));
  const contribution = parseFloat(document.getElementById("inContribution").value) || 0;
  const withdrawal = parseFloat(document.getElementById("inWithdrawal").value) || 0;
- const numSims = Math.min(10000, Math.max(100, Math.round(parseFloat(document.getElementById("inSims").value) || 1000)));
+ const numSims = Math.min(1500, Math.max(100, Math.round(parseFloat(document.getElementById("inSims").value) || 1000)));
  const inflationRate = Math.max(0, parseFloat(document.getElementById("inInflation").value) || 0) / 100;
 
  const n = SP500_RETURNS.length;
