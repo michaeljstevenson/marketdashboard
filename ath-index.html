@@ -465,7 +465,7 @@ async function init(){
    tickerGrid.innerHTML = '<span class="ticker-empty">No names in the sample are at an all-time high today.</span>';
   }
 
-  const rows = (data.rows || []).slice(-756); // ~3 trading years
+  const rows = (data.rows || []).slice(-2520); // ~10 trading years
   const ctx = document.getElementById("athChart").getContext("2d");
   new Chart(ctx, {
    type: "line",
