@@ -423,7 +423,7 @@ tbody td:nth-child(2){
 <button class="toggle-btn active" id="btnAbsolute" onclick="setMode('absolute')">Absolute</button>
 <button class="toggle-btn" id="btnRelative" onclick="setMode('relative')">Relative to S&amp;P 500</button>
 </div>
-<div class="legend-note" id="legendNote">Total return by price, not including dividends. Click a column to sort.</div>
+<div class="legend-note" id="legendNote">Total return, split&amp;dividend-adjusted. Click a column to sort.</div>
 </div>
 
 <div class="table-box">
@@ -453,7 +453,7 @@ tbody td:nth-child(2){
 <h2>How to read this</h2>
 <p>Each column is a different lookback window ending on the most recent trading day: <strong>1D</strong> is today's close vs. yesterday's; <strong>1W</strong> is roughly five trading days back; <strong>MTD/QTD/YTD</strong> compare today's close to the last close of the prior month, quarter, and calendar year respectively (the standard "since period-start" convention used on most market data terminals); and <strong>1M/3M/6M/1Y</strong> are rolling trailing returns measured from today back a fixed number of calendar months, regardless of month/quarter/year boundaries. <strong>1Y</strong> and <strong>YTD</strong> are not the same thing &mdash; 1Y is a rolling trailing year, YTD resets every January 1st.</p>
 <p><strong>Absolute</strong> shows each sector's own price return. <strong>Relative to S&amp;P 500</strong> shows each sector's return minus SPY's return over the same window &mdash; positive means that sector outperformed the broad market over that period, negative means it lagged, regardless of whether the market itself was up or down. This is the more useful view for spotting sector rotation: a sector can post a negative absolute return while still being relatively strong (losing less than the market), or a positive absolute return while relatively weak (gaining less than the market).</p>
-<p>Sectors are the 11 SPDR Select Sector ETFs (XLK, XLF, XLV, XLE, XLI, XLY, XLP, XLU, XLB, XLRE, XLC), which together track the entire S&amp;P 500 by GICS sector. Returns are price returns only (dividends excluded), computed from daily closing prices.</p>
+<p>Sectors are the 11 SPDR Select Sector ETFs (XLK, XLF, XLV, XLE, XLI, XLY, XLP, XLU, XLB, XLRE, XLC), which together track the entire S&amp;P 500 by GICS sector. Returns are <strong>total returns</strong> &mdash; computed from split- and dividend-adjusted daily closing prices, so a historical stock split or a dividend payment doesn't distort a trailing return the way it would using raw, unadjusted prices.</p>
 <div class="source">Source: <a href="https://www.alphavantage.co/" target="_blank" rel="noopener">Alpha Vantage — SPDR Select Sector ETFs &amp; SPY</a></div>
 </div>
 
@@ -513,7 +513,7 @@ function setMode(mode){
  document.getElementById("btnAbsolute").classList.toggle("active", mode === "absolute");
  document.getElementById("btnRelative").classList.toggle("active", mode === "relative");
  document.getElementById("legendNote").textContent = mode === "absolute"
-  ? "Total return by price, not including dividends. Click a column to sort."
+  ? "Total return, split & dividend-adjusted. Click a column to sort."
   : "Excess return vs. S&P 500 (SPY) over the same period. Click a column to sort.";
  render();
 }

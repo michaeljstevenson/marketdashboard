@@ -10,9 +10,17 @@
 // gets, so this needs a Background Function's up-to-15-minute window.
 //
 // Runs once daily after the close. Each run re-fetches full daily history
-// for every ticker (TIME_SERIES_DAILY, outputsize=full) and recomputes
-// every return from scratch rather than incrementally, for the same
-// reasons as the breadth job: simpler and self-healing.
+// for every ticker (TIME_SERIES_DAILY_ADJUSTED, outputsize=full) and
+// recomputes every return from scratch rather than incrementally, for the
+// same reasons as the breadth job: simpler and self-healing.
+//
+// Uses the split/dividend-adjusted close, not the raw close: plain
+// TIME_SERIES_DAILY doesn't retroactively adjust historical prices for
+// splits, so a sector ETF that split within the lookback window (this
+// happened with XLK, discovered when its "1Y" return came back as -28%
+// instead of the real ~+40%) produces wildly wrong trailing returns.
+// Adjusted close bundles in dividend reinvestment too, so these are true
+// total returns, not price-only returns.
 
 const { getSectorStore, BLOB_KEY } = require("./sector-blob-store");
 
@@ -49,17 +57,17 @@ async function fetchJson(url) {
 
 async function fetchDailyCloses(apiKey, symbol) {
   const payload = await fetchJson(
-    `${ALPHA_VANTAGE_URL}?function=TIME_SERIES_DAILY&symbol=${symbol}&outputsize=full&apikey=${apiKey}`
+    `${ALPHA_VANTAGE_URL}?function=TIME_SERIES_DAILY_ADJUSTED&symbol=${symbol}&outputsize=full&apikey=${apiKey}`
   );
   const series = payload["Time Series (Daily)"];
   if (!series) {
     throw new Error(
-      `Alpha Vantage TIME_SERIES_DAILY missing data for ${symbol}: ` +
+      `Alpha Vantage TIME_SERIES_DAILY_ADJUSTED missing data for ${symbol}: ` +
         (payload.Note || payload.Information || payload.error_message || JSON.stringify(payload).slice(0, 200))
     );
   }
   return Object.entries(series)
-    .map(([date, day]) => ({ date, close: parseFloat(day["4. close"]) }))
+    .map(([date, day]) => ({ date, close: parseFloat(day["5. adjusted close"]) }))
     .sort((a, b) => (a.date < b.date ? -1 : 1));
 }
 
