@@ -1,0 +1,644 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Valuations by Industry — Michael J. Stevenson</title>
+
+<style>
+
+:root{
+  --bg:#14181c;
+  --card:#1c2127;
+  --card-hover:#20262d;
+  --ink:#eae6da;
+  --muted:#8b9199;
+  --hair:#2b3138;
+
+  --fear:#6f8fac;
+  --neutral:#7c828a;
+  --greed:#d98a3d;
+  --extreme:#b56f2a;
+
+  --serif:'Iowan Old Style','Palatino Linotype',Georgia,serif;
+  --mono:'SF Mono','JetBrains Mono',ui-monospace,Menlo,monospace;
+  --sans:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+}
+
+*{ box-sizing:border-box; }
+
+body{
+ margin:0;
+ background:var(--bg);
+ color:var(--ink);
+ font-family:var(--sans);
+}
+
+a{ color:inherit; }
+
+/* SITE NAV (shared with homepage) */
+
+.sitenav{
+ display:grid;
+ grid-template-columns:1fr auto 1fr;
+ align-items:center;
+ padding:16px 24px;
+ border-bottom:1px solid var(--hair);
+ position:relative;
+ z-index:50;
+}
+
+.sitenav .brand{
+ justify-self:start;
+}
+
+.sitenav .brand{
+ font-family:var(--serif);
+ font-size:17px;
+ color:var(--ink);
+ text-decoration:none;
+ letter-spacing:0.3px;
+}
+
+.navlinks{
+ display:flex;
+ gap:26px;
+ align-items:center;
+}
+
+.navlinks > a{
+ color:var(--muted);
+ font-size:13px;
+ text-decoration:none;
+ padding:6px 0;
+}
+
+.navlinks > a:hover, .navlinks > a.active{ color:var(--ink); }
+
+.navdrop{ position:relative; }
+
+.navdrop > .navlabel{
+ color:var(--muted);
+ font-size:13px;
+ cursor:default;
+ padding:6px 0;
+ user-select:none;
+}
+
+.navdrop:hover > .navlabel{ color:var(--ink); }
+
+.navdrop .dropdown{
+ display:none;
+ position:absolute;
+ top:100%;
+ left:0;
+ background:var(--card);
+ border:1px solid var(--hair);
+ border-radius:8px;
+ padding:8px 0;
+ min-width:230px;
+ margin-top:12px;
+ box-shadow:0 10px 30px rgba(0,0,0,0.45);
+}
+
+.navdrop:hover .dropdown{ display:block; }
+
+.dropdown a{
+ display:block;
+ padding:9px 16px;
+ color:var(--muted);
+ text-decoration:none;
+ font-size:13px;
+}
+
+.dropdown a:hover{
+ background:var(--card-hover);
+ color:var(--ink);
+}
+
+.dropdown a.active{ color:var(--greed); }
+
+@media (max-width:720px){
+ .navlinks{ display:none; }
+}
+
+.container{
+ max-width:1100px;
+ margin:auto;
+ padding:30px 20px 60px;
+}
+
+/* HEADER */
+
+.header{
+ display:flex;
+ justify-content:space-between;
+ align-items:flex-end;
+ border-bottom:1px solid var(--hair);
+ padding-bottom:18px;
+ margin-bottom:25px;
+ flex-wrap:wrap;
+ gap:12px;
+}
+
+h1{
+ font-family:var(--serif);
+ font-size:28px;
+ font-weight:400;
+ margin:0;
+}
+
+.subtitle{
+ color:var(--muted);
+ font-size:13px;
+ margin-top:6px;
+ max-width:620px;
+}
+
+.updated{
+ color:var(--muted);
+ font-size:12px;
+}
+
+/* STAT ROW (Total Market benchmark) */
+
+.stat-grid{
+ display:grid;
+ grid-template-columns:repeat(5,1fr);
+ gap:16px;
+ margin-bottom:20px;
+}
+
+.stat-card{
+ background:var(--card);
+ border:1px solid var(--hair);
+ border-radius:10px;
+ padding:16px;
+}
+
+.stat-label{
+ color:var(--muted);
+ font-size:11px;
+ text-transform:uppercase;
+ letter-spacing:0.04em;
+ margin-bottom:6px;
+}
+
+.stat-value{
+ font-family:var(--mono);
+ font-size:22px;
+ color:var(--greed);
+}
+
+@media (max-width:900px){
+ .stat-grid{ grid-template-columns:repeat(2,1fr); }
+}
+
+/* CONTROLS */
+
+.controls{
+ display:flex;
+ align-items:center;
+ justify-content:space-between;
+ flex-wrap:wrap;
+ gap:14px;
+ margin-bottom:14px;
+}
+
+.search-box input{
+ background:var(--card);
+ border:1px solid var(--hair);
+ border-radius:8px;
+ padding:8px 12px;
+ color:var(--ink);
+ font-family:var(--sans);
+ font-size:13px;
+ width:220px;
+}
+
+.search-box input:focus{ outline:none; border-color:var(--greed); }
+
+.legend-note{
+ color:var(--muted);
+ font-size:12px;
+}
+
+/* TABLE */
+
+.table-box{
+ background:var(--card);
+ border:1px solid var(--hair);
+ border-radius:12px;
+ overflow-x:auto;
+ margin-bottom:30px;
+}
+
+table{
+ width:100%;
+ border-collapse:collapse;
+ font-size:13px;
+ min-width:880px;
+}
+
+thead th{
+ text-align:right;
+ padding:14px 10px;
+ color:var(--muted);
+ font-size:11px;
+ text-transform:uppercase;
+ letter-spacing:0.04em;
+ font-weight:600;
+ cursor:pointer;
+ user-select:none;
+ white-space:nowrap;
+ border-bottom:1px solid var(--hair);
+}
+
+thead th:first-child{
+ text-align:left;
+}
+
+thead th:hover{ color:var(--ink); }
+
+thead th .sort-arrow{
+ opacity:0.4;
+ margin-left:3px;
+ font-size:10px;
+}
+
+thead th.sorted .sort-arrow{ opacity:1; color:var(--greed); }
+
+tbody td{
+ padding:10px;
+ text-align:right;
+ font-family:var(--mono);
+ white-space:nowrap;
+ border-bottom:1px solid var(--hair);
+}
+
+tbody tr:last-child td{ border-bottom:none; }
+
+tbody tr:hover{ background:var(--card-hover); }
+
+tbody tr.total-market{ background:rgba(217,138,61,0.08); }
+tbody tr.total-market td{ font-weight:600; }
+
+tbody td:first-child{
+ text-align:left;
+ font-family:var(--sans);
+}
+
+.cell-na{ color:var(--muted); }
+
+/* EXPLAINER */
+
+.explainer{
+ background:var(--card);
+ border:1px solid var(--hair);
+ border-radius:12px;
+ padding:24px 26px;
+}
+
+.explainer p{
+ color:var(--muted);
+ font-size:14px;
+ line-height:1.7;
+ margin:0 0 14px;
+}
+
+.explainer p:last-child{ margin-bottom:0; }
+
+.explainer .source{
+ margin-top:16px;
+ font-size:11px;
+}
+
+.explainer .source a{
+ color:var(--muted);
+ text-decoration:none;
+ border-bottom:1px dotted var(--muted);
+}
+
+.explainer .source a:hover{ color:var(--ink); }
+
+</style>
+</head>
+<body>
+
+<nav class="sitenav">
+<a class="brand" href="/">Michael J. Stevenson, CAIA<span style="font-size:0.6em; vertical-align:super;">&reg;</span></a>
+<div class="navlinks">
+<a href="/sentiment-index.html">Sentiment Index</a>
+<a href="/portfolio-simulator.html">Portfolio Simulator</a>
+
+<div class="navdrop">
+<span class="navlabel">Markets &amp; Macro ▾</span>
+<div class="dropdown">
+<a href="/volatility.html">Implied vs. Realized Volatility</a>
+<a href="/implied-erp.html">Implied Equity Risk Premium</a>
+<a href="/coming-soon.html?title=Yield%20Curves">Yield Curves</a>
+<a href="/coming-soon.html?title=Credit%20Spreads">Credit Spreads</a>
+<a href="/coming-soon.html?title=Global%20Liquidity">Global Liquidity</a>
+<a href="/coming-soon.html?title=Recession%20Probability%20Model">Recession Probability Model</a>
+<a href="/coming-soon.html?title=Inflation">Inflation</a>
+</div>
+</div>
+
+<div class="navdrop">
+<span class="navlabel">Equities ▾</span>
+<div class="dropdown">
+<a href="/sector-analysis.html">Sector Performance</a>
+<a href="/ath-index.html">Stocks at All-Time Highs</a>
+<a href="/valuations.html" class="active">Valuations</a>
+<a href="/coming-soon.html?title=Earnings%20Revisions">Earnings Revisions</a>
+<a href="/coming-soon.html?title=Market%20Breadth">Market Breadth</a>
+<a href="/coming-soon.html?title=Concentration%20Risk">Concentration Risk</a>
+</div>
+</div>
+
+<div class="navdrop">
+<span class="navlabel">Rates &amp; Credit ▾</span>
+<div class="dropdown">
+<a href="/coming-soon.html?title=Monetary%20Policy">Monetary Policy</a>
+<a href="/coming-soon.html?title=Real%20Yields%20Dashboard">Real Yields Dashboard</a>
+</div>
+</div>
+
+<div class="navdrop">
+<span class="navlabel">Alternative &amp; Cross-Asset ▾</span>
+<div class="dropdown">
+<a href="/coming-soon.html?title=Cross-Asset%20Risk">Cross-Asset Risk</a>
+<a href="/coming-soon.html?title=Commodity%20Cycle">Commodity Cycle</a>
+<a href="/coming-soon.html?title=Currency%20Strength">Currency Strength</a>
+</div>
+</div>
+
+<div class="navdrop">
+<span class="navlabel">Behavioral &amp; Positioning ▾</span>
+<div class="dropdown">
+<a href="/coming-soon.html?title=Options%20Positioning">Options Positioning</a>
+<a href="/coming-soon.html?title=Retail%20vs.%20Institutional%20Flow">Retail vs. Institutional Flow</a>
+<a href="/coming-soon.html?title=IPO%20%26%20SPAC%20Activity">IPO &amp; SPAC Activity</a>
+</div>
+</div>
+
+<div class="navdrop">
+<span class="navlabel">Thematic ▾</span>
+<div class="dropdown">
+<a href="/coming-soon.html?title=AI%20Capex%20Tracker">AI Capex Tracker</a>
+<a href="/coming-soon.html?title=Housing%20Market%20Monitor">Housing Market Monitor</a>
+</div>
+</div>
+
+</div>
+</nav>
+
+<div class="container">
+
+<div class="header">
+<div>
+<h1>Valuations by Industry</h1>
+<div class="subtitle">Aggregated valuation multiples across ~7,000 U.S. public companies, grouped into 94 industry classifications — price/earnings, EV/EBITDA, price/book, and expected growth.</div>
+</div>
+<div class="updated" id="updated">Annual, updated each January</div>
+</div>
+
+<div class="stat-grid" id="totalMarketStats"></div>
+
+<div class="controls">
+<div class="search-box"><input type="text" id="searchBox" placeholder="Filter industries..." oninput="render()"></div>
+<div class="legend-note">Total Market shown for reference. Click a column to sort.</div>
+</div>
+
+<div class="table-box">
+<table id="multiplesTable">
+<thead>
+<tr>
+<th data-key="industry">Industry</th>
+<th data-key="numFirms">Firms<span class="sort-arrow">▾</span></th>
+<th data-key="currentPE">Current PE<span class="sort-arrow">▾</span></th>
+<th data-key="trailingPE">Trailing PE<span class="sort-arrow">▾</span></th>
+<th data-key="forwardPE">Forward PE<span class="sort-arrow">▾</span></th>
+<th data-key="pegRatio">PEG<span class="sort-arrow">▾</span></th>
+<th data-key="evEbitda">EV/EBITDA<span class="sort-arrow">▾</span></th>
+<th data-key="pbv">P/B<span class="sort-arrow">▾</span></th>
+<th data-key="roe">ROE<span class="sort-arrow">▾</span></th>
+<th data-key="expGrowth5yr">Exp. Growth (5yr)<span class="sort-arrow">▾</span></th>
+</tr>
+</thead>
+<tbody id="tableBody"></tbody>
+</table>
+</div>
+
+<div class="explainer">
+<p>Each row aggregates every publicly traded U.S. company Damodaran's dataset covers within that industry classification (~7,000 companies total across 94 industries). <strong>Current PE</strong> uses trailing 12-month diluted EPS including one-time items; <strong>Trailing PE</strong> excludes them; <strong>Forward PE</strong> uses next-12-month analyst EPS estimates. <strong>PEG</strong> divides the PE ratio by the expected 5-year earnings growth rate — a PEG near 1 is the classic rule-of-thumb for "fairly priced relative to growth," well above 1 suggests growth may be overpriced, below 1 potentially underpriced (though this rule of thumb has real limitations across industries with very different risk and margin profiles). <strong>EV/EBITDA</strong> compares enterprise value to earnings before interest, taxes, depreciation and amortization — useful for comparing capital structures across industries with different debt levels. <strong>ROE</strong> is aggregate net income divided by aggregate book equity for money-making firms in the industry.</p>
+<p><strong>Limitations:</strong> industry aggregates can be skewed by a small number of very large or very high-multiple companies within a group — averages here aren't sales-weighted or median-based. Data is annual, refreshed each January, not a live daily feed. A very high PE or PEG in a small, immature, or high-money-losing-share industry often reflects the small denominator effect of aggregating mostly unprofitable early-stage companies, not genuine overvaluation of the profitable ones.</p>
+<div class="source">Source: <a href="https://pages.stern.nyu.edu/~adamodar/New_Home_Page/data.html" target="_blank" rel="noopener">Aswath Damodaran, NYU Stern — Industry-average valuation multiples (PE, EV/EBITDA, Price/Book)</a></div>
+</div>
+
+</div>
+
+<script>
+const MULTIPLES_DATA = [
+  { industry: "Advertising", numFirms: 52, pctMoneyLosing: 78.8, currentPE: 132.24, trailingPE: 44.43, forwardPE: 52.87, expGrowth5yr: 2.28, pegRatio: 11.16, evEbitda: 12.0, pbv: 4.55, roe: -1.34 },
+  { industry: "Aerospace/Defense", numFirms: 79, pctMoneyLosing: 50.6, currentPE: 118.0, trailingPE: 92.8, forwardPE: 45.87, expGrowth5yr: 25.04, pegRatio: 1.41, evEbitda: 21.58, pbv: 7.88, roe: 15.27 },
+  { industry: "Air Transport", numFirms: 23, pctMoneyLosing: 60.9, currentPE: 15.55, trailingPE: 18.32, forwardPE: 11.37, expGrowth5yr: 30.21, pegRatio: 0.43, evEbitda: 7.58, pbv: 2.84, roe: 14.19 },
+  { industry: "Apparel", numFirms: 35, pctMoneyLosing: 62.9, currentPE: 82.1, trailingPE: 37.83, forwardPE: 24.89, expGrowth5yr: 13.63, pegRatio: 1.99, evEbitda: 10.3, pbv: 3.89, roe: 10.42 },
+  { industry: "Auto & Truck", numFirms: 33, pctMoneyLosing: 81.8, currentPE: 44.59, trailingPE: 64.32, forwardPE: 49.04, expGrowth5yr: 10.22, pegRatio: 11.71, evEbitda: 47.76, pbv: 7.72, roe: 3.16 },
+  { industry: "Auto Parts", numFirms: 35, pctMoneyLosing: 48.6, currentPE: 27.85, trailingPE: 28.07, forwardPE: 15.13, expGrowth5yr: 15.97, pegRatio: 1.27, evEbitda: 6.43, pbv: 1.87, roe: 2.17 },
+  { industry: "Bank (Money Center)", numFirms: 15, pctMoneyLosing: 6.7, currentPE: 17.58, trailingPE: 14.95, forwardPE: 13.04, expGrowth5yr: 13.74, pegRatio: 1.03, evEbitda: null, pbv: 1.62, roe: 12.86 },
+  { industry: "Banks (Regional)", numFirms: 568, pctMoneyLosing: 14.1, currentPE: 34.74, trailingPE: 33.6, forwardPE: 11.0, expGrowth5yr: 13.96, pegRatio: 0.9, evEbitda: null, pbv: 1.14, roe: 9.75 },
+  { industry: "Beverage (Alcoholic)", numFirms: 14, pctMoneyLosing: 64.3, currentPE: 34.97, trailingPE: 28.3, forwardPE: 12.84, expGrowth5yr: 3.89, pegRatio: 4.26, evEbitda: 8.61, pbv: 1.91, roe: 0.57 },
+  { industry: "Beverage (Soft)", numFirms: 27, pctMoneyLosing: 70.4, currentPE: 37.11, trailingPE: 47.76, forwardPE: 23.7, expGrowth5yr: 15.44, pegRatio: 1.7, evEbitda: 16.9, pbv: 6.87, roe: 30.92 },
+  { industry: "Broadcasting", numFirms: 24, pctMoneyLosing: 70.8, currentPE: 6.38, trailingPE: 44.76, forwardPE: 17.5, expGrowth5yr: 0.87, pegRatio: 15.52, evEbitda: 7.85, pbv: 1.66, roe: 3.99 },
+  { industry: "Brokerage & Investment Banking", numFirms: 32, pctMoneyLosing: 21.9, currentPE: 26.81, trailingPE: 86.54, forwardPE: 19.86, expGrowth5yr: 20.3, pegRatio: 0.98, evEbitda: null, pbv: 2.81, roe: 17.77 },
+  { industry: "Building Materials", numFirms: 41, pctMoneyLosing: 29.3, currentPE: 21.06, trailingPE: 32.8, forwardPE: 18.39, expGrowth5yr: 10.19, pegRatio: 1.68, evEbitda: 11.61, pbv: 3.62, roe: 16.0 },
+  { industry: "Business & Consumer Services", numFirms: 155, pctMoneyLosing: 56.8, currentPE: 35.43, trailingPE: 36.4, forwardPE: 18.7, expGrowth5yr: 12.8, pegRatio: 1.89, evEbitda: 14.26, pbv: 5.3, roe: 18.2 },
+  { industry: "Cable TV", numFirms: 9, pctMoneyLosing: 44.4, currentPE: 13.75, trailingPE: 6.1, forwardPE: 9.21, expGrowth5yr: 5.43, pegRatio: 0.93, evEbitda: 6.21, pbv: 1.31, roe: 11.06 },
+  { industry: "Chemical (Basic)", numFirms: 29, pctMoneyLosing: 75.9, currentPE: 14.07, trailingPE: 24.42, forwardPE: 22.82, expGrowth5yr: 19.81, pegRatio: 0.93, evEbitda: 8.57, pbv: 1.12, roe: -8.29 },
+  { industry: "Chemical (Diversified)", numFirms: 4, pctMoneyLosing: 100.0, currentPE: 20.55, trailingPE: null, forwardPE: 14.17, expGrowth5yr: null, pegRatio: null, evEbitda: 8.39, pbv: 1.08, roe: -15.3 },
+  { industry: "Chemical (Specialty)", numFirms: 59, pctMoneyLosing: 59.3, currentPE: 161.7, trailingPE: 196.77, forwardPE: 19.32, expGrowth5yr: 8.46, pegRatio: 2.74, evEbitda: 13.36, pbv: 2.45, roe: 3.5 },
+  { industry: "Coal & Related Energy", numFirms: 16, pctMoneyLosing: 81.2, currentPE: 23.85, trailingPE: 17.01, forwardPE: 34.39, expGrowth5yr: 22.54, pegRatio: 0.88, evEbitda: 10.37, pbv: 2.25, roe: -2.51 },
+  { industry: "Computer Services", numFirms: 64, pctMoneyLosing: 54.7, currentPE: 26.45, trailingPE: 51.6, forwardPE: 56.54, expGrowth5yr: 12.33, pegRatio: 2.11, evEbitda: 14.1, pbv: 4.73, roe: 18.25 },
+  { industry: "Computers/Peripherals", numFirms: 36, pctMoneyLosing: 61.1, currentPE: 80.95, trailingPE: 81.13, forwardPE: 36.15, expGrowth5yr: 25.42, pegRatio: 1.35, evEbitda: 25.42, pbv: 34.08, roe: -0.17 },
+  { industry: "Construction Supplies", numFirms: 40, pctMoneyLosing: 30.0, currentPE: 26.96, trailingPE: 42.75, forwardPE: 17.69, expGrowth5yr: 7.61, pegRatio: 3.39, evEbitda: 16.82, pbv: 5.46, roe: 22.86 },
+  { industry: "Diversified", numFirms: 20, pctMoneyLosing: 80.0, currentPE: 14.13, trailingPE: 15.73, forwardPE: 14.88, expGrowth5yr: 7.56, pegRatio: 2.22, evEbitda: 11.42, pbv: 1.78, roe: 11.37 },
+  { industry: "Drugs (Biotechnology)", numFirms: 496, pctMoneyLosing: 89.5, currentPE: 109.27, trailingPE: 64.28, forwardPE: 63.76, expGrowth5yr: 38.08, pegRatio: 0.84, evEbitda: 15.78, pbv: 8.22, roe: -5.67 },
+  { industry: "Drugs (Pharmaceutical)", numFirms: 228, pctMoneyLosing: 84.6, currentPE: 335.27, trailingPE: 55.67, forwardPE: 24.19, expGrowth5yr: 17.8, pegRatio: 1.4, evEbitda: 15.25, pbv: 6.64, roe: 24.04 },
+  { industry: "Education", numFirms: 32, pctMoneyLosing: 50.0, currentPE: 27.6, trailingPE: 26.97, forwardPE: 18.11, expGrowth5yr: 19.03, pegRatio: 0.79, evEbitda: 9.26, pbv: 2.6, roe: 15.9 },
+  { industry: "Electrical Equipment", numFirms: 112, pctMoneyLosing: 75.0, currentPE: 76.44, trailingPE: 80.04, forwardPE: 29.61, expGrowth5yr: 18.86, pegRatio: 2.5, evEbitda: 24.59, pbv: 6.51, roe: 1.53 },
+  { industry: "Electronics (Consumer & Office)", numFirms: 8, pctMoneyLosing: 100.0, currentPE: null, trailingPE: null, forwardPE: 19.51, expGrowth5yr: -56.8, pegRatio: null, evEbitda: 30.7, pbv: 3.85, roe: -28.81 },
+  { industry: "Electronics (General)", numFirms: 114, pctMoneyLosing: 59.6, currentPE: 52.0, trailingPE: 48.44, forwardPE: 29.61, expGrowth5yr: 17.69, pegRatio: 2.27, evEbitda: 19.99, pbv: 4.97, roe: 12.62 },
+  { industry: "Engineering/Construction", numFirms: 48, pctMoneyLosing: 39.6, currentPE: 90.22, trailingPE: 63.33, forwardPE: 28.11, expGrowth5yr: 21.04, pegRatio: 1.18, evEbitda: 17.18, pbv: 5.49, roe: 26.14 },
+  { industry: "Entertainment", numFirms: 92, pctMoneyLosing: 82.6, currentPE: 171.99, trailingPE: 108.63, forwardPE: 42.73, expGrowth5yr: 5.75, pegRatio: 5.64, evEbitda: 19.41, pbv: 4.8, roe: 6.09 },
+  { industry: "Environmental & Waste Services", numFirms: 53, pctMoneyLosing: 79.2, currentPE: 66.2, trailingPE: 66.55, forwardPE: 61.07, expGrowth5yr: 12.2, pegRatio: 2.81, evEbitda: 15.61, pbv: 6.59, roe: 19.74 },
+  { industry: "Farming/Agriculture", numFirms: 35, pctMoneyLosing: 65.7, currentPE: 16.79, trailingPE: 19.12, forwardPE: 19.31, expGrowth5yr: 11.99, pegRatio: 1.83, evEbitda: 16.04, pbv: 2.42, roe: 12.04 },
+  { industry: "Financial Svcs. (Non-bank & Insurance)", numFirms: 176, pctMoneyLosing: 40.9, currentPE: 65.59, trailingPE: 26.14, forwardPE: 16.38, expGrowth5yr: 22.02, pegRatio: 1.0, evEbitda: 57.52, pbv: 3.66, roe: 28.82 },
+  { industry: "Food Processing", numFirms: 78, pctMoneyLosing: 60.3, currentPE: 30.97, trailingPE: 47.97, forwardPE: 17.23, expGrowth5yr: 2.66, pegRatio: 6.21, evEbitda: 10.01, pbv: 1.8, roe: 4.6 },
+  { industry: "Food Wholesalers", numFirms: 13, pctMoneyLosing: 53.8, currentPE: 24.9, trailingPE: 26.8, forwardPE: 16.64, expGrowth5yr: 36.93, pegRatio: 0.67, evEbitda: 11.08, pbv: 4.88, roe: 18.22 },
+  { industry: "Furn/Home Furnishings", numFirms: 27, pctMoneyLosing: 51.9, currentPE: 15.93, trailingPE: 17.38, forwardPE: 20.34, expGrowth5yr: 12.28, pegRatio: 2.05, evEbitda: 11.27, pbv: 2.45, roe: 3.11 },
+  { industry: "Green & Renewable Energy", numFirms: 15, pctMoneyLosing: 86.7, currentPE: 44.56, trailingPE: 32.25, forwardPE: 42.71, expGrowth5yr: 7.77, pegRatio: 3.34, evEbitda: 13.44, pbv: 1.26, roe: -7.36 },
+  { industry: "Healthcare Products", numFirms: 204, pctMoneyLosing: 76.0, currentPE: 55.87, trailingPE: 43.07, forwardPE: 42.33, expGrowth5yr: 11.07, pegRatio: 2.74, evEbitda: 19.78, pbv: 4.44, roe: 11.26 },
+  { industry: "Healthcare Support Services", numFirms: 104, pctMoneyLosing: 62.5, currentPE: 94.43, trailingPE: 83.77, forwardPE: 55.29, expGrowth5yr: 12.57, pegRatio: 1.68, evEbitda: 11.17, pbv: 2.8, roe: 9.89 },
+  { industry: "Heathcare Information and Technology", numFirms: 115, pctMoneyLosing: 76.5, currentPE: 219.64, trailingPE: 506.55, forwardPE: 37.38, expGrowth5yr: 11.17, pegRatio: 3.34, evEbitda: 21.27, pbv: 4.0, roe: 6.4 },
+  { industry: "Homebuilding", numFirms: 30, pctMoneyLosing: 20.0, currentPE: 10.2, trailingPE: 11.45, forwardPE: 14.35, expGrowth5yr: 1.97, pegRatio: 5.72, evEbitda: 8.92, pbv: 1.63, roe: 14.23 },
+  { industry: "Hospitals/Healthcare Facilities", numFirms: 31, pctMoneyLosing: 51.6, currentPE: 24.35, trailingPE: 18.8, forwardPE: 15.65, expGrowth5yr: 14.98, pegRatio: 1.04, evEbitda: 8.86, pbv: 5.62, roe: 50.84 },
+  { industry: "Hotel/Gaming", numFirms: 63, pctMoneyLosing: 54.0, currentPE: 83.16, trailingPE: 46.6, forwardPE: 29.07, expGrowth5yr: 13.57, pegRatio: 1.82, evEbitda: 14.93, pbv: 12.3, roe: 45.38 },
+  { industry: "Household Products", numFirms: 110, pctMoneyLosing: 71.8, currentPE: 65.89, trailingPE: 33.07, forwardPE: 16.85, expGrowth5yr: 8.02, pegRatio: 2.45, evEbitda: 13.17, pbv: 5.85, roe: 27.02 },
+  { industry: "Information Services", numFirms: 15, pctMoneyLosing: 40.0, currentPE: 29.35, trailingPE: 24.92, forwardPE: 13.22, expGrowth5yr: 10.12, pegRatio: 2.33, evEbitda: 11.5, pbv: 3.79, roe: 14.95 },
+  { industry: "Insurance (General)", numFirms: 21, pctMoneyLosing: 23.8, currentPE: 55.15, trailingPE: 33.96, forwardPE: 21.51, expGrowth5yr: 24.58, pegRatio: 1.11, evEbitda: 15.76, pbv: 3.45, roe: 19.07 },
+  { industry: "Insurance (Life)", numFirms: 20, pctMoneyLosing: 25.0, currentPE: 19.86, trailingPE: 12.56, forwardPE: 9.3, expGrowth5yr: -30.45, pegRatio: null, evEbitda: 12.52, pbv: 1.43, roe: 12.87 },
+  { industry: "Insurance (Prop/Cas.)", numFirms: 57, pctMoneyLosing: 14.0, currentPE: 18.05, trailingPE: 18.33, forwardPE: 16.36, expGrowth5yr: 15.33, pegRatio: 0.77, evEbitda: 8.44, pbv: 2.02, roe: 18.71 },
+  { industry: "Investments & Asset Management", numFirms: 283, pctMoneyLosing: 57.6, currentPE: 378.64, trailingPE: 75.3, forwardPE: 18.77, expGrowth5yr: 15.0, pegRatio: 1.53, evEbitda: 38.03, pbv: 2.49, roe: 15.88 },
+  { industry: "Machinery", numFirms: 105, pctMoneyLosing: 42.9, currentPE: 42.6, trailingPE: 35.76, forwardPE: 24.06, expGrowth5yr: 13.55, pegRatio: 1.97, evEbitda: 16.22, pbv: 4.5, roe: 16.42 },
+  { industry: "Metals & Mining", numFirms: 73, pctMoneyLosing: 84.9, currentPE: 92.87, trailingPE: 54.12, forwardPE: 29.82, expGrowth5yr: 34.42, pegRatio: 0.86, evEbitda: 11.39, pbv: 4.34, roe: 17.79 },
+  { industry: "Office Equipment & Services", numFirms: 14, pctMoneyLosing: 42.9, currentPE: 13.42, trailingPE: 18.55, forwardPE: 10.31, expGrowth5yr: 14.4, pegRatio: 1.26, evEbitda: 8.59, pbv: 2.92, roe: 13.23 },
+  { industry: "Oil/Gas (Integrated)", numFirms: 4, pctMoneyLosing: 0.0, currentPE: 13.01, trailingPE: 16.24, forwardPE: 21.9, expGrowth5yr: 4.14, pegRatio: 4.6, evEbitda: 8.16, pbv: 1.71, roe: 9.96 },
+  { industry: "Oil/Gas (Production and Exploration)", numFirms: 142, pctMoneyLosing: 59.2, currentPE: 21.36, trailingPE: 30.98, forwardPE: 16.14, expGrowth5yr: 4.9, pegRatio: 2.59, evEbitda: 5.15, pbv: 1.36, roe: 12.21 },
+  { industry: "Oil/Gas Distribution", numFirms: 23, pctMoneyLosing: 43.5, currentPE: 20.2, trailingPE: 23.72, forwardPE: 42.52, expGrowth5yr: 12.68, pegRatio: 1.46, evEbitda: 11.56, pbv: 2.88, roe: 18.03 },
+  { industry: "Oilfield Svcs/Equip.", numFirms: 97, pctMoneyLosing: 57.7, currentPE: 37.98, trailingPE: 33.3, forwardPE: 21.22, expGrowth5yr: 3.47, pegRatio: 5.6, evEbitda: 8.63, pbv: 1.92, roe: 8.65 },
+  { industry: "Packaging & Container", numFirms: 19, pctMoneyLosing: 36.8, currentPE: 60.51, trailingPE: 16.43, forwardPE: 15.28, expGrowth5yr: 18.96, pegRatio: 0.74, evEbitda: 9.71, pbv: 2.18, roe: 12.29 },
+  { industry: "Paper/Forest Products", numFirms: 6, pctMoneyLosing: 50.0, currentPE: 7.03, trailingPE: 12.85, forwardPE: 16.64, expGrowth5yr: -9.29, pegRatio: null, evEbitda: 8.18, pbv: 1.83, roe: 7.01 },
+  { industry: "Power", numFirms: 46, pctMoneyLosing: 10.9, currentPE: 20.75, trailingPE: 24.74, forwardPE: 17.59, expGrowth5yr: 9.6, pegRatio: 2.19, evEbitda: 12.38, pbv: 2.28, roe: 12.4 },
+  { industry: "Precious Metals", numFirms: 56, pctMoneyLosing: 85.7, currentPE: 119.66, trailingPE: 26.8, forwardPE: 16.45, expGrowth5yr: 71.77, pegRatio: 0.26, evEbitda: 10.68, pbv: 3.64, roe: 23.52 },
+  { industry: "Publishing & Newspapers", numFirms: 19, pctMoneyLosing: 52.6, currentPE: 18.57, trailingPE: 15.18, forwardPE: 13.51, expGrowth5yr: 9.39, pegRatio: 1.78, evEbitda: 11.24, pbv: 2.28, roe: 13.83 },
+  { industry: "R.E.I.T.", numFirms: 190, pctMoneyLosing: 33.7, currentPE: 62.98, trailingPE: 36.95, forwardPE: 45.11, expGrowth5yr: 4.29, pegRatio: 6.55, evEbitda: 19.87, pbv: 1.99, roe: 5.04 },
+  { industry: "Real Estate (Development)", numFirms: 14, pctMoneyLosing: 78.6, currentPE: 29.45, trailingPE: 11.35, forwardPE: 12.34, expGrowth5yr: -2.9, pegRatio: null, evEbitda: 10.23, pbv: 0.99, roe: 5.06 },
+  { industry: "Real Estate (General/Diversified)", numFirms: 12, pctMoneyLosing: 58.3, currentPE: 46.16, trailingPE: 40.25, forwardPE: 14.33, expGrowth5yr: null, pegRatio: null, evEbitda: 17.29, pbv: 1.16, roe: 10.77 },
+  { industry: "Real Estate (Operations & Services)", numFirms: 54, pctMoneyLosing: 59.3, currentPE: 61.29, trailingPE: 107.34, forwardPE: 93.59, expGrowth5yr: 33.0, pegRatio: 1.33, evEbitda: 21.95, pbv: 3.06, roe: 3.3 },
+  { industry: "Recreation", numFirms: 49, pctMoneyLosing: 57.1, currentPE: 24.85, trailingPE: 119.01, forwardPE: 38.02, expGrowth5yr: 9.95, pegRatio: 1.83, evEbitda: 10.39, pbv: 4.03, roe: -12.76 },
+  { industry: "Reinsurance", numFirms: 1, pctMoneyLosing: 0.0, currentPE: 18.65, trailingPE: 15.42, forwardPE: 8.14, expGrowth5yr: null, pegRatio: null, evEbitda: 8.67, pbv: 1.02, roe: 7.79 },
+  { industry: "Restaurant/Dining", numFirms: 64, pctMoneyLosing: 46.9, currentPE: 67.67, trailingPE: 48.33, forwardPE: 31.9, expGrowth5yr: 3.53, pegRatio: 9.29, evEbitda: 17.49, pbv: 74.74, roe: 0.1 },
+  { industry: "Retail (Automotive)", numFirms: 34, pctMoneyLosing: 55.9, currentPE: 34.26, trailingPE: 54.83, forwardPE: 21.88, expGrowth5yr: 17.82, pegRatio: 1.35, evEbitda: 14.79, pbv: 7.48, roe: 34.38 },
+  { industry: "Retail (Building Supply)", numFirms: 14, pctMoneyLosing: 50.0, currentPE: 31.22, trailingPE: 23.47, forwardPE: 23.14, expGrowth5yr: 16.98, pegRatio: 1.31, evEbitda: 14.42, pbv: 132.2, roe: null },
+  { industry: "Retail (Distributors)", numFirms: 62, pctMoneyLosing: 45.2, currentPE: 103.56, trailingPE: 28.8, forwardPE: 43.84, expGrowth5yr: 9.47, pegRatio: 2.37, evEbitda: 13.71, pbv: 4.04, roe: 18.33 },
+  { industry: "Retail (General)", numFirms: 23, pctMoneyLosing: 26.1, currentPE: 46.68, trailingPE: 51.0, forwardPE: 23.97, expGrowth5yr: 11.71, pegRatio: 2.86, evEbitda: 17.38, pbv: 7.19, roe: 26.05 },
+  { industry: "Retail (Grocery and Food)", numFirms: 15, pctMoneyLosing: 40.0, currentPE: 17.46, trailingPE: 20.54, forwardPE: 14.34, expGrowth5yr: 11.13, pegRatio: 2.27, evEbitda: 8.94, pbv: 3.93, roe: 12.9 },
+  { industry: "Retail (REITs)", numFirms: 26, pctMoneyLosing: 7.7, currentPE: 109.93, trailingPE: 368.69, forwardPE: 44.39, expGrowth5yr: 3.99, pegRatio: 7.79, evEbitda: 16.73, pbv: 2.08, roe: 6.36 },
+  { industry: "Retail (Special Lines)", numFirms: 94, pctMoneyLosing: 61.7, currentPE: 26.04, trailingPE: 314.01, forwardPE: 21.52, expGrowth5yr: 8.08, pegRatio: 3.08, evEbitda: 11.47, pbv: 7.25, roe: 30.12 },
+  { industry: "Rubber& Tires", numFirms: 3, pctMoneyLosing: 100.0, currentPE: 35.81, trailingPE: null, forwardPE: 7.3, expGrowth5yr: 9.07, pegRatio: null, evEbitda: 6.74, pbv: 0.79, roe: -36.41 },
+  { industry: "Semiconductor", numFirms: 66, pctMoneyLosing: 62.1, currentPE: 70.13, trailingPE: 100.18, forwardPE: 37.29, expGrowth5yr: 22.88, pegRatio: 2.13, evEbitda: 34.75, pbv: 13.31, roe: 31.36 },
+  { industry: "Semiconductor Equip", numFirms: 31, pctMoneyLosing: 45.2, currentPE: 47.58, trailingPE: 46.83, forwardPE: 41.58, expGrowth5yr: 18.74, pegRatio: 1.82, evEbitda: 24.74, pbv: 9.7, roe: 35.78 },
+  { industry: "Shipbuilding & Marine", numFirms: 8, pctMoneyLosing: 62.5, currentPE: 13.7, trailingPE: 18.87, forwardPE: 11.56, expGrowth5yr: 16.4, pegRatio: 0.83, evEbitda: 7.95, pbv: 1.5, roe: 10.15 },
+  { industry: "Shoe", numFirms: 11, pctMoneyLosing: 36.4, currentPE: 18.7, trailingPE: 24.47, forwardPE: 17.1, expGrowth5yr: 7.3, pegRatio: 4.17, evEbitda: 16.86, pbv: 6.06, roe: 19.49 },
+  { industry: "Software (Entertainment)", numFirms: 77, pctMoneyLosing: 71.4, currentPE: 70.74, trailingPE: 39.34, forwardPE: 18.52, expGrowth5yr: 20.55, pegRatio: 1.44, evEbitda: 22.01, pbv: 9.1, roe: 36.51 },
+  { industry: "Software (Internet)", numFirms: 29, pctMoneyLosing: 72.4, currentPE: 162.98, trailingPE: 67.21, forwardPE: 64.81, expGrowth5yr: 20.9, pegRatio: 1.67, evEbitda: 30.26, pbv: 10.86, roe: -1.47 },
+  { industry: "Software (System & Application)", numFirms: 309, pctMoneyLosing: 70.2, currentPE: 122.49, trailingPE: 79.17, forwardPE: 34.13, expGrowth5yr: 22.76, pegRatio: 1.65, evEbitda: 24.48, pbv: 9.14, roe: 29.62 },
+  { industry: "Steel", numFirms: 19, pctMoneyLosing: 36.8, currentPE: 77.37, trailingPE: 47.58, forwardPE: 16.85, expGrowth5yr: 16.04, pegRatio: 1.5, evEbitda: 11.59, pbv: 1.88, roe: 3.68 },
+  { industry: "Telecom (Wireless)", numFirms: 12, pctMoneyLosing: 75.0, currentPE: 21.64, trailingPE: 107.14, forwardPE: 35.63, expGrowth5yr: 15.1, pegRatio: 1.29, evEbitda: 8.97, pbv: 3.47, roe: 16.06 },
+  { industry: "Telecom. Equipment", numFirms: 57, pctMoneyLosing: 68.4, currentPE: 125.46, trailingPE: 84.72, forwardPE: 39.47, expGrowth5yr: 40.27, pegRatio: 0.87, evEbitda: 24.07, pbv: 8.37, roe: 24.96 },
+  { industry: "Telecom. Services", numFirms: 39, pctMoneyLosing: 79.5, currentPE: 26.52, trailingPE: 16.79, forwardPE: 26.5, expGrowth5yr: 59.42, pegRatio: 0.13, evEbitda: 6.54, pbv: 1.64, roe: 19.82 },
+  { industry: "Tobacco", numFirms: 10, pctMoneyLosing: 50.0, currentPE: 22.98, trailingPE: 23.21, forwardPE: 17.64, expGrowth5yr: 6.11, pegRatio: 3.24, evEbitda: 13.46, pbv: null, roe: null },
+  { industry: "Transportation", numFirms: 19, pctMoneyLosing: 52.6, currentPE: 60.03, trailingPE: 28.87, forwardPE: 19.76, expGrowth5yr: 15.8, pegRatio: 0.84, evEbitda: 12.55, pbv: 4.79, roe: 36.58 },
+  { industry: "Transportation (Railroads)", numFirms: 4, pctMoneyLosing: 25.0, currentPE: 21.5, trailingPE: 21.53, forwardPE: 20.47, expGrowth5yr: 7.66, pegRatio: 2.72, evEbitda: 13.49, pbv: 5.83, roe: 29.07 },
+  { industry: "Trucking", numFirms: 26, pctMoneyLosing: 50.0, currentPE: 33.87, trailingPE: 37.42, forwardPE: 46.17, expGrowth5yr: 20.12, pegRatio: 1.62, evEbitda: 10.41, pbv: 2.86, roe: 7.6 },
+  { industry: "Utility (General)", numFirms: 14, pctMoneyLosing: 0.0, currentPE: 21.03, trailingPE: 19.92, forwardPE: 18.13, expGrowth5yr: 6.91, pegRatio: 2.96, evEbitda: 13.73, pbv: 1.81, roe: 10.42 },
+  { industry: "Utility (Water)", numFirms: 14, pctMoneyLosing: 28.6, currentPE: 21.99, trailingPE: 23.07, forwardPE: 21.3, expGrowth5yr: 7.65, pegRatio: 2.64, evEbitda: 14.14, pbv: 2.0, roe: 10.28 },
+  { industry: "Total Market", numFirms: 5994, pctMoneyLosing: 57.2, currentPE: 72.19, trailingPE: 57.86, forwardPE: 27.66, expGrowth5yr: 13.95, pegRatio: 1.9, evEbitda: 19.73, pbv: 4.61, roe: 17.21 },
+  { industry: "Total Market (without financials)", numFirms: 4822, pctMoneyLosing: 64.0, currentPE: 60.26, trailingPE: 61.56, forwardPE: 30.89, expGrowth5yr: 13.68, pegRatio: 2.11, evEbitda: 16.95, pbv: 5.1, roe: 16.41 },
+];
+
+const TOTAL_MARKET_KEYS = ["Total Market", "Total Market (without financials)"];
+const industries = MULTIPLES_DATA.filter(d => !TOTAL_MARKET_KEYS.includes(d.industry));
+const totalMarket = MULTIPLES_DATA.find(d => d.industry === "Total Market");
+
+let SORT_KEY = "currentPE";
+let SORT_DIR = -1;
+
+function fmtNum(v, digits){
+ if(v === null || v === undefined) return null;
+ return v.toFixed(digits);
+}
+
+function renderStats(){
+ if(!totalMarket) return;
+ const container = document.getElementById("totalMarketStats");
+ const items = [
+  { label: "Total Market PE", value: fmtNum(totalMarket.currentPE, 1) },
+  { label: "Total Market PEG", value: fmtNum(totalMarket.pegRatio, 2) },
+  { label: "Total Market EV/EBITDA", value: fmtNum(totalMarket.evEbitda, 1) },
+  { label: "Total Market P/B", value: fmtNum(totalMarket.pbv, 2) },
+  { label: "Total Market ROE", value: fmtNum(totalMarket.roe, 1) + "%" },
+ ];
+ container.innerHTML = items.map(i => `
+  <div class="stat-card">
+   <div class="stat-label">${i.label}</div>
+   <div class="stat-value">${i.value === null ? "—" : i.value}</div>
+  </div>
+ `).join("");
+}
+
+function sortBy(key){
+ if(SORT_KEY === key){
+  SORT_DIR = -SORT_DIR;
+ }else{
+  SORT_KEY = key;
+  SORT_DIR = key === "industry" ? 1 : -1;
+ }
+ render();
+}
+
+function render(){
+ const query = document.getElementById("searchBox").value.trim().toLowerCase();
+ let rows = industries.filter(r => r.industry.toLowerCase().includes(query));
+
+ rows.sort((a, b) => {
+  const av = a[SORT_KEY], bv = b[SORT_KEY];
+  if(SORT_KEY === "industry") return av.localeCompare(bv) * SORT_DIR;
+  if(av === null || av === undefined) return 1;
+  if(bv === null || bv === undefined) return -1;
+  return (av - bv) * SORT_DIR;
+ });
+
+ const tbody = document.getElementById("tableBody");
+ const bodyRows = rows.map(r => `
+  <tr>
+   <td>${r.industry}</td>
+   <td class="${r.numFirms === null ? 'cell-na' : ''}">${r.numFirms ?? "—"}</td>
+   <td class="${r.currentPE === null ? 'cell-na' : ''}">${fmtNum(r.currentPE,1) ?? "—"}</td>
+   <td class="${r.trailingPE === null ? 'cell-na' : ''}">${fmtNum(r.trailingPE,1) ?? "—"}</td>
+   <td class="${r.forwardPE === null ? 'cell-na' : ''}">${fmtNum(r.forwardPE,1) ?? "—"}</td>
+   <td class="${r.pegRatio === null ? 'cell-na' : ''}">${fmtNum(r.pegRatio,2) ?? "—"}</td>
+   <td class="${r.evEbitda === null ? 'cell-na' : ''}">${fmtNum(r.evEbitda,1) ?? "—"}</td>
+   <td class="${r.pbv === null ? 'cell-na' : ''}">${fmtNum(r.pbv,2) ?? "—"}</td>
+   <td class="${r.roe === null ? 'cell-na' : ''}">${r.roe === null ? "—" : fmtNum(r.roe,1) + "%"}</td>
+   <td class="${r.expGrowth5yr === null ? 'cell-na' : ''}">${r.expGrowth5yr === null ? "—" : fmtNum(r.expGrowth5yr,1) + "%"}</td>
+  </tr>
+ `).join("");
+
+ const totalRow = totalMarket ? `
+  <tr class="total-market">
+   <td>${totalMarket.industry}</td>
+   <td>${totalMarket.numFirms ?? "—"}</td>
+   <td>${fmtNum(totalMarket.currentPE,1) ?? "—"}</td>
+   <td>${fmtNum(totalMarket.trailingPE,1) ?? "—"}</td>
+   <td>${fmtNum(totalMarket.forwardPE,1) ?? "—"}</td>
+   <td>${fmtNum(totalMarket.pegRatio,2) ?? "—"}</td>
+   <td>${fmtNum(totalMarket.evEbitda,1) ?? "—"}</td>
+   <td>${fmtNum(totalMarket.pbv,2) ?? "—"}</td>
+   <td>${totalMarket.roe === null ? "—" : fmtNum(totalMarket.roe,1) + "%"}</td>
+   <td>${totalMarket.expGrowth5yr === null ? "—" : fmtNum(totalMarket.expGrowth5yr,1) + "%"}</td>
+  </tr>
+ ` : "";
+
+ tbody.innerHTML = totalRow + bodyRows;
+
+ document.querySelectorAll("thead th").forEach(th => {
+  const key = th.dataset.key;
+  th.classList.toggle("sorted", key === SORT_KEY);
+  const arrow = th.querySelector(".sort-arrow");
+  if(arrow) arrow.textContent = (key === SORT_KEY && SORT_DIR === 1) ? "▴" : "▾";
+ });
+}
+
+document.querySelectorAll("thead th").forEach(th => {
+ const key = th.dataset.key;
+ if(key) th.addEventListener("click", () => sortBy(key));
+});
+
+renderStats();
+render();
+</script>
+
+</body>
+</html>
