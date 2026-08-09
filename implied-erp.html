@@ -281,42 +281,50 @@ h1{
  margin-bottom:14px;
 }
 
-.regression-stats{
- display:flex;
- flex-wrap:wrap;
- gap:14px;
+.method-table{
+ width:100%;
+ border-collapse:collapse;
  font-family:var(--mono);
- font-size:12px;
- color:var(--muted);
-}
-
-.regression-stats b{ color:var(--ink); }
-
-.regression-stats .sig{ color:var(--greed); }
-
-.method-block{
- margin-top:10px;
-}
-
-.method-label{
- font-size:10px;
- text-transform:uppercase;
- letter-spacing:0.04em;
- color:var(--muted);
- margin-bottom:4px;
- padding-top:10px;
- border-top:1px solid var(--hair);
-}
-
-.method-block .regression-stats{
- gap:6px 10px;
  font-size:10.5px;
+ margin-top:8px;
 }
+
+.method-table th{
+ text-align:right;
+ padding:6px 5px;
+ color:var(--muted);
+ font-size:9px;
+ text-transform:uppercase;
+ letter-spacing:0.03em;
+ font-weight:600;
+ border-bottom:1px solid var(--hair);
+ white-space:nowrap;
+}
+
+.method-table th:first-child{ text-align:left; }
+
+.method-table td{
+ padding:7px 5px;
+ text-align:right;
+ border-bottom:1px solid var(--hair);
+ white-space:nowrap;
+ color:var(--ink);
+}
+
+.method-table td:first-child{
+ text-align:left;
+ font-family:var(--sans);
+ color:var(--muted);
+}
+
+.method-table tr:last-child td{ border-bottom:none; }
+
+.method-table .sig{ color:var(--greed); }
 
 .method-note{
  font-size:10px;
  color:var(--muted);
- margin-top:3px;
+ margin-top:6px;
  font-style:italic;
 }
 
@@ -505,9 +513,7 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <div class="scatter-canvas-wrap">
 <canvas id="scatterSameYear"></canvas>
 </div>
-<div class="method-label">Pearson (OLS)</div>
-<div class="regression-stats" id="statsSameYear"></div>
-<div id="methodsSameYear"></div>
+<div id="tableSameYear"></div>
 </div>
 <div class="scatter-box">
 <h3>Predictive: ERP vs. next year's return</h3>
@@ -515,9 +521,7 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <div class="scatter-canvas-wrap">
 <canvas id="scatterPredictive"></canvas>
 </div>
-<div class="method-label">Pearson (OLS)</div>
-<div class="regression-stats" id="statsPredictive"></div>
-<div id="methodsPredictive"></div>
+<div id="tablePredictive"></div>
 </div>
 </div>
 
@@ -662,17 +666,6 @@ function erf(x){
  return sign * y;
 }
 
-function renderRegressionStats(elId, stats){
- const sig = stats.p < 0.05;
- document.getElementById(elId).innerHTML =
-  `<span>n=<b>${stats.n}</b></span>` +
-  `<span>r=<b>${stats.r.toFixed(2)}</b></span>` +
-  `<span>R&sup2;=<b>${(stats.r2 * 100).toFixed(1)}%</b></span>` +
-  `<span>slope=<b>${stats.slope >= 0 ? "+" : ""}${stats.slope.toFixed(2)}</b></span>` +
-  `<span>t=<b>${stats.t.toFixed(2)}</b></span>` +
-  `<span class="${sig ? "sig" : ""}">p=<b>${stats.p < 0.001 ? "<0.001" : stats.p.toFixed(3)}</b>${sig ? " (sig. at 5%)" : " (not sig. at 5%)"}</span>`;
-}
-
 // ---- Robustness checks: Spearman rank correlation and jackknife
 // (leave-one-out) trimming, same as used on the Factor Analysis page —
 // run alongside the headline Pearson/OLS regression so a result can't be
@@ -720,29 +713,38 @@ function jackknifeTrim(points){
  return { ...trimmed, removedPoint: points[influentialIdx] };
 }
 
-function renderRobustnessMethods(containerElId, points){
- const spear = spearmanRegression(points.map(p => p.x), points.map(p => p.y));
+// Renders one table per scatter panel with a row each for Pearson
+// (OLS), Spearman (rank correlation), and the jackknife-trimmed
+// regression — same n/r/r²/slope/t/p columns for all three.
+function renderMethodTable(containerElId, points){
+ const xs = points.map(p => p.x), ys = points.map(p => p.y);
+ const pearson = linearRegression(xs, ys);
+ const spear = spearmanRegression(xs, ys);
  const trimmed = jackknifeTrim(points);
 
- function statsRow(stats){
+ function row(label, stats){
   const sig = stats.p < 0.05;
-  return `<span>n=<b>${stats.n}</b></span>` +
-   `<span>r=<b>${stats.r.toFixed(2)}</b></span>` +
-   `<span>R&sup2;=<b>${(stats.r2 * 100).toFixed(1)}%</b></span>` +
-   `<span>t=<b>${stats.t.toFixed(2)}</b></span>` +
-   `<span class="${sig ? "sig" : ""}">p=<b>${stats.p < 0.001 ? "<0.001" : stats.p.toFixed(3)}</b>${sig ? " (sig.)" : " (n.s.)"}</span>`;
+  return `<tr>` +
+   `<td>${label}</td>` +
+   `<td>${stats.n}</td>` +
+   `<td>${stats.r.toFixed(2)}</td>` +
+   `<td>${(stats.r2 * 100).toFixed(1)}%</td>` +
+   `<td>${stats.slope >= 0 ? "+" : ""}${stats.slope.toFixed(2)}</td>` +
+   `<td>${stats.t.toFixed(2)}</td>` +
+   `<td class="${sig ? "sig" : ""}">${stats.p < 0.001 ? "<0.001" : stats.p.toFixed(3)}</td>` +
+  `</tr>`;
  }
 
  document.getElementById(containerElId).innerHTML =
-  `<div class="method-block">` +
-   `<div class="method-label">Spearman (rank correlation)</div>` +
-   `<div class="regression-stats">${statsRow(spear)}</div>` +
-  `</div>` +
-  `<div class="method-block">` +
-   `<div class="method-label">Jackknife (most influential point removed)</div>` +
-   `<div class="regression-stats">${statsRow(trimmed)}</div>` +
-   `<div class="method-note">Removed: ${trimmed.removedPoint.year} (${trimmed.removedPoint.x.toFixed(2)}% &rarr; ${trimmed.removedPoint.y.toFixed(1)}%)</div>` +
-  `</div>`;
+  `<table class="method-table">` +
+   `<thead><tr><th>Method</th><th>n</th><th>r</th><th>r&sup2;</th><th>slope</th><th>t</th><th>p</th></tr></thead>` +
+   `<tbody>` +
+    row("Pearson (OLS)", pearson) +
+    row("Spearman (&rho;)", spear) +
+    row("Jackknife", trimmed) +
+   `</tbody>` +
+  `</table>` +
+  `<div class="method-note">Jackknife removed: ${trimmed.removedPoint.year} (${trimmed.removedPoint.x.toFixed(2)}% &rarr; ${trimmed.removedPoint.y.toFixed(1)}%)</div>`;
 }
 
 function renderScatter(canvasId, points, stats, pointColor){
@@ -871,8 +873,7 @@ function init(){
   .filter(p => p.y !== null);
  const sameYearStats = linearRegression(sameYearPoints.map(p => p.x), sameYearPoints.map(p => p.y));
  renderScatter("scatterSameYear", sameYearPoints, sameYearStats, "rgba(217,138,61,0.75)");
- renderRegressionStats("statsSameYear", sameYearStats);
- renderRobustnessMethods("methodsSameYear", sameYearPoints);
+ renderMethodTable("tableSameYear", sameYearPoints);
 
  // Predictive: ERP_t vs. return_{t+1} — pairs year i's ERP (i from 1 to
  // n-2, since i=0 has no realized return to anchor the same-year set
@@ -884,8 +885,7 @@ function init(){
  }
  const predictiveStats = linearRegression(predictivePoints.map(p => p.x), predictivePoints.map(p => p.y));
  renderScatter("scatterPredictive", predictivePoints, predictiveStats, "rgba(111,143,172,0.75)");
- renderRegressionStats("statsPredictive", predictiveStats);
- renderRobustnessMethods("methodsPredictive", predictivePoints);
+ renderMethodTable("tablePredictive", predictivePoints);
 }
 
 init();

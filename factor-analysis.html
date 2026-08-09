@@ -316,42 +316,50 @@ h1{
  margin-bottom:12px;
 }
 
-.regression-stats{
- display:flex;
- flex-wrap:wrap;
- gap:8px 12px;
+.method-table{
+ width:100%;
+ border-collapse:collapse;
  font-family:var(--mono);
- font-size:11px;
- color:var(--muted);
-}
-
-.regression-stats b{ color:var(--ink); }
-
-.regression-stats .sig{ color:var(--greed); }
-
-.method-block{
- margin-top:10px;
-}
-
-.method-label{
- font-size:10px;
- text-transform:uppercase;
- letter-spacing:0.04em;
- color:var(--muted);
- margin-bottom:4px;
- padding-top:10px;
- border-top:1px solid var(--hair);
-}
-
-.method-block .regression-stats{
- gap:6px 10px;
  font-size:10.5px;
+ margin-top:8px;
 }
+
+.method-table th{
+ text-align:right;
+ padding:6px 5px;
+ color:var(--muted);
+ font-size:9px;
+ text-transform:uppercase;
+ letter-spacing:0.03em;
+ font-weight:600;
+ border-bottom:1px solid var(--hair);
+ white-space:nowrap;
+}
+
+.method-table th:first-child{ text-align:left; }
+
+.method-table td{
+ padding:7px 5px;
+ text-align:right;
+ border-bottom:1px solid var(--hair);
+ white-space:nowrap;
+ color:var(--ink);
+}
+
+.method-table td:first-child{
+ text-align:left;
+ font-family:var(--sans);
+ color:var(--muted);
+}
+
+.method-table tr:last-child td{ border-bottom:none; }
+
+.method-table .sig{ color:var(--greed); }
 
 .method-note{
  font-size:10px;
  color:var(--muted);
- margin-top:3px;
+ margin-top:6px;
  font-style:italic;
 }
 
@@ -624,25 +632,19 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <h3>Size (SMB)</h3>
 <div class="scatter-sub">SMB return, year t (x) vs. SMB return, year t+1 (y)</div>
 <div class="scatter-canvas-wrap"><canvas id="scatterSmb"></canvas></div>
-<div class="method-label">Pearson (OLS)</div>
-<div class="regression-stats" id="statsSmb"></div>
-<div id="methodsSmb"></div>
+<div id="tableSmb"></div>
 </div>
 <div class="scatter-box">
 <h3>Value (HML)</h3>
 <div class="scatter-sub">HML return, year t (x) vs. HML return, year t+1 (y)</div>
 <div class="scatter-canvas-wrap"><canvas id="scatterHml"></canvas></div>
-<div class="method-label">Pearson (OLS)</div>
-<div class="regression-stats" id="statsHml"></div>
-<div id="methodsHml"></div>
+<div id="tableHml"></div>
 </div>
 <div class="scatter-box">
 <h3>Momentum (WML)</h3>
 <div class="scatter-sub">WML return, year t (x) vs. WML return, year t+1 (y)</div>
 <div class="scatter-canvas-wrap"><canvas id="scatterWml"></canvas></div>
-<div class="method-label">Pearson (OLS)</div>
-<div class="regression-stats" id="statsWml"></div>
-<div id="methodsWml"></div>
+<div id="tableWml"></div>
 </div>
 </div>
 
@@ -656,25 +658,19 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <h3>Size (SMB)</h3>
 <div class="scatter-sub">SMB return, quarter t (x) vs. SMB return, quarter t+1 (y)</div>
 <div class="scatter-canvas-wrap"><canvas id="scatterSmbQ"></canvas></div>
-<div class="method-label">Pearson (OLS)</div>
-<div class="regression-stats" id="statsSmbQ"></div>
-<div id="methodsSmbQ"></div>
+<div id="tableSmbQ"></div>
 </div>
 <div class="scatter-box">
 <h3>Value (HML)</h3>
 <div class="scatter-sub">HML return, quarter t (x) vs. HML return, quarter t+1 (y)</div>
 <div class="scatter-canvas-wrap"><canvas id="scatterHmlQ"></canvas></div>
-<div class="method-label">Pearson (OLS)</div>
-<div class="regression-stats" id="statsHmlQ"></div>
-<div id="methodsHmlQ"></div>
+<div id="tableHmlQ"></div>
 </div>
 <div class="scatter-box">
 <h3>Momentum (WML)</h3>
 <div class="scatter-sub">WML return, quarter t (x) vs. WML return, quarter t+1 (y)</div>
 <div class="scatter-canvas-wrap"><canvas id="scatterWmlQ"></canvas></div>
-<div class="method-label">Pearson (OLS)</div>
-<div class="regression-stats" id="statsWmlQ"></div>
-<div id="methodsWmlQ"></div>
+<div id="tableWmlQ"></div>
 </div>
 </div>
 
@@ -688,26 +684,20 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <h3>Size (SMB)</h3>
 <div class="scatter-sub">SMB return, month t (x) vs. SMB return, month t+1 (y)</div>
 <div class="scatter-canvas-wrap"><canvas id="scatterSmbM"></canvas></div>
-<div class="method-label">Pearson (OLS)</div>
-<div class="regression-stats" id="statsSmbM"></div>
-<div id="methodsSmbM"></div>
+<div id="tableSmbM"></div>
 <div class="method-note">Pearson alone (p=0.125) misses what Spearman and jackknife catch (p=0.001, p=0.007) &mdash; traced to Feb&rarr;Mar 2000, the dot-com peak (SMB +21.6% then -16.1%), one of the most extreme two-month swings in the series. Removing just that pair lifts Pearson to r=0.078, p=0.007. Purging every pair touching either month (3 pairs) still leaves r=0.061, p=0.036 &mdash; a real signal survives even with the dot-com period fully excluded, not purely a single-event artifact.</div>
 </div>
 <div class="scatter-box">
 <h3>Value (HML)</h3>
 <div class="scatter-sub">HML return, month t (x) vs. HML return, month t+1 (y)</div>
 <div class="scatter-canvas-wrap"><canvas id="scatterHmlM"></canvas></div>
-<div class="method-label">Pearson (OLS)</div>
-<div class="regression-stats" id="statsHmlM"></div>
-<div id="methodsHmlM"></div>
+<div id="tableHmlM"></div>
 </div>
 <div class="scatter-box">
 <h3>Momentum (WML)</h3>
 <div class="scatter-sub">WML return, month t (x) vs. WML return, month t+1 (y)</div>
 <div class="scatter-canvas-wrap"><canvas id="scatterWmlM"></canvas></div>
-<div class="method-label">Pearson (OLS)</div>
-<div class="regression-stats" id="statsWmlM"></div>
-<div id="methodsWmlM"></div>
+<div id="tableWmlM"></div>
 </div>
 </div>
 
@@ -950,17 +940,6 @@ function samePairYearOverYear(annualReturns){
  return pairs;
 }
 
-function renderRegressionStats(elId, stats){
- const sig = stats.p < 0.05;
- document.getElementById(elId).innerHTML =
-  `<span>n=<b>${stats.n}</b></span>` +
-  `<span>r=<b>${stats.r.toFixed(2)}</b></span>` +
-  `<span>R&sup2;=<b>${(stats.r2 * 100).toFixed(1)}%</b></span>` +
-  `<span>slope=<b>${stats.slope >= 0 ? "+" : ""}${stats.slope.toFixed(2)}</b></span>` +
-  `<span>t=<b>${stats.t.toFixed(2)}</b></span>` +
-  `<span class="${sig ? "sig" : ""}">p=<b>${stats.p < 0.001 ? "<0.001" : stats.p.toFixed(3)}</b>${sig ? " (sig. at 5%)" : " (not sig. at 5%)"}</span>`;
-}
-
 // ---- Robustness checks: Spearman rank correlation and jackknife
 // (leave-one-out) trimming, run alongside the headline Pearson/OLS
 // regression so a result can't be quietly resting on rank-insensitive
@@ -1012,17 +991,27 @@ function jackknifeTrim(pairs){
  return { ...trimmed, removedPoint: pairs[influentialIdx] };
 }
 
-function renderRobustnessMethods(containerElId, pairs){
- const spear = spearmanRegression(pairs.map(p => p.x), pairs.map(p => p.y));
+// Renders one table per scatter panel with a row each for Pearson
+// (OLS), Spearman (rank correlation), and the jackknife-trimmed
+// regression — same n/r/r²/slope/t/p columns for all three, so they're
+// directly comparable at a glance.
+function renderMethodTable(containerElId, pairs){
+ const xs = pairs.map(p => p.x), ys = pairs.map(p => p.y);
+ const pearson = linearRegression(xs, ys);
+ const spear = spearmanRegression(xs, ys);
  const trimmed = jackknifeTrim(pairs);
 
- function statsRow(stats){
+ function row(label, stats){
   const sig = stats.p < 0.05;
-  return `<span>n=<b>${stats.n}</b></span>` +
-   `<span>r=<b>${stats.r.toFixed(2)}</b></span>` +
-   `<span>R&sup2;=<b>${(stats.r2 * 100).toFixed(1)}%</b></span>` +
-   `<span>t=<b>${stats.t.toFixed(2)}</b></span>` +
-   `<span class="${sig ? "sig" : ""}">p=<b>${stats.p < 0.001 ? "<0.001" : stats.p.toFixed(3)}</b>${sig ? " (sig.)" : " (n.s.)"}</span>`;
+  return `<tr>` +
+   `<td>${label}</td>` +
+   `<td>${stats.n}</td>` +
+   `<td>${stats.r.toFixed(2)}</td>` +
+   `<td>${(stats.r2 * 100).toFixed(1)}%</td>` +
+   `<td>${stats.slope >= 0 ? "+" : ""}${stats.slope.toFixed(2)}</td>` +
+   `<td>${stats.t.toFixed(2)}</td>` +
+   `<td class="${sig ? "sig" : ""}">${stats.p < 0.001 ? "<0.001" : stats.p.toFixed(3)}</td>` +
+  `</tr>`;
  }
 
  const removedLabel = trimmed.removedPoint.year !== undefined
@@ -1030,15 +1019,15 @@ function renderRobustnessMethods(containerElId, pairs){
   : trimmed.removedPoint.key;
 
  document.getElementById(containerElId).innerHTML =
-  `<div class="method-block">` +
-   `<div class="method-label">Spearman (rank correlation)</div>` +
-   `<div class="regression-stats">${statsRow(spear)}</div>` +
-  `</div>` +
-  `<div class="method-block">` +
-   `<div class="method-label">Jackknife (most influential point removed)</div>` +
-   `<div class="regression-stats">${statsRow(trimmed)}</div>` +
-   `<div class="method-note">Removed: ${removedLabel} (${trimmed.removedPoint.x.toFixed(1)}% → ${trimmed.removedPoint.y.toFixed(1)}%)</div>` +
-  `</div>`;
+  `<table class="method-table">` +
+   `<thead><tr><th>Method</th><th>n</th><th>r</th><th>r&sup2;</th><th>slope</th><th>t</th><th>p</th></tr></thead>` +
+   `<tbody>` +
+    row("Pearson (OLS)", pearson) +
+    row("Spearman (&rho;)", spear) +
+    row("Jackknife", trimmed) +
+   `</tbody>` +
+  `</table>` +
+  `<div class="method-note">Jackknife removed: ${removedLabel} (${trimmed.removedPoint.x.toFixed(1)}% → ${trimmed.removedPoint.y.toFixed(1)}%)</div>`;
 }
 
 function renderScatter(canvasId, points, stats, pointColor, opts){
@@ -1185,14 +1174,11 @@ function renderFactorMomentum(rows){
  const momStats = linearRegression(momPairs.map(p => p.x), momPairs.map(p => p.y));
 
  renderScatter("scatterSmb", smbPairs, smbStats, "rgba(111,143,172,0.75)");
- renderRegressionStats("statsSmb", smbStats);
- renderRobustnessMethods("methodsSmb", smbPairs);
+ renderMethodTable("tableSmb", smbPairs);
  renderScatter("scatterHml", hmlPairs, hmlStats, "rgba(139,111,172,0.75)");
- renderRegressionStats("statsHml", hmlStats);
- renderRobustnessMethods("methodsHml", hmlPairs);
+ renderMethodTable("tableHml", hmlPairs);
  renderScatter("scatterWml", momPairs, momStats, "rgba(111,172,130,0.75)");
- renderRegressionStats("statsWml", momStats);
- renderRobustnessMethods("methodsWml", momPairs);
+ renderMethodTable("tableWml", momPairs);
 
  document.getElementById("momentumSub").textContent =
   `Each point is one pair of consecutive full calendar years (${smbPairs[0].year}→${smbPairs[0].year + 1} through ${smbPairs[smbPairs.length - 1].year}→${smbPairs[smbPairs.length - 1].year + 1}), ` +
@@ -1219,14 +1205,11 @@ function renderFactorMomentumQuarterly(rows){
   datasetLabel: "Quarters",
  };
  renderScatter("scatterSmbQ", smbPairs, smbStats, "rgba(111,143,172,0.75)", quarterOpts);
- renderRegressionStats("statsSmbQ", smbStats);
- renderRobustnessMethods("methodsSmbQ", smbPairs);
+ renderMethodTable("tableSmbQ", smbPairs);
  renderScatter("scatterHmlQ", hmlPairs, hmlStats, "rgba(139,111,172,0.75)", quarterOpts);
- renderRegressionStats("statsHmlQ", hmlStats);
- renderRobustnessMethods("methodsHmlQ", hmlPairs);
+ renderMethodTable("tableHmlQ", hmlPairs);
  renderScatter("scatterWmlQ", momPairs, momStats, "rgba(111,172,130,0.75)", quarterOpts);
- renderRegressionStats("statsWmlQ", momStats);
- renderRobustnessMethods("methodsWmlQ", momPairs);
+ renderMethodTable("tableWmlQ", momPairs);
 
  document.getElementById("momentumSubQ").textContent =
   `Each point is one pair of consecutive full calendar quarters (${smbPairs[0].key}→${smbPairs[0].nextKey} through ${smbPairs[smbPairs.length - 1].key}→${smbPairs[smbPairs.length - 1].nextKey}), ` +
@@ -1253,14 +1236,11 @@ function renderFactorMomentumMonthly(rows){
   datasetLabel: "Months",
  };
  renderScatter("scatterSmbM", smbPairs, smbStats, "rgba(111,143,172,0.75)", monthOpts);
- renderRegressionStats("statsSmbM", smbStats);
- renderRobustnessMethods("methodsSmbM", smbPairs);
+ renderMethodTable("tableSmbM", smbPairs);
  renderScatter("scatterHmlM", hmlPairs, hmlStats, "rgba(139,111,172,0.75)", monthOpts);
- renderRegressionStats("statsHmlM", hmlStats);
- renderRobustnessMethods("methodsHmlM", hmlPairs);
+ renderMethodTable("tableHmlM", hmlPairs);
  renderScatter("scatterWmlM", momPairs, momStats, "rgba(111,172,130,0.75)", monthOpts);
- renderRegressionStats("statsWmlM", momStats);
- renderRobustnessMethods("methodsWmlM", momPairs);
+ renderMethodTable("tableWmlM", momPairs);
 
  document.getElementById("momentumSubM").textContent =
   `Each point is one pair of consecutive full calendar months (${smbPairs[0].key}→${smbPairs[0].nextKey} through ${smbPairs[smbPairs.length - 1].key}→${smbPairs[smbPairs.length - 1].nextKey}), ` +
