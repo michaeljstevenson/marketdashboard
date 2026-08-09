@@ -259,6 +259,82 @@ h1{
  height:380px;
 }
 
+/* MOMENTUM SCATTER SECTION */
+
+.momentum-header{
+ display:flex;
+ justify-content:space-between;
+ align-items:center;
+ flex-wrap:wrap;
+ gap:10px;
+ margin-bottom:6px;
+}
+
+.momentum-header h2{
+ font-family:var(--serif);
+ font-weight:400;
+ font-size:22px;
+ margin:0;
+}
+
+.momentum-sub{
+ color:var(--muted);
+ font-size:13px;
+ max-width:680px;
+ margin-bottom:22px;
+}
+
+.scatter-grid{
+ display:grid;
+ grid-template-columns:repeat(3, 1fr);
+ gap:16px;
+ margin-bottom:30px;
+}
+
+.scatter-box{
+ background:var(--card);
+ border:1px solid var(--hair);
+ border-radius:12px;
+ padding:18px;
+}
+
+.scatter-box h3{
+ font-family:var(--serif);
+ font-weight:400;
+ font-size:14px;
+ margin:0 0 3px;
+}
+
+.scatter-box .scatter-sub{
+ color:var(--muted);
+ font-size:11px;
+ margin-bottom:12px;
+}
+
+.scatter-canvas-wrap{
+ height:230px;
+ margin-bottom:12px;
+}
+
+.regression-stats{
+ display:flex;
+ flex-wrap:wrap;
+ gap:8px 12px;
+ font-family:var(--mono);
+ font-size:11px;
+ color:var(--muted);
+ border-top:1px solid var(--hair);
+ padding-top:10px;
+}
+
+.regression-stats b{ color:var(--ink); }
+
+.regression-stats .sig{ color:var(--greed); }
+
+@media (max-width:900px){
+ .scatter-grid{ grid-template-columns:1fr; }
+}
+
 /* EXPLAINER */
 
 .explainer{
@@ -448,6 +524,32 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 </div>
 </div>
 
+<div class="momentum-header">
+<h2>Factor Momentum: Non-Overlapping Annual</h2>
+</div>
+<div class="momentum-sub" id="momentumSub">Loading...</div>
+
+<div class="scatter-grid">
+<div class="scatter-box">
+<h3>Size (SMB)</h3>
+<div class="scatter-sub">SMB return, year t (x) vs. SMB return, year t+1 (y)</div>
+<div class="scatter-canvas-wrap"><canvas id="scatterSmb"></canvas></div>
+<div class="regression-stats" id="statsSmb"></div>
+</div>
+<div class="scatter-box">
+<h3>Value (HML)</h3>
+<div class="scatter-sub">HML return, year t (x) vs. HML return, year t+1 (y)</div>
+<div class="scatter-canvas-wrap"><canvas id="scatterHml"></canvas></div>
+<div class="regression-stats" id="statsHml"></div>
+</div>
+<div class="scatter-box">
+<h3>Momentum (WML)</h3>
+<div class="scatter-sub">WML return, year t (x) vs. WML return, year t+1 (y)</div>
+<div class="scatter-canvas-wrap"><canvas id="scatterWml"></canvas></div>
+<div class="regression-stats" id="statsWml"></div>
+</div>
+</div>
+
 <div class="explainer">
 <h2>What these factors are</h2>
 <p><strong>Market (Mkt&minus;RF)</strong> is the broad US stock market's return in excess of the risk-free rate — the baseline "just own the market" premium. <strong>Size (SMB, "small minus big")</strong> is the return of small-cap stocks minus large-cap stocks. <strong>Value (HML, "high minus low")</strong> is the return of high book-to-market ("value") stocks minus low book-to-market ("growth") stocks. <strong>Momentum</strong> is the return of recent winners (top 30% by prior 12-month return, skipping the most recent month) minus recent losers (bottom 30%).</p>
@@ -574,6 +676,170 @@ function renderChartRange(rangeKey){
  });
 }
 
+// ---- Factor momentum: non-overlapping annual regressions ----
+//
+// Non-overlapping by construction: each year's return is compounded from
+// that year's own daily returns only, so year t and year t+1 share zero
+// underlying trading days. That matters — a *rolling* trailing-return
+// version (e.g. trailing-12-months measured weekly) would have adjacent
+// observations share nearly all their underlying days, which mechanically
+// produces serial correlation that has nothing to do with real momentum
+// (see the explainer below). Annual, non-overlapping avoids that trap
+// entirely, at the cost of a coarser (yearly) view of the effect.
+
+function linearRegression(xs, ys){
+ const n = xs.length;
+ const mx = xs.reduce((a, b) => a + b, 0) / n;
+ const my = ys.reduce((a, b) => a + b, 0) / n;
+ const sxx = xs.reduce((s, x) => s + (x - mx) ** 2, 0);
+ const sxy = xs.reduce((s, x, i) => s + (x - mx) * (ys[i] - my), 0);
+ const syy = ys.reduce((s, y) => s + (y - my) ** 2, 0);
+ const slope = sxy / sxx;
+ const intercept = my - slope * mx;
+ const r = sxy / Math.sqrt(sxx * syy);
+ const r2 = r * r;
+ const dof = n - 2;
+ const sse = ys.reduce((s, y, i) => s + (y - (intercept + slope * xs[i])) ** 2, 0);
+ const seSlope = Math.sqrt((sse / dof) / sxx);
+ const t = slope / seSlope;
+ const p = 2 * (1 - normalCdf(Math.abs(t)));
+ return { n, slope, intercept, r, r2, t, dof, p };
+}
+
+function normalCdf(x){
+ return 0.5 * (1 + erf(x / Math.SQRT2));
+}
+
+// Abramowitz & Stegun 7.1.26 approximation — accurate to ~1e-7.
+function erf(x){
+ const sign = x < 0 ? -1 : 1;
+ x = Math.abs(x);
+ const a1 = 0.254829592, a2 = -0.284496736, a3 = 1.421413741, a4 = -1.453152027, a5 = 1.061405429, p = 0.3275911;
+ const t = 1 / (1 + p * x);
+ const y = 1 - (((((a5 * t + a4) * t) + a3) * t + a2) * t + a1) * t * Math.exp(-x * x);
+ return sign * y;
+}
+
+// Compounds daily % returns within each calendar year into one annual %
+// return per factor field, from full calendar years only — the first
+// year in the dataset (1926, which only starts in July) and the current
+// year (partial, still accumulating) are dropped rather than treated as
+// full years, since a partial year isn't comparable to the others and
+// would quietly distort both the annual return and the regression.
+function annualReturnsByField(rows, field){
+ const byYear = new Map();
+ for(const r of rows){
+  const year = r.date.slice(0, 4);
+  const v = r[field];
+  if(v === null || v === undefined || isNaN(v)) continue;
+  if(!byYear.has(year)) byYear.set(year, { product: 1, firstDate: r.date, lastDate: r.date });
+  const entry = byYear.get(year);
+  entry.product *= (1 + v / 100);
+  entry.lastDate = r.date;
+ }
+ const years = [...byYear.keys()].sort();
+ const results = [];
+ for(let i = 0; i < years.length; i++){
+  const year = years[i];
+  const entry = byYear.get(year);
+  const isFirstYear = i === 0;
+  const isLastYear = i === years.length - 1;
+  // A full year's last trading day falls in late December; anything
+  // ending well before that (the current, still-in-progress year) is
+  // treated as partial and dropped, same as the dataset's actual first
+  // (partial) year.
+  const endsInDecember = entry.lastDate.slice(5, 7) === "12";
+  if((isFirstYear && entry.firstDate.slice(5, 7) !== "01") || (isLastYear && !endsInDecember)) continue;
+  results.push({ year: parseInt(year, 10), value: Math.round((entry.product - 1) * 1000) / 10 });
+ }
+ return results;
+}
+
+function samePairYearOverYear(annualReturns){
+ const byYear = new Map(annualReturns.map(r => [r.year, r.value]));
+ const pairs = [];
+ for(const { year, value } of annualReturns){
+  const next = byYear.get(year + 1);
+  if(next === undefined) continue;
+  pairs.push({ x: value, y: next, year });
+ }
+ return pairs;
+}
+
+function renderRegressionStats(elId, stats){
+ const sig = stats.p < 0.05;
+ document.getElementById(elId).innerHTML =
+  `<span>n=<b>${stats.n}</b></span>` +
+  `<span>r=<b>${stats.r.toFixed(2)}</b></span>` +
+  `<span>R&sup2;=<b>${(stats.r2 * 100).toFixed(1)}%</b></span>` +
+  `<span>slope=<b>${stats.slope >= 0 ? "+" : ""}${stats.slope.toFixed(2)}</b></span>` +
+  `<span>t=<b>${stats.t.toFixed(2)}</b></span>` +
+  `<span class="${sig ? "sig" : ""}">p=<b>${stats.p < 0.001 ? "<0.001" : stats.p.toFixed(3)}</b>${sig ? " (sig. at 5%)" : " (not sig. at 5%)"}</span>`;
+}
+
+function renderScatter(canvasId, points, stats, pointColor){
+ const xs = points.map(p => p.x);
+ const xMin = Math.min(...xs), xMax = Math.max(...xs);
+ const linePoints = [
+  { x: xMin, y: stats.intercept + stats.slope * xMin },
+  { x: xMax, y: stats.intercept + stats.slope * xMax },
+ ];
+
+ const ctx = document.getElementById(canvasId).getContext("2d");
+ new Chart(ctx, {
+  type: "scatter",
+  data: {
+   datasets: [
+    { label: "Years", data: points, backgroundColor: pointColor, pointRadius: 3.5, showLine: false },
+    { label: "Regression fit", type: "line", data: linePoints, borderColor: "#eae6da", borderWidth: 1.5, borderDash: [4, 3], pointRadius: 0, fill: false },
+   ],
+  },
+  options: {
+   responsive: true,
+   maintainAspectRatio: false,
+   plugins: {
+    legend: { display: false },
+    tooltip: {
+     callbacks: {
+      label: ctx => ctx.dataset.label === "Years"
+       ? `${ctx.raw.year}→${ctx.raw.year + 1}: ${ctx.raw.x.toFixed(1)}% → ${ctx.raw.y.toFixed(1)}%`
+       : null,
+     },
+    },
+   },
+   scales: {
+    x: { title: { display: true, text: "Year t return (%)", color: "#8b9199", font: { size: 10 } }, ticks: { color: "#8b9199", font: { size: 10 } }, grid: { color: "#2b3138" } },
+    y: { title: { display: true, text: "Year t+1 return (%)", color: "#8b9199", font: { size: 10 } }, ticks: { color: "#8b9199", font: { size: 10 } }, grid: { color: "#2b3138" } },
+   },
+  },
+ });
+}
+
+function renderFactorMomentum(rows){
+ const smbAnnual = annualReturnsByField(rows, "smb");
+ const hmlAnnual = annualReturnsByField(rows, "hml");
+ const momAnnual = annualReturnsByField(rows, "mom");
+
+ const smbPairs = samePairYearOverYear(smbAnnual);
+ const hmlPairs = samePairYearOverYear(hmlAnnual);
+ const momPairs = samePairYearOverYear(momAnnual);
+
+ const smbStats = linearRegression(smbPairs.map(p => p.x), smbPairs.map(p => p.y));
+ const hmlStats = linearRegression(hmlPairs.map(p => p.x), hmlPairs.map(p => p.y));
+ const momStats = linearRegression(momPairs.map(p => p.x), momPairs.map(p => p.y));
+
+ renderScatter("scatterSmb", smbPairs, smbStats, "rgba(111,143,172,0.75)");
+ renderRegressionStats("statsSmb", smbStats);
+ renderScatter("scatterHml", hmlPairs, hmlStats, "rgba(139,111,172,0.75)");
+ renderRegressionStats("statsHml", hmlStats);
+ renderScatter("scatterWml", momPairs, momStats, "rgba(111,172,130,0.75)");
+ renderRegressionStats("statsWml", momStats);
+
+ document.getElementById("momentumSub").textContent =
+  `Each point is one pair of consecutive full calendar years (${smbPairs[0].year}→${smbPairs[0].year + 1} through ${smbPairs[smbPairs.length - 1].year}→${smbPairs[smbPairs.length - 1].year + 1}), ` +
+  `${smbPairs.length} non-overlapping year-pairs per factor. Dashed line is the OLS regression fit.`;
+}
+
 async function init(){
  renderRangeButtons();
  try{
@@ -599,6 +865,7 @@ async function init(){
    "As of " + latest.date + " · " + ALL_ROWS.length.toLocaleString() + " trading days since " + ALL_ROWS[0].date;
 
   renderChartRange(DEFAULT_RANGE);
+  renderFactorMomentum(ALL_ROWS);
  }catch(e){
   showError("Couldn't load factor data: " + e.message);
   document.getElementById("updated").textContent = "";
