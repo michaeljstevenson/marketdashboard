@@ -615,7 +615,7 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 </div>
 
 <div class="rebalance-disclaimer">
-<strong>Before reading the regressions below:</strong> these factors aren't rebalanced on the same schedule, which matters for interpreting any persistence (or lack of it). <strong>SMB and HML</strong> are reformed once a year, every June, and hold the same underlying stocks unchanged for the full 12 months until the next reform &mdash; so SMB(t) and SMB(t+1), or HML(t) and HML(t+1), can literally share the same holdings across a 12-month stretch. <strong>WML (momentum)</strong> is reformed every month, ranking stocks by their trailing 12-to-2-month return (skipping the most recent month) &mdash; so WML(t) and WML(t+1) are, by construction, different portfolios each time, with no shared-holdings channel to produce persistence. See "What these factors are" below for the full explanation of why each is built this way.
+<strong>Note:</strong> These factors aren&rsquo;t rebalanced on the same schedule. Size and value are reformed once per year, every June, and hold the same underlying equities unchanged for the full twelve months until the next reform (meaning SMB(t) and SMB(t+1), and/or HML(t) and HML(t+1), can have the same underlying holdings across a twelve month period). Momentum (WML) is reformed every month, ranking equities by their trailing 12-to-2 month return (skips most recent month). See "What these factors are" below for the full explanation of why each is built this way.
 </div>
 
 <div class="momentum-header">
