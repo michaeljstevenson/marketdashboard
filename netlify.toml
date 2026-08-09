@@ -57,3 +57,11 @@
   # contention risk, just keeping all the daily jobs in one predictable
   # block after the close.
   schedule = "40 20 * * 1-5"
+
+[functions."scheduled-ticker-background"]
+  # Every 15 minutes during US market hours on weekdays (13:30-20:00 UTC =
+  # 9:30am-4:00pm EDT summer; drifts an hour during EST winter, same
+  # DST caveat as the jobs above). Unlike those once-daily jobs, the
+  # ticker tape is meant to feel current through the trading day, so it
+  # can't just run once after the close.
+  schedule = "*/15 13-20 * * 1-5"

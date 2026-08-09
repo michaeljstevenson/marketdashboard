@@ -566,14 +566,24 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
   const html = items.map(renderItem).join("");
   track.innerHTML = html + html;
 
+  // The CSS's 90s default duration was tuned for ~23 items; the -50%
+  // keyframe always scrolls exactly one full (undoubled) pass of the
+  // track regardless of item count, so with the watchlist grown to
+  // ~150+ items, a fixed 90s would fly by too fast to read. Scale the
+  // duration to keep the same ~90s/23-items pace (~3.9s per item)
+  // however many items actually loaded.
+  const SECONDS_PER_ITEM = 90 / 23;
+  const duration = Math.round(items.length * SECONDS_PER_ITEM);
+
   // The CSS animation starts running the moment the page loads, against
   // an empty (zero-width) track - once real content is injected here,
   // the browser doesn't always re-sync the animation to the new width
   // on its own (looks "stuck" until something forces a repaint, like
-  // hovering). Restarting the animation explicitly fixes it.
+  // hovering). Restarting the animation explicitly (with the scaled
+  // duration) fixes it.
   track.style.animation = "none";
   void track.offsetWidth; // force reflow
-  track.style.animation = "";
+  track.style.animation = `ticker-scroll ${duration}s linear infinite`;
 
  }catch(e){
   track.innerHTML = `<span class="ticker-item"><span class="t-label">Market data unavailable</span></span>`;
