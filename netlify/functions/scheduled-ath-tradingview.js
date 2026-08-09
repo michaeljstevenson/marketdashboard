@@ -70,7 +70,7 @@ exports.handler = async () => {
         },
         body: JSON.stringify({
           symbols: { tickers: tickerList, query: { types: [] } },
-          columns: ["name", "close", "High.All"],
+          columns: ["name", "high", "High.All"],
         }),
       });
       if (!res.ok) throw new Error(`TradingView scanner HTTP ${res.status}`);
@@ -102,10 +102,16 @@ exports.handler = async () => {
     const athTickers = [];
     let coverage = 0;
     for (const row of rows) {
-      const [symbol, close, highAll] = row.d;
-      if (close === null || highAll === null || highAll === undefined) continue;
+      const [symbol, dayHigh, highAll] = row.d;
+      if (dayHigh === null || highAll === null || highAll === undefined) continue;
       coverage++;
-      if (close >= highAll * (1 - ATH_TOLERANCE)) athTickers.push(symbol);
+      // A name "makes a new all-time high" on a day when its intraday
+      // high reaches the all-time high — not necessarily its close,
+      // since a stock can tag a fresh high and still pull back before
+      // the close. Confirmed against TradingView's own screener: for
+      // every name it reported at ATH on a test date, day-high exactly
+      // equaled High.All while close was measurably below it.
+      if (dayHigh >= highAll * (1 - ATH_TOLERANCE)) athTickers.push(symbol);
     }
     athTickers.sort();
 
