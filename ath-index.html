@@ -576,8 +576,8 @@ h1{
 <div class="explainer">
 <h2>Reading this chart</h2>
 <p>The bars show the count of S&amp;P 500 constituents at a fresh all-time high minus the count at a fresh all-time low, each trading day &mdash; a classic breadth measure. Positive and rising means strength is broadening; negative means more names are breaking down than breaking out, which can show up before the index itself rolls over. The line overlays the S&amp;P 500 level itself for context.</p>
-<p>This series is built from the same daily TradingView snapshot as the other two tabs, so its history only goes back as far as this page has been recording it &mdash; it will lengthen day by day rather than showing a pre-existing multi-year trend.</p>
-<div class="source">Source: <a href="https://www.tradingview.com/screener/" target="_blank" rel="noopener">TradingView Screener</a></div>
+<p>The historical bars come from the same Alpha Vantage daily history that backs the All-Time Highs tab's long-run chart, so they carry the same caveat: that history is capped at roughly 26 years per symbol, understating the true all-time high or low for long-listed names and skewing older counts on both sides. Today's bar is overridden with the accurate TradingView-based count once it's populated for the day.</p>
+<div class="source">Sources: <a href="https://www.alphavantage.co/" target="_blank" rel="noopener">Alpha Vantage</a> (historical bars &amp; S&amp;P 500 level) &middot; <a href="https://www.tradingview.com/screener/" target="_blank" rel="noopener">TradingView Screener</a> (today's bar)</div>
 </div>
 
 </div>
@@ -682,19 +682,40 @@ async function init(){
  // high for long-listed names. See the explainer for the full caveat.
  if(breadthResult.status === "fulfilled" && breadthResult.value.ok){
   ALL_ROWS = breadthResult.value.data.rows || [];
+  BREADTH_ROWS = ALL_ROWS;
   renderRangeButtons();
   renderChartRange(DEFAULT_RANGE);
  }
 }
 
 let TV_ROWS = [];
+let BREADTH_ROWS = [];
 let netChart = null;
+let netChartRendered = false;
 
 function renderNetChart(){
- if(!TV_ROWS.length || netChart) return;
- const rows = TV_ROWS.filter(r => r.spxClose != null && r.atlCount != null);
+ if(netChartRendered) return;
+
+ // Long-run history from breadth-internals.js (Alpha Vantage), same
+ // years-deep series that backs the ATH tab's long-run chart — subject
+ // to the same "capped ~26 years, upper-bound estimate" caveat as the
+ // ATH tab's chart, since atHighs/atLows here are computed the same way.
+ // Today's most recent bar is overwritten below with the accurate
+ // TradingView-sourced count/pct if it's available, so only the
+ // historical tail carries that caveat.
+ let rows = BREADTH_ROWS.filter(r => r.spxClose != null);
  if(!rows.length) return;
 
+ const netByDate = new Map(rows.map(r => [r.date, r.atHighs - r.atLows]));
+ const tvLatest = TV_ROWS[TV_ROWS.length - 1];
+ if(tvLatest && tvLatest.atlCount != null){
+  netByDate.set(tvLatest.date, tvLatest.count - tvLatest.atlCount);
+  if(!netByDate.has(tvLatest.date)) rows = rows.concat([{ date: tvLatest.date, spxClose: rows[rows.length - 1].spxClose }]);
+ }
+ rows = [...netByDate.keys()].sort().map(date => ({ date, net: netByDate.get(date) }));
+ const spxByDate = new Map(BREADTH_ROWS.filter(r => r.spxClose != null).map(r => [r.date, r.spxClose]));
+
+ netChartRendered = true;
  const ctx = document.getElementById("netChart").getContext("2d");
  netChart = new Chart(ctx, {
   data: {
@@ -703,19 +724,20 @@ function renderNetChart(){
     {
      type: "bar",
      label: "ATH − ATL",
-     data: rows.map(r => r.count - r.atlCount),
-     backgroundColor: rows.map(r => (r.count - r.atlCount) >= 0 ? "rgba(217,138,61,0.65)" : "rgba(111,143,172,0.65)"),
+     data: rows.map(r => r.net),
+     backgroundColor: rows.map(r => r.net >= 0 ? "rgba(217,138,61,0.65)" : "rgba(111,143,172,0.65)"),
      yAxisID: "y",
      order: 2,
     },
     {
      type: "line",
      label: "S&P 500",
-     data: rows.map(r => r.spxClose),
+     data: rows.map(r => spxByDate.has(r.date) ? spxByDate.get(r.date) : null),
      borderColor: "#eae6da",
      backgroundColor: "#eae6da",
      borderWidth: 2,
      pointRadius: 0,
+     spanGaps: true,
      fill: false,
      yAxisID: "y1",
      order: 1,

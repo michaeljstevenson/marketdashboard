@@ -65,6 +65,25 @@ async function fetchDailyCloses(apiKey, symbol) {
     .sort((a, b) => (a.date < b.date ? -1 : 1));
 }
 
+// SPX itself, for the ATH-ATL breadth chart's price overlay — not a
+// constituent, so it isn't part of BREADTH_CONSTITUENTS or the atHigh/
+// atLow math above, just a date-aligned close series to plot alongside.
+async function fetchSpxDailyCloses(apiKey) {
+  const payload = await fetchJson(
+    `${ALPHA_VANTAGE_URL}?function=INDEX_DATA&symbol=SPX&interval=daily&apikey=${apiKey}`
+  );
+  const data = payload.data;
+  if (!data || !data.length) {
+    throw new Error(
+      `Alpha Vantage INDEX_DATA missing data for SPX: ` +
+        (payload.Note || payload.Information || payload.error || JSON.stringify(payload).slice(0, 200))
+    );
+  }
+  const byDate = new Map();
+  for (const d of data) byDate.set(d.date, parseFloat(d.close));
+  return byDate;
+}
+
 // For a single name's closes, returns a map date -> { up, newHigh, newLow,
 // above200sma, atHigh }. atHigh means today's close is at or above every
 // prior close in the fetched history — i.e. a new all-time high as far
@@ -75,6 +94,7 @@ async function fetchDailyCloses(apiKey, symbol) {
 function computeNameFlags(closes) {
   const flags = new Map();
   let runningMax = closes.length ? closes[0].close : -Infinity;
+  let runningMin = closes.length ? closes[0].close : Infinity;
 
   for (let i = 1; i < closes.length; i++) {
     const { date, close } = closes[i];
@@ -95,12 +115,20 @@ function computeNameFlags(closes) {
     const atHigh = close >= runningMax;
     runningMax = Math.max(runningMax, close);
 
+    // Mirrors atHigh: today's close at or below every prior close in the
+    // fetched history — same "as far back as Alpha Vantage's daily data
+    // goes" caveat applies (see the ath-index.html "why two data
+    // sources" explainer for the ATH side of this).
+    const atLow = close <= runningMin;
+    runningMin = Math.min(runningMin, close);
+
     flags.set(date, {
       up: close > prevClose,
       newHigh: close >= windowHigh,
       newLow: close <= windowLow,
       above200sma,
       atHigh,
+      atLow,
     });
   }
   return flags;
@@ -127,6 +155,14 @@ exports.handler = async () => {
     }
     console.log(`scheduled-breadth-background: fetched ${perNameFlags.size}/${BREADTH_CONSTITUENTS.length} symbols`);
 
+    let spxByDate = new Map();
+    try {
+      spxByDate = await fetchSpxDailyCloses(apiKey);
+    } catch (err) {
+      console.error(`scheduled-breadth-background: SPX fetch failed: ${err.message}`);
+    }
+    await sleep(300);
+
     // Union of every date any name reported, so a single missing/delisted
     // name mid-history doesn't collapse the whole date range.
     const allDates = new Set();
@@ -143,6 +179,7 @@ exports.handler = async () => {
       let above200 = 0;
       let smaCoverage = 0;
       let atHighs = 0;
+      let atLows = 0;
 
       for (const flags of perNameFlags.values()) {
         const f = flags.get(date);
@@ -156,6 +193,7 @@ exports.handler = async () => {
           if (f.above200sma) above200++;
         }
         if (f.atHigh) atHighs++;
+        if (f.atLow) atLows++;
       }
 
       const coverage = advances + declines;
@@ -168,6 +206,9 @@ exports.handler = async () => {
         pctAbove200sma: smaCoverage ? Math.round((above200 / smaCoverage) * 1000) / 10 : null,
         atHighs,
         pctAtHighs: coverage ? Math.round((atHighs / coverage) * 1000) / 10 : null,
+        atLows,
+        pctAtLows: coverage ? Math.round((atLows / coverage) * 1000) / 10 : null,
+        spxClose: spxByDate.has(date) ? spxByDate.get(date) : null,
       };
     });
 
