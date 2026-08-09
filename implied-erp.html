@@ -210,7 +210,7 @@ h1{
 
 .stat-value{
  font-family:var(--mono);
- font-size:30px;
+ font-size:22px;
  color:var(--greed);
 }
 
@@ -262,6 +262,7 @@ h1{
 .swatch-erp{ background:#d98a3d; }
 .swatch-bond{ background:#6f8fac; }
 .swatch-return{ background:#8b9199; }
+.swatch-expected{ background:#8b6fac; }
 
 .chart-canvas-wrap{
  height:380px;
@@ -550,11 +551,12 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 </div>
 
 <div class="chart-box">
-<h2>Implied ERP vs. 10-year Treasury rate vs. realized S&amp;P 500 return, 1961–present</h2>
+<h2>Implied ERP vs. 10-year Treasury rate vs. implied expected return vs. realized S&amp;P 500 return, 1961–present</h2>
 <div class="chart-legend-custom">
 <span><i class="swatch swatch-erp"></i>Implied ERP</span>
 <span><i class="swatch swatch-bond"></i>10-Year T.Bond Rate</span>
 <span><i class="swatch swatch-return"></i>S&amp;P 500 Realized Return (that year)</span>
+<span><i class="swatch swatch-expected"></i>Implied Expected Equity Return</span>
 </div>
 <div class="chart-canvas-wrap">
 <canvas id="erpChart"></canvas>
@@ -905,6 +907,17 @@ function init(){
      borderColor: "#6f8fac",
      backgroundColor: "#6f8fac",
      borderWidth: 2,
+     pointRadius: 0,
+     fill: false,
+     order: 1,
+    },
+    {
+     label: "Implied Expected Equity Return",
+     data: ERP_DATA.map(r => r.erp + r.tbondRate),
+     borderColor: "#8b6fac",
+     backgroundColor: "#8b6fac",
+     borderWidth: 2,
+     borderDash: [5, 3],
      pointRadius: 0,
      fill: false,
      order: 1,
