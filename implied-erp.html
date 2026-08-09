@@ -247,6 +247,59 @@ h1{
  height:380px;
 }
 
+/* SCATTER / REGRESSION */
+
+.scatter-grid{
+ display:grid;
+ grid-template-columns:1fr 1fr;
+ gap:16px;
+ margin-bottom:30px;
+}
+
+.scatter-box{
+ background:var(--card);
+ border:1px solid var(--hair);
+ border-radius:12px;
+ padding:20px;
+}
+
+.scatter-box h3{
+ font-family:var(--serif);
+ font-weight:400;
+ font-size:15px;
+ margin:0 0 4px;
+}
+
+.scatter-box .scatter-sub{
+ color:var(--muted);
+ font-size:12px;
+ margin-bottom:14px;
+}
+
+.scatter-canvas-wrap{
+ height:280px;
+ margin-bottom:14px;
+}
+
+.regression-stats{
+ display:flex;
+ flex-wrap:wrap;
+ gap:14px;
+ font-family:var(--mono);
+ font-size:12px;
+ color:var(--muted);
+ border-top:1px solid var(--hair);
+ padding-top:12px;
+}
+
+.regression-stats b{ color:var(--ink); }
+
+.regression-stats .sig{ color:var(--greed); }
+
+@media (max-width:720px){
+ .scatter-grid{ grid-template-columns:1fr; }
+}
+
 /* EXPLAINER */
 
 .explainer{
@@ -421,6 +474,32 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 </div>
 </div>
 
+<div class="scatter-grid">
+<div class="scatter-box">
+<h3>Same year: ERP vs. that year's return</h3>
+<div class="scatter-sub">Implied ERP (x) vs. S&amp;P 500 realized return, same calendar year (y)</div>
+<div class="scatter-canvas-wrap">
+<canvas id="scatterSameYear"></canvas>
+</div>
+<div class="regression-stats" id="statsSameYear"></div>
+</div>
+<div class="scatter-box">
+<h3>Predictive: ERP vs. next year's return</h3>
+<div class="scatter-sub">Implied ERP (x) vs. S&amp;P 500 realized return, following calendar year (y)</div>
+<div class="scatter-canvas-wrap">
+<canvas id="scatterPredictive"></canvas>
+</div>
+<div class="regression-stats" id="statsPredictive"></div>
+</div>
+</div>
+
+<div class="explainer">
+<h2>Is the implied ERP a statistically significant predictor?</h2>
+<p>These two scatter plots test two different questions, and the distinction matters. The left plot asks whether a given year's implied ERP relates to <em>that same year's</em> realized return — but that relationship is mostly mechanical, not predictive: the implied ERP for a year is calculated <em>from that year's own year-end price</em>, so a year that ends with a falling market mechanically produces a higher year-end ERP for the same year (lower price, same expected cash flows, means a higher discount rate solves the valuation equation). A negative same-year correlation is close to what the math guarantees, not evidence the model forecasts anything.</p>
+<p>The right plot is the real test: does a given year's implied ERP predict <em>the following</em> year's return, the way the risk-compensation theory behind it would imply (a higher premium should mean investors are being paid more to hold stocks, and should on average realize a higher subsequent return)? Here the relationship runs in the theoretically correct direction — higher ERP is associated with a higher next-year return — and lands right at the conventional 5% significance threshold. But the R² is only about 6%: even taking the relationship at face value, the implied ERP explains a small fraction of next year's return, with most of the year-to-year variation coming from something else entirely.</p>
+<p><strong>Caveats on the significance itself:</strong> this is 63-64 annual observations — a small sample by statistical standards, which limits how much confidence any single p-value deserves. Three related relationships were tested on the same dataset (same-year, predictive, and implied-expected-return-vs-next-year in the earlier chat analysis); testing multiple hypotheses on one dataset raises the odds that at least one clears a 5% threshold by chance, an effect these p-values don't correct for. The p-values themselves come from a standard t-test assuming independent errors year to year — annual valuation-based series like this one often show some autocorrelation (a high-ERP year tends to be followed by other high-ERP years), which if present would overstate significance. None of this means the relationship is fake; it means "right at p≈0.05 with R²≈6%" is a genuinely weak, borderline result, not a strong or conclusive one — consistent with a broad academic literature finding that valuation-based predictors (dividend yield, CAPE, implied ERP) have some real but modest power to forecast long-run returns, and very little power over any single year.</p>
+</div>
+
 <div class="explainer">
 <h2>How to read this</h2>
 <p>The implied equity risk premium answers a different question than a historical-average ERP does: instead of asking "what did stocks beat bonds by in the past," it asks "given where the S&amp;P 500 is priced today, and what cash flows (dividends and buybacks) investors expect going forward, what rate of return is priced in — and how much of that is compensation for risk above the risk-free rate?" It's the equity-market equivalent of a bond's yield to maturity: an internal rate of return solved for from the current price and expected cash flows, not a backward-looking average.</p>
@@ -514,6 +593,111 @@ function realizedReturns(data){
  });
 }
 
+// Ordinary least squares on paired (x,y) arrays, plus a t-test on the
+// slope (H0: slope = 0, i.e. "x has no linear relationship with y").
+// The p-value uses the normal-distribution approximation rather than the
+// exact Student's t-distribution — no stats library is loaded on this
+// page, and with the degrees of freedom this dataset produces (60+),
+// the two are close enough that the approximation doesn't change the
+// conclusion at conventional significance thresholds.
+function linearRegression(xs, ys){
+ const n = xs.length;
+ const mx = xs.reduce((a, b) => a + b, 0) / n;
+ const my = ys.reduce((a, b) => a + b, 0) / n;
+ const sxx = xs.reduce((s, x) => s + (x - mx) ** 2, 0);
+ const sxy = xs.reduce((s, x, i) => s + (x - mx) * (ys[i] - my), 0);
+ const syy = ys.reduce((s, y) => s + (y - my) ** 2, 0);
+ const slope = sxy / sxx;
+ const intercept = my - slope * mx;
+ const r = sxy / Math.sqrt(sxx * syy);
+ const r2 = r * r;
+ const dof = n - 2;
+ const sse = ys.reduce((s, y, i) => s + (y - (intercept + slope * xs[i])) ** 2, 0);
+ const seSlope = Math.sqrt((sse / dof) / sxx);
+ const t = slope / seSlope;
+ const p = 2 * (1 - normalCdf(Math.abs(t)));
+ return { n, slope, intercept, r, r2, t, dof, p };
+}
+
+function normalCdf(x){
+ return 0.5 * (1 + erf(x / Math.SQRT2));
+}
+
+// Abramowitz & Stegun 7.1.26 approximation — accurate to ~1e-7, plenty
+// for a p-value display.
+function erf(x){
+ const sign = x < 0 ? -1 : 1;
+ x = Math.abs(x);
+ const a1 = 0.254829592, a2 = -0.284496736, a3 = 1.421413741, a4 = -1.453152027, a5 = 1.061405429, p = 0.3275911;
+ const t = 1 / (1 + p * x);
+ const y = 1 - (((((a5 * t + a4) * t) + a3) * t + a2) * t + a1) * t * Math.exp(-x * x);
+ return sign * y;
+}
+
+function renderRegressionStats(elId, stats){
+ const sig = stats.p < 0.05;
+ document.getElementById(elId).innerHTML =
+  `<span>n=<b>${stats.n}</b></span>` +
+  `<span>r=<b>${stats.r.toFixed(2)}</b></span>` +
+  `<span>R&sup2;=<b>${(stats.r2 * 100).toFixed(1)}%</b></span>` +
+  `<span>slope=<b>${stats.slope >= 0 ? "+" : ""}${stats.slope.toFixed(2)}</b></span>` +
+  `<span>t=<b>${stats.t.toFixed(2)}</b></span>` +
+  `<span class="${sig ? "sig" : ""}">p=<b>${stats.p < 0.001 ? "<0.001" : stats.p.toFixed(3)}</b>${sig ? " (sig. at 5%)" : " (not sig. at 5%)"}</span>`;
+}
+
+function renderScatter(canvasId, points, stats, pointColor){
+ const xs = points.map(p => p.x);
+ const xMin = Math.min(...xs), xMax = Math.max(...xs);
+ const linePoints = [
+  { x: xMin, y: stats.intercept + stats.slope * xMin },
+  { x: xMax, y: stats.intercept + stats.slope * xMax },
+ ];
+
+ const ctx = document.getElementById(canvasId).getContext("2d");
+ new Chart(ctx, {
+  type: "scatter",
+  data: {
+   datasets: [
+    {
+     label: "Years",
+     data: points,
+     backgroundColor: pointColor,
+     pointRadius: 4,
+     showLine: false,
+    },
+    {
+     label: "Regression fit",
+     type: "line",
+     data: linePoints,
+     borderColor: "#eae6da",
+     borderWidth: 1.5,
+     borderDash: [4, 3],
+     pointRadius: 0,
+     fill: false,
+    },
+   ],
+  },
+  options: {
+   responsive: true,
+   maintainAspectRatio: false,
+   plugins: {
+    legend: { display: false },
+    tooltip: {
+     callbacks: {
+      label: ctx => ctx.dataset.label === "Years"
+       ? `${ctx.raw.year}: ERP ${ctx.raw.x.toFixed(2)}%, return ${ctx.raw.y.toFixed(1)}%`
+       : null,
+     },
+    },
+   },
+   scales: {
+    x: { title: { display: true, text: "Implied ERP (%)", color: "#8b9199" }, ticks: { color: "#8b9199" }, grid: { color: "#2b3138" } },
+    y: { title: { display: true, text: "Realized return (%)", color: "#8b9199" }, ticks: { color: "#8b9199" }, grid: { color: "#2b3138" } },
+   },
+  },
+ });
+}
+
 function init(){
  const latest = ERP_DATA[ERP_DATA.length - 1];
  const prior = ERP_DATA[ERP_DATA.length - 2];
@@ -579,6 +763,27 @@ function init(){
    },
   },
  });
+
+ // Same-year: ERP_t vs. return_t (skip the first row, which has no
+ // realized return since there's no prior year in this dataset).
+ const sameYearPoints = ERP_DATA
+  .map((r, i) => ({ x: r.erp, y: returns[i], year: r.year }))
+  .filter(p => p.y !== null);
+ const sameYearStats = linearRegression(sameYearPoints.map(p => p.x), sameYearPoints.map(p => p.y));
+ renderScatter("scatterSameYear", sameYearPoints, sameYearStats, "rgba(217,138,61,0.75)");
+ renderRegressionStats("statsSameYear", sameYearStats);
+
+ // Predictive: ERP_t vs. return_{t+1} — pairs year i's ERP (i from 1 to
+ // n-2, since i=0 has no realized return to anchor the same-year set
+ // against and the last year has no "next year" yet) with year i+1's
+ // realized return.
+ const predictivePoints = [];
+ for(let i = 1; i < ERP_DATA.length - 1; i++){
+  predictivePoints.push({ x: ERP_DATA[i].erp, y: returns[i + 1], year: ERP_DATA[i + 1].year });
+ }
+ const predictiveStats = linearRegression(predictivePoints.map(p => p.x), predictivePoints.map(p => p.y));
+ renderScatter("scatterPredictive", predictivePoints, predictiveStats, "rgba(111,143,172,0.75)");
+ renderRegressionStats("statsPredictive", predictiveStats);
 }
 
 init();
