@@ -37,6 +37,11 @@
   to = "/.netlify/functions/ath-tradingview"
   status = 200
 
+[[redirects]]
+  from = "/api/factors"
+  to = "/.netlify/functions/factors"
+  status = 200
+
 [functions."scheduled-breadth-background"]
   # 20:30 UTC = 4:30pm EDT (summer). Shifts to 3:30pm during EST (winter,
   # roughly Nov-Mar) since Netlify's cron runs in UTC with no DST
@@ -70,3 +75,10 @@
   # a no-op rather than double-firing calls and re-tripping the rate
   # limit, so the real-world cadence ends up ~2.3 minutes, back-to-back.
   schedule = "*/2 13-20 * * 1-5"
+
+[functions."scheduled-factors-background"]
+  # Weekly (Saturday 09:00 UTC), not daily like the jobs above — Ken
+  # French updates the underlying data roughly monthly, so daily runs
+  # would just re-download and re-parse ~180k unchanged data points 6
+  # days out of 7 for nothing.
+  schedule = "0 9 * * 6"

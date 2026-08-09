@@ -2,6 +2,7 @@
   "name": "market-dashboard",
   "private": true,
   "dependencies": {
-    "@netlify/blobs": "^8.1.0"
+    "@netlify/blobs": "^8.1.0",
+    "adm-zip": "^0.6.0"
   }
 }
