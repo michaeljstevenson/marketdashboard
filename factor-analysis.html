@@ -594,19 +594,25 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <h3>Size (SMB)</h3>
 <div class="scatter-sub">SMB return, quarter t (x) vs. SMB return, quarter t+1 (y)</div>
 <div class="scatter-canvas-wrap"><canvas id="scatterSmbQ"></canvas></div>
+<div class="method-label">Pearson (OLS)</div>
 <div class="regression-stats" id="statsSmbQ"></div>
+<div id="methodsSmbQ"></div>
 </div>
 <div class="scatter-box">
 <h3>Value (HML)</h3>
 <div class="scatter-sub">HML return, quarter t (x) vs. HML return, quarter t+1 (y)</div>
 <div class="scatter-canvas-wrap"><canvas id="scatterHmlQ"></canvas></div>
+<div class="method-label">Pearson (OLS)</div>
 <div class="regression-stats" id="statsHmlQ"></div>
+<div id="methodsHmlQ"></div>
 </div>
 <div class="scatter-box">
 <h3>Momentum (WML)</h3>
 <div class="scatter-sub">WML return, quarter t (x) vs. WML return, quarter t+1 (y)</div>
 <div class="scatter-canvas-wrap"><canvas id="scatterWmlQ"></canvas></div>
+<div class="method-label">Pearson (OLS)</div>
 <div class="regression-stats" id="statsWmlQ"></div>
+<div id="methodsWmlQ"></div>
 </div>
 </div>
 
@@ -1078,10 +1084,13 @@ function renderFactorMomentumQuarterly(rows){
  };
  renderScatter("scatterSmbQ", smbPairs, smbStats, "rgba(111,143,172,0.75)", quarterOpts);
  renderRegressionStats("statsSmbQ", smbStats);
+ renderRobustnessMethods("methodsSmbQ", smbPairs);
  renderScatter("scatterHmlQ", hmlPairs, hmlStats, "rgba(139,111,172,0.75)", quarterOpts);
  renderRegressionStats("statsHmlQ", hmlStats);
+ renderRobustnessMethods("methodsHmlQ", hmlPairs);
  renderScatter("scatterWmlQ", momPairs, momStats, "rgba(111,172,130,0.75)", quarterOpts);
  renderRegressionStats("statsWmlQ", momStats);
+ renderRobustnessMethods("methodsWmlQ", momPairs);
 
  document.getElementById("momentumSubQ").textContent =
   `Each point is one pair of consecutive full calendar quarters (${smbPairs[0].key}→${smbPairs[0].nextKey} through ${smbPairs[smbPairs.length - 1].key}→${smbPairs[smbPairs.length - 1].nextKey}), ` +
