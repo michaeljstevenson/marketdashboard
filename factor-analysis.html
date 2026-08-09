@@ -665,6 +665,38 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 </div>
 
 <div class="momentum-header">
+<h2>Factor Momentum: Non-Overlapping Monthly</h2>
+</div>
+<div class="momentum-sub" id="momentumSubM">Loading...</div>
+
+<div class="scatter-grid">
+<div class="scatter-box">
+<h3>Size (SMB)</h3>
+<div class="scatter-sub">SMB return, month t (x) vs. SMB return, month t+1 (y)</div>
+<div class="scatter-canvas-wrap"><canvas id="scatterSmbM"></canvas></div>
+<div class="method-label">Pearson (OLS)</div>
+<div class="regression-stats" id="statsSmbM"></div>
+<div id="methodsSmbM"></div>
+</div>
+<div class="scatter-box">
+<h3>Value (HML)</h3>
+<div class="scatter-sub">HML return, month t (x) vs. HML return, month t+1 (y)</div>
+<div class="scatter-canvas-wrap"><canvas id="scatterHmlM"></canvas></div>
+<div class="method-label">Pearson (OLS)</div>
+<div class="regression-stats" id="statsHmlM"></div>
+<div id="methodsHmlM"></div>
+</div>
+<div class="scatter-box">
+<h3>Momentum (WML)</h3>
+<div class="scatter-sub">WML return, month t (x) vs. WML return, month t+1 (y)</div>
+<div class="scatter-canvas-wrap"><canvas id="scatterWmlM"></canvas></div>
+<div class="method-label">Pearson (OLS)</div>
+<div class="regression-stats" id="statsWmlM"></div>
+<div id="methodsWmlM"></div>
+</div>
+</div>
+
+<div class="momentum-header">
 <h2>My follow-up question&hellip; How has the rise of algorithmic and quantitative trading since the 1980s changed the behaviors of these factors?</h2>
 </div>
 <div class="momentum-sub">Testing whether factor persistence looks different in the second half of this history than the first, motivated by the rise of algorithmic and quantitative trading, using two equal-length, non-overlapping 40-year windows (1945&ndash;1984 and 1985&ndash;2025), a Chow test for whether the two periods' regressions are formally different, and a lesson reinforced while doing so.</div>
@@ -1105,6 +1137,24 @@ function nextQuarterKey(key){
  return `${y}-Q${q}`;
 }
 
+function monthKey(dateStr){
+ return dateStr.slice(0, 7); // "YYYY-MM"
+}
+function monthBounds(key){
+ const [yStr, mStr] = key.split("-");
+ const y = parseInt(yStr, 10), m = parseInt(mStr, 10);
+ const start = new Date(Date.UTC(y, m - 1, 1));
+ const end = new Date(Date.UTC(y, m, 0)); // day 0 = last day of prior (this) month
+ return { start, end };
+}
+function nextMonthKey(key){
+ const [yStr, mStr] = key.split("-");
+ let y = parseInt(yStr, 10), m = parseInt(mStr, 10);
+ m += 1;
+ if(m > 12){ m = 1; y += 1; }
+ return `${y}-${String(m).padStart(2, "0")}`;
+}
+
 function renderFactorMomentum(rows){
  const smbAnnual = annualReturnsByField(rows, "smb");
  const hmlAnnual = annualReturnsByField(rows, "hml");
@@ -1165,6 +1215,40 @@ function renderFactorMomentumQuarterly(rows){
  document.getElementById("momentumSubQ").textContent =
   `Each point is one pair of consecutive full calendar quarters (${smbPairs[0].key}→${smbPairs[0].nextKey} through ${smbPairs[smbPairs.length - 1].key}→${smbPairs[smbPairs.length - 1].nextKey}), ` +
   `${smbPairs.length} non-overlapping quarter-pairs per factor. Dashed line is the OLS regression fit.`;
+}
+
+function renderFactorMomentumMonthly(rows){
+ const smbM = periodReturnsByField(rows, "smb", monthKey, monthBounds);
+ const hmlM = periodReturnsByField(rows, "hml", monthKey, monthBounds);
+ const momM = periodReturnsByField(rows, "mom", monthKey, monthBounds);
+
+ const smbPairs = periodPairs(smbM, nextMonthKey);
+ const hmlPairs = periodPairs(hmlM, nextMonthKey);
+ const momPairs = periodPairs(momM, nextMonthKey);
+
+ const smbStats = linearRegression(smbPairs.map(p => p.x), smbPairs.map(p => p.y));
+ const hmlStats = linearRegression(hmlPairs.map(p => p.x), hmlPairs.map(p => p.y));
+ const momStats = linearRegression(momPairs.map(p => p.x), momPairs.map(p => p.y));
+
+ const monthOpts = {
+  tooltipFn: p => `${p.key}→${p.nextKey}: ${p.x.toFixed(1)}% → ${p.y.toFixed(1)}%`,
+  xLabel: "Month t return (%)",
+  yLabel: "Month t+1 return (%)",
+  datasetLabel: "Months",
+ };
+ renderScatter("scatterSmbM", smbPairs, smbStats, "rgba(111,143,172,0.75)", monthOpts);
+ renderRegressionStats("statsSmbM", smbStats);
+ renderRobustnessMethods("methodsSmbM", smbPairs);
+ renderScatter("scatterHmlM", hmlPairs, hmlStats, "rgba(139,111,172,0.75)", monthOpts);
+ renderRegressionStats("statsHmlM", hmlStats);
+ renderRobustnessMethods("methodsHmlM", hmlPairs);
+ renderScatter("scatterWmlM", momPairs, momStats, "rgba(111,172,130,0.75)", monthOpts);
+ renderRegressionStats("statsWmlM", momStats);
+ renderRobustnessMethods("methodsWmlM", momPairs);
+
+ document.getElementById("momentumSubM").textContent =
+  `Each point is one pair of consecutive full calendar months (${smbPairs[0].key}→${smbPairs[0].nextKey} through ${smbPairs[smbPairs.length - 1].key}→${smbPairs[smbPairs.length - 1].nextKey}), ` +
+  `${smbPairs.length} non-overlapping month-pairs per factor. Dashed line is the OLS regression fit.`;
 }
 
 // ---- Subsample check: has the pre-1985 vs. 1985+ relationship changed?
@@ -1299,6 +1383,7 @@ async function init(){
   renderChartRange(DEFAULT_RANGE);
   renderFactorMomentum(ALL_ROWS);
   renderFactorMomentumQuarterly(ALL_ROWS);
+  renderFactorMomentumMonthly(ALL_ROWS);
   renderSubsampleCheck(ALL_ROWS);
  }catch(e){
   showError("Couldn't load factor data: " + e.message);
