@@ -843,6 +843,14 @@ function renderNetRangeButtons(){
  });
 }
 
+// Reads the live --ink value rather than hardcoding it — --ink flips
+// between a light color (dark mode) and a dark color (light mode), so a
+// hardcoded dark-mode value would render this line invisible in light mode.
+function themeInkColor(){
+ const v = getComputedStyle(document.documentElement).getPropertyValue("--ink").trim();
+ return v || "#eae6da";
+}
+
 function renderNetChartRange(rangeKey){
  const allRows = computeNetRows();
  if(!allRows) return;
@@ -874,8 +882,8 @@ function renderNetChartRange(rangeKey){
      type: "line",
      label: "S&P 500",
      data: rows.map(r => r.spxClose),
-     borderColor: "#eae6da",
-     backgroundColor: "#eae6da",
+     borderColor: themeInkColor(),
+     backgroundColor: themeInkColor(),
      borderWidth: 2,
      pointRadius: 0,
      spanGaps: true,

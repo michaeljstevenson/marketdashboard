@@ -839,7 +839,10 @@ function renderChart(years, currentYear, paths, drawIdx, succeeded, p50){
 
  const GREEN = "rgba(90,157,111,0.35)";
  const RED = "rgba(192,86,79,0.35)";
- const MEDIAN_COLOR = "#eae6da";
+ // Reads the live --ink value rather than hardcoding it — --ink flips
+ // between a light color (dark mode) and a dark color (light mode), so a
+ // hardcoded dark-mode value would render this line invisible in light mode.
+ const MEDIAN_COLOR = getComputedStyle(document.documentElement).getPropertyValue("--ink").trim() || "#eae6da";
 
  const spaghettiDatasets = drawIdx.map(s => ({
   data: years.map(y => paths[y][s]),

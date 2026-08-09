@@ -1097,6 +1097,15 @@ function renderMethodTable(containerElId, pairs){
   `<div class="method-note">Jackknife removed: ${removedLabel} (${trimmed.removedPoint.x.toFixed(1)}% → ${trimmed.removedPoint.y.toFixed(1)}%)</div>`;
 }
 
+// Reads the live --ink value rather than hardcoding it, since --ink
+// flips between a light color (dark mode) and a dark color (light mode)
+// — a hardcoded dark-mode value would render the regression line
+// invisible against a light-mode background.
+function themeInkColor(){
+ const v = getComputedStyle(document.documentElement).getPropertyValue("--ink").trim();
+ return v || "#eae6da";
+}
+
 function renderScatter(canvasId, points, stats, pointColor, opts){
  opts = opts || {};
  const tooltipFn = opts.tooltipFn || (p => `${p.year}→${p.year + 1}: ${p.x.toFixed(1)}% → ${p.y.toFixed(1)}%`);
@@ -1117,7 +1126,7 @@ function renderScatter(canvasId, points, stats, pointColor, opts){
   data: {
    datasets: [
     { label: datasetLabel, data: points, backgroundColor: pointColor, pointRadius: 3.5, showLine: false },
-    { label: "Regression fit", type: "line", data: linePoints, borderColor: "#eae6da", borderWidth: 1.5, borderDash: [4, 3], pointRadius: 0, fill: false },
+    { label: "Regression fit", type: "line", data: linePoints, borderColor: themeInkColor(), borderWidth: 1.5, borderDash: [4, 3], pointRadius: 0, fill: false },
    ],
   },
   options: {

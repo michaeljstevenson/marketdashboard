@@ -761,8 +761,11 @@ document.querySelectorAll("thead th").forEach(th => {
  }
 });
 
+// SPY reads the live --ink value rather than hardcoding it — --ink flips
+// between a light color (dark mode) and a dark color (light mode), so a
+// hardcoded dark-mode value would render this line invisible in light mode.
 const SERIES_COLORS = {
- SPY: "#eae6da",
+ SPY: getComputedStyle(document.documentElement).getPropertyValue("--ink").trim() || "#eae6da",
  XLK: "#d98a3d",
  XLF: "#6f8fac",
  XLV: "#8e7cc3",
