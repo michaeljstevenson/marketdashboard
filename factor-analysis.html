@@ -331,6 +331,34 @@ h1{
 
 .regression-stats .sig{ color:var(--greed); }
 
+.method-block{
+ margin-top:10px;
+ padding-top:10px;
+ border-top:1px solid var(--hair);
+}
+
+.method-label{
+ font-size:10px;
+ text-transform:uppercase;
+ letter-spacing:0.04em;
+ color:var(--muted);
+ margin-bottom:4px;
+}
+
+.method-block .regression-stats{
+ border-top:none;
+ padding-top:0;
+ gap:6px 10px;
+ font-size:10.5px;
+}
+
+.method-note{
+ font-size:10px;
+ color:var(--muted);
+ margin-top:3px;
+ font-style:italic;
+}
+
 @media (max-width:900px){
  .scatter-grid{ grid-template-columns:1fr; }
 }
@@ -534,19 +562,25 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <h3>Size (SMB)</h3>
 <div class="scatter-sub">SMB return, year t (x) vs. SMB return, year t+1 (y)</div>
 <div class="scatter-canvas-wrap"><canvas id="scatterSmb"></canvas></div>
+<div class="method-label">Pearson (OLS)</div>
 <div class="regression-stats" id="statsSmb"></div>
+<div id="methodsSmb"></div>
 </div>
 <div class="scatter-box">
 <h3>Value (HML)</h3>
 <div class="scatter-sub">HML return, year t (x) vs. HML return, year t+1 (y)</div>
 <div class="scatter-canvas-wrap"><canvas id="scatterHml"></canvas></div>
+<div class="method-label">Pearson (OLS)</div>
 <div class="regression-stats" id="statsHml"></div>
+<div id="methodsHml"></div>
 </div>
 <div class="scatter-box">
 <h3>Momentum (WML)</h3>
 <div class="scatter-sub">WML return, year t (x) vs. WML return, year t+1 (y)</div>
 <div class="scatter-canvas-wrap"><canvas id="scatterWml"></canvas></div>
+<div class="method-label">Pearson (OLS)</div>
 <div class="regression-stats" id="statsWml"></div>
+<div id="methodsWml"></div>
 </div>
 </div>
 
@@ -803,6 +837,86 @@ function renderRegressionStats(elId, stats){
   `<span class="${sig ? "sig" : ""}">p=<b>${stats.p < 0.001 ? "<0.001" : stats.p.toFixed(3)}</b>${sig ? " (sig. at 5%)" : " (not sig. at 5%)"}</span>`;
 }
 
+// ---- Robustness checks: Spearman rank correlation and jackknife
+// (leave-one-out) trimming, run alongside the headline Pearson/OLS
+// regression so a result can't be quietly resting on rank-insensitive
+// magnitude outliers or a single influential data point. ----
+
+// Average-rank ranking (ties share the mean of their ranks) — standard
+// for Spearman when, as here, exact ties are rare but not guaranteed.
+function rankArray(arr){
+ const idx = arr.map((v, i) => i).sort((a, b) => arr[a] - arr[b]);
+ const ranks = new Array(arr.length);
+ let i = 0;
+ while(i < idx.length){
+  let j = i;
+  while(j + 1 < idx.length && arr[idx[j + 1]] === arr[idx[i]]) j++;
+  const avgRank = (i + j) / 2 + 1;
+  for(let k = i; k <= j; k++) ranks[idx[k]] = avgRank;
+  i = j + 1;
+ }
+ return ranks;
+}
+
+// Spearman is just Pearson's regression run on ranks instead of raw
+// values — much less sensitive to a handful of large-magnitude points,
+// since a rank can only move so far regardless of how extreme the
+// underlying value is.
+function spearmanRegression(xs, ys){
+ return linearRegression(rankArray(xs), rankArray(ys));
+}
+
+// Jackknife / leave-one-out trim: refits the regression once per point
+// removed, finds whichever single point shifted r the most (in either
+// direction) when dropped, and returns the regression with that one
+// point trimmed out. If the result depends heavily on one data point,
+// this is where that shows up.
+function jackknifeTrim(pairs){
+ const xs = pairs.map(p => p.x), ys = pairs.map(p => p.y);
+ const full = linearRegression(xs, ys);
+ let maxShift = -1, influentialIdx = -1;
+ for(let i = 0; i < pairs.length; i++){
+  const xs2 = xs.filter((_, j) => j !== i);
+  const ys2 = ys.filter((_, j) => j !== i);
+  const reg = linearRegression(xs2, ys2);
+  const shift = Math.abs(reg.r - full.r);
+  if(shift > maxShift){ maxShift = shift; influentialIdx = i; }
+ }
+ const trimmedXs = xs.filter((_, j) => j !== influentialIdx);
+ const trimmedYs = ys.filter((_, j) => j !== influentialIdx);
+ const trimmed = linearRegression(trimmedXs, trimmedYs);
+ return { ...trimmed, removedPoint: pairs[influentialIdx] };
+}
+
+function renderRobustnessMethods(containerElId, pairs){
+ const spear = spearmanRegression(pairs.map(p => p.x), pairs.map(p => p.y));
+ const trimmed = jackknifeTrim(pairs);
+
+ function statsRow(stats){
+  const sig = stats.p < 0.05;
+  return `<span>n=<b>${stats.n}</b></span>` +
+   `<span>r=<b>${stats.r.toFixed(2)}</b></span>` +
+   `<span>R&sup2;=<b>${(stats.r2 * 100).toFixed(1)}%</b></span>` +
+   `<span>t=<b>${stats.t.toFixed(2)}</b></span>` +
+   `<span class="${sig ? "sig" : ""}">p=<b>${stats.p < 0.001 ? "<0.001" : stats.p.toFixed(3)}</b>${sig ? " (sig.)" : " (n.s.)"}</span>`;
+ }
+
+ const removedLabel = trimmed.removedPoint.year !== undefined
+  ? trimmed.removedPoint.year
+  : trimmed.removedPoint.key;
+
+ document.getElementById(containerElId).innerHTML =
+  `<div class="method-block">` +
+   `<div class="method-label">Spearman (rank correlation)</div>` +
+   `<div class="regression-stats">${statsRow(spear)}</div>` +
+  `</div>` +
+  `<div class="method-block">` +
+   `<div class="method-label">Jackknife (most influential point removed)</div>` +
+   `<div class="regression-stats">${statsRow(trimmed)}</div>` +
+   `<div class="method-note">Removed: ${removedLabel} (${trimmed.removedPoint.x.toFixed(1)}% → ${trimmed.removedPoint.y.toFixed(1)}%)</div>` +
+  `</div>`;
+}
+
 function renderScatter(canvasId, points, stats, pointColor, opts){
  opts = opts || {};
  const tooltipFn = opts.tooltipFn || (p => `${p.year}→${p.year + 1}: ${p.x.toFixed(1)}% → ${p.y.toFixed(1)}%`);
@@ -930,10 +1044,13 @@ function renderFactorMomentum(rows){
 
  renderScatter("scatterSmb", smbPairs, smbStats, "rgba(111,143,172,0.75)");
  renderRegressionStats("statsSmb", smbStats);
+ renderRobustnessMethods("methodsSmb", smbPairs);
  renderScatter("scatterHml", hmlPairs, hmlStats, "rgba(139,111,172,0.75)");
  renderRegressionStats("statsHml", hmlStats);
+ renderRobustnessMethods("methodsHml", hmlPairs);
  renderScatter("scatterWml", momPairs, momStats, "rgba(111,172,130,0.75)");
  renderRegressionStats("statsWml", momStats);
+ renderRobustnessMethods("methodsWml", momPairs);
 
  document.getElementById("momentumSub").textContent =
   `Each point is one pair of consecutive full calendar years (${smbPairs[0].year}→${smbPairs[0].year + 1} through ${smbPairs[smbPairs.length - 1].year}→${smbPairs[smbPairs.length - 1].year + 1}), ` +
