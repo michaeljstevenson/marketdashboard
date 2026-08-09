@@ -261,7 +261,7 @@ h1{
 
 .swatch-erp{ background:#d98a3d; }
 .swatch-bond{ background:#6f8fac; }
-.swatch-return{ background:#8b9199; }
+.swatch-return{ background:linear-gradient(to right, #5a9d6f 50%, #c0564f 50%); }
 .swatch-expected{ background:#8b6fac; }
 
 .chart-canvas-wrap{
@@ -593,8 +593,8 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <h2>How to read this</h2>
 <p>The implied equity risk premium answers a different question than a historical-average ERP does: instead of asking "what did stocks beat bonds by in the past," it asks "given where the S&amp;P 500 is priced today, and what cash flows (dividends and buybacks) investors expect going forward, what rate of return is priced in — and how much of that is compensation for risk above the risk-free rate?" It's the equity-market equivalent of a bond's yield to maturity: an internal rate of return solved for from the current price and expected cash flows, not a backward-looking average.</p>
 <p>A rising implied ERP means investors are demanding more compensation to hold stocks relative to bonds — often a sign of rising risk aversion or falling confidence, even if the index price itself hasn't moved much (a higher premium can be priced in through slower expected cash flow growth). A falling ERP means the market is pricing in more optimism, or complacency, per dollar of risk. The <strong>implied expected equity return</strong> (ERP + the risk-free rate) is the total forward-looking return the market is pricing into stocks today — useful as a sanity check against portfolio return assumptions (like the ones in the <a href="/portfolio-simulator.html">Portfolio Simulator</a>).</p>
-<p>The bars add what actually happened: the S&amp;P 500's realized return for that same year, so you can see directly how often — and by how much — the market's forward-looking premium missed the outcome. The gap runs both ways: 2008's implied ERP rose to a then-record 6.43% heading into a year the index fell 38.5%, while 2013's modest 4.96% implied ERP preceded a 29.6% realized gain. The implied ERP isn't a forecast of that year's return — it's priced off long-run expected cash flows and typically resolves over many years, not one — so a wide single-year gap isn't itself evidence the model is wrong, but the persistent gap between the smooth premium and the noisy outcome is the point: realized returns are dominated by short-run sentiment and macro shocks the model doesn't try to capture.</p>
-<p><strong>Limitations:</strong> this is a model-based estimate, not an observed market price — it depends on assumptions about future cash flow growth and payout (dividends + buybacks) that Damodaran documents but that reasonable analysts could set differently. It's also annual data, updated once a year each January, not a live daily series. The realized-return bars are <strong>price return only</strong> (year-end index level to year-end index level) — they exclude the S&amp;P 500's dividend yield (historically ~1.5-2%/year), so total return in any given year was somewhat higher than the bar shown.</p>
+<p>The green/red line adds what actually happened: the S&amp;P 500's realized return for that same year, so you can see directly how often — and by how much — the market's forward-looking premium missed the outcome. The gap runs both ways: 2008's implied ERP rose to a then-record 6.43% heading into a year the index fell 38.5%, while 2013's modest 4.96% implied ERP preceded a 29.6% realized gain. The implied ERP isn't a forecast of that year's return — it's priced off long-run expected cash flows and typically resolves over many years, not one — so a wide single-year gap isn't itself evidence the model is wrong, but the persistent gap between the smooth premium and the noisy outcome is the point: realized returns are dominated by short-run sentiment and macro shocks the model doesn't try to capture.</p>
+<p><strong>Limitations:</strong> this is a model-based estimate, not an observed market price — it depends on assumptions about future cash flow growth and payout (dividends + buybacks) that Damodaran documents but that reasonable analysts could set differently. It's also annual data, updated once a year each January, not a live daily series. The realized-return line is <strong>price return only</strong> (year-end index level to year-end index level) — they exclude the S&amp;P 500's dividend yield (historically ~1.5-2%/year), so total return in any given year was somewhat higher than the line shown.</p>
 <div class="source">Source: <a href="https://pages.stern.nyu.edu/~adamodar/New_Home_Page/data.html" target="_blank" rel="noopener">Aswath Damodaran, NYU Stern — Implied Equity Risk Premiums (FCFE basis)</a></div>
 </div>
 
@@ -885,10 +885,15 @@ function init(){
    labels: ERP_DATA.map(r => String(r.year)),
    datasets: [
     {
-     type: "bar",
+     type: "line",
      label: "S&P 500 Realized Return (that year)",
      data: returns,
-     backgroundColor: returns.map(v => v === null ? "transparent" : (v >= 0 ? "rgba(217,138,61,0.35)" : "rgba(111,143,172,0.35)")),
+     borderWidth: 2,
+     pointRadius: 0,
+     fill: false,
+     segment: {
+      borderColor: ctx => (ctx.p1.parsed.y >= 0 ? "#5a9d6f" : "#c0564f"),
+     },
      order: 2,
     },
     {
