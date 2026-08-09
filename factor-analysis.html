@@ -460,6 +460,20 @@ h1{
  display:none;
 }
 
+.rebalance-disclaimer{
+ background:var(--card);
+ border:1px solid var(--hair);
+ border-left:3px solid var(--greed);
+ border-radius:8px;
+ padding:16px 20px;
+ margin-bottom:30px;
+ font-size:13px;
+ color:var(--muted);
+ line-height:1.7;
+}
+
+.rebalance-disclaimer strong{ color:var(--ink); }
+
 @media (max-width:720px){
  .stat-grid{ grid-template-columns:1fr 1fr; }
 }
@@ -600,6 +614,10 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 </div>
 </div>
 
+<div class="rebalance-disclaimer">
+<strong>Before reading the regressions below:</strong> these factors aren't rebalanced on the same schedule, which matters for interpreting any persistence (or lack of it). <strong>SMB and HML</strong> are reformed once a year, every June, and hold the same underlying stocks unchanged for the full 12 months until the next reform &mdash; so SMB(t) and SMB(t+1), or HML(t) and HML(t+1), can literally share the same holdings across a 12-month stretch. <strong>WML (momentum)</strong> is reformed every month, ranking stocks by their trailing 12-to-2-month return (skipping the most recent month) &mdash; so WML(t) and WML(t+1) are, by construction, different portfolios each time, with no shared-holdings channel to produce persistence. See "What these factors are" below for the full explanation of why each is built this way.
+</div>
+
 <div class="momentum-header">
 <h2>Factor Momentum: Non-Overlapping Annual</h2>
 </div>
@@ -722,6 +740,7 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <div class="explainer">
 <h2>What these factors are</h2>
 <p><strong>Market (Mkt&minus;RF)</strong> is the broad US stock market's return in excess of the risk-free rate — the baseline "just own the market" premium. <strong>Size (SMB, "small minus big")</strong> is the return of small-cap stocks minus large-cap stocks. <strong>Value (HML, "high minus low")</strong> is the return of high book-to-market ("value") stocks minus low book-to-market ("growth") stocks. <strong>Momentum</strong> is the return of recent winners (top 30% by prior 12-month return, skipping the most recent month) minus recent losers (bottom 30%).</p>
+<p><strong>Rebalance schedule matters and differs by factor.</strong> SMB and HML portfolios are reformed once a year, at the end of every June, using market equity measured at that same end-of-June date (for the size sort) and a book-to-market ratio built from book equity as of the fiscal year ending in the prior calendar year, divided by market equity at the end of that prior December (for the value sort). They then hold that same set of stocks unchanged through the following June. The specific choice of June — rather than reforming right after fiscal year-end — is deliberate: most US companies report on a December fiscal year and have up to 90 days to file their annual report, so their book-value data isn't guaranteed to be public until roughly the end of March. Waiting until June builds in a buffer, so the portfolio only ever uses data that was actually available to investors at the time, not information Fama and French could see only in hindsight. Momentum (WML) is reformed every month instead, ranking stocks by their cumulative return from 12 months ago to 2 months ago (deliberately skipping the most recent month, since 1-month returns are dominated by short-term reversal — the opposite effect from momentum — which would otherwise contaminate the signal); the top 30% by that ranking are held long, the bottom 30% short, and the whole ranking is redone from scratch the next month. That difference in rebalance frequency — SMB/HML holding the same stocks for a full year vs. WML's basket turning over monthly — is directly relevant to the factor momentum analysis further up this page: it's a large part of why SMB and HML show measurable month-to-month or year-to-year persistence in their own returns while WML doesn't.</p>
 <p>Each line above shows the growth of $1 invested at the start of the selected range in a portfolio that isolates just that factor — e.g. the size line reflects only the small-vs-large spread, not the market's overall direction. A rising SMB line means small caps are outperforming large caps over that stretch; a falling HML line means growth is beating value. These are long-run academic research series (Fama-French, updated by Kenneth French), not investable products — there's no fund that exactly replicates SMB, HML, or momentum as defined here, though many "factor" and "smart beta" funds are built to approximate their spirit.</p>
 <p>Daily data begins 1926-07-01 for market/size/value and 1926-11-03 for momentum. Values are Ken French's published daily percent returns (e.g. 0.09 means +0.09% that day); the underlying data updates roughly monthly, so this page's refresh cadence follows suit rather than checking daily.</p>
 <div class="source">Source: <a href="https://mba.tuck.dartmouth.edu/pages/faculty/ken.french/data_library.html" target="_blank" rel="noopener">Ken French Data Library</a>, Tuck School of Business at Dartmouth</div>
