@@ -1,9 +1,12 @@
 // Fully in-house homepage ticker, replacing the TradingView embed.
-// Uses the premium Alpha Vantage key's entitlements (15-min delayed US
-// stock data + historical/major index data) to show real index levels
-// (S&P 500, NASDAQ Composite, VIX) instead of ETF/CFD proxies, plus a
-// stock watchlist. MSCI World still has no real free index feed, so it
-// stays on its ETF tracker (URTH).
+// Uses the premium Alpha Vantage key's 15-min-delayed US stock data (and,
+// when the account's entitled to it, real index levels for S&P 500/NASDAQ
+// Composite/VIX via INDEX_DATA) plus a stock watchlist. When INDEX_DATA
+// isn't available on this account's current plan tier — which has flipped
+// on and off over time — fetchIndexWithProxy falls back to an ETF proxy
+// quote (SPY/ONEQ/VIXY) instead of silently dropping that item from the
+// ticker. MSCI World still has no real free index feed, so it stays on
+// its ETF tracker (URTH).
 //
 // Cached for 60s: with ~23 upstream calls per refresh and a premium key
 // rated for 75 calls/minute, refreshing once a minute keeps us at ~23
@@ -56,6 +59,21 @@ async function fetchIndex(symbol, label) {
     value: round(latest, 2),
     changePercent: round(((latest - prev) / prev) * 100, 2),
   };
+}
+
+// INDEX_DATA needs a higher Alpha Vantage plan tier than this account
+// currently has ("not yet entitled to index data access" — confirmed live,
+// not a transient rate-limit blip like the burst-pattern errors fetchJson
+// already retries). Rather than silently dropping S&P 500/NASDAQ/VIX from
+// the ticker whenever that's the case, fall back to an ETF proxy quote via
+// the GLOBAL_QUOTE endpoint this key does have access to (same proxies
+// used before this ticker had real index data — see git history).
+async function fetchIndexWithProxy(symbol, label, proxySymbol, proxyLabel) {
+  try {
+    return await fetchIndex(symbol, label);
+  } catch (err) {
+    return await fetchQuote(proxySymbol, proxyLabel);
+  }
 }
 
 async function fetchQuote(symbol, label) {
@@ -121,9 +139,9 @@ exports.handler = async () => {
     if (!process.env.ALPHAVANTAGE_API_KEY) throw new Error("ALPHAVANTAGE_API_KEY environment variable is not set");
 
     const tasks = [
-      () => fetchIndex("SPX", "S&P 500"),
-      () => fetchIndex("COMP", "NASDAQ Composite"),
-      () => fetchIndex("VIX", "VIX"),
+      () => fetchIndexWithProxy("SPX", "S&P 500", "SPY", "S&P 500 (SPY proxy)"),
+      () => fetchIndexWithProxy("COMP", "NASDAQ Composite", "ONEQ", "NASDAQ Composite (ONEQ proxy)"),
+      () => fetchIndexWithProxy("VIX", "VIX", "VIXY", "VIX (VIXY proxy)"),
       () => fetchFedFunds(),
       () => fetchQuote("URTH", "MSCI World Index (URTH)"),
       () => fetchWti(),
