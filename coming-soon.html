@@ -1,6 +1,13 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+<script>
+// Applied before first paint to avoid a flash of the wrong theme.
+(function(){
+ var saved = localStorage.getItem("theme");
+ if(saved === "light") document.documentElement.setAttribute("data-theme", "light");
+})();
+</script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Coming Soon — Michael J. Stevenson</title>
@@ -19,6 +26,15 @@
   --sans:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
 }
 
+:root[data-theme="light"]{
+  --bg:#f7f5f0;
+  --card:#ffffff;
+  --ink:#1c1f24;
+  --muted:#6b6f76;
+  --hair:#e1dbcd;
+  --greed:#b9701f;
+}
+
 *{ box-sizing:border-box; }
 
 body{
@@ -32,6 +48,9 @@ body{
 }
 
 .sitenav{
+ display:flex;
+ justify-content:space-between;
+ align-items:center;
  padding:16px 24px;
  border-bottom:1px solid var(--hair);
 }
@@ -42,6 +61,23 @@ body{
  font-size:17px;
  text-decoration:none;
 }
+
+.theme-toggle{
+ background:none;
+ border:1px solid var(--hair);
+ color:var(--muted);
+ border-radius:6px;
+ width:32px;
+ height:32px;
+ display:flex;
+ align-items:center;
+ justify-content:center;
+ cursor:pointer;
+ font-size:15px;
+ line-height:1;
+}
+
+.theme-toggle:hover{ color:var(--ink); border-color:var(--hair); }
 
 .center{
  flex:1;
@@ -95,6 +131,7 @@ p{
 
 <nav class="sitenav">
 <a href="/">Michael J. Stevenson, CAIA<span style="font-size:0.6em; vertical-align:super;">&reg;</span></a>
+<button class="theme-toggle" id="themeToggle" type="button" aria-label="Toggle light/dark mode" title="Toggle light/dark mode">&#9789;</button>
 </nav>
 
 <div class="center">
@@ -113,6 +150,21 @@ if(title){
  document.getElementById("pageTitle").textContent = title;
  document.title = title + " (Coming Soon) — Michael J. Stevenson";
 }
+</script>
+
+<script>
+(function(){
+ var btn = document.getElementById("themeToggle");
+ if(!btn) return;
+ var theme = document.documentElement.getAttribute("data-theme") === "light" ? "light" : "dark";
+ btn.textContent = theme === "light" ? "☀" : "☽";
+ btn.addEventListener("click", function(){
+  var current = document.documentElement.getAttribute("data-theme") === "light" ? "light" : "dark";
+  var next = current === "light" ? "dark" : "light";
+  localStorage.setItem("theme", next);
+  location.reload();
+ });
+})();
 </script>
 
 </body>
