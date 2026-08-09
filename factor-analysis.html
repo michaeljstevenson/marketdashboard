@@ -677,6 +677,7 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <div class="method-label">Pearson (OLS)</div>
 <div class="regression-stats" id="statsSmbM"></div>
 <div id="methodsSmbM"></div>
+<div class="method-note">Pearson alone (p=0.125) misses what Spearman and jackknife catch (p=0.001, p=0.007) &mdash; traced to Feb&rarr;Mar 2000, the dot-com peak (SMB +21.6% then -16.1%), one of the most extreme two-month swings in the series. Removing just that pair lifts Pearson to r=0.078, p=0.007. Purging every pair touching either month (3 pairs) still leaves r=0.061, p=0.036 &mdash; a real signal survives even with the dot-com period fully excluded, not purely a single-event artifact.</div>
 </div>
 <div class="scatter-box">
 <h3>Value (HML)</h3>
