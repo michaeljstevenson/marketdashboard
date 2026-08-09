@@ -60,7 +60,7 @@ exports.handler = async () => {
   try {
     const tickers = Object.entries(TICKER_EXCHANGE).map(([symbol, exchange]) => `${exchange}:${symbol}`);
 
-    async function scanTickers(tickerList) {
+    async function scanTickers(tickerList, columns) {
       const res = await fetch(SCANNER_URL, {
         method: "POST",
         headers: {
@@ -70,7 +70,7 @@ exports.handler = async () => {
         },
         body: JSON.stringify({
           symbols: { tickers: tickerList, query: { types: [] } },
-          columns: ["name", "high", "High.All"],
+          columns,
         }),
       });
       if (!res.ok) throw new Error(`TradingView scanner HTTP ${res.status}`);
@@ -78,7 +78,9 @@ exports.handler = async () => {
       return payload.data || [];
     }
 
-    let rows = await scanTickers(tickers);
+    const CONSTITUENT_COLUMNS = ["name", "high", "low", "High.All", "Low.All"];
+
+    let rows = await scanTickers(tickers, CONSTITUENT_COLUMNS);
     if (!rows.length) throw new Error("TradingView scanner returned no data");
 
     // The batched request silently drops a handful of tickers on some
@@ -92,7 +94,7 @@ exports.handler = async () => {
     if (missing.length) {
       console.log(`scheduled-ath-tradingview: retrying ${missing.length} tickers dropped from the main batch`);
       try {
-        const retryRows = await scanTickers(missing);
+        const retryRows = await scanTickers(missing, CONSTITUENT_COLUMNS);
         rows = rows.concat(retryRows);
       } catch (err) {
         console.error(`scheduled-ath-tradingview: retry failed: ${err.message}`);
@@ -100,9 +102,10 @@ exports.handler = async () => {
     }
 
     const athTickers = [];
+    const atlTickers = [];
     let coverage = 0;
     for (const row of rows) {
-      const [symbol, dayHigh, highAll] = row.d;
+      const [symbol, dayHigh, dayLow, highAll, lowAll] = row.d;
       if (dayHigh === null || highAll === null || highAll === undefined) continue;
       coverage++;
       // A name "makes a new all-time high" on a day when its intraday
@@ -112,12 +115,29 @@ exports.handler = async () => {
       // every name it reported at ATH on a test date, day-high exactly
       // equaled High.All while close was measurably below it.
       if (dayHigh >= highAll * (1 - ATH_TOLERANCE)) athTickers.push(symbol);
+      // Mirror logic for all-time lows: a name makes a new all-time low
+      // when its intraday low reaches the all-time low.
+      if (dayLow !== null && lowAll !== null && lowAll !== undefined && dayLow <= lowAll * (1 + ATH_TOLERANCE)) {
+        atlTickers.push(symbol);
+      }
     }
     athTickers.sort();
+    atlTickers.sort();
 
     console.log(
-      `scheduled-ath-tradingview: ${coverage}/${tickers.length} symbols returned data, ${athTickers.length} at ATH`
+      `scheduled-ath-tradingview: ${coverage}/${tickers.length} symbols returned data, ${athTickers.length} at ATH, ${atlTickers.length} at ATL`
     );
+
+    // SPX close, for the ATH-ATL breadth chart overlay — pulled from the
+    // same TradingView scanner rather than a second data source, since
+    // it's one extra row on a request we're already making.
+    let spxClose = null;
+    try {
+      const spxRows = await scanTickers(["SP:SPX"], ["close"]);
+      if (spxRows.length && spxRows[0].d[0] !== null) spxClose = spxRows[0].d[0];
+    } catch (err) {
+      console.error(`scheduled-ath-tradingview: SPX lookup failed: ${err.message}`);
+    }
 
     const today = {
       date: todayDateStr(),
@@ -125,6 +145,10 @@ exports.handler = async () => {
       count: athTickers.length,
       pct: coverage ? Math.round((athTickers.length / coverage) * 1000) / 10 : null,
       tickers: athTickers,
+      atlCount: atlTickers.length,
+      atlPct: coverage ? Math.round((atlTickers.length / coverage) * 1000) / 10 : null,
+      atlTickers: atlTickers,
+      spxClose,
     };
 
     const store = getTvAthStore();
@@ -135,7 +159,7 @@ exports.handler = async () => {
 
     const out = {
       generated_at_utc: new Date().toISOString(),
-      source: "TradingView scanner (High.All field)",
+      source: "TradingView scanner (High.All / Low.All fields)",
       rows: rowsOut,
     };
     await store.setJSON(BLOB_KEY, out);

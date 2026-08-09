@@ -4,7 +4,7 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Stocks at All-Time Highs — Michael J. Stevenson</title>
+<title>All-Time Highs and Lows — Michael J. Stevenson</title>
 
 <style>
 
@@ -160,6 +160,39 @@ h1{
  color:var(--muted);
  font-size:12px;
 }
+
+/* TABS */
+
+.tab-bar{
+ display:flex;
+ gap:6px;
+ margin-bottom:24px;
+ border-bottom:1px solid var(--hair);
+}
+
+.tab-btn{
+ background:none;
+ border:none;
+ color:var(--muted);
+ font-family:var(--sans);
+ font-size:14px;
+ padding:10px 4px;
+ margin-right:22px;
+ cursor:pointer;
+ border-bottom:2px solid transparent;
+ position:relative;
+ top:1px;
+}
+
+.tab-btn:hover{ color:var(--ink); }
+
+.tab-btn.active{
+ color:var(--ink);
+ border-bottom-color:var(--greed);
+}
+
+.tab-panel{ display:none; }
+.tab-panel.active{ display:block; }
 
 /* STAT ROW */
 
@@ -383,7 +416,7 @@ h1{
 <span class="navlabel">Equities ▾</span>
 <div class="dropdown">
 <a href="/sector-analysis.html">Sector Performance</a>
-<a href="/ath-index.html" class="active">Stocks at All-Time Highs</a>
+<a href="/ath-index.html" class="active">All-Time Highs and Lows</a>
 <a href="/valuations.html">Valuations</a>
 <a href="/coming-soon.html?title=Earnings%20Revisions">Earnings Revisions</a>
 <a href="/coming-soon.html?title=Market%20Breadth">Market Breadth</a>
@@ -435,11 +468,19 @@ h1{
 
 <div class="header">
 <div>
-<h1>Stocks at All-Time Highs</h1>
-<div class="subtitle">Share of the S&amp;P 500 currently trading at an all-time high (split- and dividend-adjusted), and the running history of that share over time.</div>
+<h1>All-Time Highs and Lows</h1>
+<div class="subtitle">Share of the S&amp;P 500 currently trading at an all-time high or all-time low (split- and dividend-adjusted), and the running history of that breadth over time.</div>
 </div>
 <div class="updated" id="updated">Loading...</div>
 </div>
+
+<div class="tab-bar" id="tabBar">
+<button class="tab-btn active" data-tab="ath">All-Time Highs</button>
+<button class="tab-btn" data-tab="atl">All-Time Lows</button>
+<button class="tab-btn" data-tab="net">ATH − ATL vs. S&amp;P 500</button>
+</div>
+
+<div class="tab-panel active" id="panel-ath">
 
 <div class="stat-grid">
 <div class="stat-card">
@@ -480,8 +521,65 @@ h1{
 <h2>Why two data sources</h2>
 <p>This page used to compute "at an all-time high" from Alpha Vantage's daily price history — but that history turned out to be capped at roughly 26 years for every symbol tested, starting around 1999&ndash;2000 regardless of how long the company's actually been listed. For long-established names (3M, Amgen, Eaton, and others), that understates the true all-time high: 3M's real peak (reached before 1999) sits well above its current price, but Alpha Vantage's truncated history couldn't see that and flagged it as a new high anyway.</p>
 <p>The current count and list above now come from TradingView's own all-time-high figure instead, which is built from deeper history. The long-run chart below still uses the Alpha Vantage series, since it has years of daily history to draw a trend from and the general shape is still informative &mdash; but treat its day-to-day count as an upper-bound estimate, not a precise figure, for the reason above.</p>
-<p>A name counts as being at an all-time high when its closing price is at or above its recorded all-time high for the day. A high reading means strength is broad &mdash; many names participating, not just a handful of mega-caps carrying the market. A reading near zero doesn't necessarily mean a bear market; it can simply mean the market has pulled back from a recent peak across the board, which is normal even in an uptrend.</p>
+<p>A name counts as being at an all-time high when its intraday high reaches its recorded all-time high for the day. A high reading means strength is broad &mdash; many names participating, not just a handful of mega-caps carrying the market. A reading near zero doesn't necessarily mean a bear market; it can simply mean the market has pulled back from a recent peak across the board, which is normal even in an uptrend.</p>
 <div class="source">Sources: <a href="https://www.tradingview.com/screener/" target="_blank" rel="noopener">TradingView Screener</a> (current count &amp; list) &middot; <a href="https://www.alphavantage.co/" target="_blank" rel="noopener">Alpha Vantage</a> (long-run chart)</div>
+</div>
+
+</div>
+
+<div class="tab-panel" id="panel-atl">
+
+<div class="stat-grid">
+<div class="stat-card">
+<div class="stat-label">At All-Time Lows</div>
+<div class="stat-value" id="atlStatCount" style="color:var(--fear);">—</div>
+<div class="stat-note" id="atlStatCountNote">of sample</div>
+</div>
+<div class="stat-card">
+<div class="stat-label">% of Sample</div>
+<div class="stat-value" id="atlStatPct" style="color:var(--fear);">—</div>
+<div class="stat-note">Higher means broader weakness across the sample, not just a handful of laggards</div>
+</div>
+<div class="stat-card">
+<div class="stat-label">As Of</div>
+<div class="stat-value" id="atlStatDate" style="font-size:20px;">—</div>
+<div class="stat-note">Most recent trading day</div>
+</div>
+</div>
+
+<div class="ticker-box">
+<h2>Currently at all-time lows</h2>
+<div class="ticker-grid" id="atlTickerGrid">
+<span class="ticker-empty">Loading&hellip;</span>
+</div>
+</div>
+
+<div class="explainer">
+<h2>How this is computed</h2>
+<p>Mirrors the all-time-high methodology on the other tab: a name counts as being at an all-time low when its intraday low reaches its recorded all-time low for the day, sourced from TradingView's screener (<code>Low.All</code> field). There's no Alpha Vantage-based fallback or long-run chart here, since the flawed Alpha Vantage history that motivated the ATH fix never had a comparable all-time-low computation to begin with &mdash; this tab is TradingView-only.</p>
+<div class="source">Source: <a href="https://www.tradingview.com/screener/" target="_blank" rel="noopener">TradingView Screener</a></div>
+</div>
+
+</div>
+
+<div class="tab-panel" id="panel-net">
+
+<div class="chart-box">
+<div class="chart-box-header">
+<h2>Number at ATH minus number at ATL, vs. S&amp;P 500</h2>
+</div>
+<div class="chart-canvas-wrap">
+<canvas id="netChart"></canvas>
+</div>
+</div>
+
+<div class="explainer">
+<h2>Reading this chart</h2>
+<p>The bars show the count of S&amp;P 500 constituents at a fresh all-time high minus the count at a fresh all-time low, each trading day &mdash; a classic breadth measure. Positive and rising means strength is broadening; negative means more names are breaking down than breaking out, which can show up before the index itself rolls over. The line overlays the S&amp;P 500 level itself for context.</p>
+<p>This series is built from the same daily TradingView snapshot as the other two tabs, so its history only goes back as far as this page has been recording it &mdash; it will lengthen day by day rather than showing a pre-existing multi-year trend.</p>
+<div class="source">Source: <a href="https://www.tradingview.com/screener/" target="_blank" rel="noopener">TradingView Screener</a></div>
+</div>
+
 </div>
 
 </div>
@@ -501,11 +599,27 @@ function showWarning(message){
  banner.style.display = "block";
 }
 
+function initTabs(){
+ const buttons = document.querySelectorAll(".tab-btn");
+ buttons.forEach(btn => {
+  btn.addEventListener("click", () => {
+   buttons.forEach(b => b.classList.remove("active"));
+   btn.classList.add("active");
+   document.querySelectorAll(".tab-panel").forEach(p => p.classList.remove("active"));
+   document.getElementById("panel-" + btn.dataset.tab).classList.add("active");
+   if(btn.dataset.tab === "net") renderNetChart();
+  });
+ });
+}
+
 async function init(){
+ initTabs();
+
  // Two independent sources: breadth-internals.js (Alpha Vantage) supplies
- // the long-run chart, since it has years of history to draw from —
- // ath-tradingview.js (TradingView) supplies today's count/list, since
- // it's the accurate one (see explainer below for why the two disagree).
+ // the long-run ATH chart, since it has years of history to draw from —
+ // ath-tradingview.js (TradingView) supplies today's ATH/ATL count/list
+ // plus the running ATH-ATL/SPX history, since it's the accurate one
+ // (see explainer below for why ATH figures disagree between sources).
  const [breadthResult, tvResult] = await Promise.allSettled([
   fetch("/api/breadth-internals", { cache: "no-store" }).then(r => r.json().then(d => ({ok: r.ok, data: d}))),
   fetch("/api/ath-tradingview", { cache: "no-store" }).then(r => r.json().then(d => ({ok: r.ok, data: d}))),
@@ -519,6 +633,7 @@ async function init(){
  const tvOk = tvResult.status === "fulfilled" && tvResult.value.ok && !tvResult.value.data.error;
  if(tvOk){
   const rows = tvResult.value.data.rows || [];
+  TV_ROWS = rows;
   const latest = rows[rows.length - 1];
   if(latest){
    document.getElementById("statCount").textContent = latest.count;
@@ -530,6 +645,16 @@ async function init(){
    tickerGrid.innerHTML = latest.tickers.length
     ? latest.tickers.map(t => `<span class="ticker-chip">${t}</span>`).join("")
     : '<span class="ticker-empty">No S&P 500 constituents are at an all-time high today.</span>';
+
+   const atlTickers = latest.atlTickers || [];
+   document.getElementById("atlStatCount").textContent = latest.atlCount ?? 0;
+   document.getElementById("atlStatCountNote").textContent = "of " + latest.total + " constituents";
+   document.getElementById("atlStatPct").textContent = (latest.atlPct == null ? "—" : latest.atlPct + "%");
+   document.getElementById("atlStatDate").textContent = latest.date;
+   const atlTickerGrid = document.getElementById("atlTickerGrid");
+   atlTickerGrid.innerHTML = atlTickers.length
+    ? atlTickers.map(t => `<span class="ticker-chip" style="background:rgba(111,143,172,0.14);border-color:rgba(111,143,172,0.35);color:var(--fear);">${t}</span>`).join("")
+    : '<span class="ticker-empty">No S&P 500 constituents are at an all-time low today.</span>';
 
    updatedText = "Current data from TradingView, generated " + new Date(tvResult.value.data.generated_at_utc).toLocaleString();
   }
@@ -544,6 +669,7 @@ async function init(){
   tickerGrid.innerHTML = summary.tickers.length
    ? summary.tickers.map(t => `<span class="ticker-chip">${t}</span>`).join("")
    : '<span class="ticker-empty">No names in the sample are at an all-time high today.</span>';
+  document.getElementById("atlTickerGrid").innerHTML = '<span class="ticker-empty">All-time-low data isn\'t available yet — it\'s only sourced from TradingView.</span>';
  }else{
   showError("Couldn't load all-time-high data. Neither /api/ath-tradingview nor /api/breadth-internals returned usable data.");
  }
@@ -559,6 +685,57 @@ async function init(){
   renderRangeButtons();
   renderChartRange(DEFAULT_RANGE);
  }
+}
+
+let TV_ROWS = [];
+let netChart = null;
+
+function renderNetChart(){
+ if(!TV_ROWS.length || netChart) return;
+ const rows = TV_ROWS.filter(r => r.spxClose != null && r.atlCount != null);
+ if(!rows.length) return;
+
+ const ctx = document.getElementById("netChart").getContext("2d");
+ netChart = new Chart(ctx, {
+  data: {
+   labels: rows.map(r => r.date),
+   datasets: [
+    {
+     type: "bar",
+     label: "ATH − ATL",
+     data: rows.map(r => r.count - r.atlCount),
+     backgroundColor: rows.map(r => (r.count - r.atlCount) >= 0 ? "rgba(217,138,61,0.65)" : "rgba(111,143,172,0.65)"),
+     yAxisID: "y",
+     order: 2,
+    },
+    {
+     type: "line",
+     label: "S&P 500",
+     data: rows.map(r => r.spxClose),
+     borderColor: "#eae6da",
+     backgroundColor: "#eae6da",
+     borderWidth: 2,
+     pointRadius: 0,
+     fill: false,
+     yAxisID: "y1",
+     order: 1,
+    },
+   ],
+  },
+  options: {
+   responsive: true,
+   maintainAspectRatio: false,
+   interaction: { mode: "index", intersect: false },
+   plugins: {
+    legend: { labels: { color: "#8b9199" } },
+   },
+   scales: {
+    x: { ticks: { color: "#8b9199", maxTicksLimit: 8 }, grid: { color: "#2b3138" } },
+    y: { position: "left", ticks: { color: "#8b9199" }, grid: { color: "#2b3138" }, title: { display: true, text: "ATH − ATL", color: "#8b9199" } },
+    y1: { position: "right", ticks: { color: "#8b9199" }, grid: { display: false }, title: { display: true, text: "S&P 500", color: "#8b9199" } },
+   },
+  },
+ });
 }
 
 let ALL_ROWS = [];
