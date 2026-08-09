@@ -26,6 +26,22 @@ const { getTickerStore, BLOB_KEY } = require("./ticker-blob-store");
 
 const ALPHA_VANTAGE_URL = "https://www.alphavantage.co/query";
 
+// One run takes ~2.5 minutes (see the batched() pacing below, which is
+// deliberately paced to stay under Alpha Vantage's 75-calls/minute cap —
+// ~156 calls / 75 per min already floors a single run at ~2.1 minutes
+// before any fetch latency). The schedule below fires every 2 minutes,
+// which is tighter than that floor, so back-to-back invocations would
+// overlap and double the instantaneous call rate — reproducing the exact
+// "Minute-level rate limit exceed" failure this pacing exists to avoid.
+// This lock makes overlapping invocations a no-op instead: whichever run
+// is already in flight keeps going, and the next scheduled trigger skips
+// itself if one is still active, rather than racing it. Net effect: the
+// blob refreshes as close to every 2 minutes as the rate cap allows
+// (in practice ~2.5 minutes, back-to-back) instead of true fixed 2-minute
+// ticks.
+const LOCK_KEY = "lock.json";
+const LOCK_TIMEOUT_MS = 5 * 60 * 1000; // generous margin over the ~2.5min runtime
+
 function sleep(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
@@ -147,6 +163,15 @@ async function batched(tasks, batchSize, delayMs) {
 }
 
 exports.handler = async () => {
+  const store = getTickerStore();
+
+  const existingLock = await store.get(LOCK_KEY, { type: "json" });
+  if (existingLock && Date.now() - Date.parse(existingLock.startedAt) < LOCK_TIMEOUT_MS) {
+    console.log("scheduled-ticker-background: a run is already in flight, skipping this trigger");
+    return { statusCode: 200, body: JSON.stringify({ ok: true, skipped: true }) };
+  }
+  await store.setJSON(LOCK_KEY, { startedAt: new Date().toISOString() });
+
   console.log(`scheduled-ticker-background: starting, ${TICKER_CONSTITUENTS.length} constituents`);
   try {
     if (!process.env.ALPHAVANTAGE_API_KEY) throw new Error("ALPHAVANTAGE_API_KEY environment variable is not set");
@@ -177,7 +202,6 @@ exports.handler = async () => {
       warnings,
     };
 
-    const store = getTickerStore();
     await store.setJSON(BLOB_KEY, payload);
     console.log(`scheduled-ticker-background: wrote ${items.length} items to blob`);
 
@@ -191,5 +215,7 @@ exports.handler = async () => {
       statusCode: 502,
       body: JSON.stringify({ error: err.message }),
     };
+  } finally {
+    await store.delete(LOCK_KEY);
   }
 };
