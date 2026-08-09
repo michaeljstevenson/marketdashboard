@@ -703,14 +703,13 @@ function renderNetChart(){
  // Today's most recent bar is overwritten below with the accurate
  // TradingView-sourced count/pct if it's available, so only the
  // historical tail carries that caveat.
- let rows = BREADTH_ROWS.filter(r => r.spxClose != null);
+ let rows = BREADTH_ROWS.filter(r => r.atHighs != null && r.atLows != null);
  if(!rows.length) return;
 
  const netByDate = new Map(rows.map(r => [r.date, r.atHighs - r.atLows]));
  const tvLatest = TV_ROWS[TV_ROWS.length - 1];
  if(tvLatest && tvLatest.atlCount != null){
   netByDate.set(tvLatest.date, tvLatest.count - tvLatest.atlCount);
-  if(!netByDate.has(tvLatest.date)) rows = rows.concat([{ date: tvLatest.date, spxClose: rows[rows.length - 1].spxClose }]);
  }
  rows = [...netByDate.keys()].sort().map(date => ({ date, net: netByDate.get(date) }));
  const spxByDate = new Map(BREADTH_ROWS.filter(r => r.spxClose != null).map(r => [r.date, r.spxClose]));

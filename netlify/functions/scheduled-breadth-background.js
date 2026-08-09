@@ -65,22 +65,19 @@ async function fetchDailyCloses(apiKey, symbol) {
     .sort((a, b) => (a.date < b.date ? -1 : 1));
 }
 
-// SPX itself, for the ATH-ATL breadth chart's price overlay — not a
-// constituent, so it isn't part of BREADTH_CONSTITUENTS or the atHigh/
-// atLow math above, just a date-aligned close series to plot alongside.
+// SPY (not the real SPX index), for the ATH-ATL breadth chart's price
+// overlay — not a constituent, so it isn't part of BREADTH_CONSTITUENTS
+// or the atHigh/atLow math above, just a date-aligned close series to
+// plot alongside. Uses TIME_SERIES_DAILY_ADJUSTED/SPY rather than
+// INDEX_DATA/SPX (what data.js uses for the sentiment dashboard's own
+// SPX-based factors) because this account's Alpha Vantage plan doesn't
+// include index-data access — confirmed by a live "not yet entitled to
+// index data access" error from that endpoint. SPY tracks the S&P 500
+// closely enough for a context line on this chart.
 async function fetchSpxDailyCloses(apiKey) {
-  const payload = await fetchJson(
-    `${ALPHA_VANTAGE_URL}?function=INDEX_DATA&symbol=SPX&interval=daily&apikey=${apiKey}`
-  );
-  const data = payload.data;
-  if (!data || !data.length) {
-    throw new Error(
-      `Alpha Vantage INDEX_DATA missing data for SPX: ` +
-        (payload.Note || payload.Information || payload.error || JSON.stringify(payload).slice(0, 200))
-    );
-  }
+  const closes = await fetchDailyCloses(apiKey, "SPY");
   const byDate = new Map();
-  for (const d of data) byDate.set(d.date, parseFloat(d.close));
+  for (const { date, close } of closes) byDate.set(date, close);
   return byDate;
 }
 
