@@ -12,21 +12,21 @@
 // calls/minute cap. Named with the "-background" suffix so Netlify runs
 // it as a Background Function (up to 15 minutes) rather than a standard
 // function, matching scheduled-breadth-background.js's reasoning — this
-// job deliberately paces itself to ~2.5 minutes (see the batched() call
+// job deliberately paces itself to ~2.3 minutes (see the batched() call
 // below) to stay under that same per-minute cap, well past what a
 // standard function's much tighter timeout would allow.
 //
-// Runs every 15 minutes during US market hours on weekdays (see the cron
-// schedule in netlify.toml) — frequent enough to feel current, and with
-// ~2.5 minutes of actual runtime per call, still a small fraction of each
-// 15-minute window.
+// Runs every 2 minutes during US market hours on weekdays (see the cron
+// schedule in netlify.toml, and the overlap lock right below) — frequent
+// enough to feel current given the ~2.3-minute floor a single run's
+// pacing already imposes.
 
 const { TICKER_CONSTITUENTS } = require("./ticker-constituents");
 const { getTickerStore, BLOB_KEY } = require("./ticker-blob-store");
 
 const ALPHA_VANTAGE_URL = "https://www.alphavantage.co/query";
 
-// One run takes ~2.5 minutes (see the batched() pacing below, which is
+// One run takes ~2.3 minutes (see the batched() pacing below, which is
 // deliberately paced to stay under Alpha Vantage's 75-calls/minute cap —
 // ~156 calls / 75 per min already floors a single run at ~2.1 minutes
 // before any fetch latency). The schedule below fires every 2 minutes,
@@ -37,10 +37,10 @@ const ALPHA_VANTAGE_URL = "https://www.alphavantage.co/query";
 // is already in flight keeps going, and the next scheduled trigger skips
 // itself if one is still active, rather than racing it. Net effect: the
 // blob refreshes as close to every 2 minutes as the rate cap allows
-// (in practice ~2.5 minutes, back-to-back) instead of true fixed 2-minute
+// (in practice ~2.3 minutes, back-to-back) instead of true fixed 2-minute
 // ticks.
 const LOCK_KEY = "lock.json";
-const LOCK_TIMEOUT_MS = 5 * 60 * 1000; // generous margin over the ~2.5min runtime
+const LOCK_TIMEOUT_MS = 5 * 60 * 1000; // generous margin over the ~2.3min runtime
 
 function sleep(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
@@ -142,10 +142,15 @@ async function fetchFedFunds() {
 // calls here that's fast enough to burn through the whole per-minute
 // quota before the run is even a quarter done (confirmed: an earlier run
 // at 800ms got the first ~130 through, then every later call failed with
-// "Minute-level rate limit exceed"). 5-per-4500ms keeps sustained
-// throughput to ~67/min, comfortably under the cap, at the cost of the
-// full run taking ~2.5 minutes instead of ~25 seconds — acceptable here
-// since this always runs as a background job, never on the request path.
+// "Minute-level rate limit exceed"). A bulk-quote endpoint that would
+// cut this to a handful of calls exists (REALTIME_BULK_QUOTES) but isn't
+// entitled on this account's plan either (confirmed live — same
+// "premium endpoint" gate as INDEX_DATA), so per-symbol GLOBAL_QUOTE
+// calls paced under the cap is the only option. 5-per-4200ms keeps
+// sustained throughput to ~71/min — as close to the 75/min ceiling as is
+// safe with some margin for latency jitter — at the cost of the full run
+// taking ~2.3 minutes instead of ~25 seconds — acceptable here since
+// this always runs as a background job, never on the request path.
 //
 // Each task is wrapped so a single failing symbol (delisted ticker,
 // transient API hiccup) drops just that item instead of failing the
@@ -186,7 +191,7 @@ exports.handler = async () => {
       ...TICKER_CONSTITUENTS.map((s) => () => fetchQuote(s, s)),
     ];
 
-    const results = await batched(tasks, 5, 4500);
+    const results = await batched(tasks, 5, 4200);
     const items = results.filter((r) => !r.__failed);
     const warnings = results.filter((r) => r.__failed).map((r) => r.message);
 

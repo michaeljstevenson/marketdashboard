@@ -63,10 +63,10 @@
   # 9:30am-4:00pm EDT summer; drifts an hour during EST winter, same
   # DST caveat as the jobs above). Unlike those once-daily jobs, the
   # ticker tape is meant to feel current through the trading day. Each
-  # run actually takes ~2.5 minutes (paced to stay under Alpha Vantage's
+  # run actually takes ~2.3 minutes (paced to stay under Alpha Vantage's
   # per-minute rate cap across ~156 calls — see scheduled-ticker-
   # background.js), so back-to-back 2-minute ticks would overlap; the
   # function's own lock (also in that file) makes an overlapping trigger
   # a no-op rather than double-firing calls and re-tripping the rate
-  # limit, so the real-world cadence ends up ~2.5 minutes, back-to-back.
+  # limit, so the real-world cadence ends up ~2.3 minutes, back-to-back.
   schedule = "*/2 13-20 * * 1-5"
