@@ -359,6 +359,54 @@ h1{
  font-style:italic;
 }
 
+/* SUBSAMPLE TABLE */
+
+.subsample-table-box{
+ background:var(--card);
+ border:1px solid var(--hair);
+ border-radius:12px;
+ overflow-x:auto;
+ margin-bottom:22px;
+}
+
+.subsample-table-box table{
+ width:100%;
+ border-collapse:collapse;
+ font-size:13px;
+ min-width:560px;
+}
+
+.subsample-table-box thead th{
+ text-align:right;
+ padding:14px 12px;
+ color:var(--muted);
+ font-size:11px;
+ text-transform:uppercase;
+ letter-spacing:0.04em;
+ font-weight:600;
+ white-space:nowrap;
+ border-bottom:1px solid var(--hair);
+}
+
+.subsample-table-box thead th:first-child{ text-align:left; }
+
+.subsample-table-box tbody td{
+ padding:12px;
+ text-align:right;
+ font-family:var(--mono);
+ white-space:nowrap;
+ border-bottom:1px solid var(--hair);
+}
+
+.subsample-table-box tbody tr:last-child td{ border-bottom:none; }
+
+.subsample-table-box tbody td:first-child{
+ text-align:left;
+ font-family:var(--sans);
+}
+
+.subsample-table-box .sig{ color:var(--greed); }
+
 @media (max-width:900px){
  .scatter-grid{ grid-template-columns:1fr; }
 }
@@ -616,6 +664,28 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 </div>
 </div>
 
+<div class="momentum-header">
+<h2>My follow-up question&hellip; How has the rise of algorithmic and quantitative trading since the 1980s changed the behaviors of these factors?</h2>
+</div>
+<div class="momentum-sub">Testing whether factor persistence looks different in the second half of this history than the first, motivated by the rise of algorithmic and quantitative trading, using two equal-length, non-overlapping 40-year windows (1945&ndash;1984 and 1985&ndash;2025), a Chow test for whether the two periods' regressions are formally different, and a lesson reinforced while doing so.</div>
+
+<div class="subsample-table-box">
+<table>
+<thead>
+<tr><th>Factor</th><th>1945&ndash;1984 (n=40)</th><th>1985&ndash;2025 (n=40)</th><th>Chow test</th></tr>
+</thead>
+<tbody id="subsampleTableBody">
+<tr><td colspan="4">Loading&hellip;</td></tr>
+</tbody>
+</table>
+</div>
+
+<div class="explainer">
+<p>Testing this properly required equal sample sizes on both sides, and a formal test of whether the two regressions are actually different (not just comparing two r-values). I had initially made the mistake of an unequal split at its midpoint (testing pre: 1927-1984, n:58 and post: 1985-2024, n:40) which had resulted in the post data having less statistical power. This error could easily manufacture the appearance of a &ldquo;weaker&rdquo; relationship that's really just a noisier estimate. To balance, &ldquo;pre&rdquo; became 1945-1984, n:40 and &ldquo;post&rdquo; became 1985-2025, n:40. The Chow test would help to reject my null hypothesis: Algorithmic trading did not strengthen (or made no difference to, or weakened) momentum persistence.</p>
+<p>Not one of the three factors showed a statistically significant break. Momentum's (WML) point estimates run in the opposite direction from &ldquo;algo trading strengthened persistence&rdquo; &mdash; both periods show a mild, non-significant negative relationship (a hint of reversal, not persistence), and the Chow test confirms the two periods aren't meaningfully different from each other (p=0.513). Size (SMB) shows a significant relationship pre-1985 (p=0.019) and none post-1985 (p=0.707), which looks suggestive on its own &mdash; but the Chow test says this apparent difference isn't statistically distinguishable from what you'd expect by chance across two 40-observation samples (p=0.330). There's not enough evidence to say factor behavior has structurally changed, in either direction, over this specific (annual) comparison.</p>
+<p>As a caution, in addition to the previously referenced version, another earlier version of this analysis split the full sample at its midpoint (1976) rather than at 1985, and momentum showed a seemingly strong, significant break (Chow p=0.018). That result didn't survive shifting the window to start in 1945 instead of 1927. It turned out to be driven by the Great Depression and WWII years (1927&ndash;1944) sitting in the early half, an unusually extreme 18-year stretch, not by any real pre/post regime change. A single subsample split can look meaningful and still be driven by the fact that unusual years happen to land on either side of the line. This reinforced exactly why having a pre-specified, economically motivated cutoff is more trustworthy than searching for whichever cutoff produces the most dramatic-looking result.</p>
+</div>
+
 <div class="explainer">
 <h2>What these factors are</h2>
 <p><strong>Market (Mkt&minus;RF)</strong> is the broad US stock market's return in excess of the risk-free rate — the baseline "just own the market" premium. <strong>Size (SMB, "small minus big")</strong> is the return of small-cap stocks minus large-cap stocks. <strong>Value (HML, "high minus low")</strong> is the return of high book-to-market ("value") stocks minus low book-to-market ("growth") stocks. <strong>Momentum</strong> is the return of recent winners (top 30% by prior 12-month return, skipping the most recent month) minus recent losers (bottom 30%).</p>
@@ -769,7 +839,7 @@ function linearRegression(xs, ys){
  const seSlope = Math.sqrt((sse / dof) / sxx);
  const t = slope / seSlope;
  const p = 2 * (1 - normalCdf(Math.abs(t)));
- return { n, slope, intercept, r, r2, t, dof, p };
+ return { n, slope, intercept, r, r2, t, dof, p, sse };
 }
 
 function normalCdf(x){
@@ -1097,6 +1167,111 @@ function renderFactorMomentumQuarterly(rows){
   `${smbPairs.length} non-overlapping quarter-pairs per factor. Dashed line is the OLS regression fit.`;
 }
 
+// ---- Subsample check: has the pre-1985 vs. 1985+ relationship changed?
+// (motivated by the rise of algorithmic/quantitative trading) ----
+//
+// Uses two equal-length, non-overlapping 40-year windows (1945-1984 and
+// 1985-2025) rather than splitting at 1985 directly — an unequal split
+// (e.g. 1927-1984 vs. 1985-2024, n=58 vs. n=40) gives the smaller side
+// less statistical power, which can manufacture the appearance of a
+// "weaker" relationship that's really just a noisier estimate from
+// having less data, not a real difference. Equal n on both sides removes
+// that confound.
+//
+// The Chow test formally answers "are these two periods' regressions
+// different," rather than just eyeballing two r-values next to each
+// other — it compares the fit of one shared regression across the full
+// window against two separate regressions (one per period), and asks
+// whether letting the relationship differ by period explains
+// meaningfully more than you'd expect from the extra free parameters
+// alone. Requires the regularized incomplete beta function to get an
+// exact F-distribution p-value (implemented below via a standard
+// continued-fraction approximation).
+function betacf(x, a, b){
+ const MAXIT = 200, EPS = 3e-14, FPMIN = 1e-300;
+ const qab = a + b, qap = a + 1, qam = a - 1;
+ let c = 1, d = 1 - qab * x / qap;
+ if(Math.abs(d) < FPMIN) d = FPMIN;
+ d = 1 / d;
+ let h = d;
+ for(let m = 1; m <= MAXIT; m++){
+  const m2 = 2 * m;
+  let aa = m * (b - m) * x / ((qam + m2) * (a + m2));
+  d = 1 + aa * d; if(Math.abs(d) < FPMIN) d = FPMIN;
+  c = 1 + aa / c; if(Math.abs(c) < FPMIN) c = FPMIN;
+  d = 1 / d; h *= d * c;
+  aa = -(a + m) * (qab + m) * x / ((a + m2) * (qap + m2));
+  d = 1 + aa * d; if(Math.abs(d) < FPMIN) d = FPMIN;
+  c = 1 + aa / c; if(Math.abs(c) < FPMIN) c = FPMIN;
+  d = 1 / d;
+  const del = d * c;
+  h *= del;
+  if(Math.abs(del - 1) < EPS) break;
+ }
+ return h;
+}
+function logGamma(x){
+ const cof = [76.18009172947146, -86.50532032941677, 24.01409824083091, -1.231739572450155, 0.1208650973866179e-2, -0.5395239384953e-5];
+ let y = x, tmp = x + 5.5;
+ tmp -= (x + 0.5) * Math.log(tmp);
+ let ser = 1.000000000190015;
+ for(let j = 0; j < 6; j++){ y += 1; ser += cof[j] / y; }
+ return -tmp + Math.log(2.5066282746310005 * ser / x);
+}
+function betai(x, a, b){
+ if(x <= 0) return 0;
+ if(x >= 1) return 1;
+ const bt = Math.exp(logGamma(a + b) - logGamma(a) - logGamma(b) + a * Math.log(x) + b * Math.log(1 - x));
+ if(x < (a + 1) / (a + b + 2)) return bt * betacf(x, a, b) / a;
+ return 1 - bt * betacf(1 - x, b, a) / b;
+}
+function fTestPValue(F, d1, d2){
+ const x = d1 * F / (d1 * F + d2);
+ return 1 - betai(x, d1 / 2, d2 / 2);
+}
+function chowTest(pooledSse, sub1, sub2, k){
+ const n1 = sub1.n, n2 = sub2.n;
+ const rssSum = sub1.sse + sub2.sse;
+ const numerator = (pooledSse - rssSum) / k;
+ const denominator = rssSum / (n1 + n2 - 2 * k);
+ const F = numerator / denominator;
+ const d1 = k, d2 = n1 + n2 - 2 * k;
+ return { F, d1, d2, p: fTestPValue(F, d1, d2) };
+}
+
+const SUBSAMPLE_WINDOW = 40;
+const SUBSAMPLE_SPLIT_YEAR = 1985;
+
+function renderSubsampleCheck(rows){
+ const fields = [
+  { field: "smb", label: "Size (SMB)" },
+  { field: "hml", label: "Value (HML)" },
+  { field: "mom", label: "Momentum (WML)" },
+ ];
+
+ const tbody = document.getElementById("subsampleTableBody");
+ tbody.innerHTML = fields.map(({ field, label }) => {
+  const annual = annualReturnsByField(rows, field);
+  const pairs = samePairYearOverYear(annual);
+  const pre = pairs.filter(p => p.year >= SUBSAMPLE_SPLIT_YEAR - SUBSAMPLE_WINDOW && p.year < SUBSAMPLE_SPLIT_YEAR);
+  const post = pairs.filter(p => p.year >= SUBSAMPLE_SPLIT_YEAR && p.year < SUBSAMPLE_SPLIT_YEAR + SUBSAMPLE_WINDOW);
+  const combined = pre.concat(post);
+  const pooled = linearRegression(combined.map(p => p.x), combined.map(p => p.y));
+  const preReg = linearRegression(pre.map(p => p.x), pre.map(p => p.y));
+  const postReg = linearRegression(post.map(p => p.x), post.map(p => p.y));
+  const chow = chowTest(pooled.sse, preReg, postReg, 2);
+
+  const fmt = (reg) => `r=${reg.r.toFixed(2)}, p=${reg.p < 0.001 ? "<0.001" : reg.p.toFixed(3)}`;
+  const chowSig = chow.p < 0.05;
+  return `<tr>` +
+   `<td>${label}</td>` +
+   `<td>${fmt(preReg)}</td>` +
+   `<td>${fmt(postReg)}</td>` +
+   `<td class="${chowSig ? "sig" : ""}">F=${chow.F.toFixed(2)}, p=${chow.p < 0.001 ? "<0.001" : chow.p.toFixed(3)}</td>` +
+  `</tr>`;
+ }).join("");
+}
+
 async function init(){
  renderRangeButtons();
  try{
@@ -1124,6 +1299,7 @@ async function init(){
   renderChartRange(DEFAULT_RANGE);
   renderFactorMomentum(ALL_ROWS);
   renderFactorMomentumQuarterly(ALL_ROWS);
+  renderSubsampleCheck(ALL_ROWS);
  }catch(e){
   showError("Couldn't load factor data: " + e.message);
   document.getElementById("updated").textContent = "";
