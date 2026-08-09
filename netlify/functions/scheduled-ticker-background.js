@@ -12,14 +12,14 @@
 // calls/minute cap. Named with the "-background" suffix so Netlify runs
 // it as a Background Function (up to 15 minutes) rather than a standard
 // function, matching scheduled-breadth-background.js's reasoning — this
-// job's own batching keeps it well under a minute in practice, but there's
-// no reason to risk a standard function's much tighter timeout for a job
-// that isn't on the request path.
+// job deliberately paces itself to ~2.5 minutes (see the batched() call
+// below) to stay under that same per-minute cap, well past what a
+// standard function's much tighter timeout would allow.
 //
 // Runs every 15 minutes during US market hours on weekdays (see the cron
-// schedule in netlify.toml) — frequent enough to feel current, infrequent
-// enough that 150+ calls every run stays a small fraction of the rate cap
-// even with the calls bunched at the start of each run.
+// schedule in netlify.toml) — frequent enough to feel current, and with
+// ~2.5 minutes of actual runtime per call, still a small fraction of each
+// 15-minute window.
 
 const { TICKER_CONSTITUENTS } = require("./ticker-constituents");
 const { getTickerStore, BLOB_KEY } = require("./ticker-blob-store");
@@ -70,7 +70,9 @@ async function fetchIndex(symbol, label) {
 async function fetchQuote(symbol, label) {
   const payload = await fetchJson(`function=GLOBAL_QUOTE&symbol=${symbol}&entitlement=delayed`);
   const q = payload["Global Quote - DATA DELAYED BY 15 MINUTES"] || payload["Global Quote"];
-  if (!q) throw new Error(`Missing GLOBAL_QUOTE for ${symbol}`);
+  if (!q || !q["05. price"] || !q["10. change percent"]) {
+    throw new Error(`Incomplete GLOBAL_QUOTE for ${symbol}: ${JSON.stringify(payload).slice(0, 150)}`);
+  }
   return {
     label,
     value: round(parseFloat(q["05. price"]), 2),
@@ -117,10 +119,17 @@ async function fetchFedFunds() {
 }
 
 // Firing everything at once trips Alpha Vantage's per-second burst limit
-// even on the premium key (confirmed empirically). Batching in groups of
-// 5 with a short pause between batches stays under that ceiling — same
-// pacing ticker.js used when it fetched live, just now covering ~156
-// calls instead of ~23.
+// even on the premium key (confirmed empirically). ticker.js's old live
+// fetch used 5-per-800ms for its ~23 calls, which finished well inside a
+// minute so the *per-minute* cap (75/min on this plan) never came into
+// play — but that pacing is ~375 calls/min sustained, and with ~156
+// calls here that's fast enough to burn through the whole per-minute
+// quota before the run is even a quarter done (confirmed: an earlier run
+// at 800ms got the first ~130 through, then every later call failed with
+// "Minute-level rate limit exceed"). 5-per-4500ms keeps sustained
+// throughput to ~67/min, comfortably under the cap, at the cost of the
+// full run taking ~2.5 minutes instead of ~25 seconds — acceptable here
+// since this always runs as a background job, never on the request path.
 //
 // Each task is wrapped so a single failing symbol (delisted ticker,
 // transient API hiccup) drops just that item instead of failing the
@@ -152,7 +161,7 @@ exports.handler = async () => {
       ...TICKER_CONSTITUENTS.map((s) => () => fetchQuote(s, s)),
     ];
 
-    const results = await batched(tasks, 5, 800);
+    const results = await batched(tasks, 5, 4500);
     const items = results.filter((r) => !r.__failed);
     const warnings = results.filter((r) => r.__failed).map((r) => r.message);
 
