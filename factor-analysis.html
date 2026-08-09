@@ -550,6 +550,32 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 </div>
 </div>
 
+<div class="momentum-header">
+<h2>Factor Momentum: Non-Overlapping Quarterly</h2>
+</div>
+<div class="momentum-sub" id="momentumSubQ">Loading...</div>
+
+<div class="scatter-grid">
+<div class="scatter-box">
+<h3>Size (SMB)</h3>
+<div class="scatter-sub">SMB return, quarter t (x) vs. SMB return, quarter t+1 (y)</div>
+<div class="scatter-canvas-wrap"><canvas id="scatterSmbQ"></canvas></div>
+<div class="regression-stats" id="statsSmbQ"></div>
+</div>
+<div class="scatter-box">
+<h3>Value (HML)</h3>
+<div class="scatter-sub">HML return, quarter t (x) vs. HML return, quarter t+1 (y)</div>
+<div class="scatter-canvas-wrap"><canvas id="scatterHmlQ"></canvas></div>
+<div class="regression-stats" id="statsHmlQ"></div>
+</div>
+<div class="scatter-box">
+<h3>Momentum (WML)</h3>
+<div class="scatter-sub">WML return, quarter t (x) vs. WML return, quarter t+1 (y)</div>
+<div class="scatter-canvas-wrap"><canvas id="scatterWmlQ"></canvas></div>
+<div class="regression-stats" id="statsWmlQ"></div>
+</div>
+</div>
+
 <div class="explainer">
 <h2>What these factors are</h2>
 <p><strong>Market (Mkt&minus;RF)</strong> is the broad US stock market's return in excess of the risk-free rate — the baseline "just own the market" premium. <strong>Size (SMB, "small minus big")</strong> is the return of small-cap stocks minus large-cap stocks. <strong>Value (HML, "high minus low")</strong> is the return of high book-to-market ("value") stocks minus low book-to-market ("growth") stocks. <strong>Momentum</strong> is the return of recent winners (top 30% by prior 12-month return, skipping the most recent month) minus recent losers (bottom 30%).</p>
@@ -777,7 +803,13 @@ function renderRegressionStats(elId, stats){
   `<span class="${sig ? "sig" : ""}">p=<b>${stats.p < 0.001 ? "<0.001" : stats.p.toFixed(3)}</b>${sig ? " (sig. at 5%)" : " (not sig. at 5%)"}</span>`;
 }
 
-function renderScatter(canvasId, points, stats, pointColor){
+function renderScatter(canvasId, points, stats, pointColor, opts){
+ opts = opts || {};
+ const tooltipFn = opts.tooltipFn || (p => `${p.year}→${p.year + 1}: ${p.x.toFixed(1)}% → ${p.y.toFixed(1)}%`);
+ const xLabel = opts.xLabel || "Year t return (%)";
+ const yLabel = opts.yLabel || "Year t+1 return (%)";
+ const datasetLabel = opts.datasetLabel || "Years";
+
  const xs = points.map(p => p.x);
  const xMin = Math.min(...xs), xMax = Math.max(...xs);
  const linePoints = [
@@ -790,7 +822,7 @@ function renderScatter(canvasId, points, stats, pointColor){
   type: "scatter",
   data: {
    datasets: [
-    { label: "Years", data: points, backgroundColor: pointColor, pointRadius: 3.5, showLine: false },
+    { label: datasetLabel, data: points, backgroundColor: pointColor, pointRadius: 3.5, showLine: false },
     { label: "Regression fit", type: "line", data: linePoints, borderColor: "#eae6da", borderWidth: 1.5, borderDash: [4, 3], pointRadius: 0, fill: false },
    ],
   },
@@ -801,18 +833,86 @@ function renderScatter(canvasId, points, stats, pointColor){
     legend: { display: false },
     tooltip: {
      callbacks: {
-      label: ctx => ctx.dataset.label === "Years"
-       ? `${ctx.raw.year}→${ctx.raw.year + 1}: ${ctx.raw.x.toFixed(1)}% → ${ctx.raw.y.toFixed(1)}%`
-       : null,
+      label: ctx => ctx.dataset.label === datasetLabel ? tooltipFn(ctx.raw) : null,
      },
     },
    },
    scales: {
-    x: { title: { display: true, text: "Year t return (%)", color: "#8b9199", font: { size: 10 } }, ticks: { color: "#8b9199", font: { size: 10 } }, grid: { color: "#2b3138" } },
-    y: { title: { display: true, text: "Year t+1 return (%)", color: "#8b9199", font: { size: 10 } }, ticks: { color: "#8b9199", font: { size: 10 } }, grid: { color: "#2b3138" } },
+    x: { title: { display: true, text: xLabel, color: "#8b9199", font: { size: 10 } }, ticks: { color: "#8b9199", font: { size: 10 } }, grid: { color: "#2b3138" } },
+    y: { title: { display: true, text: yLabel, color: "#8b9199", font: { size: 10 } }, ticks: { color: "#8b9199", font: { size: 10 } }, grid: { color: "#2b3138" } },
    },
   },
  });
+}
+
+// ---- Generic non-overlapping period aggregation (quarterly, and later
+// monthly/weekly reuse this — annual keeps its own simpler implementation
+// above since month-based boundary checks are simplest for that case). ----
+//
+// keyFn(dateStr) groups rows into a period key (e.g. "2024-Q1").
+// boundsFn(key) returns { start, end } as UTC Dates for that period's
+// full calendar range — used to detect and drop partial periods (the
+// dataset's first period and the still-in-progress current period) the
+// same way the annual aggregation does, just via date-distance instead
+// of a hardcoded month check, since quarter/month/week boundaries don't
+// reduce to a single "is it January/December" test.
+function periodReturnsByField(rows, field, keyFn, boundsFn){
+ const byKey = new Map();
+ for(const r of rows){
+  const key = keyFn(r.date);
+  const v = r[field];
+  if(v === null || v === undefined || isNaN(v)) continue;
+  if(!byKey.has(key)) byKey.set(key, { product: 1, firstDate: r.date, lastDate: r.date });
+  const entry = byKey.get(key);
+  entry.product *= (1 + v / 100);
+  entry.lastDate = r.date;
+ }
+ const DAY_MS = 24 * 60 * 60 * 1000;
+ const TOLERANCE_DAYS = 5; // covers weekends/holidays sitting right on a period boundary
+ const results = [];
+ for(const [key, entry] of byKey.entries()){
+  const { start, end } = boundsFn(key);
+  const firstDate = new Date(entry.firstDate + "T00:00:00Z");
+  const lastDate = new Date(entry.lastDate + "T00:00:00Z");
+  const startGap = Math.abs(firstDate - start) / DAY_MS;
+  const endGap = Math.abs(lastDate - end) / DAY_MS;
+  if(startGap > TOLERANCE_DAYS || endGap > TOLERANCE_DAYS) continue; // partial period — drop
+  results.push({ key, value: Math.round((entry.product - 1) * 1000) / 10 });
+ }
+ results.sort((a, b) => a.key < b.key ? -1 : 1);
+ return results;
+}
+
+function periodPairs(periodReturns, nextKeyFn){
+ const byKey = new Map(periodReturns.map(r => [r.key, r.value]));
+ const pairs = [];
+ for(const { key, value } of periodReturns){
+  const nextKey = nextKeyFn(key);
+  const next = byKey.get(nextKey);
+  if(next === undefined) continue;
+  pairs.push({ x: value, y: next, key, nextKey });
+ }
+ return pairs;
+}
+
+function quarterKey(dateStr){
+ const [y, m] = dateStr.split("-").map(Number);
+ return `${y}-Q${Math.floor((m - 1) / 3) + 1}`;
+}
+function quarterBounds(key){
+ const [yStr, qStr] = key.split("-Q");
+ const y = parseInt(yStr, 10), q = parseInt(qStr, 10);
+ const startMonth = (q - 1) * 3; // 0-indexed
+ const start = new Date(Date.UTC(y, startMonth, 1));
+ const end = new Date(Date.UTC(y, startMonth + 3, 0)); // day 0 = last day of prior month
+ return { start, end };
+}
+function nextQuarterKey(key){
+ const [yStr, qStr] = key.split("-Q");
+ let y = parseInt(yStr, 10), q = parseInt(qStr, 10);
+ q += 1;
+ if(q > 4){ q = 1; y += 1; }
+ return `${y}-Q${q}`;
 }
 
 function renderFactorMomentum(rows){
@@ -838,6 +938,37 @@ function renderFactorMomentum(rows){
  document.getElementById("momentumSub").textContent =
   `Each point is one pair of consecutive full calendar years (${smbPairs[0].year}→${smbPairs[0].year + 1} through ${smbPairs[smbPairs.length - 1].year}→${smbPairs[smbPairs.length - 1].year + 1}), ` +
   `${smbPairs.length} non-overlapping year-pairs per factor. Dashed line is the OLS regression fit.`;
+}
+
+function renderFactorMomentumQuarterly(rows){
+ const smbQ = periodReturnsByField(rows, "smb", quarterKey, quarterBounds);
+ const hmlQ = periodReturnsByField(rows, "hml", quarterKey, quarterBounds);
+ const momQ = periodReturnsByField(rows, "mom", quarterKey, quarterBounds);
+
+ const smbPairs = periodPairs(smbQ, nextQuarterKey);
+ const hmlPairs = periodPairs(hmlQ, nextQuarterKey);
+ const momPairs = periodPairs(momQ, nextQuarterKey);
+
+ const smbStats = linearRegression(smbPairs.map(p => p.x), smbPairs.map(p => p.y));
+ const hmlStats = linearRegression(hmlPairs.map(p => p.x), hmlPairs.map(p => p.y));
+ const momStats = linearRegression(momPairs.map(p => p.x), momPairs.map(p => p.y));
+
+ const quarterOpts = {
+  tooltipFn: p => `${p.key}→${p.nextKey}: ${p.x.toFixed(1)}% → ${p.y.toFixed(1)}%`,
+  xLabel: "Quarter t return (%)",
+  yLabel: "Quarter t+1 return (%)",
+  datasetLabel: "Quarters",
+ };
+ renderScatter("scatterSmbQ", smbPairs, smbStats, "rgba(111,143,172,0.75)", quarterOpts);
+ renderRegressionStats("statsSmbQ", smbStats);
+ renderScatter("scatterHmlQ", hmlPairs, hmlStats, "rgba(139,111,172,0.75)", quarterOpts);
+ renderRegressionStats("statsHmlQ", hmlStats);
+ renderScatter("scatterWmlQ", momPairs, momStats, "rgba(111,172,130,0.75)", quarterOpts);
+ renderRegressionStats("statsWmlQ", momStats);
+
+ document.getElementById("momentumSubQ").textContent =
+  `Each point is one pair of consecutive full calendar quarters (${smbPairs[0].key}→${smbPairs[0].nextKey} through ${smbPairs[smbPairs.length - 1].key}→${smbPairs[smbPairs.length - 1].nextKey}), ` +
+  `${smbPairs.length} non-overlapping quarter-pairs per factor. Dashed line is the OLS regression fit.`;
 }
 
 async function init(){
@@ -866,6 +997,7 @@ async function init(){
 
   renderChartRange(DEFAULT_RANGE);
   renderFactorMomentum(ALL_ROWS);
+  renderFactorMomentumQuarterly(ALL_ROWS);
  }catch(e){
   showError("Couldn't load factor data: " + e.message);
   document.getElementById("updated").textContent = "";
