@@ -567,6 +567,7 @@ h1{
 <div class="chart-box">
 <div class="chart-box-header">
 <h2>Number at ATH minus number at ATL, vs. S&amp;P 500</h2>
+<div class="range-controls" id="netRangeControls"></div>
 </div>
 <div class="chart-canvas-wrap">
 <canvas id="netChart"></canvas>
@@ -691,10 +692,19 @@ async function init(){
 let TV_ROWS = [];
 let BREADTH_ROWS = [];
 let netChart = null;
-let netChartRendered = false;
+let NET_ROWS = null;
 
-function renderNetChart(){
- if(netChartRendered) return;
+const NET_RANGES = [
+ { key: "1Y", days: 365 },
+ { key: "3Y", days: 365 * 3 },
+ { key: "5Y", days: 365 * 5 },
+ { key: "10Y", days: 365 * 10 },
+ { key: "Max", days: null },
+];
+const NET_DEFAULT_RANGE = "1Y";
+
+function computeNetRows(){
+ if(NET_ROWS) return NET_ROWS;
 
  // Long-run history from breadth-internals.js (Alpha Vantage), same
  // years-deep series that backs the ATH tab's long-run chart — subject
@@ -703,19 +713,55 @@ function renderNetChart(){
  // Today's most recent bar is overwritten below with the accurate
  // TradingView-sourced count/pct if it's available, so only the
  // historical tail carries that caveat.
- let rows = BREADTH_ROWS.filter(r => r.atHighs != null && r.atLows != null);
- if(!rows.length) return;
+ const rows = BREADTH_ROWS.filter(r => r.atHighs != null && r.atLows != null);
+ if(!rows.length) return null;
 
  const netByDate = new Map(rows.map(r => [r.date, r.atHighs - r.atLows]));
  const tvLatest = TV_ROWS[TV_ROWS.length - 1];
  if(tvLatest && tvLatest.atlCount != null){
   netByDate.set(tvLatest.date, tvLatest.count - tvLatest.atlCount);
  }
- rows = [...netByDate.keys()].sort().map(date => ({ date, net: netByDate.get(date) }));
  const spxByDate = new Map(BREADTH_ROWS.filter(r => r.spxClose != null).map(r => [r.date, r.spxClose]));
 
- netChartRendered = true;
+ NET_ROWS = [...netByDate.keys()].sort().map(date => ({
+  date,
+  net: netByDate.get(date),
+  spxClose: spxByDate.has(date) ? spxByDate.get(date) : null,
+ }));
+ return NET_ROWS;
+}
+
+function renderNetRangeButtons(){
+ const container = document.getElementById("netRangeControls");
+ if(container.childElementCount) return;
+ NET_RANGES.forEach(r => {
+  const btn = document.createElement("button");
+  btn.className = "range-btn" + (r.key === NET_DEFAULT_RANGE ? " active" : "");
+  btn.textContent = r.key;
+  btn.addEventListener("click", () => {
+   container.querySelectorAll(".range-btn").forEach(b => b.classList.remove("active"));
+   btn.classList.add("active");
+   renderNetChartRange(r.key);
+  });
+  container.appendChild(btn);
+ });
+}
+
+function renderNetChartRange(rangeKey){
+ const allRows = computeNetRows();
+ if(!allRows) return;
+ const range = NET_RANGES.find(r => r.key === rangeKey);
+
+ let rows = allRows;
+ if(range.days){
+  const lastDate = new Date(allRows[allRows.length - 1].date + "T00:00:00Z");
+  const cutoff = lastDate.getTime() - range.days * 24 * 60 * 60 * 1000;
+  const startIndex = allRows.findIndex(r => new Date(r.date + "T00:00:00Z").getTime() >= cutoff);
+  rows = startIndex === -1 ? allRows : allRows.slice(startIndex);
+ }
+
  const ctx = document.getElementById("netChart").getContext("2d");
+ if(netChart) netChart.destroy();
  netChart = new Chart(ctx, {
   data: {
    labels: rows.map(r => r.date),
@@ -731,7 +777,7 @@ function renderNetChart(){
     {
      type: "line",
      label: "S&P 500",
-     data: rows.map(r => spxByDate.has(r.date) ? spxByDate.get(r.date) : null),
+     data: rows.map(r => r.spxClose),
      borderColor: "#eae6da",
      backgroundColor: "#eae6da",
      borderWidth: 2,
@@ -757,6 +803,12 @@ function renderNetChart(){
    },
   },
  });
+}
+
+function renderNetChart(){
+ if(!computeNetRows()) return;
+ renderNetRangeButtons();
+ if(!netChart) renderNetChartRange(NET_DEFAULT_RANGE);
 }
 
 let ALL_ROWS = [];
