@@ -78,6 +78,7 @@ a{ color:inherit; }
 
 .navdrop{ position:relative; }
 
+
 .navdrop > .navlabel{
  color:var(--muted);
  font-size:13px;
@@ -86,7 +87,7 @@ a{ color:inherit; }
  user-select:none;
 }
 
-.navdrop:hover > .navlabel{ color:var(--ink); }
+.navdrop:hover > .navlabel, .navdrop.open > .navlabel{ color:var(--ink); }
 
 .navdrop .dropdown{
  display:none;
@@ -102,7 +103,9 @@ a{ color:inherit; }
  box-shadow:0 10px 30px rgba(0,0,0,0.45);
 }
 
-.navdrop:hover .dropdown{ display:block; }
+/* Driven by the .open class (see the script right after </nav>), not
+   pure :hover — see that script for why. */
+.navdrop.open .dropdown{ display:block; }
 
 .dropdown a{
  display:block;
@@ -464,6 +467,25 @@ tbody td:nth-child(2){
 
 </div>
 </nav>
+<script>
+// Class-driven (not pure :hover) nav dropdowns: pure CSS :hover drops the
+// menu the instant the cursor leaves .navdrop, which includes the moment
+// it's crossing the gap between the label and the dropdown box below —
+// exactly the "sometimes works, sometimes doesn't" flakiness reported.
+// A short close-delay after mouseleave gives the cursor room to travel
+// down into the dropdown without losing it.
+document.querySelectorAll(".navdrop").forEach(function(navdrop){
+ var closeTimer = null;
+ navdrop.addEventListener("mouseenter", function(){
+  clearTimeout(closeTimer);
+  navdrop.classList.add("open");
+ });
+ navdrop.addEventListener("mouseleave", function(){
+  closeTimer = setTimeout(function(){ navdrop.classList.remove("open"); }, 300);
+ });
+});
+</script>
+
 
 <div class="container">
 
