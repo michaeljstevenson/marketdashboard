@@ -32,6 +32,11 @@
   to = "/.netlify/functions/sector-performance"
   status = 200
 
+[[redirects]]
+  from = "/api/ath-tradingview"
+  to = "/.netlify/functions/ath-tradingview"
+  status = 200
+
 [functions."scheduled-breadth-background"]
   # 20:30 UTC = 4:30pm EDT (summer). Shifts to 3:30pm during EST (winter,
   # roughly Nov-Mar) since Netlify's cron runs in UTC with no DST
@@ -44,3 +49,11 @@
   # 20:30 UTC) so the two heavy sequential-fetch jobs don't run
   # concurrently and compete for Alpha Vantage's rate limit.
   schedule = "35 20 * * 1-5"
+
+[functions."scheduled-ath-tradingview"]
+  # Staggered after the Alpha-Vantage-based jobs above (20:40 UTC) even
+  # though this one hits a completely different data source (TradingView,
+  # not Alpha Vantage) and only takes a single request — no real
+  # contention risk, just keeping all the daily jobs in one predictable
+  # block after the close.
+  schedule = "40 20 * * 1-5"

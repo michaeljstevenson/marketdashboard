@@ -1,0 +1,103 @@
+// Maps each S&P 500 ticker (see breadth-constituents.js) to its primary
+// listing exchange (NYSE, NASDAQ, or CBOE for the handful listed on Cboe
+// BZX), needed to query TradingView's scanner API, which requires
+// "EXCHANGE:SYMBOL" formatted tickers rather than bare symbols.
+//
+// Resolved once via TradingView's symbol-search endpoint
+// (symbol-search.tradingview.com) on 2026-08-08, not looked up live on
+// every scheduled run — exchange listings change rarely, so re-resolving
+// on a schedule would be unnecessary load for no benefit. Re-run the
+// resolution script if a ticker starts failing lookups in
+// scheduled-ath-tradingview.js (most likely cause: a listing
+// moved exchanges, or the S&P 500 constituent list in
+// breadth-constituents.js was refreshed and picked up a new ticker this
+// map doesn't have yet).
+
+const TICKER_EXCHANGE = {
+  "A": "NYSE", "AAPL": "NASDAQ", "ABBV": "NYSE", "ABNB": "NASDAQ", "ABT": "NYSE", "ACGL": "NASDAQ",
+  "ACN": "NYSE", "ADBE": "NASDAQ", "ADI": "NASDAQ", "ADM": "NYSE", "ADP": "NASDAQ", "ADSK": "NASDAQ",
+  "AEE": "NYSE", "AEP": "NASDAQ", "AES": "NYSE", "AFL": "NYSE", "AIG": "NYSE", "AIZ": "NYSE",
+  "AJG": "NYSE", "AKAM": "NASDAQ", "ALB": "NYSE", "ALGN": "NASDAQ", "ALL": "NYSE", "ALLE": "NYSE",
+  "AMAT": "NASDAQ", "AMCR": "NYSE", "AMD": "NASDAQ", "AME": "NYSE", "AMGN": "NASDAQ", "AMP": "NYSE",
+  "AMT": "NYSE", "AMZN": "NASDAQ", "ANET": "NYSE", "AON": "NYSE", "AOS": "NYSE", "APA": "NASDAQ",
+  "APD": "NYSE", "APH": "NYSE", "APO": "NYSE", "APP": "NASDAQ", "APTV": "NYSE", "ARE": "NYSE",
+  "ARES": "NYSE", "ATO": "NYSE", "AVB": "NYSE", "AVGO": "NASDAQ", "AVY": "NYSE", "AWK": "NYSE",
+  "AXON": "NASDAQ", "AXP": "NYSE", "AZO": "NYSE", "BA": "NYSE", "BAC": "NYSE", "BALL": "NYSE",
+  "BAX": "NYSE", "BBY": "NYSE", "BDX": "NYSE", "BEN": "NYSE", "BF.B": "NYSE", "BG": "NYSE",
+  "BIIB": "NASDAQ", "BKNG": "NASDAQ", "BKR": "NASDAQ", "BLDR": "NYSE", "BLK": "NYSE", "BMY": "NYSE",
+  "BNY": "NYSE", "BR": "NYSE", "BRK.B": "NYSE", "BRO": "NYSE", "BSX": "NYSE", "BX": "NYSE",
+  "BXP": "NYSE", "C": "NYSE", "CAH": "NYSE", "CARR": "NYSE", "CASY": "NASDAQ", "CAT": "NYSE",
+  "CB": "NYSE", "CBOE": "CBOE", "CBRE": "NYSE", "CCI": "NYSE", "CCL": "NYSE", "CDNS": "NASDAQ",
+  "CDW": "NASDAQ", "CEG": "NASDAQ", "CF": "NYSE", "CFG": "NYSE", "CHD": "NYSE", "CHRW": "NASDAQ",
+  "CHTR": "NASDAQ", "CI": "NYSE", "CIEN": "NYSE", "CINF": "NASDAQ", "CL": "NYSE", "CLX": "NYSE",
+  "CMCSA": "NASDAQ", "CME": "NASDAQ", "CMG": "NYSE", "CMI": "NYSE", "CMS": "NYSE", "CNC": "NYSE",
+  "CNP": "NYSE", "COF": "NYSE", "COHR": "NYSE", "COIN": "NASDAQ", "COO": "NASDAQ", "COP": "NYSE",
+  "COR": "NYSE", "COST": "NASDAQ", "CPAY": "NYSE", "CPRT": "NASDAQ", "CPT": "NYSE", "CRH": "NYSE",
+  "CRL": "NYSE", "CRM": "NYSE", "CRWD": "NASDAQ", "CSCO": "NASDAQ", "CSGP": "NASDAQ", "CSX": "NASDAQ",
+  "CTAS": "NASDAQ", "CTSH": "NASDAQ", "CTVA": "NYSE", "CVNA": "NYSE", "CVS": "NYSE", "CVX": "NYSE",
+  "D": "NYSE", "DAL": "NYSE", "DASH": "NASDAQ", "DD": "NYSE", "DDOG": "NASDAQ", "DE": "NYSE",
+  "DECK": "NYSE", "DELL": "NYSE", "DG": "NYSE", "DGX": "NYSE", "DHI": "NYSE", "DHR": "NYSE",
+  "DIS": "NYSE", "DLR": "NYSE", "DLTR": "NASDAQ", "DOC": "NYSE", "DOV": "NYSE", "DOW": "NYSE",
+  "DPZ": "NASDAQ", "DRI": "NYSE", "DTE": "NYSE", "DUK": "NYSE", "DVA": "NYSE", "DVN": "NYSE",
+  "DXCM": "NASDAQ", "EBAY": "NASDAQ", "ECHO": "NASDAQ", "ECL": "NYSE", "ED": "NYSE", "EFX": "NYSE",
+  "EG": "NYSE", "EIX": "NYSE", "EL": "NYSE", "ELV": "NYSE", "EME": "NYSE", "EMR": "NYSE",
+  "EOG": "NYSE", "EQIX": "NASDAQ", "EQR": "NYSE", "EQT": "NYSE", "ERIE": "NASDAQ", "ES": "NYSE",
+  "ESS": "NYSE", "ETN": "NYSE", "ETR": "NYSE", "EVRG": "NASDAQ", "EW": "NYSE", "EXC": "NASDAQ",
+  "EXE": "NASDAQ", "EXPD": "NYSE", "EXPE": "NASDAQ", "EXR": "NYSE", "F": "NYSE", "FANG": "NASDAQ",
+  "FAST": "NASDAQ", "FCX": "NYSE", "FDS": "NYSE", "FDX": "NYSE", "FDXF": "NYSE", "FE": "NYSE",
+  "FERG": "NYSE", "FFIV": "NASDAQ", "FICO": "NYSE", "FIS": "NYSE", "FISV": "NASDAQ", "FITB": "NYSE",
+  "FIX": "NYSE", "FLEX": "NASDAQ", "FOX": "NASDAQ", "FOXA": "NASDAQ", "FRT": "NYSE", "FSLR": "NASDAQ",
+  "FTNT": "NASDAQ", "FTV": "NYSE", "GD": "NYSE", "GDDY": "NYSE", "GE": "NYSE", "GEHC": "NASDAQ",
+  "GEN": "NASDAQ", "GEV": "NYSE", "GILD": "NASDAQ", "GIS": "NYSE", "GL": "NYSE", "GLW": "NYSE",
+  "GM": "NYSE", "GNRC": "NYSE", "GOOG": "NASDAQ", "GOOGL": "NASDAQ", "GPC": "NYSE", "GPN": "NYSE",
+  "GRMN": "NYSE", "GS": "NYSE", "GWW": "NYSE", "HAL": "NYSE", "HAS": "NASDAQ", "HBAN": "NASDAQ",
+  "HCA": "NYSE", "HD": "NYSE", "HIG": "NYSE", "HII": "NYSE", "HLT": "NYSE", "HON": "NASDAQ",
+  "HONA": "NASDAQ", "HOOD": "NASDAQ", "HPE": "NYSE", "HPQ": "NYSE", "HRL": "NYSE", "HSIC": "NASDAQ",
+  "HST": "NASDAQ", "HSY": "NYSE", "HUBB": "NYSE", "HUM": "NYSE", "HWM": "NYSE", "IBKR": "NASDAQ",
+  "IBM": "NYSE", "ICE": "NYSE", "IDXX": "NASDAQ", "IEX": "NYSE", "IFF": "NYSE", "INCY": "NASDAQ",
+  "INTC": "NASDAQ", "INTU": "NASDAQ", "INVH": "NYSE", "IP": "NYSE", "IQV": "NYSE", "IR": "NYSE",
+  "IRM": "NYSE", "ISRG": "NASDAQ", "IT": "NYSE", "ITW": "NYSE", "IVZ": "NYSE", "J": "NYSE",
+  "JBHT": "NASDAQ", "JBL": "NYSE", "JCI": "NYSE", "JKHY": "NASDAQ", "JNJ": "NYSE", "JPM": "NYSE",
+  "KDP": "NASDAQ", "KEY": "NYSE", "KEYS": "NYSE", "KHC": "NASDAQ", "KIM": "NYSE", "KKR": "NYSE",
+  "KLAC": "NASDAQ", "KMB": "NASDAQ", "KMI": "NYSE", "KO": "NYSE", "KR": "NYSE", "KVUE": "NYSE",
+  "L": "NYSE", "LDOS": "NYSE", "LEN": "NYSE", "LH": "NYSE", "LHX": "NYSE", "LII": "NYSE",
+  "LIN": "NASDAQ", "LITE": "NASDAQ", "LLY": "NYSE", "LMT": "NYSE", "LNT": "NASDAQ", "LOW": "NYSE",
+  "LRCX": "NASDAQ", "LULU": "NASDAQ", "LUV": "NYSE", "LVS": "NYSE", "LYB": "NYSE", "LYV": "NYSE",
+  "MA": "NYSE", "MAA": "NYSE", "MAR": "NASDAQ", "MAS": "NYSE", "MCD": "NYSE", "MCHP": "NASDAQ",
+  "MCK": "NYSE", "MCO": "NYSE", "MDLZ": "NASDAQ", "MDT": "NYSE", "MET": "NYSE", "META": "NASDAQ",
+  "MGM": "NYSE", "MKC": "NYSE", "MLM": "NYSE", "MMM": "NYSE", "MNST": "NASDAQ", "MO": "NYSE",
+  "MOS": "NYSE", "MPC": "NYSE", "MPWR": "NASDAQ", "MRK": "NYSE", "MRNA": "NASDAQ", "MRSH": "NYSE",
+  "MRVL": "NASDAQ", "MS": "NYSE", "MSCI": "NYSE", "MSFT": "NASDAQ", "MSI": "NYSE", "MTB": "NYSE",
+  "MTD": "NYSE", "MU": "NASDAQ", "NCLH": "NYSE", "NDAQ": "NASDAQ", "NDSN": "NASDAQ", "NEE": "NYSE",
+  "NEM": "NYSE", "NFLX": "NASDAQ", "NI": "NYSE", "NKE": "NYSE", "NOC": "NYSE", "NOW": "NYSE",
+  "NRG": "NYSE", "NSC": "NYSE", "NTAP": "NASDAQ", "NTRS": "NASDAQ", "NUE": "NYSE", "NVDA": "NASDAQ",
+  "NVR": "NYSE", "NWS": "NASDAQ", "NWSA": "NASDAQ", "NXPI": "NASDAQ", "O": "NYSE", "ODFL": "NASDAQ",
+  "OKE": "NYSE", "OMC": "NYSE", "ON": "NASDAQ", "ORCL": "NYSE", "ORLY": "NASDAQ", "OTIS": "NYSE",
+  "OXY": "NYSE", "PANW": "NASDAQ", "PAYX": "NASDAQ", "PCAR": "NASDAQ", "PCG": "NYSE", "PEG": "NYSE",
+  "PEP": "NASDAQ", "PFE": "NYSE", "PFG": "NASDAQ", "PG": "NYSE", "PGR": "NYSE", "PH": "NYSE",
+  "PHM": "NYSE", "PKG": "NYSE", "PLD": "NYSE", "PLTR": "NASDAQ", "PM": "NYSE", "PNC": "NYSE",
+  "PNR": "NYSE", "PNW": "NYSE", "PODD": "NASDAQ", "PPG": "NYSE", "PPL": "NYSE", "PRU": "NYSE",
+  "PSA": "NYSE", "PSKY": "NASDAQ", "PSX": "NYSE", "PTC": "NASDAQ", "PWR": "NYSE", "PYPL": "NASDAQ",
+  "Q": "NYSE", "QCOM": "NASDAQ", "RCL": "NYSE", "REG": "NASDAQ", "REGN": "NASDAQ", "RF": "NYSE",
+  "RJF": "NYSE", "RL": "NYSE", "RMD": "NYSE", "ROK": "NYSE", "ROL": "NYSE", "ROP": "NASDAQ",
+  "ROST": "NASDAQ", "RSG": "NYSE", "RTX": "NYSE", "RVTY": "NYSE", "SBAC": "NASDAQ", "SBUX": "NASDAQ",
+  "SCHW": "NYSE", "SHW": "NYSE", "SJM": "NYSE", "SLB": "NYSE", "SMCI": "NASDAQ", "SNA": "NYSE",
+  "SNDK": "NASDAQ", "SNPS": "NASDAQ", "SO": "NYSE", "SOLV": "NYSE", "SPG": "NYSE", "SPGI": "NYSE",
+  "SRE": "NYSE", "STE": "NYSE", "STLD": "NASDAQ", "STT": "NYSE", "STX": "NASDAQ", "STZ": "NYSE",
+  "SW": "NYSE", "SWK": "NYSE", "SWKS": "NASDAQ", "SYF": "NYSE", "SYK": "NYSE", "SYY": "NYSE",
+  "T": "NYSE", "TAP": "NYSE", "TDG": "NYSE", "TDY": "NYSE", "TECH": "NASDAQ", "TEL": "NYSE",
+  "TER": "NASDAQ", "TFC": "NYSE", "TGT": "NYSE", "TJX": "NYSE", "TKO": "NYSE", "TMO": "NYSE",
+  "TMUS": "NASDAQ", "TPL": "NYSE", "TPR": "NYSE", "TRGP": "NYSE", "TRMB": "NASDAQ", "TROW": "NASDAQ",
+  "TRV": "NYSE", "TSCO": "NASDAQ", "TSLA": "NASDAQ", "TSN": "NYSE", "TT": "NYSE", "TTD": "NASDAQ",
+  "TTWO": "NASDAQ", "TXN": "NASDAQ", "TXT": "NYSE", "TYL": "NYSE", "UAL": "NASDAQ", "UBER": "NYSE",
+  "UDR": "NYSE", "UHS": "NYSE", "ULTA": "NASDAQ", "UNH": "NYSE", "UNP": "NYSE", "UPS": "NYSE",
+  "URI": "NYSE", "USB": "NYSE", "V": "NYSE", "VEEV": "NYSE", "VICI": "NYSE", "VLO": "NYSE",
+  "VLTO": "NYSE", "VMC": "NYSE", "VRSK": "NASDAQ", "VRSN": "NASDAQ", "VRT": "NYSE", "VRTX": "NASDAQ",
+  "VST": "NYSE", "VTR": "NYSE", "VTRS": "NASDAQ", "VZ": "NYSE", "WAB": "NYSE", "WAT": "NYSE",
+  "WBD": "NASDAQ", "WDAY": "NASDAQ", "WDC": "NASDAQ", "WEC": "NYSE", "WELL": "NYSE", "WFC": "NYSE",
+  "WM": "NYSE", "WMB": "NYSE", "WMT": "NASDAQ", "WRB": "NYSE", "WSM": "NYSE", "WST": "NYSE",
+  "WTW": "NASDAQ", "WY": "NYSE", "WYNN": "NASDAQ", "XEL": "NASDAQ", "XOM": "NYSE", "XYL": "NYSE",
+  "XYZ": "NYSE", "YUM": "NYSE", "ZBH": "NYSE", "ZBRA": "NASDAQ", "ZTS": "NYSE",
+};
+
+module.exports = { TICKER_EXCHANGE };

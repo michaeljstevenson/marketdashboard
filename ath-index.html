@@ -341,6 +341,17 @@ h1{
  display:none;
 }
 
+.warning-banner{
+ background:#2a2419;
+ border:1px solid #5a4f30;
+ color:#d9b877;
+ border-radius:8px;
+ padding:12px 15px;
+ margin-bottom:20px;
+ font-size:13px;
+ display:none;
+}
+
 @media (max-width:720px){
  .stat-grid{ grid-template-columns:1fr; }
 }
@@ -420,6 +431,7 @@ h1{
 <div class="container">
 
 <div class="error-banner" id="errorBanner"></div>
+<div class="warning-banner" id="warningBanner"></div>
 
 <div class="header">
 <div>
@@ -465,11 +477,11 @@ h1{
 </div>
 
 <div class="explainer">
-<h2>How to read this</h2>
-<p>This tracks the same S&amp;P 500 constituent list used elsewhere on this site for market breadth internals (advance/decline line, new highs/lows, % above 200-day SMA). The list itself is a periodically-refreshed static snapshot rather than a live index feed, so it can drift slightly out of date on additions, removals, or ticker changes — see breadth-constituents.js for details.</p>
-<p>A name counts as being at an all-time high when its most recent close is at or above every prior close in Alpha Vantage's available daily history for that symbol — which for most of these long-listed, liquid names reaches back to the 1990s, but isn't guaranteed to extend all the way to a company's actual IPO in every case. Prices are split- and dividend-adjusted, so a historical stock split or dividend payment doesn't create a false ceiling a stock can never climb back above.</p>
-<p>A high reading means strength is broad — many names participating, not just a handful of mega-caps carrying the market. A reading near zero doesn't necessarily mean a bear market; it can simply mean the market has pulled back from a recent peak across the board, which is normal even in an uptrend.</p>
-<div class="source">Source: <a href="https://www.alphavantage.co/" target="_blank" rel="noopener">Alpha Vantage — S&amp;P 500 constituents</a></div>
+<h2>Why two data sources</h2>
+<p>This page used to compute "at an all-time high" from Alpha Vantage's daily price history — but that history turned out to be capped at roughly 26 years for every symbol tested, starting around 1999&ndash;2000 regardless of how long the company's actually been listed. For long-established names (3M, Amgen, Eaton, and others), that understates the true all-time high: 3M's real peak (reached before 1999) sits well above its current price, but Alpha Vantage's truncated history couldn't see that and flagged it as a new high anyway.</p>
+<p>The current count and list above now come from TradingView's own all-time-high figure instead, which is built from deeper history. The long-run chart below still uses the Alpha Vantage series, since it has years of daily history to draw a trend from and the general shape is still informative &mdash; but treat its day-to-day count as an upper-bound estimate, not a precise figure, for the reason above.</p>
+<p>A name counts as being at an all-time high when its closing price is at or above its recorded all-time high for the day. A high reading means strength is broad &mdash; many names participating, not just a handful of mega-caps carrying the market. A reading near zero doesn't necessarily mean a bear market; it can simply mean the market has pulled back from a recent peak across the board, which is normal even in an uptrend.</p>
+<div class="source">Sources: <a href="https://www.tradingview.com/screener/" target="_blank" rel="noopener">TradingView Screener</a> (current count &amp; list) &middot; <a href="https://www.alphavantage.co/" target="_blank" rel="noopener">Alpha Vantage</a> (long-run chart)</div>
 </div>
 
 </div>
@@ -483,35 +495,69 @@ function showError(message){
  banner.style.display = "block";
 }
 
+function showWarning(message){
+ const banner = document.getElementById("warningBanner");
+ banner.textContent = message;
+ banner.style.display = "block";
+}
+
 async function init(){
- try{
-  const res = await fetch("/api/breadth-internals", { cache: "no-store" });
-  const data = await res.json();
-  if(!res.ok || data.error) throw new Error(data.error || "failed to load");
+ // Two independent sources: breadth-internals.js (Alpha Vantage) supplies
+ // the long-run chart, since it has years of history to draw from —
+ // ath-tradingview.js (TradingView) supplies today's count/list, since
+ // it's the accurate one (see explainer below for why the two disagree).
+ const [breadthResult, tvResult] = await Promise.allSettled([
+  fetch("/api/breadth-internals", { cache: "no-store" }).then(r => r.json().then(d => ({ok: r.ok, data: d}))),
+  fetch("/api/ath-tradingview", { cache: "no-store" }).then(r => r.json().then(d => ({ok: r.ok, data: d}))),
+ ]);
 
-  const summary = data.athSummary;
-  if(!summary) throw new Error("all-time-high summary not available in this data");
+ let updatedText = "";
 
-  document.getElementById("updated").textContent = "Generated " + new Date(data.generated_at_utc).toLocaleString();
+ // Current snapshot: prefer the accurate TradingView-based figures;
+ // fall back to the older Alpha-Vantage-based estimate (with a warning)
+ // only if TradingView data isn't available yet.
+ const tvOk = tvResult.status === "fulfilled" && tvResult.value.ok && !tvResult.value.data.error;
+ if(tvOk){
+  const rows = tvResult.value.data.rows || [];
+  const latest = rows[rows.length - 1];
+  if(latest){
+   document.getElementById("statCount").textContent = latest.count;
+   document.getElementById("statCountNote").textContent = "of " + latest.total + " constituents";
+   document.getElementById("statPct").textContent = (latest.pct === null ? "—" : latest.pct + "%");
+   document.getElementById("statDate").textContent = latest.date;
+
+   const tickerGrid = document.getElementById("tickerGrid");
+   tickerGrid.innerHTML = latest.tickers.length
+    ? latest.tickers.map(t => `<span class="ticker-chip">${t}</span>`).join("")
+    : '<span class="ticker-empty">No S&P 500 constituents are at an all-time high today.</span>';
+
+   updatedText = "Current data from TradingView, generated " + new Date(tvResult.value.data.generated_at_utc).toLocaleString();
+  }
+ }else if(breadthResult.status === "fulfilled" && breadthResult.value.ok && breadthResult.value.data.athSummary){
+  showWarning("Showing an Alpha-Vantage-based estimate for today's count — the more accurate TradingView-based figure hasn't populated yet. See \"Why two data sources\" below.");
+  const summary = breadthResult.value.data.athSummary;
   document.getElementById("statCount").textContent = summary.count;
-  document.getElementById("statCountNote").textContent = "of " + summary.total + " in sample";
+  document.getElementById("statCountNote").textContent = "of " + summary.total + " in sample (estimate)";
   document.getElementById("statPct").textContent = (summary.pct === null ? "—" : summary.pct + "%");
   document.getElementById("statDate").textContent = summary.asOfDate;
-
   const tickerGrid = document.getElementById("tickerGrid");
-  if(summary.tickers.length){
-   tickerGrid.innerHTML = summary.tickers.map(t => `<span class="ticker-chip">${t}</span>`).join("");
-  }else{
-   tickerGrid.innerHTML = '<span class="ticker-empty">No names in the sample are at an all-time high today.</span>';
-  }
+  tickerGrid.innerHTML = summary.tickers.length
+   ? summary.tickers.map(t => `<span class="ticker-chip">${t}</span>`).join("")
+   : '<span class="ticker-empty">No names in the sample are at an all-time high today.</span>';
+ }else{
+  showError("Couldn't load all-time-high data. Neither /api/ath-tradingview nor /api/breadth-internals returned usable data.");
+ }
 
-  ALL_ROWS = data.rows || [];
+ document.getElementById("updated").textContent = updatedText;
+
+ // Long-run chart: still from Alpha Vantage (years of history), even
+ // though its all-time-high flag isn't reliable — the daily %-at-ATH
+ // trend shape is still informative even if individual-day counts skew
+ // high for long-listed names. See the explainer for the full caveat.
+ if(breadthResult.status === "fulfilled" && breadthResult.value.ok){
+  ALL_ROWS = breadthResult.value.data.rows || [];
   renderRangeButtons();
   renderChartRange(DEFAULT_RANGE);
-
- }catch(e){
-  showError("Couldn't load all-time-high data (" + e.message + "). The /api/breadth-internals function may be unreachable.");
-  document.getElementById("updated").textContent = "";
  }
 }
 
