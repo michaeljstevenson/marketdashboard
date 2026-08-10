@@ -571,7 +571,7 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <div class="form-grid">
 
 <div class="field">
-<label for="inStarting">Starting Balance ($)</label>
+<label for="inStarting">Starting Value ($)</label>
 <input type="number" id="inStarting" value="100000" min="0" step="1000">
 </div>
 
@@ -582,7 +582,7 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 </div>
 
 <div class="field">
-<label for="inHorizon">Total Horizon (years)</label>
+<label for="inHorizon">Time Horizon (years)</label>
 <input type="number" id="inHorizon" value="40" min="1" max="90" step="1">
 </div>
 
@@ -593,19 +593,19 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 </div>
 
 <div class="field">
-<label for="inContribution">Annual Contribution ($)</label>
+<label for="inContribution">Annual Contributions ($)</label>
 <input type="number" id="inContribution" value="15000" min="0" step="500">
 <div class="hint">Applied during accumulation years only</div>
 </div>
 
 <div class="field">
-<label for="inWithdrawal">Annual Withdrawal ($)</label>
+<label for="inWithdrawal">Annual Withdrawals ($)</label>
 <input type="number" id="inWithdrawal" value="60000" min="0" step="500">
 <div class="hint">Applied after accumulation years end</div>
 </div>
 
 <div class="field">
-<label for="inSims">Number of Simulations</label>
+<label for="inSims">Number of Trials</label>
 <input type="number" id="inSims" value="1500" min="100" max="1500" step="100">
 </div>
 
@@ -652,11 +652,11 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 </div>
 
 <div class="chart-box">
-<h2>Simulated balance over time <span class="chart-subhead" id="chartSubhead"></span></h2>
+<h2>Simulated value over time <span class="chart-subhead" id="chartSubhead"></span></h2>
 <div class="chart-legend-custom">
 <span><i class="swatch swatch-green"></i>Successful trials</span>
 <span><i class="swatch swatch-red"></i>Failed trials (depleted)</span>
-<span><i class="swatch swatch-median"></i>Median path</span>
+<span><i class="swatch swatch-median"></i>Median trial</span>
 </div>
 <div class="chart-canvas-wrap">
 <canvas id="simChart"></canvas>
@@ -666,6 +666,7 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 </div>
 
 <div class="explainer">
+<h2><strong>About</strong></h2>
 <p>This simulation uses a historical bootstrap where for each simulated year, one actual year's return is randomly drawn (with replacement) from historical S&amp;P 500 and 10-year Treasury bond annual returns (1928&ndash;2025), blending the two according to specified equity/fixed income allocation. Simulating 1,500 trials produces a distribution of plausible outcomes shaped by history's actual mix of market environments. rather than a distribution that assumes returns are smoothly and independently random.</p>
 <p>Each trial applies specified annual contributions during accumulation years, and switches to specified annual withdrawals for the remaining years of the specified time horizon. Success rate is the percentage of trials that never hit a $0 balance during the withdrawal phase. Ending balances are shown in both nominal (future) dollars and in real (current) dollars, discounted back by the specified assumed inflation rate compounded over the time horizon.</p>
 <p>The chart plots the sample of individual simulated trials, colored by outcome: green trials which never hit zero during the withdrawal phase, and red trials which were depleted. The bolded line is the median trial. </p>
