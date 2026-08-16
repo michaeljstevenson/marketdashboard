@@ -494,7 +494,6 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 </div>
 
 <div class="explainer">
-<h2>How to read this</h2>
 <p>All three yield series (3-month, 2-year, 10-year constant-maturity Treasury) are Alpha Vantage's monthly data, sourced from the same Treasury daily yield curve the government publishes. The term premium series is the New York Fed's own published ACM model output. S&amp;P 500 levels are the same Damodaran year-end series used on this site's <a href="/implied-erp.html">Implied Equity Risk Premium</a> page, for consistency &mdash; so the two scatter plots above use the identical regression methodology (Pearson OLS, Spearman rank, and jackknife-trimmed) already established there.</p>
 <p><strong>Limitations:</strong> the scatter plots have only ~30 annual observations, so treat any p-value here as indicative rather than conclusive, and note the same causality caveat as the IPO page &mdash; the curve is priced by the same market whose forward return is being tested against it, so this isn't a clean natural experiment. The recession-signal analysis in Area 1 is inherently small-sample (four modern inversion episodes) and is presented as a qualitative track record rather than a statistical test for that reason.</p>
 <div class="source">Sources: Alpha Vantage (Treasury constant-maturity yields); Federal Reserve Bank of New York (ACM term premium); Aswath Damodaran, NYU Stern (S&amp;P 500 levels); NBER (official recession dates).</div>
