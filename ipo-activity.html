@@ -1,0 +1,977 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<script>
+// Applied before first paint to avoid a flash of the wrong theme.
+(function(){
+ var saved = localStorage.getItem("theme");
+ if(saved === "light") document.documentElement.setAttribute("data-theme", "light");
+})();
+</script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>IPO Market Activity &amp; Bull Cycle Strength — Michael J. Stevenson</title>
+
+<style>
+
+:root{
+  --bg:#14181c;
+  --card:#1c2127;
+  --card-hover:#20262d;
+  --ink:#eae6da;
+  --muted:#8b9199;
+  --hair:#2b3138;
+
+  --fear:#6f8fac;
+  --neutral:#7c828a;
+  --greed:#d98a3d;
+  --extreme:#b56f2a;
+
+  --serif:'Iowan Old Style','Palatino Linotype',Georgia,serif;
+  --mono:'SF Mono','JetBrains Mono',ui-monospace,Menlo,monospace;
+  --sans:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+}
+
+:root[data-theme="light"]{
+  --bg:#f7f5f0;
+  --card:#ffffff;
+  --card-hover:#f2efe6;
+  --ink:#1c1f24;
+  --muted:#6b6f76;
+  --hair:#e1dbcd;
+  --fear:#4f6f8c;
+  --neutral:#6c7178;
+  --greed:#b9701f;
+  --extreme:#96591c;
+}
+
+*{ box-sizing:border-box; }
+
+body{
+ margin:0;
+ background:var(--bg);
+ color:var(--ink);
+ font-family:var(--sans);
+}
+
+a{ color:inherit; }
+
+/* SITE NAV (shared with homepage) */
+
+.sitenav{
+ display:grid;
+ grid-template-columns:1fr auto 1fr;
+ align-items:center;
+ padding:16px 24px;
+ border-bottom:1px solid var(--hair);
+ position:relative;
+ z-index:50;
+}
+
+.sitenav .brand{
+ justify-self:start;
+}
+
+.sitenav .brand{
+ font-family:var(--serif);
+ font-size:17px;
+ color:var(--ink);
+ text-decoration:none;
+ letter-spacing:0.3px;
+}
+
+.navlinks{
+ display:flex;
+ gap:26px;
+ align-items:center;
+}
+
+.navlinks > a{
+ color:var(--muted);
+ font-size:13px;
+ text-decoration:none;
+ padding:6px 0;
+}
+
+.navlinks > a:hover, .navlinks > a.active{ color:var(--ink); }
+
+.navdrop{ position:relative; }
+
+
+.navdrop > .navlabel{
+ color:var(--muted);
+ font-size:13px;
+ cursor:default;
+ padding:6px 0;
+ user-select:none;
+}
+
+.navdrop:hover > .navlabel, .navdrop.open > .navlabel{ color:var(--ink); }
+
+.navdrop .dropdown{
+ display:none;
+ position:absolute;
+ top:100%;
+ left:0;
+ background:var(--card);
+ border:1px solid var(--hair);
+ border-radius:8px;
+ padding:8px 0;
+ min-width:230px;
+ margin-top:12px;
+ box-shadow:0 10px 30px rgba(0,0,0,0.45);
+}
+
+.navdrop.open .dropdown{ display:block; }
+
+.dropdown a{
+ display:block;
+ padding:9px 16px;
+ color:var(--muted);
+ text-decoration:none;
+ font-size:13px;
+}
+
+.dropdown a:hover{
+ background:var(--card-hover);
+ color:var(--ink);
+}
+
+.dropdown a.active{ color:var(--greed); }
+
+@media (max-width:720px){
+ .navlinks{ display:none; }
+}
+
+.container{
+ max-width:1000px;
+ margin:auto;
+ padding:30px 20px 60px;
+}
+
+/* HEADER */
+
+.header{
+ display:flex;
+ justify-content:space-between;
+ align-items:flex-end;
+ border-bottom:1px solid var(--hair);
+ padding-bottom:18px;
+ margin-bottom:25px;
+ flex-wrap:wrap;
+ gap:12px;
+}
+
+h1{
+ font-family:var(--serif);
+ font-size:28px;
+ font-weight:400;
+ margin:0;
+}
+
+.subtitle{
+ color:var(--muted);
+ font-size:13px;
+ margin-top:6px;
+ max-width:600px;
+}
+
+.updated{
+ color:var(--muted);
+ font-size:12px;
+}
+
+/* STAT ROW */
+
+.stat-grid{
+ display:grid;
+ grid-template-columns:repeat(4,1fr);
+ gap:16px;
+ margin-bottom:30px;
+}
+
+.stat-card{
+ background:var(--card);
+ border:1px solid var(--hair);
+ border-radius:10px;
+ padding:20px;
+}
+
+.stat-label{
+ color:var(--muted);
+ font-size:12px;
+ text-transform:uppercase;
+ letter-spacing:0.04em;
+ margin-bottom:8px;
+}
+
+.stat-value{
+ font-family:var(--mono);
+ font-size:22px;
+ color:var(--greed);
+}
+
+.stat-note{
+ color:var(--muted);
+ font-size:12px;
+ margin-top:6px;
+}
+
+/* CHART */
+
+.chart-box{
+ background:var(--card);
+ border:1px solid var(--hair);
+ border-radius:12px;
+ padding:20px;
+ margin-bottom:30px;
+}
+
+.chart-box h2{
+ font-family:var(--serif);
+ font-weight:400;
+ font-size:18px;
+ margin:0 0 16px;
+}
+
+.chart-legend-custom{
+ display:flex;
+ gap:20px;
+ margin-bottom:14px;
+ flex-wrap:wrap;
+}
+
+.chart-legend-custom span{
+ display:flex;
+ align-items:center;
+ gap:6px;
+ color:var(--muted);
+ font-size:12px;
+}
+
+.chart-legend-custom .swatch{
+ display:inline-block;
+ width:12px;
+ height:3px;
+ border-radius:2px;
+}
+
+.swatch-count{ background:#d98a3d; }
+.swatch-pop{ background:#8b6fac; }
+.swatch-return{ background:linear-gradient(to right, #d98a3d 50%, #6f8fac 50%); }
+.swatch-sp{ background:#6f8fac; }
+
+.chart-canvas-wrap{
+ height:380px;
+}
+
+/* SCATTER / REGRESSION */
+
+.scatter-grid{
+ display:grid;
+ grid-template-columns:1fr 1fr;
+ gap:16px;
+ margin-bottom:30px;
+}
+
+.scatter-box{
+ background:var(--card);
+ border:1px solid var(--hair);
+ border-radius:12px;
+ padding:20px;
+}
+
+.scatter-box h3{
+ font-family:var(--serif);
+ font-weight:400;
+ font-size:15px;
+ margin:0 0 4px;
+}
+
+.scatter-box .scatter-sub{
+ color:var(--muted);
+ font-size:12px;
+ margin-bottom:14px;
+}
+
+.scatter-canvas-wrap{
+ height:280px;
+ margin-bottom:14px;
+}
+
+.method-table{
+ width:100%;
+ border-collapse:collapse;
+ font-family:var(--mono);
+ font-size:10.5px;
+ margin-top:8px;
+}
+
+.method-table th{
+ text-align:right;
+ padding:6px 5px;
+ color:var(--muted);
+ font-size:9px;
+ text-transform:uppercase;
+ letter-spacing:0.03em;
+ font-weight:600;
+ border-bottom:1px solid var(--hair);
+ white-space:nowrap;
+}
+
+.method-table th:first-child{ text-align:left; }
+
+.method-table td{
+ padding:7px 5px;
+ text-align:right;
+ border-bottom:1px solid var(--hair);
+ white-space:nowrap;
+ color:var(--ink);
+}
+
+.method-table td:first-child{
+ text-align:left;
+ font-family:var(--sans);
+ color:var(--muted);
+}
+
+.method-table tr:last-child td{ border-bottom:none; }
+
+.method-table .sig{ color:var(--greed); }
+
+.method-note{
+ font-size:10px;
+ color:var(--muted);
+ margin-top:6px;
+ font-style:italic;
+}
+
+@media (max-width:720px){
+ .scatter-grid{ grid-template-columns:1fr; }
+}
+
+/* EXPLAINER */
+
+.explainer{
+ background:var(--card);
+ border:1px solid var(--hair);
+ border-radius:12px;
+ padding:24px 26px;
+ margin-bottom:20px;
+}
+
+.explainer h2{
+ font-family:var(--serif);
+ font-weight:400;
+ font-size:18px;
+ margin:0 0 12px;
+}
+
+.explainer p{
+ color:var(--muted);
+ font-size:14px;
+ line-height:1.7;
+ margin:0 0 14px;
+}
+
+.explainer p:last-child{ margin-bottom:0; }
+
+.explainer .source{
+ margin-top:16px;
+ font-size:11px;
+}
+
+.explainer .source a{
+ color:var(--muted);
+ text-decoration:none;
+ border-bottom:1px dotted var(--muted);
+}
+
+.explainer .source a:hover{ color:var(--ink); }
+
+/* EVENTS TABLE */
+
+.events-table{
+ width:100%;
+ border-collapse:collapse;
+ font-size:13px;
+ margin-top:4px;
+}
+
+.events-table th{
+ text-align:left;
+ padding:8px 10px;
+ color:var(--muted);
+ font-size:11px;
+ text-transform:uppercase;
+ letter-spacing:0.03em;
+ font-weight:600;
+ border-bottom:1px solid var(--hair);
+}
+
+.events-table td{
+ padding:9px 10px;
+ border-bottom:1px solid var(--hair);
+ color:var(--ink);
+ vertical-align:top;
+}
+
+.events-table td:first-child{
+ font-family:var(--mono);
+ color:var(--muted);
+ white-space:nowrap;
+}
+
+.events-table tr:last-child td{ border-bottom:none; }
+
+@media (max-width:720px){
+ .stat-grid{ grid-template-columns:1fr 1fr; }
+ .events-table{ font-size:12px; }
+}
+
+
+.theme-toggle{
+ justify-self:end;
+ background:none;
+ border:1px solid var(--hair);
+ color:var(--muted);
+ border-radius:6px;
+ width:32px;
+ height:32px;
+ display:flex;
+ align-items:center;
+ justify-content:center;
+ cursor:pointer;
+ font-size:15px;
+ line-height:1;
+}
+
+.theme-toggle:hover{ color:var(--ink); border-color:var(--hair); }
+
+</style>
+</head>
+<body>
+
+<nav class="sitenav">
+<a class="brand" href="/">Michael J. Stevenson, CAIA<span style="font-size:0.6em; vertical-align:super;">&reg;</span></a>
+<div class="navlinks">
+<a href="/sentiment-index.html">Sentiment Index</a>
+<a href="/portfolio-simulator.html">Portfolio Simulator</a>
+
+<div class="navdrop">
+<span class="navlabel">Markets &amp; Macro ▾</span>
+<div class="dropdown">
+<a href="/volatility.html">Implied vs. Realized Volatility</a>
+<a href="/implied-erp.html">Implied Equity Risk Premium</a>
+<a href="/ipo-activity.html" class="active">IPO Market Activity</a>
+<a href="/coming-soon.html?title=Yield%20Curves">Yield Curves</a>
+<a href="/coming-soon.html?title=Credit%20Spreads">Credit Spreads</a>
+<a href="/coming-soon.html?title=Global%20Liquidity">Global Liquidity</a>
+<a href="/coming-soon.html?title=Recession%20Probability%20Model">Recession Probability Model</a>
+<a href="/coming-soon.html?title=Inflation">Inflation</a>
+</div>
+</div>
+
+<div class="navdrop">
+<span class="navlabel">Equities ▾</span>
+<div class="dropdown">
+<a href="/sector-analysis.html">Sector Performance</a>
+<a href="/ath-index.html">All-Time Highs and Lows</a>
+<a href="/valuations.html">Valuations</a>
+<a href="/factor-analysis.html">Factor Analysis</a>
+<a href="/coming-soon.html?title=Earnings%20Revisions">Earnings Revisions</a>
+<a href="/coming-soon.html?title=Market%20Breadth">Market Breadth</a>
+<a href="/coming-soon.html?title=Concentration%20Risk">Concentration Risk</a>
+</div>
+</div>
+
+<div class="navdrop">
+<span class="navlabel">Rates &amp; Credit ▾</span>
+<div class="dropdown">
+<a href="/coming-soon.html?title=Monetary%20Policy">Monetary Policy</a>
+<a href="/coming-soon.html?title=Real%20Yields%20Dashboard">Real Yields Dashboard</a>
+</div>
+</div>
+
+<div class="navdrop">
+<span class="navlabel">Alternative &amp; Cross-Asset ▾</span>
+<div class="dropdown">
+<a href="/coming-soon.html?title=Cross-Asset%20Risk">Cross-Asset Risk</a>
+<a href="/coming-soon.html?title=Commodity%20Cycle">Commodity Cycle</a>
+<a href="/coming-soon.html?title=Currency%20Strength">Currency Strength</a>
+</div>
+</div>
+
+<div class="navdrop">
+<span class="navlabel">Behavioral &amp; Positioning ▾</span>
+<div class="dropdown">
+<a href="/coming-soon.html?title=Options%20Positioning">Options Positioning</a>
+<a href="/coming-soon.html?title=Retail%20vs.%20Institutional%20Flow">Retail vs. Institutional Flow</a>
+<a href="/ipo-activity.html">IPO &amp; SPAC Activity</a>
+</div>
+</div>
+
+<div class="navdrop">
+<span class="navlabel">Thematic ▾</span>
+<div class="dropdown">
+<a href="/coming-soon.html?title=AI%20Capex%20Tracker">AI Capex Tracker</a>
+<a href="/coming-soon.html?title=Housing%20Market%20Monitor">Housing Market Monitor</a>
+</div>
+</div>
+
+</div>
+<button class="theme-toggle" id="themeToggle" type="button" aria-label="Toggle light/dark mode" title="Toggle light/dark mode">&#9789;</button>
+</nav>
+<script>
+document.querySelectorAll(".navdrop").forEach(function(navdrop){
+ var closeTimer = null;
+ navdrop.addEventListener("mouseenter", function(){
+  clearTimeout(closeTimer);
+  navdrop.classList.add("open");
+ });
+ navdrop.addEventListener("mouseleave", function(){
+  closeTimer = setTimeout(function(){ navdrop.classList.remove("open"); }, 300);
+ });
+});
+</script>
+<script>
+(function(){
+ var btn = document.getElementById("themeToggle");
+ if(!btn) return;
+ var theme = document.documentElement.getAttribute("data-theme") === "light" ? "light" : "dark";
+ btn.textContent = theme === "light" ? "☀" : "☽";
+ btn.addEventListener("click", function(){
+  var current = document.documentElement.getAttribute("data-theme") === "light" ? "light" : "dark";
+  var next = current === "light" ? "dark" : "light";
+  localStorage.setItem("theme", next);
+  location.reload();
+ });
+})();
+</script>
+
+
+
+<div class="container">
+
+<div class="header">
+<div>
+<h1>IPO Market Activity &amp; Bull Cycle Strength</h1>
+<div class="subtitle">U.S. IPO volume, first-day "pop," and gross proceeds since 1995, tested as a sentiment and froth indicator against the S&amp;P 500 — does a hot IPO market predict what comes next, or just describe what already happened?</div>
+</div>
+<div class="updated" id="updated">Annual, updated periodically</div>
+</div>
+
+<div class="stat-grid">
+<div class="stat-card">
+<div class="stat-label">IPOs (2025)</div>
+<div class="stat-value" id="statCount">—</div>
+<div class="stat-note" id="statCountNote">—</div>
+</div>
+<div class="stat-card">
+<div class="stat-label">Avg. First-Day Pop</div>
+<div class="stat-value" id="statPop" style="color:var(--extreme);">—</div>
+<div class="stat-note">Offer price to first close, equal-weighted</div>
+</div>
+<div class="stat-card">
+<div class="stat-label">Gross Proceeds</div>
+<div class="stat-value" id="statProceeds" style="color:var(--fear);">—</div>
+<div class="stat-note">Not inflation-adjusted</div>
+</div>
+<div class="stat-card">
+<div class="stat-label">S&amp;P 500 Return (2025)</div>
+<div class="stat-value" id="statSP">—</div>
+<div class="stat-note">Price return, same calendar year</div>
+</div>
+</div>
+
+<div class="chart-box">
+<h2>IPO count, first-day pop, and S&amp;P 500 return, 1995&ndash;2025</h2>
+<div class="chart-legend-custom">
+<span><i class="swatch swatch-count"></i>Number of IPOs (bars)</span>
+<span><i class="swatch swatch-pop"></i>Avg. First-Day Return</span>
+<span><i class="swatch swatch-sp"></i>S&amp;P 500 Return (that year)</span>
+</div>
+<div class="chart-canvas-wrap">
+<canvas id="ipoChart"></canvas>
+</div>
+</div>
+
+<div class="scatter-grid">
+<div class="scatter-box">
+<h3>IPO volume vs. next year's return</h3>
+<div class="scatter-sub">Number of IPOs (x) vs. S&amp;P 500 return, following calendar year (y)</div>
+<div class="scatter-canvas-wrap">
+<canvas id="scatterCount"></canvas>
+</div>
+<div id="tableCount"></div>
+</div>
+<div class="scatter-box">
+<h3>First-day pop vs. next year's return</h3>
+<div class="scatter-sub">Avg. first-day IPO return (x) vs. S&amp;P 500 return, following calendar year (y)</div>
+<div class="scatter-canvas-wrap">
+<canvas id="scatterPop"></canvas>
+</div>
+<div id="tablePop"></div>
+</div>
+</div>
+
+<div class="explainer">
+<h2>Reading the froth signal</h2>
+<p>The intuitive story is simple: when IPO volume surges and first-day pops get extreme, it means investors are euphoric, underwriters can price anything, and speculative capital is chasing anything with a ticker — a classic late-cycle signal that should precede weak forward returns. 1999&ndash;2000 fits this story almost perfectly: 484 and 382 IPOs priced with average first-day pops of 70% and 56%, right before the S&amp;P 500 fell 10% in 2000 and 13% in 2001. 2021 rhymes: 315 IPOs (plus a separate wave of SPACs), a 32% average pop, then a 19% market decline in 2022.</p>
+<p>But the regressions above test this rigorously rather than eyeballing two anecdotes, and the honest result is that the relationship is <strong>directionally consistent with the froth story but statistically weak</strong> over this 30-year sample. IPO count and first-day pop both tend to carry a negative slope against next year's return &mdash; hot IPO markets are followed by softer years, on average &mdash; but with n≈30 annual observations, R&sup2; typically in the single digits, and p-values that often miss the conventional 0.05 threshold. The two dot-com and SPAC-boom years do a lot of the work; the jackknife row shows how much the fit moves when the single most influential year is dropped.</p>
+<p>That's not a reason to dismiss the indicator &mdash; it's a reason to treat IPO volume the way most sell-side and academic literature treats it: as one qualitative input into a euphoria read (alongside options positioning, margin debt, and valuation multiples), not a standalone quantitative timing signal. The first-day pop in particular has a cleaner behavioral story than the raw count: pops above ~40% (1999, 2000, 2020, 2021, 2022's small unprofitable-biotech cohort) mark years where underwriters and issuers were willing to leave enormous sums on the table because demand was overwhelming &mdash; a purer read on speculative appetite than headline deal count, which is also mechanically suppressed in weak years simply because fewer companies choose to go public at all.</p>
+</div>
+
+<div class="explainer">
+<h2>Notable IPO cycles, 1995&ndash;2025</h2>
+<table class="events-table">
+<tbody>
+<tr><td>1995&ndash;1998</td><td>Steady bull-market IPO issuance (310&ndash;690 deals/yr) as the 1990s expansion matured, still well short of dot-com extremes.</td></tr>
+<tr><td>1999&ndash;2000</td><td>Dot-com peak: 484 and 382 IPOs with average first-day pops of 70% and 56% &mdash; the most extreme underpricing on record, followed by the 2000&ndash;2002 bear market.</td></tr>
+<tr><td>2001&ndash;2003</td><td>IPO count collapses to 60&ndash;80/year post-bubble and post-9/11 &mdash; among the driest windows in the dataset.</td></tr>
+<tr><td>2004&ndash;2007</td><td>Recovery cycle (160&ndash;180 IPOs/yr, pops back to a more normal 10&ndash;14%) tracking the mid-2000s credit-fueled bull market.</td></tr>
+<tr><td>2008&ndash;2009</td><td>Global Financial Crisis: only 21 and 42 IPOs priced &mdash; the IPO window effectively closed.</td></tr>
+<tr><td>2013&ndash;2014</td><td>Post-GFC bull market IPO revival, led by tech and biotech (163 and 222 deals).</td></tr>
+<tr><td>2020&ndash;2021</td><td>Pandemic-liquidity boom: record proceeds ($62B and $120B), a 32% average pop in 2021, and a parallel SPAC wave (not counted in these figures) &mdash; followed by 2022's rate-shock bear market.</td></tr>
+<tr><td>2022</td><td>IPO market effectively closed again (39 deals) as the Fed hiked into a bear market &mdash; the smallest gross proceeds since the GFC.</td></tr>
+<tr><td>2023&ndash;2025</td><td>Gradual reopening; 2025's 94 deals and 28% average pop (led by high-profile tech listings) suggest renewed risk appetite.</td></tr>
+</tbody>
+</table>
+</div>
+
+<div class="explainer">
+<h2>How to read this</h2>
+<p>The chart shows three series pulled directly from Jay Ritter's (University of Florida) continuously updated IPO database, the standard academic and industry source for U.S. IPO statistics going back to 1960: the number of operating-company IPOs priced each year, the equal-weighted average first-day return ("pop" &mdash; the gain from the offer price to the first closing price), and gross proceeds raised. This is Ritter's headline series (his Table 8), which includes bank/thrift conversions but excludes ADRs, SPACs, unit offers, closed-end funds, REITs, and very small or best-efforts deals &mdash; a conservative definition chosen for year-over-year consistency rather than the broadest possible count. S&amp;P 500 returns are price return only (no dividends), matching the convention used elsewhere on this site.</p>
+<p>The two scatter plots test the "IPO froth as a contrarian indicator" hypothesis directly: does this year's IPO activity (count, or average pop) predict <em>next</em> year's S&amp;P 500 return? A negative, statistically significant slope would support the classic narrative that heavy IPO issuance marks late-cycle excess. As the methodology tables show, the sign is usually right but the significance is marginal &mdash; consistent with IPO volume being a real but noisy and non-mechanical signal, unlike the implied ERP series on this site's <a href="/implied-erp.html">Implied Equity Risk Premium</a> page, which by construction can't avoid some contemporaneous correlation with market pricing.</p>
+<p><strong>Limitations:</strong> a 31-year annual sample is small by statistical standards, and two outlier years (1999&ndash;2000, and to a lesser extent 2021) drive much of whatever relationship exists &mdash; the jackknife row in each methodology table shows exactly how much. IPO count is also a supply-side measure as much as a demand-side one: companies choose <em>whether</em> to go public based on the same market conditions being tested as the predictor, so causality runs in multiple directions. This page excludes SPAC issuance (a separate, larger wave in 2020&ndash;2021) and first-day-doubling counts, both of which Ritter also tracks and which would sharpen the euphoria read further in a future update.</p>
+<div class="source">Source: <a href="https://site.warrington.ufl.edu/ritter/ipo-data/" target="_blank" rel="noopener">Jay R. Ritter, University of Florida &mdash; IPO Data</a>. S&amp;P 500 levels from Aswath Damodaran, NYU Stern (used elsewhere on this site for the Implied ERP series).</div>
+</div>
+
+</div>
+
+<script>
+// IPO count, avg first-day return (%), and gross proceeds ($ millions) by
+// year, 1995-2025 — Jay Ritter's Table 8 (Number of Offerings, Average
+// First-day Returns, and Gross Proceeds of IPOs), pulled directly from his
+// July 2026 "Initial Public Offerings: Updated Statistics" PDF. This is his
+// headline, conservative-definition series (includes bank/S&L conversions,
+// excludes ADRs/SPACs/unit offers/closed-end funds/REITs/small deals) —
+// chosen for cross-year consistency over the broadest possible IPO count.
+const IPO_DATA = [
+  { year: 1995, count: 465, pop: 21.3, proceeds: 27993 },
+  { year: 1996, count: 689, pop: 17.1, proceeds: 42428 },
+  { year: 1997, count: 485, pop: 14.0, proceeds: 32547 },
+  { year: 1998, count: 310, pop: 20.6, proceeds: 34416 },
+  { year: 1999, count: 484, pop: 70.0, proceeds: 64809 },
+  { year: 2000, count: 382, pop: 56.1, proceeds: 64931 },
+  { year: 2001, count: 80,  pop: 14.0, proceeds: 35288 },
+  { year: 2002, count: 70,  pop: 8.6,  proceeds: 22136 },
+  { year: 2003, count: 68,  pop: 11.9, proceeds: 10075 },
+  { year: 2004, count: 181, pop: 12.4, proceeds: 31663 },
+  { year: 2005, count: 167, pop: 10.0, proceeds: 28578 },
+  { year: 2006, count: 162, pop: 12.0, proceeds: 30648 },
+  { year: 2007, count: 160, pop: 14.0, proceeds: 35704 },
+  { year: 2008, count: 21,  pop: 5.7,  proceeds: 22762 },
+  { year: 2009, count: 42,  pop: 10.8, proceeds: 13296 },
+  { year: 2010, count: 98,  pop: 9.3,  proceeds: 30624 },
+  { year: 2011, count: 82,  pop: 13.8, proceeds: 27750 },
+  { year: 2012, count: 101, pop: 17.3, proceeds: 31973 },
+  { year: 2013, count: 163, pop: 20.6, proceeds: 41909 },
+  { year: 2014, count: 222, pop: 14.9, proceeds: 46852 },
+  { year: 2015, count: 125, pop: 18.7, proceeds: 22296 },
+  { year: 2016, count: 79,  pop: 14.0, proceeds: 13234 },
+  { year: 2017, count: 117, pop: 12.3, proceeds: 24032 },
+  { year: 2018, count: 143, pop: 17.8, proceeds: 34043 },
+  { year: 2019, count: 120, pop: 22.4, proceeds: 39725 },
+  { year: 2020, count: 165, pop: 41.6, proceeds: 61860 },
+  { year: 2021, count: 315, pop: 31.9, proceeds: 119631 },
+  { year: 2022, count: 39,  pop: 47.7, proceeds: 7014 },
+  { year: 2023, count: 54,  pop: 11.9, proceeds: 11916 },
+  { year: 2024, count: 73,  pop: 15.2, proceeds: 20527 },
+  { year: 2025, count: 94,  pop: 28.4, proceeds: 39409 },
+];
+
+// S&P 500 year-end price levels (Damodaran series, same source used on the
+// Implied ERP page) — used here only to derive annual price returns, price
+// return only (no dividends), consistent with the convention elsewhere on
+// this site.
+const SP500_LEVELS = {
+  1994: 459.27, 1995: 615.93, 1996: 740.74, 1997: 970.43, 1998: 1229.23,
+  1999: 1469.25, 2000: 1320.28, 2001: 1148.09, 2002: 879.82, 2003: 1111.91,
+  2004: 1211.92, 2005: 1248.29, 2006: 1418.3, 2007: 1468.36, 2008: 903.25,
+  2009: 1115.1, 2010: 1257.64, 2011: 1257.6, 2012: 1426.19, 2013: 1848.36,
+  2014: 2058.9, 2015: 2043.94, 2016: 2238.83, 2017: 2673.61, 2018: 2506.85,
+  2019: 3230.78, 2020: 3756.07, 2021: 4766.18, 2022: 3839.5, 2023: 4769.83,
+  2024: 5881.63, 2025: 6845.5,
+};
+
+function sp500Return(year){
+ const cur = SP500_LEVELS[year], prior = SP500_LEVELS[year - 1];
+ if(cur === undefined || prior === undefined) return null;
+ return Math.round(((cur - prior) / prior) * 1000) / 10;
+}
+
+// Ordinary least squares plus a t-test on the slope (H0: slope = 0). Uses
+// the normal-distribution approximation for the p-value rather than the
+// exact Student's t — no stats library is loaded, and with the small
+// degrees of freedom here that approximation is looser than on the larger
+// ERP page sample, so treat p-values as indicative, not precise.
+function linearRegression(xs, ys){
+ const n = xs.length;
+ const mx = xs.reduce((a, b) => a + b, 0) / n;
+ const my = ys.reduce((a, b) => a + b, 0) / n;
+ const sxx = xs.reduce((s, x) => s + (x - mx) ** 2, 0);
+ const sxy = xs.reduce((s, x, i) => s + (x - mx) * (ys[i] - my), 0);
+ const syy = ys.reduce((s, y) => s + (y - my) ** 2, 0);
+ const slope = sxy / sxx;
+ const intercept = my - slope * mx;
+ const r = sxy / Math.sqrt(sxx * syy);
+ const r2 = r * r;
+ const dof = n - 2;
+ const sse = ys.reduce((s, y, i) => s + (y - (intercept + slope * xs[i])) ** 2, 0);
+ const seSlope = Math.sqrt((sse / dof) / sxx);
+ const t = slope / seSlope;
+ const p = 2 * (1 - normalCdf(Math.abs(t)));
+ return { n, slope, intercept, r, r2, t, dof, p };
+}
+
+function normalCdf(x){
+ return 0.5 * (1 + erf(x / Math.SQRT2));
+}
+
+function erf(x){
+ const sign = x < 0 ? -1 : 1;
+ x = Math.abs(x);
+ const a1 = 0.254829592, a2 = -0.284496736, a3 = 1.421413741, a4 = -1.453152027, a5 = 1.061405429, p = 0.3275911;
+ const t = 1 / (1 + p * x);
+ const y = 1 - (((((a5 * t + a4) * t) + a3) * t + a2) * t + a1) * t * Math.exp(-x * x);
+ return sign * y;
+}
+
+function rankArray(arr){
+ const idx = arr.map((v, i) => i).sort((a, b) => arr[a] - arr[b]);
+ const ranks = new Array(arr.length);
+ let i = 0;
+ while(i < idx.length){
+  let j = i;
+  while(j + 1 < idx.length && arr[idx[j + 1]] === arr[idx[i]]) j++;
+  const avgRank = (i + j) / 2 + 1;
+  for(let k = i; k <= j; k++) ranks[idx[k]] = avgRank;
+  i = j + 1;
+ }
+ return ranks;
+}
+
+function spearmanRegression(xs, ys){
+ return linearRegression(rankArray(xs), rankArray(ys));
+}
+
+function jackknifeTrim(points){
+ const xs = points.map(p => p.x), ys = points.map(p => p.y);
+ const full = linearRegression(xs, ys);
+ let maxShift = -1, influentialIdx = -1;
+ for(let i = 0; i < points.length; i++){
+  const xs2 = xs.filter((_, j) => j !== i);
+  const ys2 = ys.filter((_, j) => j !== i);
+  const reg = linearRegression(xs2, ys2);
+  const shift = Math.abs(reg.r - full.r);
+  if(shift > maxShift){ maxShift = shift; influentialIdx = i; }
+ }
+ const trimmedXs = xs.filter((_, j) => j !== influentialIdx);
+ const trimmedYs = ys.filter((_, j) => j !== influentialIdx);
+ const trimmed = linearRegression(trimmedXs, trimmedYs);
+ return { ...trimmed, removedPoint: points[influentialIdx] };
+}
+
+function renderMethodTable(containerElId, points){
+ const xs = points.map(p => p.x), ys = points.map(p => p.y);
+ const pearson = linearRegression(xs, ys);
+ const spear = spearmanRegression(xs, ys);
+ const trimmed = jackknifeTrim(points);
+
+ function row(label, stats){
+  const sig = stats.p < 0.05;
+  return `<tr>` +
+   `<td>${label}</td>` +
+   `<td>${stats.n}</td>` +
+   `<td>${stats.r.toFixed(2)}</td>` +
+   `<td>${(stats.r2 * 100).toFixed(1)}%</td>` +
+   `<td>${stats.slope >= 0 ? "+" : ""}${stats.slope.toFixed(3)}</td>` +
+   `<td>${stats.t.toFixed(2)}</td>` +
+   `<td class="${sig ? "sig" : ""}">${stats.p < 0.001 ? "<0.001" : stats.p.toFixed(3)}</td>` +
+  `</tr>`;
+ }
+
+ document.getElementById(containerElId).innerHTML =
+  `<table class="method-table">` +
+   `<thead><tr><th>Method</th><th>n</th><th>r</th><th>r&sup2;</th><th>slope</th><th>t</th><th>p</th></tr></thead>` +
+   `<tbody>` +
+    row("Pearson (OLS)", pearson) +
+    row("Spearman (&rho;)", spear) +
+    row("Jackknife", trimmed) +
+   `</tbody>` +
+  `</table>` +
+  `<div class="method-note">Jackknife removed: ${trimmed.removedPoint.sourceYear}&rarr;${trimmed.removedPoint.sourceYear + 1} (x=${trimmed.removedPoint.x.toFixed(1)}, next-yr return ${trimmed.removedPoint.y >= 0 ? "+" : ""}${trimmed.removedPoint.y.toFixed(1)}%)</div>`;
+}
+
+function themeInkColor(){
+ const v = getComputedStyle(document.documentElement).getPropertyValue("--ink").trim();
+ return v || "#eae6da";
+}
+
+function renderScatter(canvasId, points, stats, pointColor, xLabel){
+ const xs = points.map(p => p.x);
+ const xMin = Math.min(...xs), xMax = Math.max(...xs);
+ const linePoints = [
+  { x: xMin, y: stats.intercept + stats.slope * xMin },
+  { x: xMax, y: stats.intercept + stats.slope * xMax },
+ ];
+
+ const ctx = document.getElementById(canvasId).getContext("2d");
+ new Chart(ctx, {
+  type: "scatter",
+  data: {
+   datasets: [
+    {
+     label: "Years",
+     data: points,
+     backgroundColor: pointColor,
+     pointRadius: 4,
+     showLine: false,
+    },
+    {
+     label: "Regression fit",
+     type: "line",
+     data: linePoints,
+     borderColor: themeInkColor(),
+     borderWidth: 1.5,
+     borderDash: [4, 3],
+     pointRadius: 0,
+     fill: false,
+    },
+   ],
+  },
+  options: {
+   responsive: true,
+   maintainAspectRatio: false,
+   plugins: {
+    legend: { display: false },
+    tooltip: {
+     callbacks: {
+      label: ctx => ctx.dataset.label === "Years"
+       ? `${ctx.raw.sourceYear}→${ctx.raw.sourceYear + 1}: ${xLabel} ${ctx.raw.x}, next-yr return ${ctx.raw.y.toFixed(1)}%`
+       : null,
+     },
+    },
+   },
+   scales: {
+    x: { title: { display: true, text: xLabel, color: "#8b9199" }, ticks: { color: "#8b9199" }, grid: { color: "#2b3138" } },
+    y: { title: { display: true, text: "Next-year S&P 500 return (%)", color: "#8b9199" }, ticks: { color: "#8b9199" }, grid: { color: "#2b3138" } },
+   },
+  },
+ });
+}
+
+function init(){
+ const latest = IPO_DATA[IPO_DATA.length - 1];
+ const prior = IPO_DATA[IPO_DATA.length - 2];
+ const spReturns = IPO_DATA.map(r => sp500Return(r.year));
+
+ document.getElementById("statCount").textContent = latest.count.toLocaleString();
+ const countDelta = latest.count - prior.count;
+ document.getElementById("statCountNote").textContent =
+  (countDelta >= 0 ? "+" : "") + countDelta + " vs. " + prior.year;
+ document.getElementById("statPop").textContent = latest.pop.toFixed(1) + "%";
+ document.getElementById("statProceeds").textContent = "$" + (latest.proceeds / 1000).toFixed(1) + "B";
+ const latestSP = spReturns[spReturns.length - 1];
+ document.getElementById("statSP").textContent = (latestSP >= 0 ? "+" : "") + latestSP.toFixed(1) + "%";
+
+ const ctx = document.getElementById("ipoChart").getContext("2d");
+ new Chart(ctx, {
+  type: "bar",
+  data: {
+   labels: IPO_DATA.map(r => String(r.year)),
+   datasets: [
+    {
+     type: "bar",
+     label: "Number of IPOs",
+     data: IPO_DATA.map(r => r.count),
+     backgroundColor: "rgba(217,138,61,0.55)",
+     yAxisID: "yCount",
+     order: 2,
+    },
+    {
+     type: "line",
+     label: "Avg. First-Day Return",
+     data: IPO_DATA.map(r => r.pop),
+     borderColor: "#8b6fac",
+     backgroundColor: "#8b6fac",
+     borderWidth: 2,
+     pointRadius: 0,
+     fill: false,
+     yAxisID: "yPct",
+     order: 1,
+    },
+    {
+     type: "line",
+     label: "S&P 500 Return (that year)",
+     data: spReturns,
+     borderColor: "#6f8fac",
+     backgroundColor: "#6f8fac",
+     borderWidth: 2,
+     pointRadius: 0,
+     fill: false,
+     yAxisID: "yPct",
+     order: 1,
+    },
+   ],
+  },
+  options: {
+   responsive: true,
+   maintainAspectRatio: false,
+   interaction: { mode: "index", intersect: false },
+   plugins: {
+    legend: { display: false },
+    tooltip: {
+     callbacks: {
+      label: ctx => ctx.dataset.label === "Number of IPOs"
+       ? ctx.dataset.label + ": " + ctx.parsed.y
+       : ctx.dataset.label + ": " + (ctx.parsed.y === null ? "—" : ctx.parsed.y + "%"),
+     },
+    },
+   },
+   scales: {
+    x: { ticks: { color: "#8b9199", maxTicksLimit: 12 }, grid: { color: "#2b3138" } },
+    yCount: { position: "left", ticks: { color: "#8b9199" }, grid: { color: "#2b3138" }, title: { display: true, text: "Number of IPOs", color: "#8b9199" } },
+    yPct: { position: "right", ticks: { color: "#8b9199", callback: v => v + "%" }, grid: { display: false }, title: { display: true, text: "Return (%)", color: "#8b9199" } },
+   },
+  },
+ });
+
+ // Predictive: this year's IPO count / avg pop vs. NEXT calendar year's
+ // S&P 500 return. The last row (2025) has no "next year" yet, so it's
+ // excluded from both scatters.
+ const countPoints = [];
+ const popPoints = [];
+ for(let i = 0; i < IPO_DATA.length - 1; i++){
+  const nextReturn = sp500Return(IPO_DATA[i].year + 1);
+  if(nextReturn === null) continue;
+  countPoints.push({ x: IPO_DATA[i].count, y: nextReturn, sourceYear: IPO_DATA[i].year });
+  popPoints.push({ x: IPO_DATA[i].pop, y: nextReturn, sourceYear: IPO_DATA[i].year });
+ }
+
+ const countStats = linearRegression(countPoints.map(p => p.x), countPoints.map(p => p.y));
+ renderScatter("scatterCount", countPoints, countStats, "rgba(217,138,61,0.75)", "Number of IPOs");
+ renderMethodTable("tableCount", countPoints);
+
+ const popStats = linearRegression(popPoints.map(p => p.x), popPoints.map(p => p.y));
+ renderScatter("scatterPop", popPoints, popStats, "rgba(139,111,172,0.75)", "Avg. first-day pop (%)");
+ renderMethodTable("tablePop", popPoints);
+}
+
+init();
+</script>
+
+</body>
+</html>
