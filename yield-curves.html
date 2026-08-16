@@ -1,0 +1,848 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<script>
+(function(){
+ var saved = localStorage.getItem("theme");
+ if(saved === "light") document.documentElement.setAttribute("data-theme", "light");
+})();
+</script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Yield Curves &amp; the Recession Signal — Michael J. Stevenson</title>
+
+<style>
+
+:root{
+  --bg:#14181c;
+  --card:#1c2127;
+  --card-hover:#20262d;
+  --ink:#eae6da;
+  --muted:#8b9199;
+  --hair:#2b3138;
+
+  --fear:#6f8fac;
+  --neutral:#7c828a;
+  --greed:#d98a3d;
+  --extreme:#b56f2a;
+
+  --serif:'Iowan Old Style','Palatino Linotype',Georgia,serif;
+  --mono:'SF Mono','JetBrains Mono',ui-monospace,Menlo,monospace;
+  --sans:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+}
+
+:root[data-theme="light"]{
+  --bg:#f7f5f0;
+  --card:#ffffff;
+  --card-hover:#f2efe6;
+  --ink:#1c1f24;
+  --muted:#6b6f76;
+  --hair:#e1dbcd;
+  --fear:#4f6f8c;
+  --neutral:#6c7178;
+  --greed:#b9701f;
+  --extreme:#96591c;
+}
+
+*{ box-sizing:border-box; }
+
+body{
+ margin:0;
+ background:var(--bg);
+ color:var(--ink);
+ font-family:var(--sans);
+}
+
+a{ color:inherit; }
+
+.sitenav{
+ display:grid;
+ grid-template-columns:1fr auto 1fr;
+ align-items:center;
+ padding:16px 24px;
+ border-bottom:1px solid var(--hair);
+ position:relative;
+ z-index:50;
+}
+
+.sitenav .brand{ justify-self:start; }
+
+.sitenav .brand{
+ font-family:var(--serif);
+ font-size:17px;
+ color:var(--ink);
+ text-decoration:none;
+ letter-spacing:0.3px;
+}
+
+.navlinks{ display:flex; gap:26px; align-items:center; }
+
+.navlinks > a{ color:var(--muted); font-size:13px; text-decoration:none; padding:6px 0; }
+
+.navlinks > a:hover, .navlinks > a.active{ color:var(--ink); }
+
+.navdrop{ position:relative; }
+
+.navdrop > .navlabel{
+ color:var(--muted);
+ font-size:13px;
+ cursor:default;
+ padding:6px 0;
+ user-select:none;
+}
+
+.navdrop:hover > .navlabel, .navdrop.open > .navlabel{ color:var(--ink); }
+
+.navdrop .dropdown{
+ display:none;
+ position:absolute;
+ top:100%;
+ left:0;
+ background:var(--card);
+ border:1px solid var(--hair);
+ border-radius:8px;
+ padding:8px 0;
+ min-width:230px;
+ margin-top:12px;
+ box-shadow:0 10px 30px rgba(0,0,0,0.45);
+}
+
+.navdrop.open .dropdown{ display:block; }
+
+.dropdown a{
+ display:block;
+ padding:9px 16px;
+ color:var(--muted);
+ text-decoration:none;
+ font-size:13px;
+}
+
+.dropdown a:hover{ background:var(--card-hover); color:var(--ink); }
+
+.dropdown a.active{ color:var(--greed); }
+
+@media (max-width:720px){ .navlinks{ display:none; } }
+
+.container{ max-width:1000px; margin:auto; padding:30px 20px 60px; }
+
+.header{
+ display:flex;
+ justify-content:space-between;
+ align-items:flex-end;
+ border-bottom:1px solid var(--hair);
+ padding-bottom:18px;
+ margin-bottom:25px;
+ flex-wrap:wrap;
+ gap:12px;
+}
+
+h1{ font-family:var(--serif); font-size:28px; font-weight:400; margin:0; }
+
+.subtitle{ color:var(--muted); font-size:13px; margin-top:6px; max-width:620px; }
+
+.updated{ color:var(--muted); font-size:12px; }
+
+.stat-grid{ display:grid; grid-template-columns:repeat(4,1fr); gap:16px; margin-bottom:30px; }
+
+.stat-card{ background:var(--card); border:1px solid var(--hair); border-radius:10px; padding:20px; }
+
+.stat-label{ color:var(--muted); font-size:12px; text-transform:uppercase; letter-spacing:0.04em; margin-bottom:8px; }
+
+.stat-value{ font-family:var(--mono); font-size:22px; color:var(--greed); }
+
+.stat-note{ color:var(--muted); font-size:12px; margin-top:6px; }
+
+.chart-box{ background:var(--card); border:1px solid var(--hair); border-radius:12px; padding:20px; margin-bottom:30px; }
+
+.chart-box h2{ font-family:var(--serif); font-weight:400; font-size:18px; margin:0 0 16px; }
+
+.chart-legend-custom{ display:flex; gap:20px; margin-bottom:14px; flex-wrap:wrap; }
+
+.chart-legend-custom span{ display:flex; align-items:center; gap:6px; color:var(--muted); font-size:12px; }
+
+.chart-legend-custom .swatch{ display:inline-block; width:12px; height:3px; border-radius:2px; }
+
+.swatch-2s10s{ background:#d98a3d; }
+.swatch-3m10y{ background:#6f8fac; }
+.swatch-tp{ background:#8b6fac; }
+.swatch-exp{ background:#6f8fac; }
+.swatch-recession{ background:rgba(139,111,172,0.35); }
+
+.chart-canvas-wrap{ height:380px; }
+.chart-canvas-wrap.short{ height:300px; }
+
+.scatter-grid{ display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:30px; }
+
+.scatter-box{ background:var(--card); border:1px solid var(--hair); border-radius:12px; padding:20px; }
+
+.scatter-box h3{ font-family:var(--serif); font-weight:400; font-size:15px; margin:0 0 4px; }
+
+.scatter-box .scatter-sub{ color:var(--muted); font-size:12px; margin-bottom:14px; }
+
+.scatter-canvas-wrap{ height:280px; margin-bottom:14px; }
+
+.method-table{ width:100%; border-collapse:collapse; font-family:var(--mono); font-size:10.5px; margin-top:8px; }
+
+.method-table th{
+ text-align:right;
+ padding:6px 5px;
+ color:var(--muted);
+ font-size:9px;
+ text-transform:uppercase;
+ letter-spacing:0.03em;
+ font-weight:600;
+ border-bottom:1px solid var(--hair);
+ white-space:nowrap;
+}
+
+.method-table th:first-child{ text-align:left; }
+
+.method-table td{ padding:7px 5px; text-align:right; border-bottom:1px solid var(--hair); white-space:nowrap; color:var(--ink); }
+
+.method-table td:first-child{ text-align:left; font-family:var(--sans); color:var(--muted); }
+
+.method-table tr:last-child td{ border-bottom:none; }
+
+.method-table .sig{ color:var(--greed); }
+
+.method-note{ font-size:10px; color:var(--muted); margin-top:6px; font-style:italic; }
+
+@media (max-width:720px){ .scatter-grid{ grid-template-columns:1fr; } }
+
+.explainer{ background:var(--card); border:1px solid var(--hair); border-radius:12px; padding:24px 26px; margin-bottom:20px; }
+
+.explainer h2{ font-family:var(--serif); font-weight:400; font-size:18px; margin:0 0 12px; }
+
+.explainer p{ color:var(--muted); font-size:14px; line-height:1.7; margin:0 0 14px; }
+
+.explainer p:last-child{ margin-bottom:0; }
+
+.explainer .source{ margin-top:16px; font-size:11px; }
+
+.explainer .source a{ color:var(--muted); text-decoration:none; border-bottom:1px dotted var(--muted); }
+
+.explainer .source a:hover{ color:var(--ink); }
+
+.events-table-wrap{ width:100%; overflow-x:auto; margin-top:4px; }
+
+.events-table{ width:100%; min-width:640px; border-collapse:collapse; font-size:13px; }
+
+.events-table th{
+ text-align:left;
+ padding:8px 10px;
+ color:var(--muted);
+ font-size:11px;
+ text-transform:uppercase;
+ letter-spacing:0.03em;
+ font-weight:600;
+ border-bottom:1px solid var(--hair);
+}
+
+.events-table td{ padding:9px 10px; border-bottom:1px solid var(--hair); color:var(--ink); vertical-align:top; }
+
+.events-table td:first-child{ font-family:var(--mono); color:var(--muted); white-space:nowrap; }
+
+.events-table tr:last-child td{ border-bottom:none; }
+
+.events-table .hit{ color:var(--greed); }
+.events-table .miss{ color:var(--fear); }
+
+@media (max-width:720px){
+ .stat-grid{ grid-template-columns:1fr 1fr; }
+ .events-table{ font-size:12px; }
+}
+
+.theme-toggle{
+ justify-self:end;
+ background:none;
+ border:1px solid var(--hair);
+ color:var(--muted);
+ border-radius:6px;
+ width:32px;
+ height:32px;
+ display:flex;
+ align-items:center;
+ justify-content:center;
+ cursor:pointer;
+ font-size:15px;
+ line-height:1;
+}
+
+.theme-toggle:hover{ color:var(--ink); border-color:var(--hair); }
+
+</style>
+</head>
+<body>
+
+<nav class="sitenav">
+<a class="brand" href="/">Michael J. Stevenson, CAIA<span style="font-size:0.6em; vertical-align:super;">&reg;</span></a>
+<div class="navlinks">
+<a href="/sentiment-index.html">Sentiment Index</a>
+<a href="/portfolio-simulator.html">Portfolio Simulator</a>
+
+<div class="navdrop">
+<span class="navlabel">Markets &amp; Macro ▾</span>
+<div class="dropdown">
+<a href="/volatility.html">Implied vs. Realized Volatility</a>
+<a href="/implied-erp.html">Implied Equity Risk Premium</a>
+<a href="/ipo-activity.html">IPO Market Activity</a>
+<a href="/yield-curves.html" class="active">Yield Curves</a>
+<a href="/coming-soon.html?title=Credit%20Spreads">Credit Spreads</a>
+<a href="/coming-soon.html?title=Global%20Liquidity">Global Liquidity</a>
+<a href="/coming-soon.html?title=Recession%20Probability%20Model">Recession Probability Model</a>
+<a href="/coming-soon.html?title=Inflation">Inflation</a>
+</div>
+</div>
+
+<div class="navdrop">
+<span class="navlabel">Equities ▾</span>
+<div class="dropdown">
+<a href="/sector-analysis.html">Sector Performance</a>
+<a href="/ath-index.html">All-Time Highs and Lows</a>
+<a href="/valuations.html">Valuations</a>
+<a href="/factor-analysis.html">Factor Analysis</a>
+<a href="/coming-soon.html?title=Earnings%20Revisions">Earnings Revisions</a>
+<a href="/coming-soon.html?title=Market%20Breadth">Market Breadth</a>
+<a href="/coming-soon.html?title=Concentration%20Risk">Concentration Risk</a>
+</div>
+</div>
+
+<div class="navdrop">
+<span class="navlabel">Rates &amp; Credit ▾</span>
+<div class="dropdown">
+<a href="/coming-soon.html?title=Monetary%20Policy">Monetary Policy</a>
+<a href="/coming-soon.html?title=Real%20Yields%20Dashboard">Real Yields Dashboard</a>
+</div>
+</div>
+
+<div class="navdrop">
+<span class="navlabel">Alternative &amp; Cross-Asset ▾</span>
+<div class="dropdown">
+<a href="/coming-soon.html?title=Cross-Asset%20Risk">Cross-Asset Risk</a>
+<a href="/coming-soon.html?title=Commodity%20Cycle">Commodity Cycle</a>
+<a href="/coming-soon.html?title=Currency%20Strength">Currency Strength</a>
+</div>
+</div>
+
+<div class="navdrop">
+<span class="navlabel">Behavioral &amp; Positioning ▾</span>
+<div class="dropdown">
+<a href="/coming-soon.html?title=Options%20Positioning">Options Positioning</a>
+<a href="/coming-soon.html?title=Retail%20vs.%20Institutional%20Flow">Retail vs. Institutional Flow</a>
+<a href="/ipo-activity.html">IPO &amp; SPAC Activity</a>
+</div>
+</div>
+
+<div class="navdrop">
+<span class="navlabel">Thematic ▾</span>
+<div class="dropdown">
+<a href="/coming-soon.html?title=AI%20Capex%20Tracker">AI Capex Tracker</a>
+<a href="/coming-soon.html?title=Housing%20Market%20Monitor">Housing Market Monitor</a>
+</div>
+</div>
+
+</div>
+<button class="theme-toggle" id="themeToggle" type="button" aria-label="Toggle light/dark mode" title="Toggle light/dark mode">&#9789;</button>
+</nav>
+<script>
+document.querySelectorAll(".navdrop").forEach(function(navdrop){
+ var closeTimer = null;
+ navdrop.addEventListener("mouseenter", function(){
+  clearTimeout(closeTimer);
+  navdrop.classList.add("open");
+ });
+ navdrop.addEventListener("mouseleave", function(){
+  closeTimer = setTimeout(function(){ navdrop.classList.remove("open"); }, 300);
+ });
+});
+</script>
+<script>
+(function(){
+ var btn = document.getElementById("themeToggle");
+ if(!btn) return;
+ var theme = document.documentElement.getAttribute("data-theme") === "light" ? "light" : "dark";
+ btn.textContent = theme === "light" ? "☀" : "☽";
+ btn.addEventListener("click", function(){
+  var current = document.documentElement.getAttribute("data-theme") === "light" ? "light" : "dark";
+  var next = current === "light" ? "dark" : "light";
+  localStorage.setItem("theme", next);
+  location.reload();
+ });
+})();
+</script>
+
+
+
+<div class="container">
+
+<div class="header">
+<div>
+<h1>Yield Curves &amp; the Recession Signal</h1>
+<div class="subtitle">The 2s10s and 3-month/10-year Treasury spreads since 1994, tested against actual NBER recessions — plus a term-premium decomposition asking whether the curve's shape reflects rate expectations or risk compensation, and a look at which equity styles lead when the curve steepens or flattens.</div>
+</div>
+<div class="updated" id="updated">Monthly, updated periodically</div>
+</div>
+
+<div class="stat-grid">
+<div class="stat-card">
+<div class="stat-label">2s10s Spread</div>
+<div class="stat-value" id="stat2s10s">—</div>
+<div class="stat-note" id="stat2s10sNote">—</div>
+</div>
+<div class="stat-card">
+<div class="stat-label">3m/10y Spread</div>
+<div class="stat-value" id="stat3m10y" style="color:var(--fear);">—</div>
+<div class="stat-note">The New York Fed's preferred recession-model input</div>
+</div>
+<div class="stat-card">
+<div class="stat-label">10Y Term Premium</div>
+<div class="stat-value" id="statTP" style="color:var(--extreme);">—</div>
+<div class="stat-note">ACM model, NY Fed</div>
+</div>
+<div class="stat-card">
+<div class="stat-label">2022&ndash;24 Inversion</div>
+<div class="stat-value">25 mo.</div>
+<div class="stat-note">Longest 2s10s inversion on record; re-steepened Aug 2024</div>
+</div>
+</div>
+
+<div class="chart-box">
+<h2>2s10s and 3-month/10-year spreads vs. NBER recessions, 1994&ndash;2025</h2>
+<div class="chart-legend-custom">
+<span><i class="swatch swatch-2s10s"></i>2s10s Spread</span>
+<span><i class="swatch swatch-3m10y"></i>3-Month/10-Year Spread</span>
+<span><i class="swatch swatch-recession"></i>NBER Recession</span>
+</div>
+<div class="chart-canvas-wrap">
+<canvas id="curveChart"></canvas>
+</div>
+</div>
+
+<div class="explainer">
+<h2>Area 1 &mdash; The recession signal's actual track record</h2>
+<p>The chart above is the classic "inverted yield curve predicts recession" picture, but the table below tests it against what actually happened rather than the folklore version. Every U.S. recession since the mid-1990s was indeed preceded by an inversion in both spreads &mdash; a real, unbroken record over this window. But "preceded" is doing a lot of work: lead times ranged from 8 to 18 months, which is far too wide a window to trade on, and the curve also inverted at least once (June 1998, during the LTCM/Russia crisis) with no recession following at all.</p>
+<div class="events-table-wrap">
+<table class="events-table">
+<thead><tr><th>Inversion (2s10s)</th><th>Duration</th><th>Next NBER recession</th><th>Lead time</th><th>Result</th></tr></thead>
+<tbody id="inversionTable"></tbody>
+</table>
+</div>
+</div>
+
+<div class="explainer">
+<h2>How to read the recession-signal chart and table</h2>
+<p>Both spreads are computed from monthly-average Treasury constant-maturity yields (10-year minus 2-year, and 10-year minus 3-month). The shaded bands are official NBER recession dates. A negative spread means short-term yields exceed long-term yields &mdash; investors are accepting less compensation to lock up money for a decade than to lend it for two years or three months, historically a sign the market expects the Fed to be cutting rates by then, usually because of a slowing economy.</p>
+<p>The honest reading of the table: the signal has a perfect hit rate but a genuinely unreliable clock, and the 2022&ndash;2024 episode is the hardest case in the sample &mdash; at 25 months, it was more than 30% longer than any prior inversion in this window, and as of the most recent data here, still hasn't been followed by an NBER-dated recession. That's either the first clean false positive of the modern era, a signal whose lag has simply stretched further than history suggested (candidate explanations include unprecedented fiscal deficit spending, post-pandemic labor hoarding, and AI-capex-driven investment offsetting the usual rate-sensitive slowdown), or a recession that simply hasn't been dated yet. All three are live possibilities and this page will get updated as NBER's dating committee weighs in.</p>
+<p><strong>Limitations:</strong> n=4 clean inversion episodes since 1994 is a very small sample to draw firm statistical conclusions from &mdash; this is a case where the qualitative track record matters more than any regression would. The New York Fed's own recession-probability model uses the 3-month/10-year spread specifically (not 2s10s) because it has historically had a cleaner track record academically, though both are shown here since 2s10s is the more commonly cited version in the financial press.</p>
+</div>
+
+<div class="chart-box">
+<h2>10-year Treasury yield decomposed: rate expectations vs. term premium, 1994&ndash;2025</h2>
+<div class="chart-legend-custom">
+<span><i class="swatch swatch-exp"></i>Rate-Expectations Component</span>
+<span><i class="swatch swatch-tp"></i>Term Premium</span>
+</div>
+<div class="chart-canvas-wrap short">
+<canvas id="tpChart"></canvas>
+</div>
+</div>
+
+<div class="explainer">
+<h2>Area 2 &mdash; Is the curve's shape about the Fed path, or risk compensation?</h2>
+<p>A flat or inverted curve can mean two very different things, and conflating them is the most common mistake in yield-curve commentary. It can mean investors expect the Fed to cut rates substantially (a rate-expectations story), or it can mean investors are demanding <em>less</em> extra compensation for holding long-duration risk &mdash; a compressed term premium, often a symptom of abundant liquidity, foreign reserve demand for Treasuries, or QE-era central bank buying suppressing the long end mechanically rather than organically.</p>
+<p>The chart above uses the New York Fed's Adrian-Crump-Moench (ACM) term structure model, which decomposes the observed 10-year yield into these two pieces. The 2010s stand out immediately: the term premium was persistently near zero or <em>negative</em> for most of the decade &mdash; QE-era investors were effectively paying for the privilege of holding long bonds rather than being compensated for the risk, likely reflecting both aggressive Fed asset purchases and heavy foreign demand for safe dollar duration. That regime cracked open in 2022: as the Fed hiked and then began shrinking its balance sheet (quantitative tightening) while Treasury issuance ballooned with the fiscal deficit, the term premium turned decisively positive for the first time in over a decade &mdash; investors started demanding real compensation for duration risk again, a structural shift with implications well beyond the yield curve (it also raises the government's borrowing costs and tends to pressure long-duration equity valuations).</p>
+<p><strong>Limitations:</strong> the term premium is a model output, not an observed market price &mdash; it depends on the ACM model's assumptions about the risk-neutral yield curve and is revised as new data arrives, so treat any single month's reading as approximate rather than precise. Different term-premium models (ACM, Kim-Wright, D'Amico-Kim-Wei) can and do disagree on the exact level, though they broadly agree on the direction of the regime shifts described above.</p>
+<div class="source">Source: Federal Reserve Bank of New York, ACM Term Premium model (Adrian, Crump &amp; Moench, 2013).</div>
+</div>
+
+<div class="scatter-grid">
+<div class="scatter-box">
+<h3>2s10s spread vs. next year's S&amp;P 500 return</h3>
+<div class="scatter-sub">Year-end 2s10s spread (x) vs. S&amp;P 500 return, following calendar year (y)</div>
+<div class="scatter-canvas-wrap">
+<canvas id="scatterSpread"></canvas>
+</div>
+<div id="tableSpread"></div>
+</div>
+<div class="scatter-box">
+<h3>10Y term premium vs. next year's S&amp;P 500 return</h3>
+<div class="scatter-sub">Year-end ACM term premium (x) vs. S&amp;P 500 return, following calendar year (y)</div>
+<div class="scatter-canvas-wrap">
+<canvas id="scatterTP"></canvas>
+</div>
+<div id="tableTP"></div>
+</div>
+</div>
+
+<div class="explainer">
+<h2>Area 3 &mdash; Curve shape and equity style/sector leadership</h2>
+<p>The curve's direction of travel &mdash; not just its level &mdash; has historically mattered for sector and factor leadership, because it changes the relative cost of capital and the earnings sensitivity of different business models. A <strong>bull steepener</strong> (short rates falling faster than long rates, usually a Fed-easing signal) tends to favor cyclicals and financials as growth expectations improve; a <strong>bear steepener</strong> (long rates rising faster, often on inflation or term-premium repricing) tends to hurt long-duration growth stocks, whose valuations are more sensitive to the discount rate on cash flows far in the future; a <strong>bear flattener</strong> (short rates rising on Fed hikes while long rates lag) squeezes bank net interest margins and cyclicals simultaneously.</p>
+<div class="events-table-wrap">
+<table class="events-table">
+<tbody>
+<tr><td>2003&ndash;2004</td><td>Bull steepener as the Fed held rates near zero post-dot-com while growth expectations recovered &mdash; financials and small-caps led.</td></tr>
+<tr><td>2004&ndash;2006</td><td>Bear flattener as the Fed hiked 17 straight times into a still-strong economy &mdash; curve flattened toward inversion even as equities kept rising, a classic late-cycle setup.</td></tr>
+<tr><td>2013 (&ldquo;Taper Tantrum&rdquo;)</td><td>Sharp bear steepener when the Fed signaled tapering QE &mdash; long-duration bond proxies (utilities, REITs) sold off hard; cyclicals held up better.</td></tr>
+<tr><td>2020&ndash;2021</td><td>Extreme bull steepener off the pandemic lows (near-zero short rates, long rates rising on reopening/inflation expectations) &mdash; value and financials sharply outperformed growth for the first time in years.</td></tr>
+<tr><td>2022</td><td>Aggressive bear flattener into inversion as the Fed hiked 425bps in nine months &mdash; long-duration/unprofitable growth and small-caps were hit hardest; energy and value led.</td></tr>
+<tr><td>2024&ndash;2025</td><td>Bull steepener as the curve re-normalized on Fed cuts &mdash; a setup historically favorable to financials and small-caps, though AI-capex-driven mega-cap growth leadership complicated the usual playbook this cycle.</td></tr>
+</tbody>
+</table>
+</div>
+<p style="color:var(--muted); font-size:13px; line-height:1.7; margin-top:14px;">This table is a curated narrative rather than a statistical backtest &mdash; a rigorous version would need point-in-time sector/factor constituent data stretching back to the 1990s, which this site doesn't yet have archived (the <a href="/sector-analysis.html">Sector Performance</a> page currently tracks live, not historical, sector returns). Flagged here as a natural follow-up: pairing a historical sector-returns database with month-by-month curve-slope data would let this become a real regression rather than a curated table.</p>
+</div>
+
+<div class="explainer">
+<h2>How to read this</h2>
+<p>All three yield series (3-month, 2-year, 10-year constant-maturity Treasury) are Alpha Vantage's monthly data, sourced from the same Treasury daily yield curve the government publishes. The term premium series is the New York Fed's own published ACM model output. S&amp;P 500 levels are the same Damodaran year-end series used on this site's <a href="/implied-erp.html">Implied Equity Risk Premium</a> page, for consistency &mdash; so the two scatter plots above use the identical regression methodology (Pearson OLS, Spearman rank, and jackknife-trimmed) already established there.</p>
+<p><strong>Limitations:</strong> the scatter plots have only ~30 annual observations, so treat any p-value here as indicative rather than conclusive, and note the same causality caveat as the IPO page &mdash; the curve is priced by the same market whose forward return is being tested against it, so this isn't a clean natural experiment. The recession-signal analysis in Area 1 is inherently small-sample (four modern inversion episodes) and is presented as a qualitative track record rather than a statistical test for that reason.</p>
+<div class="source">Sources: Alpha Vantage (Treasury constant-maturity yields); Federal Reserve Bank of New York (ACM term premium); Aswath Damodaran, NYU Stern (S&amp;P 500 levels); NBER (official recession dates).</div>
+</div>
+
+</div>
+
+<script>
+// Monthly 2s10s (10y-2y) and 3-month/10-year (10y-3m) spreads, Dec 1994
+// through Dec 2025, in percentage points. Computed from Alpha Vantage's
+// monthly constant-maturity Treasury yield series (3-month, 2-year,
+// 10-year), each series independently pulled and cross-checked against
+// its own published year-end values before differencing.
+const CURVE_MONTHLY = [["1994-12",0.22,2.05],["1995-01",0.27,1.88],["1995-02",0.36,1.53],["1995-03",0.42,1.29],["1995-04",0.49,1.22],["1995-05",0.46,0.78],["1995-06",0.45,0.53],["1995-07",0.5,0.69],["1995-08",0.51,0.92],["1995-09",0.39,0.77],["1995-10",0.34,0.6],["1995-11",0.45,0.41],["1995-12",0.39,0.42],["1996-01",0.54,0.5],["1996-02",0.78,0.85],["1996-03",0.61,1.17],["1996-04",0.55,1.42],["1996-05",0.64,1.59],["1996-06",0.61,1.68],["1996-07",0.6,1.57],["1996-08",0.61,1.45],["1996-09",0.6,1.59],["1996-10",0.62,1.41],["1996-11",0.5,1.03],["1996-12",0.52,1.26],["1997-01",0.57,1.41],["1997-02",0.52,1.28],["1997-03",0.47,1.41],["1997-04",0.44,1.59],["1997-05",0.43,1.51],["1997-06",0.4,1.42],["1997-07",0.33,1.03],["1997-08",0.36,1.02],["1997-09",0.33,1.13],["1997-10",0.26,0.92],["1997-11",0.17,0.6],["1997-12",0.09,0.51],["1998-01",0.18,0.36],["1998-02",0.15,0.34],["1998-03",0.09,0.49],["1998-04",0.08,0.56],["1998-05",0.06,0.51],["1998-06",-0.02,0.38],["1998-07",0.0,0.37],["1998-08",0.07,0.3],["1998-09",0.14,0.07],["1998-10",0.44,0.46],["1998-11",0.29,0.3],["1998-12",0.14,0.15],["1999-01",0.1,0.27],["1999-02",0.12,0.44],["1999-03",0.18,0.66],["1999-04",0.2,0.77],["1999-05",0.29,0.91],["1999-06",0.28,1.18],["1999-07",0.24,1.1],["1999-08",0.26,1.07],["1999-09",0.26,1.1],["1999-10",0.25,1.09],["1999-11",0.17,0.8],["1999-12",0.18,0.92],["2000-01",0.22,1.16],["2000-02",-0.09,0.79],["2000-03",-0.27,0.4],["2000-04",-0.41,0.17],["2000-05",-0.37,0.45],["2000-06",-0.38,0.24],["2000-07",-0.29,-0.09],["2000-08",-0.4,-0.45],["2000-09",-0.28,-0.38],["2000-10",-0.17,-0.55],["2000-11",-0.16,-0.64],["2000-12",-0.11,-0.7],["2001-01",0.4,-0.13],["2001-02",0.44,0.09],["2001-03",0.55,0.35],["2001-04",0.91,1.17],["2001-05",1.13,1.69],["2001-06",1.2,1.71],["2001-07",1.2,1.65],["2001-08",1.21,1.53],["2001-09",1.61,2.04],["2001-10",1.84,2.37],["2001-11",1.87,2.74],["2001-12",1.98,3.37],["2002-01",2.01,3.36],["2002-02",1.89,3.15],["2002-03",1.72,3.45],["2002-04",1.79,3.46],["2002-05",1.9,3.4],["2002-06",1.94,3.2],["2002-07",2.09,2.94],["2002-08",2.13,2.61],["2002-09",1.87,2.21],["2002-10",2.03,2.33],["2002-11",2.13,2.8],["2002-12",2.19,2.82],["2003-01",2.31,2.86],["2003-02",2.27,2.71],["2003-03",2.24,2.66],["2003-04",2.34,2.81],["2003-05",2.15,2.48],["2003-06",2.1,2.39],["2003-07",2.51,3.06],["2003-08",2.59,3.48],["2003-09",2.56,3.31],["2003-10",2.54,3.35],["2003-11",2.37,3.35],["2003-12",2.36,3.36],["2004-01",2.39,3.25],["2004-02",2.34,3.14],["2004-03",2.25,2.88],["2004-04",2.28,3.39],["2004-05",2.19,3.68],["2004-06",1.97,3.44],["2004-07",1.86,3.14],["2004-08",1.77,2.78],["2004-09",1.6,2.45],["2004-10",1.52,2.31],["2004-11",1.34,2.08],["2004-12",1.22,2.01],["2005-01",1.0,1.85],["2005-02",0.79,1.59],["2005-03",0.77,1.7],["2005-04",0.69,1.5],["2005-05",0.5,1.24],["2005-06",0.36,0.96],["2005-07",0.31,0.89],["2005-08",0.22,0.74],["2005-09",0.25,0.71],["2005-10",0.19,0.67],["2005-11",0.12,0.57],["2005-12",0.07,0.5],["2006-01",0.02,0.08],["2006-02",-0.1,0.03],["2006-03",-0.01,0.09],["2006-04",0.1,0.27],["2006-05",0.14,0.27],["2006-06",-0.01,0.19],["2006-07",-0.03,0.01],["2006-08",-0.02,-0.21],["2006-09",-0.05,-0.21],["2006-10",-0.07,-0.32],["2006-11",-0.14,-0.47],["2006-12",-0.11,-0.41],["2007-01",-0.12,-0.35],["2007-02",-0.13,-0.44],["2007-03",-0.01,-0.52],["2007-04",0.02,-0.32],["2007-05",-0.02,-0.12],["2007-06",0.12,0.36],["2007-07",0.18,0.04],["2007-08",0.36,0.35],["2007-09",0.51,0.53],["2007-10",0.56,0.53],["2007-11",0.81,0.8],["2007-12",0.98,1.03],["2008-01",1.26,0.92],["2008-02",1.77,1.57],["2008-03",1.89,2.23],["2008-04",1.63,2.37],["2008-05",1.43,2.12],["2008-06",1.33,2.21],["2008-07",1.44,2.35],["2008-08",1.47,2.14],["2008-09",1.61,2.54],["2008-10",2.2,3.12],["2008-11",2.32,3.34],["2008-12",1.6,2.39],["2009-01",1.71,2.39],["2009-02",1.89,2.57],["2009-03",1.89,2.6],["2009-04",2.0,2.77],["2009-05",2.36,3.11],["2009-06",2.54,3.54],["2009-07",2.54,3.38],["2009-08",2.47,3.42],["2009-09",2.44,3.28],["2009-10",2.44,3.32],["2009-11",2.6,3.35],["2009-12",2.72,3.54],["2010-01",2.8,3.67],["2010-02",2.83,3.58],["2010-03",2.77,3.58],["2010-04",2.79,3.69],["2010-05",2.59,3.26],["2010-06",2.48,3.08],["2010-07",2.39,2.85],["2010-08",2.18,2.54],["2010-09",2.17,2.5],["2010-10",2.16,2.41],["2010-11",2.31,2.62],["2010-12",2.67,3.15],["2011-01",2.78,3.24],["2011-02",2.81,3.45],["2011-03",2.71,3.31],["2011-04",2.73,3.4],["2011-05",2.61,3.13],["2011-06",2.59,2.96],["2011-07",2.59,2.96],["2011-08",2.07,2.28],["2011-09",1.77,1.97],["2011-10",1.87,2.13],["2011-11",1.76,2.0],["2011-12",1.72,1.97],["2012-01",1.73,1.94],["2012-02",1.69,1.88],["2012-03",1.83,2.09],["2012-04",1.76,1.97],["2012-05",1.51,1.71],["2012-06",1.33,1.53],["2012-07",1.28,1.43],["2012-08",1.41,1.58],["2012-09",1.46,1.61],["2012-10",1.47,1.65],["2012-11",1.38,1.56],["2012-12",1.46,1.65],["2013-01",1.64,1.84],["2013-02",1.71,1.88],["2013-03",1.7,1.87],["2013-04",1.53,1.7],["2013-05",1.68,1.89],["2013-06",1.97,2.25],["2013-07",2.24,2.54],["2013-08",2.38,2.7],["2013-09",2.41,2.79],["2013-10",2.28,2.57],["2013-11",2.42,2.65],["2013-12",2.56,2.83],["2014-01",2.47,2.82],["2014-02",2.38,2.66],["2014-03",2.32,2.67],["2014-04",2.29,2.68],["2014-05",2.17,2.53],["2014-06",2.15,2.56],["2014-07",2.03,2.51],["2014-08",1.95,2.39],["2014-09",1.96,2.51],["2014-10",1.85,2.28],["2014-11",1.8,2.31],["2014-12",1.57,2.18],["2015-01",1.33,1.85],["2015-02",1.36,1.96],["2015-03",1.4,2.01],["2015-04",1.4,1.92],["2015-05",1.59,2.18],["2015-06",1.67,2.34],["2015-07",1.65,2.29],["2015-08",1.47,2.1],["2015-09",1.46,2.15],["2015-10",1.43,2.05],["2015-11",1.38,2.13],["2015-12",1.26,2.01],["2016-01",1.19,1.83],["2016-02",1.05,1.47],["2016-03",1.01,1.59],["2016-04",1.04,1.58],["2016-05",0.99,1.53],["2016-06",0.91,1.37],["2016-07",0.83,1.2],["2016-08",0.82,1.26],["2016-09",0.86,1.34],["2016-10",0.92,1.43],["2016-11",1.16,1.69],["2016-12",1.29,1.98],["2017-01",1.22,1.91],["2017-02",1.22,1.89],["2017-03",1.17,1.73],["2017-04",1.06,1.49],["2017-05",1.0,1.4],["2017-06",0.85,1.19],["2017-07",0.95,1.23],["2017-08",0.87,1.18],["2017-09",0.82,1.15],["2017-10",0.81,1.27],["2017-11",0.65,1.1],["2017-12",0.56,1.06],["2018-01",0.55,1.15],["2018-02",0.68,1.27],["2018-03",0.56,1.11],["2018-04",0.49,1.08],["2018-05",0.47,1.08],["2018-06",0.38,0.97],["2018-07",0.28,0.9],["2018-08",0.25,0.82],["2018-09",0.23,0.83],["2018-10",0.29,0.86],["2018-11",0.26,0.75],["2018-12",0.15,0.42],["2019-01",0.17,0.29],["2019-02",0.18,0.24],["2019-03",0.16,0.12],["2019-04",0.19,0.1],["2019-05",0.19,0.0],["2019-06",0.26,-0.15],["2019-07",0.22,-0.09],["2019-08",0.06,-0.36],["2019-09",0.05,-0.23],["2019-10",0.16,0.03],["2019-11",0.2,0.24],["2019-12",0.25,0.29],["2020-01",0.24,0.21],["2020-02",0.17,-0.04],["2020-03",0.42,0.57],["2020-04",0.44,0.52],["2020-05",0.5,0.54],["2020-06",0.54,0.57],["2020-07",0.47,0.49],["2020-08",0.51,0.55],["2020-09",0.55,0.57],["2020-10",0.64,0.69],["2020-11",0.7,0.78],["2020-12",0.79,0.84],["2021-01",0.95,1.0],["2021-02",1.14,1.22],["2021-03",1.46,1.58],["2021-04",1.48,1.62],["2021-05",1.46,1.6],["2021-06",1.32,1.48],["2021-07",1.1,1.27],["2021-08",1.06,1.23],["2021-09",1.13,1.33],["2021-10",1.19,1.53],["2021-11",1.05,1.51],["2021-12",0.79,1.41],["2022-01",0.78,1.61],["2022-02",0.49,1.62],["2022-03",0.22,1.68],["2022-04",0.21,1.99],["2022-05",0.28,1.91],["2022-06",0.14,1.6],["2022-07",-0.14,0.6],["2022-08",-0.35,0.18],["2022-09",-0.34,0.3],["2022-10",-0.4,0.11],["2022-11",-0.61,-0.43],["2022-12",-0.67,-0.74],["2023-01",-0.68,-1.16],["2023-02",-0.78,-1.04],["2023-03",-0.64,-1.2],["2023-04",-0.56,-1.61],["2023-05",-0.56,-1.74],["2023-06",-0.89,-1.67],["2023-07",-0.93,-1.59],["2023-08",-0.73,-1.39],["2023-09",-0.64,-1.18],["2023-10",-0.27,-0.8],["2023-11",-0.38,-1.02],["2023-12",-0.44,-1.42],["2024-01",-0.26,-1.39],["2024-02",-0.33,-1.23],["2024-03",-0.38,-1.26],["2024-04",-0.33,-0.9],["2024-05",-0.38,-0.98],["2024-06",-0.43,-1.2],["2024-07",-0.25,-1.18],["2024-08",-0.1,-1.43],["2024-09",0.1,-1.2],["2024-10",0.13,-0.62],["2024-11",0.1,-0.26],["2024-12",0.16,0.0],["2025-01",0.36,0.29],["2025-02",0.24,0.12],["2025-03",0.31,-0.06],["2025-04",0.5,-0.04],["2025-05",0.5,0.06],["2025-06",0.49,-0.04],["2025-07",0.51,-0.02],["2025-08",0.56,-0.04],["2025-09",0.55,0.05],["2025-10",0.54,0.08],["2025-11",0.54,0.15],["2025-12",0.64,0.46]];
+
+// NBER official U.S. recession dates falling within this chart's window.
+const RECESSIONS = [
+  { start: "2001-03", end: "2001-11", label: "Dot-com recession" },
+  { start: "2007-12", end: "2009-06", label: "Global Financial Crisis" },
+  { start: "2020-02", end: "2020-04", label: "COVID-19 recession" },
+];
+
+// 2s10s inversion episodes (contiguous months with spread < 0), identified
+// directly from CURVE_MONTHLY above, paired against the NBER recession (if
+// any) that followed.
+const INVERSION_EPISODES = [
+  { start: "1998-06", end: "1998-06", months: 1, nextRecession: null, note: "LTCM/Russia crisis — one-month blip, no recession followed" },
+  { start: "2000-02", end: "2000-12", months: 11, nextRecession: "2001-03", note: null },
+  { start: "2006-02", end: "2006-03", months: 2, nextRecession: "2007-12", note: "First of two 2006 inversions ahead of the GFC" },
+  { start: "2006-06", end: "2007-03", months: 10, nextRecession: "2007-12", note: null },
+  { start: "2007-05", end: "2007-05", months: 1, nextRecession: "2007-12", note: null },
+  { start: "2022-07", end: "2024-08", months: 25, nextRecession: null, note: "Longest 2s10s inversion on record — no NBER recession dated as of the latest data here" },
+];
+
+// Year-end ACM 10-year term premium and ACM-model-fitted 10-year yield,
+// 1994-2025, from the NY Fed's published ACM Term Premium model
+// (Adrian, Crump & Moench 2013). Rate-expectations component = fitted
+// yield minus term premium.
+const TERM_PREMIUM = [[1994,1.98,7.83],[1995,1.13,5.68],[1996,1.5,6.43],[1997,0.85,5.77],[1998,0.78,4.99],[1999,1.78,6.72],[2000,0.78,5.34],[2001,2.39,5.5],[2002,2.24,4.23],[2003,2.34,4.54],[2004,1.34,4.39],[2005,0.23,4.43],[2006,0.3,4.74],[2007,1.24,4.31],[2008,1.47,2.9],[2009,2.55,4.2],[2010,2.14,3.55],[2011,0.6,1.97],[2012,0.4,1.78],[2013,1.87,3.23],[2014,0.04,2.24],[2015,0.11,2.38],[2016,0.19,2.56],[2017,-0.47,2.44],[2018,-0.53,2.7],[2019,-0.78,1.95],[2020,-0.8,0.92],[2021,-0.67,1.59],[2022,-0.57,3.85],[2023,-0.34,3.91],[2024,0.48,4.59],[2025,0.75,4.24]];
+
+// Year-end 2s10s spread and S&P 500 levels, 1994-2025 (spread from
+// CURVE_MONTHLY's December rows; S&P levels are the same Damodaran
+// series used on the Implied ERP page).
+const SP500_LEVELS = {
+  1994: 459.27, 1995: 615.93, 1996: 740.74, 1997: 970.43, 1998: 1229.23,
+  1999: 1469.25, 2000: 1320.28, 2001: 1148.09, 2002: 879.82, 2003: 1111.91,
+  2004: 1211.92, 2005: 1248.29, 2006: 1418.3, 2007: 1468.36, 2008: 903.25,
+  2009: 1115.1, 2010: 1257.64, 2011: 1257.6, 2012: 1426.19, 2013: 1848.36,
+  2014: 2058.9, 2015: 2043.94, 2016: 2238.83, 2017: 2673.61, 2018: 2506.85,
+  2019: 3230.78, 2020: 3756.07, 2021: 4766.18, 2022: 3839.5, 2023: 4769.83,
+  2024: 5881.63, 2025: 6845.5,
+};
+
+function sp500Return(year){
+ const cur = SP500_LEVELS[year], prior = SP500_LEVELS[year - 1];
+ if(cur === undefined || prior === undefined) return null;
+ return Math.round(((cur - prior) / prior) * 1000) / 10;
+}
+
+function yearEndSpread(year){
+ const row = CURVE_MONTHLY.find(r => r[0] === year + "-12");
+ return row ? row[1] : null;
+}
+
+// Same OLS + t-test apparatus as the Implied ERP and IPO Activity pages,
+// reused here for consistency across the site.
+function linearRegression(xs, ys){
+ const n = xs.length;
+ const mx = xs.reduce((a, b) => a + b, 0) / n;
+ const my = ys.reduce((a, b) => a + b, 0) / n;
+ const sxx = xs.reduce((s, x) => s + (x - mx) ** 2, 0);
+ const sxy = xs.reduce((s, x, i) => s + (x - mx) * (ys[i] - my), 0);
+ const syy = ys.reduce((s, y) => s + (y - my) ** 2, 0);
+ const slope = sxy / sxx;
+ const intercept = my - slope * mx;
+ const r = sxy / Math.sqrt(sxx * syy);
+ const r2 = r * r;
+ const dof = n - 2;
+ const sse = ys.reduce((s, y, i) => s + (y - (intercept + slope * xs[i])) ** 2, 0);
+ const seSlope = Math.sqrt((sse / dof) / sxx);
+ const t = slope / seSlope;
+ const p = 2 * (1 - normalCdf(Math.abs(t)));
+ return { n, slope, intercept, r, r2, t, dof, p };
+}
+
+function normalCdf(x){ return 0.5 * (1 + erf(x / Math.SQRT2)); }
+
+function erf(x){
+ const sign = x < 0 ? -1 : 1;
+ x = Math.abs(x);
+ const a1 = 0.254829592, a2 = -0.284496736, a3 = 1.421413741, a4 = -1.453152027, a5 = 1.061405429, p = 0.3275911;
+ const t = 1 / (1 + p * x);
+ const y = 1 - (((((a5 * t + a4) * t) + a3) * t + a2) * t + a1) * t * Math.exp(-x * x);
+ return sign * y;
+}
+
+function rankArray(arr){
+ const idx = arr.map((v, i) => i).sort((a, b) => arr[a] - arr[b]);
+ const ranks = new Array(arr.length);
+ let i = 0;
+ while(i < idx.length){
+  let j = i;
+  while(j + 1 < idx.length && arr[idx[j + 1]] === arr[idx[i]]) j++;
+  const avgRank = (i + j) / 2 + 1;
+  for(let k = i; k <= j; k++) ranks[idx[k]] = avgRank;
+  i = j + 1;
+ }
+ return ranks;
+}
+
+function spearmanRegression(xs, ys){ return linearRegression(rankArray(xs), rankArray(ys)); }
+
+function jackknifeTrim(points){
+ const xs = points.map(p => p.x), ys = points.map(p => p.y);
+ const full = linearRegression(xs, ys);
+ let maxShift = -1, influentialIdx = -1;
+ for(let i = 0; i < points.length; i++){
+  const xs2 = xs.filter((_, j) => j !== i);
+  const ys2 = ys.filter((_, j) => j !== i);
+  const reg = linearRegression(xs2, ys2);
+  const shift = Math.abs(reg.r - full.r);
+  if(shift > maxShift){ maxShift = shift; influentialIdx = i; }
+ }
+ const trimmedXs = xs.filter((_, j) => j !== influentialIdx);
+ const trimmedYs = ys.filter((_, j) => j !== influentialIdx);
+ const trimmed = linearRegression(trimmedXs, trimmedYs);
+ return { ...trimmed, removedPoint: points[influentialIdx] };
+}
+
+function renderMethodTable(containerElId, points){
+ const xs = points.map(p => p.x), ys = points.map(p => p.y);
+ const pearson = linearRegression(xs, ys);
+ const spear = spearmanRegression(xs, ys);
+ const trimmed = jackknifeTrim(points);
+
+ function row(label, stats){
+  const sig = stats.p < 0.05;
+  return `<tr>` +
+   `<td>${label}</td>` +
+   `<td>${stats.n}</td>` +
+   `<td>${stats.r.toFixed(2)}</td>` +
+   `<td>${(stats.r2 * 100).toFixed(1)}%</td>` +
+   `<td>${stats.slope >= 0 ? "+" : ""}${stats.slope.toFixed(2)}</td>` +
+   `<td>${stats.t.toFixed(2)}</td>` +
+   `<td class="${sig ? "sig" : ""}">${stats.p < 0.001 ? "<0.001" : stats.p.toFixed(3)}</td>` +
+  `</tr>`;
+ }
+
+ document.getElementById(containerElId).innerHTML =
+  `<table class="method-table">` +
+   `<thead><tr><th>Method</th><th>n</th><th>r</th><th>r&sup2;</th><th>slope</th><th>t</th><th>p</th></tr></thead>` +
+   `<tbody>` +
+    row("Pearson (OLS)", pearson) +
+    row("Spearman (&rho;)", spear) +
+    row("Jackknife", trimmed) +
+   `</tbody>` +
+  `</table>` +
+  `<div class="method-note">Jackknife removed: ${trimmed.removedPoint.sourceYear}&rarr;${trimmed.removedPoint.sourceYear + 1} (x=${trimmed.removedPoint.x.toFixed(2)}, next-yr return ${trimmed.removedPoint.y >= 0 ? "+" : ""}${trimmed.removedPoint.y.toFixed(1)}%)</div>`;
+}
+
+function themeInkColor(){
+ const v = getComputedStyle(document.documentElement).getPropertyValue("--ink").trim();
+ return v || "#eae6da";
+}
+
+function renderScatter(canvasId, points, stats, pointColor, xLabel){
+ const xs = points.map(p => p.x);
+ const xMin = Math.min(...xs), xMax = Math.max(...xs);
+ const linePoints = [
+  { x: xMin, y: stats.intercept + stats.slope * xMin },
+  { x: xMax, y: stats.intercept + stats.slope * xMax },
+ ];
+
+ const ctx = document.getElementById(canvasId).getContext("2d");
+ new Chart(ctx, {
+  type: "scatter",
+  data: {
+   datasets: [
+    { label: "Years", data: points, backgroundColor: pointColor, pointRadius: 4, showLine: false },
+    { label: "Regression fit", type: "line", data: linePoints, borderColor: themeInkColor(), borderWidth: 1.5, borderDash: [4, 3], pointRadius: 0, fill: false },
+   ],
+  },
+  options: {
+   responsive: true,
+   maintainAspectRatio: false,
+   plugins: {
+    legend: { display: false },
+    tooltip: {
+     callbacks: {
+      label: ctx => ctx.dataset.label === "Years"
+       ? `${ctx.raw.sourceYear}→${ctx.raw.sourceYear + 1}: ${xLabel} ${ctx.raw.x.toFixed(2)}, next-yr return ${ctx.raw.y.toFixed(1)}%`
+       : null,
+     },
+    },
+   },
+   scales: {
+    x: { title: { display: true, text: xLabel, color: "#8b9199" }, ticks: { color: "#8b9199" }, grid: { color: "#2b3138" } },
+    y: { title: { display: true, text: "Next-year S&P 500 return (%)", color: "#8b9199" }, ticks: { color: "#8b9199" }, grid: { color: "#2b3138" } },
+   },
+  },
+ });
+}
+
+// Recession-shading plugin: draws a translucent vertical band behind the
+// chart for each entry in RECESSIONS whose range overlaps the visible
+// x-axis labels.
+const recessionShading = {
+ id: "recessionShading",
+ beforeDraw(chart){
+  const { ctx, chartArea, scales } = chart;
+  if(!chartArea) return;
+  const labels = chart.data.labels;
+  ctx.save();
+  ctx.fillStyle = "rgba(139,111,172,0.18)";
+  RECESSIONS.forEach(r => {
+   const startIdx = labels.indexOf(r.start);
+   const endIdx = labels.indexOf(r.end);
+   if(startIdx === -1 || endIdx === -1) return;
+   const x1 = scales.x.getPixelForValue(startIdx);
+   const x2 = scales.x.getPixelForValue(endIdx);
+   ctx.fillRect(x1, chartArea.top, Math.max(x2 - x1, 2), chartArea.bottom - chartArea.top);
+  });
+  ctx.restore();
+ },
+};
+
+function renderInversionTable(){
+ const rows = INVERSION_EPISODES.map(ep => {
+  let leadTime = "—", result = "—", resultClass = "";
+  if(ep.nextRecession){
+   const [sy, sm] = ep.start.split("-").map(Number);
+   const [ry, rm] = ep.nextRecession.split("-").map(Number);
+   leadTime = ((ry - sy) * 12 + (rm - sm)) + " mo.";
+   result = "Hit";
+   resultClass = "hit";
+  } else {
+   result = ep.end >= "2022" ? "Pending / no recession yet" : "False positive";
+   resultClass = "miss";
+  }
+  const duration = ep.months + (ep.months === 1 ? " month" : " months");
+  return `<tr>` +
+   `<td>${ep.start}${ep.start === ep.end ? "" : " to " + ep.end}</td>` +
+   `<td>${duration}</td>` +
+   `<td>${ep.nextRecession ? RECESSIONS.find(r => r.start === ep.nextRecession).label + " (" + ep.nextRecession + ")" : (ep.note || "—")}</td>` +
+   `<td>${leadTime}</td>` +
+   `<td class="${resultClass}">${result}</td>` +
+  `</tr>`;
+ }).join("");
+ document.getElementById("inversionTable").innerHTML = rows;
+}
+
+function init(){
+ const latest = CURVE_MONTHLY[CURVE_MONTHLY.length - 1];
+ const prior2s10s = CURVE_MONTHLY[CURVE_MONTHLY.length - 13]; // ~12 months earlier
+ document.getElementById("stat2s10s").textContent = (latest[1] >= 0 ? "+" : "") + latest[1].toFixed(2) + "%";
+ document.getElementById("stat2s10sNote").textContent = "As of " + latest[0] + (prior2s10s ? " (" + (latest[1] - prior2s10s[1] >= 0 ? "+" : "") + (latest[1] - prior2s10s[1]).toFixed(2) + " pts YoY)" : "");
+ document.getElementById("stat3m10y").textContent = (latest[2] >= 0 ? "+" : "") + latest[2].toFixed(2) + "%";
+ const latestTP = TERM_PREMIUM[TERM_PREMIUM.length - 1];
+ document.getElementById("statTP").textContent = (latestTP[1] >= 0 ? "+" : "") + latestTP[1].toFixed(2) + "%";
+
+ renderInversionTable();
+
+ // Main spread chart with recession shading.
+ const labels = CURVE_MONTHLY.map(r => r[0]);
+ const ctx1 = document.getElementById("curveChart").getContext("2d");
+ new Chart(ctx1, {
+  type: "line",
+  data: {
+   labels,
+   datasets: [
+    { label: "2s10s Spread", data: CURVE_MONTHLY.map(r => r[1]), borderColor: "#d98a3d", backgroundColor: "#d98a3d", borderWidth: 1.75, pointRadius: 0, fill: false },
+    { label: "3-Month/10-Year Spread", data: CURVE_MONTHLY.map(r => r[2]), borderColor: "#6f8fac", backgroundColor: "#6f8fac", borderWidth: 1.75, pointRadius: 0, fill: false },
+    { label: "Zero", data: CURVE_MONTHLY.map(() => 0), borderColor: themeInkColor(), borderWidth: 1, borderDash: [2, 3], pointRadius: 0, fill: false },
+   ],
+  },
+  options: {
+   responsive: true,
+   maintainAspectRatio: false,
+   interaction: { mode: "index", intersect: false },
+   plugins: {
+    legend: { display: false },
+    tooltip: {
+     filter: item => item.dataset.label !== "Zero",
+     callbacks: { label: ctx => ctx.dataset.label + ": " + ctx.parsed.y.toFixed(2) + "%" },
+    },
+   },
+   scales: {
+    x: { ticks: { color: "#8b9199", maxTicksLimit: 12, callback: (v, i) => labels[i].endsWith("-01") || i === 0 || i === labels.length - 1 ? labels[i].slice(0, 4) : "" }, grid: { color: "#2b3138" } },
+    y: { ticks: { color: "#8b9199", callback: v => v + "%" }, grid: { color: "#2b3138" } },
+   },
+  },
+  plugins: [recessionShading],
+ });
+
+ // Term premium decomposition chart (annual, year-end).
+ const tpLabels = TERM_PREMIUM.map(r => String(r[0]));
+ const ctx2 = document.getElementById("tpChart").getContext("2d");
+ new Chart(ctx2, {
+  type: "bar",
+  data: {
+   labels: tpLabels,
+   datasets: [
+    { type: "bar", label: "Rate-Expectations Component", data: TERM_PREMIUM.map(r => Math.round((r[2] - r[1]) * 100) / 100), backgroundColor: "rgba(111,143,172,0.65)", stack: "s" },
+    { type: "bar", label: "Term Premium", data: TERM_PREMIUM.map(r => r[1]), backgroundColor: "rgba(139,111,172,0.75)", stack: "s" },
+   ],
+  },
+  options: {
+   responsive: true,
+   maintainAspectRatio: false,
+   interaction: { mode: "index", intersect: false },
+   plugins: {
+    legend: { display: false },
+    tooltip: { callbacks: { label: ctx => ctx.dataset.label + ": " + ctx.parsed.y.toFixed(2) + "%" } },
+   },
+   scales: {
+    x: { stacked: true, ticks: { color: "#8b9199", maxTicksLimit: 12 }, grid: { color: "#2b3138" } },
+    y: { stacked: true, ticks: { color: "#8b9199", callback: v => v + "%" }, grid: { color: "#2b3138" } },
+   },
+  },
+ });
+
+ // Scatter 1: year-end 2s10s spread vs. next year's S&P 500 return.
+ const spreadPoints = [];
+ for(let y = 1994; y <= 2024; y++){
+  const spread = yearEndSpread(y);
+  const nextReturn = sp500Return(y + 1);
+  if(spread === null || nextReturn === null) continue;
+  spreadPoints.push({ x: spread, y: nextReturn, sourceYear: y });
+ }
+ const spreadStats = linearRegression(spreadPoints.map(p => p.x), spreadPoints.map(p => p.y));
+ renderScatter("scatterSpread", spreadPoints, spreadStats, "rgba(217,138,61,0.75)", "2s10s spread (%)");
+ renderMethodTable("tableSpread", spreadPoints);
+
+ // Scatter 2: year-end ACM term premium vs. next year's S&P 500 return.
+ const tpPoints = [];
+ TERM_PREMIUM.forEach(r => {
+  const [year, tp] = r;
+  const nextReturn = sp500Return(year + 1);
+  if(nextReturn === null) return;
+  tpPoints.push({ x: tp, y: nextReturn, sourceYear: year });
+ });
+ const tpStats = linearRegression(tpPoints.map(p => p.x), tpPoints.map(p => p.y));
+ renderScatter("scatterTP", tpPoints, tpStats, "rgba(139,111,172,0.75)", "10Y term premium (%)");
+ renderMethodTable("tableTP", tpPoints);
+}
+
+init();
+</script>
+
+</body>
+</html>
