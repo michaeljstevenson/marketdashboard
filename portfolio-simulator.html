@@ -667,7 +667,6 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 </div>
 
 <div class="explainer">
-<h2><strong>About</strong></h2>
 <p>This simulation uses a historical bootstrap where for each simulated year, one actual year's return is randomly drawn (with replacement) from historical S&amp;P 500 and 10-year Treasury bond annual returns (1928&ndash;2025), blending the two according to specified equity/fixed income allocation. Simulating 1,500 trials produces a distribution of plausible outcomes shaped by history's actual mix of market environments rather than a distribution that assumes returns are smoothly and independently random.</p>
 <p>Each trial applies specified annual contributions during accumulation years, and switches to specified annual withdrawals for the remaining years of the specified time horizon. Success rate is the percentage of trials that never hit a $0 balance during the withdrawal phase. Ending balances are shown in both nominal (future) dollars and in real (current) dollars, discounted back by the specified assumed inflation rate compounded over the time horizon.</p>
 <p>The chart plots the sample of individual simulated trials, colored by outcome: green trials which never hit zero during the withdrawal phase, and red trials which were depleted. The bolded line is the median trial. </p>

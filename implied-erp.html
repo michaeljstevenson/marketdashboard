@@ -528,7 +528,7 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <div class="header">
 <div>
 <h1>Implied Equity Risk Premium</h1>
-<div class="subtitle">The market-implied compensation investors demand for holding equities over risk-free bonds, derived from current S&amp;P 500 prices and expected future cash flows — a forward-looking alternative to using historical average returns.</div>
+<div class="subtitle">The market-implied compensation that investors demand for holding equities over &quot;risk-free&quot; bonds, derived from current S&amp;P 500 prices and expected future cash flows. A forward-looking alternative to using historical average returns.</div>
 </div>
 <div class="updated" id="updated">Annual, updated each January</div>
 </div>
@@ -556,7 +556,7 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <div class="chart-legend-custom">
 <span><i class="swatch swatch-erp"></i>Implied ERP</span>
 <span><i class="swatch swatch-bond"></i>10-Year T.Bond Rate</span>
-<span><i class="swatch swatch-return"></i>S&amp;P 500 Realized Return (that year)</span>
+<span><i class="swatch swatch-return"></i>S&amp;P 500 Realized Return</span>
 <span><i class="swatch swatch-expected"></i>Implied Expected Equity Return</span>
 </div>
 <div class="chart-canvas-wrap">
@@ -566,7 +566,7 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 
 <div class="scatter-grid">
 <div class="scatter-box">
-<h3>Same year: ERP vs. that year's return</h3>
+<h3>Same year: ERP vs. S&amp;P 500</h3>
 <div class="scatter-sub">Implied ERP (x) vs. S&amp;P 500 realized return, same calendar year (y)</div>
 <div class="scatter-canvas-wrap">
 <canvas id="scatterSameYear"></canvas>
@@ -574,7 +574,7 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <div id="tableSameYear"></div>
 </div>
 <div class="scatter-box">
-<h3>Predictive: ERP vs. next year's return</h3>
+<h3>Predictive: ERP vs. S&amp;P 500 (following calendar year)</h3>
 <div class="scatter-sub">Implied ERP (x) vs. S&amp;P 500 realized return, following calendar year (y)</div>
 <div class="scatter-canvas-wrap">
 <canvas id="scatterPredictive"></canvas>
@@ -585,17 +585,16 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 
 <div class="explainer">
 <h2>Is the implied ERP a statistically significant predictor?</h2>
-<p>These two scatter plots test two different questions, and the distinction matters. The left plot asks whether a given year's implied ERP relates to <em>that same year's</em> realized return — but that relationship is mostly mechanical, not predictive: the implied ERP for a year is calculated <em>from that year's own year-end price</em>, so a year that ends with a falling market mechanically produces a higher year-end ERP for the same year (lower price, same expected cash flows, means a higher discount rate solves the valuation equation). A negative same-year correlation is close to what the math guarantees, not evidence the model forecasts anything.</p>
-<p>The right plot is the real test: does a given year's implied ERP predict <em>the following</em> year's return, the way the risk-compensation theory behind it would imply (a higher premium should mean investors are being paid more to hold stocks, and should on average realize a higher subsequent return)? Here the relationship runs in the theoretically correct direction — higher ERP is associated with a higher next-year return — and lands right at the conventional 5% significance threshold. But the R² is only about 6%: even taking the relationship at face value, the implied ERP explains a small fraction of next year's return, with most of the year-to-year variation coming from something else entirely.</p>
-<p><strong>Caveats on the significance itself:</strong> this is 63-64 annual observations — a small sample by statistical standards, which limits how much confidence any single p-value deserves. Three related relationships were tested on the same dataset (same-year, predictive, and implied-expected-return-vs-next-year in the earlier chat analysis); testing multiple hypotheses on one dataset raises the odds that at least one clears a 5% threshold by chance, an effect these p-values don't correct for. The p-values themselves come from a standard t-test assuming independent errors year to year — annual valuation-based series like this one often show some autocorrelation (a high-ERP year tends to be followed by other high-ERP years), which if present would overstate significance. None of this means the relationship is fake; it means "right at p≈0.05 with R²≈6%" is a genuinely weak, borderline result, not a strong or conclusive one — consistent with a broad academic literature finding that valuation-based predictors (dividend yield, CAPE, implied ERP) have some real but modest power to forecast long-run returns, and very little power over any single year.</p>
+<p>The left plot asks whether a given year's implied equity risk premium relates to that same year's realized return. The relationship between ERP and same year returns isn't as predictive as it is mechanical. The implied ERP is calculated from that year's year-end price, so a year that ends with a falling market mechanically produces a higher year-end ERP.</p>
+<p>The right plot is the real test. Does a given year's implied ERP predict the following year's return? Risk-compensation theory (a higher ERP implies investors are being paid more to hold stocks, and should on average realize a higher future return) says it should. Upon testing, the relationship runs in the correct direction (higher ERP associated with higher next-year returns) and lands right at the conventional 5% significance threshold. However, the R² is only about 6%, which reinforces that the implied ERP explains just a small fraction of next year's returns. Most of the year-to-year variation comes from something else entirely.</p>
+<p><strong>Caveats on the significance itself:</strong> This is 63-64 annual observations which is a small sample by statistical standards. That said, the confidence of any single p-value is limited. The p-values themselves come from a standard t-test assuming independent errors year to year. Annual valuation-based series like this one often show autocorrelation which could overstate significance.</p>
 </div>
 
 <div class="explainer">
 <h2>How to read this</h2>
-<p>The implied equity risk premium answers a different question than a historical-average ERP does: instead of asking "what did stocks beat bonds by in the past," it asks "given where the S&amp;P 500 is priced today, and what cash flows (dividends and buybacks) investors expect going forward, what rate of return is priced in — and how much of that is compensation for risk above the risk-free rate?" It's the equity-market equivalent of a bond's yield to maturity: an internal rate of return solved for from the current price and expected cash flows, not a backward-looking average.</p>
-<p>A rising implied ERP means investors are demanding more compensation to hold stocks relative to bonds — often a sign of rising risk aversion or falling confidence, even if the index price itself hasn't moved much (a higher premium can be priced in through slower expected cash flow growth). A falling ERP means the market is pricing in more optimism, or complacency, per dollar of risk. The <strong>implied expected equity return</strong> (ERP + the risk-free rate) is the total forward-looking return the market is pricing into stocks today — useful as a sanity check against portfolio return assumptions (like the ones in the <a href="/portfolio-simulator.html">Portfolio Simulator</a>).</p>
-<p>The bars add what actually happened: the S&amp;P 500's realized return for that same year, so you can see directly how often — and by how much — the market's forward-looking premium missed the outcome. The gap runs both ways: 2008's implied ERP rose to a then-record 6.43% heading into a year the index fell 38.5%, while 2013's modest 4.96% implied ERP preceded a 29.6% realized gain. The implied ERP isn't a forecast of that year's return — it's priced off long-run expected cash flows and typically resolves over many years, not one — so a wide single-year gap isn't itself evidence the model is wrong, but the persistent gap between the smooth premium and the noisy outcome is the point: realized returns are dominated by short-run sentiment and macro shocks the model doesn't try to capture.</p>
-<p><strong>Limitations:</strong> this is a model-based estimate, not an observed market price — it depends on assumptions about future cash flow growth and payout (dividends + buybacks) that Damodaran documents but that reasonable analysts could set differently. It's also annual data, updated once a year each January, not a live daily series. The realized-return bars are <strong>price return only</strong> (year-end index level to year-end index level) — they exclude the S&amp;P 500's dividend yield (historically ~1.5-2%/year), so total return in any given year was somewhat higher than the bar shown.</p>
+<p>Given where the S&amp;P 500 is priced today and the cash flows that investors expect to receive in the future, what rate of return is "priced in" and how much of that is compensation for risk above the risk-free rate? The implied ERP is the equity market equivalent of a bond's YTM. An internal rate of return solved for from the current price and expected cash flows.</p>
+<p>A rising implied ERP means investors are demanding more compensation to hold stocks relative to bonds. This is often a sign of falling confidence, even if equity markets haven't moved much. A falling ERP means the market is pricing in more optimism, or complacency, per dollar of risk. The <strong>implied expected equity return</strong> (ERP + risk-free rate) is the total forward-looking return the market is pricing into stocks today.</p>
+<p>Interestingly, 2008's implied ERP rose to a (record high at the time) 6.43% heading into a year the market fell 38.5%, while 2013's (modest) 4.96% implied ERP came before a 29.6% realized gain. The implied ERP is priced off long-term expected cash flows (typically over many years). All to say, realized returns are mostly driven by short-term sentiment and macro developments, which explains much of the constant gap between smooth premiums and the noisy returns (which the model doesn't factor in).</p>
 <div class="source">Source: <a href="https://pages.stern.nyu.edu/~adamodar/New_Home_Page/data.html" target="_blank" rel="noopener">Aswath Damodaran, NYU Stern — Implied Equity Risk Premiums (FCFE basis)</a></div>
 </div>
 
@@ -873,9 +872,9 @@ function init(){
  const returns = realizedReturns(ERP_DATA);
 
  document.getElementById("statErp").textContent = latest.erp.toFixed(2) + "%";
- const delta = Math.round((latest.erp - prior.erp) * 100) / 100;
+ const deltaBps = Math.round((latest.erp - prior.erp) * 100);
  document.getElementById("statErpNote").textContent =
-  "As of " + latest.year + " (" + (delta >= 0 ? "+" : "") + delta.toFixed(2) + " pts vs. " + prior.year + ")";
+  "As of " + latest.year + " (" + (deltaBps >= 0 ? "+" : "") + deltaBps + " bps vs. " + prior.year + ")";
  document.getElementById("statBond").textContent = latest.tbondRate.toFixed(2) + "%";
  document.getElementById("statExpected").textContent = (latest.erp + latest.tbondRate).toFixed(2) + "%";
 

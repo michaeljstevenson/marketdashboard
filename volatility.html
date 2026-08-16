@@ -439,7 +439,7 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <div class="header">
 <div>
 <h1>Implied vs. Realized Volatility</h1>
-<div class="subtitle">S&amp;P 500 realized volatility (20-day annualized) against the VIX's implied volatility — the gap between what's actually happened and what options traders expect.</div>
+<div class="subtitle">VIX vs. what actually happened (S&amp;P 500 realized volatility (20-day annualized)).</div>
 </div>
 <div class="updated" id="updated">Loading...</div>
 </div>
@@ -470,9 +470,8 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 </div>
 
 <div class="explainer">
-<h2>How to read this</h2>
-<p>Realized volatility measures how much the S&amp;P 500 has <em>actually</em> moved over the trailing 20 trading days — the standard deviation of daily log returns, annualized. Implied volatility (the VIX) measures what options traders are <em>pricing in</em> for the next 30 days, derived from the premiums they're willing to pay.</p>
-<p>These two usually move together, but the gap between them — the volatility risk premium — is rarely zero. Implied volatility tends to sit above realized most of the time: option sellers demand compensation for the risk they're taking on, so options are, on average, priced slightly rich relative to what volatility actually turns out to be. A widening premium can reflect rising hedging demand or anticipation of an upcoming event (an earnings season, a Fed meeting); a shrinking or negative premium — implied trading below realized — is unusual and typically shows up after a volatility spike has already passed through realized measures but options markets haven't caught up, or during periods of unusual complacency.</p>
+<p>Realized volatility measures how much the S&amp;P 500 has <em>actually</em> moved over the trailing 20 trading days (the standard deviation of daily log returns, annualized). Implied volatility (VIX) measures what options are <em>pricing in</em> for the next 30 days, derived from the premiums that options traders are willing to pay.</p>
+<p>Implied and realized volatility usually move together, but the gap between them (volatility risk premium, VRP) is rarely zero. Implied volatility tends to sit above realized. Option sellers demand compensation for the risk they're taking on, so options are on average priced relatively higher than what volatility actually turns out to be. A widening VRP can be due to rising hedging demand or anticipation of an upcoming event (earnings, Fed meetings, etc.). A falling or negative VRP (implied vol trading below realized) is unusual (typically after a volatility spike).</p>
 <div class="source">Source: <a href="https://www.alphavantage.co/" target="_blank" rel="noopener">Alpha Vantage — S&amp;P 500 Index (SPX) &amp; CBOE Volatility Index (VIX)</a></div>
 </div>
 

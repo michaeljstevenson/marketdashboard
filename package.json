@@ -1,6 +1,9 @@
 {
   "name": "market-dashboard",
   "private": true,
+  "scripts": {
+    "preview": "node scripts/preview-server.js"
+  },
   "dependencies": {
     "@netlify/blobs": "^8.1.0",
     "adm-zip": "^0.6.0"
