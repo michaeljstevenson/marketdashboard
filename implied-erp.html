@@ -70,8 +70,7 @@ document.addEventListener("DOMContentLoaded", function(){
 // Expand-to-fullscreen button on every chart, matching the pattern from
 // sites like GuruFocus: a small corner button on each chart's canvas
 // area that fullscreens the whole chart card (title, legend, controls
-// included) via the Fullscreen API, and resizes the Chart.js instance(s)
-// inside once the transition completes. Finds every <canvas> generically
+// included) via the Fullscreen API. Finds every <canvas> generically
 // rather than relying on one wrapper class name, since different pages
 // on this site use different card markup (.chart-box, .scatter-box,
 // .chart, herd-mentality tiles, etc.).
@@ -92,8 +91,13 @@ document.addEventListener("DOMContentLoaded", function(){
    || canvas.parentElement.closest("div")
    || canvas.parentElement;
  }
+ function resizeChartIn(wrap){
+  var canvas = wrap.querySelector("canvas");
+  var chart = canvas && window.Chart && Chart.getChart(canvas);
+  if(chart) chart.resize();
+ }
 
- var entries = []; // { card, wrap, wrapFlexBefore, wrapHeightBefore }
+ var entries = []; // { card, wrap }
 
  document.querySelectorAll("canvas").forEach(function(canvas){
   if(canvas.closest(".chart-fullscreen-btn")) return;
@@ -116,6 +120,22 @@ document.addEventListener("DOMContentLoaded", function(){
   });
   wrap.appendChild(btn);
   entries.push({ card: card, wrap: wrap });
+
+  // The canvas wrapper normally has a fixed pixel height (set per-page
+  // in each chart's own CSS) so it renders correctly inline, but Chart.js
+  // also writes an inline pixel width/height directly onto the <canvas>
+  // itself every time it resizes — including mid-transition, if resize()
+  // is ever called on a guessed timer before an animated fullscreen
+  // exit has actually finished. That stale inline size then overrides
+  // any CSS the container reverts to, which is what "chart stuck very
+  // wide after exiting fullscreen" actually was: a race, not a one-time
+  // layout bug. ResizeObserver removes the guesswork — it fires with
+  // the wrapper's real, settled size every time that size changes for
+  // any reason (entering fullscreen, exiting it, a plain window resize),
+  // so resize() always runs against the correct final dimensions.
+  if(window.ResizeObserver){
+   new ResizeObserver(function(){ resizeChartIn(wrap); }).observe(wrap);
+  }
  });
 
  function onFsChange(){
@@ -123,12 +143,6 @@ document.addEventListener("DOMContentLoaded", function(){
   entries.forEach(function(entry){
    var isFs = fsEl === entry.card;
    entry.card.classList.toggle("is-chart-fullscreen", isFs);
-   // The canvas wrapper normally has a fixed pixel height (set per-page
-   // in each chart's own CSS) so it renders correctly inline — in
-   // fullscreen that fixed height leaves the chart stranded in the top
-   // slice of the screen with empty space below, so stretch it to fill
-   // the fullscreened card instead, and put it back exactly as it was
-   // on exit rather than guessing at the original value.
    if(isFs){
     entry.wrap.dataset.fsPrevHeight = entry.wrap.style.height || "";
     entry.wrap.dataset.fsPrevFlex = entry.wrap.style.flex || "";
@@ -141,17 +155,11 @@ document.addEventListener("DOMContentLoaded", function(){
     entry.wrap.style.minHeight = "";
    }
   });
-  // Chart.js needs an explicit resize once the container's real size
-  // settles post-transition — a couple of short delays covers both
-  // instant (most browsers) and animated (some OS fullscreen transitions).
-  [50, 250].forEach(function(delay){
-   setTimeout(function(){
-    document.querySelectorAll("canvas").forEach(function(c){
-     var chart = window.Chart && Chart.getChart(c);
-     if(chart) chart.resize();
-    });
-   }, delay);
-  });
+  // ResizeObserver (registered per-wrap above) handles the actual
+  // resize once layout settles; this is just an immediate first pass
+  // so the chart doesn't sit visibly wrong-sized for the split second
+  // before that fires.
+  entries.forEach(function(entry){ resizeChartIn(entry.wrap); });
  }
  ["fullscreenchange", "webkitfullscreenchange", "mozfullscreenchange", "MSFullscreenChange"].forEach(function(evt){
   document.addEventListener(evt, onFsChange);
@@ -421,7 +429,7 @@ h1{
 
 .scatter-grid{
  display:grid;
- grid-template-columns:1fr 1fr;
+ grid-template-columns:minmax(0,1fr) minmax(0,1fr);
  gap:16px;
  margin-bottom:30px;
 }
