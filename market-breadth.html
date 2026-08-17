@@ -1028,9 +1028,11 @@ function renderDayChangeRange(data, rangeKey, isLive){
  }[rangeKey] || "Change %";
  document.getElementById("dayChangeAsOf").textContent = isLive
   ? "Updated " + new Date(data.generated_at_utc).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" }) +
-    " · " + rangeLabel + " · " + summary.n + " of " + summary.total + " constituents"
-  : "As of " + data.asOfDate + " (historical, via Stooq — live data starts once the scheduled jobs first run)" +
-    " · " + rangeLabel + " · " + summary.n + " of " + summary.total + " constituents";
+    " · " + rangeLabel + " · " + summary.n + " of " + summary.total + " constituents" +
+    " · Source: Stooq, AlphaVantage"
+  : "As of " + data.asOfDate +
+    " · " + rangeLabel + " · " + summary.n + " of " + summary.total + " constituents" +
+    " · Source: Stooq, AlphaVantage";
  document.getElementById("dcMedian").textContent = (summary.median >= 0 ? "+" : "") + summary.median.toFixed(2) + "%";
  document.getElementById("dcMean").textContent = (summary.mean >= 0 ? "+" : "") + summary.mean.toFixed(2) + "%";
  document.getElementById("dcUp").textContent = summary.up;
