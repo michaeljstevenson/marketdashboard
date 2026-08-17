@@ -62,9 +62,6 @@ document.addEventListener("DOMContentLoaded", function(){
  flex-direction:column !important;
  overflow:auto !important;
 }
-.is-chart-fullscreen > *:not(.chart-fullscreen-btn):not(:last-child){
- flex:0 0 auto;
-}
 .is-chart-fullscreen canvas{
  max-height:none !important;
 }
@@ -96,7 +93,7 @@ document.addEventListener("DOMContentLoaded", function(){
    || canvas.parentElement;
  }
 
- var cards = [];
+ var entries = []; // { card, wrap, wrapFlexBefore, wrapHeightBefore }
 
  document.querySelectorAll("canvas").forEach(function(canvas){
   if(canvas.closest(".chart-fullscreen-btn")) return;
@@ -118,13 +115,31 @@ document.addEventListener("DOMContentLoaded", function(){
    else requestFs(card);
   });
   wrap.appendChild(btn);
-  cards.push(card);
+  entries.push({ card: card, wrap: wrap });
  });
 
  function onFsChange(){
   var fsEl = currentFsEl();
-  cards.forEach(function(card){
-   card.classList.toggle("is-chart-fullscreen", fsEl === card);
+  entries.forEach(function(entry){
+   var isFs = fsEl === entry.card;
+   entry.card.classList.toggle("is-chart-fullscreen", isFs);
+   // The canvas wrapper normally has a fixed pixel height (set per-page
+   // in each chart's own CSS) so it renders correctly inline — in
+   // fullscreen that fixed height leaves the chart stranded in the top
+   // slice of the screen with empty space below, so stretch it to fill
+   // the fullscreened card instead, and put it back exactly as it was
+   // on exit rather than guessing at the original value.
+   if(isFs){
+    entry.wrap.dataset.fsPrevHeight = entry.wrap.style.height || "";
+    entry.wrap.dataset.fsPrevFlex = entry.wrap.style.flex || "";
+    entry.wrap.style.flex = "1 1 auto";
+    entry.wrap.style.minHeight = "0";
+    entry.wrap.style.height = "auto";
+   }else if(entry.wrap.dataset.fsPrevHeight !== undefined){
+    entry.wrap.style.height = entry.wrap.dataset.fsPrevHeight;
+    entry.wrap.style.flex = entry.wrap.dataset.fsPrevFlex;
+    entry.wrap.style.minHeight = "";
+   }
   });
   // Chart.js needs an explicit resize once the container's real size
   // settles post-transition — a couple of short delays covers both
