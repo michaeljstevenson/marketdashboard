@@ -510,9 +510,9 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <div class="header">
 <div>
 <h1>Expectations vs. Reality</h1>
-<div class="subtitle">Every January, Wall Street's strategists publish a consensus year-end target for the S&amp;P 500. Here's how that target compared to where the index actually finished, for every year since 2001 with a reliably sourced consensus figure.</div>
+<div class="subtitle">Every January, Wall Street's strategists publish a consensus year-end target for the S&amp;P 500. Here's how that target compared to where the index actually finished, every year from 2000 to 2025.</div>
 </div>
-<div class="updated">Consensus targets sourced from Bloomberg, BusinessWeek, CNNMoney, Barron's, CNBC, and Yahoo Finance strategist surveys; see table for per-year sourcing. 2000 and 2002&ndash;2007 omitted &mdash; see explainer below.</div>
+<div class="updated">Consensus targets sourced from Bloomberg, BusinessWeek, CNNMoney, Barron's, CNBC, and Yahoo Finance strategist surveys; see table for per-year sourcing.</div>
 </div>
 
 <div class="stat-grid" id="statGrid">
@@ -581,10 +581,10 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <div class="explainer">
 <h2>Reading this page</h2>
 <p>Each January (sometimes late December of the prior year), major banks and independent strategists publish where they expect the S&amp;P 500 to finish that calendar year. Financial media compile these into a consensus figure — an average or median across roughly 10-20 named strategists — which is what's plotted here as the "target." That figure gets revised throughout the year as conditions change, but the chart uses the original, as-published consensus, since that's the actual forecast being tested against what happened.</p>
-<p>The pattern that shows up across almost every year in this dataset: strategists cluster their targets around a "normal" high-single-digit gain, and actual returns are far more volatile than that — both to the upside (2019, 2021, 2023, 2024, all beat consensus by wide margins) and the downside (2018, 2022). The years targets came closest to reality — 2010, 2016, 2014 — were also some of the more unremarkable years in the sample, without a sharp regime change up or down. That's not a coincidence: consensus forecasting is structurally better suited to calm years than volatile ones, because the process anchors on recent trends and rarely assigns much probability to a sharp break from them.</p>
-<p>None of this means the forecasts are useless — they're a reasonable read on sell-side sentiment and positioning at a point in time. But treating a January target as a meaningful prediction of where the index will actually be twelve months later hasn't been supported by more than two decades of data.</p>
-<p><strong>On the gap years:</strong> 2000 and 2002&ndash;2007 are missing from this dataset. Bespoke Investment Group has compiled a consistent target-vs-actual series back to 2000 — cited publicly as an average 14.2-percentage-point miss per year across 2000&ndash;2024, with consensus calling for a gain in all 25 of those years despite 7 actual down years — but that specific dataset is published as a chart image, not reproducible figures. Contemporary press archives for those individual years didn't turn up precise consensus numbers with enough confidence to publish here, so rather than estimate, those years are left out entirely.</p>
-<div class="source">Sources: BusinessWeek (via Seeking Alpha archive), CNNMoney/Yahoo Finance strategist roundups, Bloomberg surveys (via CNBC, Financial Samurai, globalmarketsinvestor.substack.com compilations), Barron's Big Money Poll. Actual year-end closes from public S&amp;P 500 index data. Individual year sourcing varies since no single publisher has run a consistent annual survey across the full period — see the Source column in the table above.</div>
+<p>The pattern that shows up across almost every year in this dataset: strategists cluster their targets around a "normal" high-single-digit gain, and actual returns are far more volatile than that — both to the upside (2019, 2021, 2023, 2024, all beat consensus by wide margins) and the downside (2018, 2022). The years targets came closest to reality — 2005, 2010, 2016 — were also some of the more unremarkable years in the sample, without a sharp regime change up or down. That's not a coincidence: consensus forecasting is structurally better suited to calm years than volatile ones, because the process anchors on recent trends and rarely assigns much probability to a sharp break from them.</p>
+<p>None of this means the forecasts are useless — they're a reasonable read on sell-side sentiment and positioning at a point in time. But treating a January target as a meaningful prediction of where the index will actually be twelve months later hasn't been supported by a quarter century of data. Not once in this entire 2000&ndash;2025 span has the Wall Street consensus called for a down year, even though the S&amp;P 500 actually finished lower in 7 of those 26 years.</p>
+<p><strong>On sourcing the earlier years:</strong> 2000 and 2002&ndash;2007 weren't available as press-reported consensus figures the way the other years are — no outlet's archived coverage of those specific years turned up a precise, citable number. Instead, those seven years' forecast-return values were read directly off a Bloomberg-sourced scatter chart published by 6meridian.com (an advisory firm's retrospective, itself crediting Bespoke Investment Group's methodology), which plots each year's strategist-forecast return against its actual return. The implied target price shown in the table for those years is back-calculated from that forecast return and the prior year's close, rather than quoted from an original survey.</p>
+<div class="source">Sources: BusinessWeek (via Seeking Alpha archive), CNNMoney/Yahoo Finance strategist roundups, Bloomberg surveys (via CNBC, Financial Samurai, globalmarketsinvestor.substack.com compilations, and 6meridian.com's Bloomberg-sourced retrospective chart), Barron's Big Money Poll. Actual year-end closes from public S&amp;P 500 index data. Individual year sourcing varies since no single publisher has run a consistent annual survey across the full period — see the Source column in the table above.</div>
 </div>
 
 </div>
@@ -602,14 +602,23 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 // since no single outlet has run a consistent, identically-methodologized
 // annual survey across this whole period — see the Source column per row.
 //
-// 2000 and 2002-2007 are deliberately omitted: Bespoke Investment Group
-// has compiled a consistent target-vs-actual series back to 2000, but
-// it's published as a proprietary chart image, not reproducible figures,
-// and searching contemporary press archives for those specific years
-// didn't turn up consensus numbers precise enough to publish with
-// confidence. Rather than estimate them, those years are left out.
+// 2000 and 2002-2007 come from a Bloomberg-sourced scatter chart
+// published by 6meridian.com (in turn crediting Bespoke Investment
+// Group's methodology) plotting each year's strategist-forecast return
+// against its actual return — read directly off that chart rather than
+// from a press-reported consensus figure, since no individually-sourced
+// number could be found for those specific years. The implied target
+// price is back-calculated from the forecast return and that year's
+// prior-year close.
 const DATA = [
- { year: 2001, priorClose: 1320.28, target: 1571,  actual: 1148.08, source: "Contemporary press (avg. +19% call)" },
+ { year: 2000, priorClose: 1469.25, target: 1550,  actual: 1320.28, source: "Bloomberg (via 6meridian.com scatter chart)" },
+ { year: 2001, priorClose: 1320.28, target: 1571,  actual: 1148.08, source: "Bloomberg (via 6meridian.com scatter chart)" },
+ { year: 2002, priorClose: 1148.08, target: 1292,  actual: 879.82,  source: "Bloomberg (via 6meridian.com scatter chart)" },
+ { year: 2003, priorClose: 879.82,  target: 1002,  actual: 1111.92, source: "Bloomberg (via 6meridian.com scatter chart)" },
+ { year: 2004, priorClose: 1111.92, target: 1173,  actual: 1211.92, source: "Bloomberg (via 6meridian.com scatter chart)" },
+ { year: 2005, priorClose: 1211.92, target: 1253,  actual: 1248.29, source: "Bloomberg (via 6meridian.com scatter chart)" },
+ { year: 2006, priorClose: 1248.29, target: 1364,  actual: 1418.30, source: "Bloomberg (via 6meridian.com scatter chart)" },
+ { year: 2007, priorClose: 1418.30, target: 1553,  actual: 1468.36, source: "Bloomberg (via 6meridian.com scatter chart)" },
  { year: 2008, priorClose: 1468.36, target: 1603,  actual: 903.25,  source: "BusinessWeek (13 strategists, avg. +9.2%)" },
  { year: 2009, priorClose: 903.25,  target: 1057,  actual: 1115.10, source: "Contemporary press (avg. +17% call)" },
  { year: 2010, priorClose: 1115.10, target: 1224,  actual: 1257.64, source: "Bloomberg (avg. +9.8%)" },
