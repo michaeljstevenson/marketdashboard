@@ -1169,16 +1169,54 @@ function renderHerdCharts(rows){
   grid.appendChild(cell);
 
   const bins = herdBins(firms, priorClose);
+
+  // Fitted normal curve overlaid on the actual bin counts — mean/stdev
+  // come from the real implied-return values (not the binned counts),
+  // then converted to an expected count per bin (density × bin width ×
+  // n) so it's on the same y-axis as the bars, letting you see at a
+  // glance how close the herd's actual clustering comes to a true bell
+  // curve versus this being a rougher, lumpier shape than that implies.
+  const rets = firms.map(f => pct(f.target, priorClose));
+  const nRets = rets.length;
+  let normalCurve = null;
+  if(nRets >= 3){
+   const meanRet = rets.reduce((s, v) => s + v, 0) / nRets;
+   const variance = rets.reduce((s, v) => s + (v - meanRet) ** 2, 0) / (nRets - 1);
+   const sd = Math.sqrt(variance);
+   if(sd > 0){
+    normalCurve = bins.map(b => {
+     const z = (b.center - meanRet) / sd;
+     const density = Math.exp(-0.5 * z * z) / (sd * Math.sqrt(2 * Math.PI));
+     return density * nRets * HERD_BIN_WIDTH;
+    });
+   }
+  }
+
   const histCtx = cell.querySelector(".herd-hist-canvas-wrap canvas").getContext("2d");
   new Chart(histCtx, {
-   type: "bar",
    data: {
     labels: bins.map(b => b.label),
-    datasets: [{
-     data: bins.map(b => b.count),
-     backgroundColor: "rgba(139,145,153,0.7)",
-     barThickness: 20,
-    }],
+    datasets: [
+     {
+      type: "bar",
+      data: bins.map(b => b.count),
+      backgroundColor: "rgba(139,145,153,0.7)",
+      barThickness: 20,
+      order: 1,
+     },
+     ...(normalCurve ? [{
+      type: "line",
+      label: "Normal distribution fit",
+      data: normalCurve,
+      borderColor: "#eae6da",
+      borderWidth: 1.5,
+      borderDash: [4, 3],
+      pointRadius: 0,
+      tension: 0.35,
+      fill: false,
+      order: 0,
+     }] : []),
+    ],
    },
    options: {
     responsive: true,
@@ -1189,7 +1227,9 @@ function renderHerdCharts(rows){
      tooltip: {
       callbacks: {
        title: items => items[0].label,
-       label: ctx => Math.round(ctx.parsed.y) + " firm" + (Math.round(ctx.parsed.y) === 1 ? "" : "s"),
+       label: ctx => ctx.dataset.type === "line"
+        ? "Normal fit: ~" + ctx.parsed.y.toFixed(1)
+        : Math.round(ctx.parsed.y) + " firm" + (Math.round(ctx.parsed.y) === 1 ? "" : "s"),
       },
      },
     },
