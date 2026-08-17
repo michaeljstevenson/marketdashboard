@@ -260,50 +260,6 @@ h1{
  margin:0 0 22px;
 }
 
-.featured-card{
- display:flex;
- justify-content:space-between;
- align-items:center;
- gap:24px;
- background:var(--card);
- border:1px solid var(--hair);
- border-radius:12px;
- padding:30px 34px;
- text-decoration:none;
- transition:background 0.15s;
-}
-
-.featured-card:hover{ background:var(--card-hover); }
-
-.featured-card .tag{
- display:inline-block;
- color:var(--greed);
- font-size:11px;
- letter-spacing:0.5px;
- text-transform:uppercase;
- margin-bottom:10px;
-}
-
-.featured-card h3{
- font-family:var(--serif);
- font-weight:400;
- font-size:24px;
- margin:0 0 8px;
-}
-
-.featured-card p{
- color:var(--muted);
- font-size:14px;
- margin:0;
- max-width:520px;
-}
-
-.featured-arrow{
- font-size:26px;
- color:var(--muted);
- flex-shrink:0;
-}
-
 /* CATEGORY GRID */
 
 .category-grid{
@@ -368,7 +324,6 @@ footer{
 @media (max-width:720px){
  .navlinks{ display:none; }
  h1{ font-size:34px; }
- .featured-card{ flex-direction:column; align-items:flex-start; }
 }
 
 
@@ -517,18 +472,6 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <a class="btn btn-primary" href="/sentiment-index.html">Explore Sentiment Index</a>
 <a class="btn btn-secondary" href="#research">View Research Areas</a>
 </div>
-</div>
-
-<div class="section">
-<div class="section-title">Featured</div>
-<a class="featured-card" href="/sentiment-index.html">
-<div>
-<div class="tag">Live · Updated daily</div>
-<h3>U.S. Market Sentiment Index</h3>
-<p>A multi-factor composite of market breadth, credit conditions, volatility, put/call positioning, price momentum, margin debt, fund flows, and forward valuations — scored 0–100 from Extreme Fear to Extreme Optimism.</p>
-</div>
-<div class="featured-arrow">→</div>
-</a>
 </div>
 
 <div class="section" id="research">
