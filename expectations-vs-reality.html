@@ -287,6 +287,55 @@ h1{
 
 /* TABLE */
 
+.herd-grid{
+ display:grid;
+ grid-template-columns:repeat(auto-fill, minmax(200px, 1fr));
+ gap:14px;
+ margin-bottom:30px;
+}
+
+.herd-cell{
+ background:var(--card);
+ border:1px solid var(--hair);
+ border-radius:10px;
+ padding:12px 12px 8px;
+}
+
+.herd-cell-header{
+ display:flex;
+ justify-content:space-between;
+ align-items:baseline;
+ margin-bottom:6px;
+}
+
+.herd-cell h3{
+ font-family:var(--serif);
+ font-weight:400;
+ font-size:15px;
+ margin:0;
+}
+
+.herd-cell .herd-n{
+ color:var(--muted);
+ font-size:10px;
+ text-transform:uppercase;
+ letter-spacing:0.03em;
+}
+
+.herd-canvas-wrap{
+ height:90px;
+}
+
+.herd-empty{
+ height:90px;
+ display:flex;
+ align-items:center;
+ justify-content:center;
+ color:var(--muted);
+ font-size:12px;
+ text-align:center;
+}
+
 .table-box{
  background:var(--card);
  border:1px solid var(--hair);
@@ -559,6 +608,16 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 </div>
 </div>
 
+<div class="chart-box">
+<div class="chart-box-header">
+<div>
+<h2>Herd mentality: individual strategists' targets, by year</h2>
+<div class="chart-subhead">Each tile bins that year's individual named banks'/strategists' targets by implied return (5-pt buckets, same &minus;20% to +40% x-axis on every tile) &mdash; the orange line marks what actually happened. Forecasts cluster tight; outcomes don't. Years with no verifiable individual-firm data are marked as such rather than estimated.</div>
+</div>
+</div>
+<div class="herd-grid" id="herdGrid"></div>
+</div>
+
 <div class="table-box">
 <h2>Full data</h2>
 <table>
@@ -584,6 +643,7 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <p>The pattern that shows up across almost every year in this dataset: strategists cluster their targets around a "normal" high-single-digit gain, and actual returns are far more volatile than that — both to the upside (2019, 2021, 2023, 2024, all beat consensus by wide margins) and the downside (2018, 2022). The years targets came closest to reality — 2005, 2010, 2016 — were also some of the more unremarkable years in the sample, without a sharp regime change up or down. That's not a coincidence: consensus forecasting is structurally better suited to calm years than volatile ones, because the process anchors on recent trends and rarely assigns much probability to a sharp break from them.</p>
 <p>None of this means the forecasts are useless — they're a reasonable read on sell-side sentiment and positioning at a point in time. But treating a January target as a meaningful prediction of where the index will actually be twelve months later hasn't been supported by a quarter century of data. Not once in this entire 2000&ndash;2025 span has the Wall Street consensus called for a down year, even though the S&amp;P 500 actually finished lower in 7 of those 26 years.</p>
 <p><strong>On sourcing the earlier years:</strong> 2000 and 2002&ndash;2007 weren't available as press-reported consensus figures the way the other years are — no outlet's archived coverage of those specific years turned up a precise, citable number. Instead, those seven years' forecast-return values were read directly off a Bloomberg-sourced scatter chart published by 6meridian.com (an advisory firm's retrospective, itself crediting Bespoke Investment Group's methodology), which plots each year's strategist-forecast return against its actual return. The implied target price shown in the table for those years is back-calculated from that forecast return and the prior year's close, rather than quoted from an original survey.</p>
+<p><strong>On the herd-mentality tiles:</strong> individual named-bank targets are far less consistently archived than the aggregate consensus figure — press coverage that lists every named strategist's specific number (rather than just the average) is really only reliable from about 2013 onward, and even within that window, coverage quality varies a lot by year (25 named firms for 2020, as few as 5 for 2014). 2000&ndash;2007, 2009, 2011, 2012, and 2015 have no verifiable individual-firm breakdown at all and are marked "no data" rather than estimated. Where a firm revised its target mid-year, only the original December/January call is used.</p>
 <div class="source">Sources: BusinessWeek (via Seeking Alpha archive), CNNMoney/Yahoo Finance strategist roundups, Bloomberg surveys (via CNBC, Financial Samurai, globalmarketsinvestor.substack.com compilations, and 6meridian.com's Bloomberg-sourced retrospective chart), Barron's Big Money Poll. Actual year-end closes from public S&amp;P 500 index data. Individual year sourcing varies since no single publisher has run a consistent annual survey across the full period — see the Source column in the table above.</div>
 </div>
 
@@ -756,6 +816,224 @@ function init(){
     y: { ticks: { color: "#8b9199", callback: v => v + " pts" }, grid: { color: "#2b3138" } },
    },
   },
+ });
+
+ renderHerdCharts(rows);
+}
+
+// Individual named-bank/strategist year-end S&P 500 targets, as published
+// (original Dec/Jan call, not mid-year revisions). Compiled from press
+// archives per year — coverage varies a lot: some years (2020, 2023) have
+// 20+ named firms, others (2013, 2014, 2021) have under 10, and several
+// years (2000-2007, 2009, 2011, 2012, 2015) have no verifiable
+// individual-firm breakdown at all, only the aggregate consensus already
+// used in the main dataset above. Years with no individual data are
+// rendered as an explicit empty state below rather than estimated.
+const INDIVIDUAL_TARGETS = {
+ 2008: [
+  { firm: "Strategas (Trennert)", target: 1680 },
+  { firm: "Credit Suisse", target: 1650 },
+  { firm: "McManus (Banc of America)", target: 1625 },
+ ],
+ 2010: [
+  { firm: "JPMorgan (Lee)", target: 1300 },
+  { firm: "Goldman Sachs (Kostin)", target: 1250 },
+  { firm: "UBS", target: 1250 },
+ ],
+ 2013: [
+  { firm: "Goldman Sachs", target: 1575 },
+  { firm: "Piper Jaffray", target: 1700 },
+  { firm: "Orlando (Federated)", target: 1660 },
+  { firm: "JPMorgan (Lee)", target: 1580 },
+  { firm: "D.A. Davidson (Dickson)", target: 1500 },
+  { firm: "Barclays (Knapp)", target: 1525 },
+  { firm: "Putnam (Knight)", target: 1490 },
+  { firm: "BlackRock (Koesterich)", target: 1545 },
+  { firm: "Citi (Levkovich)", target: 1615 },
+  { firm: "Morgan Stanley (Parker)", target: 1434 },
+  { firm: "Prudential Int'l (Praveen)", target: 1600 },
+  { firm: "Bank of America (Subramanian)", target: 1600 },
+ ],
+ 2014: [
+  { firm: "Goldman Sachs (Kostin)", target: 1900 },
+  { firm: "JPMorgan (Lee)", target: 2075 },
+  { firm: "Barclays (Knapp)", target: 1900 },
+  { firm: "Oppenheimer (Stoltzfus)", target: 2014 },
+  { firm: "Citi (Levkovich)", target: 1975 },
+ ],
+ 2016: [
+  { firm: "Goldman Sachs (Kostin)", target: 2100 },
+ ],
+ 2017: [
+  { firm: "Bank of America", target: 2300 }, { firm: "Barclays", target: 2400 },
+  { firm: "BMO", target: 2350 }, { firm: "Canaccord", target: 2340 },
+  { firm: "Citi", target: 2325 }, { firm: "Credit Suisse", target: 2300 },
+  { firm: "Deutsche Bank", target: 2350 }, { firm: "Fundstrat", target: 2275 },
+  { firm: "Goldman Sachs", target: 2300 }, { firm: "Jefferies", target: 2325 },
+  { firm: "JPMorgan", target: 2400 }, { firm: "Morgan Stanley", target: 2300 },
+  { firm: "Oppenheimer", target: 2450 }, { firm: "RBC", target: 2500 },
+  { firm: "Societe Generale", target: 2400 }, { firm: "UBS", target: 2300 },
+ ],
+ 2018: [
+  { firm: "Goldman Sachs", target: 2850 }, { firm: "Deutsche Bank", target: 2850 },
+  { firm: "Morgan Stanley", target: 2750 }, { firm: "Citi", target: 2800 },
+  { firm: "JPMorgan", target: 3000 }, { firm: "Bank of America", target: 3000 },
+  { firm: "BMO", target: 2950 }, { firm: "UBS", target: 2900 },
+  { firm: "Credit Suisse", target: 2938 },
+ ],
+ 2019: [
+  { firm: "Credit Suisse", target: 3350 }, { firm: "UBS", target: 3200 },
+  { firm: "BMO", target: 3150 }, { firm: "Citi", target: 3100 },
+  { firm: "Goldman Sachs", target: 3000 }, { firm: "Barclays", target: 3000 },
+  { firm: "Bank of America", target: 2900 }, { firm: "Morgan Stanley", target: 2750 },
+ ],
+ 2020: [
+  { firm: "Piper Jaffray", target: 3600 }, { firm: "Fundstrat", target: 3450 },
+  { firm: "BTIG", target: 3450 }, { firm: "Credit Suisse", target: 3425 },
+  { firm: "Canaccord", target: 3440 }, { firm: "CFRA", target: 3435 },
+  { firm: "JPMorgan", target: 3400 }, { firm: "Evercore ISI", target: 3400 },
+  { firm: "Goldman Sachs", target: 3400 }, { firm: "BMO", target: 3400 },
+  { firm: "Oppenheimer", target: 3500 }, { firm: "Citi", target: 3375 },
+  { firm: "Wells Fargo", target: 3388 }, { firm: "RBC", target: 3350 },
+  { firm: "Scotiabank", target: 3350 }, { firm: "Ned Davis Research", target: 3325 },
+  { firm: "LPL Financial", target: 3275 }, { firm: "Barclays", target: 3300 },
+  { firm: "Bank of America", target: 3300 }, { firm: "Jefferies", target: 3300 },
+  { firm: "Stifel", target: 3265 }, { firm: "Deutsche Bank", target: 3250 },
+  { firm: "Societe Generale", target: 3050 }, { firm: "Morgan Stanley", target: 3000 },
+  { firm: "UBS", target: 3000 },
+ ],
+ 2021: [
+  { firm: "Goldman Sachs", target: 4300 }, { firm: "JPMorgan", target: 4400 },
+  { firm: "Wells Fargo", target: 3900 }, { firm: "UBS", target: 4600 },
+  { firm: "Deutsche Bank", target: 4100 }, { firm: "Oppenheimer", target: 4300 },
+  { firm: "Yardeni Research", target: 4300 }, { firm: "Bank of America", target: 3800 },
+ ],
+ 2022: [
+  { firm: "Oppenheimer", target: 5330 }, { firm: "BMO", target: 5300 },
+  { firm: "Credit Suisse", target: 5200 }, { firm: "Citi", target: 5100 },
+  { firm: "Goldman Sachs", target: 5100 }, { firm: "Evercore ISI", target: 5100 },
+  { firm: "BNP Paribas", target: 5100 }, { firm: "Wells Fargo Inv. Inst.", target: 5200 },
+  { firm: "JPMorgan", target: 5050 }, { firm: "RBC", target: 5050 },
+  { firm: "Deutsche Bank", target: 5000 }, { firm: "DWS Group", target: 5000 },
+  { firm: "Jefferies", target: 5000 }, { firm: "UBS", target: 4850 },
+  { firm: "Barclays", target: 4800 }, { firm: "Wells Fargo (Harvey)", target: 4715 },
+  { firm: "Bank of America", target: 4600 }, { firm: "Morgan Stanley", target: 4400 },
+  { firm: "Yardeni Research", target: 5400 },
+ ],
+ 2023: [
+  { firm: "Barclays", target: 3675 }, { firm: "Societe Generale", target: 3800 },
+  { firm: "Capital Economics", target: 3800 }, { firm: "Morgan Stanley", target: 3900 },
+  { firm: "UBS", target: 3900 }, { firm: "Citi", target: 3900 },
+  { firm: "BlackRock", target: 3930 }, { firm: "Bank of America", target: 4000 },
+  { firm: "Goldman Sachs", target: 4000 }, { firm: "HSBC", target: 4000 },
+  { firm: "Credit Suisse", target: 4050 }, { firm: "RBC", target: 4100 },
+  { firm: "JPMorgan", target: 4200 }, { firm: "Jefferies", target: 4200 },
+  { firm: "BMO", target: 4300 }, { firm: "Nuveen", target: 4300 },
+  { firm: "Wells Fargo", target: 4400 }, { firm: "Oppenheimer", target: 4400 },
+  { firm: "Deutsche Bank", target: 4500 }, { firm: "CFRA", target: 4575 },
+  { firm: "Leuthold Group", target: 5000 },
+ ],
+ 2024: [
+  { firm: "JPMorgan", target: 4200 }, { firm: "Morgan Stanley", target: 4500 },
+  { firm: "UBS", target: 4600 }, { firm: "Wells Fargo", target: 4625 },
+  { firm: "Goldman Sachs", target: 4700 }, { firm: "Societe Generale", target: 4750 },
+  { firm: "Barclays", target: 4800 }, { firm: "Bank of America", target: 5000 },
+  { firm: "RBC", target: 5000 }, { firm: "Deutsche Bank", target: 5100 },
+  { firm: "BMO", target: 5100 }, { firm: "Fundstrat", target: 5200 },
+  { firm: "Capital Economics", target: 5500 }, { firm: "Yardeni Research", target: 5400 },
+ ],
+ 2025: [
+  { firm: "Barclays", target: 5900 }, { firm: "Goldman Sachs", target: 6500 },
+  { firm: "RBC", target: 6200 }, { firm: "JPMorgan", target: 6500 },
+  { firm: "Bank of America", target: 6666 }, { firm: "Citi", target: 6500 },
+  { firm: "HSBC", target: 6700 }, { firm: "Deutsche Bank", target: 7000 },
+  { firm: "UBS", target: 6600 }, { firm: "Morgan Stanley", target: 6500 },
+  { firm: "Oppenheimer", target: 7100 }, { firm: "BMO", target: 6700 },
+  { firm: "Yardeni Research", target: 7000 }, { firm: "Wells Fargo", target: 7007 },
+  { firm: "Evercore ISI", target: 6000 }, { firm: "BCA Research", target: 4350 },
+ ],
+};
+
+const HERD_BIN_WIDTH = 5; // percentage points
+const HERD_MIN = -20, HERD_MAX = 40;
+
+function herdBins(firms, priorClose){
+ const edges = [];
+ for(let e = HERD_MIN; e < HERD_MAX; e += HERD_BIN_WIDTH) edges.push(e);
+ const counts = edges.map(() => 0);
+ firms.forEach(f => {
+  const ret = pct(f.target, priorClose);
+  let idx = Math.floor((ret - HERD_MIN) / HERD_BIN_WIDTH);
+  idx = Math.max(0, Math.min(counts.length - 1, idx));
+  counts[idx]++;
+ });
+ return edges.map((e, i) => ({ center: e + HERD_BIN_WIDTH / 2, count: counts[i] }));
+}
+
+function renderHerdCharts(rows){
+ const grid = document.getElementById("herdGrid");
+ grid.innerHTML = "";
+ rows.forEach(r => {
+  const cell = document.createElement("div");
+  cell.className = "herd-cell";
+  const firms = INDIVIDUAL_TARGETS[r.year];
+  const n = firms ? firms.length : 0;
+  cell.innerHTML = `
+   <div class="herd-cell-header">
+    <h3>${r.year}</h3>
+    <span class="herd-n">${n ? n + (n === 1 ? " firm" : " firms") : "no data"}</span>
+   </div>
+   <div class="herd-canvas-wrap">${n ? '<canvas></canvas>' : '<div class="herd-empty">No individual-firm data found for this year</div>'}</div>
+  `;
+  grid.appendChild(cell);
+  if(!n) return;
+
+  const bins = herdBins(firms, r.priorClose);
+  const ctx = cell.querySelector("canvas").getContext("2d");
+  new Chart(ctx, {
+   type: "bar",
+   data: {
+    datasets: [{
+     data: bins.map(b => ({ x: b.center, y: b.count })),
+     backgroundColor: "rgba(139,145,153,0.7)",
+     barThickness: 7,
+    }],
+   },
+   options: {
+    responsive: true,
+    maintainAspectRatio: false,
+    animation: false,
+    plugins: {
+     legend: { display: false },
+     tooltip: {
+      callbacks: {
+       title: () => "",
+       label: ctx => Math.round(ctx.parsed.y) + " firm" + (Math.round(ctx.parsed.y) === 1 ? "" : "s") + " forecasting ~" + Math.round(ctx.parsed.x) + "% return",
+      },
+     },
+    },
+    scales: {
+     x: { type: "linear", min: HERD_MIN, max: HERD_MAX, display: false },
+     y: { display: false, beginAtZero: true },
+    },
+   },
+   plugins: [{
+    id: "actualLine",
+    afterDraw(chart){
+     const { ctx, chartArea, scales } = chart;
+     const xPix = scales.x.getPixelForValue(r.actualReturn);
+     if(xPix < chartArea.left || xPix > chartArea.right) return;
+     ctx.save();
+     ctx.strokeStyle = "#d98a3d";
+     ctx.lineWidth = 2;
+     ctx.beginPath();
+     ctx.moveTo(xPix, chartArea.top);
+     ctx.lineTo(xPix, chartArea.bottom);
+     ctx.stroke();
+     ctx.restore();
+    },
+   }],
+  });
  });
 }
 
