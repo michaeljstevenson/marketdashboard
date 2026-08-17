@@ -1027,12 +1027,16 @@ function renderDayChangeRange(data, rangeKey, isLive){
  document.getElementById("dcDown").textContent = summary.down;
 
  // Bucket width scales with the range so a 5-year distribution (moves of
- // tens to hundreds of percent) doesn't collapse into one bar the way it
- // would using the same tight buckets built for a single day's moves.
- // 1Y and 3Y use fixed-step buckets (rather than the hand-picked widening
- // steps the other ranges use) across the span where most stock moves
- // over that horizon actually land, with catch-all bins at the tails for
- // outliers.
+ // tens to hundreds, sometimes thousands, of percent) doesn't collapse
+ // into one bar the way it would using the same tight buckets built for
+ // a single day's moves. Boundaries below are sized to each range's
+ // actual 1st-99th percentile spread in the S&P 500 (checked against the
+ // Stooq seed data), not guessed — the initial version was far too
+ // narrow at every horizon past 1D, dumping the bulk of stocks into a
+ // single overflow bucket instead of showing their real spread. The
+ // Infinity catch-alls still exist beyond that for genuine outliers
+ // (a handful of names up several hundred percent over 3-5 years, for
+ // instance), which is the correct place for those, not the core range.
  const fixedStepEdges = (min, max, step) => {
   const edges = [-Infinity];
   for(let v = min; v <= max; v += step) edges.push(v);
@@ -1042,13 +1046,13 @@ function renderDayChangeRange(data, rangeKey, isLive){
 
  const edgeSets = {
   "1D": [-Infinity, -8, -5, -3, -2, -1, 0, 1, 2, 3, 4, 7, 10, Infinity],
-  "5D": [-Infinity, -15, -10, -7, -5, -3, 0, 3, 5, 7, 10, 15, 20, Infinity],
-  MTD: [-Infinity, -20, -15, -10, -5, -2, 0, 2, 5, 10, 15, 20, 30, Infinity],
-  QTD: [-Infinity, -30, -20, -15, -10, -5, 0, 5, 10, 15, 20, 30, 40, Infinity],
-  YTD: [-Infinity, -40, -25, -15, -10, -5, 0, 5, 10, 15, 25, 40, 60, Infinity],
-  "1Y": fixedStepEdges(-60, 100, 5),
-  "3Y": fixedStepEdges(-80, 200, 10),
-  "5Y": [-Infinity, -50, -25, 0, 25, 50, 100, 150, 200, 300, 400, 600, 1000, Infinity],
+  "5D": fixedStepEdges(-12, 18, 2),
+  MTD: fixedStepEdges(-20, 32, 4),
+  QTD: fixedStepEdges(-32, 48, 6),
+  YTD: fixedStepEdges(-60, 200, 15),
+  "1Y": fixedStepEdges(-65, 550, 40),
+  "3Y": fixedStepEdges(-70, 1050, 75),
+  "5Y": fixedStepEdges(-85, 1050, 75),
  };
  const edges = edgeSets[rangeKey] || edgeSets["1D"];
  const labels = edges.slice(0, -1).map((e, i) => e === -Infinity ? "<" + edges[i + 1] : (edges[i + 1] === Infinity ? e + "+" : String(e)));
