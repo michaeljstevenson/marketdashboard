@@ -35,6 +35,7 @@
 
 const { BREADTH_CONSTITUENTS } = require("./breadth-constituents");
 const { getBreadthStore, BLOB_KEY } = require("./breadth-blob-store");
+const { getDayChangeStore, BLOB_KEY: DAYCHANGE_BLOB_KEY } = require("./daychange-blob-store");
 
 const ALPHA_VANTAGE_URL = "https://www.alphavantage.co/query";
 const USER_AGENT =
@@ -135,6 +136,97 @@ function computeNameFlags(closes) {
   return flags;
 }
 
+// Cross-sectional % change distributions for the "Day's change
+// distribution" widget's longer ranges (5D/MTD/QTD/YTD/5Y) — "1D" is
+// owned by scheduled-daychange-background.js instead (see that file),
+// since it needs to refresh hourly on a live quote rather than once a
+// day against history this job already has in memory.
+function baselineIndexOnOrBefore(closes, targetDate) {
+  // closes sorted ascending by date (YYYY-MM-DD strings sort correctly).
+  let best = -1;
+  for (let i = 0; i < closes.length; i++) {
+    if (closes[i].date <= targetDate) best = i;
+    else break;
+  }
+  return best;
+}
+
+function isoDate(d) {
+  return d.toISOString().slice(0, 10);
+}
+
+function computeRangeSummaries(perNameCloses, constituentTotal) {
+  // Latest trading date across the dataset — use whichever symbol has
+  // the most recent last-row date, in case of a handful of stale fetches.
+  let latestDate = null;
+  for (const closes of perNameCloses.values()) {
+    if (!closes.length) continue;
+    const last = closes[closes.length - 1].date;
+    if (!latestDate || last > latestDate) latestDate = last;
+  }
+  if (!latestDate) return {};
+
+  const latest = new Date(latestDate + "T00:00:00Z");
+  const monthStart = new Date(Date.UTC(latest.getUTCFullYear(), latest.getUTCMonth(), 1));
+  const qMonth = Math.floor(latest.getUTCMonth() / 3) * 3;
+  const quarterStart = new Date(Date.UTC(latest.getUTCFullYear(), qMonth, 1));
+  const yearStart = new Date(Date.UTC(latest.getUTCFullYear(), 0, 1));
+  const fiveYearsAgo = new Date(Date.UTC(latest.getUTCFullYear() - 5, latest.getUTCMonth(), latest.getUTCDate()));
+
+  const dayBefore = (d) => isoDate(new Date(d.getTime() - 24 * 60 * 60 * 1000));
+
+  // "5D" is a trading-day lookback (nth-prior row), not a calendar
+  // baseline date like the others, so it's keyed to null here and
+  // special-cased in the loop below.
+  const rangeBaselines = {
+    "5D": null,
+    MTD: dayBefore(monthStart),
+    QTD: dayBefore(quarterStart),
+    YTD: dayBefore(yearStart),
+    "5Y": isoDate(fiveYearsAgo),
+  };
+
+  const ranges = {};
+
+  for (const [rangeKey, baselineDate] of Object.entries(rangeBaselines)) {
+    const changes = [];
+    for (const [symbol, closes] of perNameCloses.entries()) {
+      if (!closes.length) continue;
+      const latestClose = closes[closes.length - 1].close;
+      let baselineClose = null;
+      if (rangeKey === "5D") {
+        const idx = closes.length - 1 - 5;
+        if (idx >= 0) baselineClose = closes[idx].close;
+      } else {
+        const idx = baselineIndexOnOrBefore(closes, baselineDate);
+        if (idx >= 0) baselineClose = closes[idx].close;
+      }
+      if (baselineClose === null || baselineClose === 0) continue;
+      changes.push({ symbol, pctChange: Math.round((latestClose / baselineClose - 1) * 100 * 100) / 100 });
+    }
+    if (!changes.length) continue;
+    changes.sort((a, b) => a.pctChange - b.pctChange);
+    const values = changes.map((c) => c.pctChange);
+    const n = values.length;
+    const median = n % 2 === 1 ? values[(n - 1) / 2] : (values[n / 2 - 1] + values[n / 2]) / 2;
+    const mean = values.reduce((sum, v) => sum + v, 0) / n;
+    const up = changes.filter((c) => c.pctChange > 0).length;
+    const down = changes.filter((c) => c.pctChange < 0).length;
+    ranges[rangeKey] = {
+      n,
+      total: constituentTotal,
+      median: Math.round(median * 100) / 100,
+      mean: Math.round(mean * 100) / 100,
+      up,
+      down,
+      unchanged: n - up - down,
+      changes,
+    };
+  }
+
+  return { asOfDate: latestDate, ranges };
+}
+
 exports.handler = async () => {
   console.log(`scheduled-breadth-background: starting, ${BREADTH_CONSTITUENTS.length} symbols`);
   try {
@@ -145,10 +237,12 @@ exports.handler = async () => {
     // a burst-rate detector when requests land too close together even
     // when awaited one at a time.
     const perNameFlags = new Map();
+    const perNameCloses = new Map();
     for (const symbol of BREADTH_CONSTITUENTS) {
       try {
         const closes = await fetchDailyCloses(apiKey, symbol);
         perNameFlags.set(symbol, computeNameFlags(closes));
+        perNameCloses.set(symbol, closes);
       } catch (err) {
         console.error(`scheduled-breadth-background: ${symbol} failed: ${err.message}`);
       }
@@ -249,6 +343,27 @@ exports.handler = async () => {
     const store = getBreadthStore();
     await store.setJSON(BLOB_KEY, payload);
     console.log(`scheduled-breadth-background: wrote ${rows.length} rows to blob`);
+
+    // Longer-range slices of the "Day's change distribution" widget
+    // (5D/MTD/QTD/YTD/5Y) — computed here since the full close history
+    // needed for them is already in memory; "1D" is owned by
+    // scheduled-daychange-background.js instead (see that file), so this
+    // read-modify-writes the shared blob rather than overwriting it wholesale.
+    try {
+      const { asOfDate: rangesAsOfDate, ranges } = computeRangeSummaries(perNameCloses, BREADTH_CONSTITUENTS.length);
+      const dcStore = getDayChangeStore();
+      const existingDayChange = (await dcStore.get(DAYCHANGE_BLOB_KEY, { type: "json" })) || {};
+      const dayChangePayload = {
+        ...existingDayChange,
+        generated_at_utc: new Date().toISOString(),
+        asOfDate: rangesAsOfDate,
+        ranges: { ...(existingDayChange.ranges || {}), ...ranges },
+      };
+      await dcStore.setJSON(DAYCHANGE_BLOB_KEY, dayChangePayload);
+      console.log(`scheduled-breadth-background: wrote ${Object.keys(ranges).join(", ")} ranges to daychange blob`);
+    } catch (err) {
+      console.error(`scheduled-breadth-background: day-change ranges failed (non-fatal): ${err.message}`);
+    }
 
     return {
       statusCode: 200,

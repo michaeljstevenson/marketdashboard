@@ -1,17 +1,24 @@
 // Scheduled function (see [functions."scheduled-daychange-background"] in
-// netlify.toml) that refreshes the "Day's change distribution" widget on
-// market-breadth.html — median/mean % change across the S&P 500
-// constituent list (see breadth-constituents.js), up/down counts, and
-// the full per-symbol list for the histogram — and writes it to Netlify
-// Blobs for daychange.js to serve.
+// netlify.toml) that refreshes the "1D" range of the "Day's change
+// distribution" widget on market-breadth.html — median/mean % change
+// across the S&P 500 constituent list (see breadth-constituents.js),
+// up/down counts, and the full per-symbol list for the histogram — and
+// writes it to Netlify Blobs for daychange.js to serve.
 //
-// Deliberately separate from scheduled-breadth-background.js: that job
-// fetches full daily history per symbol (expensive, ~500 heavy calls,
-// only viable once a day after the close). This one only needs each
-// symbol's current quote vs. its previous close, which GLOBAL_QUOTE
-// gives directly — cheap enough to run hourly through the trading day
-// so the distribution actually reflects where the market is right now,
-// not last night's close.
+// The widget also supports 5D/MTD/QTD/YTD/5Y ranges, but those are
+// computed by scheduled-breadth-background.js instead (see that file) —
+// this job only owns "1D". Deliberately separate: that job fetches full
+// daily history per symbol (expensive, ~500 heavy calls, only viable
+// once a day after the close), and since it already has that history in
+// memory, computing the longer ranges there costs nothing extra. This
+// job only needs each symbol's current quote vs. its previous close,
+// which GLOBAL_QUOTE gives directly — cheap enough to run hourly through
+// the trading day so "1D" actually reflects where the market is right
+// now, not last night's close, the way the longer ranges don't need to.
+//
+// Reads the existing blob first and only overwrites the "1D" key, so
+// this job and the daily one (which owns the other five keys) don't
+// clobber each other regardless of which one last wrote the blob.
 //
 // Runs hourly during US market hours on weekdays (see the cron schedule
 // in netlify.toml). Uses entitlement=delayed, matching
@@ -107,8 +114,7 @@ exports.handler = async () => {
     const up = changes.filter((c) => c.pctChange > 0).length;
     const down = changes.filter((c) => c.pctChange < 0).length;
 
-    const payload = {
-      generated_at_utc: new Date().toISOString(),
+    const oneDaySummary = {
       n,
       total: BREADTH_CONSTITUENTS.length,
       median: Math.round(median * 100) / 100,
@@ -120,8 +126,14 @@ exports.handler = async () => {
     };
 
     const store = getDayChangeStore();
+    const existing = (await store.get(BLOB_KEY, { type: "json" })) || {};
+    const payload = {
+      ...existing,
+      generated_at_utc: new Date().toISOString(),
+      ranges: { ...(existing.ranges || {}), "1D": oneDaySummary },
+    };
     await store.setJSON(BLOB_KEY, payload);
-    console.log(`scheduled-daychange-background: wrote ${n}/${BREADTH_CONSTITUENTS.length} quotes to blob`);
+    console.log(`scheduled-daychange-background: wrote ${n}/${BREADTH_CONSTITUENTS.length} quotes (1D range) to blob`);
 
     return {
       statusCode: 200,

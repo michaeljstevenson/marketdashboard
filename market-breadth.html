@@ -697,6 +697,7 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <h2>Day's change distribution</h2>
 <div class="chart-subhead" id="dayChangeAsOf">—</div>
 </div>
+<div class="range-controls" id="dayChangeRangeControls"></div>
 </div>
 <div class="daychange-stats">
 <div class="daychange-stat"><span class="daychange-stat-label">Median</span><span class="daychange-stat-value" id="dcMedian">—</span></div>
@@ -951,53 +952,93 @@ async function init(){
   showError("Couldn't load market breadth data: " + err.message);
  }
 
- // Independent of the breadth fetch above — refreshed hourly through the
- // trading day by its own scheduled job, so a failure here (or it not
- // having run yet) shouldn't block the rest of the page. Falls back to a
- // static seed snapshot (built from downloaded Stooq daily bars) so the
- // section shows real historical data immediately after deploy, rather
- // than staying hidden until the live hourly job has run at least once.
- let liveDayChange = null;
+ // Independent of the breadth fetch above — refreshed hourly ("1D") and
+ // daily ("5D"/"MTD"/"QTD"/"YTD"/"5Y") by their own scheduled jobs, so a
+ // failure here (or it not having run yet) shouldn't block the rest of
+ // the page. Falls back to a static seed snapshot (built from downloaded
+ // Stooq daily bars) so the section shows real historical data
+ // immediately after deploy, rather than staying hidden until the live
+ // jobs have run at least once.
+ let dayChangeData = null;
+ let dayChangeIsLive = false;
  try{
   const dcRes = await fetch("/api/daychange", { cache: "no-store" });
   if(dcRes.ok){
    const dcData = await dcRes.json();
-   if(!dcData.error) liveDayChange = dcData;
+   if(!dcData.error && dcData.ranges && Object.keys(dcData.ranges).length){
+    dayChangeData = dcData;
+    dayChangeIsLive = true;
+   }
   }
  }catch(err){
   console.error("Couldn't load live day's-change data:", err.message);
  }
 
- if(liveDayChange){
-  renderDayChange(liveDayChange, true);
- }else{
+ if(!dayChangeData){
   try{
    const seedRes = await fetch("/data-daychange-seed.json", { cache: "no-store" });
-   if(seedRes.ok) renderDayChange(await seedRes.json(), false);
+   if(seedRes.ok) dayChangeData = await seedRes.json();
   }catch(err){
    console.error("Couldn't load seed day's-change data:", err.message);
   }
  }
+
+ if(dayChangeData) initDayChange(dayChangeData, dayChangeIsLive);
 }
 
-function renderDayChange(summary, isLive){
+const DAYCHANGE_RANGE_ORDER = ["1D", "5D", "MTD", "QTD", "YTD", "5Y"];
+let dayChangeChart = null;
+
+function initDayChange(data, isLive){
  document.getElementById("dayChangeBox").style.display = "";
+ const available = DAYCHANGE_RANGE_ORDER.filter(k => data.ranges[k]);
+ if(!available.length) return;
+
+ const controls = document.getElementById("dayChangeRangeControls");
+ controls.innerHTML = "";
+ available.forEach((key, i) => {
+  const btn = document.createElement("button");
+  btn.className = "range-btn" + (i === 0 ? " active" : "");
+  btn.textContent = key;
+  btn.addEventListener("click", () => {
+   controls.querySelectorAll(".range-btn").forEach(b => b.classList.remove("active"));
+   btn.classList.add("active");
+   renderDayChangeRange(data, key, isLive);
+  });
+  controls.appendChild(btn);
+ });
+
+ renderDayChangeRange(data, available[0], isLive);
+}
+
+function renderDayChangeRange(data, rangeKey, isLive){
+ const summary = data.ranges[rangeKey];
+ if(!summary) return;
+
+ const rangeLabel = { "1D": "1 day", "5D": "5 days", MTD: "month to date", QTD: "quarter to date", YTD: "year to date", "5Y": "5 years" }[rangeKey] || rangeKey;
  document.getElementById("dayChangeAsOf").textContent = isLive
-  ? "Updated " + new Date(summary.generated_at_utc).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" }) +
-    " · " + summary.n + " of " + summary.total + " constituents"
-  : "As of " + summary.asOfDate + " (historical, via Stooq — hourly live data starts once the market-hours job first runs)" +
-    " · " + summary.n + " of " + summary.total + " constituents";
+  ? "Updated " + new Date(data.generated_at_utc).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" }) +
+    " · " + rangeLabel + " · " + summary.n + " of " + summary.total + " constituents"
+  : "As of " + data.asOfDate + " (historical, via Stooq — live data starts once the scheduled jobs first run)" +
+    " · " + rangeLabel + " · " + summary.n + " of " + summary.total + " constituents";
  document.getElementById("dcMedian").textContent = (summary.median >= 0 ? "+" : "") + summary.median.toFixed(2) + "%";
  document.getElementById("dcMean").textContent = (summary.mean >= 0 ? "+" : "") + summary.mean.toFixed(2) + "%";
  document.getElementById("dcUp").textContent = summary.up;
  document.getElementById("dcDown").textContent = summary.down;
 
- // Variable-width buckets, same idea as the GuruFocus-style widget this
- // is modeled on: fine-grained near zero (where most daily moves cluster)
- // and wide catch-all bins at the tails (where individual outlier moves
- // live, one stock at a time).
- const edges = [-Infinity, -8, -5, -3, -2, -1, 0, 1, 2, 3, 4, 7, 10, Infinity];
- const labels = ["<-8", "-8", "-5", "-3", "-2", "-1", "0", "1", "2", "3", "4", "7", "10+"];
+ // Bucket width scales with the range so a 5-year distribution (moves of
+ // tens to hundreds of percent) doesn't collapse into one bar the way it
+ // would using the same tight buckets built for a single day's moves.
+ const edgeSets = {
+  "1D": [-Infinity, -8, -5, -3, -2, -1, 0, 1, 2, 3, 4, 7, 10, Infinity],
+  "5D": [-Infinity, -15, -10, -7, -5, -3, 0, 3, 5, 7, 10, 15, 20, Infinity],
+  MTD: [-Infinity, -20, -15, -10, -5, -2, 0, 2, 5, 10, 15, 20, 30, Infinity],
+  QTD: [-Infinity, -30, -20, -15, -10, -5, 0, 5, 10, 15, 20, 30, 40, Infinity],
+  YTD: [-Infinity, -40, -25, -15, -10, -5, 0, 5, 10, 15, 25, 40, 60, Infinity],
+  "5Y": [-Infinity, -50, -25, 0, 25, 50, 100, 150, 200, 300, 400, 600, 1000, Infinity],
+ };
+ const edges = edgeSets[rangeKey] || edgeSets["1D"];
+ const labels = edges.slice(0, -1).map((e, i) => e === -Infinity ? "<" + edges[i + 1] : (edges[i + 1] === Infinity ? e + "+" : String(e)));
  const counts = new Array(edges.length - 1).fill(0);
  summary.changes.forEach(c => {
   for(let i = 0; i < edges.length - 1; i++){
@@ -1005,8 +1046,9 @@ function renderDayChange(summary, isLive){
   }
  });
 
+ if(dayChangeChart) dayChangeChart.destroy();
  const ctx = document.getElementById("dayChangeChart").getContext("2d");
- new Chart(ctx, {
+ dayChangeChart = new Chart(ctx, {
   type: "bar",
   data: {
    labels,
