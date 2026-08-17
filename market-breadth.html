@@ -1016,6 +1016,16 @@ function renderDayChangeRange(data, rangeKey, isLive){
  if(!summary) return;
 
  const rangeLabel = { "1D": "1 day", "5D": "5 days", MTD: "month to date", QTD: "quarter to date", YTD: "year to date", "1Y": "1 year", "3Y": "3 years, annualized", "5Y": "5 years, annualized" }[rangeKey] || rangeKey;
+ const axisLabel = {
+  "1D": "Day's change %",
+  "5D": "5-day change %",
+  MTD: "Month-to-date change %",
+  QTD: "Quarter-to-date change %",
+  YTD: "Year-to-date change %",
+  "1Y": "1-year change %",
+  "3Y": "3-year change % (annualized)",
+  "5Y": "5-year change % (annualized)",
+ }[rangeKey] || "Change %";
  document.getElementById("dayChangeAsOf").textContent = isLive
   ? "Updated " + new Date(data.generated_at_utc).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" }) +
     " · " + rangeLabel + " · " + summary.n + " of " + summary.total + " constituents"
@@ -1086,7 +1096,7 @@ function renderDayChangeRange(data, rangeKey, isLive){
     tooltip: { callbacks: { label: ctx => ctx.parsed.y + " stocks" } },
    },
    scales: {
-    x: { ticks: { color: "#8b9199" }, grid: { display: false }, title: { display: true, text: "Day's change %", color: "#8b9199" } },
+    x: { ticks: { color: "#8b9199" }, grid: { display: false }, title: { display: true, text: axisLabel, color: "#8b9199" } },
     y: { ticks: { color: "#8b9199" }, grid: { color: "#2b3138" }, beginAtZero: true },
    },
   },
