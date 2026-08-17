@@ -632,10 +632,22 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <div class="chart-box-header">
 <div>
 <h2>Herd mentality: individual strategists' targets, by year</h2>
-<div class="chart-subhead">Each tile bins that year's individual named banks'/strategists' targets by implied return (5-pt buckets, &minus;10% to 30%, same x-axis on every tile) &mdash; the orange line marks what actually happened. Click a tile to expand it into every firm's individual number, sorted smallest to largest implied return. Years without a verifiable individual-firm breakdown aren't shown here (see the main table above for those years' consensus figures). 2026 is still in progress, so it shows the forecast cluster only, no outcome line yet.</div>
+<div class="chart-subhead">Each tile bins that year's individual named banks'/strategists' targets by implied return (2-pt buckets, &minus;10% to 30%, same x-axis on every tile) &mdash; the orange line marks what actually happened. Click a tile to expand it into every firm's individual number, sorted smallest to largest implied return. Years without a verifiable individual-firm breakdown aren't shown here (see the main table above for those years' consensus figures). 2026 is still in progress, so it shows the forecast cluster only, no outcome line yet.</div>
 </div>
 </div>
 <div class="herd-grid" id="herdGrid"></div>
+</div>
+
+<div class="chart-box">
+<div class="chart-box-header">
+<div>
+<h2>How many standard deviations away was reality?</h2>
+<div class="chart-subhead">For years with more than 7 named firms, this measures the actual return against that year's own spread of individual forecasts &mdash; (actual return &minus; mean forecast) &divide; standard deviation of forecasts. If forecasts behaved like a normal distribution, a miss beyond &plusmn;2&sigma; should be rare; here it's the norm.</div>
+</div>
+</div>
+<div class="chart-canvas-wrap">
+<canvas id="zScoreChart"></canvas>
+</div>
 </div>
 
 <div class="table-box">
@@ -832,6 +844,7 @@ function init(){
  });
 
  renderHerdCharts(rows);
+ renderZScoreChart(rows);
 }
 
 // Individual named-bank/strategist year-end S&P 500 targets, as published
@@ -1140,6 +1153,78 @@ function renderHerdCharts(rows){
    }
    cell.classList.toggle("expanded");
   });
+ });
+}
+
+function renderZScoreChart(rows){
+ const rowsByYear = new Map(rows.map(r => [r.year, r]));
+ const years = Object.keys(INDIVIDUAL_TARGETS).map(Number).sort((a, b) => a - b)
+  .filter(y => INDIVIDUAL_TARGETS[y].length > 7 && rowsByYear.has(y));
+
+ const zRows = years.map(year => {
+  const row = rowsByYear.get(year);
+  const rets = INDIVIDUAL_TARGETS[year].map(f => pct(f.target, row.priorClose));
+  const n = rets.length;
+  const mean = rets.reduce((s, v) => s + v, 0) / n;
+  const variance = rets.reduce((s, v) => s + (v - mean) ** 2, 0) / (n - 1);
+  const sd = Math.sqrt(variance);
+  const z = (row.actualReturn - mean) / sd;
+  return { year, n, mean, sd, actualReturn: row.actualReturn, z };
+ });
+
+ const ctx = document.getElementById("zScoreChart").getContext("2d");
+ new Chart(ctx, {
+  type: "bar",
+  data: {
+   labels: zRows.map(r => String(r.year)),
+   datasets: [{
+    label: "Standard deviations from mean forecast",
+    data: zRows.map(r => r.z),
+    backgroundColor: zRows.map(r => Math.abs(r.z) >= 2 ? (r.z >= 0 ? "rgba(90,157,111,0.8)" : "rgba(192,86,79,0.8)") : "rgba(139,145,153,0.7)"),
+   }],
+  },
+  options: {
+   responsive: true,
+   maintainAspectRatio: false,
+   plugins: {
+    legend: { display: false },
+    tooltip: {
+     callbacks: {
+      label: ctx => {
+       const r = zRows[ctx.dataIndex];
+       return [
+        (r.z >= 0 ? "+" : "") + r.z.toFixed(2) + "σ (" + r.n + " firms)",
+        "Mean forecast: " + fmtPct(r.mean) + " ± " + r.sd.toFixed(1) + " pts",
+        "Actual: " + fmtPct(r.actualReturn),
+       ];
+      },
+     },
+    },
+   },
+   scales: {
+    x: { ticks: { color: "#8b9199" }, grid: { color: "#2b3138" } },
+    y: { ticks: { color: "#8b9199", callback: v => v + "σ" }, grid: { color: "#2b3138" }, title: { display: true, text: "Standard deviations from mean forecast", color: "#8b9199" } },
+   },
+  },
+  plugins: [{
+   id: "twoSigmaBands",
+   beforeDraw(chart){
+    const { ctx, chartArea, scales } = chart;
+    [2, -2].forEach(level => {
+     const yPix = scales.y.getPixelForValue(level);
+     if(yPix < chartArea.top || yPix > chartArea.bottom) return;
+     ctx.save();
+     ctx.strokeStyle = "#8b9199";
+     ctx.setLineDash([3, 3]);
+     ctx.lineWidth = 1;
+     ctx.beginPath();
+     ctx.moveTo(chartArea.left, yPix);
+     ctx.lineTo(chartArea.right, yPix);
+     ctx.stroke();
+     ctx.restore();
+    });
+   },
+  }],
  });
 }
 
