@@ -289,7 +289,7 @@ h1{
 
 .herd-grid{
  display:grid;
- grid-template-columns:repeat(auto-fill, minmax(320px, 1fr));
+ grid-template-columns:1fr;
  gap:18px;
  margin-bottom:30px;
 }
@@ -299,12 +299,6 @@ h1{
  border:1px solid var(--hair);
  border-radius:10px;
  padding:16px 18px 12px;
- cursor:pointer;
- transition:background 0.15s;
-}
-
-.herd-cell:hover{
- background:var(--card-hover);
 }
 
 .herd-cell-header{
@@ -328,31 +322,12 @@ h1{
  letter-spacing:0.03em;
 }
 
-.herd-cell .herd-hint{
- color:var(--muted);
- font-size:10px;
- margin-top:6px;
- text-align:center;
-}
-
-.herd-canvas-wrap{
- height:170px;
-}
-
 .herd-detail{
- display:none;
- margin-top:10px;
- border-top:1px solid var(--hair);
- padding-top:12px;
  overflow-x:auto;
 }
 
-.herd-cell.expanded .herd-detail{ display:block; }
-.herd-cell.expanded .herd-canvas-wrap{ display:none; }
-.herd-cell.expanded .herd-hint{ display:none; }
-
 .herd-detail-canvas-wrap{
- height:240px;
+ height:260px;
 }
 
 .table-box{
@@ -626,7 +601,7 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <div class="chart-box-header">
 <div>
 <h2>Herd mentality: individual strategists' targets, by year</h2>
-<div class="chart-subhead">Each tile bins that year's individual named banks'/strategists' targets by implied return (5-pt buckets, same &minus;20% to +40% x-axis on every tile) &mdash; the orange line marks what actually happened. Forecasts cluster tight; outcomes don't. Click a tile to see every firm's individual number. Years without a verifiable individual-firm breakdown aren't shown here (see the main table above for those years' consensus figures). 2026 is still in progress, so it shows the forecast cluster only, no outcome line yet.</div>
+<div class="chart-subhead">Each row is one year's individual named banks'/strategists' targets, sorted smallest to largest implied return &mdash; the dashed line marks what actually happened. Forecasts cluster tight in the middle; outcomes don't. Years without a verifiable individual-firm breakdown aren't shown here (see the main table above for those years' consensus figures). 2026 is still in progress, so it shows the forecast cluster only, no outcome line yet.</div>
 </div>
 </div>
 <div class="herd-grid" id="herdGrid"></div>
@@ -972,22 +947,6 @@ const INDIVIDUAL_TARGETS = {
  ],
 };
 
-const HERD_BIN_WIDTH = 5; // percentage points
-const HERD_MIN = -20, HERD_MAX = 40;
-
-function herdBins(firms, priorClose){
- const edges = [];
- for(let e = HERD_MIN; e < HERD_MAX; e += HERD_BIN_WIDTH) edges.push(e);
- const counts = edges.map(() => 0);
- firms.forEach(f => {
-  const ret = pct(f.target, priorClose);
-  let idx = Math.floor((ret - HERD_MIN) / HERD_BIN_WIDTH);
-  idx = Math.max(0, Math.min(counts.length - 1, idx));
-  counts[idx]++;
- });
- return edges.map((e, i) => ({ center: e + HERD_BIN_WIDTH / 2, count: counts[i] }));
-}
-
 // 2026 is in progress — priced from the 2025 close, no actual close yet.
 const PRIOR_CLOSE_2026 = 6845.50;
 
@@ -1007,123 +966,69 @@ function renderHerdCharts(rows){
 
   const cell = document.createElement("div");
   cell.className = "herd-cell";
+  const barWidth = 46;
+  const minWidth = Math.max(280, n * barWidth);
   cell.innerHTML = `
    <div class="herd-cell-header">
     <h3>${year}${hasActual ? "" : " <span style=\"color:var(--muted); font-size:12px; font-weight:400;\">(in progress)</span>"}</h3>
     <span class="herd-n">${n} ${n === 1 ? "firm" : "firms"}</span>
    </div>
-   <div class="herd-canvas-wrap"><canvas></canvas></div>
-   <div class="herd-hint">Click to see individual firms</div>
-   <div class="herd-detail"></div>
+   <div class="herd-detail"><div class="herd-detail-canvas-wrap" style="min-width:${minWidth}px;"><canvas></canvas></div></div>
   `;
   grid.appendChild(cell);
 
-  const bins = herdBins(firms, priorClose);
+  // Smallest to largest implied return, left to right — with enough firms
+  // clustered near consensus, this reads as a rough normal-distribution
+  // shape (a gentle rise into the packed middle, then a drop-off), not
+  // just a sorted staircase.
+  const sorted = [...firms].sort((a, b) => pct(a.target, priorClose) - pct(b.target, priorClose));
+
   const ctx = cell.querySelector("canvas").getContext("2d");
   new Chart(ctx, {
    type: "bar",
    data: {
+    labels: sorted.map(f => f.firm),
     datasets: [{
-     data: bins.map(b => ({ x: b.center, y: b.count })),
-     backgroundColor: "rgba(139,145,153,0.7)",
-     barThickness: 12,
+     label: "Implied return",
+     data: sorted.map(f => pct(f.target, priorClose)),
+     backgroundColor: sorted.map(f => hasActual && pct(f.target, priorClose) >= row.actualReturn ? "rgba(90,157,111,0.75)" : "rgba(111,143,172,0.75)"),
+     barThickness: 20,
     }],
    },
    options: {
     responsive: true,
     maintainAspectRatio: false,
-    animation: false,
     plugins: {
      legend: { display: false },
      tooltip: {
       callbacks: {
-       title: () => "",
-       label: ctx => Math.round(ctx.parsed.y) + " firm" + (Math.round(ctx.parsed.y) === 1 ? "" : "s") + " forecasting ~" + Math.round(ctx.parsed.x) + "% return",
+       title: items => items[0].label,
+       label: ctx => sorted[ctx.dataIndex] && (fmtNum(sorted[ctx.dataIndex].target) + " (" + fmtPct(ctx.parsed.y) + " implied return)"),
       },
      },
     },
     scales: {
-     x: { type: "linear", min: HERD_MIN, max: HERD_MAX, display: false },
-     y: { display: false, beginAtZero: true },
+     x: { ticks: { color: "#8b9199", font: { size: 10 }, maxRotation: 60, minRotation: 60 }, grid: { display: false } },
+     y: { ticks: { color: "#8b9199", callback: v => v + "%" }, grid: { color: "#2b3138" }, title: { display: true, text: "Expected return", color: "#8b9199" } },
     },
    },
    plugins: hasActual ? [{
-    id: "actualLine",
+    id: "actualLineDetail",
     afterDraw(chart){
      const { ctx, chartArea, scales } = chart;
-     const xPix = scales.x.getPixelForValue(row.actualReturn);
-     if(xPix < chartArea.left || xPix > chartArea.right) return;
+     const yPix = scales.y.getPixelForValue(row.actualReturn);
+     if(yPix < chartArea.top || yPix > chartArea.bottom) return;
      ctx.save();
      ctx.strokeStyle = "#d98a3d";
      ctx.lineWidth = 2;
+     ctx.setLineDash([4, 3]);
      ctx.beginPath();
-     ctx.moveTo(xPix, chartArea.top);
-     ctx.lineTo(xPix, chartArea.bottom);
+     ctx.moveTo(chartArea.left, yPix);
+     ctx.lineTo(chartArea.right, yPix);
      ctx.stroke();
      ctx.restore();
     },
    }] : [],
-  });
-
-  const detail = cell.querySelector(".herd-detail");
-  let built = false;
-  cell.addEventListener("click", () => {
-   if(!built){
-    const sorted = [...firms].sort((a, b) => b.target - a.target);
-    const barWidth = 46;
-    const minWidth = Math.max(280, sorted.length * barWidth);
-    detail.innerHTML = `<div class="herd-detail-canvas-wrap" style="min-width:${minWidth}px;"><canvas></canvas></div>`;
-
-    const dctx = detail.querySelector("canvas").getContext("2d");
-    new Chart(dctx, {
-     type: "bar",
-     data: {
-      labels: sorted.map(f => f.firm),
-      datasets: [{
-       label: "Implied return",
-       data: sorted.map(f => pct(f.target, priorClose)),
-       backgroundColor: sorted.map(f => hasActual && pct(f.target, priorClose) >= row.actualReturn ? "rgba(90,157,111,0.75)" : "rgba(111,143,172,0.75)"),
-       barThickness: 20,
-      }],
-     },
-     options: {
-      responsive: true,
-      maintainAspectRatio: false,
-      plugins: {
-       legend: { display: false },
-       tooltip: {
-        callbacks: {
-         title: items => items[0].label,
-         label: ctx => sorted[ctx.dataIndex] && (fmtNum(sorted[ctx.dataIndex].target) + " (" + fmtPct(ctx.parsed.y) + " implied return)"),
-        },
-       },
-      },
-      scales: {
-       x: { ticks: { color: "#8b9199", font: { size: 10 }, maxRotation: 60, minRotation: 60 }, grid: { display: false } },
-       y: { ticks: { color: "#8b9199", callback: v => v + "%" }, grid: { color: "#2b3138" }, title: { display: true, text: "Expected return", color: "#8b9199" } },
-      },
-     },
-     plugins: hasActual ? [{
-      id: "actualLineDetail",
-      afterDraw(chart){
-       const { ctx, chartArea, scales } = chart;
-       const yPix = scales.y.getPixelForValue(row.actualReturn);
-       if(yPix < chartArea.top || yPix > chartArea.bottom) return;
-       ctx.save();
-       ctx.strokeStyle = "#d98a3d";
-       ctx.lineWidth = 2;
-       ctx.setLineDash([4, 3]);
-       ctx.beginPath();
-       ctx.moveTo(chartArea.left, yPix);
-       ctx.lineTo(chartArea.right, yPix);
-       ctx.stroke();
-       ctx.restore();
-      },
-     }] : [],
-    });
-    built = true;
-   }
-   cell.classList.toggle("expanded");
   });
  });
 }
