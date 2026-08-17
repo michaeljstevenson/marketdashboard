@@ -1,0 +1,747 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<script>
+// Applied before first paint to avoid a flash of the wrong theme.
+(function(){
+ var saved = localStorage.getItem("theme");
+ if(saved === "light") document.documentElement.setAttribute("data-theme", "light");
+})();
+</script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Market Breadth — Michael J. Stevenson</title>
+
+<style>
+
+:root{
+  --bg:#14181c;
+  --card:#1c2127;
+  --card-hover:#20262d;
+  --ink:#eae6da;
+  --muted:#8b9199;
+  --hair:#2b3138;
+
+  --fear:#6f8fac;
+  --neutral:#7c828a;
+  --greed:#d98a3d;
+  --extreme:#b56f2a;
+
+  --serif:'Iowan Old Style','Palatino Linotype',Georgia,serif;
+  --mono:'SF Mono','JetBrains Mono',ui-monospace,Menlo,monospace;
+  --sans:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+}
+
+:root[data-theme="light"]{
+  --bg:#f7f5f0;
+  --card:#ffffff;
+  --card-hover:#f2efe6;
+  --ink:#1c1f24;
+  --muted:#6b6f76;
+  --hair:#e1dbcd;
+  --fear:#4f6f8c;
+  --neutral:#6c7178;
+  --greed:#b9701f;
+  --extreme:#96591c;
+}
+
+*{ box-sizing:border-box; }
+
+body{
+ margin:0;
+ background:var(--bg);
+ color:var(--ink);
+ font-family:var(--sans);
+}
+
+a{ color:inherit; }
+
+/* SITE NAV (shared with homepage) */
+
+.sitenav{
+ display:grid;
+ grid-template-columns:1fr auto 1fr;
+ align-items:center;
+ padding:16px 24px;
+ border-bottom:1px solid var(--hair);
+ position:relative;
+ z-index:50;
+}
+
+.sitenav .brand{
+ justify-self:start;
+}
+
+.sitenav .brand{
+ font-family:var(--serif);
+ font-size:17px;
+ color:var(--ink);
+ text-decoration:none;
+ letter-spacing:0.3px;
+}
+
+.navlinks{
+ display:flex;
+ gap:26px;
+ align-items:center;
+}
+
+.navlinks > a{
+ color:var(--muted);
+ font-size:13px;
+ text-decoration:none;
+ padding:6px 0;
+}
+
+.navlinks > a:hover, .navlinks > a.active{ color:var(--ink); }
+
+.navdrop{ position:relative; }
+
+
+.navdrop > .navlabel{
+ color:var(--muted);
+ font-size:13px;
+ cursor:default;
+ padding:6px 0;
+ user-select:none;
+}
+
+.navdrop:hover > .navlabel, .navdrop.open > .navlabel{ color:var(--ink); }
+
+.navdrop .dropdown{
+ display:none;
+ position:absolute;
+ top:100%;
+ left:0;
+ background:var(--card);
+ border:1px solid var(--hair);
+ border-radius:8px;
+ padding:8px 0;
+ min-width:230px;
+ margin-top:12px;
+ box-shadow:0 10px 30px rgba(0,0,0,0.45);
+}
+
+/* Driven by the .open class (see the script right after </nav>), not
+   pure :hover — see that script for why. */
+.navdrop.open .dropdown{ display:block; }
+
+.dropdown a{
+ display:block;
+ padding:9px 16px;
+ color:var(--muted);
+ text-decoration:none;
+ font-size:13px;
+}
+
+.dropdown a:hover{
+ background:var(--card-hover);
+ color:var(--ink);
+}
+
+.dropdown a.active{ color:var(--greed); }
+
+@media (max-width:720px){
+ .navlinks{ display:none; }
+}
+
+.container{
+ max-width:1000px;
+ margin:auto;
+ padding:30px 20px 60px;
+}
+
+/* HEADER */
+
+.header{
+ display:flex;
+ justify-content:space-between;
+ align-items:flex-end;
+ border-bottom:1px solid var(--hair);
+ padding-bottom:18px;
+ margin-bottom:25px;
+ flex-wrap:wrap;
+ gap:12px;
+}
+
+h1{
+ font-family:var(--serif);
+ font-size:28px;
+ font-weight:400;
+ margin:0;
+}
+
+.subtitle{
+ color:var(--muted);
+ font-size:13px;
+ margin-top:6px;
+ max-width:560px;
+}
+
+.updated{
+ color:var(--muted);
+ font-size:12px;
+}
+
+/* STAT ROW */
+
+.stat-grid{
+ display:grid;
+ grid-template-columns:repeat(4,1fr);
+ gap:16px;
+ margin-bottom:30px;
+}
+
+.stat-card{
+ background:var(--card);
+ border:1px solid var(--hair);
+ border-radius:10px;
+ padding:20px;
+}
+
+.stat-label{
+ color:var(--muted);
+ font-size:12px;
+ text-transform:uppercase;
+ letter-spacing:0.04em;
+ margin-bottom:8px;
+}
+
+.stat-value{
+ font-family:var(--mono);
+ font-size:26px;
+ color:var(--greed);
+}
+
+.stat-note{
+ color:var(--muted);
+ font-size:12px;
+ margin-top:6px;
+}
+
+/* CHART */
+
+.chart-box{
+ background:var(--card);
+ border:1px solid var(--hair);
+ border-radius:12px;
+ padding:20px;
+ margin-bottom:30px;
+}
+
+.chart-box h2{
+ font-family:var(--serif);
+ font-weight:400;
+ font-size:18px;
+ margin:0;
+}
+
+.chart-box-header{
+ display:flex;
+ justify-content:space-between;
+ align-items:center;
+ flex-wrap:wrap;
+ gap:10px;
+ margin-bottom:16px;
+}
+
+.range-controls{
+ display:flex;
+ gap:6px;
+}
+
+.range-btn{
+ background:#171b20;
+ border:1px solid var(--hair);
+ color:var(--muted);
+ font-size:12px;
+ font-family:var(--sans);
+ padding:4px 10px;
+ border-radius:6px;
+ cursor:pointer;
+}
+
+.range-btn:hover{
+ color:var(--ink);
+ border-color:#3a424b;
+}
+
+.range-btn.active{
+ background:var(--card-hover);
+ color:var(--greed);
+ border-color:var(--greed);
+}
+
+.chart-canvas-wrap{
+ height:300px;
+}
+
+/* EXPLAINER */
+
+.explainer{
+ background:var(--card);
+ border:1px solid var(--hair);
+ border-radius:12px;
+ padding:24px 26px;
+ margin-bottom:30px;
+}
+
+.explainer h2{
+ font-family:var(--serif);
+ font-weight:400;
+ font-size:18px;
+ margin:0 0 12px;
+}
+
+.explainer p{
+ color:var(--muted);
+ font-size:14px;
+ line-height:1.7;
+ margin:0 0 14px;
+}
+
+.explainer p:last-child{ margin-bottom:0; }
+
+.explainer .source{
+ margin-top:16px;
+ font-size:11px;
+}
+
+.explainer .source a{
+ color:var(--muted);
+ text-decoration:none;
+ border-bottom:1px dotted var(--muted);
+}
+
+.explainer .source a:hover{ color:var(--ink); }
+
+.error-banner{
+ background:#2a1c1c;
+ border:1px solid #5a3030;
+ color:#e0a0a0;
+ border-radius:8px;
+ padding:12px 15px;
+ margin-bottom:20px;
+ font-size:13px;
+ display:none;
+}
+
+@media (max-width:720px){
+ .stat-grid{ grid-template-columns:repeat(2,1fr); }
+}
+
+.theme-toggle{
+ justify-self:end;
+ background:none;
+ border:1px solid var(--hair);
+ color:var(--muted);
+ border-radius:6px;
+ width:32px;
+ height:32px;
+ display:flex;
+ align-items:center;
+ justify-content:center;
+ cursor:pointer;
+ font-size:15px;
+ line-height:1;
+}
+
+.theme-toggle:hover{ color:var(--ink); border-color:var(--hair); }
+
+/* Light-theme overrides for hardcoded (non-var) dark colors */
+
+[data-theme="light"] .range-btn{
+ background:#efece2;
+}
+
+[data-theme="light"] .error-banner{
+ background:#fdecea;
+ border-color:#f0b8b0;
+ color:#a83a30;
+}
+</style>
+</head>
+<body>
+
+<nav class="sitenav">
+<a class="brand" href="/">Michael J. Stevenson, CAIA<span style="font-size:0.6em; vertical-align:super;">&reg;</span></a>
+<div class="navlinks">
+<a href="/sentiment-index.html">Sentiment Index</a>
+<a href="/portfolio-simulator.html">Portfolio Simulator</a>
+
+<div class="navdrop">
+<span class="navlabel">Markets &amp; Macro ▾</span>
+<div class="dropdown">
+<a href="/volatility.html">Implied vs. Realized Volatility</a>
+<a href="/implied-erp.html">Implied Equity Risk Premium</a>
+<a href="/ipo-activity.html">IPO Market Activity</a>
+<a href="/yield-curves.html">Yield Curves</a>
+<a href="/coming-soon.html?title=Credit%20Spreads">Credit Spreads</a>
+<a href="/coming-soon.html?title=Global%20Liquidity">Global Liquidity</a>
+<a href="/coming-soon.html?title=Recession%20Probability%20Model">Recession Probability Model</a>
+<a href="/coming-soon.html?title=Inflation">Inflation</a>
+</div>
+</div>
+
+<div class="navdrop">
+<span class="navlabel">Equities ▾</span>
+<div class="dropdown">
+<a href="/sector-analysis.html">Sector Performance</a>
+<a href="/ath-index.html">All-Time Highs and Lows</a>
+<a href="/valuations.html">Valuations</a>
+<a href="/factor-analysis.html">Factor Analysis</a>
+<a href="/coming-soon.html?title=Earnings%20Revisions">Earnings Revisions</a>
+<a href="/market-breadth.html" class="active">Market Breadth</a>
+<a href="/coming-soon.html?title=Concentration%20Risk">Concentration Risk</a>
+</div>
+</div>
+
+<div class="navdrop">
+<span class="navlabel">Rates &amp; Credit ▾</span>
+<div class="dropdown">
+<a href="/coming-soon.html?title=Monetary%20Policy">Monetary Policy</a>
+<a href="/coming-soon.html?title=Real%20Yields%20Dashboard">Real Yields Dashboard</a>
+</div>
+</div>
+
+<div class="navdrop">
+<span class="navlabel">Alternative &amp; Cross-Asset ▾</span>
+<div class="dropdown">
+<a href="/coming-soon.html?title=Cross-Asset%20Risk">Cross-Asset Risk</a>
+<a href="/coming-soon.html?title=Commodity%20Cycle">Commodity Cycle</a>
+<a href="/coming-soon.html?title=Currency%20Strength">Currency Strength</a>
+</div>
+</div>
+
+<div class="navdrop">
+<span class="navlabel">Behavioral &amp; Positioning ▾</span>
+<div class="dropdown">
+<a href="/coming-soon.html?title=Options%20Positioning">Options Positioning</a>
+<a href="/coming-soon.html?title=Retail%20vs.%20Institutional%20Flow">Retail vs. Institutional Flow</a>
+<a href="/ipo-activity.html">IPO &amp; SPAC Activity</a>
+</div>
+</div>
+
+<div class="navdrop">
+<span class="navlabel">Thematic ▾</span>
+<div class="dropdown">
+<a href="/coming-soon.html?title=AI%20Capex%20Tracker">AI Capex Tracker</a>
+<a href="/coming-soon.html?title=Housing%20Market%20Monitor">Housing Market Monitor</a>
+</div>
+</div>
+
+</div>
+<button class="theme-toggle" id="themeToggle" type="button" aria-label="Toggle light/dark mode" title="Toggle light/dark mode">&#9789;</button>
+</nav>
+<script>
+document.querySelectorAll(".navdrop").forEach(function(navdrop){
+ var closeTimer = null;
+ navdrop.addEventListener("mouseenter", function(){
+  clearTimeout(closeTimer);
+  navdrop.classList.add("open");
+ });
+ navdrop.addEventListener("mouseleave", function(){
+  closeTimer = setTimeout(function(){ navdrop.classList.remove("open"); }, 300);
+ });
+});
+</script>
+<script>
+(function(){
+ var btn = document.getElementById("themeToggle");
+ if(!btn) return;
+ var theme = document.documentElement.getAttribute("data-theme") === "light" ? "light" : "dark";
+ btn.textContent = theme === "light" ? "☀" : "☽";
+ btn.addEventListener("click", function(){
+  var current = document.documentElement.getAttribute("data-theme") === "light" ? "light" : "dark";
+  var next = current === "light" ? "dark" : "light";
+  localStorage.setItem("theme", next);
+  location.reload();
+ });
+})();
+</script>
+
+
+
+<div class="container">
+
+<div class="error-banner" id="errorBanner"></div>
+
+<div class="header">
+<div>
+<h1>Market Breadth</h1>
+<div class="subtitle">How many S&amp;P 500 constituents are actually participating in the market's move — advances vs. declines, the cumulative A-D line, % above the 200-day moving average, and the new-highs/new-lows count — since an index can rise on a shrinking handful of names.</div>
+</div>
+<div class="updated" id="updated">Loading...</div>
+</div>
+
+<div class="stat-grid">
+<div class="stat-card">
+<div class="stat-label">Advances / Declines</div>
+<div class="stat-value" id="statAdvDecl">—</div>
+<div class="stat-note" id="statAdvDeclNote">Most recent session</div>
+</div>
+<div class="stat-card">
+<div class="stat-label">% Above 200-Day SMA</div>
+<div class="stat-value" id="statPctSma">—</div>
+<div class="stat-note">Share of constituents in a long-term uptrend</div>
+</div>
+<div class="stat-card">
+<div class="stat-label">New Highs − New Lows</div>
+<div class="stat-value" id="statNetHL">—</div>
+<div class="stat-note" id="statNetHLNote">52-week basis</div>
+</div>
+<div class="stat-card">
+<div class="stat-label">A-D Line</div>
+<div class="stat-value" id="statAdLine" style="font-size:20px;">—</div>
+<div class="stat-note">Cumulative, since data start</div>
+</div>
+</div>
+
+<div class="chart-box">
+<div class="chart-box-header">
+<h2>Cumulative advance-decline line vs. S&amp;P 500</h2>
+<div class="range-controls" id="adRangeControls"></div>
+</div>
+<div class="chart-canvas-wrap">
+<canvas id="adChart"></canvas>
+</div>
+</div>
+
+<div class="chart-box">
+<div class="chart-box-header">
+<h2>% of constituents above their 200-day moving average</h2>
+<div class="range-controls" id="smaRangeControls"></div>
+</div>
+<div class="chart-canvas-wrap">
+<canvas id="smaChart"></canvas>
+</div>
+</div>
+
+<div class="chart-box">
+<div class="chart-box-header">
+<h2>52-week new highs vs. new lows</h2>
+<div class="range-controls" id="hlRangeControls"></div>
+</div>
+<div class="chart-canvas-wrap">
+<canvas id="hlChart"></canvas>
+</div>
+</div>
+
+<div class="explainer">
+<h2>Reading breadth</h2>
+<p>An index can keep climbing while fewer and fewer of its members are actually going up with it — a handful of mega-caps can carry the average even as the typical stock lags or falls. Breadth measures try to catch that: the advance-decline line tracks the running tally of advancing minus declining names, day by day, and its shape relative to the index itself is the signal. When the S&amp;P 500 makes a new high but the A-D line doesn't confirm it — a "breadth divergence" — that's historically been a warning sign that the rally's participation is narrowing, sometimes ahead of a broader pullback.</p>
+<p>The % above the 200-day moving average is a slower-moving read on the same idea: how many constituents are in a durable uptrend, not just up on a given day. A market near all-time highs with a low reading here means the advance is being carried by a narrow group of leaders rather than broad participation — worth watching even if the index itself looks fine. New highs vs. new lows is the sharpest-edged version: a rising count of fresh 52-week lows even while the index holds up is one of the more reliable early-warning breadth signals.</p>
+<p>None of these are timing tools on their own — breadth can diverge from price for months before it matters, or not matter at all. They're context for how healthy an advance or decline actually is underneath the headline index number.</p>
+<div class="source">Source: <a href="https://www.alphavantage.co/" target="_blank" rel="noopener">Alpha Vantage</a> daily adjusted closes across S&amp;P 500 constituents, computed once daily after the close.</div>
+</div>
+
+</div>
+
+<script>
+function showError(message){
+ const banner = document.getElementById("errorBanner");
+ banner.textContent = message;
+ banner.style.display = "block";
+}
+
+function themeInkColor(){
+ const v = getComputedStyle(document.documentElement).getPropertyValue("--ink").trim();
+ return v || "#eae6da";
+}
+
+let ROWS = [];
+
+const RANGES = [
+ { key: "1M", days: 30 },
+ { key: "3M", days: 90 },
+ { key: "6M", days: 182 },
+ { key: "1Y", days: 365 },
+ { key: "5Y", days: 365 * 5 },
+ { key: "Max", days: null },
+];
+const DEFAULT_RANGE = "1Y";
+
+function rowsInRange(rangeKey){
+ const range = RANGES.find(r => r.key === rangeKey);
+ if(!range.days) return ROWS;
+ const lastDate = new Date(ROWS[ROWS.length - 1].date + "T00:00:00Z");
+ const cutoff = lastDate.getTime() - range.days * 24 * 60 * 60 * 1000;
+ const startIndex = ROWS.findIndex(r => new Date(r.date + "T00:00:00Z").getTime() >= cutoff);
+ return startIndex === -1 ? ROWS : ROWS.slice(startIndex);
+}
+
+function renderRangeButtons(containerId, onSelect){
+ const container = document.getElementById(containerId);
+ container.innerHTML = "";
+ RANGES.forEach(r => {
+  const btn = document.createElement("button");
+  btn.className = "range-btn" + (r.key === DEFAULT_RANGE ? " active" : "");
+  btn.textContent = r.key;
+  btn.addEventListener("click", () => {
+   container.querySelectorAll(".range-btn").forEach(b => b.classList.remove("active"));
+   btn.classList.add("active");
+   onSelect(r.key);
+  });
+  container.appendChild(btn);
+ });
+}
+
+let adChart = null;
+function renderAdChart(rangeKey){
+ const rows = rowsInRange(rangeKey);
+ const ctx = document.getElementById("adChart").getContext("2d");
+ if(adChart) adChart.destroy();
+ adChart = new Chart(ctx, {
+  data: {
+   labels: rows.map(r => r.date),
+   datasets: [
+    {
+     type: "line",
+     label: "A-D Line",
+     data: rows.map(r => r.adLine),
+     borderColor: "#d98a3d",
+     backgroundColor: "#d98a3d",
+     borderWidth: 2,
+     pointRadius: 0,
+     fill: false,
+     yAxisID: "y",
+     order: 2,
+    },
+    {
+     type: "line",
+     label: "S&P 500",
+     data: rows.map(r => r.spxClose),
+     borderColor: themeInkColor(),
+     backgroundColor: themeInkColor(),
+     borderWidth: 2,
+     pointRadius: 0,
+     spanGaps: true,
+     fill: false,
+     yAxisID: "y1",
+     order: 1,
+    },
+   ],
+  },
+  options: {
+   responsive: true,
+   maintainAspectRatio: false,
+   interaction: { mode: "index", intersect: false },
+   plugins: { legend: { labels: { color: "#8b9199" } } },
+   scales: {
+    x: { ticks: { color: "#8b9199", maxTicksLimit: 8 }, grid: { color: "#2b3138" } },
+    y: { position: "left", ticks: { color: "#8b9199" }, grid: { color: "#2b3138" }, title: { display: true, text: "A-D Line", color: "#8b9199" } },
+    y1: { position: "right", ticks: { color: "#8b9199" }, grid: { display: false }, title: { display: true, text: "S&P 500", color: "#8b9199" } },
+   },
+  },
+ });
+}
+
+let smaChart = null;
+function renderSmaChart(rangeKey){
+ const rows = rowsInRange(rangeKey).filter(r => r.pctAbove200sma !== null);
+ const ctx = document.getElementById("smaChart").getContext("2d");
+ if(smaChart) smaChart.destroy();
+ smaChart = new Chart(ctx, {
+  type: "line",
+  data: {
+   labels: rows.map(r => r.date),
+   datasets: [{
+    label: "% above 200-day SMA",
+    data: rows.map(r => r.pctAbove200sma),
+    borderColor: "#d98a3d",
+    backgroundColor: "#d98a3d",
+    borderWidth: 2,
+    pointRadius: 0,
+    fill: false,
+   }],
+  },
+  options: {
+   responsive: true,
+   maintainAspectRatio: false,
+   interaction: { mode: "index", intersect: false },
+   plugins: {
+    legend: { display: false },
+    tooltip: { callbacks: { label: ctx => "% above 200-day SMA: " + (ctx.parsed.y === null ? "—" : ctx.parsed.y + "%") } },
+   },
+   scales: {
+    x: { ticks: { color: "#8b9199", maxTicksLimit: 8 }, grid: { color: "#2b3138" } },
+    y: { ticks: { color: "#8b9199", callback: v => v + "%" }, grid: { color: "#2b3138" }, min: 0, max: 100 },
+   },
+  },
+ });
+}
+
+let hlChart = null;
+function renderHlChart(rangeKey){
+ const rows = rowsInRange(rangeKey);
+ const ctx = document.getElementById("hlChart").getContext("2d");
+ if(hlChart) hlChart.destroy();
+ hlChart = new Chart(ctx, {
+  type: "bar",
+  data: {
+   labels: rows.map(r => r.date),
+   datasets: [
+    {
+     label: "New Highs",
+     data: rows.map(r => r.newHighs),
+     backgroundColor: "rgba(217,138,61,0.75)",
+    },
+    {
+     label: "New Lows",
+     data: rows.map(r => -r.newLows),
+     backgroundColor: "rgba(111,143,172,0.75)",
+    },
+   ],
+  },
+  options: {
+   responsive: true,
+   maintainAspectRatio: false,
+   interaction: { mode: "index", intersect: false },
+   plugins: {
+    legend: { labels: { color: "#8b9199" } },
+    tooltip: { callbacks: { label: ctx => ctx.dataset.label + ": " + Math.abs(ctx.parsed.y) } },
+   },
+   scales: {
+    x: { ticks: { color: "#8b9199", maxTicksLimit: 8 }, grid: { color: "#2b3138" }, stacked: true },
+    y: { ticks: { color: "#8b9199", callback: v => Math.abs(v) }, grid: { color: "#2b3138" }, stacked: true },
+   },
+  },
+ });
+}
+
+async function init(){
+ try{
+  const res = await fetch("/api/breadth-internals", { cache: "no-store" });
+  const data = await res.json();
+  if(!res.ok || data.error) throw new Error(data.error || "Failed to load breadth data");
+
+  ROWS = (data.rows || []).filter(r => r.advances != null && r.declines != null);
+  if(!ROWS.length) throw new Error("No breadth data available yet");
+
+  const latest = ROWS[ROWS.length - 1];
+  document.getElementById("statAdvDecl").textContent = latest.advances + " / " + latest.declines;
+  document.getElementById("statAdvDeclNote").textContent = "As of " + latest.date;
+  document.getElementById("statPctSma").textContent = latest.pctAbove200sma === null ? "—" : latest.pctAbove200sma + "%";
+  const netHL = (latest.newHighs || 0) - (latest.newLows || 0);
+  document.getElementById("statNetHL").textContent = (netHL >= 0 ? "+" : "") + netHL;
+  document.getElementById("statNetHLNote").textContent = latest.newHighs + " highs, " + latest.newLows + " lows";
+  document.getElementById("statAdLine").textContent = (latest.adLine >= 0 ? "+" : "") + latest.adLine.toLocaleString();
+  document.getElementById("updated").textContent = "Generated " + new Date(data.generated_at_utc).toLocaleString() + " · " + data.constituentCount + " constituents";
+
+  renderRangeButtons("adRangeControls", renderAdChart);
+  renderRangeButtons("smaRangeControls", renderSmaChart);
+  renderRangeButtons("hlRangeControls", renderHlChart);
+  renderAdChart(DEFAULT_RANGE);
+  renderSmaChart(DEFAULT_RANGE);
+  renderHlChart(DEFAULT_RANGE);
+ }catch(err){
+  showError("Couldn't load market breadth data: " + err.message);
+ }
+}
+
+init();
+</script>
+
+</body>
+</html>
