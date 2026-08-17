@@ -289,8 +289,8 @@ h1{
 
 .herd-grid{
  display:grid;
- grid-template-columns:repeat(auto-fill, minmax(200px, 1fr));
- gap:14px;
+ grid-template-columns:repeat(auto-fill, minmax(320px, 1fr));
+ gap:18px;
  margin-bottom:30px;
 }
 
@@ -298,43 +298,73 @@ h1{
  background:var(--card);
  border:1px solid var(--hair);
  border-radius:10px;
- padding:12px 12px 8px;
+ padding:16px 18px 12px;
+ cursor:pointer;
+ transition:background 0.15s;
+}
+
+.herd-cell:hover{
+ background:var(--card-hover);
 }
 
 .herd-cell-header{
  display:flex;
  justify-content:space-between;
  align-items:baseline;
- margin-bottom:6px;
+ margin-bottom:10px;
 }
 
 .herd-cell h3{
  font-family:var(--serif);
  font-weight:400;
- font-size:15px;
+ font-size:19px;
  margin:0;
 }
 
 .herd-cell .herd-n{
  color:var(--muted);
- font-size:10px;
+ font-size:11px;
  text-transform:uppercase;
  letter-spacing:0.03em;
 }
 
-.herd-canvas-wrap{
- height:90px;
-}
-
-.herd-empty{
- height:90px;
- display:flex;
- align-items:center;
- justify-content:center;
+.herd-cell .herd-hint{
  color:var(--muted);
- font-size:12px;
+ font-size:10px;
+ margin-top:6px;
  text-align:center;
 }
+
+.herd-canvas-wrap{
+ height:170px;
+}
+
+.herd-detail{
+ display:none;
+ margin-top:10px;
+ max-height:260px;
+ overflow-y:auto;
+ border-top:1px solid var(--hair);
+ padding-top:10px;
+}
+
+.herd-cell.expanded .herd-detail{ display:block; }
+.herd-cell.expanded .herd-canvas-wrap{ display:none; }
+.herd-cell.expanded .herd-hint{ display:none; }
+
+.herd-detail-row{
+ display:flex;
+ justify-content:space-between;
+ gap:10px;
+ font-size:12px;
+ padding:4px 0;
+ border-bottom:1px solid var(--hair);
+}
+
+.herd-detail-row:last-child{ border-bottom:none; }
+
+.herd-detail-firm{ color:var(--ink); }
+.herd-detail-target{ font-family:var(--mono); color:var(--muted); white-space:nowrap; }
 
 .table-box{
  background:var(--card);
@@ -564,12 +594,7 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <div class="updated">Consensus targets sourced from Bloomberg, BusinessWeek, CNNMoney, Barron's, CNBC, and Yahoo Finance strategist surveys; see table for per-year sourcing.</div>
 </div>
 
-<div class="stat-grid" id="statGrid">
-<div class="stat-card">
-<div class="stat-label">Most Recent Year</div>
-<div class="stat-value" id="statLatestYear">—</div>
-<div class="stat-note" id="statLatestNote">—</div>
-</div>
+<div class="stat-grid" id="statGrid" style="grid-template-columns:repeat(3,1fr);">
 <div class="stat-card">
 <div class="stat-label">Avg. Absolute Miss</div>
 <div class="stat-value" id="statAvgMiss">—</div>
@@ -612,7 +637,7 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <div class="chart-box-header">
 <div>
 <h2>Herd mentality: individual strategists' targets, by year</h2>
-<div class="chart-subhead">Each tile bins that year's individual named banks'/strategists' targets by implied return (5-pt buckets, same &minus;20% to +40% x-axis on every tile) &mdash; the orange line marks what actually happened. Forecasts cluster tight; outcomes don't. Years with no verifiable individual-firm data are marked as such rather than estimated.</div>
+<div class="chart-subhead">Each tile bins that year's individual named banks'/strategists' targets by implied return (5-pt buckets, same &minus;20% to +40% x-axis on every tile) &mdash; the orange line marks what actually happened. Forecasts cluster tight; outcomes don't. Click a tile to see every firm's individual number. Years without a verifiable individual-firm breakdown aren't shown here (see the main table above for those years' consensus figures). 2026 is still in progress, so it shows the forecast cluster only, no outcome line yet.</div>
 </div>
 </div>
 <div class="herd-grid" id="herdGrid"></div>
@@ -711,13 +736,6 @@ function init(){
   missPts: d.actual - d.target,
  }));
  rows.forEach(r => { r.missReturnPts = r.actualReturn - r.targetReturn; });
-
- const latest = rows[rows.length - 1];
- document.getElementById("statLatestYear").textContent = latest.year;
- const beatLatest = latest.actual >= latest.target;
- document.getElementById("statLatestYear").className = "stat-value " + (beatLatest ? "beat" : "miss");
- document.getElementById("statLatestNote").textContent =
-  "Target " + fmtNum(latest.target) + " → Actual " + fmtNum(latest.actual) + " (" + fmtPct(pct(latest.actual, latest.target)) + " vs. target)";
 
  const avgAbsMiss = rows.reduce((s, r) => s + Math.abs(r.missReturnPts), 0) / rows.length;
  document.getElementById("statAvgMiss").textContent = avgAbsMiss.toFixed(1) + " pts";
@@ -952,6 +970,17 @@ const INDIVIDUAL_TARGETS = {
   { firm: "Yardeni Research", target: 7000 }, { firm: "Wells Fargo", target: 7007 },
   { firm: "Evercore ISI", target: 6000 }, { firm: "BCA Research", target: 4350 },
  ],
+ 2026: [
+  { firm: "Oppenheimer", target: 8100 }, { firm: "Deutsche Bank", target: 8000 },
+  { firm: "Morgan Stanley", target: 7800 }, { firm: "Wells Fargo", target: 7800 },
+  { firm: "RBC", target: 7750 }, { firm: "Evercore ISI", target: 7750 },
+  { firm: "Yardeni Research", target: 7700 }, { firm: "Fundstrat", target: 7700 },
+  { firm: "Citi", target: 7700 }, { firm: "UBS", target: 7700 },
+  { firm: "Goldman Sachs", target: 7600 }, { firm: "Societe Generale", target: 7300 },
+  { firm: "JPMorgan", target: 7500 }, { firm: "HSBC", target: 7500 },
+  { firm: "Barclays", target: 7400 }, { firm: "BMO", target: 7380 },
+  { firm: "Bank of America", target: 7100 },
+ ],
 };
 
 const HERD_BIN_WIDTH = 5; // percentage points
@@ -970,25 +999,37 @@ function herdBins(firms, priorClose){
  return edges.map((e, i) => ({ center: e + HERD_BIN_WIDTH / 2, count: counts[i] }));
 }
 
+// 2026 is in progress — priced from the 2025 close, no actual close yet.
+const PRIOR_CLOSE_2026 = 6845.50;
+
 function renderHerdCharts(rows){
+ const rowsByYear = new Map(rows.map(r => [r.year, r]));
  const grid = document.getElementById("herdGrid");
  grid.innerHTML = "";
- rows.forEach(r => {
+
+ const years = Object.keys(INDIVIDUAL_TARGETS).map(Number).sort((a, b) => a - b);
+
+ years.forEach(year => {
+  const firms = INDIVIDUAL_TARGETS[year];
+  const n = firms.length;
+  const row = rowsByYear.get(year);
+  const priorClose = row ? row.priorClose : PRIOR_CLOSE_2026;
+  const hasActual = !!row;
+
   const cell = document.createElement("div");
   cell.className = "herd-cell";
-  const firms = INDIVIDUAL_TARGETS[r.year];
-  const n = firms ? firms.length : 0;
   cell.innerHTML = `
    <div class="herd-cell-header">
-    <h3>${r.year}</h3>
-    <span class="herd-n">${n ? n + (n === 1 ? " firm" : " firms") : "no data"}</span>
+    <h3>${year}${hasActual ? "" : " <span style=\"color:var(--muted); font-size:12px; font-weight:400;\">(in progress)</span>"}</h3>
+    <span class="herd-n">${n} ${n === 1 ? "firm" : "firms"}</span>
    </div>
-   <div class="herd-canvas-wrap">${n ? '<canvas></canvas>' : '<div class="herd-empty">No individual-firm data found for this year</div>'}</div>
+   <div class="herd-canvas-wrap"><canvas></canvas></div>
+   <div class="herd-hint">Click to see individual firms</div>
+   <div class="herd-detail"></div>
   `;
   grid.appendChild(cell);
-  if(!n) return;
 
-  const bins = herdBins(firms, r.priorClose);
+  const bins = herdBins(firms, priorClose);
   const ctx = cell.querySelector("canvas").getContext("2d");
   new Chart(ctx, {
    type: "bar",
@@ -996,7 +1037,7 @@ function renderHerdCharts(rows){
     datasets: [{
      data: bins.map(b => ({ x: b.center, y: b.count })),
      backgroundColor: "rgba(139,145,153,0.7)",
-     barThickness: 7,
+     barThickness: 12,
     }],
    },
    options: {
@@ -1017,11 +1058,11 @@ function renderHerdCharts(rows){
      y: { display: false, beginAtZero: true },
     },
    },
-   plugins: [{
+   plugins: hasActual ? [{
     id: "actualLine",
     afterDraw(chart){
      const { ctx, chartArea, scales } = chart;
-     const xPix = scales.x.getPixelForValue(r.actualReturn);
+     const xPix = scales.x.getPixelForValue(row.actualReturn);
      if(xPix < chartArea.left || xPix > chartArea.right) return;
      ctx.save();
      ctx.strokeStyle = "#d98a3d";
@@ -1032,7 +1073,23 @@ function renderHerdCharts(rows){
      ctx.stroke();
      ctx.restore();
     },
-   }],
+   }] : [],
+  });
+
+  const detail = cell.querySelector(".herd-detail");
+  let built = false;
+  cell.addEventListener("click", () => {
+   if(!built){
+    const sorted = [...firms].sort((a, b) => b.target - a.target);
+    detail.innerHTML = sorted.map(f => `
+     <div class="herd-detail-row">
+      <span class="herd-detail-firm">${f.firm}</span>
+      <span class="herd-detail-target">${fmtNum(f.target)} (${fmtPct(pct(f.target, priorClose))})</span>
+     </div>
+    `).join("");
+    built = true;
+   }
+   cell.classList.toggle("expanded");
   });
  });
 }
