@@ -1015,7 +1015,7 @@ function renderDayChangeRange(data, rangeKey, isLive){
  const summary = data.ranges[rangeKey];
  if(!summary) return;
 
- const rangeLabel = { "1D": "1 day", "5D": "5 days", MTD: "month to date", QTD: "quarter to date", YTD: "year to date", "1Y": "1 year", "3Y": "3 years", "5Y": "5 years" }[rangeKey] || rangeKey;
+ const rangeLabel = { "1D": "1 day", "5D": "5 days", MTD: "month to date", QTD: "quarter to date", YTD: "year to date", "1Y": "1 year", "3Y": "3 years, annualized", "5Y": "5 years, annualized" }[rangeKey] || rangeKey;
  document.getElementById("dayChangeAsOf").textContent = isLive
   ? "Updated " + new Date(data.generated_at_utc).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" }) +
     " · " + rangeLabel + " · " + summary.n + " of " + summary.total + " constituents"
@@ -1044,6 +1044,10 @@ function renderDayChangeRange(data, rangeKey, isLive){
   return edges;
  };
 
+ // 3Y and 5Y are annualized (CAGR), not cumulative — their moves land in
+ // a much narrower band than 1Y's raw total return, so they get their
+ // own tight buckets sized to that annualized spread rather than
+ // inheriting anything close to 1Y's scale.
  const edgeSets = {
   "1D": [-Infinity, -8, -5, -3, -2, -1, 0, 1, 2, 3, 4, 7, 10, Infinity],
   "5D": fixedStepEdges(-12, 18, 2),
@@ -1051,8 +1055,8 @@ function renderDayChangeRange(data, rangeKey, isLive){
   QTD: fixedStepEdges(-32, 48, 6),
   YTD: fixedStepEdges(-60, 200, 15),
   "1Y": fixedStepEdges(-65, 550, 40),
-  "3Y": fixedStepEdges(-70, 1050, 75),
-  "5Y": fixedStepEdges(-85, 1050, 75),
+  "3Y": fixedStepEdges(-40, 130, 10),
+  "5Y": fixedStepEdges(-30, 65, 5),
  };
  const edges = edgeSets[rangeKey] || edgeSets["1D"];
  const labels = edges.slice(0, -1).map((e, i) => e === -Infinity ? "<" + edges[i + 1] : (edges[i + 1] === Infinity ? e + "+" : String(e)));

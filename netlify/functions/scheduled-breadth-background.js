@@ -190,6 +190,14 @@ function computeRangeSummaries(perNameCloses, constituentTotal) {
     "5Y": isoDate(fiveYearsAgo),
   };
 
+  // Anything longer than 1Y is annualized (CAGR) rather than shown as
+  // cumulative total return — a 3-year cumulative +37% and a 5-year
+  // cumulative +39% look almost identical but are very different
+  // annual growth rates (+11%/yr vs. +7%/yr), and cumulative figures
+  // across different multi-year horizons aren't comparable to each
+  // other the way annualized ones are.
+  const ANNUALIZE_YEARS = { "3Y": 3, "5Y": 5 };
+
   const ranges = {};
 
   for (const [rangeKey, baselineDate] of Object.entries(rangeBaselines)) {
@@ -205,8 +213,12 @@ function computeRangeSummaries(perNameCloses, constituentTotal) {
         const idx = baselineIndexOnOrBefore(closes, baselineDate);
         if (idx >= 0) baselineClose = closes[idx].close;
       }
-      if (baselineClose === null || baselineClose === 0) continue;
-      changes.push({ symbol, pctChange: Math.round((latestClose / baselineClose - 1) * 100 * 100) / 100 });
+      if (baselineClose === null || baselineClose <= 0) continue;
+      const ratio = latestClose / baselineClose;
+      const years = ANNUALIZE_YEARS[rangeKey];
+      const pct = years ? (ratio <= 0 ? null : (ratio ** (1 / years) - 1) * 100) : (ratio - 1) * 100;
+      if (pct === null) continue;
+      changes.push({ symbol, pctChange: Math.round(pct * 100) / 100 });
     }
     if (!changes.length) continue;
     changes.sort((a, b) => a.pctChange - b.pctChange);
@@ -224,6 +236,7 @@ function computeRangeSummaries(perNameCloses, constituentTotal) {
       up,
       down,
       unchanged: n - up - down,
+      annualized: !!ANNUALIZE_YEARS[rangeKey],
       changes,
     };
   }
