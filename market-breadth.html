@@ -953,21 +953,40 @@ async function init(){
 
  // Independent of the breadth fetch above — refreshed hourly through the
  // trading day by its own scheduled job, so a failure here (or it not
- // having run yet) shouldn't block the rest of the page.
+ // having run yet) shouldn't block the rest of the page. Falls back to a
+ // static seed snapshot (built from downloaded Stooq daily bars) so the
+ // section shows real historical data immediately after deploy, rather
+ // than staying hidden until the live hourly job has run at least once.
+ let liveDayChange = null;
  try{
   const dcRes = await fetch("/api/daychange", { cache: "no-store" });
-  const dcData = await dcRes.json();
-  if(dcRes.ok && !dcData.error) renderDayChange(dcData);
+  if(dcRes.ok){
+   const dcData = await dcRes.json();
+   if(!dcData.error) liveDayChange = dcData;
+  }
  }catch(err){
-  console.error("Couldn't load day's-change data:", err.message);
+  console.error("Couldn't load live day's-change data:", err.message);
+ }
+
+ if(liveDayChange){
+  renderDayChange(liveDayChange, true);
+ }else{
+  try{
+   const seedRes = await fetch("/data-daychange-seed.json", { cache: "no-store" });
+   if(seedRes.ok) renderDayChange(await seedRes.json(), false);
+  }catch(err){
+   console.error("Couldn't load seed day's-change data:", err.message);
+  }
  }
 }
 
-function renderDayChange(summary){
+function renderDayChange(summary, isLive){
  document.getElementById("dayChangeBox").style.display = "";
- document.getElementById("dayChangeAsOf").textContent =
-  "Updated " + new Date(summary.generated_at_utc).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" }) +
-  " · " + summary.n + " of " + summary.total + " constituents";
+ document.getElementById("dayChangeAsOf").textContent = isLive
+  ? "Updated " + new Date(summary.generated_at_utc).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" }) +
+    " · " + summary.n + " of " + summary.total + " constituents"
+  : "As of " + summary.asOfDate + " (historical, via Stooq — hourly live data starts once the market-hours job first runs)" +
+    " · " + summary.n + " of " + summary.total + " constituents";
  document.getElementById("dcMedian").textContent = (summary.median >= 0 ? "+" : "") + summary.median.toFixed(2) + "%";
  document.getElementById("dcMean").textContent = (summary.mean >= 0 ? "+" : "") + summary.mean.toFixed(2) + "%";
  document.getElementById("dcUp").textContent = summary.up;

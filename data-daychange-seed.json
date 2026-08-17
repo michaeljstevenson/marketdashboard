@@ -1,0 +1,2026 @@
+{
+ "generated_at_utc": "2026-08-17T04:27:38.813148Z",
+ "source": "stooq_seed",
+ "asOfDate": "2026-08-14",
+ "n": 503,
+ "total": 503,
+ "median": 0.0,
+ "mean": 0.06,
+ "up": 250,
+ "down": 245,
+ "unchanged": 8,
+ "changes": [
+  {
+   "symbol": "AVGO",
+   "pctChange": -5.94
+  },
+  {
+   "symbol": "GDDY",
+   "pctChange": -5.56
+  },
+  {
+   "symbol": "AMAT",
+   "pctChange": -5.12
+  },
+  {
+   "symbol": "HOOD",
+   "pctChange": -3.83
+  },
+  {
+   "symbol": "CRWD",
+   "pctChange": -3.8
+  },
+  {
+   "symbol": "HPQ",
+   "pctChange": -3.8
+  },
+  {
+   "symbol": "WDAY",
+   "pctChange": -3.76
+  },
+  {
+   "symbol": "GEN",
+   "pctChange": -3.69
+  },
+  {
+   "symbol": "ORCL",
+   "pctChange": -3.65
+  },
+  {
+   "symbol": "ARES",
+   "pctChange": -3.63
+  },
+  {
+   "symbol": "BX",
+   "pctChange": -3.61
+  },
+  {
+   "symbol": "COIN",
+   "pctChange": -3.53
+  },
+  {
+   "symbol": "INTU",
+   "pctChange": -3.53
+  },
+  {
+   "symbol": "VEEV",
+   "pctChange": -3.52
+  },
+  {
+   "symbol": "FTNT",
+   "pctChange": -3.28
+  },
+  {
+   "symbol": "CIEN",
+   "pctChange": -3.17
+  },
+  {
+   "symbol": "FFIV",
+   "pctChange": -3.08
+  },
+  {
+   "symbol": "PANW",
+   "pctChange": -2.96
+  },
+  {
+   "symbol": "TTD",
+   "pctChange": -2.88
+  },
+  {
+   "symbol": "IDXX",
+   "pctChange": -2.82
+  },
+  {
+   "symbol": "PLTR",
+   "pctChange": -2.78
+  },
+  {
+   "symbol": "NCLH",
+   "pctChange": -2.76
+  },
+  {
+   "symbol": "FIS",
+   "pctChange": -2.74
+  },
+  {
+   "symbol": "KLAC",
+   "pctChange": -2.7
+  },
+  {
+   "symbol": "PAYX",
+   "pctChange": -2.7
+  },
+  {
+   "symbol": "ZTS",
+   "pctChange": -2.7
+  },
+  {
+   "symbol": "PTC",
+   "pctChange": -2.69
+  },
+  {
+   "symbol": "CRM",
+   "pctChange": -2.56
+  },
+  {
+   "symbol": "EFX",
+   "pctChange": -2.55
+  },
+  {
+   "symbol": "NOW",
+   "pctChange": -2.55
+  },
+  {
+   "symbol": "ADSK",
+   "pctChange": -2.44
+  },
+  {
+   "symbol": "ADBE",
+   "pctChange": -2.39
+  },
+  {
+   "symbol": "LLY",
+   "pctChange": -2.39
+  },
+  {
+   "symbol": "ANET",
+   "pctChange": -2.36
+  },
+  {
+   "symbol": "VRSK",
+   "pctChange": -2.3
+  },
+  {
+   "symbol": "FICO",
+   "pctChange": -2.24
+  },
+  {
+   "symbol": "ODFL",
+   "pctChange": -2.21
+  },
+  {
+   "symbol": "DAL",
+   "pctChange": -2.15
+  },
+  {
+   "symbol": "PODD",
+   "pctChange": -2.12
+  },
+  {
+   "symbol": "VRTX",
+   "pctChange": -2.07
+  },
+  {
+   "symbol": "CSGP",
+   "pctChange": -2.03
+  },
+  {
+   "symbol": "HONA",
+   "pctChange": -2.03
+  },
+  {
+   "symbol": "IQV",
+   "pctChange": -2.01
+  },
+  {
+   "symbol": "FISV",
+   "pctChange": -2.0
+  },
+  {
+   "symbol": "INTC",
+   "pctChange": -1.97
+  },
+  {
+   "symbol": "APO",
+   "pctChange": -1.96
+  },
+  {
+   "symbol": "JBL",
+   "pctChange": -1.96
+  },
+  {
+   "symbol": "DXCM",
+   "pctChange": -1.89
+  },
+  {
+   "symbol": "GPN",
+   "pctChange": -1.88
+  },
+  {
+   "symbol": "HPE",
+   "pctChange": -1.86
+  },
+  {
+   "symbol": "CDW",
+   "pctChange": -1.85
+  },
+  {
+   "symbol": "STLD",
+   "pctChange": -1.83
+  },
+  {
+   "symbol": "YUM",
+   "pctChange": -1.82
+  },
+  {
+   "symbol": "CPAY",
+   "pctChange": -1.8
+  },
+  {
+   "symbol": "HCA",
+   "pctChange": -1.71
+  },
+  {
+   "symbol": "ISRG",
+   "pctChange": -1.68
+  },
+  {
+   "symbol": "ORLY",
+   "pctChange": -1.65
+  },
+  {
+   "symbol": "JKHY",
+   "pctChange": -1.64
+  },
+  {
+   "symbol": "CSCO",
+   "pctChange": -1.58
+  },
+  {
+   "symbol": "RCL",
+   "pctChange": -1.57
+  },
+  {
+   "symbol": "SW",
+   "pctChange": -1.54
+  },
+  {
+   "symbol": "BRO",
+   "pctChange": -1.49
+  },
+  {
+   "symbol": "CHTR",
+   "pctChange": -1.44
+  },
+  {
+   "symbol": "BLDR",
+   "pctChange": -1.43
+  },
+  {
+   "symbol": "EL",
+   "pctChange": -1.4
+  },
+  {
+   "symbol": "FDX",
+   "pctChange": -1.39
+  },
+  {
+   "symbol": "EBAY",
+   "pctChange": -1.38
+  },
+  {
+   "symbol": "LH",
+   "pctChange": -1.38
+  },
+  {
+   "symbol": "LRCX",
+   "pctChange": -1.38
+  },
+  {
+   "symbol": "UNP",
+   "pctChange": -1.38
+  },
+  {
+   "symbol": "LUV",
+   "pctChange": -1.36
+  },
+  {
+   "symbol": "DPZ",
+   "pctChange": -1.31
+  },
+  {
+   "symbol": "FDS",
+   "pctChange": -1.28
+  },
+  {
+   "symbol": "FERG",
+   "pctChange": -1.28
+  },
+  {
+   "symbol": "TMO",
+   "pctChange": -1.28
+  },
+  {
+   "symbol": "BMY",
+   "pctChange": -1.27
+  },
+  {
+   "symbol": "NUE",
+   "pctChange": -1.24
+  },
+  {
+   "symbol": "IT",
+   "pctChange": -1.21
+  },
+  {
+   "symbol": "NKE",
+   "pctChange": -1.21
+  },
+  {
+   "symbol": "IBM",
+   "pctChange": -1.19
+  },
+  {
+   "symbol": "ADP",
+   "pctChange": -1.18
+  },
+  {
+   "symbol": "BAX",
+   "pctChange": -1.18
+  },
+  {
+   "symbol": "STE",
+   "pctChange": -1.18
+  },
+  {
+   "symbol": "FDXF",
+   "pctChange": -1.12
+  },
+  {
+   "symbol": "IR",
+   "pctChange": -1.12
+  },
+  {
+   "symbol": "KKR",
+   "pctChange": -1.12
+  },
+  {
+   "symbol": "TJX",
+   "pctChange": -1.11
+  },
+  {
+   "symbol": "BXP",
+   "pctChange": -1.06
+  },
+  {
+   "symbol": "CCL",
+   "pctChange": -1.06
+  },
+  {
+   "symbol": "MSCI",
+   "pctChange": -1.06
+  },
+  {
+   "symbol": "PNR",
+   "pctChange": -1.06
+  },
+  {
+   "symbol": "CL",
+   "pctChange": -1.05
+  },
+  {
+   "symbol": "NVR",
+   "pctChange": -1.05
+  },
+  {
+   "symbol": "WY",
+   "pctChange": -1.05
+  },
+  {
+   "symbol": "EW",
+   "pctChange": -1.04
+  },
+  {
+   "symbol": "HSY",
+   "pctChange": -1.02
+  },
+  {
+   "symbol": "NSC",
+   "pctChange": -1.02
+  },
+  {
+   "symbol": "RMD",
+   "pctChange": -1.01
+  },
+  {
+   "symbol": "VRSN",
+   "pctChange": -1.01
+  },
+  {
+   "symbol": "ALLE",
+   "pctChange": -1.0
+  },
+  {
+   "symbol": "EXR",
+   "pctChange": -1.0
+  },
+  {
+   "symbol": "UPS",
+   "pctChange": -0.99
+  },
+  {
+   "symbol": "ZBRA",
+   "pctChange": -0.95
+  },
+  {
+   "symbol": "AMZN",
+   "pctChange": -0.94
+  },
+  {
+   "symbol": "KR",
+   "pctChange": -0.94
+  },
+  {
+   "symbol": "TSCO",
+   "pctChange": -0.94
+  },
+  {
+   "symbol": "ULTA",
+   "pctChange": -0.93
+  },
+  {
+   "symbol": "IP",
+   "pctChange": -0.92
+  },
+  {
+   "symbol": "JBHT",
+   "pctChange": -0.92
+  },
+  {
+   "symbol": "SPGI",
+   "pctChange": -0.92
+  },
+  {
+   "symbol": "ACN",
+   "pctChange": -0.9
+  },
+  {
+   "symbol": "AJG",
+   "pctChange": -0.9
+  },
+  {
+   "symbol": "CARR",
+   "pctChange": -0.9
+  },
+  {
+   "symbol": "OMC",
+   "pctChange": -0.89
+  },
+  {
+   "symbol": "CASY",
+   "pctChange": -0.86
+  },
+  {
+   "symbol": "META",
+   "pctChange": -0.86
+  },
+  {
+   "symbol": "PSA",
+   "pctChange": -0.85
+  },
+  {
+   "symbol": "SPG",
+   "pctChange": -0.85
+  },
+  {
+   "symbol": "CTSH",
+   "pctChange": -0.84
+  },
+  {
+   "symbol": "HD",
+   "pctChange": -0.83
+  },
+  {
+   "symbol": "PFG",
+   "pctChange": -0.83
+  },
+  {
+   "symbol": "MTD",
+   "pctChange": -0.82
+  },
+  {
+   "symbol": "LEN",
+   "pctChange": -0.81
+  },
+  {
+   "symbol": "UAL",
+   "pctChange": -0.8
+  },
+  {
+   "symbol": "CLX",
+   "pctChange": -0.79
+  },
+  {
+   "symbol": "SBUX",
+   "pctChange": -0.79
+  },
+  {
+   "symbol": "MOS",
+   "pctChange": -0.78
+  },
+  {
+   "symbol": "BLK",
+   "pctChange": -0.77
+  },
+  {
+   "symbol": "AMCR",
+   "pctChange": -0.75
+  },
+  {
+   "symbol": "DELL",
+   "pctChange": -0.75
+  },
+  {
+   "symbol": "WTW",
+   "pctChange": -0.72
+  },
+  {
+   "symbol": "BR",
+   "pctChange": -0.71
+  },
+  {
+   "symbol": "DHI",
+   "pctChange": -0.71
+  },
+  {
+   "symbol": "DHR",
+   "pctChange": -0.71
+  },
+  {
+   "symbol": "MCO",
+   "pctChange": -0.71
+  },
+  {
+   "symbol": "UHS",
+   "pctChange": -0.7
+  },
+  {
+   "symbol": "DGX",
+   "pctChange": -0.69
+  },
+  {
+   "symbol": "SHW",
+   "pctChange": -0.68
+  },
+  {
+   "symbol": "SYY",
+   "pctChange": -0.67
+  },
+  {
+   "symbol": "JNJ",
+   "pctChange": -0.66
+  },
+  {
+   "symbol": "TGT",
+   "pctChange": -0.66
+  },
+  {
+   "symbol": "TROW",
+   "pctChange": -0.66
+  },
+  {
+   "symbol": "AMGN",
+   "pctChange": -0.63
+  },
+  {
+   "symbol": "EMR",
+   "pctChange": -0.63
+  },
+  {
+   "symbol": "FAST",
+   "pctChange": -0.62
+  },
+  {
+   "symbol": "PKG",
+   "pctChange": -0.61
+  },
+  {
+   "symbol": "AVY",
+   "pctChange": -0.6
+  },
+  {
+   "symbol": "BKNG",
+   "pctChange": -0.6
+  },
+  {
+   "symbol": "CTAS",
+   "pctChange": -0.59
+  },
+  {
+   "symbol": "ABNB",
+   "pctChange": -0.58
+  },
+  {
+   "symbol": "ARE",
+   "pctChange": -0.58
+  },
+  {
+   "symbol": "DE",
+   "pctChange": -0.58
+  },
+  {
+   "symbol": "NDAQ",
+   "pctChange": -0.58
+  },
+  {
+   "symbol": "BRK.B",
+   "pctChange": -0.57
+  },
+  {
+   "symbol": "AME",
+   "pctChange": -0.56
+  },
+  {
+   "symbol": "COO",
+   "pctChange": -0.56
+  },
+  {
+   "symbol": "CRH",
+   "pctChange": -0.56
+  },
+  {
+   "symbol": "RVTY",
+   "pctChange": -0.56
+  },
+  {
+   "symbol": "GRMN",
+   "pctChange": -0.55
+  },
+  {
+   "symbol": "OTIS",
+   "pctChange": -0.55
+  },
+  {
+   "symbol": "SYK",
+   "pctChange": -0.55
+  },
+  {
+   "symbol": "ABBV",
+   "pctChange": -0.54
+  },
+  {
+   "symbol": "PPG",
+   "pctChange": -0.54
+  },
+  {
+   "symbol": "AOS",
+   "pctChange": -0.53
+  },
+  {
+   "symbol": "MAA",
+   "pctChange": -0.53
+  },
+  {
+   "symbol": "SBAC",
+   "pctChange": -0.53
+  },
+  {
+   "symbol": "XYL",
+   "pctChange": -0.53
+  },
+  {
+   "symbol": "CHRW",
+   "pctChange": -0.52
+  },
+  {
+   "symbol": "MRNA",
+   "pctChange": -0.52
+  },
+  {
+   "symbol": "A",
+   "pctChange": -0.51
+  },
+  {
+   "symbol": "AZO",
+   "pctChange": -0.51
+  },
+  {
+   "symbol": "FCX",
+   "pctChange": -0.51
+  },
+  {
+   "symbol": "EXPD",
+   "pctChange": -0.5
+  },
+  {
+   "symbol": "MS",
+   "pctChange": -0.47
+  },
+  {
+   "symbol": "DUK",
+   "pctChange": -0.46
+  },
+  {
+   "symbol": "MRSH",
+   "pctChange": -0.46
+  },
+  {
+   "symbol": "AXON",
+   "pctChange": -0.45
+  },
+  {
+   "symbol": "COHR",
+   "pctChange": -0.43
+  },
+  {
+   "symbol": "CRL",
+   "pctChange": -0.43
+  },
+  {
+   "symbol": "FRT",
+   "pctChange": -0.42
+  },
+  {
+   "symbol": "TMUS",
+   "pctChange": -0.42
+  },
+  {
+   "symbol": "NDSN",
+   "pctChange": -0.41
+  },
+  {
+   "symbol": "ETN",
+   "pctChange": -0.4
+  },
+  {
+   "symbol": "BIIB",
+   "pctChange": -0.39
+  },
+  {
+   "symbol": "HSIC",
+   "pctChange": -0.39
+  },
+  {
+   "symbol": "WMT",
+   "pctChange": -0.39
+  },
+  {
+   "symbol": "V",
+   "pctChange": -0.36
+  },
+  {
+   "symbol": "VLO",
+   "pctChange": -0.36
+  },
+  {
+   "symbol": "AON",
+   "pctChange": -0.35
+  },
+  {
+   "symbol": "WSM",
+   "pctChange": -0.35
+  },
+  {
+   "symbol": "AXP",
+   "pctChange": -0.34
+  },
+  {
+   "symbol": "MAS",
+   "pctChange": -0.34
+  },
+  {
+   "symbol": "ICE",
+   "pctChange": -0.33
+  },
+  {
+   "symbol": "O",
+   "pctChange": -0.33
+  },
+  {
+   "symbol": "WAT",
+   "pctChange": -0.32
+  },
+  {
+   "symbol": "FTV",
+   "pctChange": -0.31
+  },
+  {
+   "symbol": "GS",
+   "pctChange": -0.31
+  },
+  {
+   "symbol": "REGN",
+   "pctChange": -0.31
+  },
+  {
+   "symbol": "INCY",
+   "pctChange": -0.3
+  },
+  {
+   "symbol": "MSFT",
+   "pctChange": -0.3
+  },
+  {
+   "symbol": "PH",
+   "pctChange": -0.29
+  },
+  {
+   "symbol": "KMB",
+   "pctChange": -0.28
+  },
+  {
+   "symbol": "PHM",
+   "pctChange": -0.28
+  },
+  {
+   "symbol": "MPC",
+   "pctChange": -0.27
+  },
+  {
+   "symbol": "SNA",
+   "pctChange": -0.26
+  },
+  {
+   "symbol": "CB",
+   "pctChange": -0.25
+  },
+  {
+   "symbol": "XYZ",
+   "pctChange": -0.25
+  },
+  {
+   "symbol": "AKAM",
+   "pctChange": -0.24
+  },
+  {
+   "symbol": "GPC",
+   "pctChange": -0.24
+  },
+  {
+   "symbol": "RSG",
+   "pctChange": -0.24
+  },
+  {
+   "symbol": "DECK",
+   "pctChange": -0.23
+  },
+  {
+   "symbol": "AMP",
+   "pctChange": -0.2
+  },
+  {
+   "symbol": "Q",
+   "pctChange": -0.2
+  },
+  {
+   "symbol": "REG",
+   "pctChange": -0.2
+  },
+  {
+   "symbol": "SWKS",
+   "pctChange": -0.2
+  },
+  {
+   "symbol": "AWK",
+   "pctChange": -0.19
+  },
+  {
+   "symbol": "BALL",
+   "pctChange": -0.18
+  },
+  {
+   "symbol": "GEHC",
+   "pctChange": -0.14
+  },
+  {
+   "symbol": "SWK",
+   "pctChange": -0.14
+  },
+  {
+   "symbol": "GOOGL",
+   "pctChange": -0.13
+  },
+  {
+   "symbol": "PLD",
+   "pctChange": -0.13
+  },
+  {
+   "symbol": "GOOG",
+   "pctChange": -0.12
+  },
+  {
+   "symbol": "DLTR",
+   "pctChange": -0.11
+  },
+  {
+   "symbol": "CPT",
+   "pctChange": -0.1
+  },
+  {
+   "symbol": "DOC",
+   "pctChange": -0.1
+  },
+  {
+   "symbol": "NFLX",
+   "pctChange": -0.1
+  },
+  {
+   "symbol": "RJF",
+   "pctChange": -0.1
+  },
+  {
+   "symbol": "TYL",
+   "pctChange": -0.09
+  },
+  {
+   "symbol": "COST",
+   "pctChange": -0.08
+  },
+  {
+   "symbol": "IEX",
+   "pctChange": -0.08
+  },
+  {
+   "symbol": "SRE",
+   "pctChange": -0.08
+  },
+  {
+   "symbol": "JPM",
+   "pctChange": -0.07
+  },
+  {
+   "symbol": "MRVL",
+   "pctChange": -0.07
+  },
+  {
+   "symbol": "CMI",
+   "pctChange": -0.06
+  },
+  {
+   "symbol": "ITW",
+   "pctChange": -0.06
+  },
+  {
+   "symbol": "NVDA",
+   "pctChange": -0.06
+  },
+  {
+   "symbol": "ROL",
+   "pctChange": -0.06
+  },
+  {
+   "symbol": "ECL",
+   "pctChange": -0.05
+  },
+  {
+   "symbol": "PFE",
+   "pctChange": -0.04
+  },
+  {
+   "symbol": "INVH",
+   "pctChange": -0.03
+  },
+  {
+   "symbol": "ABT",
+   "pctChange": -0.02
+  },
+  {
+   "symbol": "ATO",
+   "pctChange": -0.02
+  },
+  {
+   "symbol": "CHD",
+   "pctChange": -0.02
+  },
+  {
+   "symbol": "HON",
+   "pctChange": -0.01
+  },
+  {
+   "symbol": "LULU",
+   "pctChange": -0.01
+  },
+  {
+   "symbol": "AES",
+   "pctChange": 0.0
+  },
+  {
+   "symbol": "BEN",
+   "pctChange": 0.0
+  },
+  {
+   "symbol": "CMCSA",
+   "pctChange": 0.0
+  },
+  {
+   "symbol": "EQR",
+   "pctChange": 0.0
+  },
+  {
+   "symbol": "HAS",
+   "pctChange": 0.0
+  },
+  {
+   "symbol": "KVUE",
+   "pctChange": 0.0
+  },
+  {
+   "symbol": "MMM",
+   "pctChange": 0.0
+  },
+  {
+   "symbol": "UDR",
+   "pctChange": 0.0
+  },
+  {
+   "symbol": "SO",
+   "pctChange": 0.01
+  },
+  {
+   "symbol": "CSX",
+   "pctChange": 0.04
+  },
+  {
+   "symbol": "ESS",
+   "pctChange": 0.05
+  },
+  {
+   "symbol": "PCAR",
+   "pctChange": 0.05
+  },
+  {
+   "symbol": "ERIE",
+   "pctChange": 0.06
+  },
+  {
+   "symbol": "WRB",
+   "pctChange": 0.06
+  },
+  {
+   "symbol": "MGM",
+   "pctChange": 0.07
+  },
+  {
+   "symbol": "AVB",
+   "pctChange": 0.08
+  },
+  {
+   "symbol": "KIM",
+   "pctChange": 0.08
+  },
+  {
+   "symbol": "VICI",
+   "pctChange": 0.08
+  },
+  {
+   "symbol": "UBER",
+   "pctChange": 0.09
+  },
+  {
+   "symbol": "GWW",
+   "pctChange": 0.1
+  },
+  {
+   "symbol": "TRMB",
+   "pctChange": 0.1
+  },
+  {
+   "symbol": "TRV",
+   "pctChange": 0.1
+  },
+  {
+   "symbol": "EXE",
+   "pctChange": 0.11
+  },
+  {
+   "symbol": "LOW",
+   "pctChange": 0.11
+  },
+  {
+   "symbol": "PEP",
+   "pctChange": 0.12
+  },
+  {
+   "symbol": "MDLZ",
+   "pctChange": 0.13
+  },
+  {
+   "symbol": "IFF",
+   "pctChange": 0.14
+  },
+  {
+   "symbol": "PEG",
+   "pctChange": 0.14
+  },
+  {
+   "symbol": "VLTO",
+   "pctChange": 0.14
+  },
+  {
+   "symbol": "HIG",
+   "pctChange": 0.15
+  },
+  {
+   "symbol": "WM",
+   "pctChange": 0.15
+  },
+  {
+   "symbol": "GILD",
+   "pctChange": 0.16
+  },
+  {
+   "symbol": "ROST",
+   "pctChange": 0.16
+  },
+  {
+   "symbol": "WYNN",
+   "pctChange": 0.16
+  },
+  {
+   "symbol": "AEP",
+   "pctChange": 0.18
+  },
+  {
+   "symbol": "GL",
+   "pctChange": 0.18
+  },
+  {
+   "symbol": "ES",
+   "pctChange": 0.19
+  },
+  {
+   "symbol": "MET",
+   "pctChange": 0.19
+  },
+  {
+   "symbol": "DOV",
+   "pctChange": 0.2
+  },
+  {
+   "symbol": "PG",
+   "pctChange": 0.2
+  },
+  {
+   "symbol": "FITB",
+   "pctChange": 0.21
+  },
+  {
+   "symbol": "MCD",
+   "pctChange": 0.21
+  },
+  {
+   "symbol": "MRK",
+   "pctChange": 0.21
+  },
+  {
+   "symbol": "NEE",
+   "pctChange": 0.21
+  },
+  {
+   "symbol": "TFC",
+   "pctChange": 0.21
+  },
+  {
+   "symbol": "AAPL",
+   "pctChange": 0.22
+  },
+  {
+   "symbol": "WEC",
+   "pctChange": 0.22
+  },
+  {
+   "symbol": "CAT",
+   "pctChange": 0.23
+  },
+  {
+   "symbol": "ECHO",
+   "pctChange": 0.23
+  },
+  {
+   "symbol": "XEL",
+   "pctChange": 0.24
+  },
+  {
+   "symbol": "BSX",
+   "pctChange": 0.27
+  },
+  {
+   "symbol": "L",
+   "pctChange": 0.28
+  },
+  {
+   "symbol": "AFL",
+   "pctChange": 0.29
+  },
+  {
+   "symbol": "CINF",
+   "pctChange": 0.29
+  },
+  {
+   "symbol": "MNST",
+   "pctChange": 0.3
+  },
+  {
+   "symbol": "PRU",
+   "pctChange": 0.3
+  },
+  {
+   "symbol": "CDNS",
+   "pctChange": 0.32
+  },
+  {
+   "symbol": "MSI",
+   "pctChange": 0.32
+  },
+  {
+   "symbol": "TECH",
+   "pctChange": 0.32
+  },
+  {
+   "symbol": "CCI",
+   "pctChange": 0.33
+  },
+  {
+   "symbol": "KO",
+   "pctChange": 0.33
+  },
+  {
+   "symbol": "MTB",
+   "pctChange": 0.33
+  },
+  {
+   "symbol": "D",
+   "pctChange": 0.34
+  },
+  {
+   "symbol": "DASH",
+   "pctChange": 0.35
+  },
+  {
+   "symbol": "PGR",
+   "pctChange": 0.35
+  },
+  {
+   "symbol": "WAB",
+   "pctChange": 0.35
+  },
+  {
+   "symbol": "ALL",
+   "pctChange": 0.36
+  },
+  {
+   "symbol": "ADM",
+   "pctChange": 0.37
+  },
+  {
+   "symbol": "ED",
+   "pctChange": 0.38
+  },
+  {
+   "symbol": "USB",
+   "pctChange": 0.38
+  },
+  {
+   "symbol": "RL",
+   "pctChange": 0.39
+  },
+  {
+   "symbol": "MA",
+   "pctChange": 0.4
+  },
+  {
+   "symbol": "MKC",
+   "pctChange": 0.4
+  },
+  {
+   "symbol": "HRL",
+   "pctChange": 0.41
+  },
+  {
+   "symbol": "C",
+   "pctChange": 0.43
+  },
+  {
+   "symbol": "PSX",
+   "pctChange": 0.43
+  },
+  {
+   "symbol": "GM",
+   "pctChange": 0.44
+  },
+  {
+   "symbol": "ROP",
+   "pctChange": 0.46
+  },
+  {
+   "symbol": "TPR",
+   "pctChange": 0.46
+  },
+  {
+   "symbol": "WELL",
+   "pctChange": 0.46
+  },
+  {
+   "symbol": "NTRS",
+   "pctChange": 0.49
+  },
+  {
+   "symbol": "DVA",
+   "pctChange": 0.5
+  },
+  {
+   "symbol": "KHC",
+   "pctChange": 0.51
+  },
+  {
+   "symbol": "AIZ",
+   "pctChange": 0.52
+  },
+  {
+   "symbol": "J",
+   "pctChange": 0.52
+  },
+  {
+   "symbol": "ELV",
+   "pctChange": 0.53
+  },
+  {
+   "symbol": "TT",
+   "pctChange": 0.53
+  },
+  {
+   "symbol": "VZ",
+   "pctChange": 0.54
+  },
+  {
+   "symbol": "AEE",
+   "pctChange": 0.57
+  },
+  {
+   "symbol": "EXC",
+   "pctChange": 0.57
+  },
+  {
+   "symbol": "LNT",
+   "pctChange": 0.57
+  },
+  {
+   "symbol": "BA",
+   "pctChange": 0.58
+  },
+  {
+   "symbol": "MLM",
+   "pctChange": 0.58
+  },
+  {
+   "symbol": "IVZ",
+   "pctChange": 0.59
+  },
+  {
+   "symbol": "HII",
+   "pctChange": 0.6
+  },
+  {
+   "symbol": "BNY",
+   "pctChange": 0.61
+  },
+  {
+   "symbol": "EME",
+   "pctChange": 0.61
+  },
+  {
+   "symbol": "QCOM",
+   "pctChange": 0.61
+  },
+  {
+   "symbol": "BAC",
+   "pctChange": 0.62
+  },
+  {
+   "symbol": "EQT",
+   "pctChange": 0.63
+  },
+  {
+   "symbol": "SJM",
+   "pctChange": 0.63
+  },
+  {
+   "symbol": "CBRE",
+   "pctChange": 0.64
+  },
+  {
+   "symbol": "EVRG",
+   "pctChange": 0.65
+  },
+  {
+   "symbol": "HST",
+   "pctChange": 0.66
+  },
+  {
+   "symbol": "UNH",
+   "pctChange": 0.67
+  },
+  {
+   "symbol": "TSLA",
+   "pctChange": 0.68
+  },
+  {
+   "symbol": "ACGL",
+   "pctChange": 0.69
+  },
+  {
+   "symbol": "PNC",
+   "pctChange": 0.69
+  },
+  {
+   "symbol": "TEL",
+   "pctChange": 0.69
+  },
+  {
+   "symbol": "IBKR",
+   "pctChange": 0.7
+  },
+  {
+   "symbol": "GD",
+   "pctChange": 0.72
+  },
+  {
+   "symbol": "NWS",
+   "pctChange": 0.73
+  },
+  {
+   "symbol": "GIS",
+   "pctChange": 0.75
+  },
+  {
+   "symbol": "PNW",
+   "pctChange": 0.75
+  },
+  {
+   "symbol": "MDT",
+   "pctChange": 0.76
+  },
+  {
+   "symbol": "NWSA",
+   "pctChange": 0.76
+  },
+  {
+   "symbol": "RF",
+   "pctChange": 0.76
+  },
+  {
+   "symbol": "PM",
+   "pctChange": 0.78
+  },
+  {
+   "symbol": "APTV",
+   "pctChange": 0.79
+  },
+  {
+   "symbol": "BDX",
+   "pctChange": 0.79
+  },
+  {
+   "symbol": "DRI",
+   "pctChange": 0.79
+  },
+  {
+   "symbol": "HBAN",
+   "pctChange": 0.79
+  },
+  {
+   "symbol": "AIG",
+   "pctChange": 0.8
+  },
+  {
+   "symbol": "AMT",
+   "pctChange": 0.8
+  },
+  {
+   "symbol": "TKO",
+   "pctChange": 0.8
+  },
+  {
+   "symbol": "WFC",
+   "pctChange": 0.81
+  },
+  {
+   "symbol": "APH",
+   "pctChange": 0.82
+  },
+  {
+   "symbol": "CFG",
+   "pctChange": 0.84
+  },
+  {
+   "symbol": "FSLR",
+   "pctChange": 0.84
+  },
+  {
+   "symbol": "BG",
+   "pctChange": 0.85
+  },
+  {
+   "symbol": "CMS",
+   "pctChange": 0.85
+  },
+  {
+   "symbol": "EOG",
+   "pctChange": 0.85
+  },
+  {
+   "symbol": "HUBB",
+   "pctChange": 0.85
+  },
+  {
+   "symbol": "TDG",
+   "pctChange": 0.85
+  },
+  {
+   "symbol": "CNP",
+   "pctChange": 0.86
+  },
+  {
+   "symbol": "LDOS",
+   "pctChange": 0.86
+  },
+  {
+   "symbol": "WBD",
+   "pctChange": 0.86
+  },
+  {
+   "symbol": "ETR",
+   "pctChange": 0.87
+  },
+  {
+   "symbol": "ROK",
+   "pctChange": 0.87
+  },
+  {
+   "symbol": "LII",
+   "pctChange": 0.88
+  },
+  {
+   "symbol": "APP",
+   "pctChange": 0.89
+  },
+  {
+   "symbol": "TDY",
+   "pctChange": 0.89
+  },
+  {
+   "symbol": "DTE",
+   "pctChange": 0.94
+  },
+  {
+   "symbol": "SCHW",
+   "pctChange": 0.94
+  },
+  {
+   "symbol": "WST",
+   "pctChange": 0.94
+  },
+  {
+   "symbol": "XOM",
+   "pctChange": 0.94
+  },
+  {
+   "symbol": "LIN",
+   "pctChange": 0.95
+  },
+  {
+   "symbol": "MO",
+   "pctChange": 0.95
+  },
+  {
+   "symbol": "PPL",
+   "pctChange": 0.95
+  },
+  {
+   "symbol": "CME",
+   "pctChange": 0.97
+  },
+  {
+   "symbol": "DG",
+   "pctChange": 0.98
+  },
+  {
+   "symbol": "NI",
+   "pctChange": 1.0
+  },
+  {
+   "symbol": "STT",
+   "pctChange": 1.0
+  },
+  {
+   "symbol": "LVS",
+   "pctChange": 1.01
+  },
+  {
+   "symbol": "NTAP",
+   "pctChange": 1.02
+  },
+  {
+   "symbol": "EIX",
+   "pctChange": 1.03
+  },
+  {
+   "symbol": "KDP",
+   "pctChange": 1.03
+  },
+  {
+   "symbol": "CBOE",
+   "pctChange": 1.04
+  },
+  {
+   "symbol": "HUM",
+   "pctChange": 1.06
+  },
+  {
+   "symbol": "CF",
+   "pctChange": 1.07
+  },
+  {
+   "symbol": "ZBH",
+   "pctChange": 1.08
+  },
+  {
+   "symbol": "TXT",
+   "pctChange": 1.09
+  },
+  {
+   "symbol": "EG",
+   "pctChange": 1.11
+  },
+  {
+   "symbol": "KEYS",
+   "pctChange": 1.12
+  },
+  {
+   "symbol": "APD",
+   "pctChange": 1.13
+  },
+  {
+   "symbol": "RTX",
+   "pctChange": 1.13
+  },
+  {
+   "symbol": "OXY",
+   "pctChange": 1.14
+  },
+  {
+   "symbol": "SYF",
+   "pctChange": 1.15
+  },
+  {
+   "symbol": "CVX",
+   "pctChange": 1.16
+  },
+  {
+   "symbol": "LHX",
+   "pctChange": 1.16
+  },
+  {
+   "symbol": "APA",
+   "pctChange": 1.17
+  },
+  {
+   "symbol": "CTVA",
+   "pctChange": 1.17
+  },
+  {
+   "symbol": "VST",
+   "pctChange": 1.18
+  },
+  {
+   "symbol": "VTRS",
+   "pctChange": 1.18
+  },
+  {
+   "symbol": "MAR",
+   "pctChange": 1.19
+  },
+  {
+   "symbol": "NXPI",
+   "pctChange": 1.21
+  },
+  {
+   "symbol": "FE",
+   "pctChange": 1.22
+  },
+  {
+   "symbol": "GNRC",
+   "pctChange": 1.22
+  },
+  {
+   "symbol": "COR",
+   "pctChange": 1.23
+  },
+  {
+   "symbol": "BBY",
+   "pctChange": 1.25
+  },
+  {
+   "symbol": "T",
+   "pctChange": 1.26
+  },
+  {
+   "symbol": "DDOG",
+   "pctChange": 1.28
+  },
+  {
+   "symbol": "LYV",
+   "pctChange": 1.29
+  },
+  {
+   "symbol": "DLR",
+   "pctChange": 1.3
+  },
+  {
+   "symbol": "GEV",
+   "pctChange": 1.32
+  },
+  {
+   "symbol": "EXPE",
+   "pctChange": 1.33
+  },
+  {
+   "symbol": "ON",
+   "pctChange": 1.35
+  },
+  {
+   "symbol": "VTR",
+   "pctChange": 1.36
+  },
+  {
+   "symbol": "BF.B",
+   "pctChange": 1.39
+  },
+  {
+   "symbol": "CEG",
+   "pctChange": 1.39
+  },
+  {
+   "symbol": "KEY",
+   "pctChange": 1.39
+  },
+  {
+   "symbol": "MCK",
+   "pctChange": 1.44
+  },
+  {
+   "symbol": "JCI",
+   "pctChange": 1.45
+  },
+  {
+   "symbol": "FANG",
+   "pctChange": 1.48
+  },
+  {
+   "symbol": "DD",
+   "pctChange": 1.5
+  },
+  {
+   "symbol": "FLEX",
+   "pctChange": 1.5
+  },
+  {
+   "symbol": "TAP",
+   "pctChange": 1.54
+  },
+  {
+   "symbol": "COF",
+   "pctChange": 1.57
+  },
+  {
+   "symbol": "VMC",
+   "pctChange": 1.61
+  },
+  {
+   "symbol": "CI",
+   "pctChange": 1.64
+  },
+  {
+   "symbol": "CAH",
+   "pctChange": 1.7
+  },
+  {
+   "symbol": "PSKY",
+   "pctChange": 1.71
+  },
+  {
+   "symbol": "SMCI",
+   "pctChange": 1.74
+  },
+  {
+   "symbol": "PYPL",
+   "pctChange": 1.77
+  },
+  {
+   "symbol": "LMT",
+   "pctChange": 1.78
+  },
+  {
+   "symbol": "COP",
+   "pctChange": 1.81
+  },
+  {
+   "symbol": "MCHP",
+   "pctChange": 1.91
+  },
+  {
+   "symbol": "PWR",
+   "pctChange": 1.93
+  },
+  {
+   "symbol": "NOC",
+   "pctChange": 1.94
+  },
+  {
+   "symbol": "DIS",
+   "pctChange": 1.96
+  },
+  {
+   "symbol": "HLT",
+   "pctChange": 1.99
+  },
+  {
+   "symbol": "TER",
+   "pctChange": 2.01
+  },
+  {
+   "symbol": "STZ",
+   "pctChange": 2.08
+  },
+  {
+   "symbol": "TTWO",
+   "pctChange": 2.08
+  },
+  {
+   "symbol": "GE",
+   "pctChange": 2.15
+  },
+  {
+   "symbol": "ADI",
+   "pctChange": 2.16
+  },
+  {
+   "symbol": "CNC",
+   "pctChange": 2.17
+  },
+  {
+   "symbol": "BKR",
+   "pctChange": 2.18
+  },
+  {
+   "symbol": "LYB",
+   "pctChange": 2.18
+  },
+  {
+   "symbol": "PCG",
+   "pctChange": 2.18
+  },
+  {
+   "symbol": "IRM",
+   "pctChange": 2.22
+  },
+  {
+   "symbol": "HWM",
+   "pctChange": 2.25
+  },
+  {
+   "symbol": "TXN",
+   "pctChange": 2.25
+  },
+  {
+   "symbol": "CVS",
+   "pctChange": 2.28
+  },
+  {
+   "symbol": "MU",
+   "pctChange": 2.3
+  },
+  {
+   "symbol": "KMI",
+   "pctChange": 2.31
+  },
+  {
+   "symbol": "DOW",
+   "pctChange": 2.34
+  },
+  {
+   "symbol": "VRT",
+   "pctChange": 2.36
+  },
+  {
+   "symbol": "SNPS",
+   "pctChange": 2.37
+  },
+  {
+   "symbol": "SOLV",
+   "pctChange": 2.46
+  },
+  {
+   "symbol": "OKE",
+   "pctChange": 2.54
+  },
+  {
+   "symbol": "CVNA",
+   "pctChange": 2.56
+  },
+  {
+   "symbol": "EQIX",
+   "pctChange": 2.64
+  },
+  {
+   "symbol": "FIX",
+   "pctChange": 2.69
+  },
+  {
+   "symbol": "CMG",
+   "pctChange": 2.73
+  },
+  {
+   "symbol": "ALGN",
+   "pctChange": 2.9
+  },
+  {
+   "symbol": "MPWR",
+   "pctChange": 2.9
+  },
+  {
+   "symbol": "WMB",
+   "pctChange": 2.96
+  },
+  {
+   "symbol": "URI",
+   "pctChange": 2.97
+  },
+  {
+   "symbol": "NEM",
+   "pctChange": 3.13
+  },
+  {
+   "symbol": "TSN",
+   "pctChange": 3.16
+  },
+  {
+   "symbol": "SLB",
+   "pctChange": 3.28
+  },
+  {
+   "symbol": "DVN",
+   "pctChange": 3.29
+  },
+  {
+   "symbol": "TPL",
+   "pctChange": 3.31
+  },
+  {
+   "symbol": "TRGP",
+   "pctChange": 3.34
+  },
+  {
+   "symbol": "F",
+   "pctChange": 3.46
+  },
+  {
+   "symbol": "ALB",
+   "pctChange": 4.35
+  },
+  {
+   "symbol": "WDC",
+   "pctChange": 4.41
+  },
+  {
+   "symbol": "GLW",
+   "pctChange": 4.7
+  },
+  {
+   "symbol": "HAL",
+   "pctChange": 4.81
+  },
+  {
+   "symbol": "LITE",
+   "pctChange": 5.19
+  },
+  {
+   "symbol": "NRG",
+   "pctChange": 5.42
+  },
+  {
+   "symbol": "FOXA",
+   "pctChange": 5.49
+  },
+  {
+   "symbol": "STX",
+   "pctChange": 5.65
+  },
+  {
+   "symbol": "FOX",
+   "pctChange": 5.7
+  },
+  {
+   "symbol": "AMD",
+   "pctChange": 6.5
+  },
+  {
+   "symbol": "SNDK",
+   "pctChange": 7.39
+  },
+  {
+   "symbol": "CPRT",
+   "pctChange": 7.55
+  }
+ ]
+}
