@@ -387,11 +387,46 @@ h1{
  margin-bottom:30px;
 }
 
+.daychange-stats{
+ display:flex;
+ gap:28px;
+ flex-wrap:wrap;
+ margin:14px 0 18px;
+}
+
+.daychange-stat{
+ display:flex;
+ flex-direction:column;
+ gap:4px;
+}
+
+.daychange-stat-label{
+ color:var(--muted);
+ font-size:11px;
+ text-transform:uppercase;
+ letter-spacing:0.04em;
+}
+
+.daychange-stat-value{
+ font-family:var(--mono);
+ font-size:20px;
+ color:var(--ink);
+}
+
+.daychange-stat-value.beat{ color:#5a9d6f; }
+.daychange-stat-value.miss{ color:var(--fear); }
+
 .chart-box h2{
  font-family:var(--serif);
  font-weight:400;
  font-size:18px;
  margin:0;
+}
+
+.chart-subhead{
+ color:var(--muted);
+ font-size:12px;
+ margin-top:4px;
 }
 
 .chart-box-header{
@@ -656,6 +691,24 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 </div>
 </div>
 
+<div class="chart-box" id="dayChangeBox" style="display:none;">
+<div class="chart-box-header">
+<div>
+<h2>Day's change distribution</h2>
+<div class="chart-subhead" id="dayChangeAsOf">—</div>
+</div>
+</div>
+<div class="daychange-stats">
+<div class="daychange-stat"><span class="daychange-stat-label">Median</span><span class="daychange-stat-value" id="dcMedian">—</span></div>
+<div class="daychange-stat"><span class="daychange-stat-label">Mean</span><span class="daychange-stat-value" id="dcMean">—</span></div>
+<div class="daychange-stat"><span class="daychange-stat-label">Up</span><span class="daychange-stat-value beat" id="dcUp">—</span></div>
+<div class="daychange-stat"><span class="daychange-stat-label">Down</span><span class="daychange-stat-value miss" id="dcDown">—</span></div>
+</div>
+<div class="chart-canvas-wrap" style="height:260px;">
+<canvas id="dayChangeChart"></canvas>
+</div>
+</div>
+
 <div class="chart-box">
 <div class="chart-box-header">
 <h2>Cumulative advance-decline line vs. S&amp;P 500</h2>
@@ -893,9 +946,58 @@ async function init(){
   renderAdChart(DEFAULT_RANGE);
   renderSmaChart(DEFAULT_RANGE);
   renderHlChart(DEFAULT_RANGE);
+
+  if(data.dayChangeSummary) renderDayChange(data.dayChangeSummary);
  }catch(err){
   showError("Couldn't load market breadth data: " + err.message);
  }
+}
+
+function renderDayChange(summary){
+ document.getElementById("dayChangeBox").style.display = "";
+ document.getElementById("dayChangeAsOf").textContent =
+  "As of " + summary.asOfDate + " · " + summary.n + " constituents";
+ document.getElementById("dcMedian").textContent = (summary.median >= 0 ? "+" : "") + summary.median.toFixed(2) + "%";
+ document.getElementById("dcMean").textContent = (summary.mean >= 0 ? "+" : "") + summary.mean.toFixed(2) + "%";
+ document.getElementById("dcUp").textContent = summary.up;
+ document.getElementById("dcDown").textContent = summary.down;
+
+ // Variable-width buckets, same idea as the GuruFocus-style widget this
+ // is modeled on: fine-grained near zero (where most daily moves cluster)
+ // and wide catch-all bins at the tails (where individual outlier moves
+ // live, one stock at a time).
+ const edges = [-Infinity, -8, -5, -3, -2, -1, 0, 1, 2, 3, 4, 7, 10, Infinity];
+ const labels = ["<-8", "-8", "-5", "-3", "-2", "-1", "0", "1", "2", "3", "4", "7", "10+"];
+ const counts = new Array(edges.length - 1).fill(0);
+ summary.changes.forEach(c => {
+  for(let i = 0; i < edges.length - 1; i++){
+   if(c.pctChange >= edges[i] && c.pctChange < edges[i + 1]){ counts[i]++; break; }
+  }
+ });
+
+ const ctx = document.getElementById("dayChangeChart").getContext("2d");
+ new Chart(ctx, {
+  type: "bar",
+  data: {
+   labels,
+   datasets: [{
+    data: counts,
+    backgroundColor: labels.map((l, i) => (edges[i] < 0 ? "rgba(111,143,172,0.75)" : "rgba(90,157,111,0.75)")),
+   }],
+  },
+  options: {
+   responsive: true,
+   maintainAspectRatio: false,
+   plugins: {
+    legend: { display: false },
+    tooltip: { callbacks: { label: ctx => ctx.parsed.y + " stocks" } },
+   },
+   scales: {
+    x: { ticks: { color: "#8b9199" }, grid: { display: false }, title: { display: true, text: "Day's change %", color: "#8b9199" } },
+    y: { ticks: { color: "#8b9199" }, grid: { color: "#2b3138" }, beginAtZero: true },
+   },
+  },
+ });
 }
 
 init();
