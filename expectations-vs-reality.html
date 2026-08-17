@@ -863,6 +863,14 @@ const DATA = [
 ];
 
 function pct(a, b){ return (a / b - 1) * 100; }
+
+// Reads the live --ink value rather than hardcoding it — --ink flips
+// between a light color (dark mode) and a dark color (light mode), so a
+// hardcoded dark-mode value renders invisible against a light background.
+function themeInkColor(){
+ const v = getComputedStyle(document.documentElement).getPropertyValue("--ink").trim();
+ return v || "#eae6da";
+}
 function fmtPct(v){ return (v >= 0 ? "+" : "") + v.toFixed(1) + "%"; }
 function fmtNum(v){ return v.toLocaleString(undefined, { maximumFractionDigits: 0 }); }
 
@@ -1208,7 +1216,7 @@ function renderHerdCharts(rows){
       type: "line",
       label: "Normal distribution fit",
       data: normalCurve,
-      borderColor: "#eae6da",
+      borderColor: themeInkColor(),
       borderWidth: 1.5,
       borderDash: [4, 3],
       pointRadius: 0,
