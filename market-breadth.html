@@ -744,7 +744,8 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <p>An index can keep climbing while fewer and fewer of its members are actually going up with it — a handful of mega-caps can carry the average even as the typical stock lags or falls. Breadth measures try to catch that: the advance-decline line tracks the running tally of advancing minus declining names, day by day, and its shape relative to the index itself is the signal. When the S&amp;P 500 makes a new high but the A-D line doesn't confirm it — a "breadth divergence" — that's historically been a warning sign that the rally's participation is narrowing, sometimes ahead of a broader pullback.</p>
 <p>The % above the 200-day moving average is a slower-moving read on the same idea: how many constituents are in a durable uptrend, not just up on a given day. A market near all-time highs with a low reading here means the advance is being carried by a narrow group of leaders rather than broad participation — worth watching even if the index itself looks fine. New highs vs. new lows is the sharpest-edged version: a rising count of fresh 52-week lows even while the index holds up is one of the more reliable early-warning breadth signals.</p>
 <p>None of these are timing tools on their own — breadth can diverge from price for months before it matters, or not matter at all. They're context for how healthy an advance or decline actually is underneath the headline index number.</p>
-<div class="source">Source: <a href="https://www.alphavantage.co/" target="_blank" rel="noopener">Alpha Vantage</a> daily adjusted closes across S&amp;P 500 constituents, computed once daily after the close.</div>
+<p>The day's-change distribution above them is the one exception to "once daily" on this page — it refreshes hourly through the trading session (roughly 9:30am to 3:30pm ET on trading days) rather than waiting for the close, since it only needs each stock's current quote against its prior close rather than the full price history the other charts are built from.</p>
+<div class="source">Source: <a href="https://www.alphavantage.co/" target="_blank" rel="noopener">Alpha Vantage</a> daily adjusted closes across S&amp;P 500 constituents. Advance-decline, 200-day SMA, and new-highs/lows charts computed once daily after the close; the day's-change distribution refreshes hourly during market hours.</div>
 </div>
 
 </div>
@@ -946,17 +947,27 @@ async function init(){
   renderAdChart(DEFAULT_RANGE);
   renderSmaChart(DEFAULT_RANGE);
   renderHlChart(DEFAULT_RANGE);
-
-  if(data.dayChangeSummary) renderDayChange(data.dayChangeSummary);
  }catch(err){
   showError("Couldn't load market breadth data: " + err.message);
+ }
+
+ // Independent of the breadth fetch above — refreshed hourly through the
+ // trading day by its own scheduled job, so a failure here (or it not
+ // having run yet) shouldn't block the rest of the page.
+ try{
+  const dcRes = await fetch("/api/daychange", { cache: "no-store" });
+  const dcData = await dcRes.json();
+  if(dcRes.ok && !dcData.error) renderDayChange(dcData);
+ }catch(err){
+  console.error("Couldn't load day's-change data:", err.message);
  }
 }
 
 function renderDayChange(summary){
  document.getElementById("dayChangeBox").style.display = "";
  document.getElementById("dayChangeAsOf").textContent =
-  "As of " + summary.asOfDate + " · " + summary.n + " constituents";
+  "Updated " + new Date(summary.generated_at_utc).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" }) +
+  " · " + summary.n + " of " + summary.total + " constituents";
  document.getElementById("dcMedian").textContent = (summary.median >= 0 ? "+" : "") + summary.median.toFixed(2) + "%";
  document.getElementById("dcMean").textContent = (summary.mean >= 0 ? "+" : "") + summary.mean.toFixed(2) + "%";
  document.getElementById("dcUp").textContent = summary.up;

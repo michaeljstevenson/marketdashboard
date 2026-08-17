@@ -1,11 +1,13 @@
 // Scheduled function (see [functions."scheduled-breadth-background"] in
 // netlify.toml) that computes real market breadth internals —
 // advances/declines, 52-week new highs/lows, % of constituents above
-// their 200-day SMA, % at all-time highs, and the latest day's
-// cross-sectional distribution of % change (median/mean/up/down counts
-// plus the full per-symbol list, for the "day's change" histogram) —
-// across the full S&P 500 constituent list (see breadth-constituents.js),
-// and writes the result to Netlify Blobs for breadth-internals.js to serve.
+// their 200-day SMA, and % at all-time highs — across the full S&P 500
+// constituent list (see breadth-constituents.js), and writes the result
+// to Netlify Blobs for breadth-internals.js to serve.
+//
+// The "Day's change distribution" widget on market-breadth.html is fed
+// by a separate, more frequent job (scheduled-daychange-background.js) —
+// see that file for why it isn't computed here too.
 //
 // Named with the "-background" suffix so Netlify runs it as a Background
 // Function (up to 15 minutes) instead of a standard function (~30s) — a
@@ -123,7 +125,6 @@ function computeNameFlags(closes) {
 
     flags.set(date, {
       up: close > prevClose,
-      pctChange: Math.round(((close / prevClose - 1) * 100) * 100) / 100,
       newHigh: close >= windowHigh,
       newLow: close <= windowLow,
       above200sma,
@@ -232,42 +233,6 @@ exports.handler = async () => {
     }
     athTickers.sort();
 
-    // Cross-sectional snapshot of every constituent's daily % change as of
-    // the latest date — the distribution GuruFocus-style "Day's Change
-    // Stats" widgets show (median/mean move, up/down counts, histogram),
-    // not the aggregate advance/decline count already captured in `rows`.
-    // Only the latest day is kept (not the full history) to keep the blob
-    // small, since this is a snapshot widget, not a time series.
-    const dayChanges = [];
-    for (const [symbol, flags] of perNameFlags.entries()) {
-      const f = flags.get(latestDate);
-      if (!f || !Number.isFinite(f.pctChange)) continue;
-      dayChanges.push({ symbol, pctChange: f.pctChange });
-    }
-    dayChanges.sort((a, b) => a.pctChange - b.pctChange);
-
-    let dayChangeSummary = null;
-    if (dayChanges.length) {
-      const values = dayChanges.map((d) => d.pctChange);
-      const n = values.length;
-      const median =
-        n % 2 === 1 ? values[(n - 1) / 2] : (values[n / 2 - 1] + values[n / 2]) / 2;
-      const mean = values.reduce((sum, v) => sum + v, 0) / n;
-      const up = dayChanges.filter((d) => d.pctChange > 0).length;
-      const down = dayChanges.filter((d) => d.pctChange < 0).length;
-      const unchanged = n - up - down;
-      dayChangeSummary = {
-        asOfDate: latestDate,
-        n,
-        median: Math.round(median * 100) / 100,
-        mean: Math.round(mean * 100) / 100,
-        up,
-        down,
-        unchanged,
-        changes: dayChanges,
-      };
-    }
-
     const payload = {
       generated_at_utc: new Date().toISOString(),
       constituentCount: BREADTH_CONSTITUENTS.length,
@@ -279,7 +244,6 @@ exports.handler = async () => {
         pct: athCoverage ? Math.round((athTickers.length / athCoverage) * 1000) / 10 : null,
         tickers: athTickers,
       },
-      dayChangeSummary,
     };
 
     const store = getBreadthStore();

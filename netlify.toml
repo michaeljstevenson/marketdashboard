@@ -42,6 +42,11 @@
   to = "/.netlify/functions/factors"
   status = 200
 
+[[redirects]]
+  from = "/api/daychange"
+  to = "/.netlify/functions/daychange"
+  status = 200
+
 [functions."scheduled-breadth-background"]
   # 20:30 UTC = 4:30pm EDT (summer). Shifts to 3:30pm during EST (winter,
   # roughly Nov-Mar) since Netlify's cron runs in UTC with no DST
@@ -82,3 +87,15 @@
   # would just re-download and re-parse ~180k unchanged data points 6
   # days out of 7 for nothing.
   schedule = "0 9 * * 6"
+
+[functions."scheduled-daychange-background"]
+  # Hourly at :30 past, 13:30-19:30 UTC (9:30am-3:30pm EDT summer; drifts
+  # an hour during EST winter, same DST caveat as the jobs above) —
+  # covers the trading session without needing a call right at the open
+  # (no prior-close-vs-now gap to measure yet) or close (the once-daily
+  # scheduled-breadth-background job already captures that snapshot).
+  # Deliberately separate from that job: this one only needs GLOBAL_QUOTE
+  # (current price vs. previous close) per symbol, not full history, so
+  # it's cheap enough to run through the day — see
+  # scheduled-daychange-background.js for the rate-limit pacing.
+  schedule = "30 13-19 * * 1-5"
