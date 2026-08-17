@@ -986,7 +986,7 @@ async function init(){
  if(dayChangeData) initDayChange(dayChangeData, dayChangeIsLive);
 }
 
-const DAYCHANGE_RANGE_ORDER = ["1D", "5D", "MTD", "QTD", "YTD", "5Y"];
+const DAYCHANGE_RANGE_ORDER = ["1D", "5D", "MTD", "QTD", "YTD", "1Y", "3Y", "5Y"];
 let dayChangeChart = null;
 
 function initDayChange(data, isLive){
@@ -1015,7 +1015,7 @@ function renderDayChangeRange(data, rangeKey, isLive){
  const summary = data.ranges[rangeKey];
  if(!summary) return;
 
- const rangeLabel = { "1D": "1 day", "5D": "5 days", MTD: "month to date", QTD: "quarter to date", YTD: "year to date", "5Y": "5 years" }[rangeKey] || rangeKey;
+ const rangeLabel = { "1D": "1 day", "5D": "5 days", MTD: "month to date", QTD: "quarter to date", YTD: "year to date", "1Y": "1 year", "3Y": "3 years", "5Y": "5 years" }[rangeKey] || rangeKey;
  document.getElementById("dayChangeAsOf").textContent = isLive
   ? "Updated " + new Date(data.generated_at_utc).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" }) +
     " · " + rangeLabel + " · " + summary.n + " of " + summary.total + " constituents"
@@ -1029,12 +1029,25 @@ function renderDayChangeRange(data, rangeKey, isLive){
  // Bucket width scales with the range so a 5-year distribution (moves of
  // tens to hundreds of percent) doesn't collapse into one bar the way it
  // would using the same tight buckets built for a single day's moves.
+ // 1Y and 3Y use fixed-step buckets (rather than the hand-picked widening
+ // steps the other ranges use) across the span where most stock moves
+ // over that horizon actually land, with catch-all bins at the tails for
+ // outliers.
+ const fixedStepEdges = (min, max, step) => {
+  const edges = [-Infinity];
+  for(let v = min; v <= max; v += step) edges.push(v);
+  edges.push(Infinity);
+  return edges;
+ };
+
  const edgeSets = {
   "1D": [-Infinity, -8, -5, -3, -2, -1, 0, 1, 2, 3, 4, 7, 10, Infinity],
   "5D": [-Infinity, -15, -10, -7, -5, -3, 0, 3, 5, 7, 10, 15, 20, Infinity],
   MTD: [-Infinity, -20, -15, -10, -5, -2, 0, 2, 5, 10, 15, 20, 30, Infinity],
   QTD: [-Infinity, -30, -20, -15, -10, -5, 0, 5, 10, 15, 20, 30, 40, Infinity],
   YTD: [-Infinity, -40, -25, -15, -10, -5, 0, 5, 10, 15, 25, 40, 60, Infinity],
+  "1Y": fixedStepEdges(-60, 100, 5),
+  "3Y": fixedStepEdges(-80, 200, 10),
   "5Y": [-Infinity, -50, -25, 0, 25, 50, 100, 150, 200, 300, 400, 600, 1000, Infinity],
  };
  const edges = edgeSets[rangeKey] || edgeSets["1D"];

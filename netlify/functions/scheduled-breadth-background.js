@@ -171,6 +171,8 @@ function computeRangeSummaries(perNameCloses, constituentTotal) {
   const qMonth = Math.floor(latest.getUTCMonth() / 3) * 3;
   const quarterStart = new Date(Date.UTC(latest.getUTCFullYear(), qMonth, 1));
   const yearStart = new Date(Date.UTC(latest.getUTCFullYear(), 0, 1));
+  const oneYearAgo = new Date(Date.UTC(latest.getUTCFullYear() - 1, latest.getUTCMonth(), latest.getUTCDate()));
+  const threeYearsAgo = new Date(Date.UTC(latest.getUTCFullYear() - 3, latest.getUTCMonth(), latest.getUTCDate()));
   const fiveYearsAgo = new Date(Date.UTC(latest.getUTCFullYear() - 5, latest.getUTCMonth(), latest.getUTCDate()));
 
   const dayBefore = (d) => isoDate(new Date(d.getTime() - 24 * 60 * 60 * 1000));
@@ -183,6 +185,8 @@ function computeRangeSummaries(perNameCloses, constituentTotal) {
     MTD: dayBefore(monthStart),
     QTD: dayBefore(quarterStart),
     YTD: dayBefore(yearStart),
+    "1Y": isoDate(oneYearAgo),
+    "3Y": isoDate(threeYearsAgo),
     "5Y": isoDate(fiveYearsAgo),
   };
 
