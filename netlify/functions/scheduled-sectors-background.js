@@ -170,6 +170,12 @@ exports.handler = async () => {
     const allTickers = [BENCHMARK, ...SECTORS];
     const computed = new Map();
 
+    // 800ms between calls (not the 300ms used elsewhere) — those other jobs
+    // fetch short trailing windows, while this one pulls full daily history
+    // (outputsize=full) for 12 symbols back-to-back, which was tripping
+    // Alpha Vantage's burst limiter partway through the run and silently
+    // dropping whichever tickers landed on the throttled calls (e.g. only
+    // 7/11 sectors loading, a different 4 missing each run).
     for (const { ticker } of allTickers) {
       try {
         const closes = await fetchDailyCloses(apiKey, ticker);
@@ -177,8 +183,27 @@ exports.handler = async () => {
       } catch (err) {
         console.error(`scheduled-sectors-background: ${ticker} failed: ${err.message}`);
       }
-      await sleep(300);
+      await sleep(800);
     }
+
+    // Retry pass: any ticker that failed above gets one more attempt after
+    // the rest of the batch has had time to clear the rate-limit window,
+    // rather than leaving the page permanently short until tomorrow's run.
+    const missing = allTickers.filter(({ ticker }) => !computed.has(ticker));
+    if (missing.length) {
+      console.log(`scheduled-sectors-background: retrying ${missing.length} failed ticker(s): ${missing.map((t) => t.ticker).join(", ")}`);
+      await sleep(2000);
+      for (const { ticker } of missing) {
+        try {
+          const closes = await fetchDailyCloses(apiKey, ticker);
+          computed.set(ticker, { returns: computeReturns(closes), history: closes.slice(-HISTORY_POINTS) });
+        } catch (err) {
+          console.error(`scheduled-sectors-background: ${ticker} retry failed: ${err.message}`);
+        }
+        await sleep(800);
+      }
+    }
+
     console.log(`scheduled-sectors-background: fetched ${computed.size}/${allTickers.length} tickers`);
 
     const benchmark = computed.get(BENCHMARK.ticker);
