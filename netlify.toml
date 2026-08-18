@@ -47,6 +47,11 @@
   to = "/.netlify/functions/daychange"
   status = 200
 
+[[redirects]]
+  from = "/api/country-performance"
+  to = "/.netlify/functions/country-performance"
+  status = 200
+
 [functions."scheduled-breadth-background"]
   # 20:30 UTC = 4:30pm EDT (summer). Shifts to 3:30pm during EST (winter,
   # roughly Nov-Mar) since Netlify's cron runs in UTC with no DST
@@ -87,6 +92,12 @@
   # would just re-download and re-parse ~180k unchanged data points 6
   # days out of 7 for nothing.
   schedule = "0 9 * * 6"
+
+[functions."scheduled-countries-background"]
+  # Staggered after the other Alpha-Vantage-based daily jobs (20:45 UTC,
+  # 5 minutes after scheduled-ath-tradingview) so this one's 11 sequential
+  # full-history fetches don't compete with theirs for the rate limit.
+  schedule = "45 20 * * 1-5"
 
 [functions."scheduled-daychange-background"]
   # Hourly at :30 past, 13:30-19:30 UTC (9:30am-3:30pm EDT summer; drifts
