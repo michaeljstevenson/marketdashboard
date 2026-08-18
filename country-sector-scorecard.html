@@ -565,10 +565,13 @@ function renderTable(tableId, series){
 }
 
 function render(){
- if(!STATE.regions || !STATE.sectors) return;
- renderTable("regionTable", STATE.regions.filter(function(r){ return r.type === "region"; }));
- renderTable("styleTable", STATE.regions.filter(function(r){ return r.type === "style"; }));
- renderTable("sectorTable", STATE.sectors);
+ if(STATE.regions){
+  renderTable("regionTable", STATE.regions.filter(function(r){ return r.type === "region"; }));
+  renderTable("styleTable", STATE.regions.filter(function(r){ return r.type === "style"; }));
+ }
+ if(STATE.sectors){
+  renderTable("sectorTable", STATE.sectors);
+ }
 }
 
 document.getElementById("cadenceToggle").addEventListener("click", function(e){
@@ -586,20 +589,31 @@ function showError(msg){
 }
 
 function init(){
- Promise.all([
+ Promise.allSettled([
   fetch("/api/country-performance").then(function(r){ if(!r.ok) throw new Error("country-performance " + r.status); return r.json(); }),
   fetch("/api/sector-performance").then(function(r){ if(!r.ok) throw new Error("sector-performance " + r.status); return r.json(); }),
  ]).then(function(results){
-  var countryPayload = results[0], sectorPayload = results[1];
-  STATE.regions = countryPayload.regions;
-  STATE.sectors = sectorPayload.sectors;
-  document.getElementById("updated").textContent =
-   "Countries as of " + (countryPayload.generated_at_utc || "?").slice(0, 10) +
-   " · Sectors as of " + (sectorPayload.generated_at_utc || "?").slice(0, 10);
+  var countryResult = results[0], sectorResult = results[1];
+  var updated = [];
+  var errors = [];
+
+  if(countryResult.status === "fulfilled"){
+   STATE.regions = countryResult.value.regions;
+   updated.push("Countries as of " + (countryResult.value.generated_at_utc || "?").slice(0, 10));
+  } else {
+   errors.push("Regions/Style: " + countryResult.reason.message);
+  }
+
+  if(sectorResult.status === "fulfilled"){
+   STATE.sectors = sectorResult.value.sectors;
+   updated.push("Sectors as of " + (sectorResult.value.generated_at_utc || "?").slice(0, 10));
+  } else {
+   errors.push("Sectors: " + sectorResult.reason.message);
+  }
+
+  document.getElementById("updated").textContent = updated.join(" · ");
+  if(errors.length) showError("Some data failed to load — " + errors.join("; "));
   render();
- }).catch(function(err){
-  document.getElementById("updated").textContent = "";
-  showError("Failed to load scorecard data: " + err.message);
  });
 }
 </script>
