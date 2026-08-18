@@ -1,4 +1,5 @@
 <!DOCTYPE html>
+
 <html lang="en">
 <head>
 <script>
@@ -165,10 +166,9 @@ document.addEventListener("DOMContentLoaded", function(){
  });
 });
 </script>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1" name="viewport"/>
 <title>Yield Curves &amp; the Recession Signal — Michael J. Stevenson</title>
-
 <style>
 
 :root{
@@ -431,12 +431,10 @@ h1{ font-family:var(--serif); font-size:28px; font-weight:400; margin:0; }
 </style>
 </head>
 <body>
-
 <nav class="sitenav">
-<a class="brand" href="/">Michael J. Stevenson, CAIA<span style="font-size:0.6em; vertical-align:super;">&reg;</span></a>
+<a class="brand" href="/">Michael J. Stevenson, CAIA<span style="font-size:0.6em; vertical-align:super;">®</span></a>
 <div class="navlinks">
 <a href="/portfolio-simulator.html">Portfolio Simulator</a>
-
 <div class="navdrop">
 <span class="navlabel">Markets &amp; Macro ▾</span>
 <div class="dropdown">
@@ -444,7 +442,7 @@ h1{ font-family:var(--serif); font-size:28px; font-weight:400; margin:0; }
 <a href="/volatility.html">Implied vs. Realized Volatility</a>
 <a href="/implied-erp.html">Implied Equity Risk Premium</a>
 <a href="/ipo-activity.html">IPO Market Activity</a>
-<a href="/yield-curves.html" class="active">Yield Curves</a>
+<a class="active" href="/yield-curves.html">Yield Curves</a>
 <a href="/expectations-vs-reality.html">Expectations vs. Reality</a>
 <a href="/coming-soon.html?title=Credit%20Spreads">Credit Spreads</a>
 <a href="/coming-soon.html?title=Global%20Liquidity">Global Liquidity</a>
@@ -452,7 +450,6 @@ h1{ font-family:var(--serif); font-size:28px; font-weight:400; margin:0; }
 <a href="/coming-soon.html?title=Inflation">Inflation</a>
 </div>
 </div>
-
 <div class="navdrop">
 <span class="navlabel">Equities ▾</span>
 <div class="dropdown">
@@ -465,7 +462,6 @@ h1{ font-family:var(--serif); font-size:28px; font-weight:400; margin:0; }
 <a href="/coming-soon.html?title=Concentration%20Risk">Concentration Risk</a>
 </div>
 </div>
-
 <div class="navdrop">
 <span class="navlabel">Rates &amp; Credit ▾</span>
 <div class="dropdown">
@@ -473,7 +469,6 @@ h1{ font-family:var(--serif); font-size:28px; font-weight:400; margin:0; }
 <a href="/coming-soon.html?title=Real%20Yields%20Dashboard">Real Yields Dashboard</a>
 </div>
 </div>
-
 <div class="navdrop">
 <span class="navlabel">Alternative &amp; Cross-Asset ▾</span>
 <div class="dropdown">
@@ -482,7 +477,6 @@ h1{ font-family:var(--serif); font-size:28px; font-weight:400; margin:0; }
 <a href="/coming-soon.html?title=Currency%20Strength">Currency Strength</a>
 </div>
 </div>
-
 <div class="navdrop">
 <span class="navlabel">Behavioral &amp; Positioning ▾</span>
 <div class="dropdown">
@@ -491,7 +485,6 @@ h1{ font-family:var(--serif); font-size:28px; font-weight:400; margin:0; }
 <a href="/ipo-activity.html">IPO &amp; SPAC Activity</a>
 </div>
 </div>
-
 <div class="navdrop">
 <span class="navlabel">Thematic ▾</span>
 <div class="dropdown">
@@ -499,9 +492,8 @@ h1{ font-family:var(--serif); font-size:28px; font-weight:400; margin:0; }
 <a href="/coming-soon.html?title=Housing%20Market%20Monitor">Housing Market Monitor</a>
 </div>
 </div>
-
 </div>
-<button class="theme-toggle" id="themeToggle" type="button" aria-label="Toggle light/dark mode" title="Toggle light/dark mode">&#9789;</button>
+<button aria-label="Toggle light/dark mode" class="theme-toggle" id="themeToggle" title="Toggle light/dark mode" type="button">☽</button>
 </nav>
 <script>
 document.querySelectorAll(".navdrop").forEach(function(navdrop){
@@ -529,19 +521,14 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
  });
 })();
 </script>
-
-
-
 <div class="container">
-
 <div class="header">
 <div>
 <h1>Yield Curves &amp; the Recession Signal</h1>
-<div class="subtitle">The 2s10s and 3-month/10-year Treasury spreads since 1994, tested against actual NBER recessions — plus a term-premium decomposition asking whether the curve's shape reflects rate expectations or risk compensation, and a look at which equity styles lead when the curve steepens or flattens.</div>
+<div class="subtitle">- 2s10s, 3m/10y Treasury spreads since 1994, tested against NBER recessions. - Term-premium decomposition, whether the curve's shape reflects rate expectations or risk compensation- Which equity styles lead when the curve steepens or flattens?</div>
 </div>
 <div class="updated" id="updated">Monthly, updated periodically</div>
 </div>
-
 <div class="stat-grid">
 <div class="stat-card">
 <div class="stat-label">2s10s Spread</div>
@@ -559,14 +546,13 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <div class="stat-note">ACM model, NY Fed</div>
 </div>
 <div class="stat-card">
-<div class="stat-label">2022&ndash;24 Inversion</div>
+<div class="stat-label">2022–24 Inversion</div>
 <div class="stat-value">25 mo.</div>
 <div class="stat-note">Longest 2s10s inversion on record; re-steepened Aug 2024</div>
 </div>
 </div>
-
 <div class="chart-box">
-<h2>2s10s and 3-month/10-year spreads vs. NBER recessions, 1994&ndash;2025</h2>
+<h2>2s10s and 3-month/10-year spreads vs. NBER recessions, 1994–2025</h2>
 <div class="chart-legend-custom">
 <span><i class="swatch swatch-2s10s"></i>2s10s Spread</span>
 <span><i class="swatch swatch-3m10y"></i>3-Month/10-Year Spread</span>
@@ -576,10 +562,9 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <canvas id="curveChart"></canvas>
 </div>
 </div>
-
 <div class="explainer">
-<h2>Area 1 &mdash; The recession signal's actual track record</h2>
-<p>The chart above is the classic "inverted yield curve predicts recession" picture, but the table below tests it against what actually happened rather than the folklore version. Every U.S. recession since the mid-1990s was indeed preceded by an inversion in both spreads &mdash; a real, unbroken record over this window. But "preceded" is doing a lot of work: lead times ranged from 8 to 18 months, which is far too wide a window to trade on, and the curve also inverted at least once (June 1998, during the LTCM/Russia crisis) with no recession following at all.</p>
+<h2>The recession signal's actual track record</h2>
+<p>The chart above is the classic "inverted yield curve predicts recession" picture, but the table below tests it against what actually happened rather than the folklore version. Every U.S. recession since the mid-1990s was indeed preceded by an inversion in both spreads — a real, unbroken record over this window. But "preceded" is doing a lot of work: lead times ranged from 8 to 18 months, which is far too wide a window to trade on, and the curve also inverted at least once (June 1998, during the LTCM/Russia crisis) with no recession following at all.</p>
 <div class="events-table-wrap">
 <table class="events-table">
 <thead><tr><th>Inversion (2s10s)</th><th>Duration</th><th>Next NBER recession</th><th>Lead time</th><th>Result</th></tr></thead>
@@ -587,16 +572,14 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 </table>
 </div>
 </div>
-
 <div class="explainer">
 <h2>How to read the recession-signal chart and table</h2>
-<p>Both spreads are computed from monthly-average Treasury constant-maturity yields (10-year minus 2-year, and 10-year minus 3-month). The shaded bands are official NBER recession dates. A negative spread means short-term yields exceed long-term yields &mdash; investors are accepting less compensation to lock up money for a decade than to lend it for two years or three months, historically a sign the market expects the Fed to be cutting rates by then, usually because of a slowing economy.</p>
-<p>The honest reading of the table: the signal has a perfect hit rate but a genuinely unreliable clock, and the 2022&ndash;2024 episode is the hardest case in the sample &mdash; at 25 months, it was more than 30% longer than any prior inversion in this window, and as of the most recent data here, still hasn't been followed by an NBER-dated recession. That's either the first clean false positive of the modern era, a signal whose lag has simply stretched further than history suggested (candidate explanations include unprecedented fiscal deficit spending, post-pandemic labor hoarding, and AI-capex-driven investment offsetting the usual rate-sensitive slowdown), or a recession that simply hasn't been dated yet. All three are live possibilities and this page will get updated as NBER's dating committee weighs in.</p>
-<p><strong>Limitations:</strong> n=4 clean inversion episodes since 1994 is a very small sample to draw firm statistical conclusions from &mdash; this is a case where the qualitative track record matters more than any regression would. The New York Fed's own recession-probability model uses the 3-month/10-year spread specifically (not 2s10s) because it has historically had a cleaner track record academically, though both are shown here since 2s10s is the more commonly cited version in the financial press.</p>
-</div>
+<p>Both spreads are from monthly-average Treasury constant-maturity yields (10-year minus 2-year, and 10-year minus 3-month). NBER recessions are shaded. A negative spread means short-term yields exceed long-term yields, implying that investors are accepting less compensation to lock up money for a ten years than to lend it for two years or three months. This is historically a sign that the market expects the Fed to be cutting rates by then, usually because of a slowing economy.</p>
+<p>7/2022-8/2024, 25 months, is over 30% longer than any prior inversion since 1994. This could be due to a number of different reasons, including the first clean false positive of the modern era, a signal whose lag has just stretched further than history suggested, or a recession that hasn't been dated yet. All three are live possibilities and this page will get updated as NBER's dating committee weighs in. Other explanations are that unprecedented fiscal deficit spending, post-pandemic labor markets, and AI capex-driven investment offset the usual rate-sensitive slowdown. </p>
 
+</div>
 <div class="chart-box">
-<h2>10-year Treasury yield decomposed: rate expectations vs. term premium, 1994&ndash;2025</h2>
+<h2>10-year Treasury yield decomposed: rate expectations vs. term premium, 1994–2025</h2>
 <div class="chart-legend-custom">
 <span><i class="swatch swatch-exp"></i>Rate-Expectations Component</span>
 <span><i class="swatch swatch-tp"></i>Term Premium</span>
@@ -605,15 +588,13 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <canvas id="tpChart"></canvas>
 </div>
 </div>
-
 <div class="explainer">
-<h2>Area 2 &mdash; Is the curve's shape about the Fed path, or risk compensation?</h2>
-<p>A flat or inverted curve can mean two very different things, and conflating them is the most common mistake in yield-curve commentary. It can mean investors expect the Fed to cut rates substantially (a rate-expectations story), or it can mean investors are demanding <em>less</em> extra compensation for holding long-duration risk &mdash; a compressed term premium, often a symptom of abundant liquidity, foreign reserve demand for Treasuries, or QE-era central bank buying suppressing the long end mechanically rather than organically.</p>
-<p>The chart above uses the New York Fed's Adrian-Crump-Moench (ACM) term structure model, which decomposes the observed 10-year yield into these two pieces. The 2010s stand out immediately: the term premium was persistently near zero or <em>negative</em> for most of the decade &mdash; QE-era investors were effectively paying for the privilege of holding long bonds rather than being compensated for the risk, likely reflecting both aggressive Fed asset purchases and heavy foreign demand for safe dollar duration. That regime cracked open in 2022: as the Fed hiked and then began shrinking its balance sheet (quantitative tightening) while Treasury issuance ballooned with the fiscal deficit, the term premium turned decisively positive for the first time in over a decade &mdash; investors started demanding real compensation for duration risk again, a structural shift with implications well beyond the yield curve (it also raises the government's borrowing costs and tends to pressure long-duration equity valuations).</p>
-<p><strong>Limitations:</strong> the term premium is a model output, not an observed market price &mdash; it depends on the ACM model's assumptions about the risk-neutral yield curve and is revised as new data arrives, so treat any single month's reading as approximate rather than precise. Different term-premium models (ACM, Kim-Wright, D'Amico-Kim-Wei) can and do disagree on the exact level, though they broadly agree on the direction of the regime shifts described above.</p>
+<h2>Does the curve's shape reflect rate expectations or risk compensation?</h2>
+<p>A flat or inverted curve can mean two very different things. It can mean investors expect the Fed to cut rates substantially (rate expectations), but can also mean investors are demanding *less* extra compensation for holding long-duration risk (compressed term premium). The latter is often a symptom of excess liquidity, foreign reserve demand for Treasuries, or quantitative easing suppressing the long end mechanically rather than organically.</p>
+<p>The chart above uses the New York Fed's Adrian-Crump-Moench (ACM) term structure model. It decomposes the observed 10-year yield into rate expectations and term premiums. 2014-2023 stands out immediately, as the term premium was nearly zero if not negative for most of the decade. QE-era Investors were effectively paying for the privilege of holding long bonds rather than being compensated for the risk. In 2022 as the Fed hiked (quantitative tightening), Treasury issuance ballooned (fiscal deficit), and the term premium turned positive for the first time in over a decade. Investors started demanding compensation for duration risk again.</p>
+
 <div class="source">Source: Federal Reserve Bank of New York, ACM Term Premium model (Adrian, Crump &amp; Moench, 2013).</div>
 </div>
-
 <div class="scatter-grid">
 <div class="scatter-box">
 <h3>2s10s spread vs. next year's S&amp;P 500 return</h3>
@@ -632,33 +613,28 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <div id="tableTP"></div>
 </div>
 </div>
-
 <div class="explainer">
-<h2>Area 3 &mdash; Curve shape and equity style/sector leadership</h2>
-<p>The curve's direction of travel &mdash; not just its level &mdash; has historically mattered for sector and factor leadership, because it changes the relative cost of capital and the earnings sensitivity of different business models. A <strong>bull steepener</strong> (short rates falling faster than long rates, usually a Fed-easing signal) tends to favor cyclicals and financials as growth expectations improve; a <strong>bear steepener</strong> (long rates rising faster, often on inflation or term-premium repricing) tends to hurt long-duration growth stocks, whose valuations are more sensitive to the discount rate on cash flows far in the future; a <strong>bear flattener</strong> (short rates rising on Fed hikes while long rates lag) squeezes bank net interest margins and cyclicals simultaneously.</p>
+<h2>Which equity styles lead when the curve steepens or flattens?</h2>
+<p>The curve's direction of travel has mattered for sector and factor leadership as it changes the relative cost of capital and earnings sensitivity of different business models. When short rates fall faster than long rates (a bull steepener) (usually during QE), cyclicals and financials tend to be the biggest beneficiary as growth expectations improve. When long rates are rising faster than short rates (a bear steepener) (often on inflation), it tends to hurt long-duration growth stocks as their valuations are more sensitive to the discount rate on cash flows far in the future. When short rates rise while the Fed is hiking and long rates lag (a bear flattener), financials and cyclicals are negatively impacted.</p>
 <div class="events-table-wrap">
 <table class="events-table">
 <tbody>
-<tr><td>2003&ndash;2004</td><td>Bull steepener as the Fed held rates near zero post-dot-com while growth expectations recovered &mdash; financials and small-caps led.</td></tr>
-<tr><td>2004&ndash;2006</td><td>Bear flattener as the Fed hiked 17 straight times into a still-strong economy &mdash; curve flattened toward inversion even as equities kept rising, a classic late-cycle setup.</td></tr>
-<tr><td>2013 (&ldquo;Taper Tantrum&rdquo;)</td><td>Sharp bear steepener when the Fed signaled tapering QE &mdash; long-duration bond proxies (utilities, REITs) sold off hard; cyclicals held up better.</td></tr>
-<tr><td>2020&ndash;2021</td><td>Extreme bull steepener off the pandemic lows (near-zero short rates, long rates rising on reopening/inflation expectations) &mdash; value and financials sharply outperformed growth for the first time in years.</td></tr>
-<tr><td>2022</td><td>Aggressive bear flattener into inversion as the Fed hiked 425bps in nine months &mdash; long-duration/unprofitable growth and small-caps were hit hardest; energy and value led.</td></tr>
-<tr><td>2024&ndash;2025</td><td>Bull steepener as the curve re-normalized on Fed cuts &mdash; a setup historically favorable to financials and small-caps, though AI-capex-driven mega-cap growth leadership complicated the usual playbook this cycle.</td></tr>
+<tr><td>2003–2004</td><td>Bull steepener: Fed held rates near zero post-dot-com, growth expectations recovered. Financials and small-caps led.</td></tr>
+<tr><td>2004–2006</td><td>Bear flattener: Fed hiked 17 straight times into a strong economy. Curve flattened toward inversion even as equities kept rising. Late-cycle indicator. </td></tr>
+<tr><td>2013 (“Taper Tantrum”)</td><td>Bear steepener: Fed signaled tapering QE. Long-duration bond proxies (utilities, REITs) sold off. Cyclicals performed better.</td></tr>
+<tr><td>2020–2021</td><td>Bull steepener: Off pandemic lows (near-zero short rates, long rates rising on reopening/inflation expectations). Value and financials outperformed growth.</td></tr>
+<tr><td>2022</td><td>Bear flattener: Flattened into inversion. Fed hiked 4.25% in nine months. Long-duration/unprofitable growth. Small-caps hit hardest. Energy and value led.</td></tr>
+<tr><td>2024–2025</td><td>Bull steepener: Curve re-normalized on Fed cuts. Historically favorable to financials and small-caps. AI-capex-driven mega-cap growth leadership complicated usual playbook this cycle.</td></tr>
 </tbody>
 </table>
 </div>
-<p style="color:var(--muted); font-size:13px; line-height:1.7; margin-top:14px;">This table is a curated narrative rather than a statistical backtest &mdash; a rigorous version would need point-in-time sector/factor constituent data stretching back to the 1990s, which this site doesn't yet have archived (the <a href="/sector-analysis.html">Sector Performance</a> page currently tracks live, not historical, sector returns). Flagged here as a natural follow-up: pairing a historical sector-returns database with month-by-month curve-slope data would let this become a real regression rather than a curated table.</p>
-</div>
 
+</div>
 <div class="explainer">
-<p>All three yield series (3-month, 2-year, 10-year constant-maturity Treasury) are Alpha Vantage's monthly data, sourced from the same Treasury daily yield curve the government publishes. The term premium series is the New York Fed's own published ACM model output. S&amp;P 500 levels are the same Damodaran year-end series used on this site's <a href="/implied-erp.html">Implied Equity Risk Premium</a> page, for consistency &mdash; so the two scatter plots above use the identical regression methodology (Pearson OLS, Spearman rank, and jackknife-trimmed) already established there.</p>
-<p><strong>Limitations:</strong> the scatter plots have only ~30 annual observations, so treat any p-value here as indicative rather than conclusive, and note the same causality caveat as the IPO page &mdash; the curve is priced by the same market whose forward return is being tested against it, so this isn't a clean natural experiment. The recession-signal analysis in Area 1 is inherently small-sample (four modern inversion episodes) and is presented as a qualitative track record rather than a statistical test for that reason.</p>
+
 <div class="source">Sources: Alpha Vantage (Treasury constant-maturity yields); Federal Reserve Bank of New York (ACM term premium); Aswath Damodaran, NYU Stern (S&amp;P 500 levels); NBER (official recession dates).</div>
 </div>
-
 </div>
-
 <script>
 // Monthly 2s10s (10y-2y) and 3-month/10-year (10y-3m) spreads, Dec 1994
 // through Dec 2025, in percentage points. Computed from Alpha Vantage's
@@ -670,7 +646,7 @@ const CURVE_MONTHLY = [["1994-12",0.22,2.05],["1995-01",0.27,1.88],["1995-02",0.
 // NBER official U.S. recession dates falling within this chart's window.
 const RECESSIONS = [
   { start: "2001-03", end: "2001-11", label: "Dot-com recession" },
-  { start: "2007-12", end: "2009-06", label: "Global Financial Crisis" },
+  { start: "2007-12", end: "2009-06", label: "GFC" },
   { start: "2020-02", end: "2020-04", label: "COVID-19 recession" },
 ];
 
@@ -678,12 +654,12 @@ const RECESSIONS = [
 // directly from CURVE_MONTHLY above, paired against the NBER recession (if
 // any) that followed.
 const INVERSION_EPISODES = [
-  { start: "1998-06", end: "1998-06", months: 1, nextRecession: null, note: "LTCM/Russia crisis — one-month blip, no recession followed" },
+  { start: "1998-06", end: "1998-06", months: 1, nextRecession: null, note: "LTCM/Russia crisis. No recession followed. " },
   { start: "2000-02", end: "2000-12", months: 11, nextRecession: "2001-03", note: null },
   { start: "2006-02", end: "2006-03", months: 2, nextRecession: "2007-12", note: "First of two 2006 inversions ahead of the GFC" },
   { start: "2006-06", end: "2007-03", months: 10, nextRecession: "2007-12", note: null },
   { start: "2007-05", end: "2007-05", months: 1, nextRecession: "2007-12", note: null },
-  { start: "2022-07", end: "2024-08", months: 25, nextRecession: null, note: "Longest 2s10s inversion on record — no NBER recession dated as of the latest data here" },
+  { start: "2022-07", end: "2024-08", months: 25, nextRecession: null, note: "Longest 2s10s inversion on record. No NBER recession." },
 ];
 
 // Year-end ACM 10-year term premium and ACM-model-fitted 10-year yield,
@@ -1000,6 +976,5 @@ function init(){
 
 init();
 </script>
-
 </body>
 </html>

@@ -1,4 +1,5 @@
 <!DOCTYPE html>
+
 <html lang="en">
 <head>
 <script>
@@ -166,10 +167,9 @@ document.addEventListener("DOMContentLoaded", function(){
  });
 });
 </script>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1" name="viewport"/>
 <title>Expectations vs. Reality — Michael J. Stevenson</title>
-
 <style>
 
 :root{
@@ -609,12 +609,10 @@ tbody tr:last-child td{ border-bottom:none; }
 </style>
 </head>
 <body>
-
 <nav class="sitenav">
-<a class="brand" href="/">Michael J. Stevenson, CAIA<span style="font-size:0.6em; vertical-align:super;">&reg;</span></a>
+<a class="brand" href="/">Michael J. Stevenson, CAIA<span style="font-size:0.6em; vertical-align:super;">®</span></a>
 <div class="navlinks">
 <a href="/portfolio-simulator.html">Portfolio Simulator</a>
-
 <div class="navdrop">
 <span class="navlabel">Markets &amp; Macro ▾</span>
 <div class="dropdown">
@@ -623,14 +621,13 @@ tbody tr:last-child td{ border-bottom:none; }
 <a href="/implied-erp.html">Implied Equity Risk Premium</a>
 <a href="/ipo-activity.html">IPO Market Activity</a>
 <a href="/yield-curves.html">Yield Curves</a>
-<a href="/expectations-vs-reality.html" class="active">Expectations vs. Reality</a>
+<a class="active" href="/expectations-vs-reality.html">Expectations vs. Reality</a>
 <a href="/coming-soon.html?title=Credit%20Spreads">Credit Spreads</a>
 <a href="/coming-soon.html?title=Global%20Liquidity">Global Liquidity</a>
 <a href="/coming-soon.html?title=Recession%20Probability%20Model">Recession Probability Model</a>
 <a href="/coming-soon.html?title=Inflation">Inflation</a>
 </div>
 </div>
-
 <div class="navdrop">
 <span class="navlabel">Equities ▾</span>
 <div class="dropdown">
@@ -643,7 +640,6 @@ tbody tr:last-child td{ border-bottom:none; }
 <a href="/coming-soon.html?title=Concentration%20Risk">Concentration Risk</a>
 </div>
 </div>
-
 <div class="navdrop">
 <span class="navlabel">Rates &amp; Credit ▾</span>
 <div class="dropdown">
@@ -651,7 +647,6 @@ tbody tr:last-child td{ border-bottom:none; }
 <a href="/coming-soon.html?title=Real%20Yields%20Dashboard">Real Yields Dashboard</a>
 </div>
 </div>
-
 <div class="navdrop">
 <span class="navlabel">Alternative &amp; Cross-Asset ▾</span>
 <div class="dropdown">
@@ -660,7 +655,6 @@ tbody tr:last-child td{ border-bottom:none; }
 <a href="/coming-soon.html?title=Currency%20Strength">Currency Strength</a>
 </div>
 </div>
-
 <div class="navdrop">
 <span class="navlabel">Behavioral &amp; Positioning ▾</span>
 <div class="dropdown">
@@ -669,7 +663,6 @@ tbody tr:last-child td{ border-bottom:none; }
 <a href="/ipo-activity.html">IPO &amp; SPAC Activity</a>
 </div>
 </div>
-
 <div class="navdrop">
 <span class="navlabel">Thematic ▾</span>
 <div class="dropdown">
@@ -677,9 +670,8 @@ tbody tr:last-child td{ border-bottom:none; }
 <a href="/coming-soon.html?title=Housing%20Market%20Monitor">Housing Market Monitor</a>
 </div>
 </div>
-
 </div>
-<button class="theme-toggle" id="themeToggle" type="button" aria-label="Toggle light/dark mode" title="Toggle light/dark mode">&#9789;</button>
+<button aria-label="Toggle light/dark mode" class="theme-toggle" id="themeToggle" title="Toggle light/dark mode" type="button">☽</button>
 </nav>
 <script>
 document.querySelectorAll(".navdrop").forEach(function(navdrop){
@@ -707,19 +699,14 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
  });
 })();
 </script>
-
-
-
 <div class="container">
-
 <div class="header">
 <div>
 <h1>Expectations vs. Reality</h1>
-<div class="subtitle">Every January, Wall Street's strategists publish a consensus year-end target for the S&amp;P 500. Here's how that target compared to where the index actually finished, every year from 2000 to 2025.</div>
+<div class="subtitle">Every year, strategists publish a year-end target for the S&amp;P 500. How does that target compare to where the index actually finished, each year from 2000 to 2025.</div>
 </div>
-<div class="updated">Consensus targets sourced from Bloomberg, BusinessWeek, CNNMoney, Barron's, CNBC, and Yahoo Finance strategist surveys; see table for per-year sourcing.</div>
+<div class="updated">Source: Bloomberg, BusinessWeek, CNNMoney, Barron's, CNBC, and Yahoo Finance strategist surveys</div>
 </div>
-
 <div class="stat-grid" id="statGrid" style="grid-template-columns:repeat(3,1fr);">
 <div class="stat-card">
 <div class="stat-label">Avg. Absolute Miss</div>
@@ -737,19 +724,16 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <div class="stat-note">Strategists tend to be systematically...</div>
 </div>
 </div>
-
 <div class="chart-box">
 <div class="chart-box-header">
 <div>
 <h2>January consensus target vs. actual year-end close</h2>
-<div class="chart-subhead">The gap between the dashed line (what Wall Street expected) and the solid line (what happened)</div>
 </div>
 </div>
 <div class="chart-canvas-wrap">
 <canvas id="targetVsActualChart"></canvas>
 </div>
 </div>
-
 <div class="chart-box">
 <div class="chart-box-header">
 <h2>Miss, by year (actual return − target-implied return)</h2>
@@ -758,29 +742,26 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <canvas id="missChart"></canvas>
 </div>
 </div>
-
 <div class="chart-box">
 <div class="chart-box-header">
 <div>
 <h2>Herd mentality: individual strategists' targets, by year</h2>
-<div class="chart-subhead">Each tile bins that year's individual named banks'/strategists' targets by implied return (2-pt buckets, &minus;10% to 30%, same x-axis on every tile) &mdash; the orange line marks what actually happened. Click a tile to expand it into every firm's individual number, sorted smallest to largest implied return. Years without a verifiable individual-firm breakdown aren't shown here (see the main table above for those years' consensus figures). 2026 is still in progress, so it shows the forecast cluster only, no outcome line yet.</div>
+<div class="chart-subhead">Each tile bins that year's individual named banks'/strategists' targets by implied return. Orange line marks realized return. Click to expand it into every firm's individual number, sorted smallest to largest implied return. Years without verifiable individual-firm breakdowns not shown here (see main table above for those years' consensus figures). 2026 is still in progress, so it shows the forecast cluster only, no outcome line yet.</div>
 </div>
 </div>
 <div class="herd-grid" id="herdGrid"></div>
 </div>
-
 <div class="chart-box">
 <div class="chart-box-header">
 <div>
 <h2>How many standard deviations away was reality?</h2>
-<div class="chart-subhead">For years with more than 7 named firms, this measures the actual return against that year's own spread of individual forecasts &mdash; (actual return &minus; mean forecast) &divide; standard deviation of forecasts. If forecasts behaved like a normal distribution, a miss beyond &plusmn;2&sigma; should be rare; here it's the norm.</div>
+<div class="chart-subhead">For years with more than 7 named firms. Measures the actual return against that year's own spread of individual forecasts (actual return − mean forecast)/standard deviation of forecasts. A miss ±2σ is the norm, while if forecasts behaved like a normal distribution, it'd be rare.</div>
 </div>
 </div>
 <div class="chart-canvas-wrap">
 <canvas id="zScoreChart"></canvas>
 </div>
 </div>
-
 <div class="table-box">
 <h2>Full data</h2>
 <table>
@@ -799,19 +780,13 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <tbody id="dataTableBody"></tbody>
 </table>
 </div>
-
 <div class="explainer">
-<h2>Reading this page</h2>
-<p>Each January (sometimes late December of the prior year), major banks and independent strategists publish where they expect the S&amp;P 500 to finish that calendar year. Financial media compile these into a consensus figure — an average or median across roughly 10-20 named strategists — which is what's plotted here as the "target." That figure gets revised throughout the year as conditions change, but the chart uses the original, as-published consensus, since that's the actual forecast being tested against what happened.</p>
-<p>The pattern that shows up across almost every year in this dataset: strategists cluster their targets around a "normal" high-single-digit gain, and actual returns are far more volatile than that — both to the upside (2019, 2021, 2023, 2024, all beat consensus by wide margins) and the downside (2018, 2022). The years targets came closest to reality — 2005, 2010, 2016 — were also some of the more unremarkable years in the sample, without a sharp regime change up or down. That's not a coincidence: consensus forecasting is structurally better suited to calm years than volatile ones, because the process anchors on recent trends and rarely assigns much probability to a sharp break from them.</p>
-<p>None of this means the forecasts are useless — they're a reasonable read on sell-side sentiment and positioning at a point in time. But treating a January target as a meaningful prediction of where the index will actually be twelve months later hasn't been supported by a quarter century of data. Not once in this entire 2000&ndash;2025 span has the Wall Street consensus called for a down year, even though the S&amp;P 500 actually finished lower in 7 of those 26 years.</p>
-<p><strong>On sourcing the earlier years:</strong> 2000 and 2002&ndash;2007 weren't available as press-reported consensus figures the way the other years are — no outlet's archived coverage of those specific years turned up a precise, citable number. Instead, those seven years' forecast-return values were read directly off a Bloomberg-sourced scatter chart published by 6meridian.com (an advisory firm's retrospective, itself crediting Bespoke Investment Group's methodology), which plots each year's strategist-forecast return against its actual return. The implied target price shown in the table for those years is back-calculated from that forecast return and the prior year's close, rather than quoted from an original survey.</p>
-<p><strong>On the herd-mentality tiles:</strong> individual named-bank targets are far less consistently archived than the aggregate consensus figure — press coverage that lists every named strategist's specific number (rather than just the average) is really only reliable from about 2013 onward, and even within that window, coverage quality varies a lot by year (25 named firms for 2020, as few as 5 for 2014). 2000&ndash;2007, 2009, 2011, 2012, and 2015 have no verifiable individual-firm breakdown at all and are marked "no data" rather than estimated. Where a firm revised its target mid-year, only the original December/January call is used.</p>
+<p>Every year by early January, major banks and independent strategists publish where they expect the S&amp;P 500 to finish that calendar year. I compiled these into a consensus figure, an average or median across roughly 10-20 named strategists, plotted here as the "target." </p>
+<p>The pattern that shows up consistently is that for almost every year, strategists cluster their targets around a "normal" high-single-digit gain, while actual returns are far more volatile. Both to the upside (2019, 2021, 2023, 2024, all beat consensus by wide margins) and the downside (2018, 2022). </p>
+
 <div class="source">Sources: BusinessWeek (via Seeking Alpha archive), CNNMoney/Yahoo Finance strategist roundups, Bloomberg surveys (via CNBC, Financial Samurai, globalmarketsinvestor.substack.com compilations, and 6meridian.com's Bloomberg-sourced retrospective chart), Barron's Big Money Poll. Actual year-end closes from public S&amp;P 500 index data. Individual year sourcing varies since no single publisher has run a consistent annual survey across the full period — see the Source column in the table above.</div>
 </div>
-
 </div>
-
 <script>
 // Each entry: year, the S&P 500 close at the end of the PRIOR year (i.e.
 // where the index stood when the target was published), the consensus
@@ -1409,6 +1384,5 @@ function renderZScoreChart(rows){
 
 init();
 </script>
-
 </body>
 </html>

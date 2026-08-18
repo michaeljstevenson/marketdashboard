@@ -1,4 +1,5 @@
 <!DOCTYPE html>
+
 <html lang="en">
 <head>
 <script>
@@ -166,10 +167,9 @@ document.addEventListener("DOMContentLoaded", function(){
  });
 });
 </script>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1" name="viewport"/>
 <title>Implied Equity Risk Premium — Michael J. Stevenson</title>
-
 <style>
 
 :root{
@@ -574,19 +574,17 @@ h1{
 </style>
 </head>
 <body>
-
 <nav class="sitenav">
-<a class="brand" href="/">Michael J. Stevenson, CAIA<span style="font-size:0.6em; vertical-align:super;">&reg;</span></a>
+<a class="brand" href="/">Michael J. Stevenson, CAIA<span style="font-size:0.6em; vertical-align:super;">®</span></a>
 <div class="navlinks">
 <a href="/portfolio-simulator.html">Portfolio Simulator</a>
-
 <div class="navdrop">
 <span class="navlabel">Markets &amp; Macro ▾</span>
 <div class="dropdown">
 <a href="/sentiment-index.html">Sentiment Index</a>
 <a href="/volatility.html">Implied vs. Realized Volatility</a>
-<a href="/implied-erp.html" class="active">Implied Equity Risk Premium</a>
-<a href="/ipo-activity.html">IPO Market Activity</a>
+<a class="active" href="/implied-erp.html">Implied Equity Risk Premium</a>
+<a href="/ipo-activity.html">IPO Activity</a>
 <a href="/yield-curves.html">Yield Curves</a>
 <a href="/expectations-vs-reality.html">Expectations vs. Reality</a>
 <a href="/coming-soon.html?title=Credit%20Spreads">Credit Spreads</a>
@@ -595,7 +593,6 @@ h1{
 <a href="/coming-soon.html?title=Inflation">Inflation</a>
 </div>
 </div>
-
 <div class="navdrop">
 <span class="navlabel">Equities ▾</span>
 <div class="dropdown">
@@ -608,7 +605,6 @@ h1{
 <a href="/coming-soon.html?title=Concentration%20Risk">Concentration Risk</a>
 </div>
 </div>
-
 <div class="navdrop">
 <span class="navlabel">Rates &amp; Credit ▾</span>
 <div class="dropdown">
@@ -616,7 +612,6 @@ h1{
 <a href="/coming-soon.html?title=Real%20Yields%20Dashboard">Real Yields Dashboard</a>
 </div>
 </div>
-
 <div class="navdrop">
 <span class="navlabel">Alternative &amp; Cross-Asset ▾</span>
 <div class="dropdown">
@@ -625,7 +620,6 @@ h1{
 <a href="/coming-soon.html?title=Currency%20Strength">Currency Strength</a>
 </div>
 </div>
-
 <div class="navdrop">
 <span class="navlabel">Behavioral &amp; Positioning ▾</span>
 <div class="dropdown">
@@ -634,7 +628,6 @@ h1{
 <a href="/ipo-activity.html">IPO &amp; SPAC Activity</a>
 </div>
 </div>
-
 <div class="navdrop">
 <span class="navlabel">Thematic ▾</span>
 <div class="dropdown">
@@ -642,9 +635,8 @@ h1{
 <a href="/coming-soon.html?title=Housing%20Market%20Monitor">Housing Market Monitor</a>
 </div>
 </div>
-
 </div>
-<button class="theme-toggle" id="themeToggle" type="button" aria-label="Toggle light/dark mode" title="Toggle light/dark mode">&#9789;</button>
+<button aria-label="Toggle light/dark mode" class="theme-toggle" id="themeToggle" title="Toggle light/dark mode" type="button">☽</button>
 </nav>
 <script>
 // Class-driven (not pure :hover) nav dropdowns: pure CSS :hover drops the
@@ -678,19 +670,14 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
  });
 })();
 </script>
-
-
-
 <div class="container">
-
 <div class="header">
 <div>
 <h1>Implied Equity Risk Premium</h1>
-<div class="subtitle">The market-implied compensation that investors demand for holding equities over &quot;risk-free&quot; bonds, derived from current S&amp;P 500 prices and expected future cash flows. A forward-looking alternative to using historical average returns.</div>
+<div class="subtitle">The market-implied compensation that investors demand for holding equities over "risk-free" bonds, derived from current S&amp;P 500 prices and expected future cash flows. A forward-looking alternative to using historical average returns.</div>
 </div>
 <div class="updated" id="updated">Annual, updated each January</div>
 </div>
-
 <div class="stat-grid">
 <div class="stat-card">
 <div class="stat-label">Implied ERP (Latest)</div>
@@ -708,7 +695,6 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <div class="stat-note">ERP + risk-free rate</div>
 </div>
 </div>
-
 <div class="chart-box">
 <h2>Implied ERP vs. 10-year Treasury rate vs. implied expected return vs. realized S&amp;P 500 return, 1961–present</h2>
 <div class="chart-legend-custom">
@@ -721,7 +707,6 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <canvas id="erpChart"></canvas>
 </div>
 </div>
-
 <div class="scatter-grid">
 <div class="scatter-box">
 <h3>Same year: ERP vs. S&amp;P 500</h3>
@@ -740,23 +725,19 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <div id="tablePredictive"></div>
 </div>
 </div>
-
 <div class="explainer">
 <h2>Is the implied ERP a statistically significant predictor?</h2>
 <p>The left plot asks whether a given year's implied equity risk premium relates to that same year's realized return. The relationship between ERP and same year returns isn't as predictive as it is mechanical. The implied ERP is calculated from that year's year-end price, so a year that ends with a falling market mechanically produces a higher year-end ERP.</p>
 <p>The right plot is the real test. Does a given year's implied ERP predict the following year's return? Risk-compensation theory (a higher ERP implies investors are being paid more to hold stocks, and should on average realize a higher future return) says it should. Upon testing, the relationship runs in the correct direction (higher ERP associated with higher next-year returns) and lands right at the conventional 5% significance threshold. However, the R² is only about 6%, which reinforces that the implied ERP explains just a small fraction of next year's returns. Most of the year-to-year variation comes from something else entirely.</p>
-<p><strong>Caveats on the significance itself:</strong> This is 63-64 annual observations which is a small sample by statistical standards. That said, the confidence of any single p-value is limited. The p-values themselves come from a standard t-test assuming independent errors year to year. Annual valuation-based series like this one often show autocorrelation which could overstate significance.</p>
+<p>Caveats on the significance: This is 63-64 annual observations which is a small sample by statistical standards. That said, the confidence of any single p-value is limited. The p-values themselves come from a standard t-test assuming independent errors year to year. Annual valuation-based series like this one often show autocorrelation which could overstate significance.</p>
 </div>
-
 <div class="explainer">
 <p>Given where the S&amp;P 500 is priced today and the cash flows that investors expect to receive in the future, what rate of return is "priced in" and how much of that is compensation for risk above the risk-free rate? The implied ERP is the equity market equivalent of a bond's YTM. An internal rate of return solved for from the current price and expected cash flows.</p>
 <p>A rising implied ERP means investors are demanding more compensation to hold stocks relative to bonds. This is often a sign of falling confidence, even if equity markets haven't moved much. A falling ERP means the market is pricing in more optimism, or complacency, per dollar of risk. The <strong>implied expected equity return</strong> (ERP + risk-free rate) is the total forward-looking return the market is pricing into stocks today.</p>
 <p>Interestingly, 2008's implied ERP rose to a (record high at the time) 6.43% heading into a year the market fell 38.5%, while 2013's (modest) 4.96% implied ERP came before a 29.6% realized gain. The implied ERP is priced off long-term expected cash flows (typically over many years). All to say, realized returns are mostly driven by short-term sentiment and macro developments, which explains much of the constant gap between smooth premiums and the noisy returns (which the model doesn't factor in).</p>
-<div class="source">Source: <a href="https://pages.stern.nyu.edu/~adamodar/New_Home_Page/data.html" target="_blank" rel="noopener">Aswath Damodaran, NYU Stern — Implied Equity Risk Premiums (FCFE basis)</a></div>
+<div class="source">Source: <a href="https://pages.stern.nyu.edu/~adamodar/New_Home_Page/data.html" rel="noopener" target="_blank">Aswath Damodaran, NYU Stern — Implied Equity Risk Premiums (FCFE basis)</a></div>
 </div>
-
 </div>
-
 <script>
 const ERP_DATA = [
   { year: 1961, erp: 2.92, tbondRate: 2.35, sp500: 71.55 },
@@ -1124,6 +1105,5 @@ function init(){
 
 init();
 </script>
-
 </body>
 </html>

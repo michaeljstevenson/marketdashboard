@@ -1,4 +1,5 @@
 <!DOCTYPE html>
+
 <html lang="en">
 <head>
 <script>
@@ -166,10 +167,9 @@ document.addEventListener("DOMContentLoaded", function(){
  });
 });
 </script>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1" name="viewport"/>
 <title>IPO Market Activity &amp; Bull Cycle Strength — Michael J. Stevenson</title>
-
 <style>
 
 :root{
@@ -609,19 +609,17 @@ h1{
 </style>
 </head>
 <body>
-
 <nav class="sitenav">
-<a class="brand" href="/">Michael J. Stevenson, CAIA<span style="font-size:0.6em; vertical-align:super;">&reg;</span></a>
+<a class="brand" href="/">Michael J. Stevenson, CAIA<span style="font-size:0.6em; vertical-align:super;">®</span></a>
 <div class="navlinks">
 <a href="/portfolio-simulator.html">Portfolio Simulator</a>
-
 <div class="navdrop">
 <span class="navlabel">Markets &amp; Macro ▾</span>
 <div class="dropdown">
 <a href="/sentiment-index.html">Sentiment Index</a>
 <a href="/volatility.html">Implied vs. Realized Volatility</a>
 <a href="/implied-erp.html">Implied Equity Risk Premium</a>
-<a href="/ipo-activity.html" class="active">IPO Market Activity</a>
+<a class="active" href="/ipo-activity.html">IPO Market Activity</a>
 <a href="/yield-curves.html">Yield Curves</a>
 <a href="/expectations-vs-reality.html">Expectations vs. Reality</a>
 <a href="/coming-soon.html?title=Credit%20Spreads">Credit Spreads</a>
@@ -630,7 +628,6 @@ h1{
 <a href="/coming-soon.html?title=Inflation">Inflation</a>
 </div>
 </div>
-
 <div class="navdrop">
 <span class="navlabel">Equities ▾</span>
 <div class="dropdown">
@@ -643,7 +640,6 @@ h1{
 <a href="/coming-soon.html?title=Concentration%20Risk">Concentration Risk</a>
 </div>
 </div>
-
 <div class="navdrop">
 <span class="navlabel">Rates &amp; Credit ▾</span>
 <div class="dropdown">
@@ -651,7 +647,6 @@ h1{
 <a href="/coming-soon.html?title=Real%20Yields%20Dashboard">Real Yields Dashboard</a>
 </div>
 </div>
-
 <div class="navdrop">
 <span class="navlabel">Alternative &amp; Cross-Asset ▾</span>
 <div class="dropdown">
@@ -660,7 +655,6 @@ h1{
 <a href="/coming-soon.html?title=Currency%20Strength">Currency Strength</a>
 </div>
 </div>
-
 <div class="navdrop">
 <span class="navlabel">Behavioral &amp; Positioning ▾</span>
 <div class="dropdown">
@@ -669,7 +663,6 @@ h1{
 <a href="/ipo-activity.html">IPO &amp; SPAC Activity</a>
 </div>
 </div>
-
 <div class="navdrop">
 <span class="navlabel">Thematic ▾</span>
 <div class="dropdown">
@@ -677,9 +670,8 @@ h1{
 <a href="/coming-soon.html?title=Housing%20Market%20Monitor">Housing Market Monitor</a>
 </div>
 </div>
-
 </div>
-<button class="theme-toggle" id="themeToggle" type="button" aria-label="Toggle light/dark mode" title="Toggle light/dark mode">&#9789;</button>
+<button aria-label="Toggle light/dark mode" class="theme-toggle" id="themeToggle" title="Toggle light/dark mode" type="button">☽</button>
 </nav>
 <script>
 document.querySelectorAll(".navdrop").forEach(function(navdrop){
@@ -707,19 +699,14 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
  });
 })();
 </script>
-
-
-
 <div class="container">
-
 <div class="header">
 <div>
-<h1>IPO Market Activity &amp; Bull Cycle Strength</h1>
-<div class="subtitle">U.S. IPO volume, first-day "pop," and gross proceeds since 1995, tested as a sentiment and froth indicator against the S&amp;P 500 — does a hot IPO market predict what comes next, or just describe what already happened?</div>
+<h1>IPO Activity &amp; Bull Cycle Strength</h1>
+<div class="subtitle">U.S. IPO volume, first-day pop, gross proceeds since 1995, tested as a sentiment and froth indicator against the S&amp;P 500. Does the IPO market lead (or follow) the broader market?</div>
 </div>
 <div class="updated" id="updated">Annual, updated periodically</div>
 </div>
-
 <div class="stat-grid">
 <div class="stat-card">
 <div class="stat-label">IPOs (2025)</div>
@@ -742,9 +729,8 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <div class="stat-note">Price return, same calendar year</div>
 </div>
 </div>
-
 <div class="chart-box">
-<h2>IPO count, first-day pop, and S&amp;P 500 return, 1995&ndash;2025</h2>
+<h2>IPO count, first-day pop, and S&amp;P 500 return, 1995–2025</h2>
 <div class="chart-legend-custom">
 <span><i class="swatch swatch-count"></i>Number of IPOs (bars)</span>
 <span><i class="swatch swatch-pop"></i>Avg. First-Day Return</span>
@@ -754,7 +740,6 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <canvas id="ipoChart"></canvas>
 </div>
 </div>
-
 <div class="scatter-grid">
 <div class="scatter-box">
 <h3>IPO volume vs. next year's return</h3>
@@ -773,40 +758,34 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <div id="tablePop"></div>
 </div>
 </div>
-
 <div class="explainer">
-<h2>Reading the froth signal</h2>
-<p>The intuitive story is simple: when IPO volume surges and first-day pops get extreme, it means investors are euphoric, underwriters can price anything, and speculative capital is chasing anything with a ticker — a classic late-cycle signal that should precede weak forward returns. 1999&ndash;2000 fits this story almost perfectly: 484 and 382 IPOs priced with average first-day pops of 70% and 56%, right before the S&amp;P 500 fell 10% in 2000 and 13% in 2001. 2021 rhymes: 315 IPOs (plus a separate wave of SPACs), a 32% average pop, then a 19% market decline in 2022.</p>
-<p>But the regressions above test this rigorously rather than eyeballing two anecdotes, and the honest result is that the relationship is <strong>directionally consistent with the froth story but statistically weak</strong> over this 30-year sample. IPO count and first-day pop both tend to carry a negative slope against next year's return &mdash; hot IPO markets are followed by softer years, on average &mdash; but with n≈30 annual observations, R&sup2; typically in the single digits, and p-values that often miss the conventional 0.05 threshold. The two dot-com and SPAC-boom years do a lot of the work; the jackknife row shows how much the fit moves when the single most influential year is dropped.</p>
-<p>That's not a reason to dismiss the indicator &mdash; it's a reason to treat IPO volume the way most sell-side and academic literature treats it: as one qualitative input into a euphoria read (alongside options positioning, margin debt, and valuation multiples), not a standalone quantitative timing signal. The first-day pop in particular has a cleaner behavioral story than the raw count: pops above ~40% (1999, 2000, 2020, 2021, 2022's small unprofitable-biotech cohort) mark years where underwriters and issuers were willing to leave enormous sums on the table because demand was overwhelming &mdash; a purer read on speculative appetite than headline deal count, which is also mechanically suppressed in weak years simply because fewer companies choose to go public at all.</p>
+<p>When IPO volumes surge and first-day performance is an extreme pop, it generally means investors are euphoric and signals that underwriters can price just about anything. This classic late-cycle signal points to weak forward returns. 1999 (484) and 2000 (382) IPOs priced with average first-day pops of 70% and 56%, respectively. This was just before the S&amp;P 500 fell 10% in 2000 and 13% in 2001. 2021 rhymes: 315 IPOs (plus separate wave of SPACs), a 32% average pop, then a 19% market decline in 2022.</p>
+<p>The regressions above test this, and I can conclude that the relationship is directionally consistent with the "froth" story given the number of IPOs and the first-day pop both tend to carry a negative slope against next year's return.  On average, hot IPO markets are followed by softer years. However, it's statistically weak over the 30-year sample (n≈30, R² in single digits, p-values missing the conventional 0.05 threshold). The two dot-com and SPAC-boom years do a lot of the work. The jackknife row shows how much the fit moves when the single most influential year is dropped. </p>
+<p>IPO volume should be treated as one qualitative input into a sentiment indicator (with others like options positioning, margin debt, and valuation multiples) as opposed to a standalone quantitative timing signal. The first-day pop has a cleaner behavioral story than the raw count, but both are mechanically suppressed in weak years simply because fewer companies choose to go public at all.</p>
 </div>
-
 <div class="explainer">
-<h2>Notable IPO cycles, 1995&ndash;2025</h2>
+<h2>Notable IPO cycles, 1995–2025</h2>
 <table class="events-table">
 <tbody>
-<tr><td>1995&ndash;1998</td><td>Steady bull-market IPO issuance (310&ndash;690 deals/yr) as the 1990s expansion matured, still well short of dot-com extremes.</td></tr>
-<tr><td>1999&ndash;2000</td><td>Dot-com peak: 484 and 382 IPOs with average first-day pops of 70% and 56% &mdash; the most extreme underpricing on record, followed by the 2000&ndash;2002 bear market.</td></tr>
-<tr><td>2001&ndash;2003</td><td>IPO count collapses to 60&ndash;80/year post-bubble and post-9/11 &mdash; among the driest windows in the dataset.</td></tr>
-<tr><td>2004&ndash;2007</td><td>Recovery cycle (160&ndash;180 IPOs/yr, pops back to a more normal 10&ndash;14%) tracking the mid-2000s credit-fueled bull market.</td></tr>
-<tr><td>2008&ndash;2009</td><td>Global Financial Crisis: only 21 and 42 IPOs priced &mdash; the IPO window effectively closed.</td></tr>
-<tr><td>2013&ndash;2014</td><td>Post-GFC bull market IPO revival, led by tech and biotech (163 and 222 deals).</td></tr>
-<tr><td>2020&ndash;2021</td><td>Pandemic-liquidity boom: record proceeds ($62B and $120B), a 32% average pop in 2021, and a parallel SPAC wave (not counted in these figures) &mdash; followed by 2022's rate-shock bear market.</td></tr>
-<tr><td>2022</td><td>IPO market effectively closed again (39 deals) as the Fed hiked into a bear market &mdash; the smallest gross proceeds since the GFC.</td></tr>
-<tr><td>2023&ndash;2025</td><td>Gradual reopening; 2025's 94 deals and 28% average pop (led by high-profile tech listings) suggest renewed risk appetite.</td></tr>
+<tr><td>1995–1998</td><td>Steady bull-market IPO issuance (310–690 deals/yr) as the 1990s expansion matured, still well short of dot-com extremes.</td></tr>
+<tr><td>1999–2000</td><td>Dot-com peak: 484 and 382 IPOs with average first-day pops of 70% and 56%. The most extreme underpricing on record. Followed by the 2000–2002 bear market.</td></tr>
+<tr><td>2001–2003</td><td>IPO count collapses to 60–80/year post-bear and post-9/11.</td></tr>
+<tr><td>2004–2007</td><td>Recovery cycle (160–180 IPOs/yr, pops back to a more normal 10–14%) tracking the mid-2000s credit-fueled bull market.</td></tr>
+<tr><td>2008–2009</td><td>GFC. 21 and 42 IPOs priced. IPO window effectively closed.</td></tr>
+<tr><td>2013–2014</td><td>Post-GFC bull market IPO revival. Led by tech and biotech (163 and 222 issues).</td></tr>
+<tr><td>2020–2021</td><td>Pandemic-liquidity boom. Record proceeds ($62B and $120B). 2021 with a 32% average pop, SPAC wave (not counted above). 2022's bear market followed.</td></tr>
+<tr><td>2022</td><td>IPO window effectively closed again (39 deals). Fed hiked into a bear market. Lowest gross proceeds since GFC.</td></tr>
+<tr><td>2023–2025</td><td>Gradual reopening, 2025's 94 deals and 28% average pop (led by high-profile tech listings) suggest renewed risk appetite.</td></tr>
 </tbody>
 </table>
 </div>
-
 <div class="explainer">
-<p>The chart shows three series pulled directly from Jay Ritter's (University of Florida) continuously updated IPO database, the standard academic and industry source for U.S. IPO statistics going back to 1960: the number of operating-company IPOs priced each year, the equal-weighted average first-day return ("pop" &mdash; the gain from the offer price to the first closing price), and gross proceeds raised. This is Ritter's headline series (his Table 8), which includes bank/thrift conversions but excludes ADRs, SPACs, unit offers, closed-end funds, REITs, and very small or best-efforts deals &mdash; a conservative definition chosen for year-over-year consistency rather than the broadest possible count. S&amp;P 500 returns are price return only (no dividends), matching the convention used elsewhere on this site.</p>
-<p>The two scatter plots test the "IPO froth as a contrarian indicator" hypothesis directly: does this year's IPO activity (count, or average pop) predict <em>next</em> year's S&amp;P 500 return? A negative, statistically significant slope would support the classic narrative that heavy IPO issuance marks late-cycle excess. As the methodology tables show, the sign is usually right but the significance is marginal &mdash; consistent with IPO volume being a real but noisy and non-mechanical signal, unlike the implied ERP series on this site's <a href="/implied-erp.html">Implied Equity Risk Premium</a> page, which by construction can't avoid some contemporaneous correlation with market pricing.</p>
-<p><strong>Limitations:</strong> a 31-year annual sample is small by statistical standards, and two outlier years (1999&ndash;2000, and to a lesser extent 2021) drive much of whatever relationship exists &mdash; the jackknife row in each methodology table shows exactly how much. IPO count is also a supply-side measure as much as a demand-side one: companies choose <em>whether</em> to go public based on the same market conditions being tested as the predictor, so causality runs in multiple directions. This page excludes SPAC issuance (a separate, larger wave in 2020&ndash;2021) and first-day-doubling counts, both of which Ritter also tracks and which would sharpen the euphoria read further in a future update.</p>
-<div class="source">Source: <a href="https://site.warrington.ufl.edu/ritter/ipo-data/" target="_blank" rel="noopener">Jay R. Ritter, University of Florida &mdash; IPO Data</a>. S&amp;P 500 levels from Aswath Damodaran, NYU Stern (used elsewhere on this site for the Implied ERP series).</div>
+<p>The chart shows three series pulled directly from Jay Ritter's continuously updated IPO database, a standard academic and industry source for U.S. IPO statistics going back to 1960. The headline series includes bank/thrift conversions and excludes ADRs, SPACs, unit offers, closed-end funds, REITs, and very small or best-efforts deals, which helps to use a conservative definition for year-over-year consistency instead of the broadest possible count. *S&amp;P 500 returns are price return only (no dividends)*</p>
+<p>The two scatter plots test the "IPO froth as a contrarian indicator" hypothesis directly: does this year's IPO activity (count, or average pop) predict <em>next</em> year's S&amp;P 500 return? A negative, statistically significant slope would support the classic narrative that heavy IPO issuance marks late-cycle excess. As the methodology tables show, the sign is usually right but the significance is marginal — consistent with IPO volume being a real but noisy and non-mechanical signal, unlike the implied ERP series on this site's <a href="/implied-erp.html">Implied Equity Risk Premium</a> page, which by construction can't avoid some contemporaneous correlation with market pricing.</p>
+<p>Limitations: a 31-year annual sample is small, and two outlier years (1999–2000, 2021) drive much of the relationship. The jackknife row in each methodology table shows by exactly how much. Less focused on is that IPO count is as much a supply-side measure as it is a demand-side measure. Companies choose whether to go public based on the same market conditions that are being tested as the predictor.</p>
+<div class="source">Source: <a href="https://site.warrington.ufl.edu/ritter/ipo-data/" rel="noopener" target="_blank">Jay R. Ritter, University of Florida — IPO Data</a>. S&amp;P 500 levels from Aswath Damodaran, NYU Stern (used elsewhere on this site for the Implied ERP series).</div>
 </div>
-
 </div>
-
 <script>
 // IPO count, avg first-day return (%), and gross proceeds ($ millions) by
 // year, 1995-2025 — Jay Ritter's Table 8 (Number of Offerings, Average
@@ -1129,6 +1108,5 @@ function init(){
 
 init();
 </script>
-
 </body>
 </html>
