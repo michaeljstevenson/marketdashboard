@@ -488,65 +488,7 @@ h1{
 
 }
 
-.methodology-box{
- background:var(--card);
- border:1px solid var(--hair);
- border-radius:10px;
- padding:16px 20px;
- margin-bottom:20px;
- font-size:14px;
- line-height:1.7;
- color:var(--muted);
-}
 
-.methodology-box strong{ color:var(--ink); }
-
-.methodology-box code{
- font-family:var(--mono);
- background:var(--card-hover);
- padding:2px 6px;
- border-radius:4px;
- font-size:0.92em;
- white-space:nowrap;
-}
-
-.methodology-box summary{
- cursor:pointer;
- font-family:var(--serif);
- font-weight:400;
- font-size:18px;
- color:var(--ink);
- list-style:none;
- outline:none;
-}
-
-.methodology-box summary::-webkit-details-marker{ display:none; }
-
-.methodology-box summary::before{
- content:"▸ ";
- color:var(--muted);
- font-size:14px;
-}
-
-.methodology-box[open] summary::before{ content:"▾ "; }
-
-.methodology-box[open] summary{ margin-bottom:14px; }
-
-.methodology-box p:first-of-type{ margin-top:0; }
-
-.formula-block{
- font-family:var(--mono);
- background:var(--card-hover);
- border:1px solid var(--hair);
- border-radius:8px;
- padding:14px 16px;
- font-size:13.5px;
- line-height:1.8;
- color:var(--ink);
- white-space:pre-wrap;
- margin:10px 0 0;
- overflow-x:auto;
-}
 
 
 .signal-text{
@@ -1273,14 +1215,6 @@ Waiting for data...
 
 </div>
 
-<details class="methodology-box methodology">
-<summary>Methodology</summary>
-<p>Each factor below is scored 0–100 (0 = extreme fear, 100 = extreme greed), then combined into the composite as a weighted average:</p>
-<div class="formula-block">S = Σ wᵢ·sᵢ / Σ wᵢ
-
-Composite = Σ(score_i × weight_i) / Σ(weight_i)</div>
-<p>Weights: Credit spreads 18, Options put/call ratio 10, S&amp;P 500 momentum 10, Margin debt 10, Fund flows 10, Forward P/E 10, VIX 7, Realized volatility 7, Advance/decline breadth 6, New highs/lows breadth 6, % above 200-day SMA breadth 6. Each factor's own score is computed from where its current reading sits relative to its own historical range or moving average — see the <code>Calculation:</code> panel under each factor card below for that factor's specific inputs.</p>
-</details>
 
 
 </div>

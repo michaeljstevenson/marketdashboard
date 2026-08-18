@@ -536,45 +536,6 @@ h1{
  white-space:nowrap;
 }
 
-.formula-block{
- font-family:var(--mono);
- background:var(--card-hover);
- border:1px solid var(--hair);
- border-radius:8px;
- padding:14px 16px;
- font-size:13.5px;
- line-height:1.8;
- color:var(--ink);
- white-space:pre-wrap;
- margin:10px 0 16px;
- overflow-x:auto;
-}
-
-details.methodology{ cursor:default; }
-
-details.methodology summary{
- cursor:pointer;
- font-family:var(--serif);
- font-weight:400;
- font-size:18px;
- color:var(--ink);
- list-style:none;
- outline:none;
-}
-
-details.methodology summary::-webkit-details-marker{ display:none; }
-
-details.methodology summary::before{
- content:"▸ ";
- color:var(--muted);
- font-size:14px;
-}
-
-details.methodology[open] summary::before{ content:"▾ "; }
-
-details.methodology[open] summary{ margin-bottom:14px; }
-
-details.methodology p:first-of-type{ margin-top:0; }
 
 
 .explainer p:last-child{ margin-bottom:0; }
@@ -828,14 +789,6 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <div class="source">Sources: <a href="https://www.alphavantage.co/" rel="noopener" target="_blank">Alpha Vantage</a> (historical bars &amp; S&amp;P 500 level) · <a href="https://www.tradingview.com/screener/" rel="noopener" target="_blank">TradingView Screener</a> (today's bar)</div>
 </div>
 </div>
-<details class="explainer methodology">
-<summary>Methodology</summary>
-<div class="formula-block">ATH%(t) = N_ATH(t) / N(t) × 100
-
-% at ATH = Names(Intraday High ≥ Recorded All-Time High) / Total Names × 100
-% at ATL = Names(Intraday Low ≤ Recorded All-Time Low) / Total Names × 100
-Net Breadth = % at ATH − % at ATL</div>
-</details>
 </div>
 <script>
 const LINE_COLOR = "#d98a3d";

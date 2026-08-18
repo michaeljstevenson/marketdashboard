@@ -621,45 +621,6 @@ h1{
  white-space:nowrap;
 }
 
-.formula-block{
- font-family:var(--mono);
- background:var(--card-hover);
- border:1px solid var(--hair);
- border-radius:8px;
- padding:14px 16px;
- font-size:13.5px;
- line-height:1.8;
- color:var(--ink);
- white-space:pre-wrap;
- margin:10px 0 16px;
- overflow-x:auto;
-}
-
-details.methodology{ cursor:default; }
-
-details.methodology summary{
- cursor:pointer;
- font-family:var(--serif);
- font-weight:400;
- font-size:18px;
- color:var(--ink);
- list-style:none;
- outline:none;
-}
-
-details.methodology summary::-webkit-details-marker{ display:none; }
-
-details.methodology summary::before{
- content:"▸ ";
- color:var(--muted);
- font-size:14px;
-}
-
-details.methodology[open] summary::before{ content:"▾ "; }
-
-details.methodology[open] summary{ margin-bottom:14px; }
-
-details.methodology p:first-of-type{ margin-top:0; }
 
 
 .explainer p:last-child{ margin-bottom:0; }
@@ -974,16 +935,6 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <div class="source">Source: <a href="https://mba.tuck.dartmouth.edu/pages/faculty/ken.french/data_library.html" target="_blank" rel="noopener">Ken French Data Library</a>, Tuck School of Business at Dartmouth</div>
 </div>
 
-<details class="explainer methodology">
-<summary>Methodology</summary>
-<p>Each factor is a long/short spread return between portfolios sorted on a characteristic:</p>
-<div class="formula-block">R(t) − Rf(t) = α + β·MKT(t) + s·SMB(t) + h·HML(t) + w·WML(t) + ε(t)
-
-SMB (Size) = Return(Small-Cap Portfolio) − Return(Large-Cap Portfolio)
-HML (Value) = Return(High Book/Market Portfolio) − Return(Low Book/Market Portfolio)
-WML (Momentum) = Return(Prior Winners) − Return(Prior Losers)
-Mkt−RF = Return(Value-Weighted Market) − Risk-Free Rate</div>
-</details>
 
 </div>
 

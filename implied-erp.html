@@ -540,45 +540,6 @@ h1{
  white-space:nowrap;
 }
 
-.formula-block{
- font-family:var(--mono);
- background:var(--card-hover);
- border:1px solid var(--hair);
- border-radius:8px;
- padding:14px 16px;
- font-size:13.5px;
- line-height:1.8;
- color:var(--ink);
- white-space:pre-wrap;
- margin:10px 0 16px;
- overflow-x:auto;
-}
-
-details.methodology{ cursor:default; }
-
-details.methodology summary{
- cursor:pointer;
- font-family:var(--serif);
- font-weight:400;
- font-size:18px;
- color:var(--ink);
- list-style:none;
- outline:none;
-}
-
-details.methodology summary::-webkit-details-marker{ display:none; }
-
-details.methodology summary::before{
- content:"▸ ";
- color:var(--muted);
- font-size:14px;
-}
-
-details.methodology[open] summary::before{ content:"▾ "; }
-
-details.methodology[open] summary{ margin-bottom:14px; }
-
-details.methodology p:first-of-type{ margin-top:0; }
 
 
 .explainer p:last-child{ margin-bottom:0; }
@@ -756,16 +717,6 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <p>Interestingly, 2008's implied ERP rose to a (record high at the time) 6.43% heading into a year the market fell 38.5%, while 2013's (modest) 4.96% implied ERP came before a 29.6% realized gain. The implied ERP is priced off long-term expected cash flows (typically over many years). All to say, realized returns are mostly driven by short-term sentiment and macro developments, which explains much of the constant gap between smooth premiums and the noisy returns (which the model doesn't factor in).</p>
 <div class="source">Source: <a href="https://pages.stern.nyu.edu/~adamodar/New_Home_Page/data.html" rel="noopener" target="_blank">Aswath Damodaran, NYU Stern — Implied Equity Risk Premiums (FCFE basis)</a></div>
 </div>
-<details class="explainer methodology">
-<summary>Methodology</summary>
-<p>The implied ERP is the internal rate of return that equates the S&amp;P 500's current price to its expected future cash flows, solved for <code>r</code>:</p>
-<div class="formula-block">ERP(t) = r − Rf(t)
-
-Index Level = Σ [CF_t / (1+r)^t] + Terminal Value / (1+r)^n
-Implied ERP = r − Risk-Free Rate (10Y Treasury)
-Implied Expected Return = Implied ERP + Risk-Free Rate</div>
-<p>Values here are sourced directly from Damodaran's published FCFE-basis model rather than solved locally on this page.</p>
-</details>
 </div>
 <script>
 const ERP_DATA = [

@@ -381,45 +381,6 @@ h1{ font-family:var(--serif); font-size:28px; font-weight:400; margin:0; }
  white-space:nowrap;
 }
 
-.formula-block{
- font-family:var(--mono);
- background:var(--card-hover);
- border:1px solid var(--hair);
- border-radius:8px;
- padding:14px 16px;
- font-size:13.5px;
- line-height:1.8;
- color:var(--ink);
- white-space:pre-wrap;
- margin:10px 0 16px;
- overflow-x:auto;
-}
-
-details.methodology{ cursor:default; }
-
-details.methodology summary{
- cursor:pointer;
- font-family:var(--serif);
- font-weight:400;
- font-size:18px;
- color:var(--ink);
- list-style:none;
- outline:none;
-}
-
-details.methodology summary::-webkit-details-marker{ display:none; }
-
-details.methodology summary::before{
- content:"▸ ";
- color:var(--muted);
- font-size:14px;
-}
-
-details.methodology[open] summary::before{ content:"▾ "; }
-
-details.methodology[open] summary{ margin-bottom:14px; }
-
-details.methodology p:first-of-type{ margin-top:0; }
 
 
 .explainer p:last-child{ margin-bottom:0; }
@@ -653,18 +614,6 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 
 <div class="source">Sources: Alpha Vantage (Treasury constant-maturity yields); Federal Reserve Bank of New York (ACM term premium); Aswath Damodaran, NYU Stern (S&amp;P 500 levels); NBER (official recession dates).</div>
 </div>
-<details class="explainer methodology">
-<summary>Methodology</summary>
-<p>The two spreads plotted here are simple differences between constant-maturity Treasury yields of different tenors:</p>
-<div class="formula-block">S(t) = Y10(t) − Yx(t)
-
-2s10s Spread = 10-Year Yield − 2-Year Yield
-3m/10y Spread = 10-Year Yield − 3-Month Yield</div>
-<p>The term premium decomposes the observed 10-year yield into a rate-expectations component and a term-premium component, using the New York Fed's published Adrian-Crump-Moench (ACM) model:</p>
-<div class="formula-block">Y10(t) = E(t) + TP(t)
-
-10-Year Yield = Rate-Expectations Component + Term Premium</div>
-</details>
 </div>
 <script>
 // Monthly 2s10s (10y-2y) and 3-month/10-year (10y-3m) spreads, Dec 1994
