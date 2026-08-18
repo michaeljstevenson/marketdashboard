@@ -1,4 +1,5 @@
 <!DOCTYPE html>
+
 <html lang="en">
 <head>
 <script>
@@ -166,10 +167,9 @@ document.addEventListener("DOMContentLoaded", function(){
  });
 });
 </script>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1" name="viewport"/>
 <title>Market Breadth — Michael J. Stevenson</title>
-
 <style>
 
 :root{
@@ -555,12 +555,10 @@ h1{
 </style>
 </head>
 <body>
-
 <nav class="sitenav">
-<a class="brand" href="/">Michael J. Stevenson, CAIA<span style="font-size:0.6em; vertical-align:super;">&reg;</span></a>
+<a class="brand" href="/">Michael J. Stevenson, CAIA<span style="font-size:0.6em; vertical-align:super;">®</span></a>
 <div class="navlinks">
 <a href="/portfolio-simulator.html">Portfolio Simulator</a>
-
 <div class="navdrop">
 <span class="navlabel">Markets &amp; Macro ▾</span>
 <div class="dropdown">
@@ -576,7 +574,6 @@ h1{
 <a href="/coming-soon.html?title=Inflation">Inflation</a>
 </div>
 </div>
-
 <div class="navdrop">
 <span class="navlabel">Equities ▾</span>
 <div class="dropdown">
@@ -585,11 +582,10 @@ h1{
 <a href="/valuations.html">Valuations</a>
 <a href="/factor-analysis.html">Factor Analysis</a>
 <a href="/coming-soon.html?title=Earnings%20Revisions">Earnings Revisions</a>
-<a href="/market-breadth.html" class="active">Market Breadth</a>
+<a class="active" href="/market-breadth.html">Market Breadth</a>
 <a href="/coming-soon.html?title=Concentration%20Risk">Concentration Risk</a>
 </div>
 </div>
-
 <div class="navdrop">
 <span class="navlabel">Rates &amp; Credit ▾</span>
 <div class="dropdown">
@@ -597,7 +593,6 @@ h1{
 <a href="/coming-soon.html?title=Real%20Yields%20Dashboard">Real Yields Dashboard</a>
 </div>
 </div>
-
 <div class="navdrop">
 <span class="navlabel">Alternative &amp; Cross-Asset ▾</span>
 <div class="dropdown">
@@ -606,7 +601,6 @@ h1{
 <a href="/coming-soon.html?title=Currency%20Strength">Currency Strength</a>
 </div>
 </div>
-
 <div class="navdrop">
 <span class="navlabel">Behavioral &amp; Positioning ▾</span>
 <div class="dropdown">
@@ -615,7 +609,6 @@ h1{
 <a href="/ipo-activity.html">IPO &amp; SPAC Activity</a>
 </div>
 </div>
-
 <div class="navdrop">
 <span class="navlabel">Thematic ▾</span>
 <div class="dropdown">
@@ -623,9 +616,8 @@ h1{
 <a href="/coming-soon.html?title=Housing%20Market%20Monitor">Housing Market Monitor</a>
 </div>
 </div>
-
 </div>
-<button class="theme-toggle" id="themeToggle" type="button" aria-label="Toggle light/dark mode" title="Toggle light/dark mode">&#9789;</button>
+<button aria-label="Toggle light/dark mode" class="theme-toggle" id="themeToggle" title="Toggle light/dark mode" type="button">☽</button>
 </nav>
 <script>
 document.querySelectorAll(".navdrop").forEach(function(navdrop){
@@ -653,13 +645,8 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
  });
 })();
 </script>
-
-
-
 <div class="container">
-
 <div class="error-banner" id="errorBanner"></div>
-
 <div class="header">
 <div>
 <h1>Market Breadth</h1>
@@ -667,7 +654,6 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 </div>
 <div class="updated" id="updated">Loading...</div>
 </div>
-
 <div class="stat-grid">
 <div class="stat-card">
 <div class="stat-label">Advances / Declines</div>
@@ -690,7 +676,6 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <div class="stat-note">Cumulative, since data start</div>
 </div>
 </div>
-
 <div class="chart-box" id="dayChangeBox" style="display:none;">
 <div class="chart-box-header">
 <div>
@@ -709,7 +694,6 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <canvas id="dayChangeChart"></canvas>
 </div>
 </div>
-
 <div class="chart-box">
 <div class="chart-box-header">
 <h2>Cumulative advance-decline line vs. S&amp;P 500</h2>
@@ -719,7 +703,6 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <canvas id="adChart"></canvas>
 </div>
 </div>
-
 <div class="chart-box">
 <div class="chart-box-header">
 <h2>% of constituents above their 200-day moving average</h2>
@@ -729,7 +712,6 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <canvas id="smaChart"></canvas>
 </div>
 </div>
-
 <div class="chart-box">
 <div class="chart-box-header">
 <h2>52-week new highs vs. new lows</h2>
@@ -739,18 +721,15 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <canvas id="hlChart"></canvas>
 </div>
 </div>
-
 <div class="explainer">
-<h2>Reading breadth</h2>
-<p>An index can keep climbing while fewer and fewer of its members are actually going up with it — a handful of mega-caps can carry the average even as the typical stock lags or falls. Breadth measures try to catch that: the advance-decline line tracks the running tally of advancing minus declining names, day by day, and its shape relative to the index itself is the signal. When the S&amp;P 500 makes a new high but the A-D line doesn't confirm it — a "breadth divergence" — that's historically been a warning sign that the rally's participation is narrowing, sometimes ahead of a broader pullback.</p>
-<p>The % above the 200-day moving average is a slower-moving read on the same idea: how many constituents are in a durable uptrend, not just up on a given day. A market near all-time highs with a low reading here means the advance is being carried by a narrow group of leaders rather than broad participation — worth watching even if the index itself looks fine. New highs vs. new lows is the sharpest-edged version: a rising count of fresh 52-week lows even while the index holds up is one of the more reliable early-warning breadth signals.</p>
-<p>None of these are timing tools on their own — breadth can diverge from price for months before it matters, or not matter at all. They're context for how healthy an advance or decline actually is underneath the headline index number.</p>
-<p>The day's-change distribution above them is the one exception to "once daily" on this page — it refreshes hourly through the trading session (roughly 9:30am to 3:30pm ET on trading days) rather than waiting for the close, since it only needs each stock's current quote against its prior close rather than the full price history the other charts are built from.</p>
-<div class="source">Source: <a href="https://www.alphavantage.co/" target="_blank" rel="noopener">Alpha Vantage</a> daily adjusted closes across S&amp;P 500 constituents. Advance-decline, 200-day SMA, and new-highs/lows charts computed once daily after the close; the day's-change distribution refreshes hourly during market hours.</div>
+<h2></h2>
+<p>An index can continue climbing while less and less of its constituents are actually going climbing with it. A handful of mega-caps can carry the index even as the typical stock lags or falls. The advance-decline line tracks the running tally of advancing minus declining names, day by day. Its shape relative to the index itself is the signal. Breadth divergence is when the market makes a new high but the A-D line doesn't confirm it. This has historically been a warning sign that the participation is narrowing and sometimes points to a future broader pullback.</p>
+<p>The % above the 200-day moving average: How many constituents are in a durable uptrend (instead of just up on a given day). A market near all-time highs with a low reading % above the 200-day SMA means the advance is being carried by a narrow group of leaders rather than broad participation. New highs vs. new lows: a rising count of fresh 52-week lows even while the index holds up is an early-warning breadth signal.</p>
+<p>Breadth can diverge from price for months before it matters.  A-D, % above 20-day SMA, 52-week highs vs. lows are simply context for how healthy an advance or decline is underneath the headline index number.</p>
+<p>The day's-change distribution (top) refreshes hourly through the trading session (9:30am to 3:30pm ET on trading days) </p>
+<div class="source">Source: <a href="https://www.alphavantage.co/" rel="noopener" target="_blank">Alpha Vantage</a> daily adjusted closes across S&amp;P 500 constituents. Advance-decline, 200-day SMA, and new-highs/lows charts computed once daily after the close; the day's-change distribution refreshes hourly during market hours.</div>
 </div>
-
 </div>
-
 <script>
 function showError(message){
  const banner = document.getElementById("errorBanner");
@@ -1107,6 +1086,5 @@ function renderDayChangeRange(data, rangeKey, isLive){
 
 init();
 </script>
-
 </body>
 </html>

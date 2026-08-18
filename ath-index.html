@@ -1,4 +1,5 @@
 <!DOCTYPE html>
+
 <html lang="en">
 <head>
 <script>
@@ -166,10 +167,9 @@ document.addEventListener("DOMContentLoaded", function(){
  });
 });
 </script>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1" name="viewport"/>
 <title>All-Time Highs and Lows — Michael J. Stevenson</title>
-
 <style>
 
 :root{
@@ -609,12 +609,10 @@ h1{
 </style>
 </head>
 <body>
-
 <nav class="sitenav">
-<a class="brand" href="/">Michael J. Stevenson, CAIA<span style="font-size:0.6em; vertical-align:super;">&reg;</span></a>
+<a class="brand" href="/">Michael J. Stevenson, CAIA<span style="font-size:0.6em; vertical-align:super;">®</span></a>
 <div class="navlinks">
 <a href="/portfolio-simulator.html">Portfolio Simulator</a>
-
 <div class="navdrop">
 <span class="navlabel">Markets &amp; Macro ▾</span>
 <div class="dropdown">
@@ -630,12 +628,11 @@ h1{
 <a href="/coming-soon.html?title=Inflation">Inflation</a>
 </div>
 </div>
-
 <div class="navdrop">
 <span class="navlabel">Equities ▾</span>
 <div class="dropdown">
 <a href="/sector-analysis.html">Sector Performance</a>
-<a href="/ath-index.html" class="active">All-Time Highs and Lows</a>
+<a class="active" href="/ath-index.html">All-Time Highs and Lows</a>
 <a href="/valuations.html">Valuations</a>
 <a href="/factor-analysis.html">Factor Analysis</a>
 <a href="/coming-soon.html?title=Earnings%20Revisions">Earnings Revisions</a>
@@ -643,7 +640,6 @@ h1{
 <a href="/coming-soon.html?title=Concentration%20Risk">Concentration Risk</a>
 </div>
 </div>
-
 <div class="navdrop">
 <span class="navlabel">Rates &amp; Credit ▾</span>
 <div class="dropdown">
@@ -651,7 +647,6 @@ h1{
 <a href="/coming-soon.html?title=Real%20Yields%20Dashboard">Real Yields Dashboard</a>
 </div>
 </div>
-
 <div class="navdrop">
 <span class="navlabel">Alternative &amp; Cross-Asset ▾</span>
 <div class="dropdown">
@@ -660,7 +655,6 @@ h1{
 <a href="/coming-soon.html?title=Currency%20Strength">Currency Strength</a>
 </div>
 </div>
-
 <div class="navdrop">
 <span class="navlabel">Behavioral &amp; Positioning ▾</span>
 <div class="dropdown">
@@ -669,7 +663,6 @@ h1{
 <a href="/ipo-activity.html">IPO &amp; SPAC Activity</a>
 </div>
 </div>
-
 <div class="navdrop">
 <span class="navlabel">Thematic ▾</span>
 <div class="dropdown">
@@ -677,9 +670,8 @@ h1{
 <a href="/coming-soon.html?title=Housing%20Market%20Monitor">Housing Market Monitor</a>
 </div>
 </div>
-
 </div>
-<button class="theme-toggle" id="themeToggle" type="button" aria-label="Toggle light/dark mode" title="Toggle light/dark mode">&#9789;</button>
+<button aria-label="Toggle light/dark mode" class="theme-toggle" id="themeToggle" title="Toggle light/dark mode" type="button">☽</button>
 </nav>
 <script>
 // Class-driven (not pure :hover) nav dropdowns: pure CSS :hover drops the
@@ -713,14 +705,9 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
  });
 })();
 </script>
-
-
-
 <div class="container">
-
 <div class="error-banner" id="errorBanner"></div>
 <div class="warning-banner" id="warningBanner"></div>
-
 <div class="header">
 <div>
 <h1>All-Time Highs and Lows</h1>
@@ -728,15 +715,12 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 </div>
 <div class="updated" id="updated">Loading...</div>
 </div>
-
 <div class="tab-bar" id="tabBar">
 <button class="tab-btn active" data-tab="ath">All-Time Highs</button>
 <button class="tab-btn" data-tab="atl">All-Time Lows</button>
 <button class="tab-btn" data-tab="net">ATH − ATL vs. S&amp;P 500</button>
 </div>
-
 <div class="tab-panel active" id="panel-ath">
-
 <div class="stat-grid">
 <div class="stat-card">
 <div class="stat-label">At All-Time Highs</div>
@@ -754,7 +738,6 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <div class="stat-note">Most recent trading day</div>
 </div>
 </div>
-
 <div class="chart-box">
 <div class="chart-box-header">
 <h2>% of sample at all-time highs, over time</h2>
@@ -764,26 +747,21 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <canvas id="athChart"></canvas>
 </div>
 </div>
-
 <div class="ticker-box">
 <h2>Currently at all-time highs</h2>
 <div class="ticker-grid" id="tickerGrid">
-<span class="ticker-empty">Loading&hellip;</span>
+<span class="ticker-empty">Loading…</span>
 </div>
 </div>
-
 <div class="explainer">
-<h2>Why two data sources</h2>
-<p>This page used to compute "at an all-time high" from Alpha Vantage's daily price history — but that history turned out to be capped at roughly 26 years for every symbol tested, starting around 1999&ndash;2000 regardless of how long the company's actually been listed. For long-established names (3M, Amgen, Eaton, and others), that understates the true all-time high: 3M's real peak (reached before 1999) sits well above its current price, but Alpha Vantage's truncated history couldn't see that and flagged it as a new high anyway.</p>
-<p>The current count and list above now come from TradingView's own all-time-high figure instead, which is built from deeper history. The long-run chart below still uses the Alpha Vantage series, since it has years of daily history to draw a trend from and the general shape is still informative &mdash; but treat its day-to-day count as an upper-bound estimate, not a precise figure, for the reason above.</p>
-<p>A name counts as being at an all-time high when its intraday high reaches its recorded all-time high for the day. A high reading means strength is broad &mdash; many names participating, not just a handful of mega-caps carrying the market. A reading near zero doesn't necessarily mean a bear market; it can simply mean the market has pulled back from a recent peak across the board, which is normal even in an uptrend.</p>
-<div class="source">Sources: <a href="https://www.tradingview.com/screener/" target="_blank" rel="noopener">TradingView Screener</a> (current count &amp; list) &middot; <a href="https://www.alphavantage.co/" target="_blank" rel="noopener">Alpha Vantage</a> (long-run chart)</div>
-</div>
+<h2></h2>
 
-</div>
 
+<p>A name counts as being at an all-time high when its intraday high reaches its recorded all-time high for the day. A reading near zero doesn't necessarily mean a bear market; it can simply mean the market has pulled back from a recent peak across the board, which is normal even in an upward trending market.</p>
+<div class="source">Sources: <a href="https://www.tradingview.com/screener/" rel="noopener" target="_blank">TradingView Screener</a> (current count &amp; list) · <a href="https://www.alphavantage.co/" rel="noopener" target="_blank">Alpha Vantage</a> (long-run chart)</div>
+</div>
+</div>
 <div class="tab-panel" id="panel-atl">
-
 <div class="stat-grid">
 <div class="stat-card">
 <div class="stat-label">At All-Time Lows</div>
@@ -801,24 +779,19 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <div class="stat-note">Most recent trading day</div>
 </div>
 </div>
-
 <div class="ticker-box">
 <h2>Currently at all-time lows</h2>
 <div class="ticker-grid" id="atlTickerGrid">
-<span class="ticker-empty">Loading&hellip;</span>
+<span class="ticker-empty">Loading…</span>
 </div>
 </div>
-
 <div class="explainer">
 <h2>How this is computed</h2>
-<p>Mirrors the all-time-high methodology on the other tab: a name counts as being at an all-time low when its intraday low reaches its recorded all-time low for the day, sourced from TradingView's screener (<code>Low.All</code> field). There's no Alpha Vantage-based fallback or long-run chart here, since the flawed Alpha Vantage history that motivated the ATH fix never had a comparable all-time-low computation to begin with &mdash; this tab is TradingView-only.</p>
-<div class="source">Source: <a href="https://www.tradingview.com/screener/" target="_blank" rel="noopener">TradingView Screener</a></div>
+<p>Mirrors the all-time-high methodology on the other tab: a name counts as being at an all-time low when its intraday low reaches its recorded all-time low for the day, sourced from TradingView's screener (<code>Low.All</code> field). There's no Alpha Vantage-based fallback or long-run chart here, since the flawed Alpha Vantage history that motivated the ATH fix never had a comparable all-time-low computation to begin with — this tab is TradingView-only.</p>
+<div class="source">Source: <a href="https://www.tradingview.com/screener/" rel="noopener" target="_blank">TradingView Screener</a></div>
 </div>
-
 </div>
-
 <div class="tab-panel" id="panel-net">
-
 <div class="chart-box">
 <div class="chart-box-header">
 <h2>Number at ATH minus number at ATL, vs. S&amp;P 500</h2>
@@ -828,18 +801,14 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <canvas id="netChart"></canvas>
 </div>
 </div>
-
 <div class="explainer">
 <h2>Reading this chart</h2>
-<p>The bars show the count of S&amp;P 500 constituents at a fresh all-time high minus the count at a fresh all-time low, each trading day &mdash; a classic breadth measure. Positive and rising means strength is broadening; negative means more names are breaking down than breaking out, which can show up before the index itself rolls over. The line overlays the S&amp;P 500 level itself for context.</p>
+<p>The bars show the count of S&amp;P 500 constituents at a fresh all-time high minus the count at a fresh all-time low, each trading day — a classic breadth measure. Positive and rising means strength is broadening; negative means more names are breaking down than breaking out, which can show up before the index itself rolls over. The line overlays the S&amp;P 500 level itself for context.</p>
 <p>The historical bars come from the same Alpha Vantage daily history that backs the All-Time Highs tab's long-run chart, so they carry the same caveat: that history is capped at roughly 26 years per symbol, understating the true all-time high or low for long-listed names and skewing older counts on both sides. Today's bar is overridden with the accurate TradingView-based count once it's populated for the day.</p>
-<div class="source">Sources: <a href="https://www.alphavantage.co/" target="_blank" rel="noopener">Alpha Vantage</a> (historical bars &amp; S&amp;P 500 level) &middot; <a href="https://www.tradingview.com/screener/" target="_blank" rel="noopener">TradingView Screener</a> (today's bar)</div>
+<div class="source">Sources: <a href="https://www.alphavantage.co/" rel="noopener" target="_blank">Alpha Vantage</a> (historical bars &amp; S&amp;P 500 level) · <a href="https://www.tradingview.com/screener/" rel="noopener" target="_blank">TradingView Screener</a> (today's bar)</div>
 </div>
-
 </div>
-
 </div>
-
 <script>
 const LINE_COLOR = "#d98a3d";
 
@@ -1154,6 +1123,5 @@ function renderChartRange(rangeKey){
 
 init();
 </script>
-
 </body>
 </html>

@@ -1,4 +1,5 @@
 <!DOCTYPE html>
+
 <html lang="en">
 <head>
 <script>
@@ -8,10 +9,9 @@
  if(saved === "light") document.documentElement.setAttribute("data-theme", "light");
 })();
 </script>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1" name="viewport"/>
 <title>Valuations by Industry — Michael J. Stevenson</title>
-
 <style>
 
 :root{
@@ -366,12 +366,10 @@ tbody td:first-child{
 </style>
 </head>
 <body>
-
 <nav class="sitenav">
-<a class="brand" href="/">Michael J. Stevenson, CAIA<span style="font-size:0.6em; vertical-align:super;">&reg;</span></a>
+<a class="brand" href="/">Michael J. Stevenson, CAIA<span style="font-size:0.6em; vertical-align:super;">®</span></a>
 <div class="navlinks">
 <a href="/portfolio-simulator.html">Portfolio Simulator</a>
-
 <div class="navdrop">
 <span class="navlabel">Markets &amp; Macro ▾</span>
 <div class="dropdown">
@@ -387,20 +385,18 @@ tbody td:first-child{
 <a href="/coming-soon.html?title=Inflation">Inflation</a>
 </div>
 </div>
-
 <div class="navdrop">
 <span class="navlabel">Equities ▾</span>
 <div class="dropdown">
 <a href="/sector-analysis.html">Sector Performance</a>
 <a href="/ath-index.html">All-Time Highs and Lows</a>
-<a href="/valuations.html" class="active">Valuations</a>
+<a class="active" href="/valuations.html">Valuations</a>
 <a href="/factor-analysis.html">Factor Analysis</a>
 <a href="/coming-soon.html?title=Earnings%20Revisions">Earnings Revisions</a>
 <a href="/market-breadth.html">Market Breadth</a>
 <a href="/coming-soon.html?title=Concentration%20Risk">Concentration Risk</a>
 </div>
 </div>
-
 <div class="navdrop">
 <span class="navlabel">Rates &amp; Credit ▾</span>
 <div class="dropdown">
@@ -408,7 +404,6 @@ tbody td:first-child{
 <a href="/coming-soon.html?title=Real%20Yields%20Dashboard">Real Yields Dashboard</a>
 </div>
 </div>
-
 <div class="navdrop">
 <span class="navlabel">Alternative &amp; Cross-Asset ▾</span>
 <div class="dropdown">
@@ -417,7 +412,6 @@ tbody td:first-child{
 <a href="/coming-soon.html?title=Currency%20Strength">Currency Strength</a>
 </div>
 </div>
-
 <div class="navdrop">
 <span class="navlabel">Behavioral &amp; Positioning ▾</span>
 <div class="dropdown">
@@ -426,7 +420,6 @@ tbody td:first-child{
 <a href="/ipo-activity.html">IPO &amp; SPAC Activity</a>
 </div>
 </div>
-
 <div class="navdrop">
 <span class="navlabel">Thematic ▾</span>
 <div class="dropdown">
@@ -434,9 +427,8 @@ tbody td:first-child{
 <a href="/coming-soon.html?title=Housing%20Market%20Monitor">Housing Market Monitor</a>
 </div>
 </div>
-
 </div>
-<button class="theme-toggle" id="themeToggle" type="button" aria-label="Toggle light/dark mode" title="Toggle light/dark mode">&#9789;</button>
+<button aria-label="Toggle light/dark mode" class="theme-toggle" id="themeToggle" title="Toggle light/dark mode" type="button">☽</button>
 </nav>
 <script>
 // Class-driven (not pure :hover) nav dropdowns: pure CSS :hover drops the
@@ -470,26 +462,19 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
  });
 })();
 </script>
-
-
-
 <div class="container">
-
 <div class="header">
 <div>
 <h1>Valuations by Industry</h1>
-<div class="subtitle">Aggregated valuation multiples across ~7,000 U.S. public companies, grouped into 94 industry classifications — price/earnings, EV/EBITDA, price/book, and expected growth.</div>
+<div class="subtitle">Aggregated valuation multiples across ~7,000 US public companies, grouped into 94 industry classifications. P/E, EV/EBITDA, P/B, and expected growth.</div>
 </div>
 <div class="updated" id="updated">Annual, updated each January</div>
 </div>
-
 <div class="stat-grid" id="totalMarketStats"></div>
-
 <div class="controls">
-<div class="search-box"><input type="text" id="searchBox" placeholder="Filter industries..." oninput="render()"></div>
+<div class="search-box"><input id="searchBox" oninput="render()" placeholder="Filter industries..." type="text"/></div>
 <div class="legend-note">Total Market shown for reference. Click a column to sort.</div>
 </div>
-
 <div class="table-box">
 <table id="multiplesTable">
 <thead>
@@ -509,15 +494,12 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <tbody id="tableBody"></tbody>
 </table>
 </div>
-
 <div class="explainer">
-<p>Each row aggregates every publicly traded U.S. company Damodaran's dataset covers within that industry classification (~7,000 companies total across 94 industries). <strong>Current PE</strong> uses trailing 12-month diluted EPS including one-time items; <strong>Trailing PE</strong> excludes them; <strong>Forward PE</strong> uses next-12-month analyst EPS estimates. <strong>PEG</strong> divides the PE ratio by the expected 5-year earnings growth rate — a PEG near 1 is the classic rule-of-thumb for "fairly priced relative to growth," well above 1 suggests growth may be overpriced, below 1 potentially underpriced (though this rule of thumb has real limitations across industries with very different risk and margin profiles). <strong>EV/EBITDA</strong> compares enterprise value to earnings before interest, taxes, depreciation and amortization — useful for comparing capital structures across industries with different debt levels. <strong>ROE</strong> is aggregate net income divided by aggregate book equity for money-making firms in the industry.</p>
-<p><strong>Limitations:</strong> industry aggregates can be skewed by a small number of very large or very high-multiple companies within a group — averages here aren't sales-weighted or median-based. Data is annual, refreshed each January, not a live daily feed. A very high PE or PEG in a small, immature, or high-money-losing-share industry often reflects the small denominator effect of aggregating mostly unprofitable early-stage companies, not genuine overvaluation of the profitable ones.</p>
-<div class="source">Source: <a href="https://pages.stern.nyu.edu/~adamodar/New_Home_Page/data.html" target="_blank" rel="noopener">Aswath Damodaran, NYU Stern — Industry-average valuation multiples (PE, EV/EBITDA, Price/Book)</a></div>
-</div>
+<p>Each row aggregates every publicly traded US company Damodaran's dataset covers within that industry classification. Current PE uses trailing 12-month diluted EPS including one-time items, trailing PE excludes them, forward PE uses next-12-month analyst EPS estimates. PEG divides the PE ratio by the expected 5-year earnings growth rate. ROE is aggregate net income divided by aggregate book equity for money-making firms in the industry.</p>
 
+<div class="source">Source: <a href="https://pages.stern.nyu.edu/~adamodar/New_Home_Page/data.html" rel="noopener" target="_blank">Aswath Damodaran, NYU Stern — Industry-average valuation multiples (PE, EV/EBITDA, Price/Book)</a></div>
 </div>
-
+</div>
 <script>
 const MULTIPLES_DATA = [
   { industry: "Advertising", numFirms: 52, pctMoneyLosing: 78.8, currentPE: 132.24, trailingPE: 44.43, forwardPE: 52.87, expGrowth5yr: 2.28, pegRatio: 11.16, evEbitda: 12.0, pbv: 4.55, roe: -1.34 },
@@ -719,6 +701,5 @@ document.querySelectorAll("thead th").forEach(th => {
 renderStats();
 render();
 </script>
-
 </body>
 </html>
