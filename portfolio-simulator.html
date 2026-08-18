@@ -429,7 +429,7 @@ h1{
 
 .stat-grid{
  display:grid;
- grid-template-columns:repeat(4,1fr);
+ grid-template-columns:repeat(3,1fr);
  gap:16px;
  margin-bottom:30px;
 }
@@ -502,6 +502,31 @@ h1{
 .swatch-green{ background:#5a9d6f; }
 .swatch-red{ background:#c0564f; }
 .swatch-median{ background:var(--ink); height:2px; }
+.swatch-p10{ background:#b0413e; }
+.swatch-p25{ background:#d98a3d; }
+.swatch-p75{ background:#6f8fac; }
+.swatch-p90{ background:#3f6a8a; }
+
+.pct-toggles label{
+ display:flex;
+ align-items:center;
+ gap:6px;
+ color:var(--muted);
+ font-size:12px;
+ cursor:pointer;
+ user-select:none;
+}
+
+.pct-toggles input[type="checkbox"]{
+ accent-color:var(--greed);
+ width:13px;
+ height:13px;
+ cursor:pointer;
+ margin:0;
+}
+
+.pct-toggles label.pct-off{ color:var(--hair); }
+.pct-toggles label.pct-off .swatch{ opacity:0.3; }
 
 @media (max-width:720px){
  .stat-grid{ grid-template-columns:1fr 1fr; }
@@ -759,16 +784,28 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 
 <div class="stat-grid">
 <div class="stat-card">
+<div class="stat-label">10th Percentile</div>
+<div class="stat-value" id="statP10">—</div>
+<div class="stat-value-real" id="statP10Real">—</div>
+<div class="stat-note">Poor-outcome scenario</div>
+</div>
+<div class="stat-card">
+<div class="stat-label">25th Percentile</div>
+<div class="stat-value" id="statP25">—</div>
+<div class="stat-value-real" id="statP25Real">—</div>
+<div class="stat-note">Below-average outcome</div>
+</div>
+<div class="stat-card">
 <div class="stat-label">Median Ending Value</div>
 <div class="stat-value" id="statMedian">—</div>
 <div class="stat-value-real" id="statMedianReal">—</div>
 <div class="stat-note">50th percentile outcome</div>
 </div>
 <div class="stat-card">
-<div class="stat-label">10th Percentile</div>
-<div class="stat-value" id="statP10">—</div>
-<div class="stat-value-real" id="statP10Real">—</div>
-<div class="stat-note">Poor-outcome scenario</div>
+<div class="stat-label">75th Percentile</div>
+<div class="stat-value" id="statP75">—</div>
+<div class="stat-value-real" id="statP75Real">—</div>
+<div class="stat-note">Above-average outcome</div>
 </div>
 <div class="stat-card">
 <div class="stat-label">90th Percentile</div>
@@ -788,7 +825,13 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <div class="chart-legend-custom">
 <span><i class="swatch swatch-green"></i>Successful trials</span>
 <span><i class="swatch swatch-red"></i>Failed trials (depleted)</span>
-<span><i class="swatch swatch-median"></i>Median trial</span>
+</div>
+<div class="chart-legend-custom pct-toggles" id="pctToggles">
+<label data-pct="10"><input checked="" data-pct="10" type="checkbox"/><i class="swatch swatch-p10"></i>10th percentile</label>
+<label data-pct="25"><input checked="" data-pct="25" type="checkbox"/><i class="swatch swatch-p25"></i>25th percentile</label>
+<label data-pct="50"><input checked="" data-pct="50" type="checkbox"/><i class="swatch swatch-median"></i>Median</label>
+<label data-pct="75"><input checked="" data-pct="75" type="checkbox"/><i class="swatch swatch-p75"></i>75th percentile</label>
+<label data-pct="90"><input checked="" data-pct="90" type="checkbox"/><i class="swatch swatch-p90"></i>90th percentile</label>
 </div>
 <div class="chart-canvas-wrap">
 <canvas id="simChart"></canvas>
@@ -913,12 +956,18 @@ function runSimulation(){
 
  const median = percentile(sortedFinal, 0.50);
  const p10v = percentile(sortedFinal, 0.10);
+ const p25v = percentile(sortedFinal, 0.25);
+ const p75v = percentile(sortedFinal, 0.75);
  const p90v = percentile(sortedFinal, 0.90);
 
  document.getElementById("statMedian").textContent = "$" + fmtMoney(median);
  document.getElementById("statMedianReal").textContent = "Today's $: " + "$" + fmtMoney(median / realFactor);
  document.getElementById("statP10").textContent = "$" + fmtMoney(p10v);
  document.getElementById("statP10Real").textContent = "Today's $: " + "$" + fmtMoney(p10v / realFactor);
+ document.getElementById("statP25").textContent = "$" + fmtMoney(p25v);
+ document.getElementById("statP25Real").textContent = "Today's $: " + "$" + fmtMoney(p25v / realFactor);
+ document.getElementById("statP75").textContent = "$" + fmtMoney(p75v);
+ document.getElementById("statP75Real").textContent = "Today's $: " + "$" + fmtMoney(p75v / realFactor);
  document.getElementById("statP90").textContent = "$" + fmtMoney(p90v);
  document.getElementById("statP90Real").textContent = "Today's $: " + "$" + fmtMoney(p90v / realFactor);
 
@@ -956,15 +1005,31 @@ function runSimulation(){
   ...sample(failIdx, Math.min(failIdx.length, halfCap)),
  ];
 
- const p50 = years.map(y => percentile(paths[y].slice().sort((a,b) => a - b), 0.50));
+ // Percentile lines by year — each lets you read the full distribution's
+ // spread at any point along the horizon, not just at the final balance.
+ const pctLines = {};
+ [10, 25, 50, 75, 90].forEach(p => {
+  pctLines[p] = years.map(y => percentile(paths[y].slice().sort((a,b) => a - b), p / 100));
+ });
 
- renderChart(years, currentYear, paths, drawIdx, succeeded, p50);
+ lastRunArgs = [years, currentYear, paths, drawIdx, succeeded, pctLines];
+ renderChart(...lastRunArgs);
  document.getElementById("results").classList.add("show");
 }
 
 let simChart = null;
+let lastRunArgs = null;
 
-function renderChart(years, currentYear, paths, drawIdx, succeeded, p50){
+// Which percentile lines are currently checked, read fresh from the DOM
+// each render so toggling a checkbox can just re-run this without a full
+// re-simulation.
+function checkedPercentiles(){
+ return Array.from(document.querySelectorAll('#pctToggles input[type="checkbox"]'))
+  .filter(cb => cb.checked)
+  .map(cb => Number(cb.dataset.pct));
+}
+
+function renderChart(years, currentYear, paths, drawIdx, succeeded, pctLines){
  const ctx = document.getElementById("simChart").getContext("2d");
  if(simChart) simChart.destroy();
 
@@ -974,6 +1039,14 @@ function renderChart(years, currentYear, paths, drawIdx, succeeded, p50){
  // between a light color (dark mode) and a dark color (light mode), so a
  // hardcoded dark-mode value would render this line invisible in light mode.
  const MEDIAN_COLOR = getComputedStyle(document.documentElement).getPropertyValue("--ink").trim() || "#eae6da";
+
+ const PCT_STYLE = {
+  10: { label: "10th percentile", color: "#b0413e", width: 1.5 },
+  25: { label: "25th percentile", color: "#d98a3d", width: 1.5 },
+  50: { label: "Median", color: MEDIAN_COLOR, width: 2.5 },
+  75: { label: "75th percentile", color: "#6f8fac", width: 1.5 },
+  90: { label: "90th percentile", color: "#3f6a8a", width: 1.5 },
+ };
 
  const spaghettiDatasets = drawIdx.map(s => ({
   data: years.map(y => paths[y][s]),
@@ -986,22 +1059,27 @@ function renderChart(years, currentYear, paths, drawIdx, succeeded, p50){
   _spaghetti: true,
  }));
 
- const medianDataset = {
-  label: "Median",
-  data: p50,
-  borderColor: MEDIAN_COLOR,
-  backgroundColor: MEDIAN_COLOR,
-  borderWidth: 2.5,
-  pointRadius: 0,
-  fill: false,
-  order: 1,
- };
+ const shown = new Set(checkedPercentiles());
+ const pctDatasets = [10, 25, 50, 75, 90].filter(p => shown.has(p)).map(p => {
+  const style = PCT_STYLE[p];
+  return {
+   label: style.label,
+   data: pctLines[p],
+   borderColor: style.color,
+   backgroundColor: style.color,
+   borderWidth: style.width,
+   pointRadius: 0,
+   pointHitRadius: 10,
+   fill: false,
+   order: p === 50 ? 0 : 1,
+  };
+ });
 
  simChart = new Chart(ctx, {
   type: "line",
   data: {
    labels: years.map(y => String(currentYear + y)),
-   datasets: [...spaghettiDatasets, medianDataset],
+   datasets: [...spaghettiDatasets, ...pctDatasets],
   },
   options: {
    responsive: true,
@@ -1010,13 +1088,16 @@ function renderChart(years, currentYear, paths, drawIdx, succeeded, p50){
    // "point"/intersect:true instead of "nearest"/intersect:false — with
    // 100+ overlapping line datasets, nearest-mode hit-testing scans every
    // dataset on every mousemove and was hanging the browser tab. Point
-   // mode only hit-tests whatever's directly under the cursor.
+   // mode only hit-tests whatever's directly under the cursor. The
+   // percentile lines get a wide pointHitRadius above so they're still
+   // easy to hover precisely without paying that cost.
    interaction: { mode: "point", intersect: true },
    plugins: {
     legend: { display: false },
     tooltip: {
      filter: item => !item.dataset._spaghetti,
      callbacks: {
+      title: items => items.length ? "Year " + items[0].label : "",
       label: ctx => ctx.dataset.label + ": $" + fmtMoney(ctx.parsed.y),
      },
     },
@@ -1028,6 +1109,14 @@ function renderChart(years, currentYear, paths, drawIdx, succeeded, p50){
   },
  });
 }
+
+// Toggling a percentile checkbox just re-renders from the last computed
+// paths — no need to re-run the simulation itself.
+document.getElementById("pctToggles").addEventListener("change", function(e){
+ const label = e.target.closest("label");
+ if(label) label.classList.toggle("pct-off", !e.target.checked);
+ if(lastRunArgs) renderChart(...lastRunArgs);
+});
 
 runSimulation();
 </script>
