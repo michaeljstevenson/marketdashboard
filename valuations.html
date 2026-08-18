@@ -350,6 +350,33 @@ tbody td:first-child{
  overflow-x:auto;
 }
 
+details.methodology{ cursor:default; }
+
+details.methodology summary{
+ cursor:pointer;
+ font-family:var(--serif);
+ font-weight:400;
+ font-size:18px;
+ color:var(--ink);
+ list-style:none;
+ outline:none;
+}
+
+details.methodology summary::-webkit-details-marker{ display:none; }
+
+details.methodology summary::before{
+ content:"▸ ";
+ color:var(--muted);
+ font-size:14px;
+}
+
+details.methodology[open] summary::before{ content:"▾ "; }
+
+details.methodology[open] summary{ margin-bottom:14px; }
+
+details.methodology p:first-of-type{ margin-top:0; }
+
+
 .explainer p:last-child{ margin-bottom:0; }
 
 .explainer .source{
@@ -463,14 +490,6 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 </div>
 <div class="updated" id="updated">Annual, updated each January</div>
 </div>
-<div class="explainer">
-<h2>Methodology</h2>
-<div class="formula-block">P/E = Price / Diluted EPS (trailing, current, or forward basis)
-PEG = P/E / Expected 5-Year EPS Growth Rate
-EV/EBITDA = (Market Cap + Debt − Cash) / EBITDA
-ROE = Aggregate Net Income / Aggregate Book Equity</div>
-<p>Each ratio is computed per-company, then aggregated (not sales- or market-cap-weighted) across every company in that industry classification.</p>
-</div>
 <div class="stat-grid" id="totalMarketStats"></div>
 <div class="controls">
 <div class="search-box"><input id="searchBox" oninput="render()" placeholder="Filter industries..." type="text"/></div>
@@ -500,6 +519,16 @@ ROE = Aggregate Net Income / Aggregate Book Equity</div>
 
 <div class="source">Source: <a href="https://pages.stern.nyu.edu/~adamodar/New_Home_Page/data.html" rel="noopener" target="_blank">Aswath Damodaran, NYU Stern — Industry-average valuation multiples (PE, EV/EBITDA, Price/Book)</a></div>
 </div>
+<details class="explainer methodology">
+<summary>Methodology</summary>
+<div class="formula-block">P/E(t) = P(t) / E(t)
+
+P/E = Price / Diluted EPS (trailing, current, or forward basis)
+PEG = P/E / Expected 5-Year EPS Growth Rate
+EV/EBITDA = (Market Cap + Debt − Cash) / EBITDA
+ROE = Aggregate Net Income / Aggregate Book Equity</div>
+<p>Each ratio is computed per-company, then aggregated (not sales- or market-cap-weighted) across every company in that industry classification.</p>
+</details>
 </div>
 <script>
 const MULTIPLES_DATA = [

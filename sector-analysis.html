@@ -558,6 +558,33 @@ tbody td:nth-child(2){
  overflow-x:auto;
 }
 
+details.methodology{ cursor:default; }
+
+details.methodology summary{
+ cursor:pointer;
+ font-family:var(--serif);
+ font-weight:400;
+ font-size:18px;
+ color:var(--ink);
+ list-style:none;
+ outline:none;
+}
+
+details.methodology summary::-webkit-details-marker{ display:none; }
+
+details.methodology summary::before{
+ content:"▸ ";
+ color:var(--muted);
+ font-size:14px;
+}
+
+details.methodology[open] summary::before{ content:"▾ "; }
+
+details.methodology[open] summary{ margin-bottom:14px; }
+
+details.methodology p:first-of-type{ margin-top:0; }
+
+
 .explainer p:last-child{ margin-bottom:0; }
 
 .explainer .source{
@@ -725,12 +752,6 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <div class="updated" id="updated">Loading...</div>
 </div>
 
-<div class="explainer">
-<h2>Methodology</h2>
-<div class="formula-block">Absolute Return = (Price_end / Price_start) − 1
-Relative Return = Absolute Return(Sector) − Absolute Return(SPY)</div>
-</div>
-
 <div class="controls">
 <div class="toggle-group">
 <button class="toggle-btn active" id="btnAbsolute" onclick="setMode('absolute')">Absolute</button>
@@ -775,6 +796,14 @@ Relative Return = Absolute Return(Sector) − Absolute Return(SPY)</div>
 <div class="explainer">
 <div class="source">Source: <a href="https://www.alphavantage.co/" target="_blank" rel="noopener">Alpha Vantage — SPDR Select Sector ETFs &amp; SPY</a></div>
 </div>
+
+<details class="explainer methodology">
+<summary>Methodology</summary>
+<div class="formula-block">R(t) = P(t)/P(0) − 1
+
+Absolute Return = (Price_end / Price_start) − 1
+Relative Return = Absolute Return(Sector) − Absolute Return(SPY)</div>
+</details>
 
 </div>
 

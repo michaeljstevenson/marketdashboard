@@ -597,6 +597,33 @@ h1{
  overflow-x:auto;
 }
 
+details.methodology{ cursor:default; }
+
+details.methodology summary{
+ cursor:pointer;
+ font-family:var(--serif);
+ font-weight:400;
+ font-size:18px;
+ color:var(--ink);
+ list-style:none;
+ outline:none;
+}
+
+details.methodology summary::-webkit-details-marker{ display:none; }
+
+details.methodology summary::before{
+ content:"▸ ";
+ color:var(--muted);
+ font-size:14px;
+}
+
+details.methodology[open] summary::before{ content:"▾ "; }
+
+details.methodology[open] summary{ margin-bottom:14px; }
+
+details.methodology p:first-of-type{ margin-top:0; }
+
+
 .explainer p:last-child{ margin-bottom:0; }
 
 .explainer .source{
@@ -744,14 +771,6 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 </div>
 </div>
 
-<div class="explainer">
-<h2>Methodology</h2>
-<p>Each trial draws one historical year's return at random (with replacement) for every year of the horizon, blends it by allocation, then compounds forward with contributions or withdrawals applied:</p>
-<div class="formula-block">Year Return = Equity% × S&amp;P 500 Return_random-year + Bond% × 10Y Treasury Return_random-year
-Balance_t = Balance_t-1 × (1 + Year Return) + Contribution − Withdrawal</div>
-<p>Success rate is the share of trials whose balance never hits $0 during the withdrawal phase.</p>
-</div>
-
 <div class="form-box">
 <h2>Assumptions</h2>
 <div class="form-grid">
@@ -876,6 +895,16 @@ Balance_t = Balance_t-1 × (1 + Year Return) + Contribution − Withdrawal</div>
 <p>Limitations: Inflation applied as a constant specified rate for discounting purposes only (nominal contribution and withdrawal amounts still held constant in nominal dollars each year (not grown with inflation), only two asset classes are modeled (broad U.S. equities and 10-year Treasuries), historical bootstrap resampling assumes each year's return is independent, while real returns can show year-to-year momentum or mean reversion. For illustrative research purposes only. Not personalized investment advice.</p>
 <div class="source">Source: <a href="https://pages.stern.nyu.edu/~adamodar/New_Home_Page/datafile/histretSP.html" target="_blank" rel="noopener">NYU Stern (Aswath Damodaran) &mdash; Historical Returns on Stocks, Bonds and Bills, 1928&ndash;2025</a></div>
 </div>
+
+<details class="explainer methodology">
+<summary>Methodology</summary>
+<p>Each trial draws one historical year's return at random (with replacement) for every year of the horizon, blends it by allocation, then compounds forward with contributions or withdrawals applied:</p>
+<div class="formula-block">B(t) = B(t−1)·(1+R(t)) + C(t) − W(t)
+
+Year Return = Equity% × S&amp;P 500 Return_random-year + Bond% × 10Y Treasury Return_random-year
+Balance_t = Balance_t-1 × (1 + Year Return) + Contribution − Withdrawal</div>
+<p>Success rate is the share of trials whose balance never hits $0 during the withdrawal phase.</p>
+</details>
 
 </div>
 

@@ -590,6 +590,33 @@ tbody tr:last-child td{ border-bottom:none; }
  overflow-x:auto;
 }
 
+details.methodology{ cursor:default; }
+
+details.methodology summary{
+ cursor:pointer;
+ font-family:var(--serif);
+ font-weight:400;
+ font-size:18px;
+ color:var(--ink);
+ list-style:none;
+ outline:none;
+}
+
+details.methodology summary::-webkit-details-marker{ display:none; }
+
+details.methodology summary::before{
+ content:"▸ ";
+ color:var(--muted);
+ font-size:14px;
+}
+
+details.methodology[open] summary::before{ content:"▾ "; }
+
+details.methodology[open] summary{ margin-bottom:14px; }
+
+details.methodology p:first-of-type{ margin-top:0; }
+
+
 .explainer p:last-child{ margin-bottom:0; }
 
 .explainer .source{
@@ -699,13 +726,6 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 </div>
 <div class="updated">Source: Bloomberg, BusinessWeek, CNNMoney, Barron's, CNBC, and Yahoo Finance strategist surveys</div>
 </div>
-<div class="explainer">
-<h2>Methodology</h2>
-<p>Implied return is each year's target divided by the prior year's close, minus one. The z-score chart measures how many standard deviations the actual outcome fell from that year's spread of individual forecasts:</p>
-<div class="formula-block">Implied Return = (Target / Prior Close) − 1
-Z-Score = (Actual Return − Mean Forecast) / SD(Forecasts)</div>
-<p>Only years with more than 7 named firms get a z-score, so the standard deviation is estimated from a reasonably sized sample.</p>
-</div>
 <div class="stat-grid" id="statGrid" style="grid-template-columns:repeat(3,1fr);">
 <div class="stat-card">
 <div class="stat-label">Avg. Absolute Miss</div>
@@ -785,6 +805,15 @@ Z-Score = (Actual Return − Mean Forecast) / SD(Forecasts)</div>
 
 <div class="source">Sources: BusinessWeek (via Seeking Alpha archive), CNNMoney/Yahoo Finance strategist roundups, Bloomberg surveys (via CNBC, Financial Samurai, globalmarketsinvestor.substack.com compilations, and 6meridian.com's Bloomberg-sourced retrospective chart), Barron's Big Money Poll. Actual year-end closes from public S&amp;P 500 index data. Individual year sourcing varies since no single publisher has run a consistent annual survey across the full period — see the Source column in the table above.</div>
 </div>
+<details class="explainer methodology">
+<summary>Methodology</summary>
+<p>Implied return is each year's target divided by the prior year's close, minus one. The z-score chart measures how many standard deviations the actual outcome fell from that year's spread of individual forecasts:</p>
+<div class="formula-block">Z(t) = (R(t) − μ(t)) / σ(t)
+
+Implied Return = (Target / Prior Close) − 1
+Z-Score = (Actual Return − Mean Forecast) / SD(Forecasts)</div>
+<p>Only years with more than 7 named firms get a z-score, so the standard deviation is estimated from a reasonably sized sample.</p>
+</details>
 </div>
 <script>
 // Each entry: year, the S&P 500 close at the end of the PRIOR year (i.e.

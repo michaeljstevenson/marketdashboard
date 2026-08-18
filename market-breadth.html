@@ -514,6 +514,33 @@ h1{
  overflow-x:auto;
 }
 
+details.methodology{ cursor:default; }
+
+details.methodology summary{
+ cursor:pointer;
+ font-family:var(--serif);
+ font-weight:400;
+ font-size:18px;
+ color:var(--ink);
+ list-style:none;
+ outline:none;
+}
+
+details.methodology summary::-webkit-details-marker{ display:none; }
+
+details.methodology summary::before{
+ content:"▸ ";
+ color:var(--muted);
+ font-size:14px;
+}
+
+details.methodology[open] summary::before{ content:"▾ "; }
+
+details.methodology[open] summary{ margin-bottom:14px; }
+
+details.methodology p:first-of-type{ margin-top:0; }
+
+
 .explainer p:last-child{ margin-bottom:0; }
 
 .explainer .source{
@@ -647,12 +674,6 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 </div>
 <div class="updated" id="updated">Loading...</div>
 </div>
-<div class="explainer">
-<h2>Methodology</h2>
-<div class="formula-block">A-D Line(t) = A-D Line(t−1) + (Advancing Names(t) − Declining Names(t))
-% Above 200-Day SMA = Names(Price > 200-Day SMA) / Total Names × 100</div>
-<p>The A-D line is a running cumulative total, not reset daily — its slope, not its absolute level, is the signal.</p>
-</div>
 <div class="stat-grid">
 <div class="stat-card">
 <div class="stat-label">Advances / Declines</div>
@@ -728,6 +749,14 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <p>The day's-change distribution (top) refreshes hourly through the trading session (9:30am to 3:30pm ET on trading days) </p>
 <div class="source">Source: <a href="https://www.alphavantage.co/" rel="noopener" target="_blank">Alpha Vantage</a> daily adjusted closes across S&amp;P 500 constituents. Advance-decline, 200-day SMA, and new-highs/lows charts computed once daily after the close; the day's-change distribution refreshes hourly during market hours.</div>
 </div>
+<details class="explainer methodology">
+<summary>Methodology</summary>
+<div class="formula-block">AD(t) = AD(t−1) + (Adv(t) − Dec(t))
+
+A-D Line(t) = A-D Line(t−1) + (Advancing Names(t) − Declining Names(t))
+% Above 200-Day SMA = Names(Price > 200-Day SMA) / Total Names × 100</div>
+<p>The A-D line is a running cumulative total, not reset daily — its slope, not its absolute level, is the signal.</p>
+</details>
 </div>
 <script>
 function showError(message){

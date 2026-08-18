@@ -553,6 +553,33 @@ h1{
  overflow-x:auto;
 }
 
+details.methodology{ cursor:default; }
+
+details.methodology summary{
+ cursor:pointer;
+ font-family:var(--serif);
+ font-weight:400;
+ font-size:18px;
+ color:var(--ink);
+ list-style:none;
+ outline:none;
+}
+
+details.methodology summary::-webkit-details-marker{ display:none; }
+
+details.methodology summary::before{
+ content:"▸ ";
+ color:var(--muted);
+ font-size:14px;
+}
+
+details.methodology[open] summary::before{ content:"▾ "; }
+
+details.methodology[open] summary{ margin-bottom:14px; }
+
+details.methodology p:first-of-type{ margin-top:0; }
+
+
 .explainer p:last-child{ margin-bottom:0; }
 
 .explainer .source{
@@ -699,13 +726,6 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 </div>
 <div class="updated" id="updated">Annual, updated periodically</div>
 </div>
-<div class="explainer">
-<h2>Methodology</h2>
-<p>Each scatter tests IPO count or first-day pop (x) against next year's S&amp;P 500 return (y) with an ordinary least squares regression:</p>
-<div class="formula-block">Return_next-year = intercept + slope × IPO metric_this-year
-t = slope / SE(slope), with n − 2 degrees of freedom</div>
-<p>The jackknife row re-runs the same regression with the single most influential year removed, to show how much the fit depends on it.</p>
-</div>
 <div class="stat-grid">
 <div class="stat-card">
 <div class="stat-label">IPOs (2025)</div>
@@ -784,6 +804,15 @@ t = slope / SE(slope), with n − 2 degrees of freedom</div>
 <p>Limitations: a 31-year annual sample is small, and two outlier years (1999–2000, 2021) drive much of the relationship. The jackknife row in each methodology table shows by exactly how much. Less focused on is that IPO count is as much a supply-side measure as it is a demand-side measure. Companies choose whether to go public based on the same market conditions that are being tested as the predictor.</p>
 <div class="source">Source: <a href="https://site.warrington.ufl.edu/ritter/ipo-data/" rel="noopener" target="_blank">Jay R. Ritter, University of Florida — IPO Data</a>. S&amp;P 500 levels from Aswath Damodaran, NYU Stern (used elsewhere on this site for the Implied ERP series).</div>
 </div>
+<details class="explainer methodology">
+<summary>Methodology</summary>
+<p>Each scatter tests IPO count or first-day pop (x) against next year's S&amp;P 500 return (y) with an ordinary least squares regression:</p>
+<div class="formula-block">R(t+1) = α + β·X(t) + ε
+
+Return_next-year = intercept + slope × IPO metric_this-year
+t = slope / SE(slope), with n − 2 degrees of freedom</div>
+<p>The jackknife row re-runs the same regression with the single most influential year removed, to show how much the fit depends on it.</p>
+</details>
 </div>
 <script>
 // IPO count, avg first-day return (%), and gross proceeds ($ millions) by

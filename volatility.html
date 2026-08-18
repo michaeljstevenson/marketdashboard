@@ -445,6 +445,33 @@ h1{
  overflow-x:auto;
 }
 
+details.methodology{ cursor:default; }
+
+details.methodology summary{
+ cursor:pointer;
+ font-family:var(--serif);
+ font-weight:400;
+ font-size:18px;
+ color:var(--ink);
+ list-style:none;
+ outline:none;
+}
+
+details.methodology summary::-webkit-details-marker{ display:none; }
+
+details.methodology summary::before{
+ content:"▸ ";
+ color:var(--muted);
+ font-size:14px;
+}
+
+details.methodology[open] summary::before{ content:"▾ "; }
+
+details.methodology[open] summary{ margin-bottom:14px; }
+
+details.methodology p:first-of-type{ margin-top:0; }
+
+
 .explainer p:last-child{ margin-bottom:0; }
 
 .explainer .source{
@@ -594,13 +621,6 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <div class="updated" id="updated">Loading...</div>
 </div>
 
-<div class="explainer">
-<h2>Methodology</h2>
-<div class="formula-block">Daily Log Return = ln(Price_t / Price_t-1)
-Realized Vol (20d, annualized) = StdDev(Daily Log Returns, trailing 20 days) × √252 × 100
-VRP = Implied Vol (VIX) − Realized Vol</div>
-</div>
-
 <div class="stat-grid">
 <div class="stat-card">
 <div class="stat-label">Realized Volatility (20d, ann.)</div>
@@ -631,6 +651,15 @@ VRP = Implied Vol (VIX) − Realized Vol</div>
 <p>Implied and realized volatility usually move together, but the gap between them (volatility risk premium, VRP) is rarely zero. Implied volatility tends to sit above realized. Option sellers demand compensation for the risk they're taking on, so options are on average priced relatively higher than what volatility actually turns out to be. A widening VRP can be due to rising hedging demand or anticipation of an upcoming event (earnings, Fed meetings, etc.). A falling or negative VRP (implied vol trading below realized) is unusual (typically after a volatility spike).</p>
 <div class="source">Source: <a href="https://www.alphavantage.co/" target="_blank" rel="noopener">Alpha Vantage — S&amp;P 500 Index (SPX) &amp; CBOE Volatility Index (VIX)</a></div>
 </div>
+
+<details class="explainer methodology">
+<summary>Methodology</summary>
+<div class="formula-block">σ(t) = SD(r) × √252, where r(t) = ln(P(t)/P(t−1))
+
+Daily Log Return = ln(Price_t / Price_t-1)
+Realized Vol (20d, annualized) = StdDev(Daily Log Returns, trailing 20 days) × √252 × 100
+VRP = Implied Vol (VIX) − Realized Vol</div>
+</details>
 
 </div>
 

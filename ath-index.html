@@ -550,6 +550,33 @@ h1{
  overflow-x:auto;
 }
 
+details.methodology{ cursor:default; }
+
+details.methodology summary{
+ cursor:pointer;
+ font-family:var(--serif);
+ font-weight:400;
+ font-size:18px;
+ color:var(--ink);
+ list-style:none;
+ outline:none;
+}
+
+details.methodology summary::-webkit-details-marker{ display:none; }
+
+details.methodology summary::before{
+ content:"▸ ";
+ color:var(--muted);
+ font-size:14px;
+}
+
+details.methodology[open] summary::before{ content:"▾ "; }
+
+details.methodology[open] summary{ margin-bottom:14px; }
+
+details.methodology p:first-of-type{ margin-top:0; }
+
+
 .explainer p:last-child{ margin-bottom:0; }
 
 .explainer .source{
@@ -709,12 +736,6 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 </div>
 <div class="updated" id="updated">Loading...</div>
 </div>
-<div class="explainer">
-<h2>Methodology</h2>
-<div class="formula-block">% at ATH = Names(Intraday High ≥ Recorded All-Time High) / Total Names × 100
-% at ATL = Names(Intraday Low ≤ Recorded All-Time Low) / Total Names × 100
-Net Breadth = % at ATH − % at ATL</div>
-</div>
 <div class="tab-bar" id="tabBar">
 <button class="tab-btn active" data-tab="ath">All-Time Highs</button>
 <button class="tab-btn" data-tab="atl">All-Time Lows</button>
@@ -808,6 +829,14 @@ Net Breadth = % at ATH − % at ATL</div>
 <div class="source">Sources: <a href="https://www.alphavantage.co/" rel="noopener" target="_blank">Alpha Vantage</a> (historical bars &amp; S&amp;P 500 level) · <a href="https://www.tradingview.com/screener/" rel="noopener" target="_blank">TradingView Screener</a> (today's bar)</div>
 </div>
 </div>
+<details class="explainer methodology">
+<summary>Methodology</summary>
+<div class="formula-block">ATH%(t) = N_ATH(t) / N(t) × 100
+
+% at ATH = Names(Intraday High ≥ Recorded All-Time High) / Total Names × 100
+% at ATL = Names(Intraday Low ≤ Recorded All-Time Low) / Total Names × 100
+Net Breadth = % at ATH − % at ATL</div>
+</details>
 </div>
 <script>
 const LINE_COLOR = "#d98a3d";
