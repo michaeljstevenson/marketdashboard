@@ -372,6 +372,29 @@ h1{ font-family:var(--serif); font-size:28px; font-weight:400; margin:0; }
 
 .explainer p{ color:var(--muted); font-size:14px; line-height:1.7; margin:0 0 14px; }
 
+.explainer code{
+ font-family:var(--mono);
+ background:var(--card-hover);
+ padding:2px 6px;
+ border-radius:4px;
+ font-size:0.92em;
+ white-space:nowrap;
+}
+
+.formula-block{
+ font-family:var(--mono);
+ background:var(--card-hover);
+ border:1px solid var(--hair);
+ border-radius:8px;
+ padding:14px 16px;
+ font-size:13.5px;
+ line-height:1.8;
+ color:var(--ink);
+ white-space:pre-wrap;
+ margin:10px 0 16px;
+ overflow-x:auto;
+}
+
 .explainer p:last-child{ margin-bottom:0; }
 
 .explainer .source{ margin-top:16px; font-size:11px; }
@@ -498,6 +521,14 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <div class="subtitle">- 2s10s, 3m/10y Treasury spreads since 1994, tested against NBER recessions. - Term-premium decomposition, whether the curve's shape reflects rate expectations or risk compensation- Which equity styles lead when the curve steepens or flattens?</div>
 </div>
 <div class="updated" id="updated">Monthly, updated periodically</div>
+</div>
+<div class="explainer">
+<h2>Methodology</h2>
+<p>The two spreads plotted here are simple differences between constant-maturity Treasury yields of different tenors:</p>
+<div class="formula-block">2s10s Spread = 10-Year Yield − 2-Year Yield
+3m/10y Spread = 10-Year Yield − 3-Month Yield</div>
+<p>The term premium decomposes the observed 10-year yield into a rate-expectations component and a term-premium component, using the New York Fed's published Adrian-Crump-Moench (ACM) model:</p>
+<div class="formula-block">10-Year Yield = Rate-Expectations Component + Term Premium</div>
 </div>
 <div class="stat-grid">
 <div class="stat-card">

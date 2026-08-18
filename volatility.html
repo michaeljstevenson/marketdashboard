@@ -422,6 +422,29 @@ h1{
  margin:0 0 14px;
 }
 
+.explainer code{
+ font-family:var(--mono);
+ background:var(--card-hover);
+ padding:2px 6px;
+ border-radius:4px;
+ font-size:0.92em;
+ white-space:nowrap;
+}
+
+.formula-block{
+ font-family:var(--mono);
+ background:var(--card-hover);
+ border:1px solid var(--hair);
+ border-radius:8px;
+ padding:14px 16px;
+ font-size:13.5px;
+ line-height:1.8;
+ color:var(--ink);
+ white-space:pre-wrap;
+ margin:10px 0 16px;
+ overflow-x:auto;
+}
+
 .explainer p:last-child{ margin-bottom:0; }
 
 .explainer .source{
@@ -569,6 +592,13 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <div class="subtitle">VIX vs. what actually happened (S&amp;P 500 realized volatility (20-day annualized)).</div>
 </div>
 <div class="updated" id="updated">Loading...</div>
+</div>
+
+<div class="explainer">
+<h2>Methodology</h2>
+<div class="formula-block">Daily Log Return = ln(Price_t / Price_t-1)
+Realized Vol (20d, annualized) = StdDev(Daily Log Returns, trailing 20 days) × √252 × 100
+VRP = Implied Vol (VIX) − Realized Vol</div>
 </div>
 
 <div class="stat-grid">

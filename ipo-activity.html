@@ -530,6 +530,29 @@ h1{
  margin:0 0 14px;
 }
 
+.explainer code{
+ font-family:var(--mono);
+ background:var(--card-hover);
+ padding:2px 6px;
+ border-radius:4px;
+ font-size:0.92em;
+ white-space:nowrap;
+}
+
+.formula-block{
+ font-family:var(--mono);
+ background:var(--card-hover);
+ border:1px solid var(--hair);
+ border-radius:8px;
+ padding:14px 16px;
+ font-size:13.5px;
+ line-height:1.8;
+ color:var(--ink);
+ white-space:pre-wrap;
+ margin:10px 0 16px;
+ overflow-x:auto;
+}
+
 .explainer p:last-child{ margin-bottom:0; }
 
 .explainer .source{
@@ -675,6 +698,13 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <div class="subtitle">U.S. IPO volume, first-day pop, gross proceeds since 1995, tested as a sentiment and froth indicator against the S&amp;P 500. Does the IPO market lead (or follow) the broader market?</div>
 </div>
 <div class="updated" id="updated">Annual, updated periodically</div>
+</div>
+<div class="explainer">
+<h2>Methodology</h2>
+<p>Each scatter tests IPO count or first-day pop (x) against next year's S&amp;P 500 return (y) with an ordinary least squares regression:</p>
+<div class="formula-block">Return_next-year = intercept + slope × IPO metric_this-year
+t = slope / SE(slope), with n − 2 degrees of freedom</div>
+<p>The jackknife row re-runs the same regression with the single most influential year removed, to show how much the fit depends on it.</p>
 </div>
 <div class="stat-grid">
 <div class="stat-card">

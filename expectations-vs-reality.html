@@ -567,6 +567,29 @@ tbody tr:last-child td{ border-bottom:none; }
  margin:0 0 14px;
 }
 
+.explainer code{
+ font-family:var(--mono);
+ background:var(--card-hover);
+ padding:2px 6px;
+ border-radius:4px;
+ font-size:0.92em;
+ white-space:nowrap;
+}
+
+.formula-block{
+ font-family:var(--mono);
+ background:var(--card-hover);
+ border:1px solid var(--hair);
+ border-radius:8px;
+ padding:14px 16px;
+ font-size:13.5px;
+ line-height:1.8;
+ color:var(--ink);
+ white-space:pre-wrap;
+ margin:10px 0 16px;
+ overflow-x:auto;
+}
+
 .explainer p:last-child{ margin-bottom:0; }
 
 .explainer .source{
@@ -675,6 +698,13 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <div class="subtitle">Every year, strategists publish a year-end target for the S&amp;P 500. How does that target compare to where the index actually finished, each year from 2000 to 2025.</div>
 </div>
 <div class="updated">Source: Bloomberg, BusinessWeek, CNNMoney, Barron's, CNBC, and Yahoo Finance strategist surveys</div>
+</div>
+<div class="explainer">
+<h2>Methodology</h2>
+<p>Implied return is each year's target divided by the prior year's close, minus one. The z-score chart measures how many standard deviations the actual outcome fell from that year's spread of individual forecasts:</p>
+<div class="formula-block">Implied Return = (Target / Prior Close) − 1
+Z-Score = (Actual Return − Mean Forecast) / SD(Forecasts)</div>
+<p>Only years with more than 7 named firms get a z-score, so the standard deviation is estimated from a reasonably sized sample.</p>
 </div>
 <div class="stat-grid" id="statGrid" style="grid-template-columns:repeat(3,1fr);">
 <div class="stat-card">

@@ -327,6 +327,29 @@ tbody td:first-child{
  margin:0 0 14px;
 }
 
+.explainer code{
+ font-family:var(--mono);
+ background:var(--card-hover);
+ padding:2px 6px;
+ border-radius:4px;
+ font-size:0.92em;
+ white-space:nowrap;
+}
+
+.formula-block{
+ font-family:var(--mono);
+ background:var(--card-hover);
+ border:1px solid var(--hair);
+ border-radius:8px;
+ padding:14px 16px;
+ font-size:13.5px;
+ line-height:1.8;
+ color:var(--ink);
+ white-space:pre-wrap;
+ margin:10px 0 16px;
+ overflow-x:auto;
+}
+
 .explainer p:last-child{ margin-bottom:0; }
 
 .explainer .source{
@@ -439,6 +462,14 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <div class="subtitle">Aggregated valuation multiples across ~7,000 US public companies, grouped into 94 industry classifications. P/E, EV/EBITDA, P/B, and expected growth.</div>
 </div>
 <div class="updated" id="updated">Annual, updated each January</div>
+</div>
+<div class="explainer">
+<h2>Methodology</h2>
+<div class="formula-block">P/E = Price / Diluted EPS (trailing, current, or forward basis)
+PEG = P/E / Expected 5-Year EPS Growth Rate
+EV/EBITDA = (Market Cap + Debt − Cash) / EBITDA
+ROE = Aggregate Net Income / Aggregate Book Equity</div>
+<p>Each ratio is computed per-company, then aggregated (not sales- or market-cap-weighted) across every company in that industry classification.</p>
 </div>
 <div class="stat-grid" id="totalMarketStats"></div>
 <div class="controls">

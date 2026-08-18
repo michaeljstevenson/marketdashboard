@@ -574,6 +574,29 @@ h1{
  margin:0 0 14px;
 }
 
+.explainer code{
+ font-family:var(--mono);
+ background:var(--card-hover);
+ padding:2px 6px;
+ border-radius:4px;
+ font-size:0.92em;
+ white-space:nowrap;
+}
+
+.formula-block{
+ font-family:var(--mono);
+ background:var(--card-hover);
+ border:1px solid var(--hair);
+ border-radius:8px;
+ padding:14px 16px;
+ font-size:13.5px;
+ line-height:1.8;
+ color:var(--ink);
+ white-space:pre-wrap;
+ margin:10px 0 16px;
+ overflow-x:auto;
+}
+
 .explainer p:last-child{ margin-bottom:0; }
 
 .explainer .source{
@@ -719,6 +742,14 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <h1>Monte Carlo Simulation - Portfolio Survivability</h1>
 <div class="subtitle">Portfolio outcomes simulated using a historical bootstrap, with each year randomly selected from actual U.S. stock and bond returns between 1928 and 2025 rather than an assumed return distribution.</div>
 </div>
+</div>
+
+<div class="explainer">
+<h2>Methodology</h2>
+<p>Each trial draws one historical year's return at random (with replacement) for every year of the horizon, blends it by allocation, then compounds forward with contributions or withdrawals applied:</p>
+<div class="formula-block">Year Return = Equity% × S&amp;P 500 Return_random-year + Bond% × 10Y Treasury Return_random-year
+Balance_t = Balance_t-1 × (1 + Year Return) + Contribution − Withdrawal</div>
+<p>Success rate is the share of trials whose balance never hits $0 during the withdrawal phase.</p>
 </div>
 
 <div class="form-box">
