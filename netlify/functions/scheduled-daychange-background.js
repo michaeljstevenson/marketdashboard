@@ -66,7 +66,12 @@ async function fetchJson(params, attempt = 1) {
 
 async function fetchQuote(symbol) {
   const payload = await fetchJson(`function=GLOBAL_QUOTE&symbol=${symbol}&entitlement=delayed`);
-  const quote = payload["Global Quote"];
+  // With entitlement=delayed, Alpha Vantage keys the response
+  // "Global Quote - DATA DELAYED BY 15 MINUTES" instead of the plain
+  // "Global Quote" the realtime/free-tier response uses — match by prefix
+  // so this doesn't silently break again if the suffix wording changes.
+  const quoteKey = Object.keys(payload).find((k) => k.startsWith("Global Quote"));
+  const quote = quoteKey && payload[quoteKey];
   const price = quote && parseFloat(quote["05. price"]);
   const prevClose = quote && parseFloat(quote["08. previous close"]);
   if (!quote || !Number.isFinite(price) || !Number.isFinite(prevClose) || prevClose === 0) {

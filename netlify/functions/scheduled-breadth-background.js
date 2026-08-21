@@ -252,9 +252,14 @@ exports.handler = async () => {
 
     // Sequential with a gap, same reasoning as data.js: Alpha Vantage trips
     // a burst-rate detector when requests land too close together even
-    // when awaited one at a time.
+    // when awaited one at a time. 800ms keeps sustained throughput under
+    // this account's ~71-75 calls/minute entitlement (300ms/~200 calls-min
+    // used to blow past that and silently drop ~140 symbols per run — see
+    // scheduled-sectors-background.js for the same pacing pattern), plus a
+    // retry pass below for whatever still fails despite the pacing.
     const perNameFlags = new Map();
     const perNameCloses = new Map();
+    const failedSymbols = [];
     for (const symbol of BREADTH_CONSTITUENTS) {
       try {
         const closes = await fetchDailyCloses(apiKey, symbol);
@@ -262,8 +267,23 @@ exports.handler = async () => {
         perNameCloses.set(symbol, closes);
       } catch (err) {
         console.error(`scheduled-breadth-background: ${symbol} failed: ${err.message}`);
+        failedSymbols.push(symbol);
       }
-      await sleep(300);
+      await sleep(800);
+    }
+
+    if (failedSymbols.length) {
+      console.log(`scheduled-breadth-background: retrying ${failedSymbols.length} failed symbol(s)`);
+      for (const symbol of failedSymbols) {
+        try {
+          const closes = await fetchDailyCloses(apiKey, symbol);
+          perNameFlags.set(symbol, computeNameFlags(closes));
+          perNameCloses.set(symbol, closes);
+        } catch (err) {
+          console.error(`scheduled-breadth-background: ${symbol} failed on retry: ${err.message}`);
+        }
+        await sleep(800);
+      }
     }
     console.log(`scheduled-breadth-background: fetched ${perNameFlags.size}/${BREADTH_CONSTITUENTS.length} symbols`);
 
