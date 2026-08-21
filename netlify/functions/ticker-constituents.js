@@ -15,7 +15,7 @@ const TICKER_CONSTITUENTS = [
   "AAPL", "ABBV", "ABT", "ACN", "ADBE", "ADI", "ADP", "AEP", "AIG", "AJG",
   "ALL", "AMAT", "AMD", "AME", "AMGN", "AMT", "AMZN", "ANET", "AON", "APD",
   "APH", "AVGO", "AXP", "AZO", "BA", "BAC", "BK", "BKNG", "BLK", "BMY",
-  "BRK.B", "BSX", "C", "CAT", "CB", "CDNS", "CI", "CL", "CME", "CMG",
+  "BRK-B", "BSX", "C", "CAT", "CB", "CDNS", "CI", "CL", "CME", "CMG",
   "COF", "COP", "COST", "CRM", "CSCO", "CSX", "CTAS", "CVX", "DE", "DHR",
   "DIS", "ECL", "EMR", "EOG", "EQIX", "ETN", "FDX", "GD", "GE", "GILD",
   "GOOGL", "GS", "HCA", "HD", "HON", "IBM", "ICE", "INTU", "ISRG", "ITW",
