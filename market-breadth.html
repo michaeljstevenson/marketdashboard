@@ -657,7 +657,7 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <div class="stat-note">Cumulative, since data start</div>
 </div>
 </div>
-<div class="chart-box" id="dayChangeBox" style="display:none;">
+<div class="chart-box" id="dayChangeBox">
 <div class="chart-box-header">
 <div>
 <h2>Day's change distribution</h2>
@@ -944,13 +944,18 @@ async function init(){
  }
 
  if(dayChangeData) initDayChange(dayChangeData, dayChangeIsLive);
+ // No live data and no seed to fall back on (e.g. first deploy before
+ // either has run) — hide the box rather than leave it showing "—"
+ // placeholders forever. The box is visible by default in the markup
+ // (not toggled on after a delayed fetch) specifically so the rest of
+ // the page doesn't visibly reflow/flash once this section resolves.
+ else document.getElementById("dayChangeBox").style.display = "none";
 }
 
 const DAYCHANGE_RANGE_ORDER = ["1D", "5D", "MTD", "QTD", "YTD", "1Y", "3Y", "5Y"];
 let dayChangeChart = null;
 
 function initDayChange(data, isLive){
- document.getElementById("dayChangeBox").style.display = "";
  const available = DAYCHANGE_RANGE_ORDER.filter(k => data.ranges[k]);
  if(!available.length) return;
 
