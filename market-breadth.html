@@ -829,6 +829,15 @@ function renderAdChart(rangeKey){
 let adCumChart = null;
 function renderAdCumChart(rangeKey){
  const rows = rowsInRange(rangeKey);
+ // Indexed to 100 at the start of whichever range is selected, not a
+ // straight ratio (value/base*100) — the A-D line crosses zero in its
+ // early history (see 1999 in the raw data), so a ratio index would
+ // divide by ~0 and blow up. Rebasing additively (same units as the
+ // underlying net-advances count, just shifted so the range's first
+ // point reads 100) keeps every range comparable without that failure
+ // mode.
+ const adBase = rows.length ? rows[0].adLine : 0;
+ const adIndexed = rows.map(r => 100 + (r.adLine - adBase));
  const ctx = document.getElementById("adCumChart").getContext("2d");
  if(adCumChart) adCumChart.destroy();
  adCumChart = new Chart(ctx, {
@@ -837,8 +846,8 @@ function renderAdCumChart(rangeKey){
    datasets: [
     {
      type: "line",
-     label: "A-D Line",
-     data: rows.map(r => r.adLine),
+     label: "A-D Line (indexed to 100)",
+     data: adIndexed,
      borderColor: "#d98a3d",
      backgroundColor: "#d98a3d",
      borderWidth: 2,
@@ -869,7 +878,7 @@ function renderAdCumChart(rangeKey){
    plugins: { legend: { labels: { color: "#8b9199" } } },
    scales: {
     x: { ticks: { color: "#8b9199", maxTicksLimit: 8 }, grid: { color: "#2b3138" } },
-    y: { position: "left", ticks: { color: "#8b9199" }, grid: { color: "#2b3138" }, title: { display: true, text: "A-D Line", color: "#8b9199" } },
+    y: { position: "left", ticks: { color: "#8b9199" }, grid: { color: "#2b3138" }, title: { display: true, text: "A-D Line (indexed to 100)", color: "#8b9199" } },
     y1: { position: "right", ticks: { color: "#8b9199" }, grid: { display: false }, title: { display: true, text: "S&P 500", color: "#8b9199" } },
    },
   },
