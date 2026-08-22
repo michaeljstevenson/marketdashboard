@@ -17,6 +17,7 @@
 // couple of data points to show.
 
 const { getCountryStore, BLOB_KEY } = require("./country-blob-store");
+const { recordAvCall } = require("./av-call-counter");
 
 const HISTORY_POINTS = 2600; // ~10 trading years
 
@@ -43,6 +44,7 @@ function sleep(ms) {
 }
 
 async function fetchJson(url) {
+  await recordAvCall();
   const res = await fetch(url, { headers: { "User-Agent": USER_AGENT } });
   if (!res.ok) throw new Error(`HTTP ${res.status} for ${url}`);
   return res.json();

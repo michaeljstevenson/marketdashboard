@@ -4,6 +4,8 @@
 // 100 points (~4-5 months) — outputsize=full requires a paid plan. See
 // data.js for the fuller explanation.
 
+const { recordAvCall } = require("./av-call-counter");
+
 const ALPHA_VANTAGE_URL = "https://www.alphavantage.co/query";
 const USER_AGENT =
   "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0 Safari/537.36";
@@ -15,6 +17,7 @@ function round(n, digits) {
 
 async function fetchSpyDaily(apiKey) {
   const url = `${ALPHA_VANTAGE_URL}?function=TIME_SERIES_DAILY&symbol=SPY&outputsize=compact&apikey=${apiKey}`;
+  await recordAvCall();
   const res = await fetch(url, { headers: { "User-Agent": USER_AGENT } });
   if (!res.ok) throw new Error(`HTTP ${res.status} for Alpha Vantage`);
   const payload = await res.json();

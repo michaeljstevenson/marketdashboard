@@ -26,6 +26,7 @@
 // total returns, not price-only returns.
 
 const { getSectorStore, BLOB_KEY } = require("./sector-blob-store");
+const { recordAvCall } = require("./av-call-counter");
 
 const HISTORY_POINTS = 504; // ~2 trading years, same convention as data.js
 
@@ -55,6 +56,7 @@ function sleep(ms) {
 }
 
 async function fetchJson(url) {
+  await recordAvCall();
   const res = await fetch(url, { headers: { "User-Agent": USER_AGENT } });
   if (!res.ok) throw new Error(`HTTP ${res.status} for ${url}`);
   return res.json();

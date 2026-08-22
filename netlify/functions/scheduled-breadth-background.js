@@ -36,6 +36,7 @@
 const { BREADTH_CONSTITUENTS } = require("./breadth-constituents");
 const { getBreadthStore, BLOB_KEY } = require("./breadth-blob-store");
 const { getDayChangeStore, BLOB_KEY: DAYCHANGE_BLOB_KEY } = require("./daychange-blob-store");
+const { recordAvCall } = require("./av-call-counter");
 
 const ALPHA_VANTAGE_URL = "https://www.alphavantage.co/query";
 const USER_AGENT =
@@ -49,6 +50,7 @@ function sleep(ms) {
 }
 
 async function fetchJson(url) {
+  await recordAvCall();
   const res = await fetch(url, { headers: { "User-Agent": USER_AGENT } });
   if (!res.ok) throw new Error(`HTTP ${res.status} for ${url}`);
   return res.json();

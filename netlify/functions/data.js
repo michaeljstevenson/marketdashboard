@@ -24,6 +24,7 @@
 
 const { MANUAL_SERIES } = require("./manual-data");
 const { getBreadthStore, BLOB_KEY: BREADTH_BLOB_KEY } = require("./breadth-blob-store");
+const { recordAvCall } = require("./av-call-counter");
 
 const ALPHA_VANTAGE_URL = "https://www.alphavantage.co/query";
 const USER_AGENT =
@@ -33,6 +34,7 @@ const HISTORY_POINTS = 504; // ~2 trading years - enough to span a full market c
 const SCORE_MA_WINDOW = 50; // trading days, applied to every factor with enough history for it
 
 async function fetchJson(url) {
+  await recordAvCall();
   const res = await fetch(url, { headers: { "User-Agent": USER_AGENT } });
   if (!res.ok) throw new Error(`HTTP ${res.status} for ${url}`);
   return res.json();

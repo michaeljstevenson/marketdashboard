@@ -23,6 +23,7 @@
 
 const { TICKER_CONSTITUENTS } = require("./ticker-constituents");
 const { getTickerStore, BLOB_KEY } = require("./ticker-blob-store");
+const { recordAvCall } = require("./av-call-counter");
 
 const ALPHA_VANTAGE_URL = "https://www.alphavantage.co/query";
 
@@ -52,6 +53,7 @@ function sleep(ms) {
 // per-second burst blips, not persistent failures.
 async function fetchJson(params, attempt = 1) {
   const apiKey = process.env.ALPHAVANTAGE_API_KEY;
+  await recordAvCall();
   const res = await fetch(`${ALPHA_VANTAGE_URL}?${params}&apikey=${apiKey}`);
   const payload = res.ok ? await res.json() : null;
   const isRateLimited = !res.ok || payload.error || payload.Note || payload.Information;

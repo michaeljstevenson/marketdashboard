@@ -62,6 +62,11 @@
   to = "/.netlify/functions/backtest-configs"
   status = 200
 
+[[redirects]]
+  from = "/api/av-usage"
+  to = "/.netlify/functions/av-usage"
+  status = 200
+
 [functions."scheduled-breadth-background"]
   # 20:30 UTC = 4:30pm EDT (summer). Shifts to 3:30pm during EST (winter,
   # roughly Nov-Mar) since Netlify's cron runs in UTC with no DST

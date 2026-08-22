@@ -10,7 +10,10 @@ const ALPHA_VANTAGE_URL = "https://www.alphavantage.co/query";
 const USER_AGENT =
   "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0 Safari/537.36";
 
+const { recordAvCall } = require("./av-call-counter");
+
 async function fetchJson(url) {
+  await recordAvCall();
   const res = await fetch(url, { headers: { "User-Agent": USER_AGENT } });
   if (!res.ok) throw new Error(`HTTP ${res.status} for ${url}`);
   return res.json();

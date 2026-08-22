@@ -34,6 +34,7 @@
 
 const { BREADTH_CONSTITUENTS } = require("./breadth-constituents");
 const { getDayChangeStore, BLOB_KEY } = require("./daychange-blob-store");
+const { recordAvCall } = require("./av-call-counter");
 
 const ALPHA_VANTAGE_URL = "https://www.alphavantage.co/query";
 
@@ -48,6 +49,7 @@ function sleep(ms) {
 // approach as scheduled-ticker-background.js.
 async function fetchJson(params, attempt = 1) {
   const apiKey = process.env.ALPHAVANTAGE_API_KEY;
+  await recordAvCall();
   const res = await fetch(`${ALPHA_VANTAGE_URL}?${params}&apikey=${apiKey}`);
   const payload = res.ok ? await res.json() : null;
   const isRateLimited = !res.ok || !payload || payload.error || payload.Note || payload.Information;

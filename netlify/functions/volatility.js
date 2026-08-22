@@ -15,6 +15,8 @@
 // slightly overprice future volatility), so its sign and size are
 // interesting in their own right.
 
+const { recordAvCall } = require("./av-call-counter");
+
 const ALPHA_VANTAGE_URL = "https://www.alphavantage.co/query";
 const REALIZED_VOL_WINDOW = 20; // trading days
 const HISTORY_POINTS = 180; // ~6 months
@@ -26,6 +28,7 @@ function round(n, digits) {
 
 async function fetchIndexDaily(apiKey, symbol) {
   const url = `${ALPHA_VANTAGE_URL}?function=INDEX_DATA&symbol=${symbol}&interval=daily&apikey=${apiKey}`;
+  await recordAvCall();
   const res = await fetch(url);
   if (!res.ok) throw new Error(`HTTP ${res.status} for INDEX_DATA ${symbol}`);
   const payload = await res.json();
