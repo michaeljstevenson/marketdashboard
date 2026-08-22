@@ -677,7 +677,7 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 </div>
 <div class="chart-box">
 <div class="chart-box-header">
-<h2>Cumulative advance-decline line vs. S&amp;P 500</h2>
+<h2>Daily advance-decline vs. S&amp;P 500</h2>
 <div class="range-controls" id="adRangeControls"></div>
 </div>
 <div class="chart-canvas-wrap">
@@ -763,6 +763,17 @@ function renderRangeButtons(containerId, onSelect){
 let adChart = null;
 function renderAdChart(rangeKey){
  const rows = rowsInRange(rangeKey);
+ // Daily net advances-declines, not the running cumulative total (adLine
+ // is still what the "A-D Line" stat card up top shows) — each row
+ // already carries the raw advances/declines counts the cumulative sum
+ // was built from. S&P 500 alongside it is daily % change for the same
+ // reason: a like-for-like daily reading, not a price level plotted next
+ // to a running tally.
+ const netAd = rows.map(r => r.advances - r.declines);
+ const spxDailyPct = rows.map((r, i) => {
+  const prev = i > 0 ? rows[i - 1].spxClose : null;
+  return (r.spxClose != null && prev != null) ? ((r.spxClose / prev - 1) * 100) : null;
+ });
  const ctx = document.getElementById("adChart").getContext("2d");
  if(adChart) adChart.destroy();
  adChart = new Chart(ctx, {
@@ -770,24 +781,20 @@ function renderAdChart(rangeKey){
    labels: rows.map(r => r.date),
    datasets: [
     {
-     type: "line",
-     label: "A-D Line",
-     data: rows.map(r => r.adLine),
-     borderColor: "#d98a3d",
-     backgroundColor: "#d98a3d",
-     borderWidth: 2,
-     pointRadius: 0,
-     fill: false,
+     type: "bar",
+     label: "Net advances (adv - decl)",
+     data: netAd,
+     backgroundColor: netAd.map(v => v >= 0 ? "rgba(90,157,111,0.75)" : "rgba(111,143,172,0.75)"),
      yAxisID: "y",
      order: 2,
     },
     {
      type: "line",
-     label: "S&P 500",
-     data: rows.map(r => r.spxClose),
+     label: "S&P 500 daily change %",
+     data: spxDailyPct,
      borderColor: themeInkColor(),
      backgroundColor: themeInkColor(),
-     borderWidth: 2,
+     borderWidth: 1.5,
      pointRadius: 0,
      spanGaps: true,
      fill: false,
@@ -803,8 +810,8 @@ function renderAdChart(rangeKey){
    plugins: { legend: { labels: { color: "#8b9199" } } },
    scales: {
     x: { ticks: { color: "#8b9199", maxTicksLimit: 8 }, grid: { color: "#2b3138" } },
-    y: { position: "left", ticks: { color: "#8b9199" }, grid: { color: "#2b3138" }, title: { display: true, text: "A-D Line", color: "#8b9199" } },
-    y1: { position: "right", ticks: { color: "#8b9199" }, grid: { display: false }, title: { display: true, text: "S&P 500", color: "#8b9199" } },
+    y: { position: "left", ticks: { color: "#8b9199" }, grid: { color: "#2b3138" }, title: { display: true, text: "Net advances", color: "#8b9199" } },
+    y1: { position: "right", ticks: { color: "#8b9199" }, grid: { display: false }, title: { display: true, text: "S&P 500 daily change %", color: "#8b9199" } },
    },
   },
  });
