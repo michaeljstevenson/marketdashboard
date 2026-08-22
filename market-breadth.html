@@ -686,6 +686,15 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 </div>
 <div class="chart-box">
 <div class="chart-box-header">
+<h2>Cumulative advance-decline line vs. S&amp;P 500</h2>
+<div class="range-controls" id="adCumRangeControls"></div>
+</div>
+<div class="chart-canvas-wrap">
+<canvas id="adCumChart"></canvas>
+</div>
+</div>
+<div class="chart-box">
+<div class="chart-box-header">
 <h2>% of constituents above their 200-day moving average</h2>
 <div class="range-controls" id="smaRangeControls"></div>
 </div>
@@ -817,6 +826,56 @@ function renderAdChart(rangeKey){
  });
 }
 
+let adCumChart = null;
+function renderAdCumChart(rangeKey){
+ const rows = rowsInRange(rangeKey);
+ const ctx = document.getElementById("adCumChart").getContext("2d");
+ if(adCumChart) adCumChart.destroy();
+ adCumChart = new Chart(ctx, {
+  data: {
+   labels: rows.map(r => r.date),
+   datasets: [
+    {
+     type: "line",
+     label: "A-D Line",
+     data: rows.map(r => r.adLine),
+     borderColor: "#d98a3d",
+     backgroundColor: "#d98a3d",
+     borderWidth: 2,
+     pointRadius: 0,
+     fill: false,
+     yAxisID: "y",
+     order: 2,
+    },
+    {
+     type: "line",
+     label: "S&P 500",
+     data: rows.map(r => r.spxClose),
+     borderColor: themeInkColor(),
+     backgroundColor: themeInkColor(),
+     borderWidth: 2,
+     pointRadius: 0,
+     spanGaps: true,
+     fill: false,
+     yAxisID: "y1",
+     order: 1,
+    },
+   ],
+  },
+  options: {
+   responsive: true,
+   maintainAspectRatio: false,
+   interaction: { mode: "index", intersect: false },
+   plugins: { legend: { labels: { color: "#8b9199" } } },
+   scales: {
+    x: { ticks: { color: "#8b9199", maxTicksLimit: 8 }, grid: { color: "#2b3138" } },
+    y: { position: "left", ticks: { color: "#8b9199" }, grid: { color: "#2b3138" }, title: { display: true, text: "A-D Line", color: "#8b9199" } },
+    y1: { position: "right", ticks: { color: "#8b9199" }, grid: { display: false }, title: { display: true, text: "S&P 500", color: "#8b9199" } },
+   },
+  },
+ });
+}
+
 let smaChart = null;
 function renderSmaChart(rangeKey){
  const rows = rowsInRange(rangeKey).filter(r => r.pctAbove200sma !== null);
@@ -910,9 +969,11 @@ async function init(){
   document.getElementById("updated").textContent = "Generated " + new Date(data.generated_at_utc).toLocaleString() + " · " + data.constituentCount + " constituents";
 
   renderRangeButtons("adRangeControls", renderAdChart);
+  renderRangeButtons("adCumRangeControls", renderAdCumChart);
   renderRangeButtons("smaRangeControls", renderSmaChart);
   renderRangeButtons("hlRangeControls", renderHlChart);
   renderAdChart(DEFAULT_RANGE);
+  renderAdCumChart(DEFAULT_RANGE);
   renderSmaChart(DEFAULT_RANGE);
   renderHlChart(DEFAULT_RANGE);
  }catch(err){
