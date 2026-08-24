@@ -425,6 +425,19 @@ h1{
  margin-bottom:30px;
 }
 
+.chart-grid-2{
+ display:grid;
+ grid-template-columns:1fr 1fr;
+ gap:20px;
+ margin-bottom:30px;
+}
+
+.chart-grid-2 .chart-box{ margin-bottom:0; }
+
+@media (max-width:720px){
+ .chart-grid-2{ grid-template-columns:1fr; }
+}
+
 .chart-box h2{
  font-family:var(--serif);
  font-weight:400;
@@ -603,7 +616,7 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <div class="header">
 <div>
 <h1>Seasonality</h1>
-<div class="subtitle">Draft — S&amp;P 500 daily returns sliced by day of week, day of month, calendar month, quarter, and the presidential election cycle. Double-click a bar to filter it out.</div>
+<div class="subtitle">Draft — S&amp;P 500 daily returns sliced by day of week, day of month, calendar month, and quarter. Double-click a bar to filter it out.</div>
 </div>
 <div class="updated" id="updated">Loading...</div>
 </div>
@@ -636,6 +649,7 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 </div>
 </div>
 
+<div class="chart-grid-2">
 <div class="chart-box">
 <div class="chart-box-header">
 <div>
@@ -651,24 +665,26 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <div class="chart-box">
 <div class="chart-box-header">
 <div>
-<h2>Average monthly return by calendar month</h2>
-<div class="chart-subhead">Compounded return within each calendar month, averaged across every year on file — the "sell in May" chart</div>
-</div>
-</div>
-<div class="chart-canvas-wrap">
-<canvas id="monthChart"></canvas>
-</div>
-</div>
-
-<div class="chart-box">
-<div class="chart-box-header">
-<div>
 <h2>Average daily return by day of month</h2>
 <div class="chart-subhead">Mean daily % change grouped by calendar day-of-month (1–31); the 29th–31st have far fewer observations</div>
 </div>
 </div>
 <div class="chart-canvas-wrap">
 <canvas id="domChart"></canvas>
+</div>
+</div>
+</div>
+
+<div class="chart-grid-2">
+<div class="chart-box">
+<div class="chart-box-header">
+<div>
+<h2>Average monthly return by calendar month</h2>
+<div class="chart-subhead">Compounded return within each calendar month, averaged across every year on file — the "sell in May" chart</div>
+</div>
+</div>
+<div class="chart-canvas-wrap">
+<canvas id="monthChart"></canvas>
 </div>
 </div>
 
@@ -682,17 +698,6 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <div class="chart-canvas-wrap">
 <canvas id="quarterChart"></canvas>
 </div>
-</div>
-
-<div class="chart-box">
-<div class="chart-box-header">
-<div>
-<h2>Average return by presidential election-cycle year</h2>
-<div class="chart-subhead">Full-year return, grouped by position in the 4-year U.S. election cycle</div>
-</div>
-</div>
-<div class="chart-canvas-wrap">
-<canvas id="electionChart"></canvas>
 </div>
 </div>
 
@@ -913,36 +918,6 @@ function renderQuarterChart(rows){
  });
 }
 
-let electionChart = null;
-function renderElectionChart(rows){
- const ctx = document.getElementById("electionChart").getContext("2d");
- if(electionChart) electionChart.destroy();
- const data = rows.map(r => r.mean);
- electionChart = new Chart(ctx, {
-  type: "bar",
-  data: {
-   labels: rows.map(r => r.label),
-   datasets: [{
-    label: "Average annual return",
-    data,
-    backgroundColor: data.map(v => (v >= 0 ? "rgb(90,157,111)" : "rgb(181,95,95)")),
-   }],
-  },
-  options: {
-   responsive: true,
-   maintainAspectRatio: false,
-   plugins: {
-    legend: { display: false },
-    tooltip: { callbacks: { label: c => fmtPct(c.parsed.y) + " avg  (n=" + rows[c.dataIndex].n + " years, " + fmtPositivePct(rows[c.dataIndex].pctPositive) + " positive)" } },
-   },
-   scales: {
-    x: { ticks: { color: themeMutedColor() }, grid: { color: themeHairColor() } },
-    y: { ticks: { color: themeMutedColor(), callback: v => v.toFixed ? v.toFixed(1) + "%" : v }, grid: { color: themeHairColor() } },
-   },
-  },
- });
-}
-
 function heatmapColor(v){
  if(v == null) return "";
  const up = themeUpColor(), down = themeDownColor();
@@ -984,7 +959,6 @@ function renderAll(){
  renderDomChart(data.dom);
  renderMonthChart(data.month);
  renderQuarterChart(data.quarter);
- renderElectionChart(data.election);
  renderHeatmap(data.heatmap);
 }
 
