@@ -67,6 +67,11 @@
   to = "/.netlify/functions/av-usage"
   status = 200
 
+[[redirects]]
+  from = "/api/seasonality-history"
+  to = "/.netlify/functions/seasonality-history"
+  status = 200
+
 [functions."scheduled-breadth-background"]
   # 20:30 UTC = 4:30pm EDT (summer). Shifts to 3:30pm during EST (winter,
   # roughly Nov-Mar) since Netlify's cron runs in UTC with no DST
@@ -113,6 +118,12 @@
   # 5 minutes after scheduled-ath-tradingview) so this one's 11 sequential
   # full-history fetches don't compete with theirs for the rate limit.
   schedule = "45 20 * * 1-5"
+
+[functions."scheduled-seasonality-background"]
+  # 20:50 UTC — after the other daily jobs. Not an Alpha Vantage call
+  # (Yahoo, not AV), so there's no real rate-limit contention with them;
+  # staggered anyway just to keep all the once-daily jobs in one block.
+  schedule = "50 20 * * 1-5"
 
 [functions."scheduled-daychange-background"]
   # Hourly at :30 past, 13:30-19:30 UTC (9:30am-3:30pm EDT summer; drifts

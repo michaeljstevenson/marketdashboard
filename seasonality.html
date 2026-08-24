@@ -1,0 +1,1117 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+<script>
+// Applied before first paint to avoid a flash of the wrong theme.
+(function(){
+ var saved = localStorage.getItem("theme");
+ if(saved === "light") document.documentElement.setAttribute("data-theme", "light");
+})();
+</script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom@2"></script>
+<script>
+// FRED-style zoom: drag horizontally on any chart to zoom into that range,
+// double-click to reset. Applied via Chart.defaults so every chart on the
+// page gets it without touching each individual new Chart(...) call.
+Chart.defaults.plugins.zoom = {
+ zoom: {
+  wheel: { enabled: false },
+  pinch: { enabled: false },
+  drag: { enabled: true, backgroundColor: "rgba(217,138,61,0.15)", borderColor: "rgba(217,138,61,0.4)", borderWidth: 1 },
+  mode: "x",
+ },
+ pan: { enabled: true, mode: "x", modifierKey: "shift" },
+};
+document.addEventListener("dblclick", function(e){
+ if(e.target.tagName === "CANVAS"){
+  var chart = Chart.getChart(e.target);
+  if(chart) chart.resetZoom();
+ }
+});
+document.addEventListener("DOMContentLoaded", function(){
+ document.querySelectorAll(".chart-canvas-wrap canvas").forEach(function(c){
+  c.title = "Drag to zoom · shift-drag to pan · double-click to reset";
+ });
+});
+</script>
+<style>
+.chart-fullscreen-btn{
+ position:absolute;
+ top:8px;
+ right:8px;
+ z-index:5;
+ background:var(--card, #1c2127);
+ border:1px solid var(--hair, #2b3138);
+ color:var(--muted, #8b9199);
+ border-radius:6px;
+ width:28px;
+ height:28px;
+ display:flex;
+ align-items:center;
+ justify-content:center;
+ cursor:pointer;
+ padding:0;
+ opacity:0.85;
+}
+.chart-fullscreen-btn:hover{ color:var(--ink, #eae6da); border-color:#3a424b; opacity:1; }
+.is-chart-fullscreen{
+ background:var(--bg, #14181c) !important;
+ padding:24px !important;
+ display:flex !important;
+ flex-direction:column !important;
+ overflow:auto !important;
+}
+.is-chart-fullscreen canvas{
+ max-height:none !important;
+}
+</style>
+<script>
+// Expand-to-fullscreen button on every chart, matching the pattern from
+// sites like GuruFocus: a small corner button on each chart's canvas
+// area that fullscreens the whole chart card (title, legend, controls
+// included) via the Fullscreen API. Finds every <canvas> generically
+// rather than relying on one wrapper class name, since different pages
+// on this site use different card markup.
+document.addEventListener("DOMContentLoaded", function(){
+ function requestFs(el){
+  var fn = el.requestFullscreen || el.webkitRequestFullscreen || el.mozRequestFullScreen || el.msRequestFullscreen;
+  if(fn) fn.call(el);
+ }
+ function exitFs(){
+  var fn = document.exitFullscreen || document.webkitExitFullscreen || document.mozCancelFullScreen || document.msExitFullscreen;
+  if(fn) fn.call(document);
+ }
+ function currentFsEl(){
+  return document.fullscreenElement || document.webkitFullscreenElement || document.mozFullScreenElement || document.msFullscreenElement;
+ }
+ function resolveCard(canvas){
+  return canvas.closest(".chart-box, .scatter-box, .herd-cell, .modal-chart")
+   || canvas.parentElement.closest("div")
+   || canvas.parentElement;
+ }
+ function resizeChartIn(wrap){
+  var canvas = wrap.querySelector("canvas");
+  var chart = canvas && window.Chart && Chart.getChart(canvas);
+  if(chart) chart.resize();
+ }
+
+ var entries = [];
+
+ document.querySelectorAll("canvas").forEach(function(canvas){
+  if(canvas.closest(".chart-fullscreen-btn")) return;
+  var card = resolveCard(canvas);
+  if(!card || card.querySelector(".chart-fullscreen-btn")) return;
+
+  var wrap = canvas.parentElement;
+  var wrapStyle = getComputedStyle(wrap);
+  if(wrapStyle.position === "static") wrap.style.position = "relative";
+
+  var btn = document.createElement("button");
+  btn.type = "button";
+  btn.className = "chart-fullscreen-btn";
+  btn.title = "Expand chart";
+  btn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3H5a2 2 0 0 0-2 2v3"/><path d="M16 3h3a2 2 0 0 1 2 2v3"/><path d="M8 21H5a2 2 0 0 1-2-2v-3"/><path d="M16 21h3a2 2 0 0 0 2-2v-3"/></svg>';
+  btn.addEventListener("click", function(e){
+   e.stopPropagation();
+   if(currentFsEl() === card) exitFs();
+   else requestFs(card);
+  });
+  wrap.appendChild(btn);
+  entries.push({ card: card, wrap: wrap });
+
+  if(window.ResizeObserver){
+   new ResizeObserver(function(){ resizeChartIn(wrap); }).observe(wrap);
+  }
+ });
+
+ function onFsChange(){
+  var fsEl = currentFsEl();
+  entries.forEach(function(entry){
+   var isFs = fsEl === entry.card;
+   entry.card.classList.toggle("is-chart-fullscreen", isFs);
+   if(isFs){
+    entry.wrap.dataset.fsPrevHeight = entry.wrap.style.height || "";
+    entry.wrap.dataset.fsPrevFlex = entry.wrap.style.flex || "";
+    entry.wrap.style.flex = "1 1 auto";
+    entry.wrap.style.minHeight = "0";
+    entry.wrap.style.height = "auto";
+   }else if(entry.wrap.dataset.fsPrevHeight !== undefined){
+    entry.wrap.style.height = entry.wrap.dataset.fsPrevHeight;
+    entry.wrap.style.flex = entry.wrap.dataset.fsPrevFlex;
+    entry.wrap.style.minHeight = "";
+   }
+  });
+  entries.forEach(function(entry){ resizeChartIn(entry.wrap); });
+ }
+ ["fullscreenchange", "webkitfullscreenchange", "mozfullscreenchange", "MSFullscreenChange"].forEach(function(evt){
+  document.addEventListener(evt, onFsChange);
+ });
+});
+</script>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1" name="viewport"/>
+<title>Seasonality — Michael J. Stevenson</title>
+<style>
+
+:root{
+  --bg:#14181c;
+  --card:#1c2127;
+  --card-hover:#20262d;
+  --ink:#eae6da;
+  --muted:#8b9199;
+  --hair:#2b3138;
+
+  --fear:#6f8fac;
+  --neutral:#7c828a;
+  --greed:#d98a3d;
+  --extreme:#b56f2a;
+  --up:#5a9d6f;
+  --down:#b5615f;
+
+  --serif:'Iowan Old Style','Palatino Linotype',Georgia,serif;
+  --mono:'SF Mono','JetBrains Mono',ui-monospace,Menlo,monospace;
+  --sans:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+}
+
+:root[data-theme="light"]{
+  --bg:#f7f5f0;
+  --card:#ffffff;
+  --card-hover:#f2efe6;
+  --ink:#1c1f24;
+  --muted:#6b6f76;
+  --hair:#e1dbcd;
+  --fear:#4f6f8c;
+  --neutral:#6c7178;
+  --greed:#b9701f;
+  --extreme:#96591c;
+  --up:#3f8a56;
+  --down:#a83a30;
+}
+
+*{ box-sizing:border-box; }
+
+body{
+ margin:0;
+ background:var(--bg);
+ color:var(--ink);
+ font-family:var(--sans);
+}
+
+a{ color:inherit; }
+
+/* SITE NAV (shared with homepage) */
+
+.sitenav{
+ display:grid;
+ grid-template-columns:1fr auto 1fr;
+ align-items:center;
+ padding:16px 24px;
+ border-bottom:1px solid var(--hair);
+ position:relative;
+ z-index:50;
+}
+
+.sitenav .brand{
+ justify-self:start;
+}
+
+.sitenav .brand{
+ font-family:var(--serif);
+ font-size:17px;
+ color:var(--ink);
+ text-decoration:none;
+ letter-spacing:0.3px;
+}
+
+.navlinks{
+ display:flex;
+ gap:26px;
+ align-items:center;
+}
+
+.navlinks > a{
+ color:var(--muted);
+ font-size:13px;
+ text-decoration:none;
+ padding:6px 0;
+}
+
+.navlinks > a:hover, .navlinks > a.active{ color:var(--ink); }
+
+.navdrop{ position:relative; }
+
+.navdrop > .navlabel{
+ color:var(--muted);
+ font-size:13px;
+ cursor:default;
+ padding:6px 0;
+ user-select:none;
+}
+
+.navdrop:hover > .navlabel, .navdrop.open > .navlabel{ color:var(--ink); }
+
+.navdrop .dropdown{
+ display:none;
+ position:absolute;
+ top:100%;
+ left:0;
+ background:var(--card);
+ border:1px solid var(--hair);
+ border-radius:8px;
+ padding:8px 0;
+ min-width:230px;
+ margin-top:12px;
+ box-shadow:0 10px 30px rgba(0,0,0,0.45);
+}
+
+.navdrop.open .dropdown{ display:block; }
+
+.dropdown a{
+ display:block;
+ padding:9px 16px;
+ color:var(--muted);
+ text-decoration:none;
+ font-size:13px;
+}
+
+.dropdown a:hover{
+ background:var(--card-hover);
+ color:var(--ink);
+}
+
+.dropdown a.active{ color:var(--greed); }
+
+@media (max-width:720px){
+ .navlinks{ display:none; }
+}
+
+.container{
+ max-width:1080px;
+ margin:auto;
+ padding:30px 20px 60px;
+}
+
+/* HEADER */
+
+.header{
+ display:flex;
+ justify-content:space-between;
+ align-items:flex-end;
+ border-bottom:1px solid var(--hair);
+ padding-bottom:18px;
+ margin-bottom:25px;
+ flex-wrap:wrap;
+ gap:12px;
+}
+
+h1{
+ font-family:var(--serif);
+ font-size:28px;
+ font-weight:400;
+ margin:0;
+}
+
+.subtitle{
+ color:var(--muted);
+ font-size:13px;
+ margin-top:6px;
+ max-width:620px;
+}
+
+.updated{
+ color:var(--muted);
+ font-size:12px;
+}
+
+/* GLOBAL RANGE */
+
+.global-range{
+ display:flex;
+ align-items:center;
+ gap:10px;
+ flex-wrap:wrap;
+ margin-bottom:26px;
+}
+
+.global-range .label{
+ color:var(--muted);
+ font-size:12px;
+}
+
+.range-controls{
+ display:flex;
+ gap:6px;
+}
+
+.range-btn{
+ background:#171b20;
+ border:1px solid var(--hair);
+ color:var(--muted);
+ font-size:12px;
+ font-family:var(--sans);
+ padding:4px 10px;
+ border-radius:6px;
+ cursor:pointer;
+}
+
+.range-btn:hover{
+ color:var(--ink);
+ border-color:#3a424b;
+}
+
+.range-btn.active{
+ background:var(--card-hover);
+ color:var(--greed);
+ border-color:var(--greed);
+}
+
+/* STAT ROW */
+
+.stat-grid{
+ display:grid;
+ grid-template-columns:repeat(4,1fr);
+ gap:16px;
+ margin-bottom:30px;
+}
+
+.stat-card{
+ background:var(--card);
+ border:1px solid var(--hair);
+ border-radius:10px;
+ padding:20px;
+}
+
+.stat-label{
+ color:var(--muted);
+ font-size:12px;
+ letter-spacing:0.04em;
+ margin-bottom:8px;
+}
+
+.stat-value{
+ font-family:var(--mono);
+ font-size:24px;
+ color:var(--greed);
+}
+
+.stat-note{
+ color:var(--muted);
+ font-size:12px;
+ margin-top:6px;
+}
+
+/* CHART */
+
+.chart-box{
+ background:var(--card);
+ border:1px solid var(--hair);
+ border-radius:12px;
+ padding:20px;
+ margin-bottom:30px;
+}
+
+.chart-box h2{
+ font-family:var(--serif);
+ font-weight:400;
+ font-size:18px;
+ margin:0;
+}
+
+.chart-subhead{
+ color:var(--muted);
+ font-size:12px;
+ margin-top:4px;
+}
+
+.chart-box-header{
+ display:flex;
+ justify-content:space-between;
+ align-items:center;
+ flex-wrap:wrap;
+ gap:10px;
+ margin-bottom:16px;
+}
+
+.chart-canvas-wrap{
+ height:300px;
+}
+
+/* HOLIDAY TABLE */
+
+.holiday-grid{
+ display:grid;
+ grid-template-columns:repeat(3,1fr);
+ gap:16px;
+}
+
+.holiday-cell{
+ background:var(--card-hover);
+ border:1px solid var(--hair);
+ border-radius:10px;
+ padding:16px;
+}
+
+.holiday-cell .hc-label{
+ color:var(--muted);
+ font-size:12px;
+ margin-bottom:8px;
+}
+
+.holiday-cell .hc-value{
+ font-family:var(--mono);
+ font-size:20px;
+}
+
+.holiday-cell .hc-note{
+ color:var(--muted);
+ font-size:11px;
+ margin-top:6px;
+}
+
+/* HEATMAP TABLE */
+
+.heatmap-wrap{
+ overflow-x:auto;
+}
+
+table.heatmap{
+ border-collapse:collapse;
+ width:100%;
+ font-family:var(--mono);
+ font-size:11.5px;
+}
+
+table.heatmap th, table.heatmap td{
+ padding:5px 7px;
+ text-align:right;
+ white-space:nowrap;
+}
+
+table.heatmap thead th{
+ color:var(--muted);
+ font-weight:400;
+ border-bottom:1px solid var(--hair);
+ position:sticky;
+ top:0;
+ background:var(--card);
+}
+
+table.heatmap tbody th{
+ text-align:left;
+ color:var(--muted);
+ font-weight:400;
+ position:sticky;
+ left:0;
+ background:var(--card);
+}
+
+table.heatmap td.na{ color:var(--muted); opacity:0.35; }
+
+/* EXPLAINER */
+
+.explainer{
+ background:var(--card);
+ border:1px solid var(--hair);
+ border-radius:12px;
+ padding:24px 26px;
+ margin-bottom:30px;
+}
+
+.explainer h2{
+ font-family:var(--serif);
+ font-weight:400;
+ font-size:18px;
+ margin:0 0 12px;
+}
+
+.explainer p{
+ color:var(--muted);
+ font-size:14px;
+ line-height:1.7;
+ margin:0 0 14px;
+}
+
+.explainer p:last-child{ margin-bottom:0; }
+
+.explainer .source{
+ margin-top:16px;
+ font-size:11px;
+}
+
+.explainer .source a{
+ color:var(--muted);
+ text-decoration:none;
+ border-bottom:1px dotted var(--muted);
+}
+
+.explainer .source a:hover{ color:var(--ink); }
+
+.error-banner{
+ background:#2a1c1c;
+ border:1px solid #5a3030;
+ color:#e0a0a0;
+ border-radius:8px;
+ padding:12px 15px;
+ margin-bottom:20px;
+ font-size:13px;
+ display:none;
+}
+
+@media (max-width:720px){
+ .stat-grid{ grid-template-columns:repeat(2,1fr); }
+ .holiday-grid{ grid-template-columns:1fr; }
+}
+
+.theme-toggle{
+ justify-self:end;
+ background:none;
+ border:1px solid var(--hair);
+ color:var(--muted);
+ border-radius:6px;
+ width:32px;
+ height:32px;
+ display:flex;
+ align-items:center;
+ justify-content:center;
+ cursor:pointer;
+ font-size:15px;
+ line-height:1;
+}
+
+.theme-toggle:hover{ color:var(--ink); border-color:var(--hair); }
+
+[data-theme="light"] .range-btn{
+ background:#efece2;
+}
+
+[data-theme="light"] .error-banner{
+ background:#fdecea;
+ border-color:#f0b8b0;
+ color:#a83a30;
+}
+</style>
+</head>
+<body>
+<nav class="sitenav">
+<a class="brand" href="/">Michael J. Stevenson, CAIA<span style="font-size:0.6em; vertical-align:super;">®</span></a>
+<div class="navlinks">
+<div class="navdrop">
+<span class="navlabel">Behavioral/Positioning ▾</span>
+<div class="dropdown">
+<a href="/ipo-activity.html">IPO Activity</a>
+</div>
+</div>
+<div class="navdrop">
+<span class="navlabel">Equities ▾</span>
+<div class="dropdown">
+<a href="/sector-analysis.html">Sector Performance</a>
+<a href="/ath-index.html">All-Time Highs and Lows</a>
+<a href="/valuations.html">Valuations</a>
+<a href="/factor-analysis.html">Factor Analysis</a>
+<a href="/market-breadth.html">Market Breadth</a>
+<a class="active" href="/seasonality.html">Seasonality</a>
+</div>
+</div>
+<div class="navdrop">
+<span class="navlabel">Markets/Macro ▾</span>
+<div class="dropdown">
+<a href="/sentiment-index.html">Sentiment Index</a>
+<a href="/volatility.html">Implied vs. Realized Volatility</a>
+<a href="/implied-erp.html">Implied Equity Risk Premium</a>
+<a href="/yield-curves.html">Yield Curves</a>
+<a href="/expectations-vs-reality.html">Expectations vs. Reality</a>
+</div>
+</div>
+
+<a href="/portfolio-simulator.html">Portfolio Simulator</a>
+<a href="/backtesting.html">Backtesting</a>
+
+</div>
+<button aria-label="Toggle light/dark mode" class="theme-toggle" id="themeToggle" title="Toggle light/dark mode" type="button">☽</button>
+</nav>
+<script>
+document.querySelectorAll(".navdrop").forEach(function(navdrop){
+ var closeTimer = null;
+ navdrop.addEventListener("mouseenter", function(){
+  clearTimeout(closeTimer);
+  navdrop.classList.add("open");
+ });
+ navdrop.addEventListener("mouseleave", function(){
+  closeTimer = setTimeout(function(){ navdrop.classList.remove("open"); }, 300);
+ });
+});
+</script>
+<script>
+(function(){
+ var btn = document.getElementById("themeToggle");
+ if(!btn) return;
+ var theme = document.documentElement.getAttribute("data-theme") === "light" ? "light" : "dark";
+ btn.textContent = theme === "light" ? "☀" : "☽";
+ btn.addEventListener("click", function(){
+  var current = document.documentElement.getAttribute("data-theme") === "light" ? "light" : "dark";
+  var next = current === "light" ? "dark" : "light";
+  localStorage.setItem("theme", next);
+  location.reload();
+ });
+})();
+</script>
+<div class="container">
+<div class="error-banner" id="errorBanner"></div>
+<div class="header">
+<div>
+<h1>Seasonality</h1>
+<div class="subtitle">Draft — S&amp;P 500 daily returns sliced by day of week, day of month, calendar month, quarter, holidays, and the presidential election cycle.</div>
+</div>
+<div class="updated" id="updated">Loading...</div>
+</div>
+
+<div class="global-range">
+<span class="label">History window (recomputes everything below)</span>
+<div class="range-controls" id="globalRangeControls"></div>
+</div>
+
+<div class="stat-grid">
+<div class="stat-card">
+<div class="stat-label">Trading Days</div>
+<div class="stat-value" id="statCount">—</div>
+<div class="stat-note" id="statRangeNote">—</div>
+</div>
+<div class="stat-card">
+<div class="stat-label">% Positive Days</div>
+<div class="stat-value" id="statPctUp">—</div>
+<div class="stat-note">Share of sessions that closed higher</div>
+</div>
+<div class="stat-card">
+<div class="stat-label">Best Day of Week</div>
+<div class="stat-value" id="statBestDow" style="font-size:20px;">—</div>
+<div class="stat-note" id="statWorstDow">—</div>
+</div>
+<div class="stat-card">
+<div class="stat-label">Best Month</div>
+<div class="stat-value" id="statBestMonth" style="font-size:20px;">—</div>
+<div class="stat-note" id="statWorstMonth">—</div>
+</div>
+</div>
+
+<div class="chart-box">
+<div class="chart-box-header">
+<div>
+<h2>Average daily return by day of week</h2>
+<div class="chart-subhead">Mean of all daily % changes falling on each weekday</div>
+</div>
+</div>
+<div class="chart-canvas-wrap">
+<canvas id="dowChart"></canvas>
+</div>
+</div>
+
+<div class="chart-box">
+<div class="chart-box-header">
+<div>
+<h2>Average monthly return by calendar month</h2>
+<div class="chart-subhead">Compounded return within each calendar month, averaged across every year on file — the "sell in May" chart</div>
+</div>
+</div>
+<div class="chart-canvas-wrap">
+<canvas id="monthChart"></canvas>
+</div>
+</div>
+
+<div class="chart-box">
+<div class="chart-box-header">
+<div>
+<h2>Average daily return by day of month</h2>
+<div class="chart-subhead">Mean daily % change grouped by calendar day-of-month (1–31); the 29th–31st have far fewer observations</div>
+</div>
+</div>
+<div class="chart-canvas-wrap">
+<canvas id="domChart"></canvas>
+</div>
+</div>
+
+<div class="chart-box">
+<div class="chart-box-header">
+<div>
+<h2>Average quarterly return</h2>
+<div class="chart-subhead">Compounded return within each calendar quarter, averaged across every year on file</div>
+</div>
+</div>
+<div class="chart-canvas-wrap">
+<canvas id="quarterChart"></canvas>
+</div>
+</div>
+
+<div class="chart-box">
+<div class="chart-box-header">
+<div>
+<h2>Average return by presidential election-cycle year</h2>
+<div class="chart-subhead">Full-year return, grouped by position in the 4-year U.S. election cycle</div>
+</div>
+</div>
+<div class="chart-canvas-wrap">
+<canvas id="electionChart"></canvas>
+</div>
+</div>
+
+<div class="chart-box">
+<div class="chart-box-header">
+<div>
+<h2>Day before / after market holidays</h2>
+<div class="chart-subhead">Sessions immediately preceding or following an exchange closure (detected from gaps in the trading calendar), vs. all sessions</div>
+</div>
+</div>
+<div class="holiday-grid">
+<div class="holiday-cell">
+<div class="hc-label">All Days</div>
+<div class="hc-value" id="hcAllValue">—</div>
+<div class="hc-note" id="hcAllNote">—</div>
+</div>
+<div class="holiday-cell">
+<div class="hc-label">Day Before Holiday</div>
+<div class="hc-value" id="hcBeforeValue">—</div>
+<div class="hc-note" id="hcBeforeNote">—</div>
+</div>
+<div class="holiday-cell">
+<div class="hc-label">Day After Holiday</div>
+<div class="hc-value" id="hcAfterValue">—</div>
+<div class="hc-note" id="hcAfterNote">—</div>
+</div>
+</div>
+</div>
+
+<div class="chart-box">
+<div class="chart-box-header">
+<div>
+<h2>Monthly returns by year</h2>
+<div class="chart-subhead">Compounded return each calendar month; darker green/blue = larger positive/negative reading</div>
+</div>
+</div>
+<div class="heatmap-wrap" id="heatmapWrap" style="max-height:480px; overflow-y:auto;">
+<table class="heatmap" id="heatmapTable"></table>
+</div>
+</div>
+
+<div class="explainer">
+<h2>Reading this page</h2>
+<p>Seasonality patterns are statistical regularities in historical returns — a given day, month, or point in the election cycle averaging higher or lower returns than others over a long sample. They are not a forecast: any single year, month, or day can (and often does) run against the historical average, and a pattern's statistical significance shrinks fast once it's sliced into small buckets like "day of month" or "day after Thanksgiving."</p>
+<p>Data is the S&amp;P 500 index (^GSPC) daily close, back to the start of Yahoo Finance's series in late 1927 — this predates any S&amp;P 500 ETF (SPY launched in 1993) or the index's official 500-name form (1957), so early history reflects the index provider's own back-computed/predecessor series rather than a live, investable index. Use the history-window control above to check whether a pattern holds up in a more recent, more representative regime versus the full nearly-100-year sample.</p>
+<div class="source">Source: Yahoo Finance daily close history for ^GSPC. Every statistic on this page is recomputed once daily after the close and cached, not calculated in your browser. Holiday detection is inferred from gaps in the trading calendar (a weekday-to-weekday gap wider than a normal weekend), not a hardcoded holiday list.</div>
+</div>
+
+</div>
+<script>
+function showError(message){
+ const banner = document.getElementById("errorBanner");
+ banner.textContent = message;
+ banner.style.display = "block";
+}
+
+function themeMutedColor(){
+ const v = getComputedStyle(document.documentElement).getPropertyValue("--muted").trim();
+ return v || "#8b9199";
+}
+function themeHairColor(){
+ const v = getComputedStyle(document.documentElement).getPropertyValue("--hair").trim();
+ return v || "#2b3138";
+}
+function themeUpColor(){
+ const v = getComputedStyle(document.documentElement).getPropertyValue("--up").trim();
+ return v || "#5a9d6f";
+}
+function themeDownColor(){
+ const v = getComputedStyle(document.documentElement).getPropertyValue("--down").trim();
+ return v || "#6f8fac";
+}
+
+const GLOBAL_RANGES = [
+ { key: "Full", label: "Full history (1928–)" },
+ { key: "1950", label: "Since 1950" },
+ { key: "1980", label: "Since 1980" },
+ { key: "2000", label: "Since 2000" },
+];
+const DEFAULT_GLOBAL_RANGE = "Full";
+
+let RANGE_DATA = {};   // pre-computed stats per range key, straight from the API
+let CURRENT_RANGE = DEFAULT_GLOBAL_RANGE;
+
+function fmtPct(v, digits){
+ if(v == null || isNaN(v)) return "—";
+ const d = digits == null ? 2 : digits;
+ return (v >= 0 ? "+" : "") + v.toFixed(d) + "%";
+}
+
+function renderRangeButtons(){
+ const container = document.getElementById("globalRangeControls");
+ container.innerHTML = "";
+ GLOBAL_RANGES.forEach(r => {
+  const btn = document.createElement("button");
+  btn.className = "range-btn" + (r.key === CURRENT_RANGE ? " active" : "");
+  btn.textContent = r.label;
+  btn.addEventListener("click", () => {
+   CURRENT_RANGE = r.key;
+   container.querySelectorAll(".range-btn").forEach(b => b.classList.remove("active"));
+   btn.classList.add("active");
+   renderAll();
+  });
+  container.appendChild(btn);
+ });
+}
+
+function renderStats(data){
+ document.getElementById("statCount").textContent = data.count.toLocaleString();
+ document.getElementById("statRangeNote").textContent = data.startDate + " to " + data.endDate;
+ document.getElementById("statPctUp").textContent = data.pctPositive != null ? data.pctPositive.toFixed(1) + "%" : "—";
+
+ const dowEntries = data.dow.filter(d => d.n > 0);
+ if(dowEntries.length){
+  const best = dowEntries.reduce((a, b) => (b.mean > a.mean ? b : a));
+  const worst = dowEntries.reduce((a, b) => (b.mean < a.mean ? b : a));
+  document.getElementById("statBestDow").textContent = best.label + " (" + fmtPct(best.mean) + ")";
+  document.getElementById("statWorstDow").textContent = "Worst: " + worst.label + " (" + fmtPct(worst.mean) + ")";
+ }
+
+ const monthEntries = data.month.filter(m => m.n > 0);
+ if(monthEntries.length){
+  const best = monthEntries.reduce((a, b) => (b.mean > a.mean ? b : a));
+  const worst = monthEntries.reduce((a, b) => (b.mean < a.mean ? b : a));
+  document.getElementById("statBestMonth").textContent = best.label + " (" + fmtPct(best.mean) + ")";
+  document.getElementById("statWorstMonth").textContent = "Worst: " + worst.label + " (" + fmtPct(worst.mean) + ")";
+ }
+}
+
+function renderHolidayCells(holiday){
+ const fill = (prefix, bucket) => {
+  document.getElementById(prefix + "Value").textContent = fmtPct(bucket.mean);
+  document.getElementById(prefix + "Note").textContent =
+   "n=" + bucket.n.toLocaleString() + " · " + (bucket.pctPositive != null ? bucket.pctPositive.toFixed(1) + "% positive" : "—");
+ };
+ fill("hcAll", holiday.all);
+ fill("hcBefore", holiday.before);
+ fill("hcAfter", holiday.after);
+}
+
+let dowChart = null;
+function renderDowChart(rows){
+ const ctx = document.getElementById("dowChart").getContext("2d");
+ if(dowChart) dowChart.destroy();
+ const data = rows.map(r => r.mean);
+ dowChart = new Chart(ctx, {
+  type: "bar",
+  data: {
+   labels: rows.map(r => r.label),
+   datasets: [{
+    label: "Average daily return",
+    data,
+    backgroundColor: data.map(v => (v >= 0 ? "rgba(90,157,111,0.75)" : "rgba(181,95,95,0.75)")),
+   }],
+  },
+  options: {
+   responsive: true,
+   maintainAspectRatio: false,
+   plugins: {
+    legend: { display: false },
+    tooltip: { callbacks: { label: c => fmtPct(c.parsed.y, 3) + " avg  (n=" + rows[c.dataIndex].n.toLocaleString() + ")" } },
+   },
+   scales: {
+    x: { ticks: { color: themeMutedColor() }, grid: { color: themeHairColor() } },
+    y: { ticks: { color: themeMutedColor(), callback: v => v.toFixed ? v.toFixed(2) + "%" : v }, grid: { color: themeHairColor() } },
+   },
+  },
+ });
+}
+
+let domChart = null;
+function renderDomChart(rows){
+ const ctx = document.getElementById("domChart").getContext("2d");
+ if(domChart) domChart.destroy();
+ const data = rows.map(r => r.mean);
+ domChart = new Chart(ctx, {
+  type: "bar",
+  data: {
+   labels: rows.map(r => r.label),
+   datasets: [{
+    label: "Average daily return",
+    data,
+    backgroundColor: data.map(v => (v == null ? "rgba(140,140,140,0.3)" : v >= 0 ? "rgba(90,157,111,0.75)" : "rgba(181,95,95,0.75)")),
+   }],
+  },
+  options: {
+   responsive: true,
+   maintainAspectRatio: false,
+   plugins: {
+    legend: { display: false },
+    tooltip: { callbacks: { label: c => fmtPct(c.parsed.y, 3) + " avg  (n=" + rows[c.dataIndex].n.toLocaleString() + ")" } },
+   },
+   scales: {
+    x: { ticks: { color: themeMutedColor(), maxTicksLimit: 31 }, grid: { color: themeHairColor() }, title: { display: true, text: "Calendar day of month", color: themeMutedColor() } },
+    y: { ticks: { color: themeMutedColor(), callback: v => v.toFixed ? v.toFixed(2) + "%" : v }, grid: { color: themeHairColor() } },
+   },
+  },
+ });
+}
+
+let monthChart = null;
+function renderMonthChart(rows){
+ const ctx = document.getElementById("monthChart").getContext("2d");
+ if(monthChart) monthChart.destroy();
+ const data = rows.map(r => r.mean);
+ monthChart = new Chart(ctx, {
+  type: "bar",
+  data: {
+   labels: rows.map(r => r.label),
+   datasets: [{
+    label: "Average monthly return",
+    data,
+    backgroundColor: data.map(v => (v >= 0 ? "rgba(90,157,111,0.8)" : "rgba(181,95,95,0.75)")),
+   }],
+  },
+  options: {
+   responsive: true,
+   maintainAspectRatio: false,
+   plugins: {
+    legend: { display: false },
+    tooltip: { callbacks: { label: c => fmtPct(c.parsed.y) + " avg  (n=" + rows[c.dataIndex].n + " years)" } },
+   },
+   scales: {
+    x: { ticks: { color: themeMutedColor() }, grid: { color: themeHairColor() } },
+    y: { ticks: { color: themeMutedColor(), callback: v => v.toFixed ? v.toFixed(2) + "%" : v }, grid: { color: themeHairColor() } },
+   },
+  },
+ });
+}
+
+let quarterChart = null;
+function renderQuarterChart(rows){
+ const ctx = document.getElementById("quarterChart").getContext("2d");
+ if(quarterChart) quarterChart.destroy();
+ const data = rows.map(r => r.mean);
+ quarterChart = new Chart(ctx, {
+  type: "bar",
+  data: {
+   labels: rows.map(r => r.label),
+   datasets: [{
+    label: "Average quarterly return",
+    data,
+    backgroundColor: data.map(v => (v >= 0 ? "rgba(90,157,111,0.75)" : "rgba(181,95,95,0.75)")),
+   }],
+  },
+  options: {
+   responsive: true,
+   maintainAspectRatio: false,
+   plugins: {
+    legend: { display: false },
+    tooltip: { callbacks: { label: c => fmtPct(c.parsed.y) + " avg  (n=" + rows[c.dataIndex].n + " years)" } },
+   },
+   scales: {
+    x: { ticks: { color: themeMutedColor() }, grid: { color: themeHairColor() } },
+    y: { ticks: { color: themeMutedColor(), callback: v => v.toFixed ? v.toFixed(2) + "%" : v }, grid: { color: themeHairColor() } },
+   },
+  },
+ });
+}
+
+let electionChart = null;
+function renderElectionChart(rows){
+ const ctx = document.getElementById("electionChart").getContext("2d");
+ if(electionChart) electionChart.destroy();
+ const data = rows.map(r => r.mean);
+ electionChart = new Chart(ctx, {
+  type: "bar",
+  data: {
+   labels: rows.map(r => r.label),
+   datasets: [{
+    label: "Average annual return",
+    data,
+    backgroundColor: data.map(v => (v >= 0 ? "rgba(90,157,111,0.8)" : "rgba(181,95,95,0.75)")),
+   }],
+  },
+  options: {
+   responsive: true,
+   maintainAspectRatio: false,
+   plugins: {
+    legend: { display: false },
+    tooltip: { callbacks: { label: c => fmtPct(c.parsed.y) + " avg  (n=" + rows[c.dataIndex].n + " years)" } },
+   },
+   scales: {
+    x: { ticks: { color: themeMutedColor() }, grid: { color: themeHairColor() } },
+    y: { ticks: { color: themeMutedColor(), callback: v => v.toFixed ? v.toFixed(1) + "%" : v }, grid: { color: themeHairColor() } },
+   },
+  },
+ });
+}
+
+function heatmapColor(v){
+ if(v == null) return "";
+ const up = themeUpColor(), down = themeDownColor();
+ const intensity = Math.min(Math.abs(v) / 8, 1); // saturate around +/-8% monthly
+ const alpha = 0.12 + intensity * 0.55;
+ const rgb = v >= 0 ? hexToRgb(up) : hexToRgb(down);
+ return "rgba(" + rgb.join(",") + "," + alpha.toFixed(2) + ")";
+}
+function hexToRgb(hex){
+ hex = hex.replace("#", "");
+ if(hex.length === 3) hex = hex.split("").map(c => c + c).join("");
+ const num = parseInt(hex, 16);
+ return [(num >> 16) & 255, (num >> 8) & 255, num & 255];
+}
+
+const MONTH_NAMES = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+
+function renderHeatmap(rows){
+ const table = document.getElementById("heatmapTable");
+ let html = "<thead><tr><th>Year</th>" + MONTH_NAMES.map(m => "<th>" + m + "</th>").join("") + "<th>Year Total</th></tr></thead><tbody>";
+ rows.forEach(row => {
+  html += "<tr><th>" + row.year + "</th>";
+  row.months.forEach(v => {
+   html += v == null
+    ? '<td class="na">—</td>'
+    : '<td style="background:' + heatmapColor(v) + '">' + fmtPct(v, 1) + "</td>";
+  });
+  html += '<td style="background:' + heatmapColor(row.total) + '; font-weight:600;">' + fmtPct(row.total, 1) + "</td></tr>";
+ });
+ html += "</tbody>";
+ table.innerHTML = html;
+}
+
+function renderAll(){
+ const data = RANGE_DATA[CURRENT_RANGE];
+ if(!data) return;
+ renderStats(data);
+ renderDowChart(data.dow);
+ renderDomChart(data.dom);
+ renderMonthChart(data.month);
+ renderQuarterChart(data.quarter);
+ renderElectionChart(data.election);
+ renderHolidayCells(data.holiday);
+ renderHeatmap(data.heatmap);
+}
+
+async function loadData(){
+ try{
+  const cacheKey = "seasonality-stats-v2";
+  const cached = sessionStorage.getItem(cacheKey);
+  let payload;
+  if(cached){
+   payload = JSON.parse(cached);
+  }else{
+   const res = await fetch("/api/seasonality-history");
+   if(!res.ok) throw new Error("Failed to load seasonality stats (HTTP " + res.status + ")");
+   payload = await res.json();
+   if(payload.error) throw new Error(payload.error);
+   try{ sessionStorage.setItem(cacheKey, JSON.stringify(payload)); }catch(e){}
+  }
+  RANGE_DATA = payload.ranges;
+  document.getElementById("updated").textContent = payload.asOf ? "Data through " + payload.asOf : "No data";
+  renderRangeButtons();
+  renderAll();
+ }catch(err){
+  showError("Couldn't load seasonality stats: " + err.message);
+ }
+}
+
+loadData();
+</script>
+</body>
+</html>

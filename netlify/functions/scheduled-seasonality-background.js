@@ -1,0 +1,298 @@
+// Scheduled function (see [functions."scheduled-seasonality-background"]
+// in netlify.toml) that fetches full daily S&P 500 (^GSPC) history from
+// Yahoo Finance, computes every statistic /seasonality.html shows (day of
+// week, day of month, calendar month, quarter, election cycle, holiday
+// effect, and the year-by-month heatmap) for each of the page's history
+// windows, and writes the finished result to Netlify Blobs.
+//
+// This moves ALL of the seasonality math server-side, once a day, instead
+// of recomputing it in the visitor's browser on every page load —
+// seasonality-history.js just reads the pre-computed blob, so a page load
+// is a single cheap JSON fetch with no client-side aggregation.
+//
+// Not an Alpha Vantage job (Yahoo has no daily quota here, unlike AV), so
+// there's no rate-limit contention with the other scheduled-*-background
+// jobs; still staggered after them out of habit, and named "-background"
+// because retries on Yahoo's occasional 429s (see fetchChunk) can push a
+// run past a standard function's ~10-26s budget.
+
+const { getSeasonalityStore, BLOB_KEY } = require("./seasonality-blob-store");
+
+const YAHOO_URL = "https://query1.finance.yahoo.com/v8/finance/chart/%5EGSPC";
+// Deliberately a bare UA, not a full Chrome UA string like the rest of this
+// project's fetchers use — Yahoo's chart endpoint reliably 429s a full
+// browser-style UA on multi-year ranges but accepts this one every time.
+const USER_AGENT = "Mozilla/5.0";
+
+const DOW_NAMES = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+const MONTH_NAMES = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+const GLOBAL_RANGES = [
+  { key: "Full", startYear: null },
+  { key: "1950", startYear: 1950 },
+  { key: "1980", startYear: 1980 },
+  { key: "2000", startYear: 2000 },
+];
+
+function round(n, digits) {
+  const f = 10 ** digits;
+  return Math.round(n * f) / f;
+}
+
+function sleep(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+const dateFormatter = new Intl.DateTimeFormat("en-CA", {
+  timeZone: "America/New_York",
+  year: "numeric",
+  month: "2-digit",
+  day: "2-digit",
+});
+
+// Yahoo's chart endpoint 429s intermittently on multi-year ranges even
+// well under any documented quota — retrying the same request a moment
+// later reliably succeeds, so this is a transient throttle rather than a
+// hard block.
+async function fetchChunk(period1, period2, attempt = 1) {
+  const url = `${YAHOO_URL}?period1=${period1}&period2=${period2}&interval=1d`;
+  const res = await fetch(url, { headers: { "User-Agent": USER_AGENT } });
+  if (res.status === 429 && attempt < 4) {
+    await sleep(attempt * 1500);
+    return fetchChunk(period1, period2, attempt + 1);
+  }
+  if (!res.ok) throw new Error(`HTTP ${res.status} fetching Yahoo chart data (${period1}-${period2})`);
+  const payload = await res.json();
+  const result = payload && payload.chart && payload.chart.result && payload.chart.result[0];
+  if (!result) {
+    throw new Error(
+      "Yahoo chart response missing result: " +
+        JSON.stringify((payload && payload.chart && payload.chart.error) || payload).slice(0, 200)
+    );
+  }
+  const timestamps = result.timestamp || [];
+  const closes = (result.indicators && result.indicators.quote && result.indicators.quote[0].close) || [];
+  const bars = [];
+  for (let i = 0; i < timestamps.length; i++) {
+    const close = closes[i];
+    if (close == null) continue;
+    bars.push({ date: dateFormatter.format(new Date(timestamps[i] * 1000)), close: round(close, 2) });
+  }
+  return bars;
+}
+
+async function fetchAllBars() {
+  // ~20-year chunks rather than one 1927-to-present request; chunking
+  // isn't strictly required to dodge the 429s (that turned out to be the
+  // User-Agent, see above) but keeps each response well under any
+  // payload/duration limit for a ~24k-point series.
+  const now = Math.floor(Date.now() / 1000);
+  const boundaries = [-2208988800, -631152000, 0, 631152000, 1262304000, now];
+  const byDate = new Map();
+  for (let i = 0; i < boundaries.length - 1; i++) {
+    if (i > 0) await sleep(400);
+    const chunk = await fetchChunk(boundaries[i], boundaries[i + 1]);
+    chunk.forEach((bar) => byDate.set(bar.date, bar));
+  }
+  return Array.from(byDate.values()).sort((a, b) => (a.date < b.date ? -1 : 1));
+}
+
+function parseUTC(dateStr) {
+  return new Date(dateStr + "T00:00:00Z");
+}
+
+function mean(arr) {
+  if (!arr.length) return null;
+  return round(arr.reduce((a, b) => a + b, 0) / arr.length, 4);
+}
+
+function pctPositive(arr) {
+  if (!arr.length) return null;
+  return round((arr.filter((v) => v > 0).length / arr.length) * 100, 2);
+}
+
+function dailyReturns(bars) {
+  const out = [];
+  for (let i = 1; i < bars.length; i++) {
+    const prev = bars[i - 1].close, cur = bars[i].close;
+    if (prev == null || cur == null || prev === 0) continue;
+    out.push({ date: bars[i].date, ret: (cur / prev - 1) * 100 });
+  }
+  return out;
+}
+
+function groupMeanByDow(returns) {
+  const buckets = [1, 2, 3, 4, 5].map((dow) => ({ dow, label: DOW_NAMES[dow], vals: [] }));
+  returns.forEach((r) => {
+    const dow = parseUTC(r.date).getUTCDay();
+    const b = buckets.find((x) => x.dow === dow);
+    if (b) b.vals.push(r.ret);
+  });
+  return buckets.map((b) => ({ label: b.label, mean: mean(b.vals), n: b.vals.length }));
+}
+
+function groupMeanByDom(returns) {
+  const buckets = [];
+  for (let d = 1; d <= 31; d++) buckets.push({ day: d, vals: [] });
+  returns.forEach((r) => {
+    const day = parseUTC(r.date).getUTCDate();
+    buckets[day - 1].vals.push(r.ret);
+  });
+  return buckets.map((b) => ({ label: String(b.day), mean: mean(b.vals), n: b.vals.length }));
+}
+
+// Compounds daily returns within each calendar period (last close of the
+// period vs last close of the prior period) rather than averaging daily
+// returns that happen to fall in it — what "average April return" or
+// "average Q4 return" normally means.
+function periodReturns(bars, keyFn) {
+  const periods = [];
+  let curKey = null, curLastClose = null, prevClose = null;
+  bars.forEach((b) => {
+    const key = keyFn(parseUTC(b.date));
+    if (key !== curKey) {
+      if (curKey !== null && prevClose != null) {
+        periods.push({ key: curKey, ret: (curLastClose / prevClose - 1) * 100 });
+      }
+      prevClose = curLastClose != null ? curLastClose : b.close;
+      curKey = key;
+    }
+    curLastClose = b.close;
+  });
+  return periods;
+}
+
+function monthlyReturnsByCalendarMonth(bars) {
+  const periods = periodReturns(bars, (d) => d.getUTCFullYear() * 12 + d.getUTCMonth());
+  const buckets = MONTH_NAMES.map((label, i) => ({ label, month: i, vals: [] }));
+  periods.forEach((p) => {
+    const m = ((p.key % 12) + 12) % 12;
+    buckets[m].vals.push(p.ret);
+  });
+  return buckets.map((b) => ({ label: b.label, mean: mean(b.vals), n: b.vals.length }));
+}
+
+function quarterlyReturnsByCalendarQuarter(bars) {
+  const periods = periodReturns(bars, (d) => d.getUTCFullYear() * 4 + Math.floor(d.getUTCMonth() / 3));
+  const buckets = [0, 1, 2, 3].map((q) => ({ label: "Q" + (q + 1), q, vals: [] }));
+  periods.forEach((p) => {
+    const q = ((p.key % 4) + 4) % 4;
+    buckets[q].vals.push(p.ret);
+  });
+  return buckets.map((b) => ({ label: b.label, mean: mean(b.vals), n: b.vals.length }));
+}
+
+// Cycle position derived from the calendar year itself (year % 4), not an
+// explicit list of election dates — U.S. presidential elections fall in
+// every year divisible by 4, so this generalizes across the whole sample
+// without hardcoding a century of election dates.
+function electionCycleReturns(bars) {
+  const periods = periodReturns(bars, (d) => d.getUTCFullYear());
+  const labels = ["Election Year", "Post-Election Year", "Midterm Year", "Pre-Election Year"];
+  const buckets = labels.map((label) => ({ label, vals: [] }));
+  periods.forEach((p) => {
+    const pos = ((p.key % 4) + 4) % 4;
+    buckets[pos].vals.push(p.ret);
+  });
+  return buckets.map((b) => ({ label: b.label, mean: mean(b.vals), n: b.vals.length }));
+}
+
+// A trading day is flagged as bordering a holiday when the calendar gap to
+// its neighbor exceeds a normal weekend — this catches every U.S. market
+// holiday generically (including one-offs like 9/11 or Hurricane Sandy
+// closures) without maintaining a holiday calendar.
+function holidayBucket(returns) {
+  const sorted = returns.slice().sort((a, b) => (a.date < b.date ? -1 : 1));
+  const before = [], after = [];
+  for (let i = 0; i < sorted.length; i++) {
+    const cur = sorted[i];
+    const curDate = parseUTC(cur.date);
+    const next = sorted[i + 1];
+    if (next) {
+      const gapDays = Math.round((parseUTC(next.date) - curDate) / 86400000);
+      const dow = curDate.getUTCDay();
+      if (dow === 5 ? gapDays > 3 : gapDays > 1) before.push(cur.ret);
+    }
+    const prev = sorted[i - 1];
+    if (prev) {
+      const prevDate = parseUTC(prev.date);
+      const gapDays = Math.round((curDate - prevDate) / 86400000);
+      const prevDow = prevDate.getUTCDay();
+      if (prevDow === 5 ? gapDays > 3 : gapDays > 1) after.push(cur.ret);
+    }
+  }
+  return { before, after, all: returns.map((r) => r.ret) };
+}
+
+function holidaySummary(returns) {
+  const { before, after, all } = holidayBucket(returns);
+  const summarize = (arr) => ({ mean: mean(arr), n: arr.length, pctPositive: pctPositive(arr) });
+  return { all: summarize(all), before: summarize(before), after: summarize(after) };
+}
+
+function buildHeatmap(bars) {
+  const periods = periodReturns(bars, (d) => d.getUTCFullYear() * 12 + d.getUTCMonth());
+  const byYear = new Map();
+  periods.forEach((p) => {
+    const year = Math.floor(p.key / 12);
+    const month = ((p.key % 12) + 12) % 12;
+    if (!byYear.has(year)) byYear.set(year, {});
+    byYear.get(year)[month] = round(p.ret, 3);
+  });
+  const years = Array.from(byYear.keys()).sort((a, b) => b - a);
+  return years.map((year) => {
+    const row = byYear.get(year);
+    const months = [];
+    let compound = 1, any = false;
+    for (let m = 0; m < 12; m++) {
+      const v = row[m] != null ? row[m] : null;
+      months.push(v);
+      if (v != null) {
+        any = true;
+        compound *= 1 + v / 100;
+      }
+    }
+    return { year, months, total: any ? round((compound - 1) * 100, 3) : null };
+  });
+}
+
+function computeRangeStats(bars) {
+  const returns = dailyReturns(bars);
+  return {
+    startDate: bars.length ? bars[0].date : null,
+    endDate: bars.length ? bars[bars.length - 1].date : null,
+    count: returns.length,
+    pctPositive: pctPositive(returns.map((r) => r.ret)),
+    dow: groupMeanByDow(returns),
+    dom: groupMeanByDom(returns),
+    month: monthlyReturnsByCalendarMonth(bars),
+    quarter: quarterlyReturnsByCalendarQuarter(bars),
+    election: electionCycleReturns(bars),
+    holiday: holidaySummary(returns),
+    heatmap: buildHeatmap(bars),
+  };
+}
+
+exports.handler = async () => {
+  try {
+    const allBars = await fetchAllBars();
+
+    const ranges = {};
+    GLOBAL_RANGES.forEach((r) => {
+      const bars = r.startYear ? allBars.filter((b) => parseUTC(b.date).getUTCFullYear() >= r.startYear) : allBars;
+      ranges[r.key] = computeRangeStats(bars);
+    });
+
+    const payload = {
+      asOf: allBars.length ? allBars[allBars.length - 1].date : null,
+      generatedAt: new Date().toISOString(),
+      ranges,
+    };
+
+    const store = getSeasonalityStore();
+    await store.setJSON(BLOB_KEY, payload);
+
+    return { statusCode: 200, body: JSON.stringify({ ok: true, asOf: payload.asOf, bars: allBars.length }) };
+  } catch (err) {
+    return { statusCode: 502, body: JSON.stringify({ error: err.message }) };
+  }
+};
