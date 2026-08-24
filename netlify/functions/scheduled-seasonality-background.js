@@ -127,7 +127,7 @@ function groupMeanByDow(returns) {
     const b = buckets.find((x) => x.dow === dow);
     if (b) b.vals.push(r.ret);
   });
-  return buckets.map((b) => ({ label: b.label, mean: mean(b.vals), n: b.vals.length }));
+  return buckets.map((b) => ({ label: b.label, mean: mean(b.vals), n: b.vals.length, pctPositive: pctPositive(b.vals) }));
 }
 
 function groupMeanByDom(returns) {
@@ -137,7 +137,7 @@ function groupMeanByDom(returns) {
     const day = parseUTC(r.date).getUTCDate();
     buckets[day - 1].vals.push(r.ret);
   });
-  return buckets.map((b) => ({ label: String(b.day), mean: mean(b.vals), n: b.vals.length }));
+  return buckets.map((b) => ({ label: String(b.day), mean: mean(b.vals), n: b.vals.length, pctPositive: pctPositive(b.vals) }));
 }
 
 // Compounds daily returns within each calendar period (last close of the
@@ -168,7 +168,7 @@ function monthlyReturnsByCalendarMonth(bars) {
     const m = ((p.key % 12) + 12) % 12;
     buckets[m].vals.push(p.ret);
   });
-  return buckets.map((b) => ({ label: b.label, mean: mean(b.vals), n: b.vals.length }));
+  return buckets.map((b) => ({ label: b.label, mean: mean(b.vals), n: b.vals.length, pctPositive: pctPositive(b.vals) }));
 }
 
 function quarterlyReturnsByCalendarQuarter(bars) {
@@ -178,7 +178,7 @@ function quarterlyReturnsByCalendarQuarter(bars) {
     const q = ((p.key % 4) + 4) % 4;
     buckets[q].vals.push(p.ret);
   });
-  return buckets.map((b) => ({ label: b.label, mean: mean(b.vals), n: b.vals.length }));
+  return buckets.map((b) => ({ label: b.label, mean: mean(b.vals), n: b.vals.length, pctPositive: pctPositive(b.vals) }));
 }
 
 // Cycle position derived from the calendar year itself (year % 4), not an
@@ -193,7 +193,7 @@ function electionCycleReturns(bars) {
     const pos = ((p.key % 4) + 4) % 4;
     buckets[pos].vals.push(p.ret);
   });
-  return buckets.map((b) => ({ label: b.label, mean: mean(b.vals), n: b.vals.length }));
+  return buckets.map((b) => ({ label: b.label, mean: mean(b.vals), n: b.vals.length, pctPositive: pctPositive(b.vals) }));
 }
 
 // A trading day is flagged as bordering a holiday when the calendar gap to

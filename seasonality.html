@@ -24,15 +24,28 @@ Chart.defaults.plugins.zoom = {
  },
  pan: { enabled: true, mode: "x", modifierKey: "shift" },
 };
+// Double-click a bar to filter it out of that chart (click again to bring
+// it back) — lets a visitor isolate/exclude specific days, months,
+// quarters, etc. Double-clicking empty chart area still resets zoom, same
+// as every other chart on the site.
 document.addEventListener("dblclick", function(e){
  if(e.target.tagName === "CANVAS"){
   var chart = Chart.getChart(e.target);
-  if(chart) chart.resetZoom();
+  if(!chart) return;
+  var hit = chart.getElementsAtEventForMode(e, "nearest", { intersect: true }, true);
+  if(hit.length){
+   var idx = hit[0].index;
+   var meta = chart.getDatasetMeta(0);
+   meta.data[idx].hidden = !meta.data[idx].hidden;
+   chart.update();
+  }else{
+   chart.resetZoom();
+  }
  }
 });
 document.addEventListener("DOMContentLoaded", function(){
  document.querySelectorAll(".chart-canvas-wrap canvas").forEach(function(c){
-  c.title = "Drag to zoom · shift-drag to pan · double-click to reset";
+  c.title = "Double-click a bar to filter it out · double-click empty space to reset zoom";
  });
 });
 </script>
@@ -435,39 +448,7 @@ h1{
 }
 
 .chart-canvas-wrap{
- height:300px;
-}
-
-/* HOLIDAY TABLE */
-
-.holiday-grid{
- display:grid;
- grid-template-columns:repeat(3,1fr);
- gap:16px;
-}
-
-.holiday-cell{
- background:var(--card-hover);
- border:1px solid var(--hair);
- border-radius:10px;
- padding:16px;
-}
-
-.holiday-cell .hc-label{
- color:var(--muted);
- font-size:12px;
- margin-bottom:8px;
-}
-
-.holiday-cell .hc-value{
- font-family:var(--mono);
- font-size:20px;
-}
-
-.holiday-cell .hc-note{
- color:var(--muted);
- font-size:11px;
- margin-top:6px;
+ height:100px;
 }
 
 /* HEATMAP TABLE */
@@ -509,45 +490,6 @@ table.heatmap tbody th{
 
 table.heatmap td.na{ color:var(--muted); opacity:0.35; }
 
-/* EXPLAINER */
-
-.explainer{
- background:var(--card);
- border:1px solid var(--hair);
- border-radius:12px;
- padding:24px 26px;
- margin-bottom:30px;
-}
-
-.explainer h2{
- font-family:var(--serif);
- font-weight:400;
- font-size:18px;
- margin:0 0 12px;
-}
-
-.explainer p{
- color:var(--muted);
- font-size:14px;
- line-height:1.7;
- margin:0 0 14px;
-}
-
-.explainer p:last-child{ margin-bottom:0; }
-
-.explainer .source{
- margin-top:16px;
- font-size:11px;
-}
-
-.explainer .source a{
- color:var(--muted);
- text-decoration:none;
- border-bottom:1px dotted var(--muted);
-}
-
-.explainer .source a:hover{ color:var(--ink); }
-
 .error-banner{
  background:#2a1c1c;
  border:1px solid #5a3030;
@@ -561,7 +503,6 @@ table.heatmap td.na{ color:var(--muted); opacity:0.35; }
 
 @media (max-width:720px){
  .stat-grid{ grid-template-columns:repeat(2,1fr); }
- .holiday-grid{ grid-template-columns:1fr; }
 }
 
 .theme-toggle{
@@ -662,7 +603,7 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <div class="header">
 <div>
 <h1>Seasonality</h1>
-<div class="subtitle">Draft — S&amp;P 500 daily returns sliced by day of week, day of month, calendar month, quarter, holidays, and the presidential election cycle.</div>
+<div class="subtitle">Draft — S&amp;P 500 daily returns sliced by day of week, day of month, calendar month, quarter, and the presidential election cycle. Double-click a bar to filter it out.</div>
 </div>
 <div class="updated" id="updated">Loading...</div>
 </div>
@@ -758,46 +699,13 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <div class="chart-box">
 <div class="chart-box-header">
 <div>
-<h2>Day before / after market holidays</h2>
-<div class="chart-subhead">Sessions immediately preceding or following an exchange closure (detected from gaps in the trading calendar), vs. all sessions</div>
-</div>
-</div>
-<div class="holiday-grid">
-<div class="holiday-cell">
-<div class="hc-label">All Days</div>
-<div class="hc-value" id="hcAllValue">—</div>
-<div class="hc-note" id="hcAllNote">—</div>
-</div>
-<div class="holiday-cell">
-<div class="hc-label">Day Before Holiday</div>
-<div class="hc-value" id="hcBeforeValue">—</div>
-<div class="hc-note" id="hcBeforeNote">—</div>
-</div>
-<div class="holiday-cell">
-<div class="hc-label">Day After Holiday</div>
-<div class="hc-value" id="hcAfterValue">—</div>
-<div class="hc-note" id="hcAfterNote">—</div>
-</div>
-</div>
-</div>
-
-<div class="chart-box">
-<div class="chart-box-header">
-<div>
 <h2>Monthly returns by year</h2>
-<div class="chart-subhead">Compounded return each calendar month; darker green/blue = larger positive/negative reading</div>
+<div class="chart-subhead">Compounded return each calendar month; darker green/red = larger positive/negative reading. Source: Yahoo Finance daily close history for ^GSPC, recomputed once daily after the close and cached.</div>
 </div>
 </div>
-<div class="heatmap-wrap" id="heatmapWrap" style="max-height:480px; overflow-y:auto;">
+<div class="heatmap-wrap" id="heatmapWrap">
 <table class="heatmap" id="heatmapTable"></table>
 </div>
-</div>
-
-<div class="explainer">
-<h2>Reading this page</h2>
-<p>Seasonality patterns are statistical regularities in historical returns — a given day, month, or point in the election cycle averaging higher or lower returns than others over a long sample. They are not a forecast: any single year, month, or day can (and often does) run against the historical average, and a pattern's statistical significance shrinks fast once it's sliced into small buckets like "day of month" or "day after Thanksgiving."</p>
-<p>Data is the S&amp;P 500 index (^GSPC) daily close, back to the start of Yahoo Finance's series in late 1927 — this predates any S&amp;P 500 ETF (SPY launched in 1993) or the index's official 500-name form (1957), so early history reflects the index provider's own back-computed/predecessor series rather than a live, investable index. Use the history-window control above to check whether a pattern holds up in a more recent, more representative regime versus the full nearly-100-year sample.</p>
-<div class="source">Source: Yahoo Finance daily close history for ^GSPC. Every statistic on this page is recomputed once daily after the close and cached, not calculated in your browser. Holiday detection is inferred from gaps in the trading calendar (a weekday-to-weekday gap wider than a normal weekend), not a hardcoded holiday list.</div>
 </div>
 
 </div>
@@ -842,6 +750,10 @@ function fmtPct(v, digits){
  return (v >= 0 ? "+" : "") + v.toFixed(d) + "%";
 }
 
+function fmtPositivePct(v){
+ return v == null || isNaN(v) ? "—" : v.toFixed(1) + "%";
+}
+
 function renderRangeButtons(){
  const container = document.getElementById("globalRangeControls");
  container.innerHTML = "";
@@ -881,17 +793,6 @@ function renderStats(data){
  }
 }
 
-function renderHolidayCells(holiday){
- const fill = (prefix, bucket) => {
-  document.getElementById(prefix + "Value").textContent = fmtPct(bucket.mean);
-  document.getElementById(prefix + "Note").textContent =
-   "n=" + bucket.n.toLocaleString() + " · " + (bucket.pctPositive != null ? bucket.pctPositive.toFixed(1) + "% positive" : "—");
- };
- fill("hcAll", holiday.all);
- fill("hcBefore", holiday.before);
- fill("hcAfter", holiday.after);
-}
-
 let dowChart = null;
 function renderDowChart(rows){
  const ctx = document.getElementById("dowChart").getContext("2d");
@@ -904,7 +805,7 @@ function renderDowChart(rows){
    datasets: [{
     label: "Average daily return",
     data,
-    backgroundColor: data.map(v => (v >= 0 ? "rgba(90,157,111,0.75)" : "rgba(181,95,95,0.75)")),
+    backgroundColor: data.map(v => (v >= 0 ? "rgb(90,157,111)" : "rgb(181,95,95)")),
    }],
   },
   options: {
@@ -912,7 +813,7 @@ function renderDowChart(rows){
    maintainAspectRatio: false,
    plugins: {
     legend: { display: false },
-    tooltip: { callbacks: { label: c => fmtPct(c.parsed.y, 3) + " avg  (n=" + rows[c.dataIndex].n.toLocaleString() + ")" } },
+    tooltip: { callbacks: { label: c => fmtPct(c.parsed.y, 3) + " avg  (n=" + rows[c.dataIndex].n.toLocaleString() + ", " + fmtPositivePct(rows[c.dataIndex].pctPositive) + " positive)" } },
    },
    scales: {
     x: { ticks: { color: themeMutedColor() }, grid: { color: themeHairColor() } },
@@ -934,7 +835,7 @@ function renderDomChart(rows){
    datasets: [{
     label: "Average daily return",
     data,
-    backgroundColor: data.map(v => (v == null ? "rgba(140,140,140,0.3)" : v >= 0 ? "rgba(90,157,111,0.75)" : "rgba(181,95,95,0.75)")),
+    backgroundColor: data.map(v => (v == null ? "rgb(120,120,120)" : v >= 0 ? "rgb(90,157,111)" : "rgb(181,95,95)")),
    }],
   },
   options: {
@@ -942,7 +843,7 @@ function renderDomChart(rows){
    maintainAspectRatio: false,
    plugins: {
     legend: { display: false },
-    tooltip: { callbacks: { label: c => fmtPct(c.parsed.y, 3) + " avg  (n=" + rows[c.dataIndex].n.toLocaleString() + ")" } },
+    tooltip: { callbacks: { label: c => fmtPct(c.parsed.y, 3) + " avg  (n=" + rows[c.dataIndex].n.toLocaleString() + ", " + fmtPositivePct(rows[c.dataIndex].pctPositive) + " positive)" } },
    },
    scales: {
     x: { ticks: { color: themeMutedColor(), maxTicksLimit: 31 }, grid: { color: themeHairColor() }, title: { display: true, text: "Calendar day of month", color: themeMutedColor() } },
@@ -964,7 +865,7 @@ function renderMonthChart(rows){
    datasets: [{
     label: "Average monthly return",
     data,
-    backgroundColor: data.map(v => (v >= 0 ? "rgba(90,157,111,0.8)" : "rgba(181,95,95,0.75)")),
+    backgroundColor: data.map(v => (v >= 0 ? "rgb(90,157,111)" : "rgb(181,95,95)")),
    }],
   },
   options: {
@@ -972,7 +873,7 @@ function renderMonthChart(rows){
    maintainAspectRatio: false,
    plugins: {
     legend: { display: false },
-    tooltip: { callbacks: { label: c => fmtPct(c.parsed.y) + " avg  (n=" + rows[c.dataIndex].n + " years)" } },
+    tooltip: { callbacks: { label: c => fmtPct(c.parsed.y) + " avg  (n=" + rows[c.dataIndex].n + " years, " + fmtPositivePct(rows[c.dataIndex].pctPositive) + " positive)" } },
    },
    scales: {
     x: { ticks: { color: themeMutedColor() }, grid: { color: themeHairColor() } },
@@ -994,7 +895,7 @@ function renderQuarterChart(rows){
    datasets: [{
     label: "Average quarterly return",
     data,
-    backgroundColor: data.map(v => (v >= 0 ? "rgba(90,157,111,0.75)" : "rgba(181,95,95,0.75)")),
+    backgroundColor: data.map(v => (v >= 0 ? "rgb(90,157,111)" : "rgb(181,95,95)")),
    }],
   },
   options: {
@@ -1002,7 +903,7 @@ function renderQuarterChart(rows){
    maintainAspectRatio: false,
    plugins: {
     legend: { display: false },
-    tooltip: { callbacks: { label: c => fmtPct(c.parsed.y) + " avg  (n=" + rows[c.dataIndex].n + " years)" } },
+    tooltip: { callbacks: { label: c => fmtPct(c.parsed.y) + " avg  (n=" + rows[c.dataIndex].n + " years, " + fmtPositivePct(rows[c.dataIndex].pctPositive) + " positive)" } },
    },
    scales: {
     x: { ticks: { color: themeMutedColor() }, grid: { color: themeHairColor() } },
@@ -1024,7 +925,7 @@ function renderElectionChart(rows){
    datasets: [{
     label: "Average annual return",
     data,
-    backgroundColor: data.map(v => (v >= 0 ? "rgba(90,157,111,0.8)" : "rgba(181,95,95,0.75)")),
+    backgroundColor: data.map(v => (v >= 0 ? "rgb(90,157,111)" : "rgb(181,95,95)")),
    }],
   },
   options: {
@@ -1032,7 +933,7 @@ function renderElectionChart(rows){
    maintainAspectRatio: false,
    plugins: {
     legend: { display: false },
-    tooltip: { callbacks: { label: c => fmtPct(c.parsed.y) + " avg  (n=" + rows[c.dataIndex].n + " years)" } },
+    tooltip: { callbacks: { label: c => fmtPct(c.parsed.y) + " avg  (n=" + rows[c.dataIndex].n + " years, " + fmtPositivePct(rows[c.dataIndex].pctPositive) + " positive)" } },
    },
    scales: {
     x: { ticks: { color: themeMutedColor() }, grid: { color: themeHairColor() } },
@@ -1084,7 +985,6 @@ function renderAll(){
  renderMonthChart(data.month);
  renderQuarterChart(data.quarter);
  renderElectionChart(data.election);
- renderHolidayCells(data.holiday);
  renderHeatmap(data.heatmap);
 }
 
