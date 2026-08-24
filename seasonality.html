@@ -9,160 +9,6 @@
  if(saved === "light") document.documentElement.setAttribute("data-theme", "light");
 })();
 </script>
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom@2"></script>
-<script>
-// FRED-style zoom: drag horizontally on any chart to zoom into that range,
-// double-click to reset. Applied via Chart.defaults so every chart on the
-// page gets it without touching each individual new Chart(...) call.
-Chart.defaults.plugins.zoom = {
- zoom: {
-  wheel: { enabled: false },
-  pinch: { enabled: false },
-  drag: { enabled: true, backgroundColor: "rgba(217,138,61,0.15)", borderColor: "rgba(217,138,61,0.4)", borderWidth: 1 },
-  mode: "x",
- },
- pan: { enabled: true, mode: "x", modifierKey: "shift" },
-};
-// Double-click a bar to filter it out of that chart (click again to bring
-// it back) — lets a visitor isolate/exclude specific days, months,
-// quarters, etc. Double-clicking empty chart area still resets zoom, same
-// as every other chart on the site.
-document.addEventListener("dblclick", function(e){
- if(e.target.tagName === "CANVAS"){
-  var chart = Chart.getChart(e.target);
-  if(!chart) return;
-  var hit = chart.getElementsAtEventForMode(e, "nearest", { intersect: true }, true);
-  if(hit.length){
-   var idx = hit[0].index;
-   var meta = chart.getDatasetMeta(0);
-   meta.data[idx].hidden = !meta.data[idx].hidden;
-   chart.update();
-  }else{
-   chart.resetZoom();
-  }
- }
-});
-document.addEventListener("DOMContentLoaded", function(){
- document.querySelectorAll(".chart-canvas-wrap canvas").forEach(function(c){
-  c.title = "Double-click a bar to filter it out · double-click empty space to reset zoom";
- });
-});
-</script>
-<style>
-.chart-fullscreen-btn{
- position:absolute;
- top:8px;
- right:8px;
- z-index:5;
- background:var(--card, #1c2127);
- border:1px solid var(--hair, #2b3138);
- color:var(--muted, #8b9199);
- border-radius:6px;
- width:28px;
- height:28px;
- display:flex;
- align-items:center;
- justify-content:center;
- cursor:pointer;
- padding:0;
- opacity:0.85;
-}
-.chart-fullscreen-btn:hover{ color:var(--ink, #eae6da); border-color:#3a424b; opacity:1; }
-.is-chart-fullscreen{
- background:var(--bg, #14181c) !important;
- padding:24px !important;
- display:flex !important;
- flex-direction:column !important;
- overflow:auto !important;
-}
-.is-chart-fullscreen canvas{
- max-height:none !important;
-}
-</style>
-<script>
-// Expand-to-fullscreen button on every chart, matching the pattern from
-// sites like GuruFocus: a small corner button on each chart's canvas
-// area that fullscreens the whole chart card (title, legend, controls
-// included) via the Fullscreen API. Finds every <canvas> generically
-// rather than relying on one wrapper class name, since different pages
-// on this site use different card markup.
-document.addEventListener("DOMContentLoaded", function(){
- function requestFs(el){
-  var fn = el.requestFullscreen || el.webkitRequestFullscreen || el.mozRequestFullScreen || el.msRequestFullscreen;
-  if(fn) fn.call(el);
- }
- function exitFs(){
-  var fn = document.exitFullscreen || document.webkitExitFullscreen || document.mozCancelFullScreen || document.msExitFullscreen;
-  if(fn) fn.call(document);
- }
- function currentFsEl(){
-  return document.fullscreenElement || document.webkitFullscreenElement || document.mozFullScreenElement || document.msFullscreenElement;
- }
- function resolveCard(canvas){
-  return canvas.closest(".chart-box, .scatter-box, .herd-cell, .modal-chart")
-   || canvas.parentElement.closest("div")
-   || canvas.parentElement;
- }
- function resizeChartIn(wrap){
-  var canvas = wrap.querySelector("canvas");
-  var chart = canvas && window.Chart && Chart.getChart(canvas);
-  if(chart) chart.resize();
- }
-
- var entries = [];
-
- document.querySelectorAll("canvas").forEach(function(canvas){
-  if(canvas.closest(".chart-fullscreen-btn")) return;
-  var card = resolveCard(canvas);
-  if(!card || card.querySelector(".chart-fullscreen-btn")) return;
-
-  var wrap = canvas.parentElement;
-  var wrapStyle = getComputedStyle(wrap);
-  if(wrapStyle.position === "static") wrap.style.position = "relative";
-
-  var btn = document.createElement("button");
-  btn.type = "button";
-  btn.className = "chart-fullscreen-btn";
-  btn.title = "Expand chart";
-  btn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3H5a2 2 0 0 0-2 2v3"/><path d="M16 3h3a2 2 0 0 1 2 2v3"/><path d="M8 21H5a2 2 0 0 1-2-2v-3"/><path d="M16 21h3a2 2 0 0 0 2-2v-3"/></svg>';
-  btn.addEventListener("click", function(e){
-   e.stopPropagation();
-   if(currentFsEl() === card) exitFs();
-   else requestFs(card);
-  });
-  wrap.appendChild(btn);
-  entries.push({ card: card, wrap: wrap });
-
-  if(window.ResizeObserver){
-   new ResizeObserver(function(){ resizeChartIn(wrap); }).observe(wrap);
-  }
- });
-
- function onFsChange(){
-  var fsEl = currentFsEl();
-  entries.forEach(function(entry){
-   var isFs = fsEl === entry.card;
-   entry.card.classList.toggle("is-chart-fullscreen", isFs);
-   if(isFs){
-    entry.wrap.dataset.fsPrevHeight = entry.wrap.style.height || "";
-    entry.wrap.dataset.fsPrevFlex = entry.wrap.style.flex || "";
-    entry.wrap.style.flex = "1 1 auto";
-    entry.wrap.style.minHeight = "0";
-    entry.wrap.style.height = "auto";
-   }else if(entry.wrap.dataset.fsPrevHeight !== undefined){
-    entry.wrap.style.height = entry.wrap.dataset.fsPrevHeight;
-    entry.wrap.style.flex = entry.wrap.dataset.fsPrevFlex;
-    entry.wrap.style.minHeight = "";
-   }
-  });
-  entries.forEach(function(entry){ resizeChartIn(entry.wrap); });
- }
- ["fullscreenchange", "webkitfullscreenchange", "mozfullscreenchange", "MSFullscreenChange"].forEach(function(evt){
-  document.addEventListener(evt, onFsChange);
- });
-});
-</script>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1" name="viewport"/>
 <title>Seasonality — Michael J. Stevenson</title>
@@ -460,9 +306,51 @@ h1{
  margin-bottom:16px;
 }
 
-.chart-canvas-wrap{
- height:100px;
+/* DATA TABLES (filterable) */
+
+table.data-table{
+ border-collapse:collapse;
+ width:100%;
+ font-family:var(--mono);
+ font-size:12.5px;
 }
+
+table.data-table th, table.data-table td{
+ padding:6px 8px;
+ text-align:right;
+ white-space:nowrap;
+}
+
+table.data-table th:first-child, table.data-table td:first-child{
+ text-align:center;
+ width:24px;
+ padding-right:0;
+}
+
+table.data-table .label{ text-align:left; }
+
+table.data-table thead th{
+ color:var(--muted);
+ font-weight:400;
+ border-bottom:1px solid var(--hair);
+}
+
+table.data-table tbody tr:hover{ background:var(--card-hover); }
+
+table.data-table tbody tr.row-excluded{ opacity:0.35; }
+
+table.data-table tbody tr.row-excluded td:not(:first-child){ text-decoration:line-through; }
+
+table.data-table tfoot td{
+ border-top:1px solid var(--hair);
+ font-weight:600;
+ padding-top:10px;
+}
+
+table.data-table input[type="checkbox"]{ cursor:pointer; }
+
+table.data-table .up{ color:var(--up); }
+table.data-table .down{ color:var(--down); }
 
 /* HEATMAP TABLE */
 
@@ -616,7 +504,7 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <div class="header">
 <div>
 <h1>Seasonality</h1>
-<div class="subtitle">Draft — S&amp;P 500 daily returns sliced by day of week, day of month, calendar month, and quarter. Double-click a bar to filter it out.</div>
+<div class="subtitle">Draft — S&amp;P 500 daily returns sliced by day of week, day of month, calendar month, and quarter. Uncheck rows in a table to filter the average.</div>
 </div>
 <div class="updated" id="updated">Loading...</div>
 </div>
@@ -654,24 +542,28 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <div class="chart-box-header">
 <div>
 <h2>Average daily return by day of week</h2>
-<div class="chart-subhead">Mean of all daily % changes falling on each weekday</div>
+<div class="chart-subhead">Uncheck a row to exclude it from the filtered average below</div>
 </div>
 </div>
-<div class="chart-canvas-wrap">
-<canvas id="dowChart"></canvas>
-</div>
+<table class="data-table" id="dowTable">
+<thead><tr><th></th><th class="label">Day</th><th>Avg Return</th><th>% Positive</th><th>N</th></tr></thead>
+<tbody></tbody>
+<tfoot><tr><td></td><td class="label">Filtered avg</td><td id="dowTableFilteredMean">—</td><td id="dowTableFilteredPct">—</td><td id="dowTableFilteredN">—</td></tr></tfoot>
+</table>
 </div>
 
 <div class="chart-box">
 <div class="chart-box-header">
 <div>
 <h2>Average daily return by day of month</h2>
-<div class="chart-subhead">Mean daily % change grouped by calendar day-of-month (1–31); the 29th–31st have far fewer observations</div>
+<div class="chart-subhead">Uncheck a row to exclude it from the filtered average below</div>
 </div>
 </div>
-<div class="chart-canvas-wrap">
-<canvas id="domChart"></canvas>
-</div>
+<table class="data-table" id="domTable">
+<thead><tr><th></th><th class="label">Day</th><th>Avg Return</th><th>% Positive</th><th>N</th></tr></thead>
+<tbody></tbody>
+<tfoot><tr><td></td><td class="label">Filtered avg</td><td id="domTableFilteredMean">—</td><td id="domTableFilteredPct">—</td><td id="domTableFilteredN">—</td></tr></tfoot>
+</table>
 </div>
 </div>
 
@@ -680,24 +572,28 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <div class="chart-box-header">
 <div>
 <h2>Average monthly return by calendar month</h2>
-<div class="chart-subhead">Compounded return within each calendar month, averaged across every year on file — the "sell in May" chart</div>
+<div class="chart-subhead">Compounded return within each calendar month, averaged across every year on file — the "sell in May" table. Uncheck a row to exclude it.</div>
 </div>
 </div>
-<div class="chart-canvas-wrap">
-<canvas id="monthChart"></canvas>
-</div>
+<table class="data-table" id="monthTable">
+<thead><tr><th></th><th class="label">Month</th><th>Avg Return</th><th>% Positive</th><th>Years</th></tr></thead>
+<tbody></tbody>
+<tfoot><tr><td></td><td class="label">Filtered avg</td><td id="monthTableFilteredMean">—</td><td id="monthTableFilteredPct">—</td><td id="monthTableFilteredN">—</td></tr></tfoot>
+</table>
 </div>
 
 <div class="chart-box">
 <div class="chart-box-header">
 <div>
 <h2>Average quarterly return</h2>
-<div class="chart-subhead">Compounded return within each calendar quarter, averaged across every year on file</div>
+<div class="chart-subhead">Compounded return within each calendar quarter, averaged across every year on file. Uncheck a row to exclude it.</div>
 </div>
 </div>
-<div class="chart-canvas-wrap">
-<canvas id="quarterChart"></canvas>
-</div>
+<table class="data-table" id="quarterTable">
+<thead><tr><th></th><th class="label">Quarter</th><th>Avg Return</th><th>% Positive</th><th>Years</th></tr></thead>
+<tbody></tbody>
+<tfoot><tr><td></td><td class="label">Filtered avg</td><td id="quarterTableFilteredMean">—</td><td id="quarterTableFilteredPct">—</td><td id="quarterTableFilteredN">—</td></tr></tfoot>
+</table>
 </div>
 </div>
 
@@ -721,14 +617,6 @@ function showError(message){
  banner.style.display = "block";
 }
 
-function themeMutedColor(){
- const v = getComputedStyle(document.documentElement).getPropertyValue("--muted").trim();
- return v || "#8b9199";
-}
-function themeHairColor(){
- const v = getComputedStyle(document.documentElement).getPropertyValue("--hair").trim();
- return v || "#2b3138";
-}
 function themeUpColor(){
  const v = getComputedStyle(document.documentElement).getPropertyValue("--up").trim();
  return v || "#5a9d6f";
@@ -798,124 +686,54 @@ function renderStats(data){
  }
 }
 
-let dowChart = null;
-function renderDowChart(rows){
- const ctx = document.getElementById("dowChart").getContext("2d");
- if(dowChart) dowChart.destroy();
- const data = rows.map(r => r.mean);
- dowChart = new Chart(ctx, {
-  type: "bar",
-  data: {
-   labels: rows.map(r => r.label),
-   datasets: [{
-    label: "Average daily return",
-    data,
-    backgroundColor: data.map(v => (v >= 0 ? "rgb(90,157,111)" : "rgb(181,95,95)")),
-   }],
-  },
-  options: {
-   responsive: true,
-   maintainAspectRatio: false,
-   plugins: {
-    legend: { display: false },
-    tooltip: { callbacks: { label: c => fmtPct(c.parsed.y, 3) + " avg  (n=" + rows[c.dataIndex].n.toLocaleString() + ", " + fmtPositivePct(rows[c.dataIndex].pctPositive) + " positive)" } },
-   },
-   scales: {
-    x: { ticks: { color: themeMutedColor() }, grid: { color: themeHairColor() } },
-    y: { ticks: { color: themeMutedColor(), callback: v => v.toFixed ? v.toFixed(2) + "%" : v }, grid: { color: themeHairColor() } },
-   },
-  },
- });
-}
+// Renders one filterable stat table: every row starts checked; unchecking
+// a row excludes it from the "Filtered avg" footer row, which recomputes
+// live as an n-weighted average across whatever rows are still checked —
+// the actual filtering interaction (replacing the old double-click-a-bar
+// gimmick, which visually hid a bar but never surfaced a filtered number
+// anywhere on the page).
+function renderDataTable(tableId, rows, digits){
+ const table = document.getElementById(tableId);
+ const tbody = table.querySelector("tbody");
+ tbody.innerHTML = "";
 
-let domChart = null;
-function renderDomChart(rows){
- const ctx = document.getElementById("domChart").getContext("2d");
- if(domChart) domChart.destroy();
- const data = rows.map(r => r.mean);
- domChart = new Chart(ctx, {
-  type: "bar",
-  data: {
-   labels: rows.map(r => r.label),
-   datasets: [{
-    label: "Average daily return",
-    data,
-    backgroundColor: data.map(v => (v == null ? "rgb(120,120,120)" : v >= 0 ? "rgb(90,157,111)" : "rgb(181,95,95)")),
-   }],
-  },
-  options: {
-   responsive: true,
-   maintainAspectRatio: false,
-   plugins: {
-    legend: { display: false },
-    tooltip: { callbacks: { label: c => fmtPct(c.parsed.y, 3) + " avg  (n=" + rows[c.dataIndex].n.toLocaleString() + ", " + fmtPositivePct(rows[c.dataIndex].pctPositive) + " positive)" } },
-   },
-   scales: {
-    x: { ticks: { color: themeMutedColor(), maxTicksLimit: 31 }, grid: { color: themeHairColor() }, title: { display: true, text: "Calendar day of month", color: themeMutedColor() } },
-    y: { ticks: { color: themeMutedColor(), callback: v => v.toFixed ? v.toFixed(2) + "%" : v }, grid: { color: themeHairColor() } },
-   },
-  },
+ rows.forEach((r, i) => {
+  const tr = document.createElement("tr");
+  const meanClass = r.mean == null ? "" : r.mean >= 0 ? "up" : "down";
+  tr.innerHTML =
+   '<td><input type="checkbox" checked data-idx="' + i + '"></td>' +
+   '<td class="label">' + r.label + "</td>" +
+   '<td class="' + meanClass + '">' + fmtPct(r.mean, digits) + "</td>" +
+   "<td>" + fmtPositivePct(r.pctPositive) + "</td>" +
+   "<td>" + r.n.toLocaleString() + "</td>";
+  tbody.appendChild(tr);
  });
-}
 
-let monthChart = null;
-function renderMonthChart(rows){
- const ctx = document.getElementById("monthChart").getContext("2d");
- if(monthChart) monthChart.destroy();
- const data = rows.map(r => r.mean);
- monthChart = new Chart(ctx, {
-  type: "bar",
-  data: {
-   labels: rows.map(r => r.label),
-   datasets: [{
-    label: "Average monthly return",
-    data,
-    backgroundColor: data.map(v => (v >= 0 ? "rgb(90,157,111)" : "rgb(181,95,95)")),
-   }],
-  },
-  options: {
-   responsive: true,
-   maintainAspectRatio: false,
-   plugins: {
-    legend: { display: false },
-    tooltip: { callbacks: { label: c => fmtPct(c.parsed.y) + " avg  (n=" + rows[c.dataIndex].n + " years, " + fmtPositivePct(rows[c.dataIndex].pctPositive) + " positive)" } },
-   },
-   scales: {
-    x: { ticks: { color: themeMutedColor() }, grid: { color: themeHairColor() } },
-    y: { ticks: { color: themeMutedColor(), callback: v => v.toFixed ? v.toFixed(2) + "%" : v }, grid: { color: themeHairColor() } },
-   },
-  },
- });
-}
+ const checkboxes = Array.from(tbody.querySelectorAll('input[type="checkbox"]'));
+ const filteredMeanEl = document.getElementById(tableId + "FilteredMean");
+ const filteredPctEl = document.getElementById(tableId + "FilteredPct");
+ const filteredNEl = document.getElementById(tableId + "FilteredN");
 
-let quarterChart = null;
-function renderQuarterChart(rows){
- const ctx = document.getElementById("quarterChart").getContext("2d");
- if(quarterChart) quarterChart.destroy();
- const data = rows.map(r => r.mean);
- quarterChart = new Chart(ctx, {
-  type: "bar",
-  data: {
-   labels: rows.map(r => r.label),
-   datasets: [{
-    label: "Average quarterly return",
-    data,
-    backgroundColor: data.map(v => (v >= 0 ? "rgb(90,157,111)" : "rgb(181,95,95)")),
-   }],
-  },
-  options: {
-   responsive: true,
-   maintainAspectRatio: false,
-   plugins: {
-    legend: { display: false },
-    tooltip: { callbacks: { label: c => fmtPct(c.parsed.y) + " avg  (n=" + rows[c.dataIndex].n + " years, " + fmtPositivePct(rows[c.dataIndex].pctPositive) + " positive)" } },
-   },
-   scales: {
-    x: { ticks: { color: themeMutedColor() }, grid: { color: themeHairColor() } },
-    y: { ticks: { color: themeMutedColor(), callback: v => v.toFixed ? v.toFixed(2) + "%" : v }, grid: { color: themeHairColor() } },
-   },
-  },
- });
+ function update(){
+  let meanWeighted = 0, meanWeight = 0, posWeighted = 0, posWeight = 0, totalN = 0;
+  rows.forEach((r, i) => {
+   const checked = checkboxes[i].checked;
+   checkboxes[i].closest("tr").classList.toggle("row-excluded", !checked);
+   if(!checked || !r.n) return;
+   totalN += r.n;
+   if(r.mean != null){ meanWeighted += r.mean * r.n; meanWeight += r.n; }
+   if(r.pctPositive != null){ posWeighted += r.pctPositive * r.n; posWeight += r.n; }
+  });
+  const avgMean = meanWeight ? meanWeighted / meanWeight : null;
+  const avgPos = posWeight ? posWeighted / posWeight : null;
+  filteredMeanEl.textContent = fmtPct(avgMean);
+  filteredMeanEl.className = avgMean == null ? "" : avgMean >= 0 ? "up" : "down";
+  filteredPctEl.textContent = fmtPositivePct(avgPos);
+  filteredNEl.textContent = totalN.toLocaleString();
+ }
+
+ checkboxes.forEach(cb => cb.addEventListener("change", update));
+ update();
 }
 
 function heatmapColor(v){
@@ -955,10 +773,10 @@ function renderAll(){
  const data = RANGE_DATA[CURRENT_RANGE];
  if(!data) return;
  renderStats(data);
- renderDowChart(data.dow);
- renderDomChart(data.dom);
- renderMonthChart(data.month);
- renderQuarterChart(data.quarter);
+ renderDataTable("dowTable", data.dow, 3);
+ renderDataTable("domTable", data.dom, 3);
+ renderDataTable("monthTable", data.month);
+ renderDataTable("quarterTable", data.quarter);
  renderHeatmap(data.heatmap);
 }
 
