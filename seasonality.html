@@ -954,10 +954,19 @@ function renderDistribution(tableId){
  const maxCount = Math.max(1, ...counts);
  const upColor = themeUpColor(), downColor = themeDownColor(), inkColor = themeInkColor();
 
+ // Log-scaled bar heights, not linear — the whole point of this view is
+ // the tails, and a linear count axis buries them: a bin with 1-2
+ // observations next to a central bin with several thousand renders as a
+ // sliver a fraction of a pixel tall. log1p keeps zero-count bins at
+ // zero height (still correctly "no data") while giving low-count tail
+ // bins a visible bar instead of nothing.
+ const logMax = Math.log1p(maxCount);
+ const countFrac = (c) => (c > 0 && logMax > 0 ? Math.log1p(c) / logMax : 0);
+
  const bars = counts.map((c, i) => {
   const x0 = edges[i];
   const xPix = padL + ((x0 - xMin) / (xMax - xMin)) * plotW;
-  const hPix = (c / maxCount) * plotH;
+  const hPix = countFrac(c) * plotH;
   const yPix = padT + (plotH - hPix);
   const color = x0 >= 0 ? upColor : downColor;
   return '<rect x="' + xPix.toFixed(1) + '" y="' + yPix.toFixed(1) + '" width="' + Math.max(0, binPixW - 1).toFixed(1) +
@@ -975,7 +984,7 @@ function renderDistribution(tableId){
    const x = xMin + ((xMax - xMin) * s) / steps;
    const expectedCount = pdf(x) * totalN * binWidth;
    const xPix = padL + ((x - xMin) / (xMax - xMin)) * plotW;
-   const yPix = padT + (plotH - Math.min(1, expectedCount / maxCount) * plotH);
+   const yPix = padT + (plotH - countFrac(expectedCount) * plotH);
    pts.push(xPix.toFixed(1) + "," + yPix.toFixed(1));
   }
   curve = '<polyline points="' + pts.join(" ") + '" fill="none" stroke="' + inkColor + '" stroke-width="1.5" opacity="0.85"/>';
@@ -997,7 +1006,7 @@ function renderDistribution(tableId){
 
  const statsLine =
   "Fitted normal: μ=" + fmtPct(combinedMean, 2) + (combinedStdev != null ? ", σ=" + combinedStdev.toFixed(2) + "%" : "") +
-  " · n=" + totalN.toLocaleString();
+  " · n=" + totalN.toLocaleString() + " · bar height is log-scaled to keep the tails visible";
 
  container.innerHTML =
   '<div class="dist-stats">' + statsLine + "</div>" +
