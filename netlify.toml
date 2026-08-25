@@ -144,3 +144,12 @@
   # function's runtime past Netlify's timeout; see
   # scheduled-putcall-background.js for the full story.
   schedule = "55 20 * * 1-5"
+
+[functions."scheduled-sentiment-background"]
+  # 21:00 UTC — after scheduled-breadth-background (needs its blob) and
+  # scheduled-putcall-background (needs its blob) have both finished.
+  # Computes the whole U.S. Market Sentiment Index once daily and writes
+  # it to Netlify Blobs; data.js just reads that blob now instead of
+  # recomputing everything live on every page load — see
+  # scheduled-sentiment-background.js for the full story.
+  schedule = "0 21 * * 1-5"
