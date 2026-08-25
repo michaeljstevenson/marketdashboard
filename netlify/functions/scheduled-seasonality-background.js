@@ -117,6 +117,14 @@ function stdev(arr) {
   return round(Math.sqrt(v), 4);
 }
 
+function minMaxMedian(arr) {
+  if (!arr.length) return { min: null, median: null, max: null };
+  const sorted = arr.slice().sort((a, b) => a - b);
+  const mid = Math.floor(sorted.length / 2);
+  const median = sorted.length % 2 ? sorted[mid] : (sorted[mid - 1] + sorted[mid]) / 2;
+  return { min: round(sorted[0], 3), median: round(median, 3), max: round(sorted[sorted.length - 1], 3) };
+}
+
 // Raw power sums (Σx, Σx², Σx³, Σx⁴), not central moments — these add
 // linearly across rows, so the client can exactly recombine mean,
 // variance, and (crucially) excess kurtosis for any subset of rows a
@@ -202,6 +210,7 @@ function groupMeanByDow(returns, edges) {
     stdev: stdev(b.vals),
     histogram: histogramCounts(b.vals, edges),
     moments: rawMoments(b.vals),
+    ...minMaxMedian(b.vals),
   }));
 }
 
@@ -220,6 +229,7 @@ function groupMeanByDom(returns, edges) {
     stdev: stdev(b.vals),
     histogram: histogramCounts(b.vals, edges),
     moments: rawMoments(b.vals),
+    ...minMaxMedian(b.vals),
   }));
 }
 
@@ -259,6 +269,7 @@ function monthlyReturnsByCalendarMonth(bars, edges) {
     stdev: stdev(b.vals),
     histogram: histogramCounts(b.vals, edges),
     moments: rawMoments(b.vals),
+    ...minMaxMedian(b.vals),
   }));
 }
 
@@ -277,7 +288,28 @@ function quarterlyReturnsByCalendarQuarter(bars, edges) {
     stdev: stdev(b.vals),
     histogram: histogramCounts(b.vals, edges),
     moments: rawMoments(b.vals),
+    ...minMaxMedian(b.vals),
   }));
+}
+
+// Single-row "table" of full calendar-year returns — there's no natural
+// sub-category to group years by (unlike weekday/day-of-month/month/
+// quarter), so this is just the whole sample's year-by-year distribution:
+// same stat/histogram/distribution machinery as the other four tables,
+// applied to n≈1 bucket instead of 5/31/12/4.
+function annualReturns(bars, edges) {
+  const periods = periodReturns(bars, (d) => d.getUTCFullYear());
+  const vals = periods.map((p) => p.ret);
+  return [{
+    label: "All Years",
+    mean: mean(vals),
+    n: vals.length,
+    pctPositive: pctPositive(vals),
+    stdev: stdev(vals),
+    histogram: histogramCounts(vals, edges),
+    moments: rawMoments(vals),
+    ...minMaxMedian(vals),
+  }];
 }
 
 // Cycle position derived from the calendar year itself (year % 4), not an
@@ -365,6 +397,7 @@ function computeRangeStats(bars, edges) {
     dom: groupMeanByDom(returns, edges.daily),
     month: monthlyReturnsByCalendarMonth(bars, edges.month),
     quarter: quarterlyReturnsByCalendarQuarter(bars, edges.quarter),
+    year: annualReturns(bars, edges.annual),
     election: electionCycleReturns(bars),
     holiday: holidaySummary(returns),
     heatmap: buildHeatmap(bars),
@@ -385,6 +418,7 @@ exports.handler = async () => {
       daily: histogramEdges(dailyReturns(allBars).map((r) => r.ret), 60),
       month: histogramEdges(periodReturns(allBars, (d) => d.getUTCFullYear() * 12 + d.getUTCMonth()).map((p) => p.ret), 36),
       quarter: histogramEdges(periodReturns(allBars, (d) => d.getUTCFullYear() * 4 + Math.floor(d.getUTCMonth() / 3)).map((p) => p.ret), 32),
+      annual: histogramEdges(periodReturns(allBars, (d) => d.getUTCFullYear()).map((p) => p.ret), 28),
     };
 
     const ranges = {};

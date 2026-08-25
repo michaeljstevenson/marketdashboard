@@ -278,7 +278,14 @@ h1{
  margin-bottom:30px;
 }
 
-.chart-grid-2 .chart-box{ margin-bottom:0; }
+.chart-grid-2 .chart-box{
+ margin-bottom:0;
+ /* Grid items default to min-width:auto, which uses the content's
+    intrinsic minimum width (here, the table's min-width) instead of
+    shrinking to the track — without this override a wide table pushes
+    the whole grid cell wider rather than scrolling inside table-scroll. */
+ min-width:0;
+}
 
 @media (max-width:720px){
  .chart-grid-2{ grid-template-columns:1fr; }
@@ -308,9 +315,14 @@ h1{
 
 /* DATA TABLES (filterable) */
 
+.table-scroll{
+ overflow-x:auto;
+}
+
 table.data-table{
  border-collapse:collapse;
  width:100%;
+ min-width:460px;
  font-family:var(--mono);
  font-size:12.5px;
 }
@@ -610,11 +622,13 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <button class="view-tab" data-view="distribution" type="button">Distribution</button>
 </div>
 </div>
+<div class="table-scroll">
 <table class="data-table" id="dowTable">
-<thead><tr><th class="label sortable" data-sort="label">Day</th><th class="sortable" data-sort="mean">Avg Return</th><th class="sortable" data-sort="pctPositive">% Positive</th><th class="sortable" data-sort="n">N</th></tr></thead>
+<thead><tr><th class="label sortable" data-sort="label">Day</th><th class="sortable" data-sort="mean">Avg Return</th><th class="sortable" data-sort="min">Min</th><th class="sortable" data-sort="median">Median</th><th class="sortable" data-sort="max">Max</th><th class="sortable" data-sort="pctPositive">% Positive</th><th class="sortable" data-sort="n">N</th></tr></thead>
 <tbody></tbody>
-<tfoot><tr><td class="label">Filtered avg</td><td id="dowTableFilteredMean">—</td><td id="dowTableFilteredPct">—</td><td id="dowTableFilteredN">—</td></tr></tfoot>
+<tfoot><tr><td class="label">Filtered avg</td><td id="dowTableFilteredMean">—</td><td id="dowTableFilteredMin">—</td><td id="dowTableFilteredMedian">—</td><td id="dowTableFilteredMax">—</td><td id="dowTableFilteredPct">—</td><td id="dowTableFilteredN">—</td></tr></tfoot>
 </table>
+</div>
 <div class="dist-wrap" id="dowTableDist"></div>
 </div>
 
@@ -629,11 +643,13 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <button class="view-tab" data-view="distribution" type="button">Distribution</button>
 </div>
 </div>
+<div class="table-scroll">
 <table class="data-table" id="domTable">
-<thead><tr><th class="label sortable" data-sort="label">Day</th><th class="sortable" data-sort="mean">Avg Return</th><th class="sortable" data-sort="pctPositive">% Positive</th><th class="sortable" data-sort="n">N</th></tr></thead>
+<thead><tr><th class="label sortable" data-sort="label">Day</th><th class="sortable" data-sort="mean">Avg Return</th><th class="sortable" data-sort="min">Min</th><th class="sortable" data-sort="median">Median</th><th class="sortable" data-sort="max">Max</th><th class="sortable" data-sort="pctPositive">% Positive</th><th class="sortable" data-sort="n">N</th></tr></thead>
 <tbody></tbody>
-<tfoot><tr><td class="label">Filtered avg</td><td id="domTableFilteredMean">—</td><td id="domTableFilteredPct">—</td><td id="domTableFilteredN">—</td></tr></tfoot>
+<tfoot><tr><td class="label">Filtered avg</td><td id="domTableFilteredMean">—</td><td id="domTableFilteredMin">—</td><td id="domTableFilteredMedian">—</td><td id="domTableFilteredMax">—</td><td id="domTableFilteredPct">—</td><td id="domTableFilteredN">—</td></tr></tfoot>
 </table>
+</div>
 <div class="dist-wrap" id="domTableDist"></div>
 </div>
 </div>
@@ -650,11 +666,13 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <button class="view-tab" data-view="distribution" type="button">Distribution</button>
 </div>
 </div>
+<div class="table-scroll">
 <table class="data-table" id="monthTable">
-<thead><tr><th class="label sortable" data-sort="label">Month</th><th class="sortable" data-sort="mean">Avg Return</th><th class="sortable" data-sort="pctPositive">% Positive</th><th class="sortable" data-sort="n">Years</th></tr></thead>
+<thead><tr><th class="label sortable" data-sort="label">Month</th><th class="sortable" data-sort="mean">Avg Return</th><th class="sortable" data-sort="min">Min</th><th class="sortable" data-sort="median">Median</th><th class="sortable" data-sort="max">Max</th><th class="sortable" data-sort="pctPositive">% Positive</th><th class="sortable" data-sort="n">Years</th></tr></thead>
 <tbody></tbody>
-<tfoot><tr><td class="label">Filtered avg</td><td id="monthTableFilteredMean">—</td><td id="monthTableFilteredPct">—</td><td id="monthTableFilteredN">—</td></tr></tfoot>
+<tfoot><tr><td class="label">Filtered avg</td><td id="monthTableFilteredMean">—</td><td id="monthTableFilteredMin">—</td><td id="monthTableFilteredMedian">—</td><td id="monthTableFilteredMax">—</td><td id="monthTableFilteredPct">—</td><td id="monthTableFilteredN">—</td></tr></tfoot>
 </table>
+</div>
 <div class="dist-wrap" id="monthTableDist"></div>
 </div>
 
@@ -669,13 +687,36 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <button class="view-tab" data-view="distribution" type="button">Distribution</button>
 </div>
 </div>
+<div class="table-scroll">
 <table class="data-table" id="quarterTable">
-<thead><tr><th class="label sortable" data-sort="label">Quarter</th><th class="sortable" data-sort="mean">Avg Return</th><th class="sortable" data-sort="pctPositive">% Positive</th><th class="sortable" data-sort="n">Years</th></tr></thead>
+<thead><tr><th class="label sortable" data-sort="label">Quarter</th><th class="sortable" data-sort="mean">Avg Return</th><th class="sortable" data-sort="min">Min</th><th class="sortable" data-sort="median">Median</th><th class="sortable" data-sort="max">Max</th><th class="sortable" data-sort="pctPositive">% Positive</th><th class="sortable" data-sort="n">Years</th></tr></thead>
 <tbody></tbody>
-<tfoot><tr><td class="label">Filtered avg</td><td id="quarterTableFilteredMean">—</td><td id="quarterTableFilteredPct">—</td><td id="quarterTableFilteredN">—</td></tr></tfoot>
+<tfoot><tr><td class="label">Filtered avg</td><td id="quarterTableFilteredMean">—</td><td id="quarterTableFilteredMin">—</td><td id="quarterTableFilteredMedian">—</td><td id="quarterTableFilteredMax">—</td><td id="quarterTableFilteredPct">—</td><td id="quarterTableFilteredN">—</td></tr></tfoot>
 </table>
+</div>
 <div class="dist-wrap" id="quarterTableDist"></div>
 </div>
+</div>
+
+<div class="chart-box">
+<div class="chart-box-header">
+<div>
+<h2>Annual return</h2>
+<div class="chart-subhead">Full calendar-year return for every year on file. Click a header to sort.</div>
+</div>
+<div class="view-tabs" data-view-tabs="annualTable">
+<button class="view-tab active" data-view="table" type="button">Table</button>
+<button class="view-tab" data-view="distribution" type="button">Distribution</button>
+</div>
+</div>
+<div class="table-scroll">
+<table class="data-table" id="annualTable">
+<thead><tr><th class="label sortable" data-sort="label">Years</th><th class="sortable" data-sort="mean">Avg Return</th><th class="sortable" data-sort="min">Min</th><th class="sortable" data-sort="median">Median</th><th class="sortable" data-sort="max">Max</th><th class="sortable" data-sort="pctPositive">% Positive</th><th class="sortable" data-sort="n">Years</th></tr></thead>
+<tbody></tbody>
+<tfoot><tr><td class="label">Filtered avg</td><td id="annualTableFilteredMean">—</td><td id="annualTableFilteredMin">—</td><td id="annualTableFilteredMedian">—</td><td id="annualTableFilteredMax">—</td><td id="annualTableFilteredPct">—</td><td id="annualTableFilteredN">—</td></tr></tfoot>
+</table>
+</div>
+<div class="dist-wrap" id="annualTableDist"></div>
 </div>
 
 <div class="chart-box">
@@ -786,8 +827,28 @@ const TABLE_STATE = {};
 // Which shared histogram bin edges (see histogramEdges in the payload)
 // apply to each table — dow and dom are both grouping the same underlying
 // daily returns, just by a different calendar key, so they share "daily".
-const HIST_EDGE_KEY = { dowTable: "daily", domTable: "daily", monthTable: "month", quarterTable: "quarter" };
+const HIST_EDGE_KEY = { dowTable: "daily", domTable: "daily", monthTable: "month", quarterTable: "quarter", annualTable: "annual" };
 let HIST_EDGES = {};
+
+// A combined median can't be averaged from each row's own median the way
+// mean/min/max can — medians don't combine linearly. Estimating it from
+// the rows' summed histogram (linear interpolation across whichever bin
+// the 50th percentile falls in) reuses data already being fetched for
+// the distribution tab instead of needing the raw per-day values.
+function medianFromHistogram(counts, edges, totalN){
+ if(!totalN) return null;
+ const target = totalN / 2;
+ let cum = 0;
+ for(let i = 0; i < counts.length; i++){
+  const next = cum + counts[i];
+  if(next >= target){
+   const frac = counts[i] ? (target - cum) / counts[i] : 0;
+   return edges[i] + frac * (edges[i + 1] - edges[i]);
+  }
+  cum = next;
+ }
+ return edges[edges.length - 1];
+}
 
 function renderDataTable(tableId, rows, digits){
  const state = TABLE_STATE[tableId] || (TABLE_STATE[tableId] = { excluded: new Set(), sortKey: null, sortDir: 1, view: "table" });
@@ -802,6 +863,9 @@ function renderTable(tableId){
  const tbody = table.querySelector("tbody");
  const theadRow = table.querySelector("thead tr");
  const filteredMeanEl = document.getElementById(tableId + "FilteredMean");
+ const filteredMinEl = document.getElementById(tableId + "FilteredMin");
+ const filteredMedianEl = document.getElementById(tableId + "FilteredMedian");
+ const filteredMaxEl = document.getElementById(tableId + "FilteredMax");
  const filteredPctEl = document.getElementById(tableId + "FilteredPct");
  const filteredNEl = document.getElementById(tableId + "FilteredN");
 
@@ -834,6 +898,9 @@ function renderTable(tableId){
   tr.innerHTML =
    '<td class="label">' + r.label + "</td>" +
    '<td class="' + meanClass + '">' + fmtPct(r.mean, state.digits) + "</td>" +
+   "<td>" + fmtPct(r.min, state.digits) + "</td>" +
+   "<td>" + fmtPct(r.median, state.digits) + "</td>" +
+   "<td>" + fmtPct(r.max, state.digits) + "</td>" +
    "<td>" + fmtPositivePct(r.pctPositive) + "</td>" +
    "<td>" + r.n.toLocaleString() + "</td>";
   tr.addEventListener("click", () => {
@@ -847,16 +914,26 @@ function renderTable(tableId){
 
  function updateFooter(){
   let meanWeighted = 0, meanWeight = 0, posWeighted = 0, posWeight = 0, totalN = 0;
+  let combinedMin = null, combinedMax = null;
+  const edges = HIST_EDGES[HIST_EDGE_KEY[tableId]];
+  const combinedCounts = edges ? new Array(edges.length - 1).fill(0) : null;
   state.rows.forEach(r => {
    if(state.excluded.has(r.label) || !r.n) return;
    totalN += r.n;
    if(r.mean != null){ meanWeighted += r.mean * r.n; meanWeight += r.n; }
    if(r.pctPositive != null){ posWeighted += r.pctPositive * r.n; posWeight += r.n; }
+   if(r.min != null) combinedMin = combinedMin == null ? r.min : Math.min(combinedMin, r.min);
+   if(r.max != null) combinedMax = combinedMax == null ? r.max : Math.max(combinedMax, r.max);
+   if(combinedCounts && r.histogram) r.histogram.forEach((c, i) => { combinedCounts[i] += c; });
   });
   const avgMean = meanWeight ? meanWeighted / meanWeight : null;
   const avgPos = posWeight ? posWeighted / posWeight : null;
+  const combinedMedian = combinedCounts ? medianFromHistogram(combinedCounts, edges, totalN) : null;
   filteredMeanEl.textContent = fmtPct(avgMean);
   filteredMeanEl.className = avgMean == null ? "" : avgMean >= 0 ? "up" : "down";
+  filteredMinEl.textContent = fmtPct(combinedMin, state.digits);
+  filteredMedianEl.textContent = fmtPct(combinedMedian, state.digits);
+  filteredMaxEl.textContent = fmtPct(combinedMax, state.digits);
   filteredPctEl.textContent = fmtPositivePct(avgPos);
   filteredNEl.textContent = totalN.toLocaleString();
  }
@@ -1147,18 +1224,19 @@ function renderAll(){
  renderDataTable("domTable", data.dom, 3);
  renderDataTable("monthTable", data.month);
  renderDataTable("quarterTable", data.quarter);
+ renderDataTable("annualTable", data.year);
  renderHeatmap(data.heatmap);
 }
 
 async function loadData(){
  try{
-  const cacheKey = "seasonality-stats-v6";
+  const cacheKey = "seasonality-stats-v7";
   const cached = sessionStorage.getItem(cacheKey);
   let payload;
   if(cached){
    payload = JSON.parse(cached);
   }else{
-   const res = await fetch("/api/seasonality-history?v=5");
+   const res = await fetch("/api/seasonality-history?v=6");
    if(!res.ok) throw new Error("Failed to load seasonality stats (HTTP " + res.status + ")");
    payload = await res.json();
    if(payload.error) throw new Error(payload.error);
