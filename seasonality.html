@@ -849,7 +849,7 @@ async function loadData(){
   if(cached){
    payload = JSON.parse(cached);
   }else{
-   const res = await fetch("/api/seasonality-history");
+   const res = await fetch("/api/seasonality-history?v=3");
    if(!res.ok) throw new Error("Failed to load seasonality stats (HTTP " + res.status + ")");
    payload = await res.json();
    if(payload.error) throw new Error(payload.error);

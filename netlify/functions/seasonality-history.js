@@ -20,7 +20,7 @@ exports.handler = async () => {
       statusCode: 200,
       headers: {
         "Content-Type": "application/json",
-        "Cache-Control": "public, max-age=43200",
+        "Cache-Control": "public, max-age=300",
         "Access-Control-Allow-Origin": "*",
       },
       body: JSON.stringify(payload),
