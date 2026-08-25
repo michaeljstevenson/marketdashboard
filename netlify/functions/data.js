@@ -36,7 +36,10 @@ const ALPHA_VANTAGE_URL = "https://www.alphavantage.co/query";
 const USER_AGENT =
   "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0 Safari/537.36";
 
-const HISTORY_POINTS = 504; // ~2 trading years - enough to span a full market cycle or two
+const HISTORY_POINTS = 7560; // ~30 trading years - the underlying series (SPY, HYG/LQD, breadth) go back
+// this far already (fetched with outputsize=full); 504 was an arbitrary
+// display cap that made the composite chart look like it started in 2024
+// when the factors behind it actually go back decades.
 const SCORE_MA_WINDOW = 50; // trading days, applied to every factor with enough history for it
 
 async function fetchJson(url) {
