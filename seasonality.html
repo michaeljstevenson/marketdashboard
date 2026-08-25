@@ -522,13 +522,13 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <div class="header">
 <div>
 <h1>Seasonality</h1>
-<div class="subtitle">Draft — S&amp;P 500 daily returns sliced by day of week, day of month, calendar month, and quarter. Click a row to exclude it from the filtered average; click a column header to sort.</div>
+<div class="subtitle">S&amp;P 500 daily returns by day of week, day of month, calendar month, and quarter. </div>
 </div>
 <div class="updated" id="updated">Loading...</div>
 </div>
 
 <div class="global-range">
-<span class="label">History window (recomputes everything below)</span>
+<span class="label"></span>
 <div class="range-controls" id="globalRangeControls"></div>
 </div>
 
@@ -560,7 +560,7 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <div class="chart-box-header">
 <div>
 <h2>Average daily return by day of week</h2>
-<div class="chart-subhead">Click a row to exclude it from the filtered average below; click a header to sort</div>
+<div class="chart-subhead"></div>
 </div>
 </div>
 <table class="data-table" id="dowTable">
@@ -574,7 +574,7 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <div class="chart-box-header">
 <div>
 <h2>Average daily return by day of month</h2>
-<div class="chart-subhead">Click a row to exclude it from the filtered average below; click a header to sort</div>
+<div class="chart-subhead"></div>
 </div>
 </div>
 <table class="data-table" id="domTable">
@@ -590,7 +590,7 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <div class="chart-box-header">
 <div>
 <h2>Average monthly return by calendar month</h2>
-<div class="chart-subhead">Return each calendar month, averaged across every year on file — the "sell in May" table. Click a row to exclude it; click a header to sort.</div>
+<div class="chart-subhead">Return each calendar month, averaged across every year.</div>
 </div>
 </div>
 <table class="data-table" id="monthTable">
@@ -604,7 +604,7 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <div class="chart-box-header">
 <div>
 <h2>Average quarterly return</h2>
-<div class="chart-subhead">Return each calendar quarter, averaged across every year on file. Click a row to exclude it; click a header to sort.</div>
+<div class="chart-subhead">Return each calendar quarter, averaged across every year. </div>
 </div>
 </div>
 <table class="data-table" id="quarterTable">
@@ -619,7 +619,7 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <div class="chart-box-header">
 <div>
 <h2>Monthly returns by year</h2>
-<div class="chart-subhead">Return each calendar month; darker green/red = larger positive/negative reading. Click a column header to sort. Source: Yahoo Finance daily close history for ^GSPC, recomputed once daily after the close and cached. Figures are price return only — dividends are not included.</div>
+<div class="chart-subhead">Darker green/red = larger positive/negative return. Source: Yahoo Finance daily close history for ^GSPC, recomputed once daily after the close. Price return only (dividends not included).</div>
 </div>
 </div>
 <div class="heatmap-wrap" id="heatmapWrap">
