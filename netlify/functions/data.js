@@ -297,8 +297,12 @@ function computeNormalizedRatioSeries(numerator, denominator) {
 // Because its usable history is so much shorter than the other factors',
 // it's excluded from the composite history chart (like the manual factors)
 // but still counts fully toward the live composite score.
-const PUTCALL_SCORE_WINDOW = 15;
-const PUTCALL_TRADING_DAYS = 30; // enough for a 15-day MA plus a ~15-sample percentile (was 18/10 — too noisy)
+const PUTCALL_SCORE_WINDOW = 30;
+const PUTCALL_TRADING_DAYS = 60; // enough for a 30-day MA plus a ~30-sample percentile. Wider
+// than 15/30 (which was itself widened from the original 10/18) because a
+// single day landing at the top/bottom of a small sample hits an exact
+// 0 or 100 score more often than it should — a real percentile result,
+// just a misleadingly "broken-looking" one with too few data points.
 
 async function fetchPutCallWindow(apiKey, symbol, tradingDates) {
   const dates = tradingDates.slice(-PUTCALL_TRADING_DAYS);
