@@ -912,6 +912,46 @@ function renderTable(tableId){
 // library: this is the only chart-shaped thing left on the page after
 // the stat tables replaced Chart.js, so pulling the whole library back
 // in for one histogram wasn't worth it.
+// Lanczos approximation of ln(Γ(x)) — standard compact form (g=7, 9
+// coefficients). Working in log space keeps Γ((ν+1)/2)/Γ(ν/2) well
+// behaved for any ν instead of overflowing for larger degrees of freedom.
+const LANCZOS_G = 7;
+const LANCZOS_C = [
+ 0.99999999999980993, 676.5203681218851, -1259.1392167224028,
+ 771.32342877765313, -176.61502916214059, 12.507343278686905,
+ -0.13857109526572012, 9.9843695780195716e-6, 1.5056327351493116e-7,
+];
+function logGamma(x){
+ if(x < 0.5) return Math.log(Math.PI / Math.sin(Math.PI * x)) - logGamma(1 - x);
+ x -= 1;
+ let a = LANCZOS_C[0];
+ const t = x + LANCZOS_G + 0.5;
+ for(let i = 1; i < LANCZOS_G + 2; i++) a += LANCZOS_C[i] / (x + i);
+ return 0.5 * Math.log(2 * Math.PI) + (x + 0.5) * Math.log(t) - t + Math.log(a);
+}
+
+// Student's t pdf, parameterized by degrees of freedom (nu), location
+// (mean) and scale (s, not the same as stdev — see fitStudentT).
+function studentTPdf(x, nu, mean, s){
+ const z = (x - mean) / s;
+ const logC = logGamma((nu + 1) / 2) - logGamma(nu / 2) - 0.5 * Math.log(nu * Math.PI) - Math.log(s);
+ return Math.exp(logC) * Math.pow(1 + (z * z) / nu, -(nu + 1) / 2);
+}
+
+// Method-of-moments fit: a t-distribution's excess kurtosis is exactly
+// 6/(nu-4) for nu>4, so nu = 4 + 6/excessKurtosis. Real daily/monthly
+// returns are strongly leptokurtic (fat-tailed) — far more so than a
+// normal curve, which is why a same-mean-and-stdev normal reference
+// understates real tail risk. Clamped to keep the curve numerically sane
+// at the extremes: very low nu (near 2) has such heavy tails the scale
+// parameter blows up, and very high nu is indistinguishable from normal
+// anyway once excess kurtosis is near zero.
+function fitStudentT(mean, variance, excessKurtosis){
+ const nu = excessKurtosis > 0.05 ? Math.min(200, Math.max(4.2, 4 + 6 / excessKurtosis)) : 200;
+ const s = Math.sqrt(variance * (nu - 2) / nu);
+ return { nu, mean, s };
+}
+
 function renderDistribution(tableId){
  const state = TABLE_STATE[tableId];
  const edges = HIST_EDGES[HIST_EDGE_KEY[tableId]];
@@ -921,26 +961,30 @@ function renderDistribution(tableId){
  const included = state.rows.filter(r => !state.excluded.has(r.label) && r.histogram);
  const nBins = edges.length - 1;
  const counts = new Array(nBins).fill(0);
- let totalN = 0, meanWeighted = 0, meanWeight = 0;
+ let totalN = 0;
+ // Raw power sums (Σx..Σx⁴) add linearly across rows — summing these
+ // over just the included rows gives EXACT combined mean/variance/
+ // kurtosis for whatever subset is currently filtered in, not an
+ // approximation, and without needing per-day values client-side.
+ let M1 = 0, M2 = 0, M3 = 0, M4 = 0;
  included.forEach(r => {
   r.histogram.forEach((c, i) => { counts[i] += c; });
   totalN += r.n;
-  if(r.mean != null){ meanWeighted += r.mean * r.n; meanWeight += r.n; }
- });
- const combinedMean = meanWeight ? meanWeighted / meanWeight : null;
-
- // Combined variance via the law of total variance from each included
- // row's own (mean, stdev, n) — exact, without needing the raw values
- // client-side.
- let varWeighted = 0, varWeight = 0;
- included.forEach(r => {
-  if(r.n && r.mean != null && r.stdev != null){
-   const d = r.mean - combinedMean;
-   varWeighted += r.n * (r.stdev * r.stdev + d * d);
-   varWeight += r.n;
+  if(r.moments){
+   M1 += r.moments.m1; M2 += r.moments.m2; M3 += r.moments.m3; M4 += r.moments.m4;
   }
  });
- const combinedStdev = varWeight ? Math.sqrt(varWeighted / varWeight) : null;
+
+ let combinedMean = null, combinedStdev = null, combinedVariance = null, excessKurtosis = null;
+ if(totalN){
+  combinedMean = M1 / totalN;
+  combinedVariance = M2 / totalN - combinedMean * combinedMean;
+  combinedStdev = combinedVariance > 0 ? Math.sqrt(combinedVariance) : null;
+  if(combinedVariance > 0){
+   const mu4 = M4 / totalN - 4 * combinedMean * (M3 / totalN) + 6 * combinedMean * combinedMean * (M2 / totalN) - 3 * combinedMean ** 4;
+   excessKurtosis = mu4 / (combinedVariance * combinedVariance) - 3;
+  }
+ }
 
  if(!totalN){
   container.innerHTML = '<div class="dist-stats">No rows selected — check at least one row in the table to see its distribution.</div>';
@@ -974,15 +1018,15 @@ function renderDistribution(tableId){
    fmtPct(x0, 1) + ' to ' + fmtPct(edges[i + 1], 1) + ': ' + c.toLocaleString() + '</title></rect>';
  }).join("");
 
- let curve = "";
- if(combinedStdev){
+ let curve = "", fit = null;
+ if(combinedVariance > 0 && excessKurtosis != null){
+  fit = fitStudentT(combinedMean, combinedVariance, excessKurtosis);
   const binWidth = edges[1] - edges[0];
-  const pdf = (x) => Math.exp(-0.5 * ((x - combinedMean) / combinedStdev) ** 2) / (combinedStdev * Math.sqrt(2 * Math.PI));
   const steps = 120;
   const pts = [];
   for(let s = 0; s <= steps; s++){
    const x = xMin + ((xMax - xMin) * s) / steps;
-   const expectedCount = pdf(x) * totalN * binWidth;
+   const expectedCount = studentTPdf(x, fit.nu, fit.mean, fit.s) * totalN * binWidth;
    const xPix = padL + ((x - xMin) / (xMax - xMin)) * plotW;
    const yPix = padT + (plotH - countFrac(expectedCount) * plotH);
    pts.push(xPix.toFixed(1) + "," + yPix.toFixed(1));
@@ -1005,7 +1049,8 @@ function renderDistribution(tableId){
  }).join("");
 
  const statsLine =
-  "Fitted normal: μ=" + fmtPct(combinedMean, 2) + (combinedStdev != null ? ", σ=" + combinedStdev.toFixed(2) + "%" : "") +
+  "Fitted t-distribution" + (fit ? " (df=" + fit.nu.toFixed(1) + ")" : "") + ": μ=" + fmtPct(combinedMean, 2) +
+  (combinedStdev != null ? ", σ=" + combinedStdev.toFixed(2) + "%" : "") +
   " · n=" + totalN.toLocaleString() + " · bar height is log-scaled to keep the tails visible";
 
  container.innerHTML =
@@ -1107,13 +1152,13 @@ function renderAll(){
 
 async function loadData(){
  try{
-  const cacheKey = "seasonality-stats-v5";
+  const cacheKey = "seasonality-stats-v6";
   const cached = sessionStorage.getItem(cacheKey);
   let payload;
   if(cached){
    payload = JSON.parse(cached);
   }else{
-   const res = await fetch("/api/seasonality-history?v=4");
+   const res = await fetch("/api/seasonality-history?v=5");
    if(!res.ok) throw new Error("Failed to load seasonality stats (HTTP " + res.status + ")");
    payload = await res.json();
    if(payload.error) throw new Error(payload.error);

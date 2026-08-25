@@ -117,6 +117,30 @@ function stdev(arr) {
   return round(Math.sqrt(v), 4);
 }
 
+// Raw power sums (Σx, Σx², Σx³, Σx⁴), not central moments — these add
+// linearly across rows, so the client can exactly recombine mean,
+// variance, and (crucially) excess kurtosis for any subset of rows a
+// visitor has filtered down to, without needing the raw per-day values.
+// Kurtosis is what lets the distribution tab fit a Student's t-curve
+// instead of a normal one: stock returns are famously fat-tailed
+// (leptokurtic), so a normal reference curve understates real tail risk,
+// and a t-distribution fit via method-of-moments on the sample's own
+// excess kurtosis is the actual right-shaped model, not just a
+// same-mean-and-stdev normal overlay.
+function rawMoments(arr) {
+  let m1 = 0, m2 = 0, m3 = 0, m4 = 0;
+  arr.forEach((x) => {
+    m1 += x;
+    m2 += x * x;
+    m3 += x * x * x;
+    m4 += x * x * x * x;
+  });
+  // Not rounded, unlike this file's other outputs — these get summed
+  // across rows client-side to recompute exact combined moments, so
+  // truncating precision here would compound into the fitted curve.
+  return { n: arr.length, m1, m2, m3, m4 };
+}
+
 // Bin width is picked to land near `targetBins` bins across the sample's
 // own min/max, rounded outward to a "nice" step (1, 2, 2.5, 5, 10, ...) so
 // the histogram's x-axis reads in round numbers instead of fractions like
@@ -177,6 +201,7 @@ function groupMeanByDow(returns, edges) {
     pctPositive: pctPositive(b.vals),
     stdev: stdev(b.vals),
     histogram: histogramCounts(b.vals, edges),
+    moments: rawMoments(b.vals),
   }));
 }
 
@@ -194,6 +219,7 @@ function groupMeanByDom(returns, edges) {
     pctPositive: pctPositive(b.vals),
     stdev: stdev(b.vals),
     histogram: histogramCounts(b.vals, edges),
+    moments: rawMoments(b.vals),
   }));
 }
 
@@ -232,6 +258,7 @@ function monthlyReturnsByCalendarMonth(bars, edges) {
     pctPositive: pctPositive(b.vals),
     stdev: stdev(b.vals),
     histogram: histogramCounts(b.vals, edges),
+    moments: rawMoments(b.vals),
   }));
 }
 
@@ -249,6 +276,7 @@ function quarterlyReturnsByCalendarQuarter(bars, edges) {
     pctPositive: pctPositive(b.vals),
     stdev: stdev(b.vals),
     histogram: histogramCounts(b.vals, edges),
+    moments: rawMoments(b.vals),
   }));
 }
 
