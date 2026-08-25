@@ -110,6 +110,49 @@ function pctPositive(arr) {
   return round((arr.filter((v) => v > 0).length / arr.length) * 100, 2);
 }
 
+function stdev(arr) {
+  if (arr.length < 2) return null;
+  const m = arr.reduce((a, b) => a + b, 0) / arr.length;
+  const v = arr.reduce((a, b) => a + (b - m) * (b - m), 0) / arr.length;
+  return round(Math.sqrt(v), 4);
+}
+
+// Bin width is picked to land near `targetBins` bins across the sample's
+// own min/max, rounded outward to a "nice" step (1, 2, 2.5, 5, 10, ...) so
+// the histogram's x-axis reads in round numbers instead of fractions like
+// 0.37%. Edges are computed once from the full (unfiltered) history and
+// reused for every history-window range, so switching ranges on the page
+// doesn't rescale the distribution's x-axis out from under the viewer.
+const NICE_STEPS = [0.1, 0.2, 0.25, 0.5, 1, 2, 2.5, 5, 10, 20, 25];
+function histogramEdges(values, targetBins) {
+  const min = Math.min(...values), max = Math.max(...values);
+  const rawStep = (max - min) / targetBins;
+  const step = NICE_STEPS.find((s) => s >= rawStep) || Math.ceil(rawStep);
+  const start = Math.floor(min / step) * step;
+  const end = Math.ceil(max / step) * step;
+  const edges = [];
+  for (let v = start; v <= end + step / 2; v += step) edges.push(round(v, 3));
+  return edges;
+}
+
+// Edges are evenly spaced, so the bin index is a direct calculation
+// rather than a search; out-of-range values (a handful of extreme days
+// like Oct 1987 can fall outside even a generous span) clamp into the
+// first/last bin rather than being silently dropped.
+function histogramCounts(values, edges) {
+  const counts = new Array(edges.length - 1).fill(0);
+  const step = edges[1] - edges[0];
+  const min = edges[0], max = edges[edges.length - 1];
+  values.forEach((v) => {
+    const clamped = Math.min(Math.max(v, min), max - step / 1e6);
+    let idx = Math.floor((clamped - min) / step);
+    if (idx < 0) idx = 0;
+    if (idx >= counts.length) idx = counts.length - 1;
+    counts[idx]++;
+  });
+  return counts;
+}
+
 function dailyReturns(bars) {
   const out = [];
   for (let i = 1; i < bars.length; i++) {
@@ -120,24 +163,38 @@ function dailyReturns(bars) {
   return out;
 }
 
-function groupMeanByDow(returns) {
+function groupMeanByDow(returns, edges) {
   const buckets = [1, 2, 3, 4, 5].map((dow) => ({ dow, label: DOW_NAMES[dow], vals: [] }));
   returns.forEach((r) => {
     const dow = parseUTC(r.date).getUTCDay();
     const b = buckets.find((x) => x.dow === dow);
     if (b) b.vals.push(r.ret);
   });
-  return buckets.map((b) => ({ label: b.label, mean: mean(b.vals), n: b.vals.length, pctPositive: pctPositive(b.vals) }));
+  return buckets.map((b) => ({
+    label: b.label,
+    mean: mean(b.vals),
+    n: b.vals.length,
+    pctPositive: pctPositive(b.vals),
+    stdev: stdev(b.vals),
+    histogram: histogramCounts(b.vals, edges),
+  }));
 }
 
-function groupMeanByDom(returns) {
+function groupMeanByDom(returns, edges) {
   const buckets = [];
   for (let d = 1; d <= 31; d++) buckets.push({ day: d, vals: [] });
   returns.forEach((r) => {
     const day = parseUTC(r.date).getUTCDate();
     buckets[day - 1].vals.push(r.ret);
   });
-  return buckets.map((b) => ({ label: String(b.day), mean: mean(b.vals), n: b.vals.length, pctPositive: pctPositive(b.vals) }));
+  return buckets.map((b) => ({
+    label: String(b.day),
+    mean: mean(b.vals),
+    n: b.vals.length,
+    pctPositive: pctPositive(b.vals),
+    stdev: stdev(b.vals),
+    histogram: histogramCounts(b.vals, edges),
+  }));
 }
 
 // Compounds daily returns within each calendar period (last close of the
@@ -161,24 +218,38 @@ function periodReturns(bars, keyFn) {
   return periods;
 }
 
-function monthlyReturnsByCalendarMonth(bars) {
+function monthlyReturnsByCalendarMonth(bars, edges) {
   const periods = periodReturns(bars, (d) => d.getUTCFullYear() * 12 + d.getUTCMonth());
   const buckets = MONTH_NAMES.map((label, i) => ({ label, month: i, vals: [] }));
   periods.forEach((p) => {
     const m = ((p.key % 12) + 12) % 12;
     buckets[m].vals.push(p.ret);
   });
-  return buckets.map((b) => ({ label: b.label, mean: mean(b.vals), n: b.vals.length, pctPositive: pctPositive(b.vals) }));
+  return buckets.map((b) => ({
+    label: b.label,
+    mean: mean(b.vals),
+    n: b.vals.length,
+    pctPositive: pctPositive(b.vals),
+    stdev: stdev(b.vals),
+    histogram: histogramCounts(b.vals, edges),
+  }));
 }
 
-function quarterlyReturnsByCalendarQuarter(bars) {
+function quarterlyReturnsByCalendarQuarter(bars, edges) {
   const periods = periodReturns(bars, (d) => d.getUTCFullYear() * 4 + Math.floor(d.getUTCMonth() / 3));
   const buckets = [0, 1, 2, 3].map((q) => ({ label: "Q" + (q + 1), q, vals: [] }));
   periods.forEach((p) => {
     const q = ((p.key % 4) + 4) % 4;
     buckets[q].vals.push(p.ret);
   });
-  return buckets.map((b) => ({ label: b.label, mean: mean(b.vals), n: b.vals.length, pctPositive: pctPositive(b.vals) }));
+  return buckets.map((b) => ({
+    label: b.label,
+    mean: mean(b.vals),
+    n: b.vals.length,
+    pctPositive: pctPositive(b.vals),
+    stdev: stdev(b.vals),
+    histogram: histogramCounts(b.vals, edges),
+  }));
 }
 
 // Cycle position derived from the calendar year itself (year % 4), not an
@@ -255,17 +326,17 @@ function buildHeatmap(bars) {
   });
 }
 
-function computeRangeStats(bars) {
+function computeRangeStats(bars, edges) {
   const returns = dailyReturns(bars);
   return {
     startDate: bars.length ? bars[0].date : null,
     endDate: bars.length ? bars[bars.length - 1].date : null,
     count: returns.length,
     pctPositive: pctPositive(returns.map((r) => r.ret)),
-    dow: groupMeanByDow(returns),
-    dom: groupMeanByDom(returns),
-    month: monthlyReturnsByCalendarMonth(bars),
-    quarter: quarterlyReturnsByCalendarQuarter(bars),
+    dow: groupMeanByDow(returns, edges.daily),
+    dom: groupMeanByDom(returns, edges.daily),
+    month: monthlyReturnsByCalendarMonth(bars, edges.month),
+    quarter: quarterlyReturnsByCalendarQuarter(bars, edges.quarter),
     election: electionCycleReturns(bars),
     holiday: holidaySummary(returns),
     heatmap: buildHeatmap(bars),
@@ -276,15 +347,28 @@ exports.handler = async () => {
   try {
     const allBars = await fetchAllBars();
 
+    // Shared bin edges, computed once from the full unfiltered history so
+    // every range (Full/1950/1980/2000) and every row within a table
+    // plots on the same x-axis — necessary for the "distribution" tab to
+    // sum multiple rows' histograms together (see renderDistribution in
+    // seasonality.html) and for switching history windows not to rescale
+    // the chart underneath the viewer.
+    const edges = {
+      daily: histogramEdges(dailyReturns(allBars).map((r) => r.ret), 60),
+      month: histogramEdges(periodReturns(allBars, (d) => d.getUTCFullYear() * 12 + d.getUTCMonth()).map((p) => p.ret), 36),
+      quarter: histogramEdges(periodReturns(allBars, (d) => d.getUTCFullYear() * 4 + Math.floor(d.getUTCMonth() / 3)).map((p) => p.ret), 32),
+    };
+
     const ranges = {};
     GLOBAL_RANGES.forEach((r) => {
       const bars = r.startYear ? allBars.filter((b) => parseUTC(b.date).getUTCFullYear() >= r.startYear) : allBars;
-      ranges[r.key] = computeRangeStats(bars);
+      ranges[r.key] = computeRangeStats(bars, edges);
     });
 
     const payload = {
       asOf: allBars.length ? allBars[allBars.length - 1].date : null,
       generatedAt: new Date().toISOString(),
+      histogramEdges: edges,
       ranges,
     };
 

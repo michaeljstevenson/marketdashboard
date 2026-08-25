@@ -361,6 +361,49 @@ table.data-table tfoot td{
 table.data-table .up{ color:var(--up); }
 table.data-table .down{ color:var(--down); }
 
+/* VIEW TABS + DISTRIBUTION */
+
+.view-tabs{
+ display:flex;
+ gap:4px;
+ flex-shrink:0;
+}
+
+.view-tab{
+ background:#171b20;
+ border:1px solid var(--hair);
+ color:var(--muted);
+ font-size:11px;
+ font-family:var(--sans);
+ padding:3px 9px;
+ border-radius:6px;
+ cursor:pointer;
+}
+
+.view-tab:hover{ color:var(--ink); }
+
+.view-tab.active{
+ background:var(--card-hover);
+ color:var(--greed);
+ border-color:var(--greed);
+}
+
+.dist-wrap{ display:none; }
+.dist-wrap.active{ display:block; }
+
+.dist-stats{
+ color:var(--muted);
+ font-size:12px;
+ margin-bottom:10px;
+ font-family:var(--mono);
+}
+
+.dist-svg text{
+ font-family:var(--mono);
+ font-size:10px;
+ fill:var(--muted);
+}
+
 /* HEATMAP TABLE */
 
 .heatmap-wrap{
@@ -442,7 +485,7 @@ table.heatmap td.na{ color:var(--muted); opacity:0.35; }
 
 .theme-toggle:hover{ color:var(--ink); border-color:var(--hair); }
 
-[data-theme="light"] .range-btn{
+[data-theme="light"] .range-btn, [data-theme="light"] .view-tab{
  background:#efece2;
 }
 
@@ -562,12 +605,17 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <h2>Average daily return by day of week</h2>
 <div class="chart-subhead"></div>
 </div>
+<div class="view-tabs" data-view-tabs="dowTable">
+<button class="view-tab active" data-view="table" type="button">Table</button>
+<button class="view-tab" data-view="distribution" type="button">Distribution</button>
+</div>
 </div>
 <table class="data-table" id="dowTable">
 <thead><tr><th class="label sortable" data-sort="label">Day</th><th class="sortable" data-sort="mean">Avg Return</th><th class="sortable" data-sort="pctPositive">% Positive</th><th class="sortable" data-sort="n">N</th></tr></thead>
 <tbody></tbody>
 <tfoot><tr><td class="label">Filtered avg</td><td id="dowTableFilteredMean">—</td><td id="dowTableFilteredPct">—</td><td id="dowTableFilteredN">—</td></tr></tfoot>
 </table>
+<div class="dist-wrap" id="dowTableDist"></div>
 </div>
 
 <div class="chart-box">
@@ -576,12 +624,17 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <h2>Average daily return by day of month</h2>
 <div class="chart-subhead"></div>
 </div>
+<div class="view-tabs" data-view-tabs="domTable">
+<button class="view-tab active" data-view="table" type="button">Table</button>
+<button class="view-tab" data-view="distribution" type="button">Distribution</button>
+</div>
 </div>
 <table class="data-table" id="domTable">
 <thead><tr><th class="label sortable" data-sort="label">Day</th><th class="sortable" data-sort="mean">Avg Return</th><th class="sortable" data-sort="pctPositive">% Positive</th><th class="sortable" data-sort="n">N</th></tr></thead>
 <tbody></tbody>
 <tfoot><tr><td class="label">Filtered avg</td><td id="domTableFilteredMean">—</td><td id="domTableFilteredPct">—</td><td id="domTableFilteredN">—</td></tr></tfoot>
 </table>
+<div class="dist-wrap" id="domTableDist"></div>
 </div>
 </div>
 
@@ -592,12 +645,17 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <h2>Average monthly return by calendar month</h2>
 <div class="chart-subhead">Return each calendar month, averaged across every year.</div>
 </div>
+<div class="view-tabs" data-view-tabs="monthTable">
+<button class="view-tab active" data-view="table" type="button">Table</button>
+<button class="view-tab" data-view="distribution" type="button">Distribution</button>
+</div>
 </div>
 <table class="data-table" id="monthTable">
 <thead><tr><th class="label sortable" data-sort="label">Month</th><th class="sortable" data-sort="mean">Avg Return</th><th class="sortable" data-sort="pctPositive">% Positive</th><th class="sortable" data-sort="n">Years</th></tr></thead>
 <tbody></tbody>
 <tfoot><tr><td class="label">Filtered avg</td><td id="monthTableFilteredMean">—</td><td id="monthTableFilteredPct">—</td><td id="monthTableFilteredN">—</td></tr></tfoot>
 </table>
+<div class="dist-wrap" id="monthTableDist"></div>
 </div>
 
 <div class="chart-box">
@@ -606,12 +664,17 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <h2>Average quarterly return</h2>
 <div class="chart-subhead">Return each calendar quarter, averaged across every year. </div>
 </div>
+<div class="view-tabs" data-view-tabs="quarterTable">
+<button class="view-tab active" data-view="table" type="button">Table</button>
+<button class="view-tab" data-view="distribution" type="button">Distribution</button>
+</div>
 </div>
 <table class="data-table" id="quarterTable">
 <thead><tr><th class="label sortable" data-sort="label">Quarter</th><th class="sortable" data-sort="mean">Avg Return</th><th class="sortable" data-sort="pctPositive">% Positive</th><th class="sortable" data-sort="n">Years</th></tr></thead>
 <tbody></tbody>
 <tfoot><tr><td class="label">Filtered avg</td><td id="quarterTableFilteredMean">—</td><td id="quarterTableFilteredPct">—</td><td id="quarterTableFilteredN">—</td></tr></tfoot>
 </table>
+<div class="dist-wrap" id="quarterTableDist"></div>
 </div>
 </div>
 
@@ -642,6 +705,14 @@ function themeUpColor(){
 function themeDownColor(){
  const v = getComputedStyle(document.documentElement).getPropertyValue("--down").trim();
  return v || "#6f8fac";
+}
+function themeInkColor(){
+ const v = getComputedStyle(document.documentElement).getPropertyValue("--ink").trim();
+ return v || "#eae6da";
+}
+function themeHairColor(){
+ const v = getComputedStyle(document.documentElement).getPropertyValue("--hair").trim();
+ return v || "#2b3138";
 }
 
 const GLOBAL_RANGES = [
@@ -712,8 +783,14 @@ function renderStats(data){
 // were first attached.
 const TABLE_STATE = {};
 
+// Which shared histogram bin edges (see histogramEdges in the payload)
+// apply to each table — dow and dom are both grouping the same underlying
+// daily returns, just by a different calendar key, so they share "daily".
+const HIST_EDGE_KEY = { dowTable: "daily", domTable: "daily", monthTable: "month", quarterTable: "quarter" };
+let HIST_EDGES = {};
+
 function renderDataTable(tableId, rows, digits){
- const state = TABLE_STATE[tableId] || (TABLE_STATE[tableId] = { excluded: new Set(), sortKey: null, sortDir: 1 });
+ const state = TABLE_STATE[tableId] || (TABLE_STATE[tableId] = { excluded: new Set(), sortKey: null, sortDir: 1, view: "table" });
  state.rows = rows;
  state.digits = digits;
  renderTable(tableId);
@@ -744,6 +821,11 @@ function renderTable(tableId){
   });
  }
 
+ function refresh(){
+  updateFooter();
+  if(state.view === "distribution") renderDistribution(tableId);
+ }
+
  tbody.innerHTML = "";
  displayRows.forEach(r => {
   const tr = document.createElement("tr");
@@ -758,7 +840,7 @@ function renderTable(tableId){
    if(state.excluded.has(r.label)) state.excluded.delete(r.label);
    else state.excluded.add(r.label);
    tr.classList.toggle("row-excluded");
-   updateFooter();
+   refresh();
   });
   tbody.appendChild(tr);
  });
@@ -779,6 +861,7 @@ function renderTable(tableId){
   filteredNEl.textContent = totalN.toLocaleString();
  }
  updateFooter();
+ if(state.view === "distribution") renderDistribution(tableId);
 
  theadRow.querySelectorAll("th.sortable").forEach(th => {
   const active = th.dataset.sort === state.sortKey;
@@ -804,6 +887,123 @@ function renderTable(tableId){
    });
   });
  }
+
+ const tabsWrap = document.querySelector('.view-tabs[data-view-tabs="' + tableId + '"]');
+ if(tabsWrap && !tabsWrap.dataset.wired){
+  tabsWrap.dataset.wired = "1";
+  const distWrap = document.getElementById(tableId + "Dist");
+  tabsWrap.querySelectorAll(".view-tab").forEach(btn => {
+   btn.addEventListener("click", () => {
+    if(btn.dataset.view === state.view) return;
+    state.view = btn.dataset.view;
+    tabsWrap.querySelectorAll(".view-tab").forEach(b => b.classList.toggle("active", b === btn));
+    table.style.display = state.view === "table" ? "" : "none";
+    distWrap.classList.toggle("active", state.view === "distribution");
+    if(state.view === "distribution") renderDistribution(tableId);
+   });
+  });
+ }
+}
+
+// Combines the histograms and per-row mean/stdev of every currently
+// included (non-excluded) row into one distribution — respecting
+// whatever filtering is active on the table — and draws it as a plain
+// inline SVG bar chart with a fitted normal curve overlay. No charting
+// library: this is the only chart-shaped thing left on the page after
+// the stat tables replaced Chart.js, so pulling the whole library back
+// in for one histogram wasn't worth it.
+function renderDistribution(tableId){
+ const state = TABLE_STATE[tableId];
+ const edges = HIST_EDGES[HIST_EDGE_KEY[tableId]];
+ const container = document.getElementById(tableId + "Dist");
+ if(!edges || !state.rows.length){ container.innerHTML = ""; return; }
+
+ const included = state.rows.filter(r => !state.excluded.has(r.label) && r.histogram);
+ const nBins = edges.length - 1;
+ const counts = new Array(nBins).fill(0);
+ let totalN = 0, meanWeighted = 0, meanWeight = 0;
+ included.forEach(r => {
+  r.histogram.forEach((c, i) => { counts[i] += c; });
+  totalN += r.n;
+  if(r.mean != null){ meanWeighted += r.mean * r.n; meanWeight += r.n; }
+ });
+ const combinedMean = meanWeight ? meanWeighted / meanWeight : null;
+
+ // Combined variance via the law of total variance from each included
+ // row's own (mean, stdev, n) — exact, without needing the raw values
+ // client-side.
+ let varWeighted = 0, varWeight = 0;
+ included.forEach(r => {
+  if(r.n && r.mean != null && r.stdev != null){
+   const d = r.mean - combinedMean;
+   varWeighted += r.n * (r.stdev * r.stdev + d * d);
+   varWeight += r.n;
+  }
+ });
+ const combinedStdev = varWeight ? Math.sqrt(varWeighted / varWeight) : null;
+
+ if(!totalN){
+  container.innerHTML = '<div class="dist-stats">No rows selected — check at least one row in the table to see its distribution.</div>';
+  return;
+ }
+
+ const width = 680, height = 240, padL = 4, padR = 4, padT = 10, padB = 24;
+ const plotW = width - padL - padR, plotH = height - padT - padB;
+ const xMin = edges[0], xMax = edges[nBins];
+ const binPixW = plotW / nBins;
+ const maxCount = Math.max(1, ...counts);
+ const upColor = themeUpColor(), downColor = themeDownColor(), inkColor = themeInkColor();
+
+ const bars = counts.map((c, i) => {
+  const x0 = edges[i];
+  const xPix = padL + ((x0 - xMin) / (xMax - xMin)) * plotW;
+  const hPix = (c / maxCount) * plotH;
+  const yPix = padT + (plotH - hPix);
+  const color = x0 >= 0 ? upColor : downColor;
+  return '<rect x="' + xPix.toFixed(1) + '" y="' + yPix.toFixed(1) + '" width="' + Math.max(0, binPixW - 1).toFixed(1) +
+   '" height="' + hPix.toFixed(1) + '" fill="' + color + '" opacity="0.85"><title>' +
+   fmtPct(x0, 1) + ' to ' + fmtPct(edges[i + 1], 1) + ': ' + c.toLocaleString() + '</title></rect>';
+ }).join("");
+
+ let curve = "";
+ if(combinedStdev){
+  const binWidth = edges[1] - edges[0];
+  const pdf = (x) => Math.exp(-0.5 * ((x - combinedMean) / combinedStdev) ** 2) / (combinedStdev * Math.sqrt(2 * Math.PI));
+  const steps = 120;
+  const pts = [];
+  for(let s = 0; s <= steps; s++){
+   const x = xMin + ((xMax - xMin) * s) / steps;
+   const expectedCount = pdf(x) * totalN * binWidth;
+   const xPix = padL + ((x - xMin) / (xMax - xMin)) * plotW;
+   const yPix = padT + (plotH - Math.min(1, expectedCount / maxCount) * plotH);
+   pts.push(xPix.toFixed(1) + "," + yPix.toFixed(1));
+  }
+  curve = '<polyline points="' + pts.join(" ") + '" fill="none" stroke="' + inkColor + '" stroke-width="1.5" opacity="0.85"/>';
+ }
+
+ const zeroPix = padL + ((0 - xMin) / (xMax - xMin)) * plotW;
+ const zeroLine = (xMin < 0 && xMax > 0)
+  ? '<line x1="' + zeroPix.toFixed(1) + '" y1="' + padT + '" x2="' + zeroPix.toFixed(1) + '" y2="' + (padT + plotH) + '" stroke="' + themeHairColor() + '" stroke-width="1"/>'
+  : "";
+
+ // Axis ticks at every 4th edge, rounded to whatever precision the edges
+ // themselves already carry, keeps the label count readable regardless
+ // of how many bins a given table's range produced.
+ const tickEvery = Math.max(1, Math.round(nBins / 8));
+ const ticks = edges.filter((_, i) => i % tickEvery === 0).map((x) => {
+  const xPix = padL + ((x - xMin) / (xMax - xMin)) * plotW;
+  return '<text x="' + xPix.toFixed(1) + '" y="' + (height - 6) + '" text-anchor="middle">' + x + "%</text>";
+ }).join("");
+
+ const statsLine =
+  "Fitted normal: μ=" + fmtPct(combinedMean, 2) + (combinedStdev != null ? ", σ=" + combinedStdev.toFixed(2) + "%" : "") +
+  " · n=" + totalN.toLocaleString();
+
+ container.innerHTML =
+  '<div class="dist-stats">' + statsLine + "</div>" +
+  '<svg class="dist-svg" viewBox="0 0 ' + width + " " + height + '" preserveAspectRatio="none" style="width:100%; height:220px;">' +
+  zeroLine + bars + curve + ticks +
+  "</svg>";
 }
 
 function heatmapColor(v){
@@ -898,19 +1098,20 @@ function renderAll(){
 
 async function loadData(){
  try{
-  const cacheKey = "seasonality-stats-v4";
+  const cacheKey = "seasonality-stats-v5";
   const cached = sessionStorage.getItem(cacheKey);
   let payload;
   if(cached){
    payload = JSON.parse(cached);
   }else{
-   const res = await fetch("/api/seasonality-history?v=3");
+   const res = await fetch("/api/seasonality-history?v=4");
    if(!res.ok) throw new Error("Failed to load seasonality stats (HTTP " + res.status + ")");
    payload = await res.json();
    if(payload.error) throw new Error(payload.error);
    try{ sessionStorage.setItem(cacheKey, JSON.stringify(payload)); }catch(e){}
   }
   RANGE_DATA = payload.ranges;
+  HIST_EDGES = payload.histogramEdges || {};
   document.getElementById("updated").textContent = payload.asOf ? "Data through " + payload.asOf : "No data";
   renderRangeButtons();
   renderAll();
