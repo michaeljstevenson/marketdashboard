@@ -664,11 +664,23 @@ h1{
 /* CHART PLACEHOLDER */
 
 
+.history-controls{
+
+ display:flex;
+
+ gap:6px;
+
+ flex-wrap:wrap;
+
+ margin-top:25px;
+
+ margin-bottom:10px;
+
+}
+
 .chart{
 
  height:300px;
-
- margin-top:25px;
 
  background:var(--card);
 
@@ -1246,6 +1258,8 @@ Waiting for data...
 <div class="grid" id="components"></div>
 
 
+<div class="history-controls" id="historyRangeControls"></div>
+
 <div class="chart">
 
 <canvas id="historyChart"></canvas>
@@ -1371,7 +1385,7 @@ async function loadData(){
 
   renderDashboard(data);
 
-  renderHistoryChart(LATEST_HISTORY);
+  renderHistoryRange(CURRENT_HISTORY_RANGE);
 
  }catch(err){
 
@@ -2183,7 +2197,83 @@ function renderModalChartMulti(labels, series){
 */
 
 
+const HISTORY_RANGES = [
+ { key: "1W", days: 7 },
+ { key: "1M", days: 30 },
+ { key: "3M", days: 90 },
+ { key: "6M", days: 182 },
+ { key: "1Y", days: 365 },
+ { key: "3Y", days: 365 * 3 },
+ { key: "5Y", days: 365 * 5 },
+ { key: "10Y", days: 365 * 10 },
+ { key: "Max", days: null },
+];
+
+const HISTORY_DEFAULT_RANGE = "1Y";
+let historyChart = null;
+let CURRENT_HISTORY_RANGE = HISTORY_DEFAULT_RANGE;
+
+
+function renderHistoryRangeButtons(){
+
+ const container = document.getElementById("historyRangeControls");
+
+ container.innerHTML = "";
+
+ HISTORY_RANGES.forEach(r => {
+
+  const btn = document.createElement("button");
+
+  btn.className = "range-btn" + (r.key === HISTORY_DEFAULT_RANGE ? " active" : "");
+
+  btn.textContent = r.key;
+
+  btn.addEventListener("click", () => {
+
+   container.querySelectorAll(".range-btn").forEach(b => b.classList.remove("active"));
+
+   btn.classList.add("active");
+
+   CURRENT_HISTORY_RANGE = r.key;
+
+   renderHistoryRange(r.key);
+
+  });
+
+  container.appendChild(btn);
+
+ });
+
+}
+
+
+function renderHistoryRange(rangeKey){
+
+ if(!LATEST_HISTORY.length) return;
+
+ const range = HISTORY_RANGES.find(r => r.key === rangeKey) || HISTORY_RANGES[HISTORY_RANGES.length - 1];
+
+ let startIndex = 0;
+
+ if(range.days){
+
+  const cutoff = Date.now() - range.days * 24 * 60 * 60 * 1000;
+
+  startIndex = LATEST_HISTORY.findIndex(p => new Date(p.date + "T00:00:00Z").getTime() >= cutoff);
+
+  if(startIndex === -1) startIndex = 0;
+
+ }
+
+ renderHistoryChart(LATEST_HISTORY.slice(startIndex));
+
+}
+
+
 function renderHistoryChart(historyData){
+
+
+ if(historyChart){ historyChart.destroy(); historyChart = null; }
 
 
 const ctx =
@@ -2193,7 +2283,7 @@ document
 
 
 
-new Chart(ctx, {
+historyChart = new Chart(ctx, {
 
 
 type:"line",
@@ -2357,6 +2447,7 @@ document.getElementById("refreshBtn").addEventListener("click", async () => {
 });
 
 
+renderHistoryRangeButtons();
 loadData();
 
 
