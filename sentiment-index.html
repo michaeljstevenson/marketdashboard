@@ -1309,7 +1309,11 @@ async function loadSP500LongHistory(){
 
 }
 
-const LINE_COLOR = "#ffffff";
+function inkColor(){ return getComputedStyle(document.documentElement).getPropertyValue("--ink").trim() || "#eae6da"; }
+function mutedColor(){ return getComputedStyle(document.documentElement).getPropertyValue("--muted").trim() || "#8b9199"; }
+function gridColor(){ return getComputedStyle(document.documentElement).getPropertyValue("--hair").trim() || "#2b3138"; }
+
+const LINE_COLOR = inkColor();
 const SP500_LINE_COLOR = "#5b9bd5";
 
 let LATEST_COMPOSITE = null;
@@ -1971,7 +1975,7 @@ function openCompositeModal(){
 
  renderModalChartMulti(LATEST_HISTORY.map(p=>p.date), [
 
-  { label: "Optimism Index", data: LATEST_HISTORY.map(p=>p.optimism), color: LINE_COLOR },
+  { label: "Sentiment Index", data: LATEST_HISTORY.map(p=>p.optimism), color: LINE_COLOR },
 
  ]);
 
@@ -2088,7 +2092,7 @@ function renderModalChartMulti(labels, series){
 
    plugins:{
 
-    legend:{ display: series.length > 1, labels:{ color:"#8b9199" } }
+    legend:{ display: series.length > 1, labels:{ color: mutedColor() } }
 
    },
 
@@ -2096,17 +2100,17 @@ function renderModalChartMulti(labels, series){
 
     x:{
 
-     ticks:{ maxTicksLimit:6, color:"#8b9199" },
+     ticks:{ maxTicksLimit:6, color: mutedColor() },
 
-     grid:{ color:"#2b3138" }
+     grid:{ color: gridColor() }
 
     },
 
     y:{
 
-     ticks:{ color:"#8b9199" },
+     ticks:{ color: mutedColor() },
 
-     grid:{ color:"#2b3138" }
+     grid:{ color: gridColor() }
 
     }
 
@@ -2159,7 +2163,7 @@ datasets:[
 
 {
 
-label:"Optimism Index",
+label:"Sentiment Index",
 
 data:
 historyData.map(x=>x.optimism),
@@ -2221,6 +2225,13 @@ intersect:false
 },
 
 
+plugins:{
+
+legend:{ labels:{ color: mutedColor() } }
+
+},
+
+
 scales:{
 
 
@@ -2230,14 +2241,31 @@ position:"left",
 
 min:0,
 
-max:100
+max:100,
+
+ticks:{ color: mutedColor() },
+
+grid:{ color: gridColor() }
 
 },
 
 
 price:{
 
-position:"right"
+position:"right",
+
+ticks:{ color: mutedColor() },
+
+grid:{ drawOnChartArea:false }
+
+},
+
+
+x:{
+
+ticks:{ color: mutedColor() },
+
+grid:{ color: gridColor() }
 
 }
 

@@ -16,13 +16,17 @@
 //                         highs/lows, % above 200-day SMA) computed daily across the full
 //                         S&P 500 constituent list by scheduled-breadth-background.js and
 //                         read from Netlify Blobs here (see breadth-constituents.js).
+//   Small-Cap Rel. Strength — IWM (small-cap) price ratio vs. the S&P 500, normalized.
+//   Equal-Weight Participation — RSP (equal-weight S&P 500) price ratio vs. the
+//                         cap-weighted index, normalized.
+//   News Sentiment      — average per-article sentiment for SPY-tagged financial news
+//                         (NEWS_SENTIMENT), bucketed by day.
 //
 // "Normalized" for Credit Conditions means its ratio series is rebased to start at 100, so the
 // displayed value reads as a clean index level rather than a raw price ratio (e.g. 0.847) that's
 // hard to interpret at a glance. Rebasing by a constant factor doesn't change the score math at
 // all (ratio-to-own-MA is scale-invariant), so this only affects display.
 
-const { MANUAL_SERIES } = require("./manual-data");
 const { getBreadthStore, BLOB_KEY: BREADTH_BLOB_KEY } = require("./breadth-blob-store");
 const { recordAvCall } = require("./av-call-counter");
 
@@ -80,11 +84,26 @@ function computeRelativeScoreSeries(points, window, invert) {
     ratios.push(values[i] / ma);
   }
 
-  const sortedRatios = [...ratios].sort((a, b) => a - b);
+  // Expanding-window (causal) percentile: each date's score is ranked only
+  // against ratios observed up to and including that date, not the full
+  // dataset. Ranking against the full dataset means a regime shift years
+  // later silently rewrites how extreme an earlier reading "was" every
+  // time new data comes in — this chart should show what the index would
+  // actually have read live on that date. sortedSoFar stays sorted via
+  // binary-search insertion, so the last point's percentile still comes
+  // out identical to the old full-sample version (its population is, by
+  // construction, everything up to and including itself).
+  const sortedSoFar = [];
   const rankedPoints = points.slice(window - 1).map((p, idx) => {
     const ratio = ratios[idx];
-    const below = sortedRatios.filter((x) => x <= ratio).length;
-    const ratioPercentile = round((100 * below) / sortedRatios.length, 1);
+    let lo = 0, hi = sortedSoFar.length;
+    while (lo < hi) {
+      const mid = (lo + hi) >> 1;
+      if (sortedSoFar[mid] <= ratio) lo = mid + 1; else hi = mid;
+    }
+    const below = lo + 1; // count of values <= ratio, including this one
+    const ratioPercentile = round((100 * below) / (sortedSoFar.length + 1), 1);
+    sortedSoFar.splice(lo, 0, ratio);
     return {
       x: p.x,
       value: p.y,
@@ -106,8 +125,9 @@ function computeRelativeScoreSeries(points, window, invert) {
 function buildSeriesComponent(points, spec) {
   const latestValue = points.length ? points[points.length - 1].y : null;
   const trimmed = points.slice(-HISTORY_POINTS);
+  const maWindow = spec.maWindow || SCORE_MA_WINDOW;
 
-  const scoreSeries = computeRelativeScoreSeries(points, SCORE_MA_WINDOW, spec.invert);
+  const scoreSeries = computeRelativeScoreSeries(points, maWindow, spec.invert);
   const latest = scoreSeries.length ? scoreSeries[scoreSeries.length - 1] : null;
 
   return {
@@ -127,7 +147,7 @@ function buildSeriesComponent(points, spec) {
     })),
     calc: latest
       ? {
-          window: SCORE_MA_WINDOW,
+          window: maWindow,
           periodLabel: "day",
           invert: spec.invert,
           value: round(latest.value, 3),
@@ -244,8 +264,8 @@ function computeNormalizedRatioSeries(numerator, denominator) {
 // Because its usable history is so much shorter than the other factors',
 // it's excluded from the composite history chart (like the manual factors)
 // but still counts fully toward the live composite score.
-const PUTCALL_SCORE_WINDOW = 10;
-const PUTCALL_TRADING_DAYS = 18; // enough for a 10-day MA plus a small percentile sample
+const PUTCALL_SCORE_WINDOW = 15;
+const PUTCALL_TRADING_DAYS = 30; // enough for a 15-day MA plus a ~15-sample percentile (was 18/10 — too noisy)
 
 async function fetchPutCallWindow(apiKey, symbol, tradingDates) {
   const dates = tradingDates.slice(-PUTCALL_TRADING_DAYS);
@@ -319,10 +339,11 @@ const REALIZED_VOL_SPEC = {
   weight: 7,
   invert: true,
   atrWindow: 14,
+  maWindow: 20, // volatility mean-reverts fast — a 50-day window blunted genuine spikes
   source: { name: "Alpha Vantage — S&P 500 Index (SPX)", url: "https://www.alphavantage.co/" },
   description: "A rising 14-day Average True Range relative to trend signals widening realized price swings.",
   details:
-    "Realized volatility measures how much the S&P 500 has actually been moving, in contrast to Implied Volatility (the VIX), which measures what options traders expect it to move. This factor uses the 14-day Average True Range (ATR) — the average of each day's true trading range (accounting for gaps) over the last 14 trading days — expressed as a percentage of the index's price so it stays comparable across different price levels and eras.\n\nThe score compares today's ATR% to its own 50-day average, ranked against its full history back to 1997. ATR running above trend means the index has genuinely been swinging more than usual — realized fear rather than merely anticipated fear. Because realized and implied volatility usually move together but can diverge (implied often runs above realized as a risk premium), watching both side by side reveals when the market's expectations and its actual behavior are out of sync.",
+    "Realized volatility measures how much the S&P 500 has actually been moving, in contrast to Implied Volatility (the VIX), which measures what options traders expect it to move. This factor uses the 14-day Average True Range (ATR) — the average of each day's true trading range (accounting for gaps) over the last 14 trading days — expressed as a percentage of the index's price so it stays comparable across different price levels and eras.\n\nThe score compares today's ATR% to its own 20-day average (shorter than the 50-day window used for slower factors, since volatility regimes mean-revert quickly), ranked against its full history back to 1997. ATR running above trend means the index has genuinely been swinging more than usual — realized fear rather than merely anticipated fear. Because realized and implied volatility usually move together but can diverge (implied often runs above realized as a risk premium), watching both side by side reveals when the market's expectations and its actual behavior are out of sync.",
 };
 
 function computeAtrPercentSeries(bars, window) {
@@ -361,9 +382,9 @@ function buildRealizedVolComponent(spxDaily) {
 // views (forward-looking options pricing vs. backward-looking actual
 // price swings) on the same underlying phenomenon, deliberately balanced
 // rather than favoring either. Weights sum to 70 (breadth 18 + credit 18
-// + implied vol 7 + put/call 10 + momentum 10 + realized vol 7) + 30 (the
-// 3 manual factors defined in MANUAL_COMPONENTS, 10% each) = 100 — see
-// MANUAL_COMPONENTS for why those are capped at 10% each.
+// + implied vol 7 + put/call 10 + momentum 10 + realized vol 7) + 30
+// (Small-Cap Relative Strength, Equal-Weight Participation, and News
+// Sentiment — defined further down — 10% each) = 100.
 // Market Breadth: three real internals — cumulative advance/decline line,
 // net new 52-week highs vs. lows, and % of constituents above their own
 // 200-day SMA — computed daily across the full S&P 500 constituent list by
@@ -415,10 +436,11 @@ const CREDIT_SPEC = {
   unit: "index (normalized)",
   weight: 18,
   invert: false,
+  maWindow: 100, // credit repricing is slower/stickier than equity vol — a 50-day window flagged noise as signal
   source: { name: "Alpha Vantage — HYG vs. LQD", url: "https://www.alphavantage.co/" },
   description: "Rising high-yield demand relative to investment-grade debt indicates risk appetite.",
   details:
-    "Credit Conditions tracks demand for high-yield (\"junk\") bonds relative to safer investment-grade debt, using the price ratio of HYG (a high-yield corporate bond fund) to LQD (an investment-grade corporate bond fund). Junk bonds carry more default risk, so investors only chase them aggressively when they're feeling confident about the economy and corporate health; when fear rises, capital typically rotates out of junk bonds and into safer assets first — often before that caution shows up in stock prices.\n\nThe ratio is rebased to start at 100 so it reads as a clean index rather than a small decimal. Because credit investors are generally more risk-averse and tend to reprice risk earlier than equity markets, this factor is treated as one of the more forward-looking signals here (and weighted accordingly). The score compares today's reading to its own 50-day average: the ratio running above trend suggests risk appetite is increasing, while it running below trend can flag credit stress starting to build.",
+    "Credit Conditions tracks demand for high-yield (\"junk\") bonds relative to safer investment-grade debt, using the price ratio of HYG (a high-yield corporate bond fund) to LQD (an investment-grade corporate bond fund). Junk bonds carry more default risk, so investors only chase them aggressively when they're feeling confident about the economy and corporate health; when fear rises, capital typically rotates out of junk bonds and into safer assets first — often before that caution shows up in stock prices.\n\nThe ratio is rebased to start at 100 so it reads as a clean index rather than a small decimal. Because credit investors are generally more risk-averse and tend to reprice risk earlier than equity markets, this factor is treated as one of the more forward-looking signals here (and weighted accordingly). The score compares today's reading to its own 100-day average — wider than the 50-day window used for faster-moving factors, since credit spreads drift rather than whipsaw: the ratio running above trend suggests risk appetite is increasing, while it running below trend can flag credit stress starting to build.",
 };
 
 const VIX_SPEC = {
@@ -427,10 +449,11 @@ const VIX_SPEC = {
   unit: "index",
   weight: 7,
   invert: true,
+  maWindow: 20, // volatility mean-reverts fast — a 50-day window blunted genuine spikes
   source: { name: "Alpha Vantage — CBOE Volatility Index (VIX)", url: "https://www.alphavantage.co/" },
   description: "Elevated implied volatility relative to its recent trend reflects investor fear.",
   details:
-    "The VIX (often called the market's \"fear gauge\") measures how much volatility options traders expect in the S&P 500 over the next 30 days, derived from the prices they're willing to pay for options. It doesn't measure what already happened — it measures what the market is bracing for, which is why it's called implied (rather than realized) volatility, and why it's forward-looking rather than a reflection of past price action. See the Realized Volatility factor for the backward-looking counterpart to this one.\n\nRather than using the VIX's raw level (which drifts up and down with the broader volatility regime over months and years), this dashboard compares today's VIX to its own 50-day moving average, ranked against its full history. A VIX spiking well above its recent trend signals rising fear and uncertainty; a VIX sitting below its recent trend suggests calm, complacent conditions.",
+    "The VIX (often called the market's \"fear gauge\") measures how much volatility options traders expect in the S&P 500 over the next 30 days, derived from the prices they're willing to pay for options. It doesn't measure what already happened — it measures what the market is bracing for, which is why it's called implied (rather than realized) volatility, and why it's forward-looking rather than a reflection of past price action. See the Realized Volatility factor for the backward-looking counterpart to this one.\n\nRather than using the VIX's raw level (which drifts up and down with the broader volatility regime over months and years), this dashboard compares today's VIX to its own 20-day moving average (shorter than the 50-day window used for slower factors, since volatility regimes mean-revert quickly), ranked against its full history. A VIX spiking well above its recent trend signals rising fear and uncertainty; a VIX sitting below its recent trend suggests calm, complacent conditions.",
 };
 
 const MOMENTUM_DISPLAY_WINDOW = 90; // trading days, for the displayed "% vs MA" figure only
@@ -461,83 +484,131 @@ function buildMomentumComponent(spxDaily) {
   return component;
 }
 
-// Manually-updated factors (see manual-data.js for sourcing and the
-// update procedure). Each has its own trailing-average window sized to
-// how much history is actually available, since none of these started
-// with 50+ data points the way the live daily factors did — the window
-// (and the statistical meaningfulness of the resulting percentile) grows
-// as more readings are appended over time. invert:false for all three:
-// rising margin debt, inflows, and rising valuations vs. their own trend
-// all read as increasing risk appetite/greed here.
-const MANUAL_COMPONENTS = [
-  {
-    id: "margindebt",
-    manualKey: "marginDebt",
-    name: "Margin Debt Growth",
-    weight: 10,
-    invert: false,
-    window: 6,
-    periodLabel: "month",
-    source: { name: "FINRA Margin Statistics", url: "https://www.finra.org/rules-guidance/key-topics/margin-accounts/margin-statistics" },
-    description: "Margin debt growing faster than its trend signals rising leverage and risk appetite.",
-    details:
-      "Margin debt is money investors borrow against their brokerage accounts to buy more securities than their cash alone would allow. It tends to expand when investors are confident and reaching for more upside, and to contract sharply when fear rises and leveraged positions get unwound or forced out (margin calls).\n\nThis dashboard scores margin debt by comparing the latest month's reading to its own trailing 6-month average. Debt running above that trend suggests leverage — and risk appetite — is building; debt falling below it suggests deleveraging. Because FINRA only publishes this monthly and blocks automated fetching, this factor is updated by hand and carries a smaller (10%) weight than the daily live factors.",
-  },
-  {
-    id: "fundflows",
-    manualKey: "fundFlows",
-    name: "Equity Fund Flows",
-    weight: 10,
-    invert: false,
-    window: 4,
-    periodLabel: "week",
-    source: { name: "ICI Estimated Long-Term Mutual Fund Flows", url: "https://www.ici.org/research/stats/flows" },
-    description: "Equity fund inflows running above trend reflect investors putting new money to work.",
-    details:
-      "This factor tracks ICI's weekly estimate of net cash flowing into (or out of) U.S. long-term equity mutual funds. Sustained inflows mean investors are actively committing new money to stocks; sustained outflows mean they're pulling money out, often a sign of caution or profit-taking.\n\nThe score compares the latest week's net flow to its own trailing 4-week average. Flows running above trend (more inflow, or less outflow, than usual) lean toward optimism; flows running below trend lean toward caution. ICI's site blocks automated fetching, so this factor is updated by hand weekly and carries a smaller (10%) weight than the daily live factors.",
-  },
-  {
-    id: "forwardpe",
-    manualKey: "forwardPE",
-    name: "Forward P/E",
-    weight: 10,
-    invert: false,
-    window: 2,
-    periodLabel: "reading",
-    source: { name: "FactSet Earnings Insight", url: "https://insight.factset.com/topic/earnings" },
-    description: "A forward P/E running above trend reflects rising valuations and investor optimism about future earnings.",
-    details:
-      "The forward P/E ratio compares the S&P 500's price to analysts' consensus earnings estimate for the next 12 months — a measure of how much investors are willing to pay today for expected future profits. Rising valuations typically reflect optimism about growth; falling valuations often reflect caution or reduced growth expectations.\n\nThis factor compares the latest reading to its own short trailing average. There's no free live index-level source for this figure (Alpha Vantage's data only covers individual stocks, not indices), so it's updated by hand from FactSet's free weekly Earnings Insight report and carries a smaller (10%) weight than the daily live factors.",
-  },
-];
+// The three factors below replaced what used to be hand-updated monthly/
+// weekly readings (margin debt, fund flows, forward P/E) that required
+// manually copying numbers from FINRA/ICI/FactSet — a maintenance burden
+// that meant they silently went stale whenever nobody got around to it.
+// These are fetched live on every request like everything else here.
 
-function buildManualComponent(spec) {
-  const series = MANUAL_SERIES[spec.manualKey];
-  const history = series.history.map((p, i) => ({ x: i, y: p.value })); // synthetic x, dates aren't epoch ms here
-  const latestValue = history.length ? history[history.length - 1].y : null;
+// Small-Cap Relative Strength: IWM (small-cap) vs. the S&P 500, the same
+// "risk appetite" signal margin debt was trying to proxy — investors
+// reach for smaller, higher-beta names when confident and rotate back to
+// large-caps/safety when fearful. Uses spxDaily (already fetched for
+// Momentum/Realized Vol) as the denominator rather than fetching SPY
+// separately: SPX and SPY track within basis points of each other in
+// relative-strength terms, and this saves an extra sequential AV call.
+const SMALLCAP_SPEC = {
+  id: "smallcap",
+  name: "Small-Cap Relative Strength",
+  unit: "index (normalized)",
+  weight: 10,
+  invert: false,
+  source: { name: "Alpha Vantage — IWM vs. S&P 500", url: "https://www.alphavantage.co/" },
+  description: "Small-caps outperforming the S&P 500 relative to trend reflects rising risk appetite.",
+  details:
+    "This factor tracks the price ratio of IWM (a small-cap Russell 2000 fund) to the S&P 500 — small-caps carry more volatility and less balance-sheet cushion than large-caps, so investors chase them more aggressively when confident and rotate back to safer large-caps first when fear rises. It's a live, automated stand-in for what margin debt (leverage/risk appetite) used to proxy on this dashboard.\n\nThe ratio is rebased to start at 100 so it reads as a clean index. The score compares today's reading to its own 50-day average, ranked against its full history: the ratio running above trend suggests risk appetite for smaller, riskier names is increasing; running below trend suggests a flight to large-cap safety.",
+};
 
-  const scoreSeries = computeRelativeScoreSeries(history, spec.window, spec.invert);
+// Equal-Weight Participation: RSP (equal-weight S&P 500) vs. the
+// cap-weighted index — a real-time breadth/complacency signal, replacing
+// what forward P/E (a valuation proxy with no free automated index-level
+// source) used to carry. When the equal-weight index keeps pace with or
+// outpaces the cap-weighted one, gains are broad-based across the index
+// rather than concentrated in a handful of mega-caps.
+const EQUALWEIGHT_SPEC = {
+  id: "equalweight",
+  name: "Equal-Weight Participation",
+  unit: "index (normalized)",
+  weight: 10,
+  invert: false,
+  source: { name: "Alpha Vantage — RSP vs. S&P 500", url: "https://www.alphavantage.co/" },
+  description: "The equal-weight S&P 500 keeping pace with the cap-weighted index relative to trend reflects broad-based participation.",
+  details:
+    "This factor tracks the price ratio of RSP (an equal-weight S&P 500 fund, where every constituent counts the same regardless of market cap) to the standard cap-weighted index. When the equal-weight version keeps up with or outpaces the cap-weighted index, gains are spread across the full roster of companies; when the cap-weighted index pulls ahead, a shrinking group of mega-caps is doing the heavy lifting — a narrower, more fragile advance.\n\nThe ratio is rebased to start at 100. The score compares today's reading to its own 50-day average, ranked against its full history: the ratio running above trend suggests participation is broadening (optimism shared widely); running below trend suggests it's narrowing.",
+};
+
+// News Sentiment: Alpha Vantage's News & Sentiment feed for SPY-tagged
+// financial coverage, averaged per day — a live, automated replacement for
+// forward P/E's other half of the "market psychology" gap. Like Equity
+// Put/Call, the feed only returns a bounded recent window (not a bulk
+// decades-long history), so this factor is scored over a shorter trailing
+// window and excluded from the composite history chart, but still counts
+// fully toward the live composite score.
+const NEWS_SENTIMENT_SCORE_WINDOW = 10;
+const NEWS_SENTIMENT_LOOKBACK_DAYS = 60;
+
+const NEWSSENTIMENT_SPEC = {
+  id: "newssentiment",
+  name: "News Sentiment",
+  unit: "avg. article sentiment",
+  weight: 10,
+  invert: false,
+  source: { name: "Alpha Vantage — News & Sentiment (SPY)", url: "https://www.alphavantage.co/" },
+  description: "Financial news coverage skewing more positive than its recent trend reflects rising investor optimism.",
+  details:
+    "This factor aggregates Alpha Vantage's News & Sentiment feed for SPY-tagged financial news articles, averaging each day's per-article sentiment score (roughly -1 very bearish to +1 very bullish) — a live, automated read on how the financial press is framing the market. It replaces what was previously a hand-updated forward P/E factor.\n\nThe score compares each day's average article sentiment to its own trailing 10-day average, ranked against the ~60 days of coverage this factor has usable history for. Because the News & Sentiment API returns a bounded recent feed rather than a bulk decades-long history, this factor — like Equity Put/Call — isn't included in the composite history chart below, but still counts fully toward the live composite score.",
+};
+
+function buildNewsSentimentPoints(feed) {
+  const byDate = new Map();
+  for (const article of feed) {
+    const raw = article.time_published || "";
+    if (raw.length < 8) continue;
+    const dateStr = `${raw.slice(0, 4)}-${raw.slice(4, 6)}-${raw.slice(6, 8)}`;
+    const spyEntry = (article.ticker_sentiment || []).find((t) => t.ticker === "SPY");
+    const score = parseFloat(spyEntry ? spyEntry.ticker_sentiment_score : article.overall_sentiment_score);
+    if (Number.isNaN(score)) continue;
+    const bucket = byDate.get(dateStr) || { sum: 0, count: 0 };
+    bucket.sum += score;
+    bucket.count += 1;
+    byDate.set(dateStr, bucket);
+  }
+  return [...byDate.keys()]
+    .sort()
+    .map((d) => ({ x: Date.parse(d + "T00:00:00Z"), y: byDate.get(d).sum / byDate.get(d).count }));
+}
+
+async function fetchNewsSentiment(apiKey, tickers, daysBack) {
+  const from = new Date(Date.now() - daysBack * 24 * 60 * 60 * 1000);
+  const timeFrom = from.toISOString().slice(0, 10).replace(/-/g, "") + "T0000";
+  const payload = await fetchJson(
+    `${ALPHA_VANTAGE_URL}?function=NEWS_SENTIMENT&tickers=${tickers}&time_from=${timeFrom}&sort=EARLIEST&limit=1000&apikey=${apiKey}`
+  );
+  const feed = payload.feed;
+  if (!feed || !feed.length) {
+    throw new Error(
+      "Alpha Vantage NEWS_SENTIMENT returned no articles: " + (payload.Note || payload.Information || payload.error || JSON.stringify(payload).slice(0, 200))
+    );
+  }
+  return feed;
+}
+
+function buildNewsSentimentComponent(feed) {
+  const points = buildNewsSentimentPoints(feed);
+  const latestValue = points.length ? points[points.length - 1].y : null;
+
+  const scoreSeries = computeRelativeScoreSeries(points, NEWS_SENTIMENT_SCORE_WINDOW, NEWSSENTIMENT_SPEC.invert);
   const latest = scoreSeries.length ? scoreSeries[scoreSeries.length - 1] : null;
 
   return {
-    id: spec.id,
-    name: spec.name,
-    value: latestValue,
-    unit: series.unit,
-    percentile: latestValue !== null ? percentileRank(history.map((p) => p.y), latestValue) : null,
+    id: NEWSSENTIMENT_SPEC.id,
+    name: NEWSSENTIMENT_SPEC.name,
+    value: latestValue !== null ? round(latestValue, 3) : null,
+    unit: NEWSSENTIMENT_SPEC.unit,
+    percentile: latestValue !== null ? percentileRank(points.map((p) => p.y), latestValue) : null,
     score: latest ? latest.score : 50,
-    weight: spec.weight,
-    source: spec.source,
-    description: spec.description,
-    details: spec.details,
-    history: series.history.map((p) => ({ date: p.date, value: p.value })),
+    weight: NEWSSENTIMENT_SPEC.weight,
+    source: NEWSSENTIMENT_SPEC.source,
+    description: NEWSSENTIMENT_SPEC.description,
+    details: NEWSSENTIMENT_SPEC.details,
+    history: points.map((p) => ({ date: toDateStr(p.x), value: round(p.y, 4) })),
     calc: latest
       ? {
-          window: spec.window,
-          periodLabel: spec.periodLabel,
-          invert: spec.invert,
-          value: round(latest.value, 3),
-          ma: round(latest.ma, 3),
+          window: NEWS_SENTIMENT_SCORE_WINDOW,
+          periodLabel: "day",
+          invert: NEWSSENTIMENT_SPEC.invert,
+          value: round(latest.value, 4),
+          ma: round(latest.ma, 4),
           ratio: round(latest.ratio, 4),
           ratioPercentile: latest.ratioPercentile,
         }
@@ -588,6 +659,11 @@ exports.handler = async () => {
     await sleep(300);
     const lqdDaily = await safe("Credit Conditions (LQD)", () => fetchStockDaily(apiKey, "LQD", "full"));
     await sleep(300);
+    const iwmDaily = await safe("Small-Cap Relative Strength (IWM)", () => fetchStockDaily(apiKey, "IWM", "full"));
+    await sleep(300);
+    const rspDaily = await safe("Equal-Weight Participation (RSP)", () => fetchStockDaily(apiKey, "RSP", "full"));
+    await sleep(300);
+    const newsFeed = await safe("News Sentiment (SPY)", () => fetchNewsSentiment(apiKey, "SPY", NEWS_SENTIMENT_LOOKBACK_DAYS));
 
     const putCallPoints = spxDaily
       ? await safe("Equity Put/Call Ratio", () => fetchPutCallWindow(apiKey, "SPY", spxDaily.map((p) => toDateStr(p.x))))
@@ -611,22 +687,24 @@ exports.handler = async () => {
     if (spxDaily) {
       chartComponents.push(buildMomentumComponent(spxDaily));
       chartComponents.push(buildRealizedVolComponent(spxDaily));
+      const spxCloses = spxDaily.map((p) => ({ x: p.x, y: p.close }));
+      if (iwmDaily) chartComponents.push(buildSeriesComponent(computeNormalizedRatioSeries(iwmDaily, spxCloses), SMALLCAP_SPEC));
+      if (rspDaily) chartComponents.push(buildSeriesComponent(computeNormalizedRatioSeries(rspDaily, spxCloses), EQUALWEIGHT_SPEC));
     }
     const dailyComponents = chartComponents; // alias kept for the history-merge loop below
     const putCallComponent = putCallPoints ? buildPutCallComponent(putCallPoints) : null;
-    const manualComponents = MANUAL_COMPONENTS.map((spec) => buildManualComponent(spec));
+    const newsSentimentComponent = newsFeed ? buildNewsSentimentComponent(newsFeed) : null;
 
     // Ordered by weight, descending, so the cards render heaviest-first.
     // Missing factors (upstream fetch failed) are simply absent, not
     // null placeholders — the frontend only ever sees factors that
     // actually loaded.
     const componentsById = new Map(
-      [...chartComponents, ...(putCallComponent ? [putCallComponent] : []), ...manualComponents].map((c) => [c.id, c])
+      [...chartComponents, ...(putCallComponent ? [putCallComponent] : []), ...(newsSentimentComponent ? [newsSentimentComponent] : [])].map((c) => [c.id, c])
     );
     const components = [
       "credit", "breadthadline", "breadthhilo", "breadthpct200", "putcall", "momentum",
-      "vix", "realizedvol",
-      "margindebt", "fundflows", "forwardpe",
+      "vix", "realizedvol", "smallcap", "equalweight", "newssentiment",
     ]
       .map((id) => componentsById.get(id))
       .filter(Boolean);
@@ -642,14 +720,15 @@ exports.handler = async () => {
 
     // Composite history: our own weighted average of each factor's
     // self-computed score series, date-aligned, paired with S&P 500
-    // closes. Manual factors and Equity Put/Call are excluded from this
-    // historical chart: manual factors use coarse month/week date strings
-    // rather than real trading-day epoch timestamps, and put/call's
-    // fetchable history is too short (see PUTCALL_SPEC) — both still
-    // count toward the live composite score above, just not this chart.
+    // closes. Equity Put/Call and News Sentiment are excluded from this
+    // historical chart — their fetchable history is too short to
+    // date-align with the decades-deep series below (see PUTCALL_SPEC /
+    // NEWSSENTIMENT_SPEC) — but both still count fully toward the live
+    // composite score above, just not this chart.
     const CHART_SPECS_ALL = [
       BREADTH_ADLINE_SPEC, BREADTH_HILO_SPEC, BREADTH_PCT200_SPEC,
       CREDIT_SPEC, VIX_SPEC, MOMENTUM_SPEC, REALIZED_VOL_SPEC,
+      SMALLCAP_SPEC, EQUALWEIGHT_SPEC,
     ];
     const loadedChartIds = new Set(dailyComponents.map((c) => c.id));
     const CHART_SPECS = CHART_SPECS_ALL.filter((spec) => loadedChartIds.has(spec.id));
