@@ -379,11 +379,6 @@ table.data-table td.col-excluded, table.data-table th.col-excluded{
  text-decoration:line-through;
 }
 
-table.data-table .filtered-col{
- border-left:1px solid var(--hair);
- font-weight:600;
-}
-
 table.data-table .up{ color:var(--up); }
 table.data-table .down{ color:var(--down); }
 
@@ -699,23 +694,6 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <div class="chart-box">
 <div class="chart-box-header">
 <div>
-<h2>Annual return</h2>
-<div class="chart-subhead">Full calendar-year return for every year on file. Click a header to sort.</div>
-</div>
-<div class="view-tabs" data-view-tabs="annualTable">
-<button class="view-tab active" data-view="table" type="button">Table</button>
-<button class="view-tab" data-view="distribution" type="button">Distribution</button>
-</div>
-</div>
-<div class="table-scroll">
-<table class="data-table" id="annualTable"></table>
-</div>
-<div class="dist-wrap" id="annualTableDist"></div>
-</div>
-
-<div class="chart-box">
-<div class="chart-box-header">
-<div>
 <h2>Monthly returns by year</h2>
 <div class="chart-subhead">Darker green/red = larger positive/negative return. Source: Yahoo Finance daily close history for ^GSPC, recomputed once daily after the close. Price return only (dividends not included).</div>
 </div>
@@ -821,28 +799,8 @@ const TABLE_STATE = {};
 // Which shared histogram bin edges (see histogramEdges in the payload)
 // apply to each table — dow and dom are both grouping the same underlying
 // daily returns, just by a different calendar key, so they share "daily".
-const HIST_EDGE_KEY = { dowTable: "daily", domTable: "daily", monthTable: "month", quarterTable: "quarter", annualTable: "annual" };
+const HIST_EDGE_KEY = { dowTable: "daily", domTable: "daily", monthTable: "month", quarterTable: "quarter" };
 let HIST_EDGES = {};
-
-// A combined median can't be averaged from each row's own median the way
-// mean/min/max can — medians don't combine linearly. Estimating it from
-// the rows' summed histogram (linear interpolation across whichever bin
-// the 50th percentile falls in) reuses data already being fetched for
-// the distribution tab instead of needing the raw per-day values.
-function medianFromHistogram(counts, edges, totalN){
- if(!totalN) return null;
- const target = totalN / 2;
- let cum = 0;
- for(let i = 0; i < counts.length; i++){
-  const next = cum + counts[i];
-  if(next >= target){
-   const frac = counts[i] ? (target - cum) / counts[i] : 0;
-   return edges[i] + frac * (edges[i + 1] - edges[i]);
-  }
-  cum = next;
- }
- return edges[edges.length - 1];
-}
 
 // Stat rows shown top-to-bottom in every transposed table; "n"'s label
 // is overridden per table (N for daily tables, Years for period tables).
@@ -895,36 +853,12 @@ function renderTable(tableId){
   });
  }
 
- // "Filtered avg" column combining every currently-included category —
- // same math as before, just laid out as a column instead of a footer row.
- let meanWeighted = 0, meanWeight = 0, posWeighted = 0, posWeight = 0, totalN = 0;
- let combinedMin = null, combinedMax = null;
- const edges = HIST_EDGES[HIST_EDGE_KEY[tableId]];
- const combinedCounts = edges ? new Array(edges.length - 1).fill(0) : null;
- state.rows.forEach(r => {
-  if(state.excluded.has(r.label) || !r.n) return;
-  totalN += r.n;
-  if(r.mean != null){ meanWeighted += r.mean * r.n; meanWeight += r.n; }
-  if(r.pctPositive != null){ posWeighted += r.pctPositive * r.n; posWeight += r.n; }
-  if(r.min != null) combinedMin = combinedMin == null ? r.min : Math.min(combinedMin, r.min);
-  if(r.max != null) combinedMax = combinedMax == null ? r.max : Math.max(combinedMax, r.max);
-  if(combinedCounts && r.histogram) r.histogram.forEach((c, i) => { combinedCounts[i] += c; });
- });
- const filteredValue = {
-  mean: meanWeight ? meanWeighted / meanWeight : null,
-  min: combinedMin,
-  median: combinedCounts ? medianFromHistogram(combinedCounts, edges, totalN) : null,
-  max: combinedMax,
-  pctPositive: posWeight ? posWeighted / posWeight : null,
-  n: totalN,
- };
-
  let headHtml = "<tr><th></th>";
  cols.forEach(r => {
   const excluded = state.excluded.has(r.label);
   headHtml += '<th class="toggle-col' + (excluded ? " col-excluded" : "") + '" data-cat="' + r.label + '">' + r.label + "</th>";
  });
- headHtml += '<th class="filtered-col">Filtered avg</th></tr>';
+ headHtml += "</tr>";
 
  let bodyHtml = "";
  STAT_ROWS.forEach(stat => {
@@ -937,9 +871,7 @@ function renderTable(tableId){
    const cls = (stat.key === "mean" && r.mean != null) ? (r.mean >= 0 ? "up" : "down") : "";
    bodyHtml += '<td class="' + cls + (excluded ? " col-excluded" : "") + '">' + statText(stat, r[stat.key], state.digits) + "</td>";
   });
-  const fv = filteredValue[stat.key];
-  const filteredCls = (stat.key === "mean" && fv != null) ? (fv >= 0 ? "up" : "down") : "";
-  bodyHtml += '<td class="filtered-col ' + filteredCls + '">' + statText(stat, fv, state.digits) + "</td></tr>";
+  bodyHtml += "</tr>";
  });
 
  table.innerHTML = "<thead>" + headHtml + "</thead><tbody>" + bodyHtml + "</tbody>";
@@ -1224,7 +1156,6 @@ function renderAll(){
  renderDataTable("domTable", data.dom, 3);
  renderDataTable("monthTable", data.month, undefined, "Years");
  renderDataTable("quarterTable", data.quarter, undefined, "Years");
- renderDataTable("annualTable", data.year, undefined, "Years");
  renderHeatmap(data.heatmap);
 }
 
