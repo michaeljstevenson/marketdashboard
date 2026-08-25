@@ -30,6 +30,7 @@
 // all (ratio-to-own-MA is scale-invariant), so this only affects display.
 
 const { getBreadthStore, BLOB_KEY: BREADTH_BLOB_KEY } = require("./breadth-blob-store");
+const { getPutCallStore, BLOB_KEY: PUTCALL_BLOB_KEY } = require("./putcall-blob-store");
 const { recordAvCall } = require("./av-call-counter");
 
 const ALPHA_VANTAGE_URL = "https://www.alphavantage.co/query";
@@ -293,34 +294,26 @@ function computeNormalizedRatioSeries(numerator, denominator) {
 // mean hundreds of sequential calls, too slow for a single request. This
 // fetches a short trailing window (a few weeks) instead, batched to avoid
 // tripping Alpha Vantage's burst-rate limiter (same issue hit in ticker.js
-// and volatility.js), scored over a shorter 10-day window accordingly.
-// Because its usable history is so much shorter than the other factors',
-// it's excluded from the composite history chart (like the manual factors)
-// but still counts fully toward the live composite score.
-const PUTCALL_SCORE_WINDOW = 20;
-const PUTCALL_TRADING_DAYS = 40; // enough for a 20-day MA plus a ~20-sample percentile. Wider
-// than 15/30 (itself widened from the original 10/18) because a single
-// day landing at the top/bottom of a small sample hits an exact 0 or 100
-// score more often than it should — a real percentile result, just a
-// misleadingly "broken-looking" one with too few data points. Tried
-// 30/60 first, but the extra ~6 sequential Alpha Vantage batches pushed
-// this function's total runtime past Netlify's timeout (502). 20/40 adds
-// only 2 more batches than the known-safe 15/30 config.
+// and volatility.js), so a live version of this factor used to refetch
+// ~40 sequential per-date calls on every single page load — that pushed
+// data.js's own runtime close to (and at one point past, a 502) Netlify's
+// function timeout, and Alpha Vantage's burst limiter was silently
+// dropping a different subset of dates on each run, making the score
+// visibly flip-flop between near-simultaneous page loads. It's now
+// fetched once daily by scheduled-putcall-background.js and read from
+// Netlify Blobs here instead — see that file for the full story. Because
+// its usable history (~90 trading days) is still much shorter than the
+// other factors', it's excluded from the composite history chart but
+// still counts fully toward the live composite score.
+const PUTCALL_SCORE_WINDOW = 30;
 
-async function fetchPutCallWindow(apiKey, symbol, tradingDates) {
-  const dates = tradingDates.slice(-PUTCALL_TRADING_DAYS);
-  const points = [];
-  for (let i = 0; i < dates.length; i += 5) {
-    const batch = dates.slice(i, i + 5).map(async (dateStr) => {
-      const payload = await fetchJson(`${ALPHA_VANTAGE_URL}?function=HISTORICAL_PUT_CALL_RATIO&symbol=${symbol}&date=${dateStr}&apikey=${apiKey}`);
-      const value = parseFloat(payload.put_call_ratio_full_chain);
-      if (Number.isNaN(value)) return null;
-      return { x: Date.parse(dateStr), y: value };
-    });
-    points.push(...(await Promise.all(batch)));
-    if (i + 5 < dates.length) await sleep(800);
+async function fetchPutCallFromBlob() {
+  const store = getPutCallStore();
+  const payload = await store.get(PUTCALL_BLOB_KEY, { type: "json" });
+  if (!payload || !payload.points || !payload.points.length) {
+    throw new Error("Put/call blob not yet populated — scheduled-putcall-background hasn't run yet");
   }
-  return points.filter(Boolean).sort((a, b) => a.x - b.x);
+  return payload.points.map((p) => ({ x: Date.parse(p.date), y: p.value }));
 }
 
 const PUTCALL_SPEC = {
@@ -332,7 +325,7 @@ const PUTCALL_SPEC = {
   source: { name: "Alpha Vantage — SPY Options Put/Call Ratio", url: "https://www.alphavantage.co/" },
   description: "A rising put/call ratio relative to trend indicates bearish positioning.",
   details:
-    "This factor tracks the full-options-chain ratio of put contracts (bets that SPY will fall) to call contracts (bets that it will rise). When investors are nervous, they buy more puts to hedge or speculate on declines, pushing the ratio up; when they're confident, call buying dominates and the ratio falls.\n\nAlpha Vantage only exposes this ratio one trading day at a time (no bulk historical endpoint), so this factor is scored against a shorter 10-day trailing average rather than the 50-day window used elsewhere, and — unlike every other daily factor — isn't included in the composite history chart below, since its usable history is too short to date-align with the others. It still counts fully toward the live composite score.",
+    "This factor tracks the full-options-chain ratio of put contracts (bets that SPY will fall) to call contracts (bets that it will rise). When investors are nervous, they buy more puts to hedge or speculate on declines, pushing the ratio up; when they're confident, call buying dominates and the ratio falls.\n\nAlpha Vantage only exposes this ratio one trading day at a time (no bulk historical endpoint), so this factor is fetched and scored once daily by a background job rather than live, against a shorter 30-day trailing average than the 50-day window used elsewhere — and, unlike every other daily factor, isn't included in the composite history chart below, since its usable history is too short to date-align with the others. It still counts fully toward the live composite score.",
 };
 
 function buildPutCallComponent(points) {
@@ -705,10 +698,7 @@ exports.handler = async () => {
     await sleep(300);
     const newsFeed = await safe("News Sentiment (SPY)", () => fetchNewsSentiment(apiKey, "SPY", NEWS_SENTIMENT_LOOKBACK_DAYS));
 
-    const putCallPoints = spxDaily
-      ? await safe("Equity Put/Call Ratio", () => fetchPutCallWindow(apiKey, "SPY", spxDaily.map((p) => toDateStr(p.x))))
-      : null;
-    if (!spxDaily) warnings.push("Equity Put/Call Ratio: skipped, depends on SPX trading dates which failed to load");
+    const putCallPoints = await safe("Equity Put/Call Ratio", () => fetchPutCallFromBlob());
 
     const breadthInternals = await safe("Market Breadth", () => fetchBreadthInternals());
 

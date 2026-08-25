@@ -136,3 +136,11 @@
   # it's cheap enough to run through the day — see
   # scheduled-daychange-background.js for the rate-limit pacing.
   schedule = "30 13-19 * * 1-5"
+
+[functions."scheduled-putcall-background"]
+  # 20:55 UTC — after the other daily jobs. Moved off the live request
+  # path (was inside data.js, refetched on every page load) after its
+  # ~40 sequential per-date Alpha Vantage calls started pushing that
+  # function's runtime past Netlify's timeout; see
+  # scheduled-putcall-background.js for the full story.
+  schedule = "55 20 * * 1-5"
