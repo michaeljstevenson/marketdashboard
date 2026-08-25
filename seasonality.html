@@ -313,7 +313,12 @@ h1{
  margin-bottom:16px;
 }
 
-/* DATA TABLES (filterable) */
+/* DATA TABLES (filterable) — transposed: categories (Mon/Tue/..., 1-31,
+   Jan-Dec, Q1-Q4) run across columns, stats (Avg Return, Min, Median,
+   Max, % Positive, N) run down rows. A day-of-month table has 31
+   category columns, which is exactly the case table-scroll's horizontal
+   scroll exists for; the stat-label column stays pinned via sticky
+   while the rest scrolls under it. */
 
 .table-scroll{
  overflow-x:auto;
@@ -322,18 +327,15 @@ h1{
 table.data-table{
  border-collapse:collapse;
  width:100%;
- min-width:460px;
  font-family:var(--mono);
  font-size:12.5px;
 }
 
 table.data-table th, table.data-table td{
- padding:6px 8px;
+ padding:6px 10px;
  text-align:right;
  white-space:nowrap;
 }
-
-table.data-table .label{ text-align:left; }
 
 table.data-table thead th{
  color:var(--muted);
@@ -341,33 +343,45 @@ table.data-table thead th{
  border-bottom:1px solid var(--hair);
 }
 
-table.data-table thead th.sortable{
+table.data-table thead th.toggle-col{
  cursor:pointer;
  user-select:none;
 }
 
-table.data-table thead th.sortable:hover{ color:var(--ink); }
+table.data-table thead th.toggle-col:hover{ color:var(--ink); }
 
-table.data-table thead th.sort-active{ color:var(--greed); }
+table.data-table tbody th{
+ text-align:left;
+ color:var(--muted);
+ font-weight:400;
+ position:sticky;
+ left:0;
+ background:var(--card);
+}
 
-table.data-table thead th .sort-arrow{
+table.data-table tbody th.sortable{
+ cursor:pointer;
+ user-select:none;
+}
+
+table.data-table tbody th.sortable:hover{ color:var(--ink); }
+
+table.data-table tbody th.sort-active{ color:var(--greed); }
+
+table.data-table tbody th .sort-arrow{
  display:inline-block;
  width:0.9em;
  opacity:0.7;
 }
 
-table.data-table tbody tr{ cursor:pointer; }
+table.data-table td.col-excluded, table.data-table th.col-excluded{
+ opacity:0.35;
+ text-decoration:line-through;
+}
 
-table.data-table tbody tr:hover{ background:var(--card-hover); }
-
-table.data-table tbody tr.row-excluded{ opacity:0.35; }
-
-table.data-table tbody tr.row-excluded td{ text-decoration:line-through; }
-
-table.data-table tfoot td{
- border-top:1px solid var(--hair);
+table.data-table .filtered-col{
+ border-left:1px solid var(--hair);
  font-weight:600;
- padding-top:10px;
 }
 
 table.data-table .up{ color:var(--up); }
@@ -623,11 +637,7 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 </div>
 </div>
 <div class="table-scroll">
-<table class="data-table" id="dowTable">
-<thead><tr><th class="label sortable" data-sort="label">Day</th><th class="sortable" data-sort="mean">Avg Return</th><th class="sortable" data-sort="min">Min</th><th class="sortable" data-sort="median">Median</th><th class="sortable" data-sort="max">Max</th><th class="sortable" data-sort="pctPositive">% Positive</th><th class="sortable" data-sort="n">N</th></tr></thead>
-<tbody></tbody>
-<tfoot><tr><td class="label">Filtered avg</td><td id="dowTableFilteredMean">—</td><td id="dowTableFilteredMin">—</td><td id="dowTableFilteredMedian">—</td><td id="dowTableFilteredMax">—</td><td id="dowTableFilteredPct">—</td><td id="dowTableFilteredN">—</td></tr></tfoot>
-</table>
+<table class="data-table" id="dowTable"></table>
 </div>
 <div class="dist-wrap" id="dowTableDist"></div>
 </div>
@@ -644,11 +654,7 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 </div>
 </div>
 <div class="table-scroll">
-<table class="data-table" id="domTable">
-<thead><tr><th class="label sortable" data-sort="label">Day</th><th class="sortable" data-sort="mean">Avg Return</th><th class="sortable" data-sort="min">Min</th><th class="sortable" data-sort="median">Median</th><th class="sortable" data-sort="max">Max</th><th class="sortable" data-sort="pctPositive">% Positive</th><th class="sortable" data-sort="n">N</th></tr></thead>
-<tbody></tbody>
-<tfoot><tr><td class="label">Filtered avg</td><td id="domTableFilteredMean">—</td><td id="domTableFilteredMin">—</td><td id="domTableFilteredMedian">—</td><td id="domTableFilteredMax">—</td><td id="domTableFilteredPct">—</td><td id="domTableFilteredN">—</td></tr></tfoot>
-</table>
+<table class="data-table" id="domTable"></table>
 </div>
 <div class="dist-wrap" id="domTableDist"></div>
 </div>
@@ -667,11 +673,7 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 </div>
 </div>
 <div class="table-scroll">
-<table class="data-table" id="monthTable">
-<thead><tr><th class="label sortable" data-sort="label">Month</th><th class="sortable" data-sort="mean">Avg Return</th><th class="sortable" data-sort="min">Min</th><th class="sortable" data-sort="median">Median</th><th class="sortable" data-sort="max">Max</th><th class="sortable" data-sort="pctPositive">% Positive</th><th class="sortable" data-sort="n">Years</th></tr></thead>
-<tbody></tbody>
-<tfoot><tr><td class="label">Filtered avg</td><td id="monthTableFilteredMean">—</td><td id="monthTableFilteredMin">—</td><td id="monthTableFilteredMedian">—</td><td id="monthTableFilteredMax">—</td><td id="monthTableFilteredPct">—</td><td id="monthTableFilteredN">—</td></tr></tfoot>
-</table>
+<table class="data-table" id="monthTable"></table>
 </div>
 <div class="dist-wrap" id="monthTableDist"></div>
 </div>
@@ -688,11 +690,7 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 </div>
 </div>
 <div class="table-scroll">
-<table class="data-table" id="quarterTable">
-<thead><tr><th class="label sortable" data-sort="label">Quarter</th><th class="sortable" data-sort="mean">Avg Return</th><th class="sortable" data-sort="min">Min</th><th class="sortable" data-sort="median">Median</th><th class="sortable" data-sort="max">Max</th><th class="sortable" data-sort="pctPositive">% Positive</th><th class="sortable" data-sort="n">Years</th></tr></thead>
-<tbody></tbody>
-<tfoot><tr><td class="label">Filtered avg</td><td id="quarterTableFilteredMean">—</td><td id="quarterTableFilteredMin">—</td><td id="quarterTableFilteredMedian">—</td><td id="quarterTableFilteredMax">—</td><td id="quarterTableFilteredPct">—</td><td id="quarterTableFilteredN">—</td></tr></tfoot>
-</table>
+<table class="data-table" id="quarterTable"></table>
 </div>
 <div class="dist-wrap" id="quarterTableDist"></div>
 </div>
@@ -710,11 +708,7 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 </div>
 </div>
 <div class="table-scroll">
-<table class="data-table" id="annualTable">
-<thead><tr><th class="label sortable" data-sort="label">Years</th><th class="sortable" data-sort="mean">Avg Return</th><th class="sortable" data-sort="min">Min</th><th class="sortable" data-sort="median">Median</th><th class="sortable" data-sort="max">Max</th><th class="sortable" data-sort="pctPositive">% Positive</th><th class="sortable" data-sort="n">Years</th></tr></thead>
-<tbody></tbody>
-<tfoot><tr><td class="label">Filtered avg</td><td id="annualTableFilteredMean">—</td><td id="annualTableFilteredMin">—</td><td id="annualTableFilteredMedian">—</td><td id="annualTableFilteredMax">—</td><td id="annualTableFilteredPct">—</td><td id="annualTableFilteredN">—</td></tr></tfoot>
-</table>
+<table class="data-table" id="annualTable"></table>
 </div>
 <div class="dist-wrap" id="annualTableDist"></div>
 </div>
@@ -850,28 +844,44 @@ function medianFromHistogram(counts, edges, totalN){
  return edges[edges.length - 1];
 }
 
-function renderDataTable(tableId, rows, digits){
+// Stat rows shown top-to-bottom in every transposed table; "n"'s label
+// is overridden per table (N for daily tables, Years for period tables).
+const STAT_ROWS = [
+ { key: "mean", label: "Avg Return" },
+ { key: "min", label: "Min" },
+ { key: "median", label: "Median" },
+ { key: "max", label: "Max" },
+ { key: "pctPositive", label: "% Positive" },
+ { key: "n", label: "N" },
+];
+
+function statText(stat, value, digits){
+ if(stat.key === "n") return (value || 0).toLocaleString();
+ if(stat.key === "pctPositive") return fmtPositivePct(value);
+ return fmtPct(value, digits);
+}
+
+function renderDataTable(tableId, rows, digits, nLabel){
  const state = TABLE_STATE[tableId] || (TABLE_STATE[tableId] = { excluded: new Set(), sortKey: null, sortDir: 1, view: "table" });
  state.rows = rows;
  state.digits = digits;
+ state.nLabel = nLabel || "N";
  renderTable(tableId);
 }
 
+// Tables are transposed — day/month/quarter/year categories run across
+// columns, stats run down rows — so the whole table is rebuilt from a
+// template string on every render (like renderHeatmap) rather than
+// patched in place: with columns as the filterable/sortable axis now,
+// there's no stable per-row DOM to reuse the way the old row-per-category
+// layout had.
 function renderTable(tableId){
  const state = TABLE_STATE[tableId];
  const table = document.getElementById(tableId);
- const tbody = table.querySelector("tbody");
- const theadRow = table.querySelector("thead tr");
- const filteredMeanEl = document.getElementById(tableId + "FilteredMean");
- const filteredMinEl = document.getElementById(tableId + "FilteredMin");
- const filteredMedianEl = document.getElementById(tableId + "FilteredMedian");
- const filteredMaxEl = document.getElementById(tableId + "FilteredMax");
- const filteredPctEl = document.getElementById(tableId + "FilteredPct");
- const filteredNEl = document.getElementById(tableId + "FilteredN");
 
- let displayRows = state.rows;
+ let cols = state.rows;
  if(state.sortKey){
-  displayRows = state.rows.slice().sort((a, b) => {
+  cols = state.rows.slice().sort((a, b) => {
    let av = a[state.sortKey], bv = b[state.sortKey];
    if(state.sortKey === "label"){
     const an = parseFloat(av), bn = parseFloat(bv);
@@ -885,96 +895,86 @@ function renderTable(tableId){
   });
  }
 
- function refresh(){
-  updateFooter();
-  if(state.view === "distribution") renderDistribution(tableId);
- }
+ // "Filtered avg" column combining every currently-included category —
+ // same math as before, just laid out as a column instead of a footer row.
+ let meanWeighted = 0, meanWeight = 0, posWeighted = 0, posWeight = 0, totalN = 0;
+ let combinedMin = null, combinedMax = null;
+ const edges = HIST_EDGES[HIST_EDGE_KEY[tableId]];
+ const combinedCounts = edges ? new Array(edges.length - 1).fill(0) : null;
+ state.rows.forEach(r => {
+  if(state.excluded.has(r.label) || !r.n) return;
+  totalN += r.n;
+  if(r.mean != null){ meanWeighted += r.mean * r.n; meanWeight += r.n; }
+  if(r.pctPositive != null){ posWeighted += r.pctPositive * r.n; posWeight += r.n; }
+  if(r.min != null) combinedMin = combinedMin == null ? r.min : Math.min(combinedMin, r.min);
+  if(r.max != null) combinedMax = combinedMax == null ? r.max : Math.max(combinedMax, r.max);
+  if(combinedCounts && r.histogram) r.histogram.forEach((c, i) => { combinedCounts[i] += c; });
+ });
+ const filteredValue = {
+  mean: meanWeight ? meanWeighted / meanWeight : null,
+  min: combinedMin,
+  median: combinedCounts ? medianFromHistogram(combinedCounts, edges, totalN) : null,
+  max: combinedMax,
+  pctPositive: posWeight ? posWeighted / posWeight : null,
+  n: totalN,
+ };
 
- tbody.innerHTML = "";
- displayRows.forEach(r => {
-  const tr = document.createElement("tr");
-  const meanClass = r.mean == null ? "" : r.mean >= 0 ? "up" : "down";
-  tr.className = state.excluded.has(r.label) ? "row-excluded" : "";
-  tr.innerHTML =
-   '<td class="label">' + r.label + "</td>" +
-   '<td class="' + meanClass + '">' + fmtPct(r.mean, state.digits) + "</td>" +
-   "<td>" + fmtPct(r.min, state.digits) + "</td>" +
-   "<td>" + fmtPct(r.median, state.digits) + "</td>" +
-   "<td>" + fmtPct(r.max, state.digits) + "</td>" +
-   "<td>" + fmtPositivePct(r.pctPositive) + "</td>" +
-   "<td>" + r.n.toLocaleString() + "</td>";
-  tr.addEventListener("click", () => {
-   if(state.excluded.has(r.label)) state.excluded.delete(r.label);
-   else state.excluded.add(r.label);
-   tr.classList.toggle("row-excluded");
-   refresh();
+ let headHtml = "<tr><th></th>";
+ cols.forEach(r => {
+  const excluded = state.excluded.has(r.label);
+  headHtml += '<th class="toggle-col' + (excluded ? " col-excluded" : "") + '" data-cat="' + r.label + '">' + r.label + "</th>";
+ });
+ headHtml += '<th class="filtered-col">Filtered avg</th></tr>';
+
+ let bodyHtml = "";
+ STAT_ROWS.forEach(stat => {
+  const label = stat.key === "n" ? state.nLabel : stat.label;
+  const active = state.sortKey === stat.key;
+  const arrow = active ? (state.sortDir === 1 ? " ▲" : " ▼") : "";
+  bodyHtml += '<tr><th class="sortable' + (active ? " sort-active" : "") + '" data-sort="' + stat.key + '">' + label + arrow + "</th>";
+  cols.forEach(r => {
+   const excluded = state.excluded.has(r.label);
+   const cls = (stat.key === "mean" && r.mean != null) ? (r.mean >= 0 ? "up" : "down") : "";
+   bodyHtml += '<td class="' + cls + (excluded ? " col-excluded" : "") + '">' + statText(stat, r[stat.key], state.digits) + "</td>";
   });
-  tbody.appendChild(tr);
+  const fv = filteredValue[stat.key];
+  const filteredCls = (stat.key === "mean" && fv != null) ? (fv >= 0 ? "up" : "down") : "";
+  bodyHtml += '<td class="filtered-col ' + filteredCls + '">' + statText(stat, fv, state.digits) + "</td></tr>";
  });
 
- function updateFooter(){
-  let meanWeighted = 0, meanWeight = 0, posWeighted = 0, posWeight = 0, totalN = 0;
-  let combinedMin = null, combinedMax = null;
-  const edges = HIST_EDGES[HIST_EDGE_KEY[tableId]];
-  const combinedCounts = edges ? new Array(edges.length - 1).fill(0) : null;
-  state.rows.forEach(r => {
-   if(state.excluded.has(r.label) || !r.n) return;
-   totalN += r.n;
-   if(r.mean != null){ meanWeighted += r.mean * r.n; meanWeight += r.n; }
-   if(r.pctPositive != null){ posWeighted += r.pctPositive * r.n; posWeight += r.n; }
-   if(r.min != null) combinedMin = combinedMin == null ? r.min : Math.min(combinedMin, r.min);
-   if(r.max != null) combinedMax = combinedMax == null ? r.max : Math.max(combinedMax, r.max);
-   if(combinedCounts && r.histogram) r.histogram.forEach((c, i) => { combinedCounts[i] += c; });
+ table.innerHTML = "<thead>" + headHtml + "</thead><tbody>" + bodyHtml + "</tbody>";
+
+ table.querySelectorAll("thead th.toggle-col").forEach(th => {
+  th.addEventListener("click", () => {
+   const cat = th.dataset.cat;
+   if(state.excluded.has(cat)) state.excluded.delete(cat);
+   else state.excluded.add(cat);
+   renderTable(tableId);
   });
-  const avgMean = meanWeight ? meanWeighted / meanWeight : null;
-  const avgPos = posWeight ? posWeighted / posWeight : null;
-  const combinedMedian = combinedCounts ? medianFromHistogram(combinedCounts, edges, totalN) : null;
-  filteredMeanEl.textContent = fmtPct(avgMean);
-  filteredMeanEl.className = avgMean == null ? "" : avgMean >= 0 ? "up" : "down";
-  filteredMinEl.textContent = fmtPct(combinedMin, state.digits);
-  filteredMedianEl.textContent = fmtPct(combinedMedian, state.digits);
-  filteredMaxEl.textContent = fmtPct(combinedMax, state.digits);
-  filteredPctEl.textContent = fmtPositivePct(avgPos);
-  filteredNEl.textContent = totalN.toLocaleString();
- }
- updateFooter();
+ });
+
+ table.querySelectorAll("tbody th.sortable").forEach(th => {
+  th.addEventListener("click", () => {
+   const key = th.dataset.sort;
+   if(state.sortKey === key) state.sortDir *= -1;
+   else{ state.sortKey = key; state.sortDir = 1; }
+   renderTable(tableId);
+  });
+ });
+
  if(state.view === "distribution") renderDistribution(tableId);
-
- theadRow.querySelectorAll("th.sortable").forEach(th => {
-  const active = th.dataset.sort === state.sortKey;
-  th.classList.toggle("sort-active", active);
-  const existingArrow = th.querySelector(".sort-arrow");
-  if(existingArrow) existingArrow.remove();
-  if(active){
-   const arrow = document.createElement("span");
-   arrow.className = "sort-arrow";
-   arrow.textContent = state.sortDir === 1 ? " ▲" : " ▼";
-   th.appendChild(arrow);
-  }
- });
-
- if(!theadRow.dataset.sortWired){
-  theadRow.dataset.sortWired = "1";
-  theadRow.querySelectorAll("th.sortable").forEach(th => {
-   th.addEventListener("click", () => {
-    const key = th.dataset.sort;
-    if(state.sortKey === key) state.sortDir *= -1;
-    else{ state.sortKey = key; state.sortDir = 1; }
-    renderTable(tableId);
-   });
-  });
- }
 
  const tabsWrap = document.querySelector('.view-tabs[data-view-tabs="' + tableId + '"]');
  if(tabsWrap && !tabsWrap.dataset.wired){
   tabsWrap.dataset.wired = "1";
+  const tableScroll = table.closest(".table-scroll");
   const distWrap = document.getElementById(tableId + "Dist");
   tabsWrap.querySelectorAll(".view-tab").forEach(btn => {
    btn.addEventListener("click", () => {
     if(btn.dataset.view === state.view) return;
     state.view = btn.dataset.view;
     tabsWrap.querySelectorAll(".view-tab").forEach(b => b.classList.toggle("active", b === btn));
-    table.style.display = state.view === "table" ? "" : "none";
+    tableScroll.style.display = state.view === "table" ? "" : "none";
     distWrap.classList.toggle("active", state.view === "distribution");
     if(state.view === "distribution") renderDistribution(tableId);
    });
@@ -1222,9 +1222,9 @@ function renderAll(){
  renderStats(data);
  renderDataTable("dowTable", data.dow, 3);
  renderDataTable("domTable", data.dom, 3);
- renderDataTable("monthTable", data.month);
- renderDataTable("quarterTable", data.quarter);
- renderDataTable("annualTable", data.year);
+ renderDataTable("monthTable", data.month, undefined, "Years");
+ renderDataTable("quarterTable", data.quarter, undefined, "Years");
+ renderDataTable("annualTable", data.year, undefined, "Years");
  renderHeatmap(data.heatmap);
 }
 
