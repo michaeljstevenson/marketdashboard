@@ -321,12 +321,6 @@ table.data-table th, table.data-table td{
  white-space:nowrap;
 }
 
-table.data-table th:first-child, table.data-table td:first-child{
- text-align:center;
- width:24px;
- padding-right:0;
-}
-
 table.data-table .label{ text-align:left; }
 
 table.data-table thead th{
@@ -335,19 +329,34 @@ table.data-table thead th{
  border-bottom:1px solid var(--hair);
 }
 
+table.data-table thead th.sortable{
+ cursor:pointer;
+ user-select:none;
+}
+
+table.data-table thead th.sortable:hover{ color:var(--ink); }
+
+table.data-table thead th.sort-active{ color:var(--greed); }
+
+table.data-table thead th .sort-arrow{
+ display:inline-block;
+ width:0.9em;
+ opacity:0.7;
+}
+
+table.data-table tbody tr{ cursor:pointer; }
+
 table.data-table tbody tr:hover{ background:var(--card-hover); }
 
 table.data-table tbody tr.row-excluded{ opacity:0.35; }
 
-table.data-table tbody tr.row-excluded td:not(:first-child){ text-decoration:line-through; }
+table.data-table tbody tr.row-excluded td{ text-decoration:line-through; }
 
 table.data-table tfoot td{
  border-top:1px solid var(--hair);
  font-weight:600;
  padding-top:10px;
 }
-
-table.data-table input[type="checkbox"]{ cursor:pointer; }
 
 table.data-table .up{ color:var(--up); }
 table.data-table .down{ color:var(--down); }
@@ -504,7 +513,7 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <div class="header">
 <div>
 <h1>Seasonality</h1>
-<div class="subtitle">Draft — S&amp;P 500 daily returns sliced by day of week, day of month, calendar month, and quarter. Uncheck rows in a table to filter the average.</div>
+<div class="subtitle">Draft — S&amp;P 500 daily returns sliced by day of week, day of month, calendar month, and quarter. Click a row to exclude it from the filtered average; click a column header to sort.</div>
 </div>
 <div class="updated" id="updated">Loading...</div>
 </div>
@@ -542,13 +551,13 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <div class="chart-box-header">
 <div>
 <h2>Average daily return by day of week</h2>
-<div class="chart-subhead">Uncheck a row to exclude it from the filtered average below</div>
+<div class="chart-subhead">Click a row to exclude it from the filtered average below; click a header to sort</div>
 </div>
 </div>
 <table class="data-table" id="dowTable">
-<thead><tr><th></th><th class="label">Day</th><th>Avg Return</th><th>% Positive</th><th>N</th></tr></thead>
+<thead><tr><th class="label sortable" data-sort="label">Day</th><th class="sortable" data-sort="mean">Avg Return</th><th class="sortable" data-sort="pctPositive">% Positive</th><th class="sortable" data-sort="n">N</th></tr></thead>
 <tbody></tbody>
-<tfoot><tr><td></td><td class="label">Filtered avg</td><td id="dowTableFilteredMean">—</td><td id="dowTableFilteredPct">—</td><td id="dowTableFilteredN">—</td></tr></tfoot>
+<tfoot><tr><td class="label">Filtered avg</td><td id="dowTableFilteredMean">—</td><td id="dowTableFilteredPct">—</td><td id="dowTableFilteredN">—</td></tr></tfoot>
 </table>
 </div>
 
@@ -556,13 +565,13 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <div class="chart-box-header">
 <div>
 <h2>Average daily return by day of month</h2>
-<div class="chart-subhead">Uncheck a row to exclude it from the filtered average below</div>
+<div class="chart-subhead">Click a row to exclude it from the filtered average below; click a header to sort</div>
 </div>
 </div>
 <table class="data-table" id="domTable">
-<thead><tr><th></th><th class="label">Day</th><th>Avg Return</th><th>% Positive</th><th>N</th></tr></thead>
+<thead><tr><th class="label sortable" data-sort="label">Day</th><th class="sortable" data-sort="mean">Avg Return</th><th class="sortable" data-sort="pctPositive">% Positive</th><th class="sortable" data-sort="n">N</th></tr></thead>
 <tbody></tbody>
-<tfoot><tr><td></td><td class="label">Filtered avg</td><td id="domTableFilteredMean">—</td><td id="domTableFilteredPct">—</td><td id="domTableFilteredN">—</td></tr></tfoot>
+<tfoot><tr><td class="label">Filtered avg</td><td id="domTableFilteredMean">—</td><td id="domTableFilteredPct">—</td><td id="domTableFilteredN">—</td></tr></tfoot>
 </table>
 </div>
 </div>
@@ -572,13 +581,13 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <div class="chart-box-header">
 <div>
 <h2>Average monthly return by calendar month</h2>
-<div class="chart-subhead">Compounded return within each calendar month, averaged across every year on file — the "sell in May" table. Uncheck a row to exclude it.</div>
+<div class="chart-subhead">Compounded return within each calendar month, averaged across every year on file — the "sell in May" table. Click a row to exclude it; click a header to sort.</div>
 </div>
 </div>
 <table class="data-table" id="monthTable">
-<thead><tr><th></th><th class="label">Month</th><th>Avg Return</th><th>% Positive</th><th>Years</th></tr></thead>
+<thead><tr><th class="label sortable" data-sort="label">Month</th><th class="sortable" data-sort="mean">Avg Return</th><th class="sortable" data-sort="pctPositive">% Positive</th><th class="sortable" data-sort="n">Years</th></tr></thead>
 <tbody></tbody>
-<tfoot><tr><td></td><td class="label">Filtered avg</td><td id="monthTableFilteredMean">—</td><td id="monthTableFilteredPct">—</td><td id="monthTableFilteredN">—</td></tr></tfoot>
+<tfoot><tr><td class="label">Filtered avg</td><td id="monthTableFilteredMean">—</td><td id="monthTableFilteredPct">—</td><td id="monthTableFilteredN">—</td></tr></tfoot>
 </table>
 </div>
 
@@ -586,13 +595,13 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <div class="chart-box-header">
 <div>
 <h2>Average quarterly return</h2>
-<div class="chart-subhead">Compounded return within each calendar quarter, averaged across every year on file. Uncheck a row to exclude it.</div>
+<div class="chart-subhead">Compounded return within each calendar quarter, averaged across every year on file. Click a row to exclude it; click a header to sort.</div>
 </div>
 </div>
 <table class="data-table" id="quarterTable">
-<thead><tr><th></th><th class="label">Quarter</th><th>Avg Return</th><th>% Positive</th><th>Years</th></tr></thead>
+<thead><tr><th class="label sortable" data-sort="label">Quarter</th><th class="sortable" data-sort="mean">Avg Return</th><th class="sortable" data-sort="pctPositive">% Positive</th><th class="sortable" data-sort="n">Years</th></tr></thead>
 <tbody></tbody>
-<tfoot><tr><td></td><td class="label">Filtered avg</td><td id="quarterTableFilteredMean">—</td><td id="quarterTableFilteredPct">—</td><td id="quarterTableFilteredN">—</td></tr></tfoot>
+<tfoot><tr><td class="label">Filtered avg</td><td id="quarterTableFilteredMean">—</td><td id="quarterTableFilteredPct">—</td><td id="quarterTableFilteredN">—</td></tr></tfoot>
 </table>
 </div>
 </div>
@@ -686,40 +695,69 @@ function renderStats(data){
  }
 }
 
-// Renders one filterable stat table: every row starts checked; unchecking
-// a row excludes it from the "Filtered avg" footer row, which recomputes
-// live as an n-weighted average across whatever rows are still checked —
-// the actual filtering interaction (replacing the old double-click-a-bar
-// gimmick, which visually hid a bar but never surfaced a filtered number
-// anywhere on the page).
+// One entry per table: current rows (replaced wholesale on every
+// range-switch), which row labels are excluded, and the active sort. Kept
+// outside renderDataTable so the header click handlers — wired once per
+// table, not re-wired on every re-render — always act on the latest data
+// instead of closing over whatever `rows` array was current when they
+// were first attached.
+const TABLE_STATE = {};
+
 function renderDataTable(tableId, rows, digits){
+ const state = TABLE_STATE[tableId] || (TABLE_STATE[tableId] = { excluded: new Set(), sortKey: null, sortDir: 1 });
+ state.rows = rows;
+ state.digits = digits;
+ renderTable(tableId);
+}
+
+function renderTable(tableId){
+ const state = TABLE_STATE[tableId];
  const table = document.getElementById(tableId);
  const tbody = table.querySelector("tbody");
- tbody.innerHTML = "";
-
- rows.forEach((r, i) => {
-  const tr = document.createElement("tr");
-  const meanClass = r.mean == null ? "" : r.mean >= 0 ? "up" : "down";
-  tr.innerHTML =
-   '<td><input type="checkbox" checked data-idx="' + i + '"></td>' +
-   '<td class="label">' + r.label + "</td>" +
-   '<td class="' + meanClass + '">' + fmtPct(r.mean, digits) + "</td>" +
-   "<td>" + fmtPositivePct(r.pctPositive) + "</td>" +
-   "<td>" + r.n.toLocaleString() + "</td>";
-  tbody.appendChild(tr);
- });
-
- const checkboxes = Array.from(tbody.querySelectorAll('input[type="checkbox"]'));
+ const theadRow = table.querySelector("thead tr");
  const filteredMeanEl = document.getElementById(tableId + "FilteredMean");
  const filteredPctEl = document.getElementById(tableId + "FilteredPct");
  const filteredNEl = document.getElementById(tableId + "FilteredN");
 
- function update(){
+ let displayRows = state.rows;
+ if(state.sortKey){
+  displayRows = state.rows.slice().sort((a, b) => {
+   let av = a[state.sortKey], bv = b[state.sortKey];
+   if(state.sortKey === "label"){
+    const an = parseFloat(av), bn = parseFloat(bv);
+    if(!isNaN(an) && !isNaN(bn)){ av = an; bv = bn; }
+   }
+   if(av == null) return 1;
+   if(bv == null) return -1;
+   if(av < bv) return -state.sortDir;
+   if(av > bv) return state.sortDir;
+   return 0;
+  });
+ }
+
+ tbody.innerHTML = "";
+ displayRows.forEach(r => {
+  const tr = document.createElement("tr");
+  const meanClass = r.mean == null ? "" : r.mean >= 0 ? "up" : "down";
+  tr.className = state.excluded.has(r.label) ? "row-excluded" : "";
+  tr.innerHTML =
+   '<td class="label">' + r.label + "</td>" +
+   '<td class="' + meanClass + '">' + fmtPct(r.mean, state.digits) + "</td>" +
+   "<td>" + fmtPositivePct(r.pctPositive) + "</td>" +
+   "<td>" + r.n.toLocaleString() + "</td>";
+  tr.addEventListener("click", () => {
+   if(state.excluded.has(r.label)) state.excluded.delete(r.label);
+   else state.excluded.add(r.label);
+   tr.classList.toggle("row-excluded");
+   updateFooter();
+  });
+  tbody.appendChild(tr);
+ });
+
+ function updateFooter(){
   let meanWeighted = 0, meanWeight = 0, posWeighted = 0, posWeight = 0, totalN = 0;
-  rows.forEach((r, i) => {
-   const checked = checkboxes[i].checked;
-   checkboxes[i].closest("tr").classList.toggle("row-excluded", !checked);
-   if(!checked || !r.n) return;
+  state.rows.forEach(r => {
+   if(state.excluded.has(r.label) || !r.n) return;
    totalN += r.n;
    if(r.mean != null){ meanWeighted += r.mean * r.n; meanWeight += r.n; }
    if(r.pctPositive != null){ posWeighted += r.pctPositive * r.n; posWeight += r.n; }
@@ -731,9 +769,32 @@ function renderDataTable(tableId, rows, digits){
   filteredPctEl.textContent = fmtPositivePct(avgPos);
   filteredNEl.textContent = totalN.toLocaleString();
  }
+ updateFooter();
 
- checkboxes.forEach(cb => cb.addEventListener("change", update));
- update();
+ theadRow.querySelectorAll("th.sortable").forEach(th => {
+  const active = th.dataset.sort === state.sortKey;
+  th.classList.toggle("sort-active", active);
+  const existingArrow = th.querySelector(".sort-arrow");
+  if(existingArrow) existingArrow.remove();
+  if(active){
+   const arrow = document.createElement("span");
+   arrow.className = "sort-arrow";
+   arrow.textContent = state.sortDir === 1 ? " ▲" : " ▼";
+   th.appendChild(arrow);
+  }
+ });
+
+ if(!theadRow.dataset.sortWired){
+  theadRow.dataset.sortWired = "1";
+  theadRow.querySelectorAll("th.sortable").forEach(th => {
+   th.addEventListener("click", () => {
+    const key = th.dataset.sort;
+    if(state.sortKey === key) state.sortDir *= -1;
+    else{ state.sortKey = key; state.sortDir = 1; }
+    renderTable(tableId);
+   });
+  });
+ }
 }
 
 function heatmapColor(v){
