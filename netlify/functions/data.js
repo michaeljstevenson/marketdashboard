@@ -297,12 +297,15 @@ function computeNormalizedRatioSeries(numerator, denominator) {
 // Because its usable history is so much shorter than the other factors',
 // it's excluded from the composite history chart (like the manual factors)
 // but still counts fully toward the live composite score.
-const PUTCALL_SCORE_WINDOW = 30;
-const PUTCALL_TRADING_DAYS = 60; // enough for a 30-day MA plus a ~30-sample percentile. Wider
-// than 15/30 (which was itself widened from the original 10/18) because a
-// single day landing at the top/bottom of a small sample hits an exact
-// 0 or 100 score more often than it should — a real percentile result,
-// just a misleadingly "broken-looking" one with too few data points.
+const PUTCALL_SCORE_WINDOW = 20;
+const PUTCALL_TRADING_DAYS = 40; // enough for a 20-day MA plus a ~20-sample percentile. Wider
+// than 15/30 (itself widened from the original 10/18) because a single
+// day landing at the top/bottom of a small sample hits an exact 0 or 100
+// score more often than it should — a real percentile result, just a
+// misleadingly "broken-looking" one with too few data points. Tried
+// 30/60 first, but the extra ~6 sequential Alpha Vantage batches pushed
+// this function's total runtime past Netlify's timeout (502). 20/40 adds
+// only 2 more batches than the known-safe 15/30 config.
 
 async function fetchPutCallWindow(apiKey, symbol, tradingDates) {
   const dates = tradingDates.slice(-PUTCALL_TRADING_DAYS);
