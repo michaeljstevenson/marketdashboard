@@ -7,9 +7,11 @@
 // reading relative to its own trailing moving average, ranked against that
 // reading's own history.
 //
-//   Implied Volatility  — the real CBOE VIX level (INDEX_DATA).
-//   Realized Volatility — the S&P 500's own 14-day ATR, % of price (INDEX_DATA).
-//   Price Momentum      — the real S&P 500 (SPX) price vs. its own 90-day MA (INDEX_DATA).
+//   Implied Volatility  — the real CBOE VIX level (INDEX_DATA — currently unavailable,
+//                         see fetchIndexDaily's usage below: this account's Alpha
+//                         Vantage plan isn't entitled to INDEX_DATA).
+//   Realized Volatility — SPY's own 14-day ATR, % of price (TIME_SERIES_DAILY).
+//   Price Momentum      — SPY's price vs. its own 90-day MA (TIME_SERIES_DAILY).
 //   Equity Put/Call     — SPY's full-chain options put/call ratio (HISTORICAL_PUT_CALL_RATIO).
 //   Credit Conditions   — HYG (high-yield) vs. LQD (investment-grade) price ratio, normalized.
 //   Market Breadth      — three real advance/decline internals (A-D line, net new 52-week
@@ -67,10 +69,9 @@ function percentileRank(values, latestValue) {
 // Computes a self-derived 0-100 score for every date in `points` that has
 // enough trailing history for a moving average: today's (or that day's)
 // reading relative to its own trailing MA, ranked against that reading's
-// entire history. Returns [{x, score, value, ma, ratio, ratioPercentile}],
-// aligned to points[window-1..]. Uses a single full-sample ranking (not an
-// expanding/point-in-time window), so historical scores here are internally
-// consistent but not exactly what would have been shown live on that date.
+// history up to and including that date (see the expanding-window note
+// below). Returns [{x, score, value, ma, ratio, ratioPercentile}], aligned
+// to points[window-1..].
 function computeRelativeScoreSeries(points, window, invert) {
   const values = points.map((p) => p.y);
   if (values.length < window) return [];
@@ -202,6 +203,35 @@ async function fetchIndexDaily(apiKey, symbol) {
       high: parseFloat(d.high),
       low: parseFloat(d.low),
       close: parseFloat(d.close),
+    }))
+    .sort((a, b) => a.x - b.x);
+}
+
+// Same shape as fetchIndexDaily (OHLC, not just close), but via
+// TIME_SERIES_DAILY on an ETF rather than INDEX_DATA on the raw index —
+// this account's Alpha Vantage plan isn't entitled to INDEX_DATA ("You
+// are not yet entitled to index data access"), which was silently
+// dropping Momentum, Realized Volatility, the bottom chart's S&P line,
+// and anything else keyed off SPX. SPY tracks the S&P 500 within basis
+// points for relative-strength/ATR purposes, so it's a safe substitute
+// for the entitled TIME_SERIES_DAILY endpoint already used elsewhere here.
+async function fetchStockDailyOHLC(apiKey, symbol, outputsize) {
+  const payload = await fetchJson(`${ALPHA_VANTAGE_URL}?function=TIME_SERIES_DAILY&symbol=${symbol}&outputsize=${outputsize}&apikey=${apiKey}`);
+
+  const series = payload["Time Series (Daily)"];
+  if (!series) {
+    throw new Error(
+      `Alpha Vantage TIME_SERIES_DAILY missing data for ${symbol}: ` + (payload.Note || payload.Information || payload.error_message || JSON.stringify(payload).slice(0, 200))
+    );
+  }
+
+  return Object.entries(series)
+    .map(([date, day]) => ({
+      x: Date.parse(date),
+      open: parseFloat(day["1. open"]),
+      high: parseFloat(day["2. high"]),
+      low: parseFloat(day["3. low"]),
+      close: parseFloat(day["4. close"]),
     }))
     .sort((a, b) => a.x - b.x);
 }
@@ -340,7 +370,7 @@ const REALIZED_VOL_SPEC = {
   invert: true,
   atrWindow: 14,
   maWindow: 20, // volatility mean-reverts fast — a 50-day window blunted genuine spikes
-  source: { name: "Alpha Vantage — S&P 500 Index (SPX)", url: "https://www.alphavantage.co/" },
+  source: { name: "Alpha Vantage — S&P 500 (SPY)", url: "https://www.alphavantage.co/" },
   description: "A rising 14-day Average True Range relative to trend signals widening realized price swings.",
   details:
     "Realized volatility measures how much the S&P 500 has actually been moving, in contrast to Implied Volatility (the VIX), which measures what options traders expect it to move. This factor uses the 14-day Average True Range (ATR) — the average of each day's true trading range (accounting for gaps) over the last 14 trading days — expressed as a percentage of the index's price so it stays comparable across different price levels and eras.\n\nThe score compares today's ATR% to its own 20-day average (shorter than the 50-day window used for slower factors, since volatility regimes mean-revert quickly), ranked against its full history back to 1997. ATR running above trend means the index has genuinely been swinging more than usual — realized fear rather than merely anticipated fear. Because realized and implied volatility usually move together but can diverge (implied often runs above realized as a risk premium), watching both side by side reveals when the market's expectations and its actual behavior are out of sync.",
@@ -464,7 +494,7 @@ const MOMENTUM_SPEC = {
   unit: `% vs ${MOMENTUM_DISPLAY_WINDOW}-day MA`,
   weight: 10,
   invert: false,
-  source: { name: "Alpha Vantage — S&P 500 Index (SPX)", url: "https://www.alphavantage.co/" },
+  source: { name: "Alpha Vantage — S&P 500 (SPY)", url: "https://www.alphavantage.co/" },
   description: "Strong price trends relative to the recent average increase investor optimism.",
   details:
     "Price Momentum compares the real S&P 500 index level to its own 90-day moving average, a simple trend-following signal: when the index is trading above its recent average, the market is in an established uptrend, which tends to coincide with optimism; when it's trading below, the trend has turned down.\n\nBecause this reading is derived directly from price — the same thing sentiment is meant to help explain — it's treated as a lagging, confirming signal here rather than a leading one, and is weighted accordingly. The score compares today's price to its own 50-day average, ranked against the index's full history back to 1997; the number displayed on the card uses a 90-day moving average instead, a more conventional momentum window for the figure investors actually look at.",
@@ -646,7 +676,7 @@ exports.handler = async () => {
     // when awaited one at a time - fast-resolving calls can still land
     // under 200ms apart otherwise. Same issue hit in ticker.js and
     // volatility.js, but those only had 2-3 calls to space out.
-    const spxDaily = await safe("Price Momentum / Realized Volatility (SPX)", () => fetchIndexDaily(apiKey, "SPX"));
+    const spxDaily = await safe("Price Momentum / Realized Volatility (S&P 500 via SPY)", () => fetchStockDailyOHLC(apiKey, "SPY", "full"));
     await sleep(300);
     const vixDaily = await safe("Implied Volatility (VIX)", () => fetchIndexDaily(apiKey, "VIX"));
     await sleep(300);

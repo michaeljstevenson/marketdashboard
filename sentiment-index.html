@@ -438,11 +438,35 @@ h1{
 }
 
 
+.gauge{
+
+ width:100%;
+ height:auto;
+ display:block;
+
+}
+
+.gauge-band{
+
+ fill:none;
+ stroke-width:22;
+ stroke-linecap:butt;
+
+}
+
+#gaugeNeedle{
+
+ transition:x2 0.6s ease, y2 0.6s ease;
+
+}
+
 .score{
 
  font-family:var(--serif);
- font-size:70px;
+ font-size:44px;
  line-height:1;
+ text-align:center;
+ margin-top:-8px;
 
 }
 
@@ -451,6 +475,7 @@ h1{
 
  font-size:18px;
  margin-top:10px;
+ text-align:center;
 
 }
 
@@ -1159,6 +1184,16 @@ Loading...
 
 <div class="score-box" id="scoreBox">
 
+<svg class="gauge" viewBox="0 0 220 128" xmlns="http://www.w3.org/2000/svg">
+<path class="gauge-band" d="M 20 108 A 90 90 0 0 1 37.19 55.10" stroke="var(--fear)"/>
+<path class="gauge-band" d="M 37.19 55.10 A 90 90 0 0 1 82.19 22.42" stroke="var(--fear)"/>
+<path class="gauge-band" d="M 82.19 22.42 A 90 90 0 0 1 137.81 22.42" stroke="var(--neutral)"/>
+<path class="gauge-band" d="M 137.81 22.42 A 90 90 0 0 1 182.81 55.10" stroke="var(--greed)"/>
+<path class="gauge-band" d="M 182.81 55.10 A 90 90 0 0 1 200 108" stroke="var(--extreme)"/>
+<line id="gaugeNeedle" x1="110" y1="108" x2="110" y2="108" stroke="var(--ink)" stroke-width="3" stroke-linecap="round"/>
+<circle cx="110" cy="108" r="6" fill="var(--ink)"/>
+</svg>
+
 <div class="score" id="score">
 --
 </div>
@@ -1459,6 +1494,16 @@ return "Extreme optimism detected. Expectations may be vulnerable to disappointm
 */
 
 
+function updateGaugeNeedle(score){
+ const clamped = Math.max(0, Math.min(100, score));
+ const angleDeg = 180 - clamped * 1.8;
+ const rad = angleDeg * Math.PI / 180;
+ const needle = document.getElementById("gaugeNeedle");
+ needle.setAttribute("x2", 110 + 78 * Math.cos(rad));
+ needle.setAttribute("y2", 108 - 78 * Math.sin(rad));
+}
+
+
 function renderDashboard(data){
 
 
@@ -1469,6 +1514,10 @@ const composite = data.composite;
 
 const regime =
 getRegime(composite);
+
+
+
+updateGaugeNeedle(composite);
 
 
 
