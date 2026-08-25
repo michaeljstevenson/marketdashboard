@@ -389,6 +389,15 @@ table.heatmap thead th{
  background:var(--card);
 }
 
+table.heatmap thead th.sortable{
+ cursor:pointer;
+ user-select:none;
+}
+
+table.heatmap thead th.sortable:hover{ color:var(--ink); }
+
+table.heatmap thead th.sort-active{ color:var(--greed); }
+
 table.heatmap tbody th{
  text-align:left;
  color:var(--muted);
@@ -610,7 +619,7 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <div class="chart-box-header">
 <div>
 <h2>Monthly returns by year</h2>
-<div class="chart-subhead">Compounded return each calendar month; darker green/red = larger positive/negative reading. Source: Yahoo Finance daily close history for ^GSPC, recomputed once daily after the close and cached.</div>
+<div class="chart-subhead">Compounded return each calendar month; darker green/red = larger positive/negative reading. Click a column header to sort. Source: Yahoo Finance daily close history for ^GSPC, recomputed once daily after the close and cached.</div>
 </div>
 </div>
 <div class="heatmap-wrap" id="heatmapWrap">
@@ -814,10 +823,45 @@ function hexToRgb(hex){
 
 const MONTH_NAMES = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
 
+// Default matches the order the backend already sends (most recent year
+// first). Sorting by a month column puts years with no data for that
+// month (before it existed / the 2026-style partial current year) at the
+// bottom regardless of direction, same convention as the stat tables.
+const HEATMAP_STATE = { sortKey: "year", sortDir: -1 };
+
+function heatmapSortValue(row, key){
+ if(key === "year") return row.year;
+ if(key === "total") return row.total;
+ return row.months[parseInt(key.slice(1), 10)];
+}
+
 function renderHeatmap(rows){
  const table = document.getElementById("heatmapTable");
- let html = "<thead><tr><th>Year</th>" + MONTH_NAMES.map(m => "<th>" + m + "</th>").join("") + "<th>Year Total</th></tr></thead><tbody>";
- rows.forEach(row => {
+ const state = HEATMAP_STATE;
+
+ let displayRows = rows;
+ if(state.sortKey){
+  displayRows = rows.slice().sort((a, b) => {
+   const av = heatmapSortValue(a, state.sortKey), bv = heatmapSortValue(b, state.sortKey);
+   if(av == null) return 1;
+   if(bv == null) return -1;
+   if(av < bv) return -state.sortDir;
+   if(av > bv) return state.sortDir;
+   return 0;
+  });
+ }
+
+ const headerDefs = [["year", "Year"]]
+  .concat(MONTH_NAMES.map((m, i) => ["m" + i, m]))
+  .concat([["total", "Year Total"]]);
+ const headerHtml = headerDefs.map(([key, label]) => {
+  const active = key === state.sortKey;
+  const arrow = active ? (state.sortDir === 1 ? " ▲" : " ▼") : "";
+  return '<th class="sortable' + (active ? " sort-active" : "") + '" data-sort="' + key + '">' + label + arrow + "</th>";
+ }).join("");
+
+ let html = "<thead><tr>" + headerHtml + "</tr></thead><tbody>";
+ displayRows.forEach(row => {
   html += "<tr><th>" + row.year + "</th>";
   row.months.forEach(v => {
    html += v == null
@@ -828,6 +872,17 @@ function renderHeatmap(rows){
  });
  html += "</tbody>";
  table.innerHTML = html;
+
+ // thead is rebuilt from scratch above every render, so listeners are
+ // re-attached fresh each time rather than needing a wired-once guard.
+ table.querySelectorAll("thead th.sortable").forEach(th => {
+  th.addEventListener("click", () => {
+   const key = th.dataset.sort;
+   if(state.sortKey === key) state.sortDir *= -1;
+   else{ state.sortKey = key; state.sortDir = -1; }
+   renderHeatmap(rows);
+  });
+ });
 }
 
 function renderAll(){
