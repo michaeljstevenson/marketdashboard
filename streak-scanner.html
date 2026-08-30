@@ -1,3 +1,4 @@
+<meta charset="utf-8">
 <title>Streak Scanner</title>
 <meta name="robots" content="noindex,nofollow">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -67,6 +68,20 @@ select,input[type="search"]{font:inherit; font-size:0.82rem; background:var(--su
 input[type="search"]{min-width:170px}
 input:focus-visible,select:focus-visible{outline:2px solid var(--accent); outline-offset:1px}
 .count{font-size:0.78rem; color:var(--ink-dim); margin:14px 2px 8px}
+
+.feed{margin:26px 0}
+.feed h2{font-size:1.05rem; font-weight:600; margin-bottom:10px; display:flex; align-items:baseline; gap:8px; flex-wrap:wrap}
+.feed .feednote{font-family:"IBM Plex Mono",monospace; font-size:0.66rem; letter-spacing:0.06em;
+  text-transform:uppercase; color:var(--ink-dim); font-weight:400}
+.feed .feedcount{font-family:"IBM Plex Mono",monospace; font-size:0.72rem; color:var(--ink-dim); font-weight:400}
+.item.ended .meta{color:var(--ink-dim)}
+.cbtns{display:flex; gap:8px; margin-top:14px; padding-top:12px; border-top:1px solid var(--line)}
+.cbtn{font:inherit; font-size:0.8rem; cursor:pointer; padding:5px 12px; border-radius:7px;
+  background:var(--ink); color:var(--ground); border:1px solid var(--ink)}
+.cbtn.ghost{background:none; color:var(--ink-dim); border-color:var(--line)}
+.cbtn:hover{opacity:0.85}
+.cbtn:focus-visible{outline:2px solid var(--accent); outline-offset:2px}
+.cbtn[disabled]{opacity:0.5; cursor:default}
 
 .rows{display:flex; flex-direction:column; gap:1px; background:var(--line);
   border:1px solid var(--line); border-radius:10px; overflow:hidden}
@@ -165,6 +180,16 @@ table.fwd tbody td:first-child{font-family:"IBM Plex Mono",monospace; color:var(
 
   <div class="tiles" id="tiles"></div>
 
+  <section id="archiveSection" class="feed" hidden>
+    <h2>Archive <span class="feedcount" id="archiveCount"></span></h2>
+    <div class="rows" id="archiveRows"></div>
+  </section>
+
+  <section id="endedSection" class="feed" hidden>
+    <h2>Recently ended <span class="feednote">rarity was &gt; 50%</span> <span class="feedcount" id="endedCount"></span></h2>
+    <div class="rows" id="endedRows"></div>
+  </section>
+
   <div class="controls">
     <div class="chips" id="groupchips">
       <button class="chip" data-g="all" aria-pressed="true">All</button>
@@ -220,6 +245,7 @@ const pctS = n => (n >= 0 ? "+" : "") + (n * 100).toFixed(1) + "%";
 const pct0 = n => Math.round(n * 100) + "%";
 const MONTHS = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
 const ym = s => s ? MONTHS[+s.slice(5,7) - 1] + " " + s.slice(0,4) : "";
+const ymd = s => s ? MONTHS[+s.slice(5,7) - 1] + " " + (+s.slice(8,10)) + ", " + s.slice(0,4) : "";
 const store = (k,val) => {
   try{
     if(val === undefined) return localStorage.getItem("ss_" + k);
@@ -265,6 +291,7 @@ function init(){
   ).join("");
 
   render();
+  curationLoad().then(renderFeeds);
 }
 
 function distSVG(dist){
@@ -311,9 +338,13 @@ function bodyHTML(c){
     '<div class="leadin">The last ' + (c.analogCount || 0) + ' times ' + c.label + ' did reach ' +
     c.floor + ' ' + c.unit + 's — how the next year went:</div>';
 
+  return track + lead + fwdTable(c) + swarm(c) + rungHTML(c);
+}
+
+function fwdTable(c){
   const body = HZ.map((h,hi2) => {
     const s = c.summary && c.summary[h];
-    if(!s) return '<tr><td>' + HZLABEL[hi2] + '</td><td colspan="4" class="thin">no full window yet</td></tr>';
+    if(!s) return '<tr><td>' + HZLABEL[hi2] + '</td><td colspan="5" class="thin">no full window</td></tr>';
     return '<tr><td>' + HZLABEL[hi2] + '</td>' +
       '<td class="' + (s.medianRet >= 0 ? "pos" : "neg") + '">' + pctS(s.medianRet) + '</td>' +
       '<td>' + pct0(s.pctPositive) + '</td>' +
@@ -321,13 +352,118 @@ function bodyHTML(c){
       '<td>' + pct0(s.pctWith3pctDrawdown) + '</td>' +
       '<td>' + s.n + '</td></tr>';
   }).join("");
+  return '<table class="fwd"><thead><tr><th>After</th><th>Median</th><th>% up</th>' +
+    '<th>Med. max DD</th><th>Saw &minus;3%</th><th>n</th></tr></thead><tbody>' + body + '</tbody></table>';
+}
 
-  return track + lead +
-    '<table class="fwd"><thead><tr><th>After</th><th>Median</th><th>% up</th>' +
-    '<th>Med. max DD</th><th>Saw &minus;3%</th><th>n</th></tr></thead><tbody>' + body + '</tbody></table>' +
-    '<div class="dist"><div class="cap">Each analog’s 1-month return (n=' +
-    (c.dist ? c.dist.length : 0) + ')</div>' + distSVG(c.dist) + '</div>' +
-    rungHTML(c);
+function swarm(c){
+  return '<div class="dist"><div class="cap">Each analog’s 1-month return (n=' +
+    (c.dist ? c.dist.length : 0) + ')</div>' + distSVG(c.dist) + '</div>';
+}
+
+// ---- Recently-ended feed + archive -----------------------------------------
+
+let CURATION = { archived: [], dismissed: [] };
+let curationVia = "local";
+const PW = () => { try { return sessionStorage.getItem("ss_pw") || ""; } catch(e){ return ""; } };
+const readLocalCuration = () => {
+  try { return JSON.parse(localStorage.getItem("ss_curation") || "null") || { archived: [], dismissed: [] }; }
+  catch(e){ return { archived: [], dismissed: [] }; }
+};
+
+async function curationLoad(){
+  try {
+    const res = await fetch("/api/oddstats-curation", { headers: { "x-streak-password": PW() }, cache: "no-store" });
+    if(res.ok){ CURATION = await res.json(); curationVia = "server"; return; }
+  } catch(e){}
+  curationVia = "local";
+  CURATION = readLocalCuration();
+}
+
+async function curationSave(op, key, entry){
+  if(curationVia === "server"){
+    try {
+      const res = await fetch("/api/oddstats-curation", {
+        method: "POST",
+        headers: { "x-streak-password": PW(), "content-type": "application/json" },
+        body: JSON.stringify({ op, key, entry })
+      });
+      if(res.ok){ CURATION = await res.json(); return; }
+    } catch(e){}
+  }
+  const a = CURATION.archived || (CURATION.archived = []);
+  const d = CURATION.dismissed || (CURATION.dismissed = []);
+  if(op === "archive"){ if(entry && !a.some(e => e.key === entry.key)) a.unshift(entry); }
+  else if(op === "unarchive"){ CURATION.archived = a.filter(e => e.key !== key); }
+  else if(op === "dismiss"){ if(!d.includes(key)) d.push(key); }
+  else if(op === "undismiss"){ CURATION.dismissed = d.filter(k => k !== key); }
+  try { localStorage.setItem("ss_curation", JSON.stringify(CURATION)); } catch(e){}
+}
+
+function frozenCardHTML(c, ctx){
+  const g = GROUPS[c.group] || { name: c.group, v: "--ink-dim" };
+  const n = c.currentRun;
+  const phrase = c.phrase.replace(new RegExp("\\b" + n + "\\b"), "<b>" + n + "</b>");
+  const btns = ctx === "ended"
+    ? '<button class="cbtn" data-op="archive">Archive</button>' +
+      '<button class="cbtn ghost" data-op="dismiss">Delete</button>'
+    : '<button class="cbtn ghost" data-op="unarchive">Remove from archive</button>';
+  return '<div class="item ended collapsed" data-key="' + c.key + '" style="--gd:var(' + g.v + ')">' +
+    '<button class="head" aria-expanded="false">' +
+      '<span>' +
+        '<span class="lab"><span class="dot"></span>' + c.label +
+          ' &middot; <span style="text-transform:none;letter-spacing:0">' + g.name + '</span>' +
+          '<span class="caret" data-caret>▸</span></span>' +
+        '<span class="phrase">' + phrase + '</span>' +
+        '<span class="meta">ended ' + ymd(c.endedOn) + ' · peaked at <b>' + n + '</b> ' + c.unit +
+          's · ' + c.analogCount + ' analogs</span>' +
+      '</span>' +
+      '<span class="rarity"><div class="pctnum">' + pct0(c.rarity) + '</div>' +
+        '<div class="pctlbl">rarer than</div>' +
+        '<div class="rbar"><span style="width:' + Math.round(c.rarity * 100) + '%"></span></div></span>' +
+    '</button>' +
+    '<div class="body">' + fwdTable(c) + swarm(c) + '<div class="cbtns">' + btns + '</div></div>' +
+  '</div>';
+}
+
+function renderFeeds(){
+  const dismissed = new Set(CURATION.dismissed || []);
+  const archivedKeys = new Set((CURATION.archived || []).map(e => e.key));
+
+  const arch = CURATION.archived || [];
+  el("archiveSection").hidden = arch.length === 0;
+  el("archiveCount").textContent = arch.length || "";
+  el("archiveRows").innerHTML = arch.map(c => frozenCardHTML(c, "archived")).join("");
+
+  const ended = (DATA.recentlyEnded || []).filter(c =>
+    (c.rarity || 0) >= 0.5 && !dismissed.has(c.key) && !archivedKeys.has(c.key));
+  el("endedSection").hidden = ended.length === 0;
+  el("endedCount").textContent = ended.length || "";
+  el("endedRows").innerHTML = ended.map(c => frozenCardHTML(c, "ended")).join("");
+
+  document.querySelectorAll("#archiveRows .head, #endedRows .head").forEach(h => {
+    h.addEventListener("click", e => {
+      if(e.target.closest(".cbtn")) return;
+      const item = h.closest(".item");
+      const opened = !item.classList.toggle("collapsed");
+      h.setAttribute("aria-expanded", String(opened));
+      const car = h.querySelector("[data-caret]");
+      if(car) car.textContent = opened ? "▾" : "▸";
+    });
+  });
+  document.querySelectorAll("#archiveRows .cbtn, #endedRows .cbtn").forEach(b => {
+    b.addEventListener("click", async e => {
+      e.stopPropagation();
+      const item = b.closest(".item");
+      const key = item.dataset.key;
+      const op = b.dataset.op;
+      const entry = (DATA.recentlyEnded || []).find(x => x.key === key) ||
+        (CURATION.archived || []).find(x => x.key === key);
+      b.disabled = true;
+      await curationSave(op, key, op === "archive" ? entry : undefined);
+      renderFeeds();
+    });
+  });
 }
 
 // The "and here's every shorter length this run passed through" matrix —

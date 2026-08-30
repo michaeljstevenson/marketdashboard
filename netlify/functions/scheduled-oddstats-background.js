@@ -17,15 +17,19 @@
 // the breadth/sectors jobs.
 
 const { getOddstatsStore, BLOB_KEY } = require("./oddstats-blob-store");
-const { loadUniverse, snapshot } = require("./oddstats-engine");
+const { loadUniverse, snapshot, mergeRecentlyEnded } = require("./oddstats-engine");
 
 exports.handler = async () => {
   try {
+    const store = getOddstatsStore();
+    const prev = await store.get(BLOB_KEY, { type: "json" }).catch(() => null);
+
     const universe = await loadUniverse();
     const board = snapshot(universe);
     board.generatedAt = new Date().toISOString();
+    // Feed of streaks that were notable and have since ended (see engine).
+    board.recentlyEnded = mergeRecentlyEnded(prev, board);
 
-    const store = getOddstatsStore();
     await store.setJSON(BLOB_KEY, board);
 
     return {
@@ -36,6 +40,7 @@ exports.handler = async () => {
         conditions: board.scanned,
         live: board.live,
         sectors: board.sectorCount,
+        recentlyEnded: board.recentlyEnded.length,
       }),
     };
   } catch (err) {

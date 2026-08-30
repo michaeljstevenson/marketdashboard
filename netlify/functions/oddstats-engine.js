@@ -1036,6 +1036,38 @@ function snapshot(universe) {
   };
 }
 
+// Rolling feed of streaks that were live and notable (rarity >= minRarity) on
+// the previous run and have since ended — i.e. their run fell back below the
+// floor. Each entry is the condition frozen at its final (peak) active state,
+// tagged with the date it ended. The scheduled job carries this forward in the
+// blob so the page can show a "recently ended" section without its own memory.
+function mergeRecentlyEnded(prevBoard, newBoard, opts = {}) {
+  const minRarity = opts.minRarity ?? 0.5;
+  const keepDays = opts.keepDays ?? 180;
+  const max = opts.max ?? 150;
+  const endedOn = newBoard.asOf;
+
+  const nowById = new Map(newBoard.conditions.map((c) => [c.id, c]));
+  const list = (prevBoard && prevBoard.recentlyEnded ? prevBoard.recentlyEnded : []).slice();
+  const seen = new Set(list.map((e) => e.key));
+
+  for (const prev of (prevBoard && prevBoard.conditions) || []) {
+    if (!prev.active || (prev.rarity || 0) < minRarity) continue;
+    const now = nowById.get(prev.id);
+    if (now && now.active) continue; // still running
+    const key = `${prev.id}@${endedOn}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    const { rungs, ...frozen } = prev; // drop the heavy per-length matrix
+    list.unshift({ key, endedOn, ...frozen });
+  }
+
+  const cutoff = new Date(endedOn + "T00:00:00Z");
+  cutoff.setUTCDate(cutoff.getUTCDate() - keepDays);
+  const cutoffStr = cutoff.toISOString().slice(0, 10);
+  return list.filter((e) => e.endedOn >= cutoffStr).slice(0, max);
+}
+
 module.exports = {
   loadCsv,
   loadRows,
@@ -1046,6 +1078,7 @@ module.exports = {
   detect,
   analyzePredicate,
   snapshot,
+  mergeRecentlyEnded,
   HORIZONS,
   hzLabel,
 };
