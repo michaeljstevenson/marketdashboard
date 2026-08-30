@@ -72,6 +72,11 @@
   to = "/.netlify/functions/seasonality-history"
   status = 200
 
+[[redirects]]
+  from = "/api/oddstats"
+  to = "/.netlify/functions/oddstats"
+  status = 200
+
 [functions."scheduled-breadth-background"]
   # 20:30 UTC = 4:30pm EDT (summer). Shifts to 3:30pm during EST (winter,
   # roughly Nov-Mar) since Netlify's cron runs in UTC with no DST
@@ -153,3 +158,11 @@
   # recomputing everything live on every page load — see
   # scheduled-sentiment-background.js for the full story.
   schedule = "0 21 * * 1-5"
+
+[functions."scheduled-oddstats-background"]
+  # 21:10 UTC — last of the daily block. Yahoo-only (no Alpha Vantage
+  # contention); runs the full streak scanner (~24 sequential Yahoo
+  # fetches + ~360 analog scans) and writes the board to Netlify Blobs
+  # for oddstats.js to serve. Background function for the long runtime —
+  # see scheduled-oddstats-background.js.
+  schedule = "10 21 * * 1-5"

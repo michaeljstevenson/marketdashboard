@@ -1,0 +1,474 @@
+<title>Streak Scanner</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+:root{
+  --ground:#f4f3ef; --surface:#fbfaf7; --surface-2:#f0eee7;
+  --ink:#1b1e1c; --ink-dim:#5c5f59; --line:#e2dfd5;
+  --accent:#a75d2b; --accent-soft:#efe0d0;
+  --pos:#2f7350; --neg:#b0453a;
+  --idx:#5b6b8c; --sec:#8a6a3c; --rel:#6a7a5c; --brd:#7d5c7a; --xdiv:#a05a44; --xtog:#4d7a86; --xcon:#7d6aa0;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --ground:#16150f; --surface:#1e1d17; --surface-2:#26241d;
+    --ink:#ece9e1; --ink-dim:#9a978c; --line:#33302a;
+    --accent:#e0a15c; --accent-soft:#392e21;
+    --pos:#5cae86; --neg:#d9776b;
+    --idx:#8ea0c4; --sec:#c7a06a; --rel:#9fb08c; --brd:#b78fb3; --xdiv:#d98e72; --xtog:#7bb6c4; --xcon:#b29ad9;
+  }
+}
+:root[data-theme="dark"]{
+  --ground:#16150f; --surface:#1e1d17; --surface-2:#26241d;
+  --ink:#ece9e1; --ink-dim:#9a978c; --line:#33302a;
+  --accent:#e0a15c; --accent-soft:#392e21;
+  --pos:#5cae86; --neg:#d9776b;
+  --idx:#8ea0c4; --sec:#c7a06a; --rel:#9fb08c; --brd:#b78fb3; --xdiv:#d98e72; --xtog:#7bb6c4; --xcon:#b29ad9;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{-webkit-text-size-adjust:100%}
+body{
+  background:var(--ground); color:var(--ink);
+  font-family:"IBM Plex Sans",system-ui,-apple-system,sans-serif;
+  font-size:15px; line-height:1.5;
+  padding:clamp(18px,4vw,52px);
+}
+.wrap{max-width:1000px;margin:0 auto}
+h1{font-size:clamp(1.8rem,4.5vw,2.9rem); font-weight:600; letter-spacing:-0.02em;
+  line-height:1.05; text-wrap:balance}
+.lede{color:var(--ink-dim); margin-top:10px; max-width:64ch; font-size:0.95rem}
+.asof{font-family:"IBM Plex Mono",ui-monospace,Menlo,monospace; font-size:0.72rem;
+  letter-spacing:0.06em; text-transform:uppercase; color:var(--accent); margin-bottom:14px}
+
+.tiles{display:grid; grid-template-columns:repeat(auto-fit,minmax(158px,1fr)); gap:1px;
+  background:var(--line); border:1px solid var(--line); border-radius:10px;
+  overflow:hidden; margin:30px 0 26px}
+.tile{background:var(--surface); padding:16px 18px}
+.tile .k{font-family:"IBM Plex Mono",monospace; font-size:0.66rem; letter-spacing:0.1em;
+  text-transform:uppercase; color:var(--ink-dim)}
+.tile .v{font-size:1.7rem; font-weight:600; margin-top:6px; font-variant-numeric:tabular-nums}
+.tile .v.hot{color:var(--accent)}
+.tile .sub{font-size:0.78rem; color:var(--ink-dim); margin-top:2px}
+
+.controls{display:flex; flex-wrap:wrap; gap:10px 14px; align-items:center; margin-bottom:8px}
+.chips{display:flex; flex-wrap:wrap; gap:6px}
+.chip{font:inherit; font-size:0.8rem; cursor:pointer; background:var(--surface);
+  color:var(--ink-dim); border:1px solid var(--line); border-radius:999px; padding:5px 12px}
+.chip[aria-pressed="true"]{background:var(--ink); color:var(--ground); border-color:var(--ink)}
+.chip:focus-visible{outline:2px solid var(--accent); outline-offset:2px}
+.spacer{flex:1 1 30px}
+.linkbtn{font:inherit; font-size:0.8rem; color:var(--ink-dim); background:none; border:0;
+  cursor:pointer; text-decoration:underline; text-underline-offset:3px}
+label.sortlbl{display:flex; align-items:center; gap:7px; font-size:0.82rem; color:var(--ink-dim)}
+select,input[type="search"]{font:inherit; font-size:0.82rem; background:var(--surface); color:var(--ink);
+  border:1px solid var(--line); border-radius:7px; padding:5px 8px}
+input[type="search"]{min-width:170px}
+input:focus-visible,select:focus-visible{outline:2px solid var(--accent); outline-offset:1px}
+.count{font-size:0.78rem; color:var(--ink-dim); margin:14px 2px 8px}
+
+.rows{display:flex; flex-direction:column; gap:1px; background:var(--line);
+  border:1px solid var(--line); border-radius:10px; overflow:hidden}
+.grouphdr{background:var(--surface-2); padding:9px 16px; font-family:"IBM Plex Mono",monospace;
+  font-size:0.68rem; letter-spacing:0.12em; text-transform:uppercase; color:var(--ink-dim)}
+.item{background:var(--surface)}
+.item.dormant .phrase{color:var(--ink-dim)}
+.item.dormant .dot{opacity:0.55}
+.head{width:100%; border:0; background:none; font:inherit; color:inherit; text-align:left;
+  cursor:pointer; padding:14px 16px; display:grid; grid-template-columns:1fr auto; gap:10px 16px;
+  align-items:start}
+.head:hover{background:var(--surface-2)}
+.head:focus-visible{outline:2px solid var(--accent); outline-offset:-2px}
+.lab{font-family:"IBM Plex Mono",monospace; font-size:0.68rem; letter-spacing:0.04em;
+  text-transform:uppercase; color:var(--gd,var(--ink-dim)); display:flex; align-items:center; gap:6px}
+.dot{width:7px; height:7px; border-radius:2px; background:var(--gd,var(--ink-dim)); flex:none}
+.phrase{margin-top:4px; font-size:0.98rem; line-height:1.35}
+.phrase b{font-weight:600; font-variant-numeric:tabular-nums}
+.meta{margin-top:5px; font-family:"IBM Plex Mono",monospace; font-size:0.72rem;
+  color:var(--ink-dim); font-variant-numeric:tabular-nums}
+.meta .rec{color:var(--accent)}
+.rarity{justify-self:end; text-align:right; min-width:74px}
+.rarity .pctnum{font-family:"IBM Plex Mono",monospace; font-size:1.05rem; font-weight:500;
+  font-variant-numeric:tabular-nums}
+.rarity .pctlbl{font-family:"IBM Plex Mono",monospace; font-size:0.58rem; letter-spacing:0.06em;
+  text-transform:uppercase; color:var(--ink-dim); margin-top:1px}
+.rarity.togo .pctnum{font-size:0.9rem; color:var(--ink-dim)}
+.rbar{height:3px; margin-top:5px; background:var(--line); border-radius:2px; overflow:hidden}
+.rbar span{display:block; height:100%; background:var(--accent)}
+.rarity.togo .rbar span{background:var(--ink-dim)}
+.caret{font-family:"IBM Plex Mono",monospace; font-size:0.7rem; color:var(--ink-dim); margin-left:6px}
+
+.body{padding:0 16px 18px; display:block}
+.item.collapsed .body{display:none}
+.track{position:relative; height:9px; border-radius:5px; background:var(--surface-2);
+  border:1px solid var(--line); margin:2px 0 6px}
+.track .fill{position:absolute; inset:0 auto 0 0; border-radius:5px; background:var(--accent); opacity:0.5}
+.track.dim .fill{background:var(--ink-dim); opacity:0.4}
+.item.rec .track .fill{opacity:1}
+.leadin{font-size:0.85rem; color:var(--ink-dim); margin:12px 0 2px}
+.track .tick{position:absolute; top:-3px; bottom:-3px; width:2px; background:var(--ink); opacity:0.5}
+.trackcap{font-family:"IBM Plex Mono",monospace; font-size:0.66rem; color:var(--ink-dim);
+  display:flex; justify-content:space-between}
+table.fwd{width:100%; border-collapse:collapse; font-size:0.83rem; margin-top:12px}
+table.fwd th,table.fwd td{padding:6px 8px; text-align:right; font-variant-numeric:tabular-nums}
+table.fwd th{font-family:"IBM Plex Mono",monospace; font-weight:400; font-size:0.66rem;
+  letter-spacing:0.06em; text-transform:uppercase; color:var(--ink-dim); border-bottom:1px solid var(--line)}
+table.fwd td:first-child,table.fwd th:first-child{text-align:left}
+table.fwd tbody td:first-child{font-family:"IBM Plex Mono",monospace; color:var(--ink-dim)}
+.pos{color:var(--pos)} .neg{color:var(--neg)}
+.rungs{margin-top:16px; border-top:1px solid var(--line); padding-top:6px}
+.rungs summary{font-family:"IBM Plex Mono",monospace; font-size:0.66rem; letter-spacing:0.04em;
+  text-transform:uppercase; color:var(--ink-dim); cursor:pointer; padding:6px 0}
+.rungs summary:focus-visible{outline:2px solid var(--accent); outline-offset:2px}
+.rungwrap{max-height:340px; overflow:auto; margin-top:4px}
+.rungwrap table.fwd{margin-top:0}
+.rungwrap thead th{position:sticky; top:0; background:var(--surface)}
+.rungwrap tr.now td{background:var(--accent-soft); font-weight:500}
+.rungwrap tr.now td:first-child{color:var(--ink)}
+.dist{margin-top:14px}
+.dist .cap{font-family:"IBM Plex Mono",monospace; font-size:0.64rem; letter-spacing:0.06em;
+  text-transform:uppercase; color:var(--ink-dim); margin-bottom:6px}
+.dist svg{width:100%; height:auto; display:block; overflow:visible}
+.thin{color:var(--ink-dim); font-style:italic}
+.foot{margin-top:34px; font-size:0.78rem; color:var(--ink-dim); max-width:72ch; line-height:1.6}
+.foot code{font-family:"IBM Plex Mono",monospace; background:var(--surface-2); padding:1px 5px; border-radius:4px}
+@media (max-width:560px){
+  .head{grid-template-columns:1fr}
+  .rarity{justify-self:start; text-align:left}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+.gate{min-height:70vh; display:flex; align-items:center; justify-content:center}
+.gate form{width:min(340px,90vw); display:flex; flex-direction:column; gap:12px; text-align:center}
+.gate h1{font-size:1.6rem}
+.gate p{color:var(--ink-dim); font-size:0.9rem; margin-bottom:4px}
+.gate input{font:inherit; font-size:1rem; text-align:center; padding:10px 12px;
+  background:var(--surface); color:var(--ink); border:1px solid var(--line); border-radius:8px}
+.gate button{font:inherit; font-size:0.95rem; padding:10px 12px; cursor:pointer;
+  background:var(--ink); color:var(--ground); border:0; border-radius:8px}
+.gate .gateerr{color:var(--neg); font-size:0.85rem; min-height:1.2em}
+.gate .loading{color:var(--ink-dim); font-size:0.85rem}
+</style>
+<div id="gate" class="gate">
+  <form id="gateform">
+    <h1>Streak Scanner</h1>
+    <p>Michael J. Stevenson &middot; enter the password to view.</p>
+    <input type="password" id="gatepw" aria-label="Password" autocomplete="current-password" autofocus>
+    <button type="submit">Unlock</button>
+    <div class="gateerr" id="gateerr"></div>
+  </form>
+</div>
+<div id="app" hidden>
+<div class="wrap">
+  <div class="asof" id="asof"></div>
+  <h1>Streak Scanner</h1>
+  <p class="lede">Every streak condition the odd-stats engine tracks &mdash; the S&amp;P 500 back to
+  1927, each of the 11 SPDR sector ETFs, and every pair among the index, the sectors, and its ten
+  largest companies (individually and as a basket) running in step, against each other, or closing
+  their gap. Live streaks sit up top with the full history of every prior time they reached this
+  length and what markets did over the following year; the rest show how far along they are and how
+  past occurrences played out. Counts update as streaks extend.</p>
+
+  <div class="tiles" id="tiles"></div>
+
+  <div class="controls">
+    <div class="chips" id="groupchips">
+      <button class="chip" data-g="all" aria-pressed="true">All</button>
+      <button class="chip" data-g="index" aria-pressed="false">Index</button>
+      <button class="chip" data-g="sector" aria-pressed="false">Sectors</button>
+      <button class="chip" data-g="sector-rel" aria-pressed="false">Relative</button>
+      <button class="chip" data-g="breadth" aria-pressed="false">Breadth</button>
+      <button class="chip" data-g="diverge" aria-pressed="false">Divergence</button>
+      <button class="chip" data-g="together" aria-pressed="false">In step</button>
+      <button class="chip" data-g="converge" aria-pressed="false">Converging</button>
+    </div>
+    <span class="spacer"></span>
+    <input type="search" id="q" placeholder="filter (e.g. XLE, tech, 200-day)" autocomplete="off">
+    <label class="sortlbl"><input type="checkbox" id="liveonly"> Live only</label>
+    <button class="linkbtn" id="toggleall">Expand all</button>
+    <label class="sortlbl">Sort
+      <select id="sort">
+        <option value="rarity">rarest live first</option>
+        <option value="closest">closest to firing</option>
+        <option value="current">streak length</option>
+        <option value="group">group</option>
+      </select>
+    </label>
+  </div>
+  <div class="count" id="count"></div>
+  <div class="rows" id="rows"></div>
+
+  <p class="foot">Live conditions are analysed at their current run length; the number and its
+  history update as the streak extends. Dormant conditions (the ones still short of their minimum
+  length) show what happened the last times they <em>did</em> reach it. Rarity, for a live streak,
+  is the share of this condition's past qualifying runs that never got this long &mdash; near 0% for
+  a fresh streak, climbing as it extends. Forward-return columns summarise the analog set: prior
+  runs that reached the same length, de-duplicated so one long streak counts once, tracked over the
+  next year (samples shrink at the longer horizons as recent analogs run out of runway). Regenerate
+  with <code>node scripts/oddstats-detect.js --dump</code>. Food for thought, not a signal.</p>
+</div>
+</div>
+<script>
+let DATA = null;
+let HZ, HZLABEL;
+const GROUPS = {
+  index:{name:"S&P 500 index",v:"--idx"},
+  sector:{name:"Sector ETF",v:"--sec"},
+  "sector-rel":{name:"Sector vs S&P 500",v:"--rel"},
+  breadth:{name:"All-sector breadth",v:"--brd"},
+  diverge:{name:"Pair divergence",v:"--xdiv"},
+  together:{name:"Pair in step",v:"--xtog"},
+  converge:{name:"Pair converging",v:"--xcon"}
+};
+const pctS = n => (n >= 0 ? "+" : "") + (n * 100).toFixed(1) + "%";
+const pct0 = n => Math.round(n * 100) + "%";
+const MONTHS = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+const ym = s => s ? MONTHS[+s.slice(5,7) - 1] + " " + s.slice(0,4) : "";
+const store = (k,val) => {
+  try{
+    if(val === undefined) return localStorage.getItem("ss_" + k);
+    localStorage.setItem("ss_" + k, val);
+  }catch(e){ return null; }
+};
+const el = id => document.getElementById(id);
+
+let state = {
+  group: store("group") || "all",
+  sort: store("sort") || "rarity",
+  liveonly: store("liveonly") === "1",
+  q: "",
+  expand: store("expand") || "auto"   // auto = live open, dormant closed
+};
+
+// Called once DATA is available (injected for the artifact, fetched for the
+// password-gated site page).
+function init(){
+  HZ = DATA.horizons;
+  HZLABEL = DATA.horizonLabels || HZ.map(h => h + "d");
+
+  const gen = DATA.generatedAt ? " · refreshed " + DATA.generatedAt.slice(0, 10) : "";
+  el("asof").textContent = "Scan as of " + DATA.asOf + "  ·  " + DATA.live +
+    " live streaks  ·  " + DATA.scanned + " conditions tracked  ·  " +
+    DATA.sectorCount + " sector ETFs" + gen;
+
+  const byRarity = DATA.conditions.filter(c => c.active).sort((a,b) => b.rarity - a.rarity);
+  const rec = DATA.conditions.filter(c => c.atRecord);
+  el("tiles").innerHTML = [
+    ["Live streaks", DATA.live, "of " + DATA.scanned + " tracked", true],
+    ["Rarest live", byRarity[0] ? pct0(byRarity[0].rarity) : "—",
+       byRarity[0] ? byRarity[0].label + " · " + byRarity[0].currentRun + " " + byRarity[0].unit + "s" : "", false],
+    ["At an all-time record", rec.length, rec.length ? rec.map(c => c.label).join(", ") : "none right now", false],
+    ["History depth", "1927", "S&P 500 daily", false]
+  ].map(t => '<div class="tile"><div class="k">' + t[0] + '</div><div class="v' +
+    (t[3] ? " hot" : "") + '">' + t[1] + '</div><div class="sub">' + (t[2] || "") + '</div></div>'
+  ).join("");
+
+  render();
+}
+
+function distSVG(dist){
+  if(!dist || !dist.length) return '<div class="thin">Not enough analogs with a full forward window.</div>';
+  const W = 320, H = 66, midY = 30, mx = Math.max(0.05, ...dist.map(Math.abs));
+  const dots = dist.map((r,i) => {
+    const x = (W/2) + (r / mx) * (W/2 - 8);
+    const y = midY + (((i * 2654435761) % 41) / 41 - 0.5) * 34;
+    return '<circle cx="' + x.toFixed(1) + '" cy="' + y.toFixed(1) + '" r="2.6" fill="var(--' +
+      (r >= 0 ? "pos" : "neg") + ')" fill-opacity="0.66"/>';
+  }).join("");
+  return '<svg viewBox="0 0 ' + W + ' ' + H + '" role="img">' +
+    '<line x1="' + W/2 + '" y1="6" x2="' + W/2 + '" y2="' + (H-16) + '" stroke="var(--ink)" stroke-opacity="0.4" stroke-width="1"/>' +
+    '<line x1="4" y1="' + midY + '" x2="' + (W-4) + '" y2="' + midY + '" stroke="var(--line)" stroke-width="1"/>' + dots +
+    '<text x="4" y="' + (H-4) + '" font-size="7" fill="var(--ink-dim)" font-family="monospace">' + pctS(-mx) + '</text>' +
+    '<text x="' + (W/2) + '" y="' + (H-4) + '" font-size="7" fill="var(--ink-dim)" font-family="monospace" text-anchor="middle">0</text>' +
+    '<text x="' + (W-4) + '" y="' + (H-4) + '" font-size="7" fill="var(--ink-dim)" font-family="monospace" text-anchor="end">' + pctS(mx) + '</text>' +
+    '</svg>';
+}
+
+function bodyHTML(c){
+  let track;
+  if(c.active){
+    const lo = c.floor, hi = Math.max(c.histMaxRun, c.currentRun);
+    const span = Math.max(1, hi - lo);
+    const fillW = ((c.currentRun - lo) / span) * 100;
+    const tickW = ((c.histMaxRun - lo) / span) * 100;
+    track = '<div class="track">' +
+      '<span class="fill" style="width:' + Math.max(2, fillW).toFixed(1) + '%"></span>' +
+      (c.atRecord ? '' : '<span class="tick" style="left:' + tickW.toFixed(1) + '%"></span>') +
+      '</div><div class="trackcap"><span>floor ' + lo + '</span>' +
+      '<span>' + (c.atRecord ? 'now at the record' :
+        'record ' + c.histMaxRun + (c.histMaxDate ? ' · ' + ym(c.histMaxDate) : '')) + '</span></div>';
+  } else {
+    const fillW = (c.currentRun / c.floor) * 100;
+    track = '<div class="track dim">' +
+      '<span class="fill" style="width:' + Math.max(1, fillW).toFixed(1) + '%"></span>' +
+      '<span class="tick" style="left:100%"></span>' +
+      '</div><div class="trackcap"><span>' + c.currentRun + ' now</span>' +
+      '<span>needs ' + c.floor + ' · longest ever ' + c.histMaxRun +
+      (c.histMaxDate ? ' (' + ym(c.histMaxDate) + ')' : '') + '</span></div>';
+  }
+  const lead = c.active ? '' :
+    '<div class="leadin">The last ' + (c.analogCount || 0) + ' times ' + c.label + ' did reach ' +
+    c.floor + ' ' + c.unit + 's — how the next year went:</div>';
+
+  const body = HZ.map((h,hi2) => {
+    const s = c.summary && c.summary[h];
+    if(!s) return '<tr><td>' + HZLABEL[hi2] + '</td><td colspan="4" class="thin">no full window yet</td></tr>';
+    return '<tr><td>' + HZLABEL[hi2] + '</td>' +
+      '<td class="' + (s.medianRet >= 0 ? "pos" : "neg") + '">' + pctS(s.medianRet) + '</td>' +
+      '<td>' + pct0(s.pctPositive) + '</td>' +
+      '<td class="neg">' + pctS(s.medianMaxDD) + '</td>' +
+      '<td>' + pct0(s.pctWith3pctDrawdown) + '</td>' +
+      '<td>' + s.n + '</td></tr>';
+  }).join("");
+
+  return track + lead +
+    '<table class="fwd"><thead><tr><th>After</th><th>Median</th><th>% up</th>' +
+    '<th>Med. max DD</th><th>Saw &minus;3%</th><th>n</th></tr></thead><tbody>' + body + '</tbody></table>' +
+    '<div class="dist"><div class="cap">Each analog’s 1-month return (n=' +
+    (c.dist ? c.dist.length : 0) + ')</div>' + distSVG(c.dist) + '</div>' +
+    rungHTML(c);
+}
+
+// The "and here's every shorter length this run passed through" matrix —
+// median forward return at each length from the floor up to today.
+function rungHTML(c){
+  if(!c.rungs || c.rungs.length < 2) return "";
+  const head = '<tr><th>' + c.unit + 's</th>' +
+    HZLABEL.map(l => '<th>' + l + '</th>').join("") + '<th>rarity</th><th>n</th></tr>';
+  const body = c.rungs.map(r => {
+    const cells = r.med.map(m => m == null
+      ? '<td class="thin">·</td>'
+      : '<td class="' + (m >= 0 ? "pos" : "neg") + '">' + pctS(m) + '</td>').join("");
+    return '<tr' + (r.len === c.currentRun ? ' class="now"' : '') + '>' +
+      '<td>' + r.len + (r.len === c.currentRun ? ' &larr; now' : '') + '</td>' +
+      cells + '<td>' + pct0(r.rarity) + '</td><td>' + r.n + '</td></tr>';
+  }).join("");
+  return '<details class="rungs"' + (c.rungs.length <= 14 ? ' open' : '') + '>' +
+    '<summary>By streak length so far &mdash; median forward return at each rung (' +
+    c.rungs.length + ' lengths)</summary>' +
+    '<div class="rungwrap"><table class="fwd"><thead>' + head + '</thead><tbody>' + body +
+    '</tbody></table></div></details>';
+}
+
+function isOpen(c){
+  return state.expand === "all" ? true : state.expand === "none" ? false : c.active;
+}
+
+function itemHTML(c){
+  const g = GROUPS[c.group] || {name:c.group, v:"--ink-dim"};
+  const open = isOpen(c);
+  const n = c.active ? c.currentRun : c.runLength;
+  const phrase = c.phrase.replace(new RegExp("\\b" + n + "\\b"), "<b>" + n + "</b>");
+
+  let meta, chip;
+  if(c.active){
+    const recTxt = c.atRecord
+      ? '<span class="rec">longest on record</span>'
+      : 'record ' + c.histMaxRun + (c.histMaxDate ? ' (' + ym(c.histMaxDate) + ')' : '');
+    meta = '<b>' + c.currentRun + '</b> ' + c.unit + 's and counting · ' + recTxt +
+      ' · ' + c.analogCount + ' analogs · last ' + ym(c.lastOccurrence);
+    chip = '<span class="rarity">' +
+      '<div class="pctnum">' + pct0(c.rarity) + '</div>' +
+      '<div class="pctlbl">rarer than</div>' +
+      '<div class="rbar"><span style="width:' + Math.round(c.rarity * 100) + '%"></span></div>' +
+    '</span>';
+  } else {
+    meta = '<b>' + c.currentRun + '</b> of ' + c.floor + ' ' + c.unit + 's · ' +
+      c.analogCount + ' prior times · last reached ' + ym(c.lastOccurrence);
+    chip = '<span class="rarity togo">' +
+      '<div class="pctnum">' + c.currentRun + '/' + c.floor + '</div>' +
+      '<div class="pctlbl">' + c.toGo + ' to go</div>' +
+      '<div class="rbar"><span style="width:' + Math.round((c.currentRun / c.floor) * 100) + '%"></span></div>' +
+    '</span>';
+  }
+
+  return '<div class="item' + (open ? "" : " collapsed") + (c.active ? "" : " dormant") +
+      (c.atRecord ? " rec" : "") + '" style="--gd:var(' + g.v + ')">' +
+    '<button class="head" aria-expanded="' + open + '">' +
+      '<span>' +
+        '<span class="lab"><span class="dot"></span>' + c.label +
+          ' &middot; <span style="text-transform:none;letter-spacing:0">' + g.name + '</span>' +
+          '<span class="caret" data-caret>' + (open ? "▾" : "▸") + '</span></span>' +
+        '<span class="phrase">' + phrase + '</span>' +
+        '<span class="meta">' + meta + '</span>' +
+      '</span>' + chip +
+    '</button>' +
+    '<div class="body">' + bodyHTML(c) + '</div>' +
+  '</div>';
+}
+
+function render(){
+  el("groupchips").querySelectorAll(".chip").forEach(b =>
+    b.setAttribute("aria-pressed", String(b.dataset.g === state.group)));
+  el("sort").value = state.sort;
+  el("liveonly").checked = state.liveonly;
+  el("toggleall").textContent = state.expand === "all" ? "Collapse all" : "Expand all";
+
+  const q = state.q.trim().toLowerCase();
+  let list = DATA.conditions.filter(c =>
+    (state.group === "all" || c.group === state.group) &&
+    (!state.liveonly || c.active) &&
+    (!q || (c.label + " " + c.phrase + " " + c.id).toLowerCase().includes(q)));
+  const af = (a,b) => Number(b.active) - Number(a.active);
+  const cmp = {
+    rarity: (a,b) => af(a,b) || (a.active ? b.rarity - a.rarity : b.currentRun/b.floor - a.currentRun/a.floor) || b.analogCount - a.analogCount,
+    closest: (a,b) => af(a,b) || b.currentRun/b.floor - a.currentRun/a.floor,
+    current: (a,b) => b.currentRun - a.currentRun,
+    group: (a,b) => a.group.localeCompare(b.group) || af(a,b) || b.rarity - a.rarity
+  }[state.sort];
+  list.sort(cmp);
+
+  const nLive = list.filter(c => c.active).length;
+  el("count").textContent = nLive + " live" +
+    (state.liveonly ? "" : " · " + (list.length - nLive) + " dormant") +
+    (state.group !== "all" ? " · " + (GROUPS[state.group] ? GROUPS[state.group].name : state.group) : "");
+
+  let html = "", lastG = null;
+  for(const c of list){
+    if(state.sort === "group" && c.group !== lastG){
+      lastG = c.group;
+      html += '<div class="grouphdr">' + (GROUPS[c.group] ? GROUPS[c.group].name : c.group) + '</div>';
+    }
+    html += itemHTML(c);
+  }
+  el("rows").innerHTML = html || '<div class="grouphdr">Nothing matches</div>';
+
+  el("rows").querySelectorAll(".head").forEach(btn => {
+    btn.addEventListener("click", () => {
+      const item = btn.closest(".item");
+      const open = item.classList.toggle("collapsed") === false;
+      btn.setAttribute("aria-expanded", String(open));
+      const car = btn.querySelector("[data-caret]");
+      if(car) car.textContent = open ? "▾" : "▸";
+    });
+  });
+}
+
+el("groupchips").addEventListener("click", e => {
+  const b = e.target.closest(".chip");
+  if(!b) return;
+  state.group = b.dataset.g;
+  store("group", state.group);
+  render();
+});
+el("q").addEventListener("input", e => {
+  state.q = e.target.value;
+  render();
+});
+el("sort").addEventListener("change", e => {
+  state.sort = e.target.value;
+  store("sort", state.sort);
+  render();
+});
+el("liveonly").addEventListener("change", e => {
+  state.liveonly = e.target.checked;
+  store("liveonly", state.liveonly ? "1" : "0");
+  render();
+});
+el("toggleall").addEventListener("click", () => {
+  state.expand = state.expand === "all" ? "none" : "all";
+  store("expand", state.expand);
+  render();
+});
+
+__BOOT__
+</script>
