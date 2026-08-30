@@ -606,19 +606,19 @@ function buildPredicates(rows) {
 }
 
 // ---------------------------------------------------------------------------
-// Sector predicates — the same streak vocabulary, per SPDR sector ETF, plus
-// relative-strength-vs-SPY streaks and index-wide "all sectors" breadth.
-// Forward returns for a sector stat are measured on that sector's own series;
-// for the cross-sector breadth stats, on the S&P 500.
+// Per-instrument streak predicates — the same streak vocabulary applied to
+// each SPDR sector ETF and each of the ten largest S&P constituents: up/down
+// streaks, 52-week highs/lows, RSI extremes, and relative-strength-vs-SPY
+// streaks. Forward returns for each stat are measured on that instrument's
+// own series. (Index-wide "all sectors" breadth lives in buildCrossSector.)
 // ---------------------------------------------------------------------------
 
-function buildSectorPredicates(universe) {
-  const spyPx = new Map((universe.spy || []).map((r) => [r.date, r.px]));
+function buildInstrumentPredicates(instruments, spyPx, group, relGroup) {
   const out = [];
-
-  for (const sec of universe.sectors) {
-    const rows = sec.rows;
-    const label = `${sec.name} (${sec.ticker})`;
+  for (const inst of instruments) {
+    const rows = inst.rows;
+    const t = inst.ticker;
+    const label = `${inst.name} (${t})`;
     const px = rows.map((r) => r.px);
     const ch = pctChange(rows);
     const r = rsi(px, 14);
@@ -637,17 +637,28 @@ function buildSectorPredicates(universe) {
     });
 
     out.push(
-      { id: `${sec.ticker}-up-streak`, rows, label, floor: 5, group: "sector", flag: ch.map((c) => c > 0), phrase: (n) => `has closed higher ${n} days in a row` },
-      { id: `${sec.ticker}-down-streak`, rows, label, floor: 5, group: "sector", flag: ch.map((c) => c < 0), phrase: (n) => `has closed lower ${n} days in a row` },
-      { id: `${sec.ticker}-52w-high`, rows, label, floor: 3, group: "sector", flag: rows.map((_, i) => i >= 60 && px[i] >= hi[i] - 1e-9), phrase: (n) => `has closed at a 52-week high ${n} days running` },
-      { id: `${sec.ticker}-52w-low`, rows, label, floor: 3, group: "sector", flag: rows.map((_, i) => i >= 60 && px[i] <= lo[i] + 1e-9), phrase: (n) => `has closed at a 52-week low ${n} days running` },
-      { id: `${sec.ticker}-rsi-hot`, rows, label, floor: 4, group: "sector", flag: r.map((v) => isFinite(v) && v > 70), phrase: (n) => `has held a 14-day RSI above 70 for ${n} straight days` },
-      { id: `${sec.ticker}-rsi-cold`, rows, label, floor: 4, group: "sector", flag: r.map((v) => isFinite(v) && v < 30), phrase: (n) => `has held a 14-day RSI below 30 for ${n} straight days` },
-      { id: `${sec.ticker}-beat-spy`, rows, label, floor: 6, group: "sector-rel", flag: rel.map((v) => isFinite(v) && v > 0), phrase: (n) => `has outpaced the S&P 500 ${n} sessions in a row` },
-      { id: `${sec.ticker}-lag-spy`, rows, label, floor: 6, group: "sector-rel", flag: rel.map((v) => isFinite(v) && v < 0), phrase: (n) => `has lagged the S&P 500 ${n} sessions in a row` }
+      { id: `${t}-up-streak`, rows, label, floor: 5, group, flag: ch.map((c) => c > 0), phrase: (n) => `has closed higher ${n} days in a row` },
+      { id: `${t}-down-streak`, rows, label, floor: 5, group, flag: ch.map((c) => c < 0), phrase: (n) => `has closed lower ${n} days in a row` },
+      { id: `${t}-52w-high`, rows, label, floor: 3, group, flag: rows.map((_, i) => i >= 60 && px[i] >= hi[i] - 1e-9), phrase: (n) => `has closed at a 52-week high ${n} days running` },
+      { id: `${t}-52w-low`, rows, label, floor: 3, group, flag: rows.map((_, i) => i >= 60 && px[i] <= lo[i] + 1e-9), phrase: (n) => `has closed at a 52-week low ${n} days running` },
+      { id: `${t}-rsi-hot`, rows, label, floor: 4, group, flag: r.map((v) => isFinite(v) && v > 70), phrase: (n) => `has held a 14-day RSI above 70 for ${n} straight days` },
+      { id: `${t}-rsi-cold`, rows, label, floor: 4, group, flag: r.map((v) => isFinite(v) && v < 30), phrase: (n) => `has held a 14-day RSI below 30 for ${n} straight days` },
+      { id: `${t}-beat-spy`, rows, label, floor: 6, group: relGroup, flag: rel.map((v) => isFinite(v) && v > 0), phrase: (n) => `has outpaced the S&P 500 ${n} sessions in a row` },
+      { id: `${t}-lag-spy`, rows, label, floor: 6, group: relGroup, flag: rel.map((v) => isFinite(v) && v < 0), phrase: (n) => `has lagged the S&P 500 ${n} sessions in a row` }
     );
   }
   return out;
+}
+
+function buildSectorPredicates(universe) {
+  const spyPx = new Map((universe.spy || []).map((r) => [r.date, r.px]));
+  return buildInstrumentPredicates(universe.sectors, spyPx, "sector", "sector-rel");
+}
+
+function buildMegacapPredicates(universe) {
+  if (!universe.megacaps || !universe.megacaps.length) return [];
+  const spyPx = new Map((universe.spy || []).map((r) => [r.date, r.px]));
+  return buildInstrumentPredicates(universe.megacaps, spyPx, "megacap", "megacap");
 }
 
 function buildCrossSectorPredicates(universe) {
@@ -777,6 +788,7 @@ function buildAll(universe) {
   return [
     ...idx,
     ...buildSectorPredicates(universe),
+    ...buildMegacapPredicates(universe),
     ...buildCrossSectorPredicates(universe),
     ...buildRelationshipPredicates(universe),
   ];

@@ -9,7 +9,7 @@
   --ink:#1b1e1c; --ink-dim:#5c5f59; --line:#e2dfd5;
   --accent:#a75d2b; --accent-soft:#efe0d0;
   --pos:#2f7350; --neg:#b0453a;
-  --idx:#5b6b8c; --sec:#8a6a3c; --rel:#6a7a5c; --brd:#7d5c7a; --xdiv:#a05a44; --xtog:#4d7a86; --xcon:#7d6aa0;
+  --idx:#5b6b8c; --sec:#8a6a3c; --rel:#6a7a5c; --brd:#7d5c7a; --xdiv:#a05a44; --xtog:#4d7a86; --xcon:#7d6aa0; --mc:#4a7a5a;
 }
 @media (prefers-color-scheme:dark){
   :root:not([data-theme="light"]){
@@ -17,7 +17,7 @@
     --ink:#ece9e1; --ink-dim:#9a978c; --line:#33302a;
     --accent:#e0a15c; --accent-soft:#392e21;
     --pos:#5cae86; --neg:#d9776b;
-    --idx:#8ea0c4; --sec:#c7a06a; --rel:#9fb08c; --brd:#b78fb3; --xdiv:#d98e72; --xtog:#7bb6c4; --xcon:#b29ad9;
+    --idx:#8ea0c4; --sec:#c7a06a; --rel:#9fb08c; --brd:#b78fb3; --xdiv:#d98e72; --xtog:#7bb6c4; --xcon:#b29ad9; --mc:#79b98f;
   }
 }
 :root[data-theme="dark"]{
@@ -25,7 +25,7 @@
   --ink:#ece9e1; --ink-dim:#9a978c; --line:#33302a;
   --accent:#e0a15c; --accent-soft:#392e21;
   --pos:#5cae86; --neg:#d9776b;
-  --idx:#8ea0c4; --sec:#c7a06a; --rel:#9fb08c; --brd:#b78fb3; --xdiv:#d98e72; --xtog:#7bb6c4; --xcon:#b29ad9;
+  --idx:#8ea0c4; --sec:#c7a06a; --rel:#9fb08c; --brd:#b78fb3; --xdiv:#d98e72; --xtog:#7bb6c4; --xcon:#b29ad9; --mc:#79b98f;
 }
 *{box-sizing:border-box;margin:0;padding:0}
 html{-webkit-text-size-adjust:100%}
@@ -177,6 +177,7 @@ table.fwd tbody td:first-child{font-family:"IBM Plex Mono",monospace; color:var(
       <button class="chip" data-g="index" aria-pressed="false">Index</button>
       <button class="chip" data-g="sector" aria-pressed="false">Sectors</button>
       <button class="chip" data-g="sector-rel" aria-pressed="false">Relative</button>
+      <button class="chip" data-g="megacap" aria-pressed="false">Mega-caps</button>
       <button class="chip" data-g="breadth" aria-pressed="false">Breadth</button>
       <button class="chip" data-g="diverge" aria-pressed="false">Divergence</button>
       <button class="chip" data-g="together" aria-pressed="false">In step</button>
@@ -215,6 +216,7 @@ const GROUPS = {
   index:{name:"S&P 500 index",v:"--idx"},
   sector:{name:"Sector ETF",v:"--sec"},
   "sector-rel":{name:"Sector vs S&P 500",v:"--rel"},
+  megacap:{name:"Mega-cap stock",v:"--mc"},
   breadth:{name:"All-sector breadth",v:"--brd"},
   diverge:{name:"Pair divergence",v:"--xdiv"},
   together:{name:"Pair in step",v:"--xtog"},
