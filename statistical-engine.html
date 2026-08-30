@@ -1,5 +1,5 @@
 <meta charset="utf-8">
-<title>Streak Scanner</title>
+<title>Statistical Engine</title>
 <meta name="robots" content="noindex,nofollow">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -69,14 +69,17 @@ input[type="search"]{min-width:170px}
 input:focus-visible,select:focus-visible{outline:2px solid var(--accent); outline-offset:1px}
 .count{font-size:0.78rem; color:var(--ink-dim); margin:14px 2px 8px}
 
-.pagenav{margin:2px 0 10px; font-family:"IBM Plex Mono",monospace; font-size:0.72rem}
-.pagenav a{color:var(--accent); text-decoration:none}
-.pagenav a:hover{text-decoration:underline}
+.tabs{display:flex; gap:4px; margin:16px 0 20px; border-bottom:1px solid var(--line)}
+.tab{font:inherit; font-size:0.9rem; cursor:pointer; background:none; border:0;
+  color:var(--ink-dim); padding:8px 14px; border-bottom:2px solid transparent; margin-bottom:-1px}
+.tab[aria-selected="true"]{color:var(--ink); border-bottom-color:var(--accent); font-weight:600}
+.tab:focus-visible{outline:2px solid var(--accent); outline-offset:2px}
+.tabcount{font-family:"IBM Plex Mono",monospace; font-size:0.72rem; color:var(--ink-dim); font-weight:400}
 .feed{margin:26px 0}
-.feed:first-of-type{margin-top:6px}
+.feed:first-child{margin-top:0}
 .feed h2{font-size:1.05rem; font-weight:600; margin-bottom:10px; display:flex; align-items:baseline; gap:8px; flex-wrap:wrap}
-.feed .feedlink{font-family:"IBM Plex Mono",monospace; font-size:0.7rem; font-weight:400;
-  color:var(--accent); text-decoration:none; margin-left:auto}
+.feed .feedlink{font:inherit; font-family:"IBM Plex Mono",monospace; font-size:0.7rem; font-weight:400;
+  color:var(--accent); background:none; border:0; cursor:pointer; margin-left:auto; padding:0}
 .feed .feedlink:hover{text-decoration:underline}
 .feed .feednote{font-family:"IBM Plex Mono",monospace; font-size:0.66rem; letter-spacing:0.06em;
   text-transform:uppercase; color:var(--ink-dim); font-weight:400}
@@ -174,7 +177,7 @@ table.fwd tbody td:first-child{font-family:"IBM Plex Mono",monospace; color:var(
 </style>
 <div id="gate" class="gate">
   <form id="gateform">
-    <h1>Streak Scanner</h1>
+    <h1>Statistical Engine</h1>
     <p>Michael J. Stevenson &middot; enter the password to view.</p>
     <input type="password" id="gatepw" aria-label="Password" autocomplete="current-password" autofocus>
     <button type="submit">Unlock</button>
@@ -184,23 +187,20 @@ table.fwd tbody td:first-child{font-family:"IBM Plex Mono",monospace; color:var(
 <div id="app" hidden>
 <div class="wrap">
   <div class="asof" id="asof"></div>
-  <div class="pagenav" id="pagenav"></div>
-  <h1 id="pagetitle">Streak Scanner</h1>
+  <h1>Statistical Engine</h1>
 
-  <section id="archiveSection" class="feed" hidden>
-    <h2 id="archiveTitle">Archived streaks <span class="feedcount" id="archiveCount"></span></h2>
-    <p class="thin" id="archiveEmpty" hidden>Nothing archived yet — archive streaks from the
-      <a href="/streak-scanner">scanner</a> as they end.</p>
-    <div class="rows" id="archiveRows"></div>
-  </section>
+  <div class="tabs" id="tabs">
+    <button class="tab" data-tab="scanner" aria-selected="true">Scanner</button>
+    <button class="tab" data-tab="archive" aria-selected="false">Archive <span class="tabcount" id="archiveTabCount"></span></button>
+  </div>
 
-  <div id="scannerOnly">
+  <div id="scannerTab">
   <div class="tiles" id="tiles"></div>
 
   <section id="endedSection" class="feed" hidden>
     <h2>Recently ended <span class="feednote">rarity was &gt; 50%</span>
       <span class="feedcount" id="endedCount"></span>
-      <a class="feedlink" href="/streak-archive">Archive &rarr;</a></h2>
+      <button class="feedlink" data-tab-link="archive">Archive &rarr;</button></h2>
     <div class="rows" id="endedRows"></div>
   </section>
 
@@ -240,6 +240,15 @@ table.fwd tbody td:first-child{font-family:"IBM Plex Mono",monospace; color:var(
   runs that reached the same length, de-duplicated so one long streak counts once, tracked over the
   next year (samples shrink at the longer horizons as recent analogs run out of runway). Regenerate
   with <code>node scripts/oddstats-detect.js --dump</code>. Food for thought, not a signal.</p>
+  </div><!-- /scannerTab -->
+
+  <div id="archiveTab" hidden>
+    <section id="archiveSection" class="feed">
+      <p class="thin" id="archiveEmpty" hidden>Nothing archived yet. When a notable streak ends it
+        shows on the Scanner tab under &ldquo;recently ended&rdquo; &mdash; archive the ones worth
+        keeping and they land here.</p>
+      <div class="rows" id="archiveRows"></div>
+    </section>
   </div>
 </div>
 </div>
@@ -308,9 +317,28 @@ function init(){
     (t[3] ? " hot" : "") + '">' + t[1] + '</div><div class="sub">' + (t[2] || "") + '</div></div>'
   ).join("");
 
-  if(!window.__noNav) el("pagenav").innerHTML = '<a href="/streak-archive">Archived streaks &rarr;</a>';
   render();
-  curationLoad().then(renderEndedFeed);
+  wireTabs();
+  if(location.hash === "#archive") switchTab("archive");
+  curationLoad().then(() => { renderEndedFeed(); renderArchive(); });
+}
+
+function wireTabs(){
+  el("tabs").querySelectorAll(".tab").forEach(b => {
+    b.addEventListener("click", () => switchTab(b.dataset.tab));
+  });
+  document.querySelectorAll("[data-tab-link]").forEach(b => {
+    b.addEventListener("click", () => switchTab(b.dataset.tabLink));
+  });
+}
+
+function switchTab(name){
+  el("tabs").querySelectorAll(".tab").forEach(b =>
+    b.setAttribute("aria-selected", String(b.dataset.tab === name)));
+  el("scannerTab").hidden = name !== "scanner";
+  el("archiveTab").hidden = name !== "archive";
+  try { history.replaceState(null, "", name === "archive" ? "#archive" : location.pathname); } catch(e){}
+  window.scrollTo(0, 0);
 }
 
 function distSVG(dist){
@@ -445,10 +473,8 @@ function frozenCardHTML(c, ctx){
   '</div>';
 }
 
-// Recently-ended feed (scanner page). Archiving a card moves it to the
-// separate /streak-archive page.
+// Recently-ended feed (Scanner tab). Archiving a card moves it to the Archive tab.
 function renderEndedFeed(){
-  if(window.__noNav){ const fl = el("endedSection").querySelector(".feedlink"); if(fl) fl.remove(); }
   const dismissed = new Set(CURATION.dismissed || []);
   const archivedKeys = new Set((CURATION.archived || []).map(e => e.key));
   const ended = (DATA.recentlyEnded || []).filter(c =>
@@ -459,16 +485,16 @@ function renderEndedFeed(){
   wireFeedRows(el("endedRows"), renderEndedFeed);
 }
 
-// Archive page.
+// Archive tab.
 function renderArchive(){
   const arch = CURATION.archived || [];
-  el("archiveCount").textContent = arch.length || "";
+  el("archiveTabCount").textContent = arch.length || "";
   el("archiveEmpty").hidden = arch.length > 0;
   el("archiveRows").innerHTML = arch.map(c => frozenCardHTML(c, "archived")).join("");
-  wireFeedRows(el("archiveRows"), renderArchive);
+  wireFeedRows(el("archiveRows"));
 }
 
-function wireFeedRows(container, rerender){
+function wireFeedRows(container){
   container.querySelectorAll(".head").forEach(h => {
     h.addEventListener("click", e => {
       if(e.target.closest(".cbtn")) return;
@@ -488,21 +514,10 @@ function wireFeedRows(container, rerender){
       const entry = ((DATA && DATA.recentlyEnded) || []).find(x => x.key === key);
       b.disabled = true;
       await curationSave(op, key, op === "archive" ? entry : undefined);
-      rerender();
+      renderEndedFeed();
+      renderArchive();
     });
   });
-}
-
-// Archive page entry point (build-dashboard.js --archive wires the boot to
-// this, with CURATION already loaded by the password gate).
-function initArchive(){
-  document.title = "Streak Archive";
-  el("pagetitle").textContent = "Streak Archive";
-  const so = el("scannerOnly"); if(so) so.remove();
-  el("archiveSection").hidden = false;
-  el("pagenav").innerHTML = '<a href="/streak-scanner">&larr; Streak Scanner</a>';
-  el("asof").textContent = "";
-  renderArchive();
 }
 
 // The "and here's every shorter length this run passed through" matrix —
@@ -656,12 +671,12 @@ el("toggleall").addEventListener("click", () => {
     catch(e){ say('Network error \u2014 try again.'); return; }
     if(res.status === 401){ try{ sessionStorage.removeItem('ss_pw'); }catch(e){} say('Wrong password.'); pwIn.select(); return; }
     if(!res.ok){ const j = await res.json().catch(function(){ return {}; }); say(j.error || ('Error ' + res.status)); return; }
-    const payload = await res.json();
+    DATA = await res.json();
     try{ sessionStorage.setItem('ss_pw', pw); }catch(e){}
     say('');
     gate.hidden = true; gate.style.display = 'none';
     el('app').hidden = false;
-    DATA = payload; init();
+    init();
   }
   form.addEventListener('submit', function(e){ e.preventDefault(); if(pwIn.value) tryPw(pwIn.value); });
   var saved = null; try{ saved = sessionStorage.getItem('ss_pw'); }catch(e){}
