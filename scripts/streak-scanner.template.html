@@ -161,11 +161,6 @@ table.fwd tbody td:first-child{font-family:"IBM Plex Mono",monospace; color:var(
 <div class="wrap">
   <div class="asof" id="asof"></div>
   <h1>Streak Scanner</h1>
-  <p class="lede">Every streak condition the odd-stats engine tracks &mdash; the S&amp;P 500 back to
-  1927, each of the 11 SPDR sector ETFs, and every pair among the index, the sectors, and the 25 largest S&amp;P companies (individually and as a basket) running in step, against each other, or closing
-  their gap. Live streaks sit up top with the full history of every prior time they reached this
-  length and what markets did over the following year; the rest show how far along they are and how
-  past occurrences played out. Counts update as streaks extend.</p>
 
   <div class="tiles" id="tiles"></div>
 
@@ -231,11 +226,17 @@ const store = (k,val) => {
   }catch(e){ return null; }
 };
 const el = id => document.getElementById(id);
+// Clear filter keys a previous build used to persist — a stuck value there
+// silently hides most of the board.
+try { localStorage.removeItem("ss_group"); localStorage.removeItem("ss_liveonly"); } catch (e) {}
 
+// Group and "live only" are deliberately NOT persisted — a filter left on
+// from a past visit silently hides most of the board (and makes a search look
+// broken). Sort and expand are cosmetic and safe to remember.
 let state = {
-  group: store("group") || "all",
+  group: "all",
   sort: store("sort") || "rarity",
-  liveonly: store("liveonly") === "1",
+  liveonly: false,
   q: "",
   expand: store("expand") || "auto"   // auto = live open, dormant closed
 };
@@ -257,8 +258,7 @@ function init(){
     ["Live streaks", DATA.live, "of " + DATA.scanned + " tracked", true],
     ["Rarest live", byRarity[0] ? pct0(byRarity[0].rarity) : "—",
        byRarity[0] ? byRarity[0].label + " · " + byRarity[0].currentRun + " " + byRarity[0].unit + "s" : "", false],
-    ["At an all-time record", rec.length, rec.length ? rec.map(c => c.label).join(", ") : "none right now", false],
-    ["History depth", "1927", "S&P 500 daily", false]
+    ["At an all-time record", rec.length, rec.length ? rec.map(c => c.label).join(", ") : "none right now", false]
   ].map(t => '<div class="tile"><div class="k">' + t[0] + '</div><div class="v' +
     (t[3] ? " hot" : "") + '">' + t[1] + '</div><div class="sub">' + (t[2] || "") + '</div></div>'
   ).join("");
@@ -448,7 +448,6 @@ el("groupchips").addEventListener("click", e => {
   const b = e.target.closest(".chip");
   if(!b) return;
   state.group = b.dataset.g;
-  store("group", state.group);
   render();
 });
 el("q").addEventListener("input", e => {
@@ -462,7 +461,6 @@ el("sort").addEventListener("change", e => {
 });
 el("liveonly").addEventListener("change", e => {
   state.liveonly = e.target.checked;
-  store("liveonly", state.liveonly ? "1" : "0");
   render();
 });
 el("toggleall").addEventListener("click", () => {
