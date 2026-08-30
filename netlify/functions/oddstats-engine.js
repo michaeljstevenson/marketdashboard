@@ -1,6 +1,6 @@
 // Odd-stats streak-scanner engine. Scans run-length "odd stat" conditions
 // over the S&P 500 (Yahoo ^GSPC, 1927+), the 11 SPDR sector ETFs, SPY, and
-// the 10 largest S&P constituents: directional / volatility / trend / RSI
+// the 25 largest S&P constituents: directional / volatility / trend / RSI
 // streaks, sector streaks and relative strength vs SPY, all-sector breadth,
 // and every S&P x sector, sector x sector and S&P x megacap pair for daily
 // divergence, co-movement, and 1-month performance convergence.
@@ -165,9 +165,9 @@ async function fetchYahoo(symbol = "^GSPC", boundaryList = YAHOO_BOUNDARIES) {
   return rows;
 }
 
-// The ten largest S&P 500 companies by market cap. Hand-maintained — refresh
-// the list (and order) as the leaderboard changes; the engine only needs the
-// Yahoo ticker and a display name.
+// The 25 largest S&P 500 companies by market cap, in rough rank order.
+// Hand-maintained — refresh the list and order as the leaderboard changes;
+// the engine only needs the Yahoo ticker and a display name.
 const MEGACAPS = [
   { ticker: "NVDA", name: "Nvidia" },
   { ticker: "AAPL", name: "Apple" },
@@ -177,14 +177,29 @@ const MEGACAPS = [
   { ticker: "META", name: "Meta" },
   { ticker: "AVGO", name: "Broadcom" },
   { ticker: "TSLA", name: "Tesla" },
-  { ticker: "BRK-B", name: "Berkshire" },
-  { ticker: "JPM", name: "JPMorgan" },
+  { ticker: "BRK-B", name: "Berkshire Hathaway" },
+  { ticker: "JPM", name: "JPMorgan Chase" },
+  { ticker: "WMT", name: "Walmart" },
+  { ticker: "LLY", name: "Eli Lilly" },
+  { ticker: "ORCL", name: "Oracle" },
+  { ticker: "V", name: "Visa" },
+  { ticker: "MA", name: "Mastercard" },
+  { ticker: "NFLX", name: "Netflix" },
+  { ticker: "XOM", name: "ExxonMobil" },
+  { ticker: "COST", name: "Costco" },
+  { ticker: "JNJ", name: "Johnson & Johnson" },
+  { ticker: "HD", name: "Home Depot" },
+  { ticker: "PG", name: "Procter & Gamble" },
+  { ticker: "PLTR", name: "Palantir" },
+  { ticker: "BAC", name: "Bank of America" },
+  { ticker: "ABBV", name: "AbbVie" },
+  { ticker: "CVX", name: "Chevron" },
 ];
 
 // A daily-rebalanced equal-weight basket of whichever megacaps have data that
 // day, as a synthetic price series (date -> level). Used for the "S&P vs the
 // top 10 together" relationship stats.
-function buildMega10Basket(megacaps) {
+function buildCapBasket(megacaps) {
   const retMaps = megacaps.map((m) => {
     const r = new Map();
     for (let i = 1; i < m.rows.length; i++) r.set(m.rows[i].date, m.rows[i].px / m.rows[i - 1].px - 1);
@@ -205,7 +220,7 @@ function buildMega10Basket(megacaps) {
 }
 
 // The full data set the engine runs over: the S&P 500 index plus (unless
-// --no-sectors) the sector ETFs, SPY, and the ten largest S&P constituents,
+// --no-sectors) the sector ETFs, SPY, and the 25 largest S&P constituents,
 // fetched sequentially so Yahoo's intermittent throttle stays quiet.
 async function loadUniverse(file, opts = {}) {
   const spx = file ? loadCsv(path.resolve(file)) : await fetchYahoo();
@@ -223,7 +238,7 @@ async function loadUniverse(file, opts = {}) {
     if (rows.length > 260) universe.megacaps.push({ ...m, rows });
   }
   if (universe.megacaps.length >= 5) {
-    universe.mega10 = buildMega10Basket(universe.megacaps);
+    universe.capBasket = buildCapBasket(universe.megacaps);
   }
   return universe;
 }
@@ -607,7 +622,7 @@ function buildPredicates(rows) {
 
 // ---------------------------------------------------------------------------
 // Per-instrument streak predicates — the same streak vocabulary applied to
-// each SPDR sector ETF and each of the ten largest S&P constituents: up/down
+// each SPDR sector ETF and each of the 25 largest S&P constituents: up/down
 // streaks, 52-week highs/lows, RSI extremes, and relative-strength-vs-SPY
 // streaks. Forward returns for each stat are measured on that instrument's
 // own series. (Index-wide "all sectors" breadth lives in buildCrossSector.)
@@ -718,7 +733,7 @@ function buildRelationshipPredicates(universe) {
   const series = { SPX: alignSeries(spx) };
   for (const sec of universe.sectors) series[sec.ticker] = alignSeries(mapOf(sec.rows));
   for (const mc of universe.megacaps || []) series[mc.ticker] = alignSeries(mapOf(mc.rows));
-  if (universe.mega10) series.MEGA10 = alignSeries(universe.mega10);
+  if (universe.capBasket) series.CAP25 = alignSeries(universe.capBasket);
 
   const out = [];
   const pairPreds = (A, B, aName, bName) => {
@@ -771,12 +786,12 @@ function buildRelationshipPredicates(universe) {
     }
   }
 
-  // S&P × each of the ten largest constituents, and × the basket of all ten.
+  // S&P × each of the 25 largest constituents, and × the basket of all 25.
   for (const mc of universe.megacaps || []) {
     out.push(...pairPreds("SPX", mc.ticker, "the S&P 500", mc.name));
   }
-  if (universe.mega10) {
-    out.push(...pairPreds("SPX", "MEGA10", "the S&P 500", "its ten largest companies"));
+  if (universe.capBasket) {
+    out.push(...pairPreds("SPX", "CAP25", "the S&P 500", "its 25 largest companies"));
   }
 
   return out;

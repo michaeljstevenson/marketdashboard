@@ -163,8 +163,7 @@ table.fwd tbody td:first-child{font-family:"IBM Plex Mono",monospace; color:var(
   <div class="asof" id="asof"></div>
   <h1>Streak Scanner</h1>
   <p class="lede">Every streak condition the odd-stats engine tracks &mdash; the S&amp;P 500 back to
-  1927, each of the 11 SPDR sector ETFs, and every pair among the index, the sectors, and its ten
-  largest companies (individually and as a basket) running in step, against each other, or closing
+  1927, each of the 11 SPDR sector ETFs, and every pair among the index, the sectors, and the 25 largest S&amp;P companies (individually and as a basket) running in step, against each other, or closing
   their gap. Live streaks sit up top with the full history of every prior time they reached this
   length and what markets did over the following year; the rest show how far along they are and how
   past occurrences played out. Counts update as streaks extend.</p>
@@ -177,7 +176,7 @@ table.fwd tbody td:first-child{font-family:"IBM Plex Mono",monospace; color:var(
       <button class="chip" data-g="index" aria-pressed="false">Index</button>
       <button class="chip" data-g="sector" aria-pressed="false">Sectors</button>
       <button class="chip" data-g="sector-rel" aria-pressed="false">Relative</button>
-      <button class="chip" data-g="megacap" aria-pressed="false">Mega-caps</button>
+      <button class="chip" data-g="megacap" aria-pressed="false">Top 25</button>
       <button class="chip" data-g="breadth" aria-pressed="false">Breadth</button>
       <button class="chip" data-g="diverge" aria-pressed="false">Divergence</button>
       <button class="chip" data-g="together" aria-pressed="false">In step</button>
@@ -216,7 +215,7 @@ const GROUPS = {
   index:{name:"S&P 500 index",v:"--idx"},
   sector:{name:"Sector ETF",v:"--sec"},
   "sector-rel":{name:"Sector vs S&P 500",v:"--rel"},
-  megacap:{name:"Mega-cap stock",v:"--mc"},
+  megacap:{name:"Top-25 company",v:"--mc"},
   breadth:{name:"All-sector breadth",v:"--brd"},
   diverge:{name:"Pair divergence",v:"--xdiv"},
   together:{name:"Pair in step",v:"--xtog"},

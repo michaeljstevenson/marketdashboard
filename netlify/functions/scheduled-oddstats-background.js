@@ -3,8 +3,8 @@
 // writes the finished board to Netlify Blobs for oddstats.js to serve.
 //
 // Named "-background" for the same reason as scheduled-sectors-background.js:
-// loadUniverse() makes ~24 sequential Yahoo fetches (^GSPC + SPY + 11 sector
-// ETFs + 10 megacaps, spaced to stay under Yahoo's burst throttle) and
+// loadUniverse() makes ~38 sequential Yahoo fetches (^GSPC + SPY + 11 sector
+// ETFs + 25 megacaps, spaced to stay under Yahoo's burst throttle) and
 // snapshot() then re-runs ~360 analog scans over the full history — well past
 // the ~26s a standard function gets, comfortably inside a Background
 // Function's 15-minute window.
