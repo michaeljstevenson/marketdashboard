@@ -652,7 +652,7 @@ el("toggleall").addEventListener("click", () => {
   async function tryPw(pw){
     say('Checking\u2026', true);
     let res;
-    try { res = await fetch('/api/oddstats', { headers: { 'x-streak-password': pw }, cache: 'no-store' }); }
+    try { res = await fetch('/api/oddstats-curation', { headers: { 'x-streak-password': pw }, cache: 'no-store' }); }
     catch(e){ say('Network error \u2014 try again.'); return; }
     if(res.status === 401){ try{ sessionStorage.removeItem('ss_pw'); }catch(e){} say('Wrong password.'); pwIn.select(); return; }
     if(!res.ok){ const j = await res.json().catch(function(){ return {}; }); say(j.error || ('Error ' + res.status)); return; }
@@ -661,7 +661,7 @@ el("toggleall").addEventListener("click", () => {
     say('');
     gate.hidden = true; gate.style.display = 'none';
     el('app').hidden = false;
-    DATA = payload; init();
+    CURATION = payload; curationVia = 'server'; initArchive();
   }
   form.addEventListener('submit', function(e){ e.preventDefault(); if(pwIn.value) tryPw(pwIn.value); });
   var saved = null; try{ saved = sessionStorage.getItem('ss_pw'); }catch(e){}

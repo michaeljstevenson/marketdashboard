@@ -68,8 +68,15 @@ input[type="search"]{min-width:170px}
 input:focus-visible,select:focus-visible{outline:2px solid var(--accent); outline-offset:1px}
 .count{font-size:0.78rem; color:var(--ink-dim); margin:14px 2px 8px}
 
+.pagenav{margin:2px 0 10px; font-family:"IBM Plex Mono",monospace; font-size:0.72rem}
+.pagenav a{color:var(--accent); text-decoration:none}
+.pagenav a:hover{text-decoration:underline}
 .feed{margin:26px 0}
+.feed:first-of-type{margin-top:6px}
 .feed h2{font-size:1.05rem; font-weight:600; margin-bottom:10px; display:flex; align-items:baseline; gap:8px; flex-wrap:wrap}
+.feed .feedlink{font-family:"IBM Plex Mono",monospace; font-size:0.7rem; font-weight:400;
+  color:var(--accent); text-decoration:none; margin-left:auto}
+.feed .feedlink:hover{text-decoration:underline}
 .feed .feednote{font-family:"IBM Plex Mono",monospace; font-size:0.66rem; letter-spacing:0.06em;
   text-transform:uppercase; color:var(--ink-dim); font-weight:400}
 .feed .feedcount{font-family:"IBM Plex Mono",monospace; font-size:0.72rem; color:var(--ink-dim); font-weight:400}
@@ -94,12 +101,13 @@ input:focus-visible,select:focus-visible{outline:2px solid var(--accent); outlin
   align-items:start}
 .head:hover{background:var(--surface-2)}
 .head:focus-visible{outline:2px solid var(--accent); outline-offset:-2px}
+.head > span:first-child{min-width:0}
 .lab{font-family:"IBM Plex Mono",monospace; font-size:0.68rem; letter-spacing:0.04em;
   text-transform:uppercase; color:var(--gd,var(--ink-dim)); display:flex; align-items:center; gap:6px}
 .dot{width:7px; height:7px; border-radius:2px; background:var(--gd,var(--ink-dim)); flex:none}
-.phrase{margin-top:4px; font-size:0.98rem; line-height:1.35}
+.phrase{display:block; margin-top:4px; font-size:0.98rem; line-height:1.35}
 .phrase b{font-weight:600; font-variant-numeric:tabular-nums}
-.meta{margin-top:5px; font-family:"IBM Plex Mono",monospace; font-size:0.72rem;
+.meta{display:block; margin-top:5px; font-family:"IBM Plex Mono",monospace; font-size:0.72rem;
   color:var(--ink-dim); font-variant-numeric:tabular-nums}
 .meta .rec{color:var(--accent)}
 .rarity{justify-self:end; text-align:right; min-width:74px}
@@ -175,17 +183,23 @@ table.fwd tbody td:first-child{font-family:"IBM Plex Mono",monospace; color:var(
 <div id="app" hidden>
 <div class="wrap">
   <div class="asof" id="asof"></div>
-  <h1>Streak Scanner</h1>
-
-  <div class="tiles" id="tiles"></div>
+  <div class="pagenav" id="pagenav"></div>
+  <h1 id="pagetitle">Streak Scanner</h1>
 
   <section id="archiveSection" class="feed" hidden>
-    <h2>Archive <span class="feedcount" id="archiveCount"></span></h2>
+    <h2 id="archiveTitle">Archived streaks <span class="feedcount" id="archiveCount"></span></h2>
+    <p class="thin" id="archiveEmpty" hidden>Nothing archived yet — archive streaks from the
+      <a href="/streak-scanner">scanner</a> as they end.</p>
     <div class="rows" id="archiveRows"></div>
   </section>
 
+  <div id="scannerOnly">
+  <div class="tiles" id="tiles"></div>
+
   <section id="endedSection" class="feed" hidden>
-    <h2>Recently ended <span class="feednote">rarity was &gt; 50%</span> <span class="feedcount" id="endedCount"></span></h2>
+    <h2>Recently ended <span class="feednote">rarity was &gt; 50%</span>
+      <span class="feedcount" id="endedCount"></span>
+      <a class="feedlink" href="/streak-archive">Archive &rarr;</a></h2>
     <div class="rows" id="endedRows"></div>
   </section>
 
@@ -225,11 +239,15 @@ table.fwd tbody td:first-child{font-family:"IBM Plex Mono",monospace; color:var(
   runs that reached the same length, de-duplicated so one long streak counts once, tracked over the
   next year (samples shrink at the longer horizons as recent analogs run out of runway). Regenerate
   with <code>node scripts/oddstats-detect.js --dump</code>. Food for thought, not a signal.</p>
+  </div>
 </div>
 </div>
 <script>
 let DATA = null;
-let HZ, HZLABEL;
+// Defaults; init() overrides from DATA.horizons on the scanner page. The
+// archive page keeps these (its frozen entries' summaries use the same keys).
+let HZ = [5, 21, 63, 126, 252];
+let HZLABEL = ["5d", "1m", "3m", "6m", "12m"];
 const GROUPS = {
   index:{name:"S&P 500 index",v:"--idx"},
   sector:{name:"Sector ETF",v:"--sec"},
@@ -289,8 +307,9 @@ function init(){
     (t[3] ? " hot" : "") + '">' + t[1] + '</div><div class="sub">' + (t[2] || "") + '</div></div>'
   ).join("");
 
+  if(!window.__noNav) el("pagenav").innerHTML = '<a href="/streak-archive">Archived streaks &rarr;</a>';
   render();
-  curationLoad().then(renderFeeds);
+  curationLoad().then(renderEndedFeed);
 }
 
 function distSVG(dist){
@@ -425,22 +444,31 @@ function frozenCardHTML(c, ctx){
   '</div>';
 }
 
-function renderFeeds(){
+// Recently-ended feed (scanner page). Archiving a card moves it to the
+// separate /streak-archive page.
+function renderEndedFeed(){
+  if(window.__noNav){ const fl = el("endedSection").querySelector(".feedlink"); if(fl) fl.remove(); }
   const dismissed = new Set(CURATION.dismissed || []);
   const archivedKeys = new Set((CURATION.archived || []).map(e => e.key));
-
-  const arch = CURATION.archived || [];
-  el("archiveSection").hidden = arch.length === 0;
-  el("archiveCount").textContent = arch.length || "";
-  el("archiveRows").innerHTML = arch.map(c => frozenCardHTML(c, "archived")).join("");
-
   const ended = (DATA.recentlyEnded || []).filter(c =>
     (c.rarity || 0) >= 0.5 && !dismissed.has(c.key) && !archivedKeys.has(c.key));
   el("endedSection").hidden = ended.length === 0;
   el("endedCount").textContent = ended.length || "";
   el("endedRows").innerHTML = ended.map(c => frozenCardHTML(c, "ended")).join("");
+  wireFeedRows(el("endedRows"), renderEndedFeed);
+}
 
-  document.querySelectorAll("#archiveRows .head, #endedRows .head").forEach(h => {
+// Archive page.
+function renderArchive(){
+  const arch = CURATION.archived || [];
+  el("archiveCount").textContent = arch.length || "";
+  el("archiveEmpty").hidden = arch.length > 0;
+  el("archiveRows").innerHTML = arch.map(c => frozenCardHTML(c, "archived")).join("");
+  wireFeedRows(el("archiveRows"), renderArchive);
+}
+
+function wireFeedRows(container, rerender){
+  container.querySelectorAll(".head").forEach(h => {
     h.addEventListener("click", e => {
       if(e.target.closest(".cbtn")) return;
       const item = h.closest(".item");
@@ -450,19 +478,30 @@ function renderFeeds(){
       if(car) car.textContent = opened ? "▾" : "▸";
     });
   });
-  document.querySelectorAll("#archiveRows .cbtn, #endedRows .cbtn").forEach(b => {
+  container.querySelectorAll(".cbtn").forEach(b => {
     b.addEventListener("click", async e => {
       e.stopPropagation();
       const item = b.closest(".item");
       const key = item.dataset.key;
       const op = b.dataset.op;
-      const entry = (DATA.recentlyEnded || []).find(x => x.key === key) ||
-        (CURATION.archived || []).find(x => x.key === key);
+      const entry = ((DATA && DATA.recentlyEnded) || []).find(x => x.key === key);
       b.disabled = true;
       await curationSave(op, key, op === "archive" ? entry : undefined);
-      renderFeeds();
+      rerender();
     });
   });
+}
+
+// Archive page entry point (build-dashboard.js --archive wires the boot to
+// this, with CURATION already loaded by the password gate).
+function initArchive(){
+  document.title = "Streak Archive";
+  el("pagetitle").textContent = "Streak Archive";
+  const so = el("scannerOnly"); if(so) so.remove();
+  el("archiveSection").hidden = false;
+  el("pagenav").innerHTML = '<a href="/streak-scanner">&larr; Streak Scanner</a>';
+  el("asof").textContent = "";
+  renderArchive();
 }
 
 // The "and here's every shorter length this run passed through" matrix —
