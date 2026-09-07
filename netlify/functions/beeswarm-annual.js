@@ -9,7 +9,7 @@ const { getBeeswarmStore, ANNUAL_KEY } = require("./beeswarm-blob-store");
 exports.handler = async () => {
   try {
     const payload = await getBeeswarmStore().get(ANNUAL_KEY, { type: "json" });
-    if (!payload || !payload.years || !payload.years.length) {
+    if (!payload || !payload.dates || !payload.dates.length || !payload.years || !payload.years.length) {
       throw new Error("Annual beeswarm data not yet populated — scheduled-beeswarm-annual-background hasn't run yet");
     }
     return {

@@ -1,19 +1,21 @@
-// Scheduled Background Function (see netlify.toml) that computes calendar-
-// year total returns for the 11 SPDR sector ETFs plus SPY, for roughly the
-// last 15 full calendar years plus the current year-to-date, and writes the
-// result to Netlify Blobs for beeswarm-annual.js to serve.
+// Scheduled Background Function (see netlify.toml) that builds the "annual"
+// mode of the sector-beeswarm page: the year-by-year path of each of the 11
+// SPDR sector ETFs (plus SPY), for roughly the last 15 full calendar years
+// plus the current year-to-date, and writes it to Netlify Blobs for
+// beeswarm-annual.js to serve.
 //
-// This is the "annual" mode of the sector-beeswarm page — the individual-
-// company daily view can't go back 15 years (no such intraday/constituent
-// history is obtainable at that scale), so the historical view drops to
-// sector-ETF granularity at annual resolution instead.
+// The individual-company daily view can't go back 15 years (no such
+// constituent history is obtainable at that scale), so the historical view
+// drops to sector-ETF granularity — but NOT to a single year-end snapshot.
+// It carries every trading day's cumulative calendar-year total return (the
+// return resets each Jan 1), so the page can animate the bubbles drifting
+// through each year the way the Chartfleau reference animates through a day,
+// rather than snapping between 12 year-end dots.
 //
-// Only ~12 Alpha Vantage calls per run (TIME_SERIES_MONTHLY_ADJUSTED,
-// which returns full history in one call per symbol), so this could be a
-// standard function — it's a Background Function only for consistency with
-// the other scheduled jobs and headroom if pacing ever needs to grow.
-// Runs weekly; the underlying data only changes meaningfully once a year
-// (at each year-end close) plus a slow YTD drift the rest of the time.
+// ~12 Alpha Vantage calls per run (TIME_SERIES_DAILY_ADJUSTED, outputsize
+// full — same endpoint scheduled-sectors-background.js uses). Runs weekly;
+// the shape of a completed year never changes and the current year only
+// drifts slowly.
 
 const { getBeeswarmStore, ANNUAL_KEY } = require("./beeswarm-blob-store");
 const { SECTOR_ORDER, SECTOR_ETF } = require("./beeswarm-sectors");
@@ -27,11 +29,10 @@ const BENCHMARK = "SPY";
 const YEARS_BACK = 15;
 
 // Approximate S&P 500 year-end GICS sector weights (%), used only to size
-// the bubbles in the annual view — not a precise figure and not shown as a
-// number anywhere. Real Estate broke out of Financials in Sep 2016 and
-// Communication Services replaced Telecom in Sep 2018; for years before an
-// ETF existed the weight is irrelevant (no bubble is drawn). Sourced from
-// S&P / SPDR sector weightings, rounded.
+// the bubbles — not a precise figure and not shown as a number. Real Estate
+// broke out of Financials in Sep 2016 and Communication Services replaced
+// Telecom in Sep 2018; for years before an ETF traded the weight is unused
+// (no bubble is drawn). Sourced from S&P / SPDR sector weightings, rounded.
 const SECTOR_WEIGHTS_BY_YEAR = {
   2010: { "Information Technology": 18.7, "Health Care": 10.9, Financials: 16.1, "Consumer Discretionary": 10.6, "Communication Services": 3.1, Industrials: 11.3, "Consumer Staples": 10.6, Energy: 12.0, Utilities: 3.3, "Real Estate": 0, Materials: 3.7 },
   2011: { "Information Technology": 19.0, "Health Care": 11.9, Financials: 13.4, "Consumer Discretionary": 10.7, "Communication Services": 3.2, Industrials: 10.7, "Consumer Staples": 11.5, Energy: 12.3, Utilities: 3.9, "Real Estate": 0, Materials: 3.5 },
@@ -50,6 +51,9 @@ const SECTOR_WEIGHTS_BY_YEAR = {
   2024: { "Information Technology": 32.5, "Health Care": 10.1, Financials: 13.6, "Consumer Discretionary": 11.3, "Communication Services": 9.4, Industrials: 8.2, "Consumer Staples": 5.5, Energy: 3.2, Utilities: 2.5, "Real Estate": 2.1, Materials: 1.9 },
   2025: { "Information Technology": 33.0, "Health Care": 9.5, Financials: 13.5, "Consumer Discretionary": 10.5, "Communication Services": 9.7, Industrials: 8.5, "Consumer Staples": 5.4, Energy: 3.0, Utilities: 2.5, "Real Estate": 2.0, Materials: 1.8 },
 };
+const weightsFor = (year) =>
+  SECTOR_WEIGHTS_BY_YEAR[year] ||
+  SECTOR_WEIGHTS_BY_YEAR[Math.max(...Object.keys(SECTOR_WEIGHTS_BY_YEAR).map(Number))];
 
 function sleep(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
@@ -62,41 +66,39 @@ async function fetchJson(url) {
   return res.json();
 }
 
-// Monthly adjusted close series -> { "YYYY-MM": adjClose }, ascending.
-async function fetchMonthlyAdjusted(apiKey, symbol) {
+// Full daily adjusted-close history -> { dates:[asc], closes:[parallel] }.
+// Adjusted close (dividends + splits) so these are true total returns —
+// same reasoning as scheduled-sectors-background.js.
+async function fetchDailyAdjusted(apiKey, symbol) {
   const payload = await fetchJson(
-    `${ALPHA_VANTAGE_URL}?function=TIME_SERIES_MONTHLY_ADJUSTED&symbol=${symbol}&apikey=${apiKey}`
+    `${ALPHA_VANTAGE_URL}?function=TIME_SERIES_DAILY_ADJUSTED&symbol=${symbol}&outputsize=full&apikey=${apiKey}`
   );
-  const series = payload["Monthly Adjusted Time Series"];
+  const series = payload["Time Series (Daily)"];
   if (!series) {
     throw new Error(
-      `TIME_SERIES_MONTHLY_ADJUSTED missing for ${symbol}: ` +
+      `TIME_SERIES_DAILY_ADJUSTED missing for ${symbol}: ` +
         (payload.Note || payload.Information || payload.error_message || JSON.stringify(payload).slice(0, 160))
     );
   }
-  const byMonth = {};
-  for (const [date, row] of Object.entries(series)) {
-    byMonth[date.slice(0, 7)] = parseFloat(row["5. adjusted close"]);
-  }
-  return byMonth;
+  const rows = Object.entries(series)
+    .map(([date, r]) => ({ date, close: parseFloat(r["5. adjusted close"]) }))
+    .filter((r) => Number.isFinite(r.close))
+    .sort((a, b) => (a.date < b.date ? -1 : 1));
+  return { dates: rows.map((r) => r.date), closes: rows.map((r) => r.close) };
 }
 
-// Calendar-year total return for year Y = last available month-end of Y
-// over last available month-end of Y-1. Returns null if either anchor is
-// missing (e.g. the ETF didn't trade yet).
-function yearReturn(byMonth, year) {
-  const endThis = latestMonthInYear(byMonth, year);
-  const endPrev = latestMonthInYear(byMonth, year - 1);
-  if (!endThis || !endPrev) return null;
-  return (byMonth[endThis] / byMonth[endPrev] - 1) * 100;
-}
-
-function latestMonthInYear(byMonth, year) {
-  let best = null;
-  for (const ym of Object.keys(byMonth)) {
-    if (ym.startsWith(String(year)) && (!best || ym > best)) best = ym;
+// Latest close on or before targetDate (dates ascending). Binary search.
+function closeOnOrBefore(hist, targetDate) {
+  const { dates, closes } = hist;
+  let lo = 0;
+  let hi = dates.length - 1;
+  if (!dates.length || dates[0] > targetDate) return null;
+  while (lo < hi) {
+    const mid = (lo + hi + 1) >> 1;
+    if (dates[mid] <= targetDate) lo = mid;
+    else hi = mid - 1;
   }
-  return best;
+  return closes[lo];
 }
 
 exports.handler = async () => {
@@ -105,66 +107,102 @@ exports.handler = async () => {
     const apiKey = process.env.ALPHAVANTAGE_API_KEY;
     if (!apiKey) throw new Error("ALPHAVANTAGE_API_KEY is not set");
 
-    const now = new Date();
-    const currentYear = now.getUTCFullYear();
+    const currentYear = new Date().getUTCFullYear();
     const firstYear = currentYear - YEARS_BACK;
 
-    const symbols = [BENCHMARK, ...SECTOR_ORDER.map((s) => SECTOR_ETF[s])];
-    const monthlyBySymbol = new Map();
+    const etfBySector = SECTOR_ORDER.map((s) => ({ sector: s, etf: SECTOR_ETF[s] }));
+    const symbols = [BENCHMARK, ...etfBySector.map((e) => e.etf)];
+
+    const histBySymbol = new Map();
     for (const sym of symbols) {
       try {
-        monthlyBySymbol.set(sym, await fetchMonthlyAdjusted(apiKey, sym));
+        histBySymbol.set(sym, await fetchDailyAdjusted(apiKey, sym));
       } catch (err) {
         console.error(`scheduled-beeswarm-annual-background: ${sym} failed: ${err.message}`);
       }
       await sleep(900);
     }
 
-    const spy = monthlyBySymbol.get(BENCHMARK);
-    if (!spy) throw new Error("SPY failed to load — cannot build annual payload");
+    const spyHist = histBySymbol.get(BENCHMARK);
+    if (!spyHist) throw new Error("SPY failed to load — cannot build annual payload");
 
+    // SPY drives the shared trading-day calendar, from firstYear on.
+    const firstDate = `${firstYear}-01-01`;
+    const dates = spyHist.dates.filter((d) => d >= firstDate);
+
+    // Year-end base close (last trading day <= Dec 31 of `year`).
+    const baseClose = (hist, year) => closeOnOrBefore(hist, `${year}-12-31`);
+
+    // Cumulative calendar-year total return (%) for one symbol across `dates`.
+    // null until the symbol has a real prior-year-end anchor.
+    function ytdSeries(hist) {
+      if (!hist) return dates.map(() => null);
+      const baseByYear = {};
+      return dates.map((d) => {
+        const year = +d.slice(0, 4);
+        if (!(year in baseByYear)) baseByYear[year] = baseClose(hist, year - 1);
+        const base = baseByYear[year];
+        if (!base) return null;
+        const c = closeOnOrBefore(hist, d);
+        return c ? Math.round((c / base - 1) * 10000) / 100 : null;
+      });
+    }
+
+    const spy = ytdSeries(spyHist);
+    const series = {};
+    for (const { etf } of etfBySector) series[etf] = ytdSeries(histBySymbol.get(etf));
+
+    // Per-year slider metadata: index span, a stable y-axis envelope for
+    // that year (so the axis holds still while a year animates), and the
+    // sector weights used for bubble size.
     const years = [];
     for (let y = firstYear; y <= currentYear; y++) {
-      const spyRet = yearReturn(spy, y);
-      if (spyRet === null) continue;
-
-      const sectors = [];
-      for (const sectorName of SECTOR_ORDER) {
-        const etf = SECTOR_ETF[sectorName];
-        const byMonth = monthlyBySymbol.get(etf);
-        if (!byMonth) continue;
-        const ret = yearReturn(byMonth, y);
-        if (ret === null) continue;
-        const weight =
-          (SECTOR_WEIGHTS_BY_YEAR[y] && SECTOR_WEIGHTS_BY_YEAR[y][sectorName]) ||
-          (SECTOR_WEIGHTS_BY_YEAR[2025] && SECTOR_WEIGHTS_BY_YEAR[2025][sectorName]) ||
-          5;
-        sectors.push({
-          ticker: etf,
-          sector: sectorName,
-          ret: Math.round(ret * 100) / 100,
-          weight,
-        });
+      let start = -1;
+      let end = -1;
+      for (let i = 0; i < dates.length; i++) {
+        if (+dates[i].slice(0, 4) !== y) continue;
+        if (start < 0) start = i;
+        end = i;
       }
+      if (start < 0 || spy[end] === null) continue;
 
+      let lo = 0;
+      let hi = 0;
+      for (let i = start; i <= end; i++) {
+        for (const v of [spy[i], ...etfBySector.map((e) => series[e.etf][i])]) {
+          if (v === null) continue;
+          if (v < lo) lo = v;
+          if (v > hi) hi = v;
+        }
+      }
+      const wt = weightsFor(y);
       years.push({
         year: y,
         ytd: y === currentYear,
-        asOfMonth: latestMonthInYear(spy, y),
-        spyReturn: Math.round(spyRet * 100) / 100,
-        sectors,
+        startIndex: start,
+        endIndex: end,
+        yLo: Math.floor((lo - 3) / 5) * 5,
+        yHi: Math.ceil((hi + 3) / 5) * 5,
+        weights: Object.fromEntries(etfBySector.map((e) => [e.sector, wt[e.sector] || 5])),
       });
     }
 
     const payload = {
       generated_at_utc: new Date().toISOString(),
       benchmark: BENCHMARK,
+      sectorOrder: SECTOR_ORDER,
+      etf: Object.fromEntries(etfBySector.map((e) => [e.sector, e.etf])),
+      dates,
+      spy,
+      series,
       years,
     };
 
     await getBeeswarmStore().setJSON(ANNUAL_KEY, payload);
-    console.log(`scheduled-beeswarm-annual-background: wrote ${years.length} years`);
-    return { statusCode: 200, body: JSON.stringify({ ok: true, years: years.length }) };
+    console.log(
+      `scheduled-beeswarm-annual-background: wrote ${dates.length} trading days across ${years.length} years`
+    );
+    return { statusCode: 200, body: JSON.stringify({ ok: true, days: dates.length, years: years.length }) };
   } catch (err) {
     console.error(`scheduled-beeswarm-annual-background: FAILED: ${err.message}`);
     return { statusCode: 502, body: JSON.stringify({ error: err.message }) };

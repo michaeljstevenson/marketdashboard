@@ -461,6 +461,9 @@ function darker(hex, k){
  const c = d3.color(hex); if(!c) return hex;
  return c.darker(k).formatHex();
 }
+const SECTOR_STROKE = {};
+for(const k in SECTOR_COLOR) SECTOR_STROKE[k] = darker(SECTOR_COLOR[k], 0.9);
+const PLOT_BG = getComputedStyle(document.documentElement).getPropertyValue("--plot-bg").trim() || "none";
 
 const VB_W = 1120, VB_H = 726;
 const M = { top: 96, right: 66, bottom: 74, left: 62 };
@@ -468,16 +471,18 @@ const PLOT_W = VB_W - M.left - M.right;
 const PLOT_H = VB_H - M.top - M.bottom;
 
 const DAILY_CLAMP = 7;          // daily view: y-axis clamps at +/- this, with overflow band
+const DAILY_MAX_CAP = 4200000;  // $M reference for the largest bubble (~$4.2T), fixed so size is comparable across days
 const LABEL_TOP_N = 20;         // always-labelled mega-caps in the daily view
 
 const svg = d3.select("#chart");
 const tooltip = d3.select("#tooltip");
 
 let mode = "daily";
-let frames = [];        // array of frame descriptors for the current mode
+let frames = [];        // per-frame descriptors: daily = one archived session, annual = one trading day
 let frameIndex = 0;
 let playing = false;
 let playTimer = null;
+let rafId = null;
 const dailyCache = new Map();   // date -> resolved frame data
 let annualData = null;
 
@@ -514,24 +519,18 @@ function buildYScale(frame){
  if(mode === "daily"){
   return d3.scaleLinear().domain([-DAILY_CLAMP, DAILY_CLAMP]).range([M.top + PLOT_H, M.top]);
  }
- // annual: data-driven, padded to a round number
- const rs = frame.nodes.map(n => n.ret).concat([frame.spyReturn, 0]);
- let lo = Math.min(...rs), hi = Math.max(...rs);
- const step = (hi - lo) > 60 ? 10 : 5;
- const pad = Math.max(3, (hi - lo) * 0.06);
- lo = Math.floor((lo - pad) / step) * step;
- hi = Math.ceil((hi + pad) / step) * step;
+ // annual: the current year's fixed envelope, so the axis holds still while
+ // a year animates and only steps at each Jan 1 boundary
+ const [lo, hi] = frame.yDomain || [-20, 20];
  return d3.scaleLinear().domain([lo, hi]).range([M.top + PLOT_H, M.top]);
 }
 
-function buildRScale(frame){
- const vals = frame.nodes.map(n => n.size).filter(v => v > 0);
- const max = d3.max(vals) || 1;
- const min = d3.min(vals) || 0;
+function buildRScale(){
+ // Fixed domains so bubbles never resize frame-to-frame during playback.
  if(mode === "daily"){
-  return d3.scaleSqrt().domain([0, max]).range([2.4, 39]);
+  return d3.scaleSqrt().domain([0, DAILY_MAX_CAP]).range([2.4, 39]).clamp(true);
  }
- return d3.scaleSqrt().domain([Math.max(0, min - 1), max]).range([12, 50]);
+ return d3.scaleSqrt().domain([0, 34]).range([7, 46]).clamp(true);
 }
 
 /* ----- frame data shaping ------------------------------------------------ */
@@ -548,16 +547,38 @@ function dailyFrameFromPayload(p){
  return { kind: "daily", label: niceDate(p.date), date: p.date, spyReturn: p.spyReturn, nodes };
 }
 
-// Annual API year: {year, ytd, spyReturn, sectors:[{ticker,sector,ret,weight}]}
-function annualFrameFromYear(y){
- const nodes = (y.sectors || [])
-  .filter(s => SECTOR_ORDER.includes(s.sector) && Number.isFinite(s.ret))
-  .map(s => ({
-   key: s.ticker, ticker: s.ticker, name: s.sector + " Select Sector SPDR", sector: s.sector,
-   ret: s.ret, size: s.weight || 5,
-   capText: (s.weight ? s.weight.toFixed(1) + "% of index" : "n/a"),
-  }));
- return { kind: "annual", label: y.ytd ? (y.year + " YTD") : String(y.year), year: y.year, spyReturn: y.spyReturn, nodes };
+// Annual payload is columnar: {dates, spy:[ytd%], series:{ETF:[ytd%]}, etf:{sector:ETF},
+// years:[{year,ytd,startIndex,endIndex,yLo,yHi,weights}]}. A "frame" is one
+// trading-day index i — the bubbles are each ETF's cumulative return so far
+// that calendar year, so scrubbing/playing drifts them fluidly through the
+// year instead of snapping between year-end dots.
+function annualYearBlock(i){
+ const ys = annualData.years;
+ for(const y of ys) if(i >= y.startIndex && i <= y.endIndex) return y;
+ return ys[ys.length - 1];
+}
+function shortMD(iso){
+ return new Date(iso + "T00:00:00Z").toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone: "UTC" });
+}
+function annualFrameAt(i){
+ const d = annualData.dates[i];
+ const yb = annualYearBlock(i);
+ const nodes = [];
+ for(const sector of SECTOR_ORDER){
+  const etf = annualData.etf[sector];
+  const arr = annualData.series[etf];
+  const v = arr ? arr[i] : null;
+  if(v == null || !Number.isFinite(v)) continue;
+  const w = (yb.weights && yb.weights[sector]) || 5;
+  nodes.push({ key: etf, ticker: etf, name: sector + " Select Sector SPDR", sector,
+   ret: v, size: w, capText: w.toFixed(1) + "% of index" });
+ }
+ const atYearEnd = i === yb.endIndex;
+ const label = atYearEnd
+  ? (yb.ytd ? yb.year + " YTD" : String(yb.year))
+  : yb.year + " · " + shortMD(d);
+ return { kind: "annual", label, year: yb.year, date: d,
+  spyReturn: annualData.spy[i], nodes, yDomain: [yb.yLo, yb.yHi] };
 }
 
 /* ----- the render ----------------------------------------------------- */
@@ -605,135 +626,66 @@ function pickLabels(nodes){
  return set;
 }
 
-function render(frame, animate){
- const y = buildYScale(frame);
- const r = buildRScale(frame);
- runSimulation(frame.nodes, y, r);
- const labelled = pickLabels(frame.nodes);
-
- const dur = animate ? 650 : 0;
- svg.selectAll("*").interrupt();
-
- /* --- static layers (rebuilt each frame, they're cheap) --- */
- let gGrid = svg.select("g.layer-grid");
- if(gGrid.empty()) gGrid = svg.append("g").attr("class", "layer-grid");
- let gAxis = svg.select("g.layer-axis");
- if(gAxis.empty()) gAxis = svg.append("g").attr("class", "layer-axis");
- let gBubbles = svg.select("g.layer-bubbles");
- if(gBubbles.empty()) gBubbles = svg.append("g").attr("class", "layer-bubbles");
- let gLabels = svg.select("g.layer-labels");
- if(gLabels.empty()) gLabels = svg.append("g").attr("class", "layer-labels");
- let gOver = svg.select("g.layer-over");
- if(gOver.empty()) gOver = svg.append("g").attr("class", "layer-over");
-
- // plot background
- let bg = gGrid.select("rect.plot-bg");
- if(bg.empty()) bg = gGrid.append("rect").attr("class", "plot-bg");
- bg.attr("x", M.left).attr("y", M.top).attr("width", PLOT_W).attr("height", PLOT_H)
-   .attr("fill", getComputedStyle(document.documentElement).getPropertyValue("--plot-bg").trim() || "none")
-   .attr("rx", 4);
-
- // y gridlines + ticks (both sides)
- const ticks = y.ticks(mode === "daily" ? 14 : 9);
- const grid = gGrid.selectAll("line.gridline").data(ticks, d => d);
- grid.join(
-   ent => ent.append("line").attr("class", "gridline"),
-   upd => upd,
-   ex => ex.remove(),
- ).transition().duration(dur)
-  .attr("x1", M.left).attr("x2", M.left + PLOT_W)
-  .attr("y1", d => y(d)).attr("y2", d => y(d));
-
- const mkTickText = (sel, xPos, anchor) => {
-  const t = gAxis.selectAll("text." + sel).data(ticks, d => d);
-  t.join(
-    ent => ent.append("text").attr("class", sel).attr("text-anchor", anchor).attr("dominant-baseline", "middle"),
-    upd => upd,
-    ex => ex.remove(),
-  ).transition().duration(dur)
-   .attr("x", xPos).attr("y", d => y(d))
-   .tween("text", function(d){
-     const self = d3.select(this);
-     return () => {
-      let lbl = d + "%";
-      if(mode === "daily" && d <= -DAILY_CLAMP) lbl = "< -" + DAILY_CLAMP + "%";
-      if(mode === "daily" && d >= DAILY_CLAMP) lbl = "> " + DAILY_CLAMP + "%";
-      self.text(lbl);
-     };
-   });
+// Layer groups + a cache key so the axis/grid/legend (the expensive joins)
+// only rebuild when the geometry actually changes — not on every one of the
+// ~1600 frames an annual play sweep renders.
+let layers = null;
+let lastStaticKey = null;
+function ensureLayers(){
+ if(layers) return layers;
+ layers = {
+  grid: svg.append("g").attr("class", "layer-grid"),
+  axis: svg.append("g").attr("class", "layer-axis"),
+  bubbles: svg.append("g").attr("class", "layer-bubbles"),
+  labels: svg.append("g").attr("class", "layer-labels"),
+  over: svg.append("g").attr("class", "layer-over"),
  };
- mkTickText("tickL", M.left - 10, "end");
- mkTickText("tickR", M.left + PLOT_W + 10, "start");
+ layers.grid.append("rect").attr("class", "plot-bg")
+   .attr("x", M.left).attr("y", M.top).attr("width", PLOT_W).attr("height", PLOT_H)
+   .attr("fill", PLOT_BG).attr("rx", 4);
+ layers.axis.append("line").attr("class", "zero-line");
+ layers.axis.append("line").attr("class", "spy-line");
+ layers.axis.selectAll("text.ytitle").data([-1, 1]).join("text")
+   .attr("class", "ytitle").attr("text-anchor", "middle").style("font-size", "11px")
+   .attr("transform", d => `translate(${d < 0 ? 16 : VB_W - 16},${M.top + PLOT_H / 2}) rotate(${d < 0 ? -90 : 90})`)
+   .text("Return");
+ layers.axis.selectAll("text.sector-label").data(SECTOR_ORDER).join("text")
+   .attr("class", "sector-label").attr("text-anchor", "middle")
+   .attr("x", d => xBand(d)).attr("y", (d, i) => M.top + PLOT_H + 22 + (i % 2 ? 20 : 0))
+   .text(d => d);
+ return layers;
+}
 
- // zero line
- let zero = gAxis.select("line.zero-line");
- if(zero.empty()) zero = gAxis.append("line").attr("class", "zero-line");
- zero.transition().duration(dur)
-  .attr("x1", M.left).attr("x2", M.left + PLOT_W).attr("y1", y(0)).attr("y2", y(0));
+function renderStatic(y, r){
+ const key = mode + "|" + y.domain().join(",");
+ if(key === lastStaticKey) return;
+ lastStaticKey = key;
+ const L = layers;
 
- // y axis titles
- gAxis.selectAll("text.ytitle").data([-1, 1]).join(
-   ent => ent.append("text").attr("class", "ytitle").attr("text-anchor", "middle").style("font-size", "11px"),
- ).attr("transform", d => {
-   const xx = d < 0 ? 16 : VB_W - 16;
-   return `translate(${xx},${M.top + PLOT_H / 2}) rotate(${d < 0 ? -90 : 90})`;
- }).text("Return");
+ const ticks = mode === "daily" ? d3.range(-DAILY_CLAMP, DAILY_CLAMP + 1, 1) : y.ticks(9);
+ const tickLabel = d => {
+  if(mode === "daily" && d <= -DAILY_CLAMP) return "< -" + DAILY_CLAMP + "%";
+  if(mode === "daily" && d >= DAILY_CLAMP) return "> " + DAILY_CLAMP + "%";
+  return d + "%";
+ };
+ L.grid.selectAll("line.gridline").data(ticks, d => d).join("line")
+   .attr("class", "gridline")
+   .attr("x1", M.left).attr("x2", M.left + PLOT_W).attr("y1", d => y(d)).attr("y2", d => y(d));
+ for(const [cls, xPos, anchor] of [["tickL", M.left - 10, "end"], ["tickR", M.left + PLOT_W + 10, "start"]]){
+  L.axis.selectAll("text." + cls).data(ticks, d => d).join("text")
+    .attr("class", cls).attr("text-anchor", anchor).attr("dominant-baseline", "middle")
+    .attr("x", xPos).attr("y", d => y(d)).text(tickLabel);
+ }
+ L.axis.select("line.zero-line").attr("x1", M.left).attr("x2", M.left + PLOT_W).attr("y1", y(0)).attr("y2", y(0));
 
- // SPY dashed line
- const spyY = y(clampForMode(frame.spyReturn, y));
- let spy = gAxis.select("line.spy-line");
- if(spy.empty()) spy = gAxis.append("line").attr("class", "spy-line");
- spy.transition().duration(dur).attr("x1", M.left).attr("x2", M.left + PLOT_W).attr("y1", spyY).attr("y2", spyY);
- gAxis.selectAll("text.spy-tag").data([M.left - 8, M.left + PLOT_W + 8]).join(
-   ent => ent.append("text").attr("class", "spy-tag").attr("dominant-baseline", "middle"),
- ).attr("text-anchor", (d, i) => i === 0 ? "end" : "start")
-  .attr("x", d => d).transition().duration(dur).attr("y", spyY - 9).text("SPY");
-
- // sector column labels (staggered two rows)
- gAxis.selectAll("text.sector-label").data(SECTOR_ORDER).join(
-   ent => ent.append("text").attr("class", "sector-label").attr("text-anchor", "middle"),
- ).attr("x", d => xBand(d))
-  .attr("y", (d, i) => M.top + PLOT_H + 22 + (i % 2 ? 20 : 0))
-  .text(d => d);
-
- /* --- bubbles --- */
- const bubbles = gBubbles.selectAll("circle.bubble").data(frame.nodes, d => d.key);
- bubbles.join(
-   ent => ent.append("circle").attr("class", "bubble")
-     .attr("cx", d => d.x).attr("cy", d => d.y).attr("r", 0)
-     .attr("fill", d => SECTOR_COLOR[d.sector]).attr("fill-opacity", 0.82)
-     .attr("stroke", d => darker(SECTOR_COLOR[d.sector], 0.9))
-     .on("mousemove", onHover).on("mouseleave", onLeave),
-   upd => upd,
-   ex => ex.transition().duration(dur).attr("r", 0).remove(),
- ).transition().duration(dur)
-  .attr("cx", d => d.x).attr("cy", d => d.y).attr("r", d => d.r)
-  .attr("fill", d => SECTOR_COLOR[d.sector])
-  .attr("stroke", d => darker(SECTOR_COLOR[d.sector], 0.9));
-
- /* --- labels --- */
- const labelNodes = frame.nodes.filter(n => labelled.has(n.key));
- const labels = gLabels.selectAll("text.bubble-label").data(labelNodes, d => d.key);
- labels.join(
-   ent => ent.append("text").attr("class", "bubble-label").attr("text-anchor", "middle").attr("opacity", 0),
-   upd => upd,
-   ex => ex.transition().duration(dur).attr("opacity", 0).remove(),
- ).attr("class", d => "bubble-label" + (d.r >= 15 ? "" : " out"))
-  .text(d => d.ticker)
-  .transition().duration(dur)
-  .attr("x", d => d.x)
-  .attr("y", d => d.r >= 15 ? d.y + 3.5 : d.y - d.r - 4)
-  .attr("opacity", 1);
-
- /* --- market-cap / weight size legend (top-centre, circles on a baseline) --- */
- gOver.selectAll("*").remove();
+ // size legend
+ L.over.selectAll("*").remove();
  const legVals = mode === "daily" ? [3e6, 1.5e6, 6e5, 2e5] : [30, 20, 10, 4];
  const legLabel = mode === "daily" ? ["$3T", "$1.5T", "$600B", "$200B"] : ["30%", "20%", "10%", "4%"];
- const baseline = M.top - 20;           // circles rest on this line, above the plot
- const gap = 20;
+ const baseline = M.top - 20, gap = 20;
  const widths = legVals.map(v => Math.max(6, r(v)) * 2);
  const totalW = widths.reduce((a, b) => a + b, 0) + gap * (legVals.length - 1);
- const legend = gOver.append("g").attr("class", "size-legend")
+ const legend = L.over.append("g").attr("class", "size-legend")
    .attr("transform", `translate(${M.left + PLOT_W / 2 - totalW / 2}, 0)`);
  let lx = 0;
  legVals.forEach((v, i) => {
@@ -744,11 +696,64 @@ function render(frame, animate){
  });
  legend.append("text").attr("x", -14).attr("y", baseline - 2).attr("text-anchor", "end")
    .text(mode === "daily" ? "Market cap" : "Index weight");
+}
+
+function render(frame, animate){
+ const L = ensureLayers();
+ const y = buildYScale(frame);
+ const r = buildRScale();
+ if(mode === "daily"){
+  runSimulation(frame.nodes, y, r);
+ } else {
+  frame.nodes.forEach(n => {
+   n.r = Math.max(3, r(n.size));
+   n.x = xBand(n.sector);
+   n.y = y(clampForMode(n.ret, y));
+  });
+ }
+ const labelled = pickLabels(frame.nodes);
+ const dur = animate ? 650 : 0;
+ const T = sel => (dur > 0 ? sel.transition().duration(dur) : sel);
+ if(dur > 0) svg.selectAll("*").interrupt();
+
+ renderStatic(y, r);
+
+ // SPY dashed line + tags
+ const spyY = y(clampForMode(frame.spyReturn, y));
+ T(L.axis.select("line.spy-line")).attr("x1", M.left).attr("x2", M.left + PLOT_W).attr("y1", spyY).attr("y2", spyY);
+ const spyTag = L.axis.selectAll("text.spy-tag").data([M.left - 8, M.left + PLOT_W + 8]).join(
+   ent => ent.append("text").attr("class", "spy-tag").attr("dominant-baseline", "middle").attr("y", spyY - 9),
+ ).attr("text-anchor", (d, i) => i === 0 ? "end" : "start").attr("x", d => d).text("SPY");
+ T(spyTag).attr("y", spyY - 9);
+
+ // bubbles
+ const bubMerged = L.bubbles.selectAll("circle.bubble").data(frame.nodes, d => d.key).join(
+   ent => ent.append("circle").attr("class", "bubble")
+     .attr("cx", d => d.x).attr("cy", d => d.y).attr("r", 0)
+     .attr("fill", d => SECTOR_COLOR[d.sector]).attr("fill-opacity", 0.82)
+     .attr("stroke", d => SECTOR_STROKE[d.sector])
+     .on("mousemove", onHover).on("mouseleave", onLeave),
+   upd => upd,
+   ex => (dur > 0 ? ex.transition().duration(dur).attr("r", 0).remove() : ex.remove()),
+ );
+ T(bubMerged).attr("cx", d => d.x).attr("cy", d => d.y).attr("r", d => d.r);
+
+ // labels
+ const labelNodes = frame.nodes.filter(n => labelled.has(n.key));
+ const labMerged = L.labels.selectAll("text.bubble-label").data(labelNodes, d => d.key).join(
+   ent => ent.append("text").attr("class", "bubble-label").attr("text-anchor", "middle")
+     .attr("x", d => d.x).attr("y", d => d.y).attr("opacity", 0),
+   upd => upd,
+   ex => (dur > 0 ? ex.transition().duration(dur).attr("opacity", 0).remove() : ex.remove()),
+ ).attr("class", d => "bubble-label" + (d.r >= 15 ? "" : " out")).text(d => d.ticker);
+ T(labMerged)
+  .attr("x", d => d.x)
+  .attr("y", d => d.r >= 15 ? d.y + 3.5 : d.y - d.r - 4)
+  .attr("opacity", 1);
 
  // head readouts
  document.getElementById("plotDate").textContent = frame.label;
- const spyTxt = fmtPct(frame.spyReturn);
- document.getElementById("plotSpy").innerHTML = "SPY <strong>" + spyTxt + "</strong>";
+ document.getElementById("plotSpy").innerHTML = "SPY <strong>" + fmtPct(frame.spyReturn) + "</strong>";
  document.getElementById("plotSpy").style.color = frame.spyReturn >= 0 ? "var(--fear)" : "var(--extreme)";
 }
 
@@ -762,7 +767,7 @@ function onHover(event, d){
    '<div class="tt-t">' + d.ticker + '</div>' +
    '<div class="tt-n">' + d.name + '</div>' +
    '<div class="tt-n">' + d.sector + '</div>' +
-   '<div class="tt-r">' + (mode === "daily" ? "Return " : "Year ") + fmtPct(d.ret) + '</div>' +
+   '<div class="tt-r">' + (mode === "daily" ? "Return " : "YTD ") + fmtPct(d.ret) + '</div>' +
    '<div class="tt-r tt-n">' + d.capText + '</div>'
   );
 }
@@ -772,14 +777,16 @@ function onLeave(){ tooltip.style("opacity", 0); }
 
 function setFrame(i, animate){
  if(!frames.length) return;
- frameIndex = Math.max(0, Math.min(frames.length - 1, i));
- const fr = frames[frameIndex];
+ frameIndex = Math.max(0, Math.min(frames.length - 1, Math.round(i)));
  document.getElementById("frameRange").value = frameIndex;
- document.getElementById("frameLabel").textContent = fr.label;
 
  if(mode === "annual"){
-  render(annualFrameFromYear(fr.raw), animate);
+  const fr = annualFrameAt(frameIndex);
+  document.getElementById("frameLabel").textContent = fr.label;
+  render(fr, animate);
  } else {
+  const fr = frames[frameIndex];
+  document.getElementById("frameLabel").textContent = fr.label;
   loadDaily(fr.date).then(payload => {
    if(frames[frameIndex] !== fr) return; // user moved on
    render(dailyFrameFromPayload(payload), animate);
@@ -794,17 +801,32 @@ function loadDaily(date){
   .then(p => { dailyCache.set(date, p); return p; });
 }
 
+// Annual playback sweeps every trading day via requestAnimationFrame so the
+// bubbles glide; daily playback steps snapshot to snapshot on a timer, each
+// step easing across with a transition.
+const ANNUAL_DAYS_PER_FRAME = 3.2;   // full ~15-year sweep in ~20s at 60fps
+
 function togglePlay(){
  playing = !playing;
  document.getElementById("playBtn").innerHTML = playing ? "&#10073;&#10073;" : "&#9654;";
- if(playing){
-  if(frameIndex >= frames.length - 1) frameIndex = -1;
+ if(!playing){ clearInterval(playTimer); cancelAnimationFrame(rafId); return; }
+ if(frameIndex >= frames.length - 1) frameIndex = 0;
+
+ if(mode === "annual"){
+  let pos = frameIndex;
+  const tick = () => {
+   if(!playing) return;
+   pos += ANNUAL_DAYS_PER_FRAME;
+   if(pos >= frames.length - 1){ setFrame(frames.length - 1, false); togglePlay(); return; }
+   setFrame(pos, false);
+   rafId = requestAnimationFrame(tick);
+  };
+  rafId = requestAnimationFrame(tick);
+ } else {
   playTimer = setInterval(() => {
    if(frameIndex >= frames.length - 1){ togglePlay(); return; }
    setFrame(frameIndex + 1, true);
-  }, mode === "daily" ? 1400 : 1100);
- } else {
-  clearInterval(playTimer);
+  }, 1400);
  }
 }
 function stopPlay(){ if(playing) togglePlay(); }
@@ -828,10 +850,29 @@ function setMode(next){
 }
 
 function initAnnualFrames(){
- frames = annualData.years.map(y => ({ label: y.ytd ? (y.year + " YTD") : String(y.year), raw: y }));
+ frames = annualData.dates.map(d => ({ label: d.slice(0, 4), date: d }));
+ buildYearTicks();
  setupRange();
  setFrame(frames.length - 1, false);
- document.getElementById("updated").textContent = "Annual data generated " + (annualData.generated_at_utc || "").slice(0, 10);
+ const gen = (annualData.generated_at_utc || "").slice(0, 10);
+ document.getElementById("updated").textContent =
+  annualData.dates.length.toLocaleString() + " trading days · " + annualData.years.length + " years · updated " + gen;
+}
+
+// Year boundary tick marks under the scrubber (native <datalist> ticks).
+function buildYearTicks(){
+ let dl = document.getElementById("frameTicks");
+ if(!dl){ dl = document.createElement("datalist"); dl.id = "frameTicks"; document.body.appendChild(dl); }
+ dl.innerHTML = "";
+ const rng = document.getElementById("frameRange");
+ if(mode === "annual"){
+  annualData.years.forEach(y => {
+   const o = document.createElement("option"); o.value = y.startIndex; dl.appendChild(o);
+  });
+  rng.setAttribute("list", "frameTicks");
+ } else {
+  rng.removeAttribute("list");
+ }
 }
 
 function initDailyFrames(){
@@ -844,6 +885,7 @@ function initDailyFrames(){
   if(!dates.length) throw new Error("no snapshots archived yet");
   dailyCache.set(p.date, p);
   frames = dates.map(d => ({ label: niceDate(d), date: d }));
+  buildYearTicks();
   setupRange();
   setFrame(frames.length - 1, false);
   document.getElementById("updated").textContent = dates.length + " session" + (dates.length === 1 ? "" : "s") + " archived · latest " + p.date;
