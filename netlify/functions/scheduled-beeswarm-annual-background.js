@@ -166,23 +166,45 @@ exports.handler = async () => {
       }
       if (start < 0 || spy[end] === null) continue;
 
-      let lo = 0;
-      let hi = 0;
-      for (let i = start; i <= end; i++) {
-        for (const v of [spy[i], ...etfBySector.map((e) => series[e.etf][i])]) {
+      // Per-sector peak / trough across the year, then drop the single most
+      // extreme sector on each side before setting the axis. One sector that
+      // runs away (energy 2022, +60%+) otherwise stretches the axis so far
+      // that the other ten sit squashed in a thin band; the runaway just
+      // clamps to the edge on the page instead. SPY's range is always kept.
+      const peaks = [];
+      const troughs = [];
+      for (const e of etfBySector) {
+        let p = null;
+        let t = null;
+        for (let i = start; i <= end; i++) {
+          const v = series[e.etf][i];
           if (v === null) continue;
-          if (v < lo) lo = v;
-          if (v > hi) hi = v;
+          if (p === null || v > p) p = v;
+          if (t === null || v < t) t = v;
         }
+        if (p !== null) peaks.push(p);
+        if (t !== null) troughs.push(t);
       }
+      peaks.sort((a, b) => a - b);
+      troughs.sort((a, b) => a - b);
+      let spyLo = 0;
+      let spyHi = 0;
+      for (let i = start; i <= end; i++) {
+        if (spy[i] === null) continue;
+        if (spy[i] < spyLo) spyLo = spy[i];
+        if (spy[i] > spyHi) spyHi = spy[i];
+      }
+      const hi = Math.max(spyHi, peaks.length > 1 ? peaks[peaks.length - 2] : peaks[peaks.length - 1] || 0);
+      const lo = Math.min(spyLo, troughs.length > 1 ? troughs[1] : troughs[0] || 0);
+
       const wt = weightsFor(y);
       years.push({
         year: y,
         ytd: y === currentYear,
         startIndex: start,
         endIndex: end,
-        yLo: Math.floor((lo - 3) / 5) * 5,
-        yHi: Math.ceil((hi + 3) / 5) * 5,
+        yLo: Math.max(-55, Math.min(-10, Math.floor(lo / 5) * 5 - 5)),
+        yHi: Math.max(12, Math.min(55, Math.ceil(hi / 5) * 5 + 5)),
         weights: Object.fromEntries(etfBySector.map((e) => [e.sector, wt[e.sector] || 5])),
       });
     }

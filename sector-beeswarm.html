@@ -235,15 +235,13 @@ h1{ font-family:var(--serif); font-size:28px; font-weight:400; margin:0; }
 
 #chart{ width:100%; display:block; }
 #chart text{ fill:var(--muted); font-family:var(--sans); }
-#chart .axis-line{ stroke:var(--hair); }
-#chart .gridline{ stroke:var(--grid); }
-#chart .zero-line{ stroke:var(--muted); stroke-opacity:0.55; }
 #chart .spy-line{ stroke:var(--ink); stroke-opacity:0.5; stroke-dasharray:5 4; }
 #chart .spy-tag{ fill:var(--muted); font-size:11px; }
 #chart .sector-label{ fill:var(--ink); font-size:12px; }
 #chart .bubble{ stroke-width:1; }
 #chart .bubble-label{ fill:#1a1a1a; font-size:10px; font-weight:600; pointer-events:none; }
 #chart .bubble-label.out{ fill:var(--ink); }
+#chart .bubble-label.sector{ font-size:10px; font-weight:600; fill:var(--ink); dominant-baseline:central; paint-order:stroke; stroke:var(--plot-bg); stroke-width:3.5px; stroke-linejoin:round; }
 
 .tooltip{
  position:fixed;
@@ -401,7 +399,7 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <div class="spy" id="plotSpy">&mdash;</div>
 </div>
 </div>
-<svg id="chart" viewBox="0 0 1120 726" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Sector beeswarm chart"></svg>
+<svg id="chart" viewBox="0 0 1120 660" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Sector beeswarm chart"></svg>
 </div>
 
 <div class="explainer">
@@ -470,7 +468,7 @@ const SECTOR_STROKE = {};
 for(const k in SECTOR_COLOR) SECTOR_STROKE[k] = darker(SECTOR_COLOR[k], 0.9);
 const PLOT_BG = getComputedStyle(document.documentElement).getPropertyValue("--plot-bg").trim() || "none";
 
-const VB_W = 1120, VB_H = 726;
+const VB_W = 1120, VB_H = 660;
 const M = { top: 40, right: 66, bottom: 74, left: 62 };
 const PLOT_W = VB_W - M.left - M.right;
 const PLOT_H = VB_H - M.top - M.bottom;
@@ -565,6 +563,11 @@ function annualYearBlock(i){
 function shortMD(iso){
  return new Date(iso + "T00:00:00Z").toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone: "UTC" });
 }
+// two-word sector names wrap onto a second line so the label fits a bubble
+function wrapSector(name){
+ const w = name.split(" ");
+ return w.length < 2 ? [name] : [w[0], w.slice(1).join(" ")];
+}
 function annualFrameAt(i){
  const d = annualData.dates[i];
  const yb = annualYearBlock(i);
@@ -575,7 +578,7 @@ function annualFrameAt(i){
   const v = arr ? arr[i] : null;
   if(v == null || !Number.isFinite(v)) continue;
   const w = (yb.weights && yb.weights[sector]) || 5;
-  nodes.push({ key: etf, ticker: etf, name: sector + " Select Sector SPDR", sector,
+  nodes.push({ key: etf, ticker: etf, label: sector, name: sector + " Select Sector SPDR", sector,
    ret: v, size: w, capText: w.toFixed(1) + "% of index" });
  }
  const atYearEnd = i === yb.endIndex;
@@ -647,16 +650,11 @@ function ensureLayers(){
  layers.grid.append("rect").attr("class", "plot-bg")
    .attr("x", M.left).attr("y", M.top).attr("width", PLOT_W).attr("height", PLOT_H)
    .attr("fill", PLOT_BG).attr("rx", 4);
- layers.axis.append("line").attr("class", "zero-line");
  layers.axis.append("line").attr("class", "spy-line");
  layers.axis.selectAll("text.ytitle").data([-1, 1]).join("text")
    .attr("class", "ytitle").attr("text-anchor", "middle").style("font-size", "11px")
    .attr("transform", d => `translate(${d < 0 ? 16 : VB_W - 16},${M.top + PLOT_H / 2}) rotate(${d < 0 ? -90 : 90})`)
    .text("Return");
- layers.axis.selectAll("text.sector-label").data(SECTOR_ORDER).join("text")
-   .attr("class", "sector-label").attr("text-anchor", "middle")
-   .attr("x", d => xBand(d)).attr("y", (d, i) => M.top + PLOT_H + 22 + (i % 2 ? 20 : 0))
-   .text(d => d);
  return layers;
 }
 
@@ -672,15 +670,17 @@ function renderStatic(y){
   if(mode === "daily" && d >= DAILY_CLAMP) return "> " + DAILY_CLAMP + "%";
   return d + "%";
  };
- L.grid.selectAll("line.gridline").data(ticks, d => d).join("line")
-   .attr("class", "gridline")
-   .attr("x1", M.left).attr("x2", M.left + PLOT_W).attr("y1", d => y(d)).attr("y2", d => y(d));
+ // side return scale — numbers only, no gridlines
  for(const [cls, xPos, anchor] of [["tickL", M.left - 10, "end"], ["tickR", M.left + PLOT_W + 10, "start"]]){
   L.axis.selectAll("text." + cls).data(ticks, d => d).join("text")
     .attr("class", cls).attr("text-anchor", anchor).attr("dominant-baseline", "middle")
     .attr("x", xPos).attr("y", d => y(d)).text(tickLabel);
  }
- L.axis.select("line.zero-line").attr("x1", M.left).attr("x2", M.left + PLOT_W).attr("y1", y(0)).attr("y2", y(0));
+ // sector column labels: daily only (annual bubbles carry their own sector name)
+ L.axis.selectAll("text.sector-label").data(mode === "daily" ? SECTOR_ORDER : [], d => d).join("text")
+   .attr("class", "sector-label").attr("text-anchor", "middle")
+   .attr("x", d => xBand(d)).attr("y", (d, i) => M.top + PLOT_H + 22 + (i % 2 ? 20 : 0))
+   .text(d => d);
 }
 
 function render(frame, animate){
@@ -697,7 +697,7 @@ function render(frame, animate){
   });
  }
  const labelled = pickLabels(frame.nodes);
- const dur = animate ? 650 : 0;
+ const dur = animate ? 1000 : 0;
  const T = sel => (dur > 0 ? sel.transition().duration(dur) : sel);
  if(dur > 0) svg.selectAll("*").interrupt();
 
@@ -730,11 +730,24 @@ function render(frame, animate){
      .attr("x", d => d.x).attr("y", d => d.y).attr("opacity", 0),
    upd => upd,
    ex => (dur > 0 ? ex.transition().duration(dur).attr("opacity", 0).remove() : ex.remove()),
- ).attr("class", d => "bubble-label" + (d.r >= 15 ? "" : " out")).text(d => d.ticker);
- T(labMerged)
-  .attr("x", d => d.x)
-  .attr("y", d => d.r >= 15 ? d.y + 3.5 : d.y - d.r - 4)
-  .attr("opacity", 1);
+ );
+ if(mode === "annual"){
+  // sector name, centred on the bubble, wrapped to <=2 lines
+  labMerged.attr("class", "bubble-label sector").each(function(d){
+   const lines = wrapSector(d.label || d.ticker);
+   const sel = d3.select(this);
+   sel.text(null);
+   const dy0 = -((lines.length - 1) * 0.55) + "em";
+   lines.forEach((ln, i) => sel.append("tspan").attr("x", d.x).attr("dy", i ? "1.1em" : dy0).text(ln));
+  });
+  T(labMerged).attr("opacity", 1).attr("x", d => d.x).attr("y", d => d.y);
+ } else {
+  labMerged.attr("class", d => "bubble-label" + (d.r >= 15 ? "" : " out")).text(d => d.ticker);
+  T(labMerged)
+   .attr("x", d => d.x)
+   .attr("y", d => d.r >= 15 ? d.y + 3.5 : d.y - d.r - 4)
+   .attr("opacity", 1);
+ }
 
  // head readouts
  document.getElementById("plotDate").textContent = frame.label;
@@ -789,7 +802,7 @@ function loadDaily(date){
 // Annual playback sweeps the selected year's trading days via
 // requestAnimationFrame so the bubbles glide from Jan to Dec; daily
 // playback steps snapshot to snapshot on a timer with an eased transition.
-const ANNUAL_DAYS_PER_FRAME = 0.5;   // one calendar year (~250 days) sweeps in ~8s at 60fps
+const ANNUAL_DAYS_PER_FRAME = 0.2;   // one calendar year (~250 days) sweeps in ~21s at 60fps
 
 function togglePlay(){
  playing = !playing;
@@ -811,7 +824,7 @@ function togglePlay(){
   playTimer = setInterval(() => {
    if(frameIndex >= frames.length - 1){ togglePlay(); return; }
    setFrame(frameIndex + 1, true);
-  }, 1400);
+  }, 2600);
  }
 }
 function stopPlay(){ if(playing) togglePlay(); }
