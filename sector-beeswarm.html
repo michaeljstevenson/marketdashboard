@@ -183,6 +183,19 @@ h1{ font-family:var(--serif); font-size:28px; font-weight:400; margin:0; }
 }
 .scrubber .stepbtn:hover{ color:var(--ink); }
 .scrubber input[type=range]{ flex:1 1 260px; accent-color:var(--greed); }
+.year-select{
+ flex:none;
+ background:var(--greed);
+ color:#1a1408;
+ font-family:var(--mono);
+ font-weight:600;
+ font-size:13px;
+ border:none;
+ border-radius:6px;
+ padding:7px 10px;
+ cursor:pointer;
+}
+.year-select:focus{ outline:2px solid var(--ink); outline-offset:1px; }
 .scrubber .frame-label{
  font-family:var(--mono);
  font-size:13px;
@@ -377,6 +390,7 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 </div>
 
 <div class="scrubber" id="scrubber">
+<select id="yearSelect" class="year-select" hidden aria-label="Select year"></select>
 <button class="stepbtn" id="stepBack" type="button" title="Previous">&#8249;</button>
 <button class="playbtn" id="playBtn" type="button" title="Play">&#9654;</button>
 <button class="stepbtn" id="stepFwd" type="button" title="Next">&#8250;</button>
@@ -781,7 +795,7 @@ function setFrame(i, animate){
  document.getElementById("frameRange").value = frameIndex;
 
  if(mode === "annual"){
-  const fr = annualFrameAt(frameIndex);
+  const fr = annualFrameAt(frames[frameIndex].gi);
   document.getElementById("frameLabel").textContent = fr.label;
   render(fr, animate);
  } else {
@@ -801,10 +815,10 @@ function loadDaily(date){
   .then(p => { dailyCache.set(date, p); return p; });
 }
 
-// Annual playback sweeps every trading day via requestAnimationFrame so the
-// bubbles glide; daily playback steps snapshot to snapshot on a timer, each
-// step easing across with a transition.
-const ANNUAL_DAYS_PER_FRAME = 3.2;   // full ~15-year sweep in ~20s at 60fps
+// Annual playback sweeps the selected year's trading days via
+// requestAnimationFrame so the bubbles glide from Jan to Dec; daily
+// playback steps snapshot to snapshot on a timer with an eased transition.
+const ANNUAL_DAYS_PER_FRAME = 0.5;   // one calendar year (~250 days) sweeps in ~8s at 60fps
 
 function togglePlay(){
  playing = !playing;
@@ -841,7 +855,7 @@ function setMode(next){
  document.getElementById("btnAnnual").classList.toggle("active", next === "annual");
  document.getElementById("legendNote").textContent = next === "daily"
   ? "Close-to-close return · one bubble per S&P 500 company"
-  : "Calendar-year total return · one bubble per SPDR sector ETF";
+  : "Calendar-year total return · pick a year, then play it through";
  // reset node positions so the sim re-seeds cleanly for the new geometry
  svg.selectAll("circle.bubble").remove();
  svg.selectAll("text.bubble-label").remove();
@@ -849,30 +863,35 @@ function setMode(next){
  else initDailyFrames();
 }
 
+let annualYear = null;
+
 function initAnnualFrames(){
- frames = annualData.dates.map(d => ({ label: d.slice(0, 4), date: d }));
- buildYearTicks();
- setupRange();
- setFrame(frames.length - 1, false);
+ const sel = document.getElementById("yearSelect");
+ sel.hidden = false;
+ sel.innerHTML = "";
+ annualData.years.forEach(y => {
+  const o = document.createElement("option");
+  o.value = y.year;
+  o.textContent = y.ytd ? (y.year + " YTD") : y.year;
+  sel.appendChild(o);
+ });
+ const last = annualData.years[annualData.years.length - 1].year;
+ setAnnualYear(annualData.years.some(y => y.year === annualYear) ? annualYear : last);
  const gen = (annualData.generated_at_utc || "").slice(0, 10);
  document.getElementById("updated").textContent =
-  annualData.dates.length.toLocaleString() + " trading days · " + annualData.years.length + " years · updated " + gen;
+  annualData.years.length + " years · " + annualData.dates.length.toLocaleString() + " trading days · updated " + gen;
 }
 
-// Year boundary tick marks under the scrubber (native <datalist> ticks).
-function buildYearTicks(){
- let dl = document.getElementById("frameTicks");
- if(!dl){ dl = document.createElement("datalist"); dl.id = "frameTicks"; document.body.appendChild(dl); }
- dl.innerHTML = "";
- const rng = document.getElementById("frameRange");
- if(mode === "annual"){
-  annualData.years.forEach(y => {
-   const o = document.createElement("option"); o.value = y.startIndex; dl.appendChild(o);
-  });
-  rng.setAttribute("list", "frameTicks");
- } else {
-  rng.removeAttribute("list");
- }
+// Rebuild the scrubber to span just the selected calendar year; frames map
+// local day index -> global index into annualData.dates / .series.
+function setAnnualYear(y){
+ annualYear = y;
+ document.getElementById("yearSelect").value = String(y);
+ const yb = annualData.years.find(b => b.year === y) || annualData.years[annualData.years.length - 1];
+ frames = [];
+ for(let gi = yb.startIndex; gi <= yb.endIndex; gi++) frames.push({ gi });
+ setupRange();
+ setFrame(frames.length - 1, false);   // rest on the finished-year picture
 }
 
 function initDailyFrames(){
@@ -884,8 +903,8 @@ function initDailyFrames(){
   const dates = p.dates || (p.date ? [p.date] : []);
   if(!dates.length) throw new Error("no snapshots archived yet");
   dailyCache.set(p.date, p);
+  document.getElementById("yearSelect").hidden = true;
   frames = dates.map(d => ({ label: niceDate(d), date: d }));
-  buildYearTicks();
   setupRange();
   setFrame(frames.length - 1, false);
   document.getElementById("updated").textContent = dates.length + " session" + (dates.length === 1 ? "" : "s") + " archived · latest " + p.date;
@@ -908,6 +927,7 @@ function setupRange(){
 
 document.getElementById("btnDaily").addEventListener("click", () => setMode("daily"));
 document.getElementById("btnAnnual").addEventListener("click", () => setMode("annual"));
+document.getElementById("yearSelect").addEventListener("change", e => { stopPlay(); setAnnualYear(+e.target.value); });
 document.getElementById("frameRange").addEventListener("input", e => { stopPlay(); setFrame(+e.target.value, false); });
 document.getElementById("stepBack").addEventListener("click", () => { stopPlay(); setFrame(frameIndex - 1, true); });
 document.getElementById("stepFwd").addEventListener("click", () => { stopPlay(); setFrame(frameIndex + 1, true); });
