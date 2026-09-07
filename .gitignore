@@ -5,3 +5,9 @@ node_modules/
 .DS_Store
 preview-edits.json
 deno.lock
+
+# local beeswarm preview fixtures (see scratchpad/gen-samples.js)
+_sample-beeswarm-annual.json
+_sample-beeswarm-daily.json
+Chart Fleau.mov
+ref-recording.mov

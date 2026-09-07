@@ -82,6 +82,16 @@
   to = "/.netlify/functions/oddstats-curation"
   status = 200
 
+[[redirects]]
+  from = "/api/beeswarm-annual"
+  to = "/.netlify/functions/beeswarm-annual"
+  status = 200
+
+[[redirects]]
+  from = "/api/beeswarm-daily"
+  to = "/.netlify/functions/beeswarm-daily"
+  status = 200
+
 # The Statistical Engine page was briefly at these paths.
 [[redirects]]
   from = "/streak-scanner"
@@ -182,3 +192,27 @@
   # for oddstats.js to serve. Background function for the long runtime —
   # see scheduled-oddstats-background.js.
   schedule = "10 21 * * 1-5"
+
+[functions."scheduled-beeswarm-daily-background"]
+  # 21:40 UTC — after the whole daily Alpha-Vantage block above has
+  # cleared (last of it, scheduled-oddstats, is Yahoo but the AV jobs
+  # finish well before 21:40), so this job's ~504 GLOBAL_QUOTE calls
+  # don't compete for the rate limit. 21:40 UTC = 5:40pm EDT / 4:40pm EST
+  # — always after the 4:00pm ET close plus the 15-minute quote delay,
+  # in either DST regime. Captures the end-of-day sector-beeswarm
+  # snapshot; see scheduled-beeswarm-daily-background.js.
+  schedule = "40 21 * * 1-5"
+
+[functions."scheduled-beeswarm-meta-background"]
+  # Weekly, Saturday 07:00 UTC — before scheduled-factors-background
+  # (09:00 Sat) and well clear of the weekday jobs. ~503 COMPANY_OVERVIEW
+  # calls for per-company sector / shares-outstanding metadata that the
+  # daily beeswarm job joins against; changes little week to week.
+  schedule = "0 7 * * 6"
+
+[functions."scheduled-beeswarm-annual-background"]
+  # Weekly, Saturday 08:30 UTC — after the meta job, before the factors
+  # job. Only ~12 TIME_SERIES_MONTHLY_ADJUSTED calls (sector ETFs + SPY)
+  # to recompute calendar-year returns for the annual historical view;
+  # the data only really moves once a year at each year-end close.
+  schedule = "30 8 * * 6"

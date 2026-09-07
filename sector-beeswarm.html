@@ -1,0 +1,888 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<script>
+// Applied before first paint to avoid a flash of the wrong theme.
+(function(){
+ var saved = localStorage.getItem("theme");
+ if(saved === "light") document.documentElement.setAttribute("data-theme", "light");
+})();
+</script>
+<script src="https://cdn.jsdelivr.net/npm/d3@7"></script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>S&amp;P 500 Sector Beeswarm — Michael J. Stevenson</title>
+
+<style>
+:root{
+  --bg:#14181c;
+  --card:#1c2127;
+  --card-hover:#20262d;
+  --ink:#eae6da;
+  --muted:#8b9199;
+  --hair:#2b3138;
+
+  --fear:#6f8fac;
+  --neutral:#7c828a;
+  --greed:#d98a3d;
+  --extreme:#b56f2a;
+
+  --serif:'Iowan Old Style','Palatino Linotype',Georgia,serif;
+  --mono:'SF Mono','JetBrains Mono',ui-monospace,Menlo,monospace;
+  --sans:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+
+  --grid:rgba(139,145,153,0.16);
+  --plot-bg:#171b20;
+}
+
+:root[data-theme="light"]{
+  --bg:#f7f5f0;
+  --card:#ffffff;
+  --card-hover:#f2efe6;
+  --ink:#1c1f24;
+  --muted:#6b6f76;
+  --hair:#e1dbcd;
+  --fear:#4f6f8c;
+  --neutral:#6c7178;
+  --greed:#b9701f;
+  --extreme:#96591c;
+  --grid:rgba(107,111,118,0.18);
+  --plot-bg:#fbfaf6;
+}
+
+*{ box-sizing:border-box; }
+
+body{
+ margin:0;
+ background:var(--bg);
+ color:var(--ink);
+ font-family:var(--sans);
+}
+
+a{ color:inherit; }
+
+/* SITE NAV (shared with homepage) */
+.sitenav{
+ display:grid;
+ grid-template-columns:1fr auto 1fr;
+ align-items:center;
+ padding:16px 24px;
+ border-bottom:1px solid var(--hair);
+ position:relative;
+ z-index:50;
+}
+.sitenav .brand{
+ justify-self:start;
+ font-family:var(--serif);
+ font-size:17px;
+ color:var(--ink);
+ text-decoration:none;
+ letter-spacing:0.3px;
+}
+.navlinks{ display:flex; gap:26px; align-items:center; }
+.navlinks > a{ color:var(--muted); font-size:13px; text-decoration:none; padding:6px 0; }
+.navlinks > a:hover, .navlinks > a.active{ color:var(--ink); }
+.navdrop{ position:relative; }
+.navdrop > .navlabel{ color:var(--muted); font-size:13px; cursor:default; padding:6px 0; user-select:none; }
+.navdrop:hover > .navlabel, .navdrop.open > .navlabel{ color:var(--ink); }
+.navdrop .dropdown{
+ display:none;
+ position:absolute;
+ top:100%;
+ left:0;
+ background:var(--card);
+ border:1px solid var(--hair);
+ border-radius:8px;
+ padding:8px 0;
+ min-width:230px;
+ margin-top:12px;
+ box-shadow:0 10px 30px rgba(0,0,0,0.45);
+}
+.navdrop.open .dropdown{ display:block; }
+.dropdown a{ display:block; padding:9px 16px; color:var(--muted); text-decoration:none; font-size:13px; }
+.dropdown a:hover{ background:var(--card-hover); color:var(--ink); }
+.dropdown a.active{ color:var(--greed); }
+
+.theme-toggle{
+ justify-self:end;
+ background:none;
+ border:1px solid var(--hair);
+ color:var(--muted);
+ border-radius:6px;
+ width:32px;
+ height:32px;
+ display:flex;
+ align-items:center;
+ justify-content:center;
+ cursor:pointer;
+ font-size:15px;
+}
+.theme-toggle:hover{ color:var(--ink); border-color:var(--hair); }
+
+.container{ max-width:1180px; margin:auto; padding:30px 20px 60px; }
+
+.header{
+ display:flex;
+ justify-content:space-between;
+ align-items:flex-end;
+ border-bottom:1px solid var(--hair);
+ padding-bottom:18px;
+ margin-bottom:22px;
+ flex-wrap:wrap;
+ gap:12px;
+}
+h1{ font-family:var(--serif); font-size:28px; font-weight:400; margin:0; }
+.subtitle{ color:var(--muted); font-size:13px; margin-top:6px; max-width:640px; }
+.updated{ color:var(--muted); font-size:12px; }
+
+.controls{
+ display:flex;
+ align-items:center;
+ justify-content:space-between;
+ flex-wrap:wrap;
+ gap:14px;
+ margin-bottom:16px;
+}
+.toggle-group{ display:inline-flex; background:var(--card); border:1px solid var(--hair); border-radius:8px; padding:3px; }
+.toggle-btn{
+ background:none; border:none; color:var(--muted);
+ font-family:var(--sans); font-size:13px; padding:7px 16px; border-radius:6px; cursor:pointer;
+}
+.toggle-btn.active{ background:var(--greed); color:#1a1408; font-weight:600; }
+
+/* SCRUBBER */
+.scrubber{
+ display:flex;
+ align-items:center;
+ gap:12px;
+ background:var(--card);
+ border:1px solid var(--hair);
+ border-radius:10px;
+ padding:12px 16px;
+ margin-bottom:18px;
+ flex-wrap:wrap;
+}
+.scrubber .playbtn{
+ background:var(--greed);
+ color:#1a1408;
+ border:none;
+ border-radius:6px;
+ width:34px; height:34px;
+ font-size:14px;
+ cursor:pointer;
+ flex:none;
+}
+.scrubber .stepbtn{
+ background:none;
+ border:1px solid var(--hair);
+ color:var(--muted);
+ border-radius:6px;
+ width:30px; height:34px;
+ cursor:pointer;
+ flex:none;
+}
+.scrubber .stepbtn:hover{ color:var(--ink); }
+.scrubber input[type=range]{ flex:1 1 260px; accent-color:var(--greed); }
+.scrubber .frame-label{
+ font-family:var(--mono);
+ font-size:13px;
+ color:var(--ink);
+ min-width:150px;
+ text-align:right;
+}
+.scrubber .speed{
+ font-size:12px;
+ color:var(--muted);
+ display:flex;
+ align-items:center;
+ gap:6px;
+}
+
+.chart-box{
+ background:var(--card);
+ border:1px solid var(--hair);
+ border-radius:12px;
+ padding:18px 16px 10px;
+ margin-bottom:26px;
+ position:relative;
+}
+
+.plot-head{
+ display:flex;
+ justify-content:space-between;
+ align-items:flex-start;
+ padding:4px 8px 10px;
+ gap:16px;
+ flex-wrap:wrap;
+}
+.plot-head .lead{ display:flex; flex-direction:column; gap:2px; }
+.plot-head .lead .big{ font-family:var(--serif); font-size:22px; }
+.plot-head .lead .sub{ font-family:var(--mono); font-size:13px; color:var(--muted); }
+.plot-head .lead .spy{ font-family:var(--mono); font-size:13px; margin-top:2px; }
+.plot-head .credit{ font-size:12px; color:var(--muted); text-align:right; line-height:1.5; }
+.plot-head .credit .mark{ font-family:var(--serif); font-size:15px; color:var(--ink); letter-spacing:0.5px; }
+
+#chart{ width:100%; display:block; }
+#chart text{ fill:var(--muted); font-family:var(--sans); }
+#chart .axis-line{ stroke:var(--hair); }
+#chart .gridline{ stroke:var(--grid); }
+#chart .zero-line{ stroke:var(--muted); stroke-opacity:0.55; }
+#chart .spy-line{ stroke:var(--ink); stroke-opacity:0.5; stroke-dasharray:5 4; }
+#chart .spy-tag{ fill:var(--muted); font-size:11px; }
+#chart .sector-label{ fill:var(--ink); font-size:12px; }
+#chart .bubble{ stroke-width:1; }
+#chart .bubble-label{ fill:#1a1a1a; font-size:10px; font-weight:600; pointer-events:none; }
+#chart .bubble-label.out{ fill:var(--ink); }
+#chart .size-legend text{ fill:var(--muted); font-size:11px; }
+#chart .size-legend circle{ fill:var(--muted); fill-opacity:0.18; stroke:var(--muted); stroke-opacity:0.4; }
+
+.tooltip{
+ position:fixed;
+ pointer-events:none;
+ background:var(--card);
+ border:1px solid var(--hair);
+ border-radius:8px;
+ padding:8px 11px;
+ font-size:12px;
+ line-height:1.5;
+ box-shadow:0 8px 24px rgba(0,0,0,0.4);
+ opacity:0;
+ transition:opacity 0.12s;
+ z-index:100;
+ max-width:220px;
+}
+.tooltip .tt-t{ font-weight:700; font-family:var(--mono); }
+.tooltip .tt-n{ color:var(--muted); }
+.tooltip .tt-r{ font-family:var(--mono); margin-top:3px; }
+
+.explainer{
+ background:var(--card);
+ border:1px solid var(--hair);
+ border-radius:12px;
+ padding:24px 26px;
+}
+.explainer h2{ font-family:var(--serif); font-weight:400; font-size:18px; margin:0 0 12px; }
+.explainer p{ color:var(--muted); font-size:14px; line-height:1.7; margin:0 0 14px; }
+.explainer p:last-child{ margin-bottom:0; }
+.explainer .source{ margin-top:16px; font-size:11px; }
+.explainer .source a{ color:var(--muted); text-decoration:none; border-bottom:1px dotted var(--muted); }
+.explainer .source a:hover{ color:var(--ink); }
+.editorial-note{
+ color:var(--muted);
+ font-size:12px;
+ font-style:italic;
+ border-left:2px solid var(--hair);
+ padding-left:12px;
+ margin:14px 0;
+}
+
+.error-banner{
+ background:#2a1c1c; border:1px solid #5a3030; color:#e0a0a0;
+ border-radius:8px; padding:12px 15px; margin-bottom:20px; font-size:13px; display:none;
+}
+.warning-banner{
+ background:#2a2419; border:1px solid #5a4f30; color:#d9b877;
+ border-radius:8px; padding:12px 15px; margin-bottom:20px; font-size:13px; display:none;
+}
+
+@media (max-width:640px){
+ .plot-head .credit{ text-align:left; }
+ .scrubber .frame-label{ text-align:left; min-width:0; }
+}
+</style>
+</head>
+<body>
+
+<nav class="sitenav">
+<a class="brand" href="/">Michael J. Stevenson, CAIA<span style="font-size:0.6em; vertical-align:super;">&reg;</span></a>
+<div class="navlinks">
+<div class="navdrop">
+<span class="navlabel">Behavioral/Positioning ▾</span>
+<div class="dropdown">
+<a href="/ipo-activity.html">IPO Activity</a>
+</div>
+</div>
+
+<div class="navdrop">
+<span class="navlabel">Equities ▾</span>
+<div class="dropdown">
+<a href="/sector-analysis.html">Sector Performance</a>
+<a href="/sector-beeswarm.html" class="active">Sector Beeswarm</a>
+<a href="/ath-index.html">All-Time Highs and Lows</a>
+<a href="/valuations.html">Valuations</a>
+<a href="/factor-analysis.html">Factor Analysis</a>
+<a href="/market-breadth.html">Market Breadth</a>
+<a href="/seasonality.html">Seasonality</a>
+</div>
+</div>
+
+<div class="navdrop">
+<span class="navlabel">Markets/Macro ▾</span>
+<div class="dropdown">
+<a href="/sentiment-index.html">Sentiment Index</a>
+<a href="/volatility.html">Implied vs. Realized Volatility</a>
+<a href="/implied-erp.html">Implied Equity Risk Premium</a>
+<a href="/yield-curves.html">Yield Curves</a>
+<a href="/expectations-vs-reality.html">Expectations vs. Reality</a>
+</div>
+</div>
+
+<a href="/portfolio-simulator.html">Portfolio Simulator</a>
+<a href="/backtesting.html">Backtesting</a>
+<a href="/statistical-engine">Statistical Engine</a>
+</div>
+<button class="theme-toggle" id="themeToggle" type="button" aria-label="Toggle light/dark mode" title="Toggle light/dark mode">&#9789;</button>
+</nav>
+<script>
+document.querySelectorAll(".navdrop").forEach(function(navdrop){
+ var closeTimer = null;
+ navdrop.addEventListener("mouseenter", function(){ clearTimeout(closeTimer); navdrop.classList.add("open"); });
+ navdrop.addEventListener("mouseleave", function(){ closeTimer = setTimeout(function(){ navdrop.classList.remove("open"); }, 300); });
+});
+</script>
+<script>
+(function(){
+ var btn = document.getElementById("themeToggle");
+ if(!btn) return;
+ var theme = document.documentElement.getAttribute("data-theme") === "light" ? "light" : "dark";
+ btn.textContent = theme === "light" ? "☀" : "☽";
+ btn.addEventListener("click", function(){
+  var current = document.documentElement.getAttribute("data-theme") === "light" ? "light" : "dark";
+  var next = current === "light" ? "dark" : "light";
+  localStorage.setItem("theme", next);
+  location.reload();
+ });
+})();
+</script>
+
+<div class="container">
+
+<div class="error-banner" id="errorBanner"></div>
+<div class="warning-banner" id="warningBanner"></div>
+
+<div class="header">
+<div>
+<h1>S&amp;P 500 Sector Beeswarm</h1>
+<div class="subtitle" id="subtitle">Every S&amp;P 500 company as a bubble &mdash; positioned by sector and by return, sized by market capitalization. <strong>Daily</strong> replays the most recent sessions company by company; <strong>Annual</strong> steps back through the last 15 calendar years at sector-ETF resolution.</div>
+</div>
+<div class="updated" id="updated">Loading&hellip;</div>
+</div>
+
+<div class="controls">
+<div class="toggle-group">
+<button class="toggle-btn active" id="btnDaily" type="button">Daily &mdash; companies</button>
+<button class="toggle-btn" id="btnAnnual" type="button">Annual &mdash; sector ETFs</button>
+</div>
+<div class="legend-note" id="legendNote"></div>
+</div>
+
+<div class="scrubber" id="scrubber">
+<button class="stepbtn" id="stepBack" type="button" title="Previous">&#8249;</button>
+<button class="playbtn" id="playBtn" type="button" title="Play">&#9654;</button>
+<button class="stepbtn" id="stepFwd" type="button" title="Next">&#8250;</button>
+<input type="range" id="frameRange" min="0" max="0" value="0" step="1">
+<span class="frame-label" id="frameLabel">&mdash;</span>
+</div>
+
+<div class="chart-box">
+<div class="plot-head">
+<div class="lead">
+<div class="big">S&amp;P 500</div>
+<div class="sub" id="plotDate">&mdash;</div>
+<div class="spy" id="plotSpy">&mdash;</div>
+</div>
+<div class="credit">
+<div class="mark">CHARTFLEAU</div>
+<div>Visualization concept by Jan at Chartfleau</div>
+</div>
+</div>
+<svg id="chart" viewBox="0 0 1120 726" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Sector beeswarm chart"></svg>
+</div>
+
+<div class="explainer">
+<h2>Reading this chart</h2>
+<p>
+ Each bubble is one company (Daily) or one SPDR Select Sector ETF (Annual). Horizontal position
+ is the company&rsquo;s GICS sector; vertical position is its return &mdash; close-to-close for the
+ session in Daily, calendar-year total return in Annual. Bubble area is market capitalization
+ (Daily) or the sector&rsquo;s approximate weight in the index (Annual). The dashed line marks
+ SPY&rsquo;s return over the same window.
+</p>
+<p class="editorial-note">
+ Placeholder copy &mdash; headline, framing, and the methodology write-up below are yours to author.
+</p>
+<h2>Method &amp; caveats</h2>
+<p>
+ <strong>Daily</strong> snapshots are captured after each close and archived going forward; there is
+ no historical backfill. Returns come from Alpha Vantage delayed quotes; market caps are shares
+ outstanding &times; last price, with sector and share counts refreshed weekly. Index membership is
+ the current S&amp;P 500 constituent list applied to every archived day &mdash; a company added or
+ removed later is not reconstructed point-in-time.
+</p>
+<p>
+ <strong>Annual</strong> uses the 11 SPDR Select Sector ETFs (total return, split&nbsp;&amp;
+ dividend&nbsp;adjusted) for calendar years over roughly the last 15 years. XLRE (Real Estate)
+ begins in 2016 and XLC (Communication Services) in 2019 &mdash; earlier years omit those bubbles.
+ Sector weights used for bubble size are approximate year-end figures.
+</p>
+<div class="source">Source: <a href="https://www.alphavantage.co/" target="_blank" rel="noopener">Alpha Vantage</a> &mdash; SPDR Select Sector ETFs, SPY, and S&amp;P 500 constituent quotes. Visualization after Jan at <a href="https://www.chartfleau.com/" target="_blank" rel="noopener">Chartfleau</a>.</div>
+</div>
+
+</div>
+
+<div class="tooltip" id="tooltip"></div>
+
+<script>
+"use strict";
+
+/* ----- config ----------------------------------------------------------- */
+
+const SECTOR_ORDER = [
+ "Energy", "Industrials", "Health Care", "Consumer Staples", "Information Technology",
+ "Materials", "Financials", "Consumer Discretionary", "Communication Services",
+ "Real Estate", "Utilities",
+];
+
+// Column hues echo the Chartfleau reference: one distinct family per sector.
+const SECTOR_COLOR = {
+ "Energy": "#9ecae1",
+ "Industrials": "#3b7dd8",
+ "Health Care": "#a1d99b",
+ "Consumer Staples": "#2f9e44",
+ "Information Technology": "#f2a6a0",
+ "Materials": "#d1332e",
+ "Financials": "#f2b134",
+ "Consumer Discretionary": "#f08c1d",
+ "Communication Services": "#c3b0e0",
+ "Real Estate": "#7048b6",
+ "Utilities": "#f2e05a",
+};
+function darker(hex, k){
+ const c = d3.color(hex); if(!c) return hex;
+ return c.darker(k).formatHex();
+}
+
+const VB_W = 1120, VB_H = 726;
+const M = { top: 96, right: 66, bottom: 74, left: 62 };
+const PLOT_W = VB_W - M.left - M.right;
+const PLOT_H = VB_H - M.top - M.bottom;
+
+const DAILY_CLAMP = 7;          // daily view: y-axis clamps at +/- this, with overflow band
+const LABEL_TOP_N = 20;         // always-labelled mega-caps in the daily view
+
+const svg = d3.select("#chart");
+const tooltip = d3.select("#tooltip");
+
+let mode = "daily";
+let frames = [];        // array of frame descriptors for the current mode
+let frameIndex = 0;
+let playing = false;
+let playTimer = null;
+const dailyCache = new Map();   // date -> resolved frame data
+let annualData = null;
+
+const useSample = new URLSearchParams(location.search).has("sample");
+const API_ANNUAL = useSample ? "/_sample-beeswarm-annual.json" : "/api/beeswarm-annual";
+const API_DAILY  = useSample ? "/_sample-beeswarm-daily.json"  : "/api/beeswarm-daily";
+
+/* ----- helpers --------------------------------------------------------- */
+
+function showError(msg){ const b = document.getElementById("errorBanner"); b.textContent = msg; b.style.display = "block"; }
+function clearError(){ document.getElementById("errorBanner").style.display = "none"; }
+function showWarning(msg){ const b = document.getElementById("warningBanner"); b.textContent = msg; b.style.display = "block"; }
+function clearWarning(){ document.getElementById("warningBanner").style.display = "none"; }
+
+function fmtPct(v){ return (v >= 0 ? "+" : "") + v.toFixed(v <= -10 || v >= 10 ? 0 : 1) + "%"; }
+function fmtCap(m){ // m in $ millions
+ if(m == null) return "n/a";
+ if(m >= 1e6) return "$" + (m / 1e6).toFixed(2) + "T";
+ if(m >= 1e3) return "$" + (m / 1e3).toFixed(1) + "B";
+ return "$" + m.toFixed(0) + "M";
+}
+function ink(){ return getComputedStyle(document.documentElement).getPropertyValue("--ink").trim() || "#eee"; }
+
+function niceDate(iso){
+ const d = new Date(iso + "T00:00:00Z");
+ return d.toLocaleDateString("en-US", { weekday: "short", day: "2-digit", month: "short", year: "numeric", timeZone: "UTC" });
+}
+
+/* ----- scales / layout ------------------------------------------------- */
+
+const xBand = d3.scalePoint().domain(SECTOR_ORDER).range([M.left + PLOT_W * 0.02, M.left + PLOT_W * 0.98]).padding(0.5);
+
+function buildYScale(frame){
+ if(mode === "daily"){
+  return d3.scaleLinear().domain([-DAILY_CLAMP, DAILY_CLAMP]).range([M.top + PLOT_H, M.top]);
+ }
+ // annual: data-driven, padded to a round number
+ const rs = frame.nodes.map(n => n.ret).concat([frame.spyReturn, 0]);
+ let lo = Math.min(...rs), hi = Math.max(...rs);
+ const step = (hi - lo) > 60 ? 10 : 5;
+ const pad = Math.max(3, (hi - lo) * 0.06);
+ lo = Math.floor((lo - pad) / step) * step;
+ hi = Math.ceil((hi + pad) / step) * step;
+ return d3.scaleLinear().domain([lo, hi]).range([M.top + PLOT_H, M.top]);
+}
+
+function buildRScale(frame){
+ const vals = frame.nodes.map(n => n.size).filter(v => v > 0);
+ const max = d3.max(vals) || 1;
+ const min = d3.min(vals) || 0;
+ if(mode === "daily"){
+  return d3.scaleSqrt().domain([0, max]).range([2.4, 39]);
+ }
+ return d3.scaleSqrt().domain([Math.max(0, min - 1), max]).range([12, 50]);
+}
+
+/* ----- frame data shaping ------------------------------------------------ */
+
+// Daily API row: {t,name,sector,ret,mcap($M)}  ->  node
+function dailyFrameFromPayload(p){
+ const nodes = (p.stocks || [])
+  .filter(s => SECTOR_ORDER.includes(s.sector) && Number.isFinite(s.ret))
+  .map(s => ({
+   key: s.t, ticker: s.t, name: s.name, sector: s.sector,
+   ret: s.ret, size: s.mcap || 0,
+   capText: fmtCap(s.mcap),
+  }));
+ return { kind: "daily", label: niceDate(p.date), date: p.date, spyReturn: p.spyReturn, nodes };
+}
+
+// Annual API year: {year, ytd, spyReturn, sectors:[{ticker,sector,ret,weight}]}
+function annualFrameFromYear(y){
+ const nodes = (y.sectors || [])
+  .filter(s => SECTOR_ORDER.includes(s.sector) && Number.isFinite(s.ret))
+  .map(s => ({
+   key: s.ticker, ticker: s.ticker, name: s.sector + " Select Sector SPDR", sector: s.sector,
+   ret: s.ret, size: s.weight || 5,
+   capText: (s.weight ? s.weight.toFixed(1) + "% of index" : "n/a"),
+  }));
+ return { kind: "annual", label: y.ytd ? (y.year + " YTD") : String(y.year), year: y.year, spyReturn: y.spyReturn, nodes };
+}
+
+/* ----- the render ----------------------------------------------------- */
+
+function runSimulation(nodes, y, r){
+ nodes.forEach(n => {
+  n.r = Math.max(2, r(n.size));
+  n.ty = y(clampForMode(n.ret, y));
+  n.tx = xBand(n.sector);
+  if(n.x == null){ n.x = n.tx + (Math.random() - 0.5) * 12; n.y = n.ty + (Math.random() - 0.5) * 12; }
+ });
+ const sim = d3.forceSimulation(nodes)
+  .force("x", d3.forceX(d => d.tx).strength(0.22))
+  .force("y", d3.forceY(d => d.ty).strength(0.9))
+  .force("collide", d3.forceCollide(d => d.r + 1.1).strength(1).iterations(3))
+  .stop();
+ for(let i = 0; i < 320; i++) sim.tick();
+ // keep bubbles inside their plot band horizontally
+ nodes.forEach(n => {
+  const half = (xBand.step() * 0.62);
+  n.x = Math.max(n.tx - half, Math.min(n.tx + half, n.x));
+  n.y = Math.max(M.top + n.r, Math.min(M.top + PLOT_H - n.r, n.y));
+ });
+}
+
+function clampForMode(v, y){
+ if(mode === "daily") return Math.max(-DAILY_CLAMP + 0.15, Math.min(DAILY_CLAMP - 0.15, v));
+ const dom = y.domain();
+ return Math.max(dom[0], Math.min(dom[1], v));
+}
+
+function pickLabels(nodes){
+ const set = new Set();
+ if(mode === "annual"){ nodes.forEach(n => set.add(n.key)); return set; }
+ // daily: top N by size, plus each column's max & min return
+ [...nodes].sort((a, b) => b.size - a.size).slice(0, LABEL_TOP_N).forEach(n => set.add(n.key));
+ const byCol = d3.group(nodes, n => n.sector);
+ byCol.forEach(list => {
+  if(!list.length) return;
+  const hi = d3.greatest(list, n => n.ret);
+  const lo = d3.least(list, n => n.ret);
+  if(hi) set.add(hi.key);
+  if(lo) set.add(lo.key);
+ });
+ return set;
+}
+
+function render(frame, animate){
+ const y = buildYScale(frame);
+ const r = buildRScale(frame);
+ runSimulation(frame.nodes, y, r);
+ const labelled = pickLabels(frame.nodes);
+
+ const dur = animate ? 650 : 0;
+ svg.selectAll("*").interrupt();
+
+ /* --- static layers (rebuilt each frame, they're cheap) --- */
+ let gGrid = svg.select("g.layer-grid");
+ if(gGrid.empty()) gGrid = svg.append("g").attr("class", "layer-grid");
+ let gAxis = svg.select("g.layer-axis");
+ if(gAxis.empty()) gAxis = svg.append("g").attr("class", "layer-axis");
+ let gBubbles = svg.select("g.layer-bubbles");
+ if(gBubbles.empty()) gBubbles = svg.append("g").attr("class", "layer-bubbles");
+ let gLabels = svg.select("g.layer-labels");
+ if(gLabels.empty()) gLabels = svg.append("g").attr("class", "layer-labels");
+ let gOver = svg.select("g.layer-over");
+ if(gOver.empty()) gOver = svg.append("g").attr("class", "layer-over");
+
+ // plot background
+ let bg = gGrid.select("rect.plot-bg");
+ if(bg.empty()) bg = gGrid.append("rect").attr("class", "plot-bg");
+ bg.attr("x", M.left).attr("y", M.top).attr("width", PLOT_W).attr("height", PLOT_H)
+   .attr("fill", getComputedStyle(document.documentElement).getPropertyValue("--plot-bg").trim() || "none")
+   .attr("rx", 4);
+
+ // y gridlines + ticks (both sides)
+ const ticks = y.ticks(mode === "daily" ? 14 : 9);
+ const grid = gGrid.selectAll("line.gridline").data(ticks, d => d);
+ grid.join(
+   ent => ent.append("line").attr("class", "gridline"),
+   upd => upd,
+   ex => ex.remove(),
+ ).transition().duration(dur)
+  .attr("x1", M.left).attr("x2", M.left + PLOT_W)
+  .attr("y1", d => y(d)).attr("y2", d => y(d));
+
+ const mkTickText = (sel, xPos, anchor) => {
+  const t = gAxis.selectAll("text." + sel).data(ticks, d => d);
+  t.join(
+    ent => ent.append("text").attr("class", sel).attr("text-anchor", anchor).attr("dominant-baseline", "middle"),
+    upd => upd,
+    ex => ex.remove(),
+  ).transition().duration(dur)
+   .attr("x", xPos).attr("y", d => y(d))
+   .tween("text", function(d){
+     const self = d3.select(this);
+     return () => {
+      let lbl = d + "%";
+      if(mode === "daily" && d <= -DAILY_CLAMP) lbl = "< -" + DAILY_CLAMP + "%";
+      if(mode === "daily" && d >= DAILY_CLAMP) lbl = "> " + DAILY_CLAMP + "%";
+      self.text(lbl);
+     };
+   });
+ };
+ mkTickText("tickL", M.left - 10, "end");
+ mkTickText("tickR", M.left + PLOT_W + 10, "start");
+
+ // zero line
+ let zero = gAxis.select("line.zero-line");
+ if(zero.empty()) zero = gAxis.append("line").attr("class", "zero-line");
+ zero.transition().duration(dur)
+  .attr("x1", M.left).attr("x2", M.left + PLOT_W).attr("y1", y(0)).attr("y2", y(0));
+
+ // y axis titles
+ gAxis.selectAll("text.ytitle").data([-1, 1]).join(
+   ent => ent.append("text").attr("class", "ytitle").attr("text-anchor", "middle").style("font-size", "11px"),
+ ).attr("transform", d => {
+   const xx = d < 0 ? 16 : VB_W - 16;
+   return `translate(${xx},${M.top + PLOT_H / 2}) rotate(${d < 0 ? -90 : 90})`;
+ }).text("Return");
+
+ // SPY dashed line
+ const spyY = y(clampForMode(frame.spyReturn, y));
+ let spy = gAxis.select("line.spy-line");
+ if(spy.empty()) spy = gAxis.append("line").attr("class", "spy-line");
+ spy.transition().duration(dur).attr("x1", M.left).attr("x2", M.left + PLOT_W).attr("y1", spyY).attr("y2", spyY);
+ gAxis.selectAll("text.spy-tag").data([M.left - 8, M.left + PLOT_W + 8]).join(
+   ent => ent.append("text").attr("class", "spy-tag").attr("dominant-baseline", "middle"),
+ ).attr("text-anchor", (d, i) => i === 0 ? "end" : "start")
+  .attr("x", d => d).transition().duration(dur).attr("y", spyY - 9).text("SPY");
+
+ // sector column labels (staggered two rows)
+ gAxis.selectAll("text.sector-label").data(SECTOR_ORDER).join(
+   ent => ent.append("text").attr("class", "sector-label").attr("text-anchor", "middle"),
+ ).attr("x", d => xBand(d))
+  .attr("y", (d, i) => M.top + PLOT_H + 22 + (i % 2 ? 20 : 0))
+  .text(d => d);
+
+ /* --- bubbles --- */
+ const bubbles = gBubbles.selectAll("circle.bubble").data(frame.nodes, d => d.key);
+ bubbles.join(
+   ent => ent.append("circle").attr("class", "bubble")
+     .attr("cx", d => d.x).attr("cy", d => d.y).attr("r", 0)
+     .attr("fill", d => SECTOR_COLOR[d.sector]).attr("fill-opacity", 0.82)
+     .attr("stroke", d => darker(SECTOR_COLOR[d.sector], 0.9))
+     .on("mousemove", onHover).on("mouseleave", onLeave),
+   upd => upd,
+   ex => ex.transition().duration(dur).attr("r", 0).remove(),
+ ).transition().duration(dur)
+  .attr("cx", d => d.x).attr("cy", d => d.y).attr("r", d => d.r)
+  .attr("fill", d => SECTOR_COLOR[d.sector])
+  .attr("stroke", d => darker(SECTOR_COLOR[d.sector], 0.9));
+
+ /* --- labels --- */
+ const labelNodes = frame.nodes.filter(n => labelled.has(n.key));
+ const labels = gLabels.selectAll("text.bubble-label").data(labelNodes, d => d.key);
+ labels.join(
+   ent => ent.append("text").attr("class", "bubble-label").attr("text-anchor", "middle").attr("opacity", 0),
+   upd => upd,
+   ex => ex.transition().duration(dur).attr("opacity", 0).remove(),
+ ).attr("class", d => "bubble-label" + (d.r >= 15 ? "" : " out"))
+  .text(d => d.ticker)
+  .transition().duration(dur)
+  .attr("x", d => d.x)
+  .attr("y", d => d.r >= 15 ? d.y + 3.5 : d.y - d.r - 4)
+  .attr("opacity", 1);
+
+ /* --- market-cap / weight size legend (top-centre, circles on a baseline) --- */
+ gOver.selectAll("*").remove();
+ const legVals = mode === "daily" ? [3e6, 1.5e6, 6e5, 2e5] : [30, 20, 10, 4];
+ const legLabel = mode === "daily" ? ["$3T", "$1.5T", "$600B", "$200B"] : ["30%", "20%", "10%", "4%"];
+ const baseline = M.top - 20;           // circles rest on this line, above the plot
+ const gap = 20;
+ const widths = legVals.map(v => Math.max(6, r(v)) * 2);
+ const totalW = widths.reduce((a, b) => a + b, 0) + gap * (legVals.length - 1);
+ const legend = gOver.append("g").attr("class", "size-legend")
+   .attr("transform", `translate(${M.left + PLOT_W / 2 - totalW / 2}, 0)`);
+ let lx = 0;
+ legVals.forEach((v, i) => {
+  const rr = Math.max(6, r(v));
+  legend.append("circle").attr("cx", lx + rr).attr("cy", baseline - rr).attr("r", rr);
+  legend.append("text").attr("x", lx + rr).attr("y", baseline + 14).attr("text-anchor", "middle").text(legLabel[i]);
+  lx += widths[i] + gap;
+ });
+ legend.append("text").attr("x", -14).attr("y", baseline - 2).attr("text-anchor", "end")
+   .text(mode === "daily" ? "Market cap" : "Index weight");
+
+ // head readouts
+ document.getElementById("plotDate").textContent = frame.label;
+ const spyTxt = fmtPct(frame.spyReturn);
+ document.getElementById("plotSpy").innerHTML = "SPY <strong>" + spyTxt + "</strong>";
+ document.getElementById("plotSpy").style.color = frame.spyReturn >= 0 ? "var(--fear)" : "var(--extreme)";
+}
+
+/* ----- interaction ---------------------------------------------------- */
+
+function onHover(event, d){
+ tooltip.style("opacity", 1)
+  .style("left", (event.clientX + 14) + "px")
+  .style("top", (event.clientY + 14) + "px")
+  .html(
+   '<div class="tt-t">' + d.ticker + '</div>' +
+   '<div class="tt-n">' + d.name + '</div>' +
+   '<div class="tt-n">' + d.sector + '</div>' +
+   '<div class="tt-r">' + (mode === "daily" ? "Return " : "Year ") + fmtPct(d.ret) + '</div>' +
+   '<div class="tt-r tt-n">' + d.capText + '</div>'
+  );
+}
+function onLeave(){ tooltip.style("opacity", 0); }
+
+/* ----- framing / playback ------------------------------------------------ */
+
+function setFrame(i, animate){
+ if(!frames.length) return;
+ frameIndex = Math.max(0, Math.min(frames.length - 1, i));
+ const fr = frames[frameIndex];
+ document.getElementById("frameRange").value = frameIndex;
+ document.getElementById("frameLabel").textContent = fr.label;
+
+ if(mode === "annual"){
+  render(annualFrameFromYear(fr.raw), animate);
+ } else {
+  loadDaily(fr.date).then(payload => {
+   if(frames[frameIndex] !== fr) return; // user moved on
+   render(dailyFrameFromPayload(payload), animate);
+  }).catch(err => showError("Couldn't load " + fr.date + ": " + err.message));
+ }
+}
+
+function loadDaily(date){
+ if(dailyCache.has(date)) return Promise.resolve(dailyCache.get(date));
+ const url = useSample ? API_DAILY : (API_DAILY + "?date=" + encodeURIComponent(date));
+ return fetch(url).then(r => { if(!r.ok) throw new Error("HTTP " + r.status); return r.json(); })
+  .then(p => { dailyCache.set(date, p); return p; });
+}
+
+function togglePlay(){
+ playing = !playing;
+ document.getElementById("playBtn").innerHTML = playing ? "&#10073;&#10073;" : "&#9654;";
+ if(playing){
+  if(frameIndex >= frames.length - 1) frameIndex = -1;
+  playTimer = setInterval(() => {
+   if(frameIndex >= frames.length - 1){ togglePlay(); return; }
+   setFrame(frameIndex + 1, true);
+  }, mode === "daily" ? 1400 : 1100);
+ } else {
+  clearInterval(playTimer);
+ }
+}
+function stopPlay(){ if(playing) togglePlay(); }
+
+/* ----- mode switch / bootstrap ----------------------------------------- */
+
+function setMode(next){
+ if(mode === next) return;
+ stopPlay();
+ mode = next;
+ document.getElementById("btnDaily").classList.toggle("active", next === "daily");
+ document.getElementById("btnAnnual").classList.toggle("active", next === "annual");
+ document.getElementById("legendNote").textContent = next === "daily"
+  ? "Close-to-close return · one bubble per S&P 500 company"
+  : "Calendar-year total return · one bubble per SPDR sector ETF";
+ // reset node positions so the sim re-seeds cleanly for the new geometry
+ svg.selectAll("circle.bubble").remove();
+ svg.selectAll("text.bubble-label").remove();
+ if(next === "annual") initAnnualFrames();
+ else initDailyFrames();
+}
+
+function initAnnualFrames(){
+ frames = annualData.years.map(y => ({ label: y.ytd ? (y.year + " YTD") : String(y.year), raw: y }));
+ setupRange();
+ setFrame(frames.length - 1, false);
+ document.getElementById("updated").textContent = "Annual data generated " + (annualData.generated_at_utc || "").slice(0, 10);
+}
+
+function initDailyFrames(){
+ return fetch(API_DAILY).then(r => {
+  if(!r.ok) throw new Error("HTTP " + r.status);
+  return r.json();
+ }).then(p => {
+  clearError();
+  const dates = p.dates || (p.date ? [p.date] : []);
+  if(!dates.length) throw new Error("no snapshots archived yet");
+  dailyCache.set(p.date, p);
+  frames = dates.map(d => ({ label: niceDate(d), date: d }));
+  setupRange();
+  setFrame(frames.length - 1, false);
+  document.getElementById("updated").textContent = dates.length + " session" + (dates.length === 1 ? "" : "s") + " archived · latest " + p.date;
+  if(dates.length === 1) showWarning("The daily archive has one session so far — it fills in one trading day at a time going forward.");
+  else clearWarning();
+ }).catch(err => {
+  frames = [];
+  setupRange();
+  svg.selectAll("*").remove();
+  showError("Daily view unavailable: " + err.message + ". The archive begins once the first post-close snapshot runs — the Annual view works now.");
+ });
+}
+
+function setupRange(){
+ const rng = document.getElementById("frameRange");
+ rng.max = Math.max(0, frames.length - 1);
+ rng.value = Math.min(frameIndex, frames.length - 1);
+ document.getElementById("scrubber").style.opacity = frames.length ? 1 : 0.4;
+}
+
+document.getElementById("btnDaily").addEventListener("click", () => setMode("daily"));
+document.getElementById("btnAnnual").addEventListener("click", () => setMode("annual"));
+document.getElementById("frameRange").addEventListener("input", e => { stopPlay(); setFrame(+e.target.value, false); });
+document.getElementById("stepBack").addEventListener("click", () => { stopPlay(); setFrame(frameIndex - 1, true); });
+document.getElementById("stepFwd").addEventListener("click", () => { stopPlay(); setFrame(frameIndex + 1, true); });
+document.getElementById("playBtn").addEventListener("click", togglePlay);
+window.addEventListener("resize", () => { if(frames.length) setFrame(frameIndex, false); });
+
+/* boot: load annual (always available), then try daily as the default view */
+fetch(API_ANNUAL).then(r => { if(!r.ok) throw new Error("HTTP " + r.status); return r.json(); })
+ .then(data => {
+  annualData = data;
+  document.getElementById("legendNote").textContent = "Close-to-close return · one bubble per S&P 500 company";
+  initDailyFrames().then(() => {
+   if(!frames.length){ mode = "annual"; document.getElementById("btnDaily").classList.remove("active"); document.getElementById("btnAnnual").classList.add("active"); initAnnualFrames(); }
+  });
+ })
+ .catch(err => showError("Couldn't load visualization data (" + err.message + ")."));
+</script>
+
+</body>
+</html>
