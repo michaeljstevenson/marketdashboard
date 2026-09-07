@@ -232,8 +232,6 @@ h1{ font-family:var(--serif); font-size:28px; font-weight:400; margin:0; }
 .plot-head .lead .big{ font-family:var(--serif); font-size:22px; }
 .plot-head .lead .sub{ font-family:var(--mono); font-size:13px; color:var(--muted); }
 .plot-head .lead .spy{ font-family:var(--mono); font-size:13px; margin-top:2px; }
-.plot-head .credit{ font-size:12px; color:var(--muted); text-align:right; line-height:1.5; }
-.plot-head .credit .mark{ font-family:var(--serif); font-size:15px; color:var(--ink); letter-spacing:0.5px; }
 
 #chart{ width:100%; display:block; }
 #chart text{ fill:var(--muted); font-family:var(--sans); }
@@ -246,8 +244,6 @@ h1{ font-family:var(--serif); font-size:28px; font-weight:400; margin:0; }
 #chart .bubble{ stroke-width:1; }
 #chart .bubble-label{ fill:#1a1a1a; font-size:10px; font-weight:600; pointer-events:none; }
 #chart .bubble-label.out{ fill:var(--ink); }
-#chart .size-legend text{ fill:var(--muted); font-size:11px; }
-#chart .size-legend circle{ fill:var(--muted); fill-opacity:0.18; stroke:var(--muted); stroke-opacity:0.4; }
 
 .tooltip{
  position:fixed;
@@ -299,7 +295,6 @@ h1{ font-family:var(--serif); font-size:28px; font-weight:400; margin:0; }
 }
 
 @media (max-width:640px){
- .plot-head .credit{ text-align:left; }
  .scrubber .frame-label{ text-align:left; min-width:0; }
 }
 </style>
@@ -405,10 +400,6 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <div class="sub" id="plotDate">&mdash;</div>
 <div class="spy" id="plotSpy">&mdash;</div>
 </div>
-<div class="credit">
-<div class="mark">CHARTFLEAU</div>
-<div>Visualization concept by Jan at Chartfleau</div>
-</div>
 </div>
 <svg id="chart" viewBox="0 0 1120 726" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Sector beeswarm chart"></svg>
 </div>
@@ -480,7 +471,7 @@ for(const k in SECTOR_COLOR) SECTOR_STROKE[k] = darker(SECTOR_COLOR[k], 0.9);
 const PLOT_BG = getComputedStyle(document.documentElement).getPropertyValue("--plot-bg").trim() || "none";
 
 const VB_W = 1120, VB_H = 726;
-const M = { top: 96, right: 66, bottom: 74, left: 62 };
+const M = { top: 40, right: 66, bottom: 74, left: 62 };
 const PLOT_W = VB_W - M.left - M.right;
 const PLOT_H = VB_H - M.top - M.bottom;
 
@@ -652,7 +643,6 @@ function ensureLayers(){
   axis: svg.append("g").attr("class", "layer-axis"),
   bubbles: svg.append("g").attr("class", "layer-bubbles"),
   labels: svg.append("g").attr("class", "layer-labels"),
-  over: svg.append("g").attr("class", "layer-over"),
  };
  layers.grid.append("rect").attr("class", "plot-bg")
    .attr("x", M.left).attr("y", M.top).attr("width", PLOT_W).attr("height", PLOT_H)
@@ -670,7 +660,7 @@ function ensureLayers(){
  return layers;
 }
 
-function renderStatic(y, r){
+function renderStatic(y){
  const key = mode + "|" + y.domain().join(",");
  if(key === lastStaticKey) return;
  lastStaticKey = key;
@@ -691,25 +681,6 @@ function renderStatic(y, r){
     .attr("x", xPos).attr("y", d => y(d)).text(tickLabel);
  }
  L.axis.select("line.zero-line").attr("x1", M.left).attr("x2", M.left + PLOT_W).attr("y1", y(0)).attr("y2", y(0));
-
- // size legend
- L.over.selectAll("*").remove();
- const legVals = mode === "daily" ? [3e6, 1.5e6, 6e5, 2e5] : [30, 20, 10, 4];
- const legLabel = mode === "daily" ? ["$3T", "$1.5T", "$600B", "$200B"] : ["30%", "20%", "10%", "4%"];
- const baseline = M.top - 20, gap = 20;
- const widths = legVals.map(v => Math.max(6, r(v)) * 2);
- const totalW = widths.reduce((a, b) => a + b, 0) + gap * (legVals.length - 1);
- const legend = L.over.append("g").attr("class", "size-legend")
-   .attr("transform", `translate(${M.left + PLOT_W / 2 - totalW / 2}, 0)`);
- let lx = 0;
- legVals.forEach((v, i) => {
-  const rr = Math.max(6, r(v));
-  legend.append("circle").attr("cx", lx + rr).attr("cy", baseline - rr).attr("r", rr);
-  legend.append("text").attr("x", lx + rr).attr("y", baseline + 14).attr("text-anchor", "middle").text(legLabel[i]);
-  lx += widths[i] + gap;
- });
- legend.append("text").attr("x", -14).attr("y", baseline - 2).attr("text-anchor", "end")
-   .text(mode === "daily" ? "Market cap" : "Index weight");
 }
 
 function render(frame, animate){
@@ -730,7 +701,7 @@ function render(frame, animate){
  const T = sel => (dur > 0 ? sel.transition().duration(dur) : sel);
  if(dur > 0) svg.selectAll("*").interrupt();
 
- renderStatic(y, r);
+ renderStatic(y);
 
  // SPY dashed line + tags
  const spyY = y(clampForMode(frame.spyReturn, y));
