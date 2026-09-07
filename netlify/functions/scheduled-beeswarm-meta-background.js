@@ -59,30 +59,50 @@ exports.handler = async () => {
     const tickers = {};
     let ok = 0;
     let carried = 0;
-    let sectorless = 0;
 
-    for (const symbol of BREADTH_CONSTITUENTS) {
+    async function fetchInto(symbol) {
       let entry = null;
       try {
         entry = await fetchOverview(apiKey, symbol);
       } catch (err) {
         console.error(`scheduled-beeswarm-meta-background: ${symbol} failed: ${err.message}`);
+        // A long OVERVIEW run drifts into Alpha Vantage's minute-level cap
+        // even at ~1/sec; when it trips, back off hard before the next
+        // call rather than burning the rest of the batch on a closed window.
+        if (/rate limit|per minute/i.test(err.message)) await sleep(20000);
+        return false;
       }
-      if (entry && entry.sharesOutstanding) {
-        // Fall back to the previous run's sector if OVERVIEW gave one we
-        // couldn't map (and we had a good one before).
-        if (!entry.sector && prevTickers[symbol] && prevTickers[symbol].sector) {
-          entry.sector = prevTickers[symbol].sector;
-        }
-        tickers[symbol] = entry;
-        ok++;
-      } else if (prevTickers[symbol]) {
-        tickers[symbol] = prevTickers[symbol];
-        carried++;
+      if (!entry || !entry.sharesOutstanding) {
+        if (prevTickers[symbol]) { tickers[symbol] = prevTickers[symbol]; carried++; }
+        return false;
       }
-      if (tickers[symbol] && !tickers[symbol].sector) sectorless++;
-      await sleep(800);
+      // Keep a previously-mapped sector if this run's OVERVIEW string didn't map.
+      if (!entry.sector && prevTickers[symbol] && prevTickers[symbol].sector) {
+        entry.sector = prevTickers[symbol].sector;
+      }
+      tickers[symbol] = entry;
+      ok++;
+      return true;
     }
+
+    // Two passes: the second retries whatever the first couldn't resolve,
+    // after a full minute's cooling-off.
+    let todo = [...BREADTH_CONSTITUENTS];
+    for (let pass = 0; pass < 2 && todo.length; pass++) {
+      if (pass > 0) {
+        console.log(`scheduled-beeswarm-meta-background: retry pass for ${todo.length} ticker(s)`);
+        await sleep(65000);
+      }
+      const missed = [];
+      for (const symbol of todo) {
+        const got = await fetchInto(symbol);
+        if (!got && !tickers[symbol]) missed.push(symbol);
+        await sleep(1050);
+      }
+      todo = missed;
+    }
+
+    const sectorless = Object.values(tickers).filter((t) => !t.sector).length;
 
     const payload = {
       generated_at_utc: new Date().toISOString(),
