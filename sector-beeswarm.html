@@ -406,21 +406,22 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <h2>Reading this chart</h2>
 <p>
  Each bubble is one company (Daily) or one SPDR Select Sector ETF (Annual). Horizontal position
- is the company&rsquo;s GICS sector; vertical position is its return &mdash; close-to-close for the
- session in Daily, calendar-year total return in Annual. Bubble area is market capitalization
- (Daily) or the sector&rsquo;s approximate weight in the index (Annual). The dashed line marks
- SPY&rsquo;s return over the same window.
+ is the company&rsquo;s GICS sector; vertical position is its return &mdash; measured from the prior
+ close, tracked through the session at 15-minute marks in Daily, or cumulative calendar-year total
+ return in Annual. Bubble area is market capitalization (Daily) or the sector&rsquo;s approximate
+ weight in the index (Annual). The dashed line marks SPY&rsquo;s return over the same window.
 </p>
 <p class="editorial-note">
  Placeholder copy &mdash; headline, framing, and the methodology write-up below are yours to author.
 </p>
 <h2>Method &amp; caveats</h2>
 <p>
- <strong>Daily</strong> snapshots are captured after each close and archived going forward; there is
- no historical backfill. Returns come from Alpha Vantage delayed quotes; market caps are shares
- outstanding &times; last price, with sector and share counts refreshed weekly. Index membership is
- the current S&amp;P 500 constituent list applied to every archived day &mdash; a company added or
- removed later is not reconstructed point-in-time.
+ <strong>Daily</strong> sessions are captured after each close from Alpha Vantage 15-minute
+ intraday bars (delayed data) and archived going forward. Each mark is that bar&rsquo;s price versus
+ the prior session close; bubble size is shares outstanding &times; the closing price (fixed for
+ the session), with sector and share counts refreshed weekly. Index membership is the current
+ S&amp;P 500 constituent list applied to every archived day &mdash; a company added or removed
+ later is not reconstructed point-in-time.
 </p>
 <p>
  <strong>Annual</strong> uses the 11 SPDR Select Sector ETFs (total return, split&nbsp;&amp;
@@ -481,12 +482,15 @@ const svg = d3.select("#chart");
 const tooltip = d3.select("#tooltip");
 
 let mode = "daily";
-let frames = [];        // per-frame descriptors: daily = one archived session, annual = one trading day
+let frames = [];        // per-frame descriptors: daily = one 15-min mark, annual = one trading day
 let frameIndex = 0;
 let playing = false;
 let playTimer = null;
 let rafId = null;
-const dailyCache = new Map();   // date -> resolved frame data
+let simTicks = 320;    // force-sim iterations per render; dropped during playback
+let dailyDay = null;   // selected session date (daily mode)
+let currentDay = null; // its resolved payload
+const dailyCache = new Map();   // date -> resolved payload
 let annualData = null;
 
 const useSample = new URLSearchParams(location.search).has("sample");
@@ -538,16 +542,27 @@ function buildRScale(){
 
 /* ----- frame data shaping ------------------------------------------------ */
 
-// Daily API row: {t,name,sector,ret,mcap($M)}  ->  node
-function dailyFrameFromPayload(p){
+// Daily payload is one session at 15-min resolution:
+//   { date, times:["09:30",..], spy:[ret per mark], stocks:[{t,name,sector,mcap,r:[ret per mark]}] }
+// A "frame" is one mark index i — playing sweeps the bubbles through the
+// session the way they moved on the day.
+function fmtClock(hhmm){
+ let [h, m] = hhmm.split(":").map(Number);
+ const ap = h >= 12 ? "PM" : "AM";
+ h = h % 12 || 12;
+ return h + ":" + String(m).padStart(2, "0") + " " + ap;
+}
+function dailyFrameAt(p, i){
  const nodes = (p.stocks || [])
-  .filter(s => SECTOR_ORDER.includes(s.sector) && Number.isFinite(s.ret))
+  .filter(s => SECTOR_ORDER.includes(s.sector) && s.r && Number.isFinite(s.r[i]))
   .map(s => ({
    key: s.t, ticker: s.t, name: s.name, sector: s.sector,
-   ret: s.ret, size: s.mcap || 0,
-   capText: fmtCap(s.mcap),
+   ret: s.r[i], size: s.mcap || 0, capText: fmtCap(s.mcap),
   }));
- return { kind: "daily", label: niceDate(p.date), date: p.date, spyReturn: p.spyReturn, nodes };
+ const atClose = i === p.times.length - 1;
+ return { kind: "daily", date: p.date,
+  label: niceDate(p.date) + (atClose ? "" : " · " + fmtClock(p.times[i])),
+  spyReturn: p.spy[i], nodes };
 }
 
 // Annual payload is columnar: {dates, spy:[ytd%], series:{ETF:[ytd%]}, etf:{sector:ETF},
@@ -603,7 +618,7 @@ function runSimulation(nodes, y, r){
   .force("y", d3.forceY(d => d.ty).strength(0.9))
   .force("collide", d3.forceCollide(d => d.r + 1.1).strength(1).iterations(3))
   .stop();
- for(let i = 0; i < 320; i++) sim.tick();
+ for(let i = 0; i < simTicks; i++) sim.tick();
  // keep bubbles inside their plot band horizontally
  nodes.forEach(n => {
   const half = (xBand.step() * 0.62);
@@ -688,6 +703,17 @@ function render(frame, animate){
  const y = buildYScale(frame);
  const r = buildRScale();
  if(mode === "daily"){
+  // Carry each bubble's current position onto the new frame's node objects
+  // (dailyFrameAt builds fresh objects each call) so the force sim converges
+  // from where the layout already is instead of re-packing from scratch —
+  // that's what keeps playback a smooth drift rather than a scramble.
+  const prev = new Map();
+  L.bubbles.selectAll("circle.bubble").each(function(d){
+   prev.set(d.key, { x: +this.getAttribute("cx"), y: +this.getAttribute("cy") });
+  });
+  let warm = 0;
+  frame.nodes.forEach(n => { const p = prev.get(n.key); if(p){ n.x = p.x; n.y = p.y; warm++; } });
+  simTicks = warm < frame.nodes.length * 0.5 ? 320 : (playing ? 70 : 130);
   runSimulation(frame.nodes, y, r);
  } else {
   frame.nodes.forEach(n => {
@@ -697,8 +723,11 @@ function render(frame, animate){
   });
  }
  const labelled = pickLabels(frame.nodes);
- const dur = animate ? 1000 : 0;
- const T = sel => (dur > 0 ? sel.transition().duration(dur) : sel);
+ // animate: true -> 1000ms manual ease; a number -> that duration, linear so
+ // consecutive playback steps chain seamlessly; falsy -> instant
+ const dur = animate === true ? 1000 : (+animate || 0);
+ const ease = animate === true ? d3.easeCubicOut : d3.easeLinear;
+ const T = sel => (dur > 0 ? sel.transition().duration(dur).ease(ease) : sel);
  if(dur > 0) svg.selectAll("*").interrupt();
 
  renderStatic(y);
@@ -783,12 +812,10 @@ function setFrame(i, animate){
   document.getElementById("frameLabel").textContent = fr.label;
   render(fr, animate);
  } else {
-  const fr = frames[frameIndex];
-  document.getElementById("frameLabel").textContent = fr.label;
-  loadDaily(fr.date).then(payload => {
-   if(frames[frameIndex] !== fr) return; // user moved on
-   render(dailyFrameFromPayload(payload), animate);
-  }).catch(err => showError("Couldn't load " + fr.date + ": " + err.message));
+  if(!currentDay) return;
+  const fr = dailyFrameAt(currentDay, frameIndex);
+  document.getElementById("frameLabel").textContent = frames[frameIndex].label;
+  render(fr, animate);
  }
 }
 
@@ -800,14 +827,17 @@ function loadDaily(date){
 }
 
 // Annual playback sweeps the selected year's trading days via
-// requestAnimationFrame so the bubbles glide from Jan to Dec; daily
-// playback steps snapshot to snapshot on a timer with an eased transition.
+// requestAnimationFrame so the bubbles glide from Jan to Dec. Daily
+// playback steps through the session's ~26 fifteen-minute marks on a
+// timer, each step easing across — the bubbles retarget continuously as
+// each stock's return moves through the day.
 const ANNUAL_DAYS_PER_FRAME = 0.2;   // one calendar year (~250 days) sweeps in ~21s at 60fps
+const DAILY_STEP_MS = 850;           // per 15-min mark → a full session in ~22s
 
 function togglePlay(){
  playing = !playing;
  document.getElementById("playBtn").innerHTML = playing ? "&#10073;&#10073;" : "&#9654;";
- if(!playing){ clearInterval(playTimer); cancelAnimationFrame(rafId); return; }
+ if(!playing){ clearInterval(playTimer); cancelAnimationFrame(rafId); simTicks = 320; return; }
  if(frameIndex >= frames.length - 1) frameIndex = 0;
 
  if(mode === "annual"){
@@ -821,10 +851,11 @@ function togglePlay(){
   };
   rafId = requestAnimationFrame(tick);
  } else {
+  simTicks = 90;   // warm-started, incremental — full re-pack isn't needed each mark
   playTimer = setInterval(() => {
    if(frameIndex >= frames.length - 1){ togglePlay(); return; }
-   setFrame(frameIndex + 1, true);
-  }, 2600);
+   setFrame(frameIndex + 1, DAILY_STEP_MS);
+  }, DAILY_STEP_MS);
  }
 }
 function stopPlay(){ if(playing) togglePlay(); }
@@ -838,7 +869,7 @@ function setMode(next){
  document.getElementById("btnDaily").classList.toggle("active", next === "daily");
  document.getElementById("btnAnnual").classList.toggle("active", next === "annual");
  document.getElementById("legendNote").textContent = next === "daily"
-  ? "Close-to-close return · one bubble per S&P 500 company"
+  ? "Intraday return · pick a session, then play it through · one bubble per S&P 500 company"
   : "Calendar-year total return · pick a year, then play it through";
  // reset node positions so the sim re-seeds cleanly for the new geometry
  svg.selectAll("circle.bubble").remove();
@@ -884,22 +915,45 @@ function initDailyFrames(){
   return r.json();
  }).then(p => {
   clearError();
-  const dates = p.dates || (p.date ? [p.date] : []);
-  if(!dates.length) throw new Error("no snapshots archived yet");
+  const dates = (p.dates && p.dates.length ? p.dates : (p.date ? [p.date] : [])).slice().sort();
+  if(!dates.length || !p.times) throw new Error("no sessions archived yet");
   dailyCache.set(p.date, p);
-  document.getElementById("yearSelect").hidden = true;
-  frames = dates.map(d => ({ label: niceDate(d), date: d }));
-  setupRange();
-  setFrame(frames.length - 1, false);
-  document.getElementById("updated").textContent = dates.length + " session" + (dates.length === 1 ? "" : "s") + " archived · latest " + p.date;
-  if(dates.length === 1) showWarning("The daily archive has one session so far — it fills in one trading day at a time going forward.");
+
+  const sel = document.getElementById("yearSelect");
+  sel.hidden = false;
+  sel.innerHTML = "";
+  dates.slice().reverse().forEach(d => {
+   const o = document.createElement("option");
+   o.value = d;
+   o.textContent = niceDate(d);
+   sel.appendChild(o);
+  });
+
+  setDailyDay(dates.includes(dailyDay) ? dailyDay : dates[dates.length - 1]);
+  document.getElementById("updated").textContent =
+   dates.length + " session" + (dates.length === 1 ? "" : "s") + " archived · latest " + dates[dates.length - 1];
+  if(dates.length === 1) showWarning("The archive has one session so far — it fills in one trading day at a time going forward.");
   else clearWarning();
  }).catch(err => {
   frames = [];
+  currentDay = null;
   setupRange();
   svg.selectAll("*").remove();
   showError("Daily view unavailable: " + err.message + ". The archive begins once the first post-close snapshot runs — the Annual view works now.");
  });
+}
+
+// Rebuild the scrubber to span just the selected session's 15-min marks.
+function setDailyDay(date){
+ dailyDay = date;
+ document.getElementById("yearSelect").value = date;
+ loadDaily(date).then(p => {
+  if(dailyDay !== date) return;
+  currentDay = p;
+  frames = p.times.map((t, i) => ({ label: fmtClock(t), i }));
+  setupRange();
+  setFrame(frames.length - 1, false);   // rest on the closing picture
+ }).catch(err => showError("Couldn't load " + date + ": " + err.message));
 }
 
 function setupRange(){
@@ -911,7 +965,11 @@ function setupRange(){
 
 document.getElementById("btnDaily").addEventListener("click", () => setMode("daily"));
 document.getElementById("btnAnnual").addEventListener("click", () => setMode("annual"));
-document.getElementById("yearSelect").addEventListener("change", e => { stopPlay(); setAnnualYear(+e.target.value); });
+document.getElementById("yearSelect").addEventListener("change", e => {
+ stopPlay();
+ if(mode === "annual") setAnnualYear(+e.target.value);
+ else setDailyDay(e.target.value);
+});
 document.getElementById("frameRange").addEventListener("input", e => { stopPlay(); setFrame(+e.target.value, false); });
 document.getElementById("stepBack").addEventListener("click", () => { stopPlay(); setFrame(frameIndex - 1, true); });
 document.getElementById("stepFwd").addEventListener("click", () => { stopPlay(); setFrame(frameIndex + 1, true); });
@@ -922,7 +980,7 @@ window.addEventListener("resize", () => { if(frames.length) setFrame(frameIndex,
 fetch(API_ANNUAL).then(r => { if(!r.ok) throw new Error("HTTP " + r.status); return r.json(); })
  .then(data => {
   annualData = data;
-  document.getElementById("legendNote").textContent = "Close-to-close return · one bubble per S&P 500 company";
+  document.getElementById("legendNote").textContent = "Intraday return · pick a session, then play it through · one bubble per S&P 500 company";
   initDailyFrames().then(() => {
    if(!frames.length){ mode = "annual"; document.getElementById("btnDaily").classList.remove("active"); document.getElementById("btnAnnual").classList.add("active"); initAnnualFrames(); }
   });
