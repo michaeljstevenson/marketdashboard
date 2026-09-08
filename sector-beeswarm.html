@@ -476,7 +476,6 @@ const PLOT_H = VB_H - M.top - M.bottom;
 
 const DAILY_CLAMP = 7;          // daily view: y-axis clamps at +/- this, with overflow band
 const DAILY_MAX_CAP = 4200000;  // $M reference for the largest bubble (~$4.2T), fixed so size is comparable across days
-const LABEL_TOP_N = 20;         // always-labelled mega-caps in the daily view
 
 const svg = d3.select("#chart");
 const tooltip = d3.select("#tooltip");
@@ -487,7 +486,6 @@ let frameIndex = 0;
 let playing = false;
 let playTimer = null;
 let rafId = null;
-let simTicks = 320;    // force-sim iterations per render; dropped during playback
 let dailyDay = null;   // selected session date (daily mode)
 let currentDay = null; // its resolved payload
 const dailyCache = new Map();   // date -> resolved payload
@@ -552,19 +550,6 @@ function fmtClock(hhmm){
  h = h % 12 || 12;
  return h + ":" + String(m).padStart(2, "0") + " " + ap;
 }
-function dailyFrameAt(p, i){
- const nodes = (p.stocks || [])
-  .filter(s => SECTOR_ORDER.includes(s.sector) && s.r && Number.isFinite(s.r[i]))
-  .map(s => ({
-   key: s.t, ticker: s.t, name: s.name, sector: s.sector,
-   ret: s.r[i], size: s.mcap || 0, capText: fmtCap(s.mcap),
-  }));
- const atClose = i === p.times.length - 1;
- return { kind: "daily", date: p.date,
-  label: niceDate(p.date) + (atClose ? "" : " · " + fmtClock(p.times[i])),
-  spyReturn: p.spy[i], nodes };
-}
-
 // Annual payload is columnar: {dates, spy:[ytd%], series:{ETF:[ytd%]}, etf:{sector:ETF},
 // years:[{year,ytd,startIndex,endIndex,yLo,yHi,weights}]}. A "frame" is one
 // trading-day index i — the bubbles are each ETF's cumulative return so far
@@ -606,47 +591,10 @@ function annualFrameAt(i){
 
 /* ----- the render ----------------------------------------------------- */
 
-function runSimulation(nodes, y, r){
- nodes.forEach(n => {
-  n.r = Math.max(2, r(n.size));
-  n.ty = y(clampForMode(n.ret, y));
-  n.tx = xBand(n.sector);
-  if(n.x == null){ n.x = n.tx + (Math.random() - 0.5) * 12; n.y = n.ty + (Math.random() - 0.5) * 12; }
- });
- const sim = d3.forceSimulation(nodes)
-  .force("x", d3.forceX(d => d.tx).strength(0.22))
-  .force("y", d3.forceY(d => d.ty).strength(0.9))
-  .force("collide", d3.forceCollide(d => d.r + 1.1).strength(1).iterations(3))
-  .stop();
- for(let i = 0; i < simTicks; i++) sim.tick();
- // keep bubbles inside their plot band horizontally
- nodes.forEach(n => {
-  const half = (xBand.step() * 0.62);
-  n.x = Math.max(n.tx - half, Math.min(n.tx + half, n.x));
-  n.y = Math.max(M.top + n.r, Math.min(M.top + PLOT_H - n.r, n.y));
- });
-}
-
 function clampForMode(v, y){
  if(mode === "daily") return Math.max(-DAILY_CLAMP + 0.15, Math.min(DAILY_CLAMP - 0.15, v));
  const dom = y.domain();
  return Math.max(dom[0], Math.min(dom[1], v));
-}
-
-function pickLabels(nodes){
- const set = new Set();
- if(mode === "annual"){ nodes.forEach(n => set.add(n.key)); return set; }
- // daily: top N by size, plus each column's max & min return
- [...nodes].sort((a, b) => b.size - a.size).slice(0, LABEL_TOP_N).forEach(n => set.add(n.key));
- const byCol = d3.group(nodes, n => n.sector);
- byCol.forEach(list => {
-  if(!list.length) return;
-  const hi = d3.greatest(list, n => n.ret);
-  const lo = d3.least(list, n => n.ret);
-  if(hi) set.add(hi.key);
-  if(lo) set.add(lo.key);
- });
- return set;
 }
 
 // Layer groups + a cache key so the axis/grid/legend (the expensive joins)
@@ -698,50 +646,40 @@ function renderStatic(y){
    .text(d => d);
 }
 
+function updateChrome(label, spyReturn){
+ document.getElementById("plotDate").textContent = label;
+ document.getElementById("plotSpy").innerHTML = "SPY <strong>" + fmtPct(spyReturn) + "</strong>";
+ document.getElementById("plotSpy").style.color = spyReturn >= 0 ? "var(--fear)" : "var(--extreme)";
+}
+function updateSpyLine(y, spyReturn, T){
+ const L = layers, spyY = y(clampForMode(spyReturn, y));
+ (T || (s => s))(L.axis.select("line.spy-line"))
+   .attr("x1", M.left).attr("x2", M.left + PLOT_W).attr("y1", spyY).attr("y2", spyY);
+ const tag = L.axis.selectAll("text.spy-tag").data([M.left - 8, M.left + PLOT_W + 8]).join(
+   ent => ent.append("text").attr("class", "spy-tag").attr("dominant-baseline", "middle").attr("y", spyY - 9),
+ ).attr("text-anchor", (d, i) => i === 0 ? "end" : "start").attr("x", d => d).text("SPY");
+ (T || (s => s))(tag).attr("y", spyY - 9);
+}
+
+// ANNUAL render: 11 bubbles, one per column, positioned directly and eased.
 function render(frame, animate){
  const L = ensureLayers();
  const y = buildYScale(frame);
  const r = buildRScale();
- if(mode === "daily"){
-  // Carry each bubble's current position onto the new frame's node objects
-  // (dailyFrameAt builds fresh objects each call) so the force sim converges
-  // from where the layout already is instead of re-packing from scratch —
-  // that's what keeps playback a smooth drift rather than a scramble.
-  const prev = new Map();
-  L.bubbles.selectAll("circle.bubble").each(function(d){
-   prev.set(d.key, { x: +this.getAttribute("cx"), y: +this.getAttribute("cy") });
-  });
-  let warm = 0;
-  frame.nodes.forEach(n => { const p = prev.get(n.key); if(p){ n.x = p.x; n.y = p.y; warm++; } });
-  simTicks = warm < frame.nodes.length * 0.5 ? 320 : (playing ? 70 : 130);
-  runSimulation(frame.nodes, y, r);
- } else {
-  frame.nodes.forEach(n => {
-   n.r = Math.max(3, r(n.size));
-   n.x = xBand(n.sector);
-   n.y = y(clampForMode(n.ret, y));
-  });
- }
- const labelled = pickLabels(frame.nodes);
- // animate: true -> 1000ms manual ease; a number -> that duration, linear so
- // consecutive playback steps chain seamlessly; falsy -> instant
+ frame.nodes.forEach(n => {
+  n.r = Math.max(3, r(n.size));
+  n.x = xBand(n.sector);
+  n.y = y(clampForMode(n.ret, y));
+ });
  const dur = animate === true ? 1000 : (+animate || 0);
  const ease = animate === true ? d3.easeCubicOut : d3.easeLinear;
  const T = sel => (dur > 0 ? sel.transition().duration(dur).ease(ease) : sel);
  if(dur > 0) svg.selectAll("*").interrupt();
 
  renderStatic(y);
+ updateSpyLine(y, frame.spyReturn, T);
 
- // SPY dashed line + tags
- const spyY = y(clampForMode(frame.spyReturn, y));
- T(L.axis.select("line.spy-line")).attr("x1", M.left).attr("x2", M.left + PLOT_W).attr("y1", spyY).attr("y2", spyY);
- const spyTag = L.axis.selectAll("text.spy-tag").data([M.left - 8, M.left + PLOT_W + 8]).join(
-   ent => ent.append("text").attr("class", "spy-tag").attr("dominant-baseline", "middle").attr("y", spyY - 9),
- ).attr("text-anchor", (d, i) => i === 0 ? "end" : "start").attr("x", d => d).text("SPY");
- T(spyTag).attr("y", spyY - 9);
-
- // bubbles
- const bubMerged = L.bubbles.selectAll("circle.bubble").data(frame.nodes, d => d.key).join(
+ T(L.bubbles.selectAll("circle.bubble").data(frame.nodes, d => d.key).join(
    ent => ent.append("circle").attr("class", "bubble")
      .attr("cx", d => d.x).attr("cy", d => d.y).attr("r", 0)
      .attr("fill", d => SECTOR_COLOR[d.sector]).attr("fill-opacity", 0.82)
@@ -749,44 +687,32 @@ function render(frame, animate){
      .on("mousemove", onHover).on("mouseleave", onLeave),
    upd => upd,
    ex => (dur > 0 ? ex.transition().duration(dur).attr("r", 0).remove() : ex.remove()),
- );
- T(bubMerged).attr("cx", d => d.x).attr("cy", d => d.y).attr("r", d => d.r);
+ )).attr("cx", d => d.x).attr("cy", d => d.y).attr("r", d => d.r);
 
- // labels
- const labelNodes = frame.nodes.filter(n => labelled.has(n.key));
- const labMerged = L.labels.selectAll("text.bubble-label").data(labelNodes, d => d.key).join(
-   ent => ent.append("text").attr("class", "bubble-label").attr("text-anchor", "middle")
+ const labMerged = L.labels.selectAll("text.bubble-label").data(frame.nodes, d => d.key).join(
+   ent => ent.append("text").attr("class", "bubble-label sector").attr("text-anchor", "middle")
      .attr("x", d => d.x).attr("y", d => d.y).attr("opacity", 0),
    upd => upd,
    ex => (dur > 0 ? ex.transition().duration(dur).attr("opacity", 0).remove() : ex.remove()),
  );
- if(mode === "annual"){
-  // sector name, centred on the bubble, wrapped to <=2 lines
-  labMerged.attr("class", "bubble-label sector").each(function(d){
-   const lines = wrapSector(d.label || d.ticker);
-   const sel = d3.select(this);
-   sel.text(null);
-   const dy0 = -((lines.length - 1) * 0.55) + "em";
-   lines.forEach((ln, i) => sel.append("tspan").attr("x", d.x).attr("dy", i ? "1.1em" : dy0).text(ln));
-  });
-  T(labMerged).attr("opacity", 1).attr("x", d => d.x).attr("y", d => d.y);
- } else {
-  labMerged.attr("class", d => "bubble-label" + (d.r >= 15 ? "" : " out")).text(d => d.ticker);
-  T(labMerged)
-   .attr("x", d => d.x)
-   .attr("y", d => d.r >= 15 ? d.y + 3.5 : d.y - d.r - 4)
-   .attr("opacity", 1);
- }
+ labMerged.each(function(d){
+  const lines = wrapSector(d.label || d.ticker);
+  const sel = d3.select(this);
+  sel.text(null);
+  const dy0 = -((lines.length - 1) * 0.55) + "em";
+  lines.forEach((ln, i) => sel.append("tspan").attr("x", d.x).attr("dy", i ? "1.1em" : dy0).text(ln));
+ });
+ T(labMerged).attr("opacity", 1).attr("x", d => d.x).attr("y", d => d.y);
 
- // head readouts
- document.getElementById("plotDate").textContent = frame.label;
- document.getElementById("plotSpy").innerHTML = "SPY <strong>" + fmtPct(frame.spyReturn) + "</strong>";
- document.getElementById("plotSpy").style.color = frame.spyReturn >= 0 ? "var(--fear)" : "var(--extreme)";
+ updateChrome(frame.label, frame.spyReturn);
 }
 
 /* ----- interaction ---------------------------------------------------- */
 
 function onHover(event, d){
+ const ret = mode === "daily"
+  ? d.r[Math.max(0, Math.min(d.r.length - 1, Math.round(dailyT)))]
+  : d.ret;
  tooltip.style("opacity", 1)
   .style("left", (event.clientX + 14) + "px")
   .style("top", (event.clientY + 14) + "px")
@@ -794,7 +720,7 @@ function onHover(event, d){
    '<div class="tt-t">' + d.ticker + '</div>' +
    '<div class="tt-n">' + d.name + '</div>' +
    '<div class="tt-n">' + d.sector + '</div>' +
-   '<div class="tt-r">' + (mode === "daily" ? "Return " : "YTD ") + fmtPct(d.ret) + '</div>' +
+   '<div class="tt-r">' + (mode === "daily" ? "Return " : "YTD ") + fmtPct(ret) + '</div>' +
    '<div class="tt-r tt-n">' + d.capText + '</div>'
   );
 }
@@ -802,21 +728,14 @@ function onLeave(){ tooltip.style("opacity", 0); }
 
 /* ----- framing / playback ------------------------------------------------ */
 
+// Annual only — daily interactions go through the daily engine below.
 function setFrame(i, animate){
- if(!frames.length) return;
+ if(mode !== "annual" || !frames.length) return;
  frameIndex = Math.max(0, Math.min(frames.length - 1, Math.round(i)));
  document.getElementById("frameRange").value = frameIndex;
-
- if(mode === "annual"){
-  const fr = annualFrameAt(frames[frameIndex].gi);
-  document.getElementById("frameLabel").textContent = fr.label;
-  render(fr, animate);
- } else {
-  if(!currentDay) return;
-  const fr = dailyFrameAt(currentDay, frameIndex);
-  document.getElementById("frameLabel").textContent = frames[frameIndex].label;
-  render(fr, animate);
- }
+ const fr = annualFrameAt(frames[frameIndex].gi);
+ document.getElementById("frameLabel").textContent = fr.label;
+ render(fr, animate);
 }
 
 function loadDaily(date){
@@ -826,21 +745,142 @@ function loadDaily(date){
   .then(p => { dailyCache.set(date, p); return p; });
 }
 
-// Annual playback sweeps the selected year's trading days via
-// requestAnimationFrame so the bubbles glide from Jan to Dec. Daily
-// playback steps through the session's ~26 fifteen-minute marks on a
-// timer, each step easing across — the bubbles retarget continuously as
-// each stock's return moves through the day.
+/* ----- daily engine: precomputed per-mark layouts, playback lerps between -- */
+
+let dailyNodes = [];
+let dailyLayouts = [];      // [mark] -> [{x,y}] index-aligned to dailyNodes
+let dailyCircleSel = null;
+let dailyLabelSel = null;
+let dailyY = null;
+let dailyT = 0;              // float position within the session, 0 .. times.length-1
+let dailyTickTs = 0;
+let dailyRAF = null;
+const DAILY_MARKS_PER_SEC = 26 / 24;   // a full session plays in ~24s
+const DAILY_LABEL_N = 14;
+
+function stopDailyEngine(){
+ cancelAnimationFrame(dailyRAF);
+ dailyNodes = [];
+ dailyLayouts = [];
+}
+
+// Precompute a converged beeswarm layout for every 15-minute mark (each
+// warm-started from the previous mark, so a bubble never leaps across its
+// column between marks), then playback is a pure position lerp — accurate
+// heights and 60fps-smooth, with no live sim fighting the collision force.
+function startDailySession(p){
+ stopDailyEngine();
+ currentDay = p;
+ const L = ensureLayers();
+ dailyY = d3.scaleLinear().domain([-DAILY_CLAMP, DAILY_CLAMP]).range([M.top + PLOT_H, M.top]);
+ renderStatic(dailyY);
+ const rScale = buildRScale();
+ const half = xBand.step() * 0.58;
+ const clampNode = n => {
+  n.x = Math.max(xBand(n.sector) - half, Math.min(xBand(n.sector) + half, n.x));
+  n.y = Math.max(M.top + n.rad, Math.min(M.top + PLOT_H - n.rad, n.y));
+ };
+
+ dailyNodes = (p.stocks || [])
+  .filter(s => SECTOR_ORDER.includes(s.sector) && Array.isArray(s.r))
+  .map(s => ({
+   key: s.t, ticker: s.t, name: s.name, sector: s.sector,
+   size: s.mcap || 0, capText: fmtCap(s.mcap), r: s.r, rad: Math.max(2, rScale(s.mcap || 0)),
+   x: xBand(s.sector) + (Math.random() - 0.5) * 24,
+   y: dailyY(0) + (Math.random() - 0.5) * 40,
+   ty: dailyY(0),
+  }));
+
+ // custom y-force so the pull re-reads n.ty every tick (d3.forceY caches its
+ // targets at initialize time, which breaks a moving target)
+ const yForce = alpha => { for(const n of dailyNodes) n.vy += (n.ty - n.y) * 0.32 * alpha; };
+ const sim = d3.forceSimulation(dailyNodes).stop()
+  .velocityDecay(0.45)
+  .force("x", d3.forceX(d => xBand(d.sector)).strength(0.35))
+  .force("y", yForce)
+  .force("collide", d3.forceCollide(d => d.rad + 0.7).strength(1).iterations(2));
+
+ dailyLayouts = [];
+ for(let m = 0; m < p.times.length; m++){
+  dailyNodes.forEach(n => { n.ty = dailyY(clampForMode(n.r[m], dailyY)); });
+  sim.alpha(m === 0 ? 1 : 0.45).alphaTarget(0);
+  const ticks = m === 0 ? 300 : 110;
+  for(let i = 0; i < ticks; i++) sim.tick();
+  dailyNodes.forEach(clampNode);
+  dailyLayouts.push(dailyNodes.map(n => ({ x: n.x, y: n.y })));
+ }
+ sim.stop();
+
+ const labelKeys = new Set([...dailyNodes].sort((a, b) => b.size - a.size).slice(0, DAILY_LABEL_N).map(n => n.key));
+ dailyCircleSel = L.bubbles.selectAll("circle.bubble").data(dailyNodes, d => d.key).join(
+   ent => ent.append("circle").attr("class", "bubble")
+     .attr("fill", d => SECTOR_COLOR[d.sector]).attr("fill-opacity", 0.82)
+     .attr("stroke", d => SECTOR_STROKE[d.sector])
+     .on("mousemove", onHover).on("mouseleave", onLeave),
+   upd => upd, ex => ex.remove(),
+ ).attr("r", d => d.rad);
+ dailyLabelSel = L.labels.selectAll("text.bubble-label")
+   .data(dailyNodes.filter(n => labelKeys.has(n.key)), d => d.key).join(
+   ent => ent.append("text").attr("class", "bubble-label").attr("text-anchor", "middle").attr("dominant-baseline", "central"),
+   upd => upd, ex => ex.remove(),
+ ).text(d => d.ticker);
+
+ dailyT = p.times.length - 1;
+ drawDailyAt(dailyT);           // rest on the closing picture
+}
+
+// interpolate positions + chrome for a fractional mark position t
+function drawDailyAt(t){
+ const p = currentDay, N = p.times.length;
+ const i0 = Math.max(0, Math.min(N - 1, Math.floor(t)));
+ const i1 = Math.min(N - 1, i0 + 1);
+ const f = t - i0;
+ const A = dailyLayouts[i0], B = dailyLayouts[i1];
+ dailyNodes.forEach((n, k) => {
+  n.x = A[k].x + (B[k].x - A[k].x) * f;
+  n.y = A[k].y + (B[k].y - A[k].y) * f;
+ });
+ dailyCircleSel.attr("cx", d => d.x).attr("cy", d => d.y);
+ dailyLabelSel.attr("x", d => d.x).attr("y", d => d.y);
+
+ const spyRv = p.spy[i0] + (p.spy[i1] - p.spy[i0]) * f;
+ updateSpyLine(dailyY, spyRv, null);
+ const mk = Math.round(t), atClose = mk >= N - 1;
+ document.getElementById("frameLabel").textContent = fmtClock(p.times[mk]);
+ updateChrome(niceDate(p.date) + (atClose ? "" : " · " + fmtClock(p.times[mk])), spyRv);
+}
+
+function dailySeek(t){
+ if(!dailyLayouts.length) return;
+ dailyT = Math.max(0, Math.min(currentDay.times.length - 1, t));
+ document.getElementById("frameRange").value = Math.round(dailyT);
+ drawDailyAt(dailyT);
+}
+
+function dailyPlayLoop(now){
+ if(!playing) return;
+ const end = currentDay.times.length - 1;
+ const dt = Math.min(0.05, (now - dailyTickTs) / 1000);
+ dailyTickTs = now;
+ dailyT = Math.min(end, dailyT + dt * DAILY_MARKS_PER_SEC);
+ drawDailyAt(dailyT);
+ document.getElementById("frameRange").value = Math.round(dailyT);
+ if(dailyT >= end){ togglePlay(); return; }
+ dailyRAF = requestAnimationFrame(dailyPlayLoop);
+}
+
+// Annual playback sweeps the selected year's trading days via rAF so the
+// bubbles glide from Jan to Dec. Daily playback lerps between the
+// precomputed per-mark layouts.
 const ANNUAL_DAYS_PER_FRAME = 0.2;   // one calendar year (~250 days) sweeps in ~21s at 60fps
-const DAILY_STEP_MS = 850;           // per 15-min mark → a full session in ~22s
 
 function togglePlay(){
  playing = !playing;
  document.getElementById("playBtn").innerHTML = playing ? "&#10073;&#10073;" : "&#9654;";
- if(!playing){ clearInterval(playTimer); cancelAnimationFrame(rafId); simTicks = 320; return; }
- if(frameIndex >= frames.length - 1) frameIndex = 0;
+ if(!playing){ cancelAnimationFrame(rafId); cancelAnimationFrame(dailyRAF); return; }
 
  if(mode === "annual"){
+  if(frameIndex >= frames.length - 1) frameIndex = 0;
   let pos = frameIndex;
   const tick = () => {
    if(!playing) return;
@@ -851,11 +891,10 @@ function togglePlay(){
   };
   rafId = requestAnimationFrame(tick);
  } else {
-  simTicks = 90;   // warm-started, incremental — full re-pack isn't needed each mark
-  playTimer = setInterval(() => {
-   if(frameIndex >= frames.length - 1){ togglePlay(); return; }
-   setFrame(frameIndex + 1, DAILY_STEP_MS);
-  }, DAILY_STEP_MS);
+  if(!dailyLayouts.length){ playing = false; document.getElementById("playBtn").innerHTML = "&#9654;"; return; }
+  if(dailyT >= currentDay.times.length - 1) dailyT = 0;
+  dailyTickTs = performance.now();
+  dailyRAF = requestAnimationFrame(dailyPlayLoop);
  }
 }
 function stopPlay(){ if(playing) togglePlay(); }
@@ -871,7 +910,8 @@ function setMode(next){
  document.getElementById("legendNote").textContent = next === "daily"
   ? "Intraday return · pick a session, then play it through · one bubble per S&P 500 company"
   : "Calendar-year total return · pick a year, then play it through";
- // reset node positions so the sim re-seeds cleanly for the new geometry
+ stopDailyEngine();
+ lastStaticKey = null;
  svg.selectAll("circle.bubble").remove();
  svg.selectAll("text.bubble-label").remove();
  if(next === "annual") initAnnualFrames();
@@ -943,16 +983,15 @@ function initDailyFrames(){
  });
 }
 
-// Rebuild the scrubber to span just the selected session's 15-min marks.
+// Load a session and hand it to the daily engine.
 function setDailyDay(date){
  dailyDay = date;
  document.getElementById("yearSelect").value = date;
  loadDaily(date).then(p => {
-  if(dailyDay !== date) return;
-  currentDay = p;
+  if(dailyDay !== date || mode !== "daily") return;
   frames = p.times.map((t, i) => ({ label: fmtClock(t), i }));
   setupRange();
-  setFrame(frames.length - 1, false);   // rest on the closing picture
+  startDailySession(p);
  }).catch(err => showError("Couldn't load " + date + ": " + err.message));
 }
 
@@ -970,11 +1009,23 @@ document.getElementById("yearSelect").addEventListener("change", e => {
  if(mode === "annual") setAnnualYear(+e.target.value);
  else setDailyDay(e.target.value);
 });
-document.getElementById("frameRange").addEventListener("input", e => { stopPlay(); setFrame(+e.target.value, false); });
-document.getElementById("stepBack").addEventListener("click", () => { stopPlay(); setFrame(frameIndex - 1, true); });
-document.getElementById("stepFwd").addEventListener("click", () => { stopPlay(); setFrame(frameIndex + 1, true); });
+function stepBy(delta){
+ stopPlay();
+ if(mode === "annual") setFrame(frameIndex + delta, true);
+ else dailySeek(Math.round(dailyT) + delta, 0.55);
+}
+document.getElementById("frameRange").addEventListener("input", e => {
+ stopPlay();
+ if(mode === "annual") setFrame(+e.target.value, false);
+ else dailySeek(+e.target.value, 0.55);
+});
+document.getElementById("stepBack").addEventListener("click", () => stepBy(-1));
+document.getElementById("stepFwd").addEventListener("click", () => stepBy(1));
 document.getElementById("playBtn").addEventListener("click", togglePlay);
-window.addEventListener("resize", () => { if(frames.length) setFrame(frameIndex, false); });
+window.addEventListener("resize", () => {
+ if(mode === "annual"){ if(frames.length) setFrame(frameIndex, false); }
+ else if(currentDay) startDailySession(currentDay);
+});
 
 /* boot: load annual (always available), then try daily as the default view */
 fetch(API_ANNUAL).then(r => { if(!r.ok) throw new Error("HTTP " + r.status); return r.json(); })
