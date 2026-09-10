@@ -66,6 +66,23 @@ document.addEventListener("DOMContentLoaded", function(){
 .is-chart-fullscreen canvas{
  max-height:none !important;
 }
+/* Make the plot panel (and its stacked canvases) actually fill the
+   screen in fullscreen — without this the chart keeps its fixed inline
+   height and only occupies the top portion. */
+.is-chart-fullscreen .ndr-panel{
+ flex:1 1 auto;
+ display:flex;
+ flex-direction:column;
+ min-height:0;
+}
+.is-chart-fullscreen .chart-canvas-wrap{
+ flex:1 1 auto;
+ min-height:0;
+ height:auto !important;
+}
+.is-chart-fullscreen .chart-canvas-wrap.short{
+ flex:0 0 24%;
+}
 </style>
 <script>
 // Expand-to-fullscreen button on every chart (same pattern as the other
@@ -129,7 +146,7 @@ document.addEventListener("DOMContentLoaded", function(){
    if(isFs){
     entry.wrap.dataset.fsPrevHeight = entry.wrap.style.height || "";
     entry.wrap.dataset.fsPrevFlex = entry.wrap.style.flex || "";
-    entry.wrap.style.flex = "1 1 auto";
+    entry.wrap.style.flex = entry.wrap.classList.contains("short") ? "0 0 24%" : "1 1 auto";
     entry.wrap.style.minHeight = "0";
     entry.wrap.style.height = "auto";
    }else if(entry.wrap.dataset.fsPrevHeight !== undefined){
@@ -369,35 +386,37 @@ h1{
  white-space:nowrap;
 }
 
-/* TradingView-style scale toggle: a small pill anchored to the
-   bottom-right of the plot, just above the x-axis labels. */
+/* Scale toggle — a small pill in a right-aligned strip just under the
+   plot panel, so it never overlaps the axis labels. */
+.scale-row{
+ display:flex;
+ justify-content:flex-end;
+ margin-top:8px;
+}
+
 .scale-toggle{
- position:absolute;
- right:10px;
- bottom:8px;
- z-index:4;
  display:inline-flex;
  border:1px solid var(--ndr-grid);
  border-radius:5px;
  overflow:hidden;
- background:var(--ndr-plot);
- box-shadow:0 1px 3px rgba(0,0,0,0.12);
+ background:var(--card);
 }
 
 .scale-toggle button{
  background:transparent;
  border:0;
- color:var(--ndr-axis-soft);
+ color:var(--muted);
  font-family:var(--sans);
  font-size:10px;
- letter-spacing:0.02em;
- padding:3px 8px;
+ letter-spacing:0.03em;
+ text-transform:uppercase;
+ padding:3px 9px;
  cursor:pointer;
- line-height:1.4;
+ line-height:1.5;
 }
 
 .scale-toggle button + button{ border-left:1px solid var(--ndr-grid); }
-.scale-toggle button:hover{ color:var(--ndr-axis); }
+.scale-toggle button:hover{ color:var(--ink); }
 .scale-toggle button.active{ background:var(--ndr-navy); color:#fff; }
 
 /* The warm-paper plot panel behind each canvas — the NDR homage. */
@@ -554,13 +573,14 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 </div>
 <div class="chart-subhead">SPY (cap-weighted) and RSP (equal-weighted) total-return proxies, each indexed to 100 at RSP's April 2003 inception. When the cap-weighted line pulls ahead, gains are concentrating in the largest names; the lower panel is the equal-weight/cap-weight ratio.</div>
 <div class="ndr-panel">
-<div class="chart-canvas-wrap"><canvas id="chartD"></canvas>
+<div class="chart-canvas-wrap"><canvas id="chartD"></canvas></div>
+<div class="chart-canvas-wrap short"><canvas id="chartDratio"></canvas></div>
+</div>
+<div class="scale-row">
 <div class="scale-toggle" id="scaleD">
 <button data-scale="linear" class="active" type="button">Auto</button>
 <button data-scale="logarithmic" type="button">Log</button>
 </div>
-</div>
-<div class="chart-canvas-wrap short"><canvas id="chartDratio"></canvas></div>
 </div>
 <div class="chart-error" id="errD" hidden></div>
 <div class="chart-source">Source: SPY &amp; RSP daily split/dividend-adjusted closes (Alpha Vantage). Equal- and cap-weighted S&amp;P 500 proxies; ETF expense drag not removed.</div>
