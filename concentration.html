@@ -1,0 +1,898 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+<script>
+// Applied before first paint to avoid a flash of the wrong theme.
+(function(){
+ var saved = localStorage.getItem("theme");
+ if(saved === "light") document.documentElement.setAttribute("data-theme", "light");
+})();
+</script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom@2"></script>
+<script>
+// FRED-style zoom: drag horizontally on any chart to zoom into that range,
+// double-click to reset. Applied via Chart.defaults so every chart on the
+// page gets it without touching each individual new Chart(...) call.
+Chart.defaults.plugins.zoom = {
+ zoom: {
+  wheel: { enabled: false },
+  pinch: { enabled: false },
+  drag: { enabled: true, backgroundColor: "rgba(176,64,58,0.14)", borderColor: "rgba(176,64,58,0.4)", borderWidth: 1 },
+  mode: "x",
+ },
+ pan: { enabled: true, mode: "x", modifierKey: "shift" },
+};
+document.addEventListener("dblclick", function(e){
+ if(e.target.tagName === "CANVAS"){
+  var chart = Chart.getChart(e.target);
+  if(chart) chart.resetZoom();
+ }
+});
+document.addEventListener("DOMContentLoaded", function(){
+ document.querySelectorAll(".chart-canvas-wrap canvas").forEach(function(c){
+  c.title = "Drag to zoom · shift-drag to pan · double-click to reset";
+ });
+});
+</script>
+<style>
+.chart-fullscreen-btn{
+ position:absolute;
+ top:8px;
+ right:8px;
+ z-index:5;
+ background:var(--card, #1c2127);
+ border:1px solid var(--hair, #2b3138);
+ color:var(--muted, #8b9199);
+ border-radius:6px;
+ width:28px;
+ height:28px;
+ display:flex;
+ align-items:center;
+ justify-content:center;
+ cursor:pointer;
+ padding:0;
+ opacity:0.85;
+}
+.chart-fullscreen-btn:hover{ color:var(--ink, #eae6da); border-color:#3a424b; opacity:1; }
+.is-chart-fullscreen{
+ background:var(--bg, #14181c) !important;
+ padding:24px !important;
+ display:flex !important;
+ flex-direction:column !important;
+ overflow:auto !important;
+}
+.is-chart-fullscreen canvas{
+ max-height:none !important;
+}
+</style>
+<script>
+// Expand-to-fullscreen button on every chart (same pattern as the other
+// dashboard pages): a small corner button that fullscreens the whole
+// chart card via the Fullscreen API.
+document.addEventListener("DOMContentLoaded", function(){
+ function requestFs(el){
+  var fn = el.requestFullscreen || el.webkitRequestFullscreen || el.mozRequestFullScreen || el.msRequestFullscreen;
+  if(fn) fn.call(el);
+ }
+ function exitFs(){
+  var fn = document.exitFullscreen || document.webkitExitFullscreen || document.mozCancelFullScreen || document.msExitFullscreen;
+  if(fn) fn.call(document);
+ }
+ function currentFsEl(){
+  return document.fullscreenElement || document.webkitFullscreenElement || document.mozFullScreenElement || document.msFullscreenElement;
+ }
+ function resolveCard(canvas){
+  return canvas.closest(".chart-box") || canvas.parentElement.closest("div") || canvas.parentElement;
+ }
+ function resizeChartIn(wrap){
+  var canvas = wrap.querySelector("canvas");
+  var chart = canvas && window.Chart && Chart.getChart(canvas);
+  if(chart) chart.resize();
+ }
+
+ var entries = [];
+
+ document.querySelectorAll("canvas").forEach(function(canvas){
+  if(canvas.closest(".chart-fullscreen-btn")) return;
+  var card = resolveCard(canvas);
+  if(!card || card.querySelector(".chart-fullscreen-btn")) return;
+
+  var wrap = canvas.parentElement;
+  var wrapStyle = getComputedStyle(wrap);
+  if(wrapStyle.position === "static") wrap.style.position = "relative";
+
+  var btn = document.createElement("button");
+  btn.type = "button";
+  btn.className = "chart-fullscreen-btn";
+  btn.title = "Expand chart";
+  btn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3H5a2 2 0 0 0-2 2v3"/><path d="M16 3h3a2 2 0 0 1 2 2v3"/><path d="M8 21H5a2 2 0 0 1-2-2v-3"/><path d="M16 21h3a2 2 0 0 0 2-2v-3"/></svg>';
+  btn.addEventListener("click", function(e){
+   e.stopPropagation();
+   if(currentFsEl() === card) exitFs();
+   else requestFs(card);
+  });
+  wrap.appendChild(btn);
+  entries.push({ card: card, wrap: wrap });
+
+  if(window.ResizeObserver){
+   new ResizeObserver(function(){ resizeChartIn(wrap); }).observe(wrap);
+  }
+ });
+
+ function onFsChange(){
+  var fsEl = currentFsEl();
+  entries.forEach(function(entry){
+   var isFs = fsEl === entry.card;
+   entry.card.classList.toggle("is-chart-fullscreen", isFs);
+   if(isFs){
+    entry.wrap.dataset.fsPrevHeight = entry.wrap.style.height || "";
+    entry.wrap.dataset.fsPrevFlex = entry.wrap.style.flex || "";
+    entry.wrap.style.flex = "1 1 auto";
+    entry.wrap.style.minHeight = "0";
+    entry.wrap.style.height = "auto";
+   }else if(entry.wrap.dataset.fsPrevHeight !== undefined){
+    entry.wrap.style.height = entry.wrap.dataset.fsPrevHeight;
+    entry.wrap.style.flex = entry.wrap.dataset.fsPrevFlex;
+    entry.wrap.style.minHeight = "";
+   }
+  });
+  entries.forEach(function(entry){ resizeChartIn(entry.wrap); });
+ }
+ ["fullscreenchange", "webkitfullscreenchange", "mozfullscreenchange", "MSFullscreenChange"].forEach(function(evt){
+  document.addEventListener(evt, onFsChange);
+ });
+});
+</script>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1" name="viewport"/>
+<title>Concentration — Michael J. Stevenson</title>
+<style>
+
+:root{
+  --bg:#14181c;
+  --card:#1c2127;
+  --card-hover:#20262d;
+  --ink:#eae6da;
+  --muted:#8b9199;
+  --hair:#2b3138;
+
+  --fear:#6f8fac;
+  --neutral:#7c828a;
+  --greed:#d98a3d;
+  --extreme:#b56f2a;
+
+  --serif:'Iowan Old Style','Palatino Linotype',Georgia,serif;
+  --mono:'SF Mono','JetBrains Mono',ui-monospace,Menlo,monospace;
+  --sans:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+
+  /* NDR-style chart palette. Deliberately the SAME in light and dark —
+     these charts keep a constant warm-paper look as a homage to the Ned
+     Davis Research print charts that inspired the page. JS reads them via
+     getComputedStyle (per the site convention) rather than hardcoding. */
+  --ndr-plot:#f5f1e6;
+  --ndr-axis:#3c3a33;
+  --ndr-axis-soft:#6f6a5c;
+  --ndr-grid:#ddd6c2;
+  --ndr-red:#a83c36;
+  --ndr-green:#4f6f3f;
+  --ndr-gold:#c1902f;
+  --ndr-navy:#2f4b6e;
+  --ndr-slate:#7d8a99;
+}
+
+:root[data-theme="light"]{
+  --bg:#f7f5f0;
+  --card:#ffffff;
+  --card-hover:#f2efe6;
+  --ink:#1c1f24;
+  --muted:#6b6f76;
+  --hair:#e1dbcd;
+  --fear:#4f6f8c;
+  --neutral:#6c7178;
+  --greed:#b9701f;
+  --extreme:#96591c;
+}
+
+*{ box-sizing:border-box; }
+
+body{
+ margin:0;
+ background:var(--bg);
+ color:var(--ink);
+ font-family:var(--sans);
+}
+
+a{ color:inherit; }
+
+/* SITE NAV (shared with homepage) */
+
+.sitenav{
+ display:grid;
+ grid-template-columns:1fr auto 1fr;
+ align-items:center;
+ padding:16px 24px;
+ border-bottom:1px solid var(--hair);
+ position:relative;
+ z-index:50;
+}
+
+.sitenav .brand{ justify-self:start; }
+
+.sitenav .brand{
+ font-family:var(--serif);
+ font-size:17px;
+ color:var(--ink);
+ text-decoration:none;
+ letter-spacing:0.3px;
+}
+
+.navlinks{
+ display:flex;
+ gap:26px;
+ align-items:center;
+}
+
+.navlinks > a{
+ color:var(--muted);
+ font-size:13px;
+ text-decoration:none;
+ padding:6px 0;
+}
+
+.navlinks > a:hover, .navlinks > a.active{ color:var(--ink); }
+
+.navdrop{ position:relative; }
+
+.navdrop > .navlabel{
+ color:var(--muted);
+ font-size:13px;
+ cursor:default;
+ padding:6px 0;
+ user-select:none;
+}
+
+.navdrop:hover > .navlabel, .navdrop.open > .navlabel{ color:var(--ink); }
+
+.navdrop .dropdown{
+ display:none;
+ position:absolute;
+ top:100%;
+ left:0;
+ background:var(--card);
+ border:1px solid var(--hair);
+ border-radius:8px;
+ padding:8px 0;
+ min-width:230px;
+ margin-top:12px;
+ box-shadow:0 10px 30px rgba(0,0,0,0.45);
+}
+
+.navdrop.open .dropdown{ display:block; }
+
+.dropdown a{
+ display:block;
+ padding:9px 16px;
+ color:var(--muted);
+ text-decoration:none;
+ font-size:13px;
+}
+
+.dropdown a:hover{
+ background:var(--card-hover);
+ color:var(--ink);
+}
+
+.dropdown a.active{ color:var(--greed); }
+
+@media (max-width:720px){
+ .navlinks{ display:none; }
+}
+
+.container{
+ max-width:1000px;
+ margin:auto;
+ padding:30px 20px 60px;
+}
+
+/* HEADER */
+
+.header{
+ display:flex;
+ justify-content:space-between;
+ align-items:flex-end;
+ border-bottom:1px solid var(--hair);
+ padding-bottom:18px;
+ margin-bottom:25px;
+ flex-wrap:wrap;
+ gap:12px;
+}
+
+h1{
+ font-family:var(--serif);
+ font-size:28px;
+ font-weight:400;
+ margin:0;
+}
+
+.subtitle{
+ color:var(--muted);
+ font-size:13px;
+ margin-top:6px;
+ max-width:620px;
+}
+
+.updated{
+ color:var(--muted);
+ font-size:12px;
+}
+
+/* CHART CARD */
+
+.chart-box{
+ background:var(--card);
+ border:1px solid var(--hair);
+ border-radius:12px;
+ padding:20px;
+ margin-bottom:30px;
+}
+
+.chart-box h2{
+ font-family:var(--serif);
+ font-weight:400;
+ font-size:18px;
+ margin:0;
+}
+
+.chart-box-header{
+ display:flex;
+ justify-content:space-between;
+ align-items:baseline;
+ flex-wrap:wrap;
+ gap:10px;
+ margin-bottom:6px;
+}
+
+.chart-subhead{
+ color:var(--muted);
+ font-size:12px;
+ margin:2px 0 14px;
+ max-width:640px;
+ line-height:1.6;
+}
+
+.chart-daterange{
+ color:var(--muted);
+ font-size:11px;
+ font-family:var(--mono);
+ white-space:nowrap;
+}
+
+/* TradingView-style scale toggle: a small pill anchored to the
+   bottom-right of the plot, just above the x-axis labels. */
+.scale-toggle{
+ position:absolute;
+ right:10px;
+ bottom:8px;
+ z-index:4;
+ display:inline-flex;
+ border:1px solid var(--ndr-grid);
+ border-radius:5px;
+ overflow:hidden;
+ background:var(--ndr-plot);
+ box-shadow:0 1px 3px rgba(0,0,0,0.12);
+}
+
+.scale-toggle button{
+ background:transparent;
+ border:0;
+ color:var(--ndr-axis-soft);
+ font-family:var(--sans);
+ font-size:10px;
+ letter-spacing:0.02em;
+ padding:3px 8px;
+ cursor:pointer;
+ line-height:1.4;
+}
+
+.scale-toggle button + button{ border-left:1px solid var(--ndr-grid); }
+.scale-toggle button:hover{ color:var(--ndr-axis); }
+.scale-toggle button.active{ background:var(--ndr-navy); color:#fff; }
+
+/* The warm-paper plot panel behind each canvas — the NDR homage. */
+.ndr-panel{
+ background:var(--ndr-plot);
+ border:1px solid var(--ndr-grid);
+ border-radius:8px;
+ padding:14px 14px 10px;
+}
+
+.chart-canvas-wrap{
+ height:340px;
+ position:relative;
+}
+
+.chart-canvas-wrap.short{ height:150px; }
+
+.chart-source{
+ color:var(--muted);
+ font-size:11px;
+ margin-top:12px;
+}
+
+.chart-source a{
+ color:var(--muted);
+ text-decoration:none;
+ border-bottom:1px dotted var(--muted);
+}
+
+.chart-source a:hover{ color:var(--ink); }
+
+.chart-pending{
+ position:absolute;
+ inset:0;
+ display:flex;
+ align-items:center;
+ justify-content:center;
+ color:var(--ndr-axis-soft);
+ font-size:13px;
+ font-family:var(--sans);
+ text-align:center;
+ padding:0 24px;
+ background:var(--ndr-plot);
+}
+
+.chart-pending[hidden]{ display:none; }
+
+.chart-error{
+ color:var(--fear);
+ font-size:12px;
+ margin-top:10px;
+}
+
+.theme-toggle{
+ justify-self:end;
+ background:none;
+ border:1px solid var(--hair);
+ color:var(--muted);
+ border-radius:6px;
+ width:32px;
+ height:32px;
+ display:flex;
+ align-items:center;
+ justify-content:center;
+ cursor:pointer;
+ font-size:15px;
+ line-height:1;
+}
+
+.theme-toggle:hover{ color:var(--ink); border-color:var(--hair); }
+
+</style>
+</head>
+<body>
+<nav class="sitenav">
+<a class="brand" href="/">Michael J. Stevenson, CAIA<span style="font-size:0.6em; vertical-align:super;">®</span></a>
+<div class="navlinks">
+<div class="navdrop">
+<span class="navlabel">Behavioral/Positioning ▾</span>
+<div class="dropdown">
+<a href="/ipo-activity.html">IPO Activity</a>
+</div>
+</div>
+<div class="navdrop">
+<span class="navlabel">Equities ▾</span>
+<div class="dropdown">
+<a href="/sector-analysis.html">Sector Performance</a>
+<a href="/sector-beeswarm.html">Sector Beeswarm</a>
+<a href="/ath-index.html">All-Time Highs and Lows</a>
+<a href="/valuations.html">Valuations</a>
+<a href="/factor-analysis.html">Factor Analysis</a>
+<a href="/market-breadth.html">Market Breadth</a>
+<a href="/seasonality.html">Seasonality</a>
+<a class="active" href="/concentration.html">Concentration</a>
+</div>
+</div>
+<div class="navdrop">
+<span class="navlabel">Markets/Macro ▾</span>
+<div class="dropdown">
+<a href="/sentiment-index.html">Sentiment Index</a>
+<a href="/volatility.html">Implied vs. Realized Volatility</a>
+<a href="/implied-erp.html">Implied Equity Risk Premium</a>
+<a href="/yield-curves.html">Yield Curves</a>
+<a href="/expectations-vs-reality.html">Expectations vs. Reality</a>
+</div>
+</div>
+
+<a href="/portfolio-simulator.html">Portfolio Simulator</a>
+<a href="/backtesting.html">Backtesting</a>
+<a href="/statistical-engine">Statistical Engine</a>
+
+</div>
+<button aria-label="Toggle light/dark mode" class="theme-toggle" id="themeToggle" title="Toggle light/dark mode" type="button">☽</button>
+</nav>
+<script>
+document.querySelectorAll(".navdrop").forEach(function(navdrop){
+ var closeTimer = null;
+ navdrop.addEventListener("mouseenter", function(){
+  clearTimeout(closeTimer);
+  navdrop.classList.add("open");
+ });
+ navdrop.addEventListener("mouseleave", function(){
+  closeTimer = setTimeout(function(){ navdrop.classList.remove("open"); }, 300);
+ });
+});
+</script>
+<script>
+(function(){
+ var btn = document.getElementById("themeToggle");
+ if(!btn) return;
+ var theme = document.documentElement.getAttribute("data-theme") === "light" ? "light" : "dark";
+ btn.textContent = theme === "light" ? "☀" : "☽";
+ btn.addEventListener("click", function(){
+  var current = document.documentElement.getAttribute("data-theme") === "light" ? "light" : "dark";
+  var next = current === "light" ? "dark" : "light";
+  localStorage.setItem("theme", next);
+  location.reload();
+ });
+})();
+</script>
+<div class="container">
+<div class="header">
+<div>
+<h1>Concentration</h1>
+</div>
+<div class="updated" id="updated">Loading…</div>
+</div>
+
+<!-- ============================ CHART D ============================ -->
+<div class="chart-box" id="boxD">
+<div class="chart-box-header">
+<h2>Cap-weighted vs. equal-weighted S&amp;P 500</h2>
+<div class="chart-daterange" id="rangeD"></div>
+</div>
+<div class="chart-subhead">SPY (cap-weighted) and RSP (equal-weighted) total-return proxies, each indexed to 100 at RSP's April 2003 inception. When the cap-weighted line pulls ahead, gains are concentrating in the largest names; the lower panel is the equal-weight/cap-weight ratio.</div>
+<div class="ndr-panel">
+<div class="chart-canvas-wrap"><canvas id="chartD"></canvas>
+<div class="scale-toggle" id="scaleD">
+<button data-scale="linear" class="active" type="button">Auto</button>
+<button data-scale="logarithmic" type="button">Log</button>
+</div>
+</div>
+<div class="chart-canvas-wrap short"><canvas id="chartDratio"></canvas></div>
+</div>
+<div class="chart-error" id="errD" hidden></div>
+<div class="chart-source">Source: SPY &amp; RSP daily split/dividend-adjusted closes (Alpha Vantage). Equal- and cap-weighted S&amp;P 500 proxies; ETF expense drag not removed.</div>
+</div>
+
+<!-- ============================ CHART C ============================ -->
+<div class="chart-box" id="boxC">
+<div class="chart-box-header">
+<h2>The Magnificent Seven vs. the S&amp;P 493</h2>
+<div class="chart-daterange" id="rangeC"></div>
+</div>
+<div class="chart-subhead">Cap-weighted basket of AAPL, MSFT, GOOGL, AMZN, NVDA, META and TSLA — rebalanced to market-cap weights each quarter — against the S&amp;P 500 and the S&amp;P 493 (the index with those seven names' contribution stripped out), all total return, indexed to 100 at year-end 2014.</div>
+<div class="ndr-panel">
+<div class="chart-canvas-wrap"><canvas id="chartC"></canvas><div class="chart-pending" id="pendingC">Data pipeline in progress — quarterly cap weights from SEC filings, populating next.</div></div>
+</div>
+<div class="chart-error" id="errC" hidden></div>
+<div class="chart-source">Source: constituent monthly adjusted closes (Alpha Vantage); quarterly shares outstanding from SEC 10-Q / 10-K filings.</div>
+</div>
+
+<!-- ============================ CHART F ============================ -->
+<div class="chart-box" id="boxF">
+<div class="chart-box-header">
+<h2>Magnificent Seven relative strength</h2>
+<div class="chart-daterange" id="rangeF"></div>
+</div>
+<div class="chart-subhead">The cap-weighted Magnificent Seven basket divided by the S&amp;P 500 total-return index. A rising line is the seven outperforming; the shaded lower panel is the drawdown of that ratio from its own running high.</div>
+<div class="ndr-panel">
+<div class="chart-canvas-wrap"><canvas id="chartF"></canvas><div class="chart-pending" id="pendingF">Derived from the chart&nbsp;C basket — populating next.</div></div>
+<div class="chart-canvas-wrap short"><canvas id="chartFdd"></canvas></div>
+</div>
+<div class="chart-error" id="errF" hidden></div>
+<div class="chart-source">Source: derived from the cap-weighted Magnificent Seven basket and the S&amp;P 500 total-return index.</div>
+</div>
+
+<!-- ============================ CHART G ============================ -->
+<div class="chart-box" id="boxG">
+<div class="chart-box-header">
+<h2>Share of S&amp;P 500 market capitalization: the largest 10</h2>
+<div class="chart-daterange" id="rangeG"></div>
+</div>
+<div class="chart-subhead">The 10 largest S&amp;P 500 companies at each quarter-end — whoever they were at the time — as a percentage of the index's total market capitalization, back to 2000.</div>
+<div class="ndr-panel">
+<div class="chart-canvas-wrap"><canvas id="chartG"></canvas><div class="chart-pending" id="pendingG">Data pipeline in progress — quarterly top-10 constituents and index market cap, populating next.</div></div>
+</div>
+<div class="chart-error" id="errG" hidden></div>
+<div class="chart-source">Source: per-company market caps from <a href="https://companiesmarketcap.com" rel="noopener" target="_blank">companiesmarketcap.com</a>; S&amp;P 500 aggregate market cap (year-end anchors, interpolated to quarter-ends) from <a href="https://www.finhacker.cz/en/top-20-sp-500-companies-by-market-cap/" rel="noopener" target="_blank">finhacker.cz</a>.</div>
+</div>
+
+<!-- ============================ CHART H ============================ -->
+<div class="chart-box" id="boxH">
+<div class="chart-box-header">
+<h2>Annual return contribution: the largest 10 vs. the rest</h2>
+<div class="chart-daterange" id="rangeH"></div>
+</div>
+<div class="chart-subhead">Each calendar year's S&amp;P 500 total return split into the share contributed by that year's 10 largest companies (by start-of-year weight) and the share from the other ~490.</div>
+<div class="ndr-panel">
+<div class="chart-canvas-wrap"><canvas id="chartH"></canvas><div class="chart-pending" id="pendingH">Data pipeline in progress — populating next.</div></div>
+</div>
+<div class="chart-error" id="errH" hidden></div>
+<div class="chart-source">Source: start-of-year weights from the market-cap data above; constituent and index annual total returns from Alpha Vantage (split/dividend-adjusted).</div>
+</div>
+
+</div>
+
+<script>
+// ---- NDR chart styling helpers -----------------------------------------
+// Colours come from the --ndr-* custom properties (constant across themes)
+// so the charts keep their warm-paper look while still following the
+// site's "read chart colours from CSS, don't hardcode" rule. The site
+// loads only Chart.js core (no date adapter), so every x-axis is a
+// category scale over date-string labels, matching the other pages.
+function ndr(name){
+ return getComputedStyle(document.documentElement).getPropertyValue("--ndr-" + name).trim();
+}
+
+Chart.defaults.font.family = "'Iowan Old Style','Palatino Linotype',Georgia,serif";
+Chart.defaults.color = ndr("axis-soft");
+
+function ndrXScale(){
+ return {
+  ticks: { color: ndr("axis"), maxTicksLimit: 9, maxRotation: 0, autoSkip: true, font: { size: 11 } },
+  grid: { color: "rgba(0,0,0,0)", borderColor: ndr("axis") },
+ };
+}
+
+function ndrYScale(opts){
+ opts = opts || {};
+ return {
+  type: opts.log ? "logarithmic" : "linear",
+  position: opts.position || "left",
+  grid: { color: ndr("grid"), drawBorder: false },
+  ticks: { color: ndr("axis"), font: { size: 11 }, callback: opts.fmt || undefined },
+  title: opts.title ? { display: true, text: opts.title, color: ndr("axis-soft"), font: { size: 10 } } : { display: false },
+  min: opts.min, max: opts.max,
+ };
+}
+
+function ndrLegend(){
+ return {
+  display: true, position: "top", align: "start",
+  labels: { boxWidth: 22, boxHeight: 2, color: ndr("axis"), font: { size: 11 } },
+ };
+}
+
+// ---- Chart D: cap-weighted (SPY) vs equal-weighted (RSP) ---------------
+async function renderChartD(){
+ const errEl = document.getElementById("errD");
+ try{
+  const res = await fetch("/api/concentration-market", { cache: "no-store" });
+  if(!res.ok) throw new Error("HTTP " + res.status);
+  const data = await res.json();
+  if(data.error) throw new Error(data.error);
+  const rows = data.rows || [];
+  if(!rows.length) throw new Error("no rows returned");
+
+  const labels = rows.map(r => r.date);
+  const spy0 = rows[0].spy, rsp0 = rows[0].rsp;
+  const cap = rows.map(r => 100 * r.spy / spy0);
+  const eql = rows.map(r => 100 * r.rsp / rsp0);
+  // Equal-weight / cap-weight ratio, indexed to 1.00 at the start —
+  // rising = the average stock beating the cap-weighted index.
+  const ratio = rows.map(r => (r.rsp / rsp0) / (r.spy / spy0));
+
+  document.getElementById("rangeD").textContent =
+   "Daily data " + rows[0].date + " to " + rows[rows.length - 1].date;
+  document.getElementById("updated").textContent =
+   "Updated " + (data.generated_at_utc ? data.generated_at_utc.slice(0, 10) : rows[rows.length - 1].date);
+
+  let chartD = null;
+  function drawChartD(scale){
+   if(chartD) chartD.destroy();
+   chartD = new Chart(document.getElementById("chartD"), {
+    type: "line",
+    data: { labels, datasets: [
+     { label: "Cap-weighted (SPY)", data: cap, borderColor: ndr("navy"), borderWidth: 1.4, pointRadius: 0, tension: 0 },
+     { label: "Equal-weighted (RSP)", data: eql, borderColor: ndr("gold"), borderWidth: 1.4, pointRadius: 0, tension: 0 },
+    ]},
+    options: {
+     responsive: true, maintainAspectRatio: false, animation: false,
+     interaction: { mode: "index", intersect: false },
+     // Linear = autofit (Chart.js derives min/max from the data, not
+     // pinned to zero); log makes the multi-decade compounding legible.
+     scales: {
+      x: ndrXScale(),
+      y: ndrYScale({
+       log: scale === "logarithmic",
+       fmt: (v) => Number(v).toLocaleString(),
+      }),
+     },
+     plugins: { legend: ndrLegend() },
+    },
+   });
+  }
+  drawChartD("linear");
+
+  const scaleD = document.getElementById("scaleD");
+  scaleD.addEventListener("click", (e) => {
+   const btn = e.target.closest("button[data-scale]");
+   if(!btn) return;
+   scaleD.querySelectorAll("button").forEach(b => b.classList.toggle("active", b === btn));
+   drawChartD(btn.dataset.scale);
+  });
+
+  new Chart(document.getElementById("chartDratio"), {
+   type: "line",
+   data: { labels, datasets: [
+    { label: "Equal-weight ÷ cap-weight", data: ratio, borderColor: ndr("red"), borderWidth: 1.2, pointRadius: 0,
+      fill: { value: 1, above: "rgba(79,111,63,0.10)", below: "rgba(168,60,54,0.12)" }, tension: 0 },
+   ]},
+   options: {
+    responsive: true, maintainAspectRatio: false, animation: false,
+    interaction: { mode: "index", intersect: false },
+    scales: { x: ndrXScale(), y: ndrYScale({ fmt: (v) => Number(v).toFixed(2), title: "equal ÷ cap" }) },
+    plugins: { legend: { display: false } },
+   },
+  });
+ }catch(err){
+  errEl.hidden = false;
+  errEl.textContent = "Could not load chart D: " + err.message;
+  document.getElementById("updated").textContent = "Data unavailable";
+ }
+}
+
+renderChartD();
+
+// ---- Charts C & F: Magnificent Seven basket ---------------------------
+async function renderMag7(){
+ const errC = document.getElementById("errC"), errF = document.getElementById("errF");
+ try{
+  const res = await fetch("/api/concentration-mag7", { cache: "no-store" });
+  if(!res.ok) throw new Error("HTTP " + res.status);
+  const data = await res.json();
+  if(data.error) throw new Error(data.error);
+  const rows = data.rows || [];
+  if(rows.length < 12) throw new Error("insufficient data");
+
+  const labels = rows.map(r => r.date.slice(0, 7));
+  const mag7 = rows.map(r => r.mag7);
+  const sp500 = rows.map(r => r.sp500);
+  const sp493 = rows.map(r => r.sp493 ?? null);
+  document.getElementById("pendingC").hidden = true;
+  document.getElementById("pendingF").hidden = true;
+
+  const rangeTxt = "Monthly data " + rows[0].date.slice(0, 7) + " to " + rows[rows.length - 1].date.slice(0, 7);
+  document.getElementById("rangeC").textContent = rangeTxt;
+  document.getElementById("rangeF").textContent = rangeTxt;
+
+  // ---- Chart C: basket vs S&P 500 (S&P 493 line still pending) ----
+  new Chart(document.getElementById("chartC"), {
+   type: "line",
+   data: { labels, datasets: [
+    { label: "Magnificent Seven (cap-weighted)", data: mag7, borderColor: ndr("red"), borderWidth: 1.6, pointRadius: 0, tension: 0 },
+    { label: "S&P 500", data: sp500, borderColor: ndr("navy"), borderWidth: 1.4, pointRadius: 0, tension: 0 },
+    { label: "S&P 493 (ex the seven)", data: sp493, borderColor: ndr("green"), borderWidth: 1.4, pointRadius: 0, tension: 0, borderDash: [4, 3] },
+   ]},
+   options: {
+    responsive: true, maintainAspectRatio: false, animation: false,
+    interaction: { mode: "index", intersect: false },
+    scales: { x: ndrXScale(), y: ndrYScale({ fmt: (v) => Number(v).toLocaleString(), title: "index, 2014-12 = 100" }) },
+    plugins: { legend: ndrLegend() },
+   },
+  });
+
+  // ---- Chart F: relative strength + drawdown ----------------------
+  const ratio = rows.map(r => r.mag7 / r.sp500);
+  let peak = -Infinity;
+  const dd = ratio.map(v => { peak = Math.max(peak, v); return (v / peak - 1) * 100; });
+
+  new Chart(document.getElementById("chartF"), {
+   type: "line",
+   data: { labels, datasets: [
+    { label: "Magnificent Seven ÷ S&P 500", data: ratio, borderColor: ndr("red"), borderWidth: 1.6, pointRadius: 0, tension: 0 },
+   ]},
+   options: {
+    responsive: true, maintainAspectRatio: false, animation: false,
+    interaction: { mode: "index", intersect: false },
+    scales: { x: ndrXScale(), y: ndrYScale({ fmt: (v) => Number(v).toFixed(2), title: "ratio, 2014-12 = 1.00" }) },
+    plugins: { legend: { display: false } },
+   },
+  });
+
+  new Chart(document.getElementById("chartFdd"), {
+   type: "line",
+   data: { labels, datasets: [
+    { label: "Drawdown of the ratio", data: dd, borderColor: ndr("slate"), borderWidth: 1, pointRadius: 0,
+      fill: { value: 0, below: "rgba(125,138,153,0.18)" }, tension: 0 },
+   ]},
+   options: {
+    responsive: true, maintainAspectRatio: false, animation: false,
+    interaction: { mode: "index", intersect: false },
+    scales: { x: ndrXScale(), y: ndrYScale({ fmt: (v) => Number(v).toFixed(0) + "%", max: 0, title: "drawdown" }) },
+    plugins: { legend: { display: false } },
+   },
+  });
+ }catch(err){
+  errC.hidden = false; errC.textContent = "Could not load chart C: " + err.message;
+  errF.hidden = false; errF.textContent = "Could not load chart F: " + err.message;
+ }
+}
+
+renderMag7();
+
+// ---- Charts G & H: long-history concentration ------------------------
+async function renderHistory(){
+ const errG = document.getElementById("errG"), errH = document.getElementById("errH");
+ try{
+  const res = await fetch("/api/concentration-history", { cache: "no-store" });
+  if(!res.ok) throw new Error("HTTP " + res.status);
+  const data = await res.json();
+  if(data.error) throw new Error(data.error);
+  const q = data.quarterly || [], a = data.annual || [];
+  if(!q.length) throw new Error("no quarterly data");
+
+  // ---- Chart G: top-10 (and top-3) share of index market cap ----
+  document.getElementById("pendingG").hidden = true;
+  document.getElementById("rangeG").textContent = "Quarterly data " + q[0].date + " to " + q[q.length - 1].date;
+  const qLabels = q.map(r => r.date);
+  new Chart(document.getElementById("chartG"), {
+   type: "line",
+   data: { labels: qLabels, datasets: [
+    { label: "Top 10", data: q.map(r => r.top10_share), borderColor: ndr("red"), borderWidth: 1.6, pointRadius: 0,
+      fill: { value: 0, above: "rgba(168,60,54,0.10)" }, tension: 0 },
+    { label: "Top 3", data: q.map(r => r.top3_share), borderColor: ndr("gold"), borderWidth: 1.3, pointRadius: 0, tension: 0 },
+   ]},
+   options: {
+    responsive: true, maintainAspectRatio: false, animation: false,
+    interaction: { mode: "index", intersect: false },
+    scales: { x: ndrXScale(), y: ndrYScale({ fmt: (v) => Number(v).toFixed(0) + "%", title: "share of S&P 500 market cap" }) },
+    plugins: {
+     legend: ndrLegend(),
+     tooltip: { callbacks: { afterBody: (items) => {
+      const row = q[items[0].dataIndex];
+      return row ? row.top10.map(x => `${x.t}  $${(x.mcap/1000).toFixed(2)}T`) : [];
+     } } },
+    },
+   },
+  });
+
+  // ---- Chart H: annual return contribution, top-10 vs the rest ----
+  if(a.length){
+   document.getElementById("pendingH").hidden = true;
+   document.getElementById("rangeH").textContent = "Annual data " + a[0].year + " to " + a[a.length - 1].year;
+   new Chart(document.getElementById("chartH"), {
+    type: "bar",
+    data: { labels: a.map(r => String(r.year)), datasets: [
+     { label: "Largest 10", data: a.map(r => r.top10_contrib), backgroundColor: "rgba(168,60,54,0.85)", stack: "s" },
+     { label: "Other ~490", data: a.map(r => r.rest_contrib), backgroundColor: "rgba(125,138,153,0.75)", stack: "s" },
+    ]},
+    options: {
+     responsive: true, maintainAspectRatio: false, animation: false,
+     interaction: { mode: "index", intersect: false },
+     scales: {
+      x: { ...ndrXScale(), stacked: true },
+      y: { ...ndrYScale({ fmt: (v) => Number(v).toFixed(0) + "%", title: "contribution to S&P 500 total return" }), stacked: true },
+     },
+     plugins: {
+      legend: ndrLegend(),
+      tooltip: { callbacks: {
+       label: (c) => `${c.dataset.label}: ${c.parsed.y > 0 ? "+" : ""}${c.parsed.y.toFixed(1)} pp`,
+       footer: (items) => { const r = a[items[0].dataIndex]; return r ? `S&P 500 total return: ${r.sp500_tr > 0 ? "+" : ""}${r.sp500_tr}%` : ""; },
+      } },
+     },
+    },
+   });
+  }
+ }catch(err){
+  errG.hidden = false; errG.textContent = "Could not load chart G: " + err.message;
+  errH.hidden = false; errH.textContent = "Could not load chart H: " + err.message;
+ }
+}
+
+renderHistory();
+</script>
+</body>
+</html>

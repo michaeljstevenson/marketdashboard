@@ -92,6 +92,21 @@
   to = "/.netlify/functions/beeswarm-daily"
   status = 200
 
+[[redirects]]
+  from = "/api/concentration-market"
+  to = "/.netlify/functions/concentration-market"
+  status = 200
+
+[[redirects]]
+  from = "/api/concentration-mag7"
+  to = "/.netlify/functions/concentration-mag7"
+  status = 200
+
+[[redirects]]
+  from = "/api/concentration-history"
+  to = "/.netlify/functions/concentration-history"
+  status = 200
+
 # The Statistical Engine page was briefly at these paths.
 [[redirects]]
   from = "/streak-scanner"
@@ -216,3 +231,17 @@
   # to recompute calendar-year returns for the annual historical view;
   # the data only really moves once a year at each year-end close.
   schedule = "30 8 * * 6"
+
+[functions."scheduled-concentration-background"]
+  # Weekly, Saturday 09:30 UTC — after the factors job. Only ~8 Alpha
+  # Vantage (monthly bars) + ~7 SEC calls for the Magnificent Seven
+  # cap-weighted basket vs S&P 500; monthly-granularity data that barely
+  # moves week to week, and the SEC share counts update only quarterly.
+  schedule = "30 9 * * 6"
+
+[functions."scheduled-concentration-history-background"]
+  # Weekly, Saturday 10:00 UTC — after scheduled-concentration-background.
+  # ~39 Alpha Vantage monthly-bar calls (SPY + the ever-largest names) for
+  # the top-10-share history and annual return-contribution charts;
+  # quarterly/annual data that only moves at each quarter-end.
+  schedule = "0 10 * * 6"
