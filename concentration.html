@@ -753,6 +753,33 @@ function annotationLabel(text, opts){
  }, opts.props || {});
 }
 
+// A proper callout: an open circle around the data point, an arrow
+// running from the description back to it, and the description itself —
+// three annotation entries returned as one object (spread into
+// `annotations`). `pointX`/`pointY` are the data-space coordinates of the
+// thing being pointed at; `labelX`/`labelY` are where the description
+// sits (on a category x-axis, labelX must be one of the chart's own
+// labels — pass a nearby one, not an arbitrary string).
+function calloutAnnotations(id, pointX, pointY, labelX, labelY, text, opts){
+ opts = opts || {};
+ const color = opts.color || ndr("red");
+ const out = {};
+ out[id + "Arrow"] = {
+  type: "line", xMin: labelX, xMax: pointX, yMin: labelY, yMax: pointY,
+  borderColor: color, borderWidth: 1.3,
+  arrowHeads: { end: { display: true, width: 6, length: 8, fill: true } },
+ };
+ out[id + "Circle"] = {
+  type: "point", xValue: pointX, yValue: pointY, radius: opts.radius || 7,
+  borderWidth: 2, borderColor: color, backgroundColor: "rgba(0,0,0,0)",
+ };
+ out[id + "Label"] = annotationLabel(text, {
+  color: opts.textColor || color, bold: opts.bold,
+  props: { xValue: labelX, yValue: labelY, textAlign: opts.textAlign || "center" },
+ });
+ return out;
+}
+
 function ordinal(n){
  const s = ["th", "st", "nd", "rd"], v = n % 100;
  return n + (s[(v - 20) % 10] || s[v] || s[0]);
@@ -907,20 +934,21 @@ async function renderMag7(){
    { label: "MULTIPLE SINCE 2014", value: (mag7[mag7.length - 1] / 100).toFixed(1) + "x", note: "vs. " + (sp500[sp500.length - 1] / 100).toFixed(1) + "x for the S&P 500" },
   ]);
 
-  function markerLine(date, text, labelPosition){
-   return {
-    type: "line", scaleID: "x", value: nearestLabel(labels, date),
-    borderColor: ndr("axis-soft"), borderWidth: 1, borderDash: [3, 3],
-    label: {
-     display: true, content: text, position: labelPosition || "start", rotation: 90,
-     backgroundColor: ndr("plot"), color: ndr("axis"), font: { size: 9 }, padding: 3,
-    },
-   };
-  }
+  // Circle the basket's actual level on the date of each event, arrow out
+  // to the description — anchored on the Magnificent Seven line itself.
+  const cMax = Math.max(...mag7);
+  function idxAt(date){ return labels.indexOf(nearestLabel(labels, date)); }
+  const lowIdx = idxAt("2022-10"), gptIdx = idxAt("2022-11"), nvdaIdx = idxAt("2023-05");
   const cAnnotations = {
-   low: markerLine("2022-10", "2022 bear-market low", "start"),
-   gpt: markerLine("2022-11", "ChatGPT launches", "center"),
-   nvda: markerLine("2023-05", "Nvidia's AI-earnings surprise", "end"),
+   ...calloutAnnotations("low", labels[lowIdx], mag7[lowIdx],
+    labels[Math.max(0, lowIdx - 16)], mag7[lowIdx] + cMax * 0.22,
+    "2022 bear-market low", { color: ndr("navy") }),
+   ...calloutAnnotations("gpt", labels[gptIdx], mag7[gptIdx],
+    labels[Math.min(labels.length - 1, gptIdx + 10)], mag7[gptIdx] + cMax * 0.42,
+    "ChatGPT launches", { color: ndr("red") }),
+   ...calloutAnnotations("nvda", labels[nvdaIdx], mag7[nvdaIdx],
+    labels[Math.min(labels.length - 1, nvdaIdx + 20)], mag7[nvdaIdx] + cMax * 0.05,
+    "Nvidia's AI-earnings surprise", { color: ndr("gold") }),
   };
 
   // ---- Chart C: basket vs S&P 500 vs S&P 493 -----------------------
@@ -967,13 +995,11 @@ async function renderMag7(){
     interaction: { mode: "index", intersect: false },
     scales: { x: ndrXScale(), y: ndrYScale({ fmt: (v) => Number(v).toFixed(2), title: "ratio, 2014-12 = 1.00" }) },
     plugins: { legend: { display: false },
-     annotation: { annotations: recoverIdx >= 0 ? {
-      recovered: {
-       type: "point", xValue: labels[recoverIdx], yValue: ratio[recoverIdx], radius: 3, backgroundColor: ndr("green"), borderWidth: 0,
-      },
-      recoveredLbl: annotationLabel("Reclaimed prior high", { color: ndr("green"),
-       props: { xValue: labels[recoverIdx], yValue: ratio[recoverIdx], yAdjust: -14 } }),
-     } : {} },
+     annotation: { annotations: recoverIdx >= 0 ? calloutAnnotations(
+      "recovered", labels[recoverIdx], ratio[recoverIdx],
+      labels[Math.max(0, recoverIdx - 14)], ratio[recoverIdx] + Math.max(...ratio) * 0.14,
+      "Reclaimed prior high", { color: ndr("green") }
+     ) : {} },
     },
    },
   });
@@ -989,11 +1015,11 @@ async function renderMag7(){
     interaction: { mode: "index", intersect: false },
     scales: { x: ndrXScale(), y: ndrYScale({ fmt: (v) => Number(v).toFixed(0) + "%", max: 0, title: "drawdown" }) },
     plugins: { legend: { display: false },
-     annotation: { annotations: {
-      trough: { type: "point", xValue: labels[troughIdx], yValue: dd[troughIdx], radius: 4, backgroundColor: ndr("red"), borderWidth: 0 },
-      troughLbl: annotationLabel(dd[troughIdx].toFixed(0) + "%", { color: ndr("red"), bold: true, bg: false,
-       props: { xValue: labels[troughIdx], yValue: dd[troughIdx], yAdjust: 12 } }),
-     } },
+     annotation: { annotations: calloutAnnotations(
+      "trough", labels[troughIdx], dd[troughIdx],
+      labels[Math.min(labels.length - 1, troughIdx + 14)], dd[troughIdx] + 11,
+      dd[troughIdx].toFixed(0) + "% drawdown", { color: ndr("red"), bold: true }
+     ) },
     },
    },
   });
@@ -1050,20 +1076,22 @@ async function renderHistory(){
       const row = q[items[0].dataIndex];
       return row ? row.top10.map(x => `${x.t}  $${(x.mcap/1000).toFixed(2)}T`) : [];
      } } },
-     annotation: { annotations: {
-      dotcomLine: {
-       type: "line", scaleID: "y", value: dotcomPeak.top10_share,
-       borderColor: ndr("axis-soft"), borderWidth: 1, borderDash: [4, 4],
-       label: { display: true, content: "Dot-com peak: " + dotcomPeak.top10_share.toFixed(0) + "%", position: "start",
-        backgroundColor: ndr("plot"), color: ndr("axis-soft"), font: { size: 9 } },
-      },
-      todayPoint: { type: "point", xValue: today.date, yValue: today.top10_share, radius: 4, backgroundColor: ndr("red"), borderWidth: 0 },
-      todayLbl: annotationLabel("Today: " + today.top10_share.toFixed(0) + "%", { color: ndr("red"), bold: true,
-       props: { xValue: today.date, yValue: today.top10_share, yAdjust: -16, xAdjust: -36 } }),
-      troughPoint: { type: "point", xValue: trough.date, yValue: trough.top10_share, radius: 3, backgroundColor: ndr("gold"), borderWidth: 0 },
-      troughLbl: annotationLabel(trough.date.slice(0, 4) + " trough", { color: ndr("gold"),
-       props: { xValue: trough.date, yValue: trough.top10_share, yAdjust: 14 } }),
-     } },
+     annotation: { annotations: (() => {
+      const dotcomIdx = qLabels.indexOf(dotcomPeak.date);
+      const todayIdx = qLabels.length - 1;
+      const gTroughIdx = qLabels.indexOf(trough.date);
+      return {
+       ...calloutAnnotations("dotcom", qLabels[dotcomIdx], dotcomPeak.top10_share,
+        qLabels[Math.min(qLabels.length - 1, dotcomIdx + 20)], dotcomPeak.top10_share + 9,
+        "Dot-com peak: " + dotcomPeak.top10_share.toFixed(0) + "%", { color: ndr("axis") }),
+       ...calloutAnnotations("today", qLabels[todayIdx], today.top10_share,
+        qLabels[Math.max(0, todayIdx - 20)], today.top10_share + 6,
+        "Today: " + today.top10_share.toFixed(0) + "%", { color: ndr("red"), bold: true }),
+       ...calloutAnnotations("gTrough", qLabels[gTroughIdx], trough.top10_share,
+        qLabels[Math.max(0, gTroughIdx - 14)], trough.top10_share + 10,
+        trough.date.slice(0, 4) + " trough", { color: ndr("gold") }),
+      };
+     })() },
     },
    },
   });
