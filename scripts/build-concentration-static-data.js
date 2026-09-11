@@ -101,7 +101,7 @@ async function main() {
       const yyyy = d.trim().split("/")[2];
       return [parseInt(yyyy, 10), Math.round(parseFloat(v) * 1e12)];
     })
-    .filter((r) => r[0] >= 1998 && Number.isFinite(r[1]))
+    .filter((r) => r[0] >= 1989 && Number.isFinite(r[1]))
     .sort((a, b) => a[0] - b[0]);
 
   const out =
