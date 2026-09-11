@@ -803,81 +803,13 @@ function renderMiniStats(containerId, items){
  `).join("");
 }
 
-// =========================================================================
-// ANNOTATION CONFIG — everything editorial about the charts' callouts and
-// shaded eras lives here. To change what a marker says, where it points,
-// or how far its label sits from the point, edit a value below and
-// refresh — nothing else on the page needs to change. Colors are palette
-// names from the --ndr-* custom properties up in <style> (navy, red,
-// gold, green, slate, axis); add a new --ndr-* variable there for a new
-// color rather than hardcoding one here.
-//
-// `labelMonths` / `labelQuarters` — how many data points left (negative)
-// or right (positive) of the circled point the description sits.
-// `labelLift` — how far above the point the description sits: on chart C
-// it's a fraction of that chart's max value (e.g. 0.22 = 22% of the way
-// up the y-axis); everywhere else it's a plain data-unit offset (points
-// of drawdown, percentage points of share, etc.) since those charts don't
-// span orders of magnitude the way chart C's index does.
-// A "{value}" or "{year}" placeholder in `text` is filled in with the
-// actual computed number/year at render time.
-// =========================================================================
-const ANNOTATION_CONFIG = {
-
- // Chart D ratio panel — shaded eras, not a point callout. `to: null`
- // means "through the end of the data".
- D_ERAS: [
-  { from: "2003-04-30", to: "2013-12-31", text: "Broad leadership", color: "green", textAt: "2008-01-01" },
-  { from: "2014-01-01", to: null, text: "Narrowing leadership", color: "red", textAt: "2019-06-01" },
- ],
-
- // Chart C — one entry per event marker on the Magnificent Seven line.
- // Add or remove entries freely; each becomes its own circle+arrow+label.
- C_EVENTS: [
-  { date: "2022-10", text: "2022 bear-market low", color: "navy", labelMonths: -16, labelLift: 0.22 },
-  { date: "2022-11", text: "ChatGPT launches", color: "red", labelMonths: 10, labelLift: 0.42 },
-  { date: "2023-05", text: "Nvidia's AI-earnings surprise", color: "gold", labelMonths: 20, labelLift: 0.05 },
- ],
-
- // Chart F (relative strength) — the "line reclaimed its old high" marker.
- // Skipped automatically if the ratio hasn't actually recovered yet.
- F_RECOVERED: { text: "Reclaimed prior high", color: "green", labelMonths: -14, labelLift: 0.14 },
-
- // Chart F drawdown panel — the trough marker.
- F_TROUGH: { text: "{value}% drawdown", color: "red", bold: true, labelMonths: 14, labelLift: 11 },
-
- // Chart G — three markers, each anchored to a data-derived point (the
- // actual dot-com-era peak quarter, the latest quarter, and the lowest
- // quarter) rather than a fixed date, so they keep pointing at the right
- // place as new data arrives.
- G_DOTCOM: { text: "Dot-com peak: {value}%", color: "axis", labelQuarters: 20, labelLift: 9 },
- G_TODAY: { text: "Today: {value}%", color: "red", bold: true, labelQuarters: -20, labelLift: 6 },
- G_TROUGH: { text: "{year} trough", color: "gold", labelQuarters: -14, labelLift: 10 },
-};
-
-// Builds the shaded-era box + label pair for one D_ERAS entry.
-function buildEraAnnotation(id, era, labels, textY){
- const xMin = nearestLabel(labels, era.from);
- const xMax = era.to ? nearestLabel(labels, era.to) : labels[labels.length - 1];
- const out = {};
- out[id + "Box"] = { type: "box", xMin, xMax, backgroundColor: ndr(era.color) + "14", borderWidth: 0 };
- out[id + "Lbl"] = annotationLabel(era.text, { color: ndr(era.color), bg: false,
-  props: { xValue: nearestLabel(labels, era.textAt), yValue: textY } });
- return out;
-}
-
-// Builds one circle+arrow+label callout from a C_EVENTS-shaped config
-// entry, anchored at `idx` in `labels`/`series`. `chartMax` sets the scale
-// for `labelLift` when it's a fraction (chart C); pass 1 for the charts
-// where `labelLift` is already a plain data-unit offset. `vars` (optional)
-// fills any "{value}"/"{year}" placeholder in cfg.text.
-function buildEventCallout(id, cfg, labels, series, idx, chartMax, vars){
- const labelIdx = Math.max(0, Math.min(labels.length - 1, idx + (cfg.labelMonths ?? cfg.labelQuarters ?? 0)));
- const lift = chartMax === 1 ? cfg.labelLift : cfg.labelLift * chartMax;
- const text = vars ? fillText(cfg.text, vars) : cfg.text;
- return calloutAnnotations(id, labels[idx], series[idx], labels[labelIdx], series[idx] + lift,
-  text, { color: ndr(cfg.color), bold: cfg.bold });
-}
+// Chart markings (shaded eras, circled event callouts) have been pulled
+// off every chart below — cleared at the user's request so they can mark
+// up the charts themselves and hand back exactly what they want. The
+// generic building blocks (nearestLabel, annotationLabel,
+// calloutAnnotations, fillText, ordinal, renderMiniStats above) are still
+// here and still work — wire them back up against a fresh config once
+// there's something to draw from.
 
 // ---- Chart D: cap-weighted (SPY) vs equal-weighted (RSP) ---------------
 async function renderChartD(){
@@ -914,12 +846,6 @@ async function renderChartD(){
    { label: "ALL-TIME LOW", value: ratio[troughIdx].toFixed(2), note: labels[troughIdx] },
    { label: "PERCENTILE (SINCE 2003)", value: ordinal(percentile), note: percentile < 50 ? "narrower than usual" : "broader than usual" },
   ]);
-
-  const eraTop = Math.max(...ratio) * 0.985;
-  const ratioAnnotations = {};
-  ANNOTATION_CONFIG.D_ERAS.forEach((era, i) => {
-   Object.assign(ratioAnnotations, buildEraAnnotation("era" + i, era, labels, eraTop));
-  });
 
   let chartD = null;
   function drawChartD(scale){
@@ -966,7 +892,7 @@ async function renderChartD(){
     responsive: true, maintainAspectRatio: false, animation: false,
     interaction: { mode: "index", intersect: false },
     scales: { x: ndrXScale(), y: ndrYScale({ fmt: (v) => Number(v).toFixed(2), title: "equal ÷ cap" }) },
-    plugins: { legend: { display: false }, annotation: { annotations: ratioAnnotations } },
+    plugins: { legend: { display: false } },
    },
   });
  }catch(err){
@@ -1010,14 +936,6 @@ async function renderMag7(){
    { label: "MULTIPLE SINCE 2014", value: (mag7[mag7.length - 1] / 100).toFixed(1) + "x", note: "vs. " + (sp500[sp500.length - 1] / 100).toFixed(1) + "x for the S&P 500" },
   ]);
 
-  // Circle the basket's actual level on the date of each configured
-  // event, arrow out to the description — see ANNOTATION_CONFIG.C_EVENTS.
-  const cMax = Math.max(...mag7);
-  const cAnnotations = {};
-  ANNOTATION_CONFIG.C_EVENTS.forEach((ev, i) => {
-   const idx = labels.indexOf(nearestLabel(labels, ev.date));
-   Object.assign(cAnnotations, buildEventCallout("evt" + i, ev, labels, mag7, idx, cMax));
-  });
 
   // ---- Chart C: basket vs S&P 500 vs S&P 493 -----------------------
   new Chart(document.getElementById("chartC"), {
@@ -1031,7 +949,7 @@ async function renderMag7(){
     responsive: true, maintainAspectRatio: false, animation: false,
     interaction: { mode: "index", intersect: false },
     scales: { x: ndrXScale(), y: ndrYScale({ fmt: (v) => Number(v).toLocaleString(), title: "index, 2014-12 = 100" }) },
-    plugins: { legend: ndrLegend(), annotation: { annotations: cAnnotations } },
+    plugins: { legend: ndrLegend() },
    },
   });
 
@@ -1062,11 +980,7 @@ async function renderMag7(){
     responsive: true, maintainAspectRatio: false, animation: false,
     interaction: { mode: "index", intersect: false },
     scales: { x: ndrXScale(), y: ndrYScale({ fmt: (v) => Number(v).toFixed(2), title: "ratio, 2014-12 = 1.00" }) },
-    plugins: { legend: { display: false },
-     annotation: { annotations: recoverIdx >= 0
-      ? buildEventCallout("recovered", ANNOTATION_CONFIG.F_RECOVERED, labels, ratio, recoverIdx, Math.max(...ratio))
-      : {} },
-    },
+    plugins: { legend: { display: false } },
    },
   });
 
@@ -1080,10 +994,7 @@ async function renderMag7(){
     responsive: true, maintainAspectRatio: false, animation: false,
     interaction: { mode: "index", intersect: false },
     scales: { x: ndrXScale(), y: ndrYScale({ fmt: (v) => Number(v).toFixed(0) + "%", max: 0, title: "drawdown" }) },
-    plugins: { legend: { display: false },
-     annotation: { annotations: buildEventCallout("trough", ANNOTATION_CONFIG.F_TROUGH, labels, dd, troughIdx, 1,
-      { value: dd[troughIdx].toFixed(0) }) },
-    },
+    plugins: { legend: { display: false } },
    },
   });
  }catch(err){
@@ -1140,14 +1051,6 @@ async function renderHistory(){
       const row = q[items[0].dataIndex];
       return row ? row.top10.map(x => `${x.t}  $${(x.mcap/1000).toFixed(2)}T`) : [];
      } } },
-     annotation: { annotations: {
-      ...buildEventCallout("dotcom", ANNOTATION_CONFIG.G_DOTCOM, qLabels,
-       top10Series, qLabels.indexOf(dotcomPeak.date), 1, { value: dotcomPeak.top10_share.toFixed(0) }),
-      ...buildEventCallout("today", ANNOTATION_CONFIG.G_TODAY, qLabels,
-       top10Series, qLabels.length - 1, 1, { value: today.top10_share.toFixed(0) }),
-      ...buildEventCallout("gTrough", ANNOTATION_CONFIG.G_TROUGH, qLabels,
-       top10Series, qLabels.indexOf(trough.date), 1, { year: trough.date.slice(0, 4) }),
-     } },
     },
    },
   });
