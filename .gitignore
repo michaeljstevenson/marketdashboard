@@ -4,6 +4,7 @@ node_modules/
 .netlify/
 .DS_Store
 preview-edits.json
+markup-notes.json
 deno.lock
 
 # local beeswarm preview fixtures (see scratchpad/gen-samples.js)
