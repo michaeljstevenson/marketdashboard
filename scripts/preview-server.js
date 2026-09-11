@@ -18,6 +18,13 @@ const path = require('path');
 const ROOT = path.join(__dirname, '..');
 const EDITS_FILE = path.join(ROOT, 'preview-edits.json');
 const MARKUP_FILE = path.join(ROOT, 'markup-notes.json');
+// This is a plain static file server, not `netlify dev` — it can't run
+// the Netlify Functions behind /api/*, so any data-driven page (the
+// concentration.html charts included) got a live 404 and never rendered,
+// which made Markup Mode useless on them. Proxying /api/* to the real
+// deployed site instead means every page here shows real, current data —
+// the only thing local about this preview is the two overlay scripts.
+const API_PROXY_ORIGIN = 'https://michaeljstevenson.co';
 const PORT = process.env.PORT || 5555;
 
 const MIME = {
@@ -461,6 +468,21 @@ const server = http.createServer((req, res) => {
     const entry = all[url.searchParams.get('page')] || { shapes: [] };
     res.writeHead(200, { 'Content-Type': 'application/json' });
     res.end(JSON.stringify(entry));
+    return;
+  }
+
+  if (url.pathname.startsWith('/api/')) {
+    const target = API_PROXY_ORIGIN + url.pathname + url.search;
+    fetch(target)
+      .then(async (r) => {
+        const body = await r.text();
+        res.writeHead(r.status, { 'Content-Type': r.headers.get('content-type') || 'application/json' });
+        res.end(body);
+      })
+      .catch((e) => {
+        res.writeHead(502, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: 'preview proxy to ' + API_PROXY_ORIGIN + ' failed: ' + e.message }));
+      });
     return;
   }
 
