@@ -1,7 +1,7 @@
 // Shared helper for opening the "share-count-trends" Netlify Blobs store,
 // used by scheduled-share-count-background.js (writes) and
-// share-count-trends.js (reads). Mirrors earnings-surprise-blob-store.js —
-// see breadth-blob-store.js for why the explicit siteID/token fallback is
+// share-count-trends.js (reads). Mirrors insider-blob-store.js — see
+// breadth-blob-store.js for why the explicit siteID/token fallback is
 // needed on this site (automatic context injection doesn't work here).
 
 const { getStore } = require("@netlify/blobs");
