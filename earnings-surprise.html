@@ -152,7 +152,7 @@ document.addEventListener("DOMContentLoaded", function(){
 </script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Earnings Revisions — Michael J. Stevenson</title>
+<title>Earnings Surprise History — Michael J. Stevenson</title>
 
 <style>
 
@@ -503,24 +503,37 @@ tbody td:nth-child(3){ color:var(--muted); font-size:11px; }
  .leaderboard-grid{ grid-template-columns:1fr; }
 }
 
-/* SECTOR LEGEND (scatter) */
+/* PERSISTENCE TABLE */
 
-.sector-legend{
- display:flex;
- flex-wrap:wrap;
- gap:10px 16px;
- margin-top:14px;
- font-size:11px;
- color:var(--muted);
+.persist-grid{
+ display:grid;
+ grid-template-columns:repeat(3,1fr);
+ gap:16px;
+ margin-bottom:16px;
 }
 
-.sector-legend .dot{
- display:inline-block;
- width:8px;
- height:8px;
- border-radius:50%;
- margin-right:5px;
- vertical-align:middle;
+.persist-card{
+ background:var(--card-hover);
+ border:1px solid var(--hair);
+ border-radius:10px;
+ padding:16px;
+ text-align:center;
+}
+
+.persist-card .persist-label{
+ color:var(--muted);
+ font-size:11.5px;
+ margin-bottom:8px;
+}
+
+.persist-card .persist-value{
+ font-family:var(--mono);
+ font-size:22px;
+ color:var(--ink);
+}
+
+@media (max-width:720px){
+ .persist-grid{ grid-template-columns:1fr; }
 }
 
 /* EXPLAINER */
@@ -644,13 +657,9 @@ tbody td:nth-child(3){ color:var(--muted); font-size:11px; }
 <a href="/market-breadth.html">Market Breadth</a>
 <a href="/seasonality.html">Seasonality</a>
 <a href="/concentration.html">Concentration</a>
-<a href="/earnings-revisions.html" class="active">Earnings Revisions</a>
-<a href="/earnings-surprise.html">Earnings Surprise History</a>
+<a href="/earnings-revisions.html">Earnings Revisions</a>
+<a href="/earnings-surprise.html" class="active">Earnings Surprise History</a>
 <a href="/insider-buying-selling.html">Insider Buying/Selling</a>
-<a href="/small-cap-vs-large-cap.html">Small Cap vs. Large Cap Spread</a>
-<a href="/share-count-trends.html">Share Count Trends</a>
-<a href="/sector-correlation.html">Sector Correlation Matrix</a>
-<a href="/sector-rotation.html">Sector Rotation Model</a>
 </div>
 </div>
 
@@ -716,44 +725,56 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 
 <div class="header">
 <div>
-<h1>Earnings Revisions</h1>
-<div class="subtitle">How Wall Street analysts are revising S&amp;P 500 earnings estimates — how many are moving their numbers, which way, and by how much — broken out by sector.</div>
+<h1>Earnings Surprise History</h1>
+<div class="subtitle">How often S&amp;P 500 companies beat, meet, or miss the Street's EPS estimate — by sector, over time, and whether a beat (or a miss) tends to repeat itself next quarter.</div>
 </div>
 <div class="updated" id="updated">Loading...</div>
 </div>
 
 <div class="stat-grid">
 <div class="stat-card">
-<div class="stat-label">Market Net Revision Ratio</div>
-<div class="stat-value" id="statNrr">—</div>
-<div class="stat-note">Trailing 30 days, equal-weighted</div>
+<div class="stat-label">Latest Quarter Beat Rate</div>
+<div class="stat-value" id="statBeatRate">—</div>
+<div class="stat-note" id="statBeatRateNote">Share of reporters beating consensus EPS</div>
 </div>
 <div class="stat-card">
-<div class="stat-label">Market Estimate Drift</div>
-<div class="stat-value" id="statDrift">—</div>
-<div class="stat-note">30-day change in consensus FY1 EPS</div>
+<div class="stat-label">Avg. Surprise Magnitude</div>
+<div class="stat-value neutral" id="statAvgSurprise">—</div>
+<div class="stat-note">Mean surprise %, latest quarter</div>
 </div>
 <div class="stat-card">
-<div class="stat-label">Upgrades vs. Downgrades</div>
-<div class="stat-value neutral" id="statUpDown">—</div>
-<div class="stat-note">Analyst estimate revisions, trailing 30 days</div>
+<div class="stat-label">Beat Rate After a Beat</div>
+<div class="stat-value neutral" id="statPersistence">—</div>
+<div class="stat-note" id="statPersistenceNote">vs. unconditional beat rate</div>
 </div>
 <div class="stat-card">
 <div class="stat-label">Coverage</div>
 <div class="stat-value neutral" id="statCoverage">—</div>
-<div class="stat-note">S&amp;P 500 constituents with usable estimates</div>
+<div class="stat-note">S&amp;P 500 constituents with usable earnings data</div>
 </div>
 </div>
 
 <div class="chart-box">
 <div class="chart-box-header">
 <div>
-<h2>By sector</h2>
-<div class="chart-box-sub" id="sectorChartSub">Net Revision Ratio: share of analysts revising up minus down, trailing 30 days.</div>
+<h2>Beat rate over time</h2>
+<div class="chart-box-sub">Share of the mapped universe beating consensus EPS each calendarized reporting quarter, market-wide.</div>
+</div>
+</div>
+<div class="chart-canvas-wrap short">
+<canvas id="trendChart"></canvas>
+</div>
+</div>
+
+<div class="chart-box">
+<div class="chart-box-header">
+<div>
+<h2>By sector, latest quarter</h2>
+<div class="chart-box-sub" id="sectorChartSub">Beat rate: share of sector constituents beating consensus EPS.</div>
 </div>
 <div class="toggle-group">
-<button class="toggle-btn active" id="btnBreadth">Breadth (Net Revision Ratio)</button>
-<button class="toggle-btn" id="btnMagnitude">Magnitude (Estimate Drift)</button>
+<button class="toggle-btn active" id="btnBeatRate">Beat rate</button>
+<button class="toggle-btn" id="btnMagnitude">Avg. surprise %</button>
 </div>
 </div>
 <div class="chart-canvas-wrap">
@@ -764,48 +785,84 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <div class="chart-box">
 <div class="chart-box-header">
 <div>
-<h2>Market Net Revision Ratio over time</h2>
-<div class="chart-box-sub">Weekly snapshots, accumulated since this page began tracking — not backfilled (see methodology below).</div>
+<h2>Surprise magnitude distribution</h2>
+<div class="chart-box-sub">Latest quarter, all reporters with usable estimates. A longer right tail than left is the well-documented tendency for upside surprises to run larger than downside ones.</div>
 </div>
 </div>
 <div class="chart-canvas-wrap short">
-<canvas id="historyChart"></canvas>
+<canvas id="distChart"></canvas>
 </div>
 </div>
 
 <div class="chart-box">
 <div class="chart-box-header">
 <div>
-<h2>Breadth vs. magnitude, by stock</h2>
-<div class="chart-box-sub">Each point is one S&amp;P 500 constituent. Upper-right: broadly and sharply upgraded. Lower-left: broadly and sharply downgraded.</div>
+<h2>Does a beat predict another beat?</h2>
+<div class="chart-box-sub">Pooled across the panel: how often the next quarter is also a beat, conditioned on whether this quarter was a beat or a miss.</div>
 </div>
 </div>
-<div class="chart-canvas-wrap tall">
-<canvas id="scatterChart"></canvas>
+<div class="persist-grid">
+<div class="persist-card">
+<div class="persist-label">Beat rate after a beat</div>
+<div class="persist-value" id="persistAfterBeat">—</div>
 </div>
-<div class="sector-legend" id="scatterLegend"></div>
+<div class="persist-card">
+<div class="persist-label">Beat rate after a miss</div>
+<div class="persist-value" id="persistAfterMiss">—</div>
+</div>
+<div class="persist-card">
+<div class="persist-label">Unconditional beat rate</div>
+<div class="persist-value" id="persistUnconditional">—</div>
+</div>
+</div>
+<div class="chart-box-sub" id="persistStats">—</div>
 </div>
 
 <div class="leaderboard-grid">
 <div class="leaderboard-col">
-<h3 class="up">Biggest upgrades</h3>
+<h3 class="up">Longest active beat streaks</h3>
 <div class="table-box">
 <table>
 <thead>
-<tr><th>Ticker</th><th>Company</th><th>Sector</th><th>FY1 EPS est.</th><th>30D drift</th><th>Analysts &uarr;/&darr;</th></tr>
+<tr><th>Ticker</th><th>Company</th><th>Sector</th><th>Streak</th><th>Latest surprise</th></tr>
 </thead>
-<tbody id="upgradesBody"><tr><td colspan="6" style="text-align:center; color:var(--muted); padding:20px;">Loading&hellip;</td></tr></tbody>
+<tbody id="streaksBeatBody"><tr><td colspan="5" style="text-align:center; color:var(--muted); padding:20px;">Loading&hellip;</td></tr></tbody>
 </table>
 </div>
 </div>
 <div class="leaderboard-col">
-<h3 class="down">Biggest downgrades</h3>
+<h3 class="down">Longest active miss streaks</h3>
 <div class="table-box">
 <table>
 <thead>
-<tr><th>Ticker</th><th>Company</th><th>Sector</th><th>FY1 EPS est.</th><th>30D drift</th><th>Analysts &uarr;/&darr;</th></tr>
+<tr><th>Ticker</th><th>Company</th><th>Sector</th><th>Streak</th><th>Latest surprise</th></tr>
 </thead>
-<tbody id="downgradesBody"><tr><td colspan="6" style="text-align:center; color:var(--muted); padding:20px;">Loading&hellip;</td></tr></tbody>
+<tbody id="streaksMissBody"><tr><td colspan="5" style="text-align:center; color:var(--muted); padding:20px;">Loading&hellip;</td></tr></tbody>
+</table>
+</div>
+</div>
+</div>
+
+<div class="leaderboard-grid">
+<div class="leaderboard-col">
+<h3 class="up">Biggest beats, latest quarter</h3>
+<div class="table-box">
+<table>
+<thead>
+<tr><th>Ticker</th><th>Company</th><th>Sector</th><th>Reported</th><th>Est.</th><th>Surprise</th></tr>
+</thead>
+<tbody id="biggestBeatsBody"><tr><td colspan="6" style="text-align:center; color:var(--muted); padding:20px;">Loading&hellip;</td></tr></tbody>
+</table>
+</div>
+</div>
+<div class="leaderboard-col">
+<h3 class="down">Biggest misses, latest quarter</h3>
+<div class="table-box">
+<table>
+<thead>
+<tr><th>Ticker</th><th>Company</th><th>Sector</th><th>Reported</th><th>Est.</th><th>Surprise</th></tr>
+</thead>
+<tbody id="biggestMissesBody"><tr><td colspan="6" style="text-align:center; color:var(--muted); padding:20px;">Loading&hellip;</td></tr></tbody>
 </table>
 </div>
 </div>
@@ -813,37 +870,24 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 
 <div class="explainer">
 <h2>Methodology</h2>
-<p>Two different questions get asked about analyst earnings revisions, and they don't always point the same way: <em>how many</em> analysts are changing their minds, and <em>how much</em> the number is actually moving. The <strong>Net Revision Ratio</strong> answers the first: for each stock's current-fiscal-year (FY1) consensus EPS estimate, it's (upward revisions &minus; downward revisions) &divide; total revisions over the trailing 30 days, a breadth measure that runs from &minus;1 (every revision was down) to +1 (every revision was up). The <strong>Estimate Drift</strong> answers the second: the trailing-30-day percent change in the consensus FY1 EPS estimate itself. A stock (or sector) can have wide breadth with almost no drift &mdash; a dozen analysts each nudging their number a penny in the same direction &mdash; or the reverse: one or two analysts making a large call that moves the average a lot without most of the Street having weighed in yet. Sector and market figures are the equal-weighted mean of each metric across that group's constituents with usable data, not cap-weighted &mdash; a $50B mid-cap's analyst revisions count the same as a Magnificent Seven name's.</p>
-<p>The universe is the S&amp;P 500 (the same constituent list used elsewhere on this site &mdash; see <a href="/sector-beeswarm.html">Sector Beeswarm</a>), with sector classification pulled from that page's own weekly company-metadata refresh rather than a second, redundant lookup. The leaderboards exclude stocks with fewer than 3 covering analysts, since a one- or two-analyst estimate can swing double digits on a single revision with no real breadth behind it.</p>
-<p>The "over time" chart is not a backfilled series &mdash; Alpha Vantage's estimates endpoint returns only the current snapshot's trailing-window figures, not a history of past snapshots, so there was no way to reconstruct what the Net Revision Ratio looked like a year or five years ago. Instead, this page takes its own weekly snapshot and appends it, meaning the trend line will only get more useful over time as more weekly points accumulate; treat an early, short line as exactly that &mdash; a start, not a full cycle.</p>
-<p>Recomputed weekly (Saturday) across all ~500 constituents, sequentially and rate-limited, rather than daily &mdash; trailing-30-day revision counts and 30-day drift don't move enough day to day to justify the extra API load.</p>
-<div class="source">Source: <a href="https://www.alphavantage.co/" target="_blank" rel="noopener">Alpha Vantage — EARNINGS_ESTIMATES</a>. Not investment advice.</div>
+<p>Each quarter, an S&amp;P 500 company either <strong>beats</strong>, <strong>meets</strong>, or <strong>misses</strong> the consensus analyst estimate for its reported EPS &mdash; and the gap between reported and estimated, as a percentage of the estimate, is the <strong>surprise</strong>. This page pulls Alpha Vantage's full quarterly earnings history for every S&amp;P 500 constituent (the same universe used elsewhere on this site &mdash; see <a href="/sector-beeswarm.html">Sector Beeswarm</a>, whose weekly company metadata this page reuses for sector/name rather than a second lookup) and works out three things: how often companies beat, by how much, and whether beating (or missing) tends to repeat.</p>
+<p>Two filters are applied before a quarter counts toward any of these numbers. A quarter with a consensus estimate smaller than 5&cent; is dropped, since dividing by a number that close to zero turns an ordinary penny of upside into a triple-digit "surprise" that has nothing to do with how the company actually did. Any surprise beyond &plusmn;200% is dropped too, as the same failure mode in a milder disguise. Both exist to keep a handful of near-zero-EPS names from dominating a mean or a leaderboard that's supposed to describe the other 490-odd companies.</p>
+<p>Quarters are <strong>calendarized</strong>: a fiscal period ending any time in a given three-month calendar window (Jan&ndash;Mar, Apr&ndash;Jun, Jul&ndash;Sep, Oct&ndash;Dec) is bucketed together, so a September-fiscal-year-end company like Apple lines up in the same column as a December-fiscal-year-end peer reporting a similar real-world period. It's an approximation, not exact fiscal alignment. The "latest quarter" used for the headline stats, sector breakdown, and biggest-beat/miss tables is the most recent calendarized quarter where at least half the mapped universe has reported &mdash; early in a reporting season, the first few dozen reporters aren't representative enough to call a beat rate.</p>
+<p>The <strong>persistence</strong> test pools every consecutive pair of a company's own filtered quarters across the whole panel (not just the latest quarter) and asks: given this quarter was a beat, was the next one also a beat &mdash; and how does that compare to the same question after a miss, and to the unconditional beat rate? The z-statistic and p-value test whether the after-a-beat and after-a-miss rates differ by more than sampling noise would produce on their own; it's a standard two-proportion z-test, not a claim about causation or a tradeable signal, and it says nothing about the size or timing of any price reaction &mdash; that would require pairing this panel with a price series around each report date, which this page doesn't attempt.</p>
+<p>Recomputed weekly (Saturday), across all ~500 constituents, sequentially and rate-limited. Unlike some of this site's other weekly jobs, there's no need for the page to accumulate its own history over time here &mdash; Alpha Vantage's EARNINGS endpoint returns years of real quarterly history in a single call, so the trend chart is genuine historical data, recomputed fresh each run, not a series built one weekly snapshot at a time.</p>
+<div class="source">Source: <a href="https://www.alphavantage.co/" target="_blank" rel="noopener">Alpha Vantage — EARNINGS</a>. Not investment advice.</div>
 </div>
 
 </div>
 
 <script>
-const DATA_URL = "/api/earnings-revisions";
-
-const SECTOR_COLORS = {
- "Information Technology": "#d98a3d",
- "Financials": "#6f8fac",
- "Health Care": "#8e7cc3",
- "Energy": "#c0564f",
- "Industrials": "#5a9d6f",
- "Consumer Discretionary": "#e0b04f",
- "Consumer Staples": "#4fb0c0",
- "Utilities": "#b56f2a",
- "Materials": "#9a9a9a",
- "Real Estate": "#c77dbd",
- "Communication Services": "#4f7ae0",
-};
+const DATA_URL = "/api/earnings-surprise";
 
 let RAW = null;
+let trendChart = null;
 let sectorChart = null;
-let historyChart = null;
-let scatterChart = null;
-let SECTOR_MODE = "breadth"; // "breadth" | "magnitude"
+let distChart = null;
+let SECTOR_MODE = "beatRate"; // "beatRate" | "magnitude"
 
 function showError(message){
  const banner = document.getElementById("errorBanner");
@@ -857,14 +901,14 @@ function showWarning(message){
  banner.style.display = "block";
 }
 
-function fmtRatio(v){
- if(v === null || v === undefined || isNaN(v)) return "—";
- return (v >= 0 ? "+" : "") + v.toFixed(2);
-}
-
 function fmtPct(v, digits){
  if(v === null || v === undefined || isNaN(v)) return "—";
  return (v >= 0 ? "+" : "") + v.toFixed(digits === undefined ? 2 : digits) + "%";
+}
+
+function fmtPlainPct(v, digits){
+ if(v === null || v === undefined || isNaN(v)) return "—";
+ return v.toFixed(digits === undefined ? 1 : digits) + "%";
 }
 
 function classForValue(v){
@@ -878,9 +922,6 @@ function themeMutedColor(){
 function themeHairColor(){
  return getComputedStyle(document.documentElement).getPropertyValue("--hair").trim() || "#2b3138";
 }
-function themeInkColor(){
- return getComputedStyle(document.documentElement).getPropertyValue("--ink").trim() || "#eae6da";
-}
 
 async function init(){
  try{
@@ -892,111 +933,45 @@ async function init(){
   document.getElementById("updated").textContent = "As of " + new Date(data.generated_at_utc).toLocaleString();
 
   if(data.universe_size < data.universe_total * 0.85){
-   showWarning("Only " + data.universe_size + " of " + data.universe_total + " S&P 500 constituents had usable estimates this run — some sector figures may be based on partial coverage.");
+   showWarning("Only " + data.universe_size + " of " + data.universe_total + " S&P 500 constituents had usable earnings data this run — some figures may be based on partial coverage.");
   }
 
   renderStats();
+  renderTrendChart();
   renderSectorChart();
-  renderHistoryChart();
-  renderScatter();
+  renderDistChart();
+  renderPersistence();
   renderLeaderboards();
 
  }catch(e){
-  showError("Couldn't load earnings revisions data (" + e.message + "). The /api/earnings-revisions function may be unreachable.");
+  showError("Couldn't load earnings surprise data (" + e.message + "). The /api/earnings-surprise function may be unreachable.");
  }
 }
 
 function renderStats(){
  const m = RAW.market;
- document.getElementById("statNrr").textContent = fmtRatio(m.netRevisionRatio30);
- document.getElementById("statNrr").className = "stat-value" + (m.netRevisionRatio30 < 0 ? " down" : "");
- document.getElementById("statDrift").textContent = fmtPct(m.drift30);
- document.getElementById("statDrift").className = "stat-value" + (m.drift30 < 0 ? " down" : "");
- document.getElementById("statUpDown").textContent = m.upTotal + " / " + m.downTotal;
+ document.getElementById("statBeatRate").textContent = fmtPlainPct(m.beatRate);
+ document.getElementById("statBeatRateNote").textContent = RAW.latestQuarter.label + " · n=" + RAW.latestQuarter.count;
+ document.getElementById("statAvgSurprise").textContent = fmtPct(m.avgSurprise);
+ document.getElementById("statAvgSurprise").className = "stat-value" + (m.avgSurprise < 0 ? " down" : " neutral");
+
+ const p = RAW.persistence;
+ document.getElementById("statPersistence").textContent = fmtPlainPct(p.beatRateAfterBeat);
+ document.getElementById("statPersistenceNote").textContent = "vs. " + fmtPlainPct(p.unconditionalBeatRate) + " unconditional";
  document.getElementById("statCoverage").textContent = RAW.universe_size + " / " + RAW.universe_total;
 }
 
-function renderSectorChart(){
- const sectors = [...RAW.sectors].sort((a, b) => {
-  const av = SECTOR_MODE === "breadth" ? a.netRevisionRatio30 : a.drift30;
-  const bv = SECTOR_MODE === "breadth" ? b.netRevisionRatio30 : b.drift30;
-  return (bv ?? -Infinity) - (av ?? -Infinity);
- });
-
- const values = sectors.map(s => SECTOR_MODE === "breadth" ? s.netRevisionRatio30 : s.drift30);
- const colors = values.map(v => (v === null ? themeMutedColor() : (v >= 0 ? "#d98a3d" : "#6f8fac")));
-
- const ctx = document.getElementById("sectorChart").getContext("2d");
- if(sectorChart) sectorChart.destroy();
- sectorChart = new Chart(ctx, {
-  type: "bar",
-  data: {
-   labels: sectors.map(s => s.sector),
-   datasets: [{
-    label: SECTOR_MODE === "breadth" ? "Net Revision Ratio" : "Estimate Drift (30D, %)",
-    data: values,
-    backgroundColor: colors,
-    borderRadius: 4,
-   }],
-  },
-  options: {
-   indexAxis: "y",
-   responsive: true,
-   maintainAspectRatio: false,
-   plugins: {
-    legend: { display: false },
-    tooltip: {
-     callbacks: {
-      label: ctx => SECTOR_MODE === "breadth"
-       ? "Net Revision Ratio: " + fmtRatio(ctx.parsed.x) + " (n=" + sectors[ctx.dataIndex].count + ")"
-       : "Estimate Drift: " + fmtPct(ctx.parsed.x) + " (n=" + sectors[ctx.dataIndex].count + ")",
-     },
-    },
-   },
-   scales: {
-    x: {
-     ticks: { color: themeMutedColor() },
-     grid: { color: themeHairColor() },
-     title: { display: true, text: SECTOR_MODE === "breadth" ? "Net Revision Ratio (−1..+1)" : "30-day estimate drift (%)", color: themeMutedColor() },
-    },
-    y: { ticks: { color: themeMutedColor() }, grid: { display: false } },
-   },
-  },
- });
-}
-
-document.getElementById("btnBreadth").addEventListener("click", () => {
- SECTOR_MODE = "breadth";
- document.getElementById("btnBreadth").classList.add("active");
- document.getElementById("btnMagnitude").classList.remove("active");
- document.getElementById("sectorChartSub").textContent = "Net Revision Ratio: share of analysts revising up minus down, trailing 30 days.";
- renderSectorChart();
-});
-document.getElementById("btnMagnitude").addEventListener("click", () => {
- SECTOR_MODE = "magnitude";
- document.getElementById("btnMagnitude").classList.add("active");
- document.getElementById("btnBreadth").classList.remove("active");
- document.getElementById("sectorChartSub").textContent = "Estimate Drift: 30-day % change in the consensus FY1 EPS estimate.";
- renderSectorChart();
-});
-
-function renderHistoryChart(){
- const points = RAW.history || [];
- const ctx = document.getElementById("historyChart").getContext("2d");
- if(historyChart) historyChart.destroy();
-
- if(points.length < 2){
-  // Not enough history yet to draw a meaningful line — still render the
-  // single available point (or none) rather than erroring.
- }
-
- historyChart = new Chart(ctx, {
+function renderTrendChart(){
+ const points = RAW.trend || [];
+ const ctx = document.getElementById("trendChart").getContext("2d");
+ if(trendChart) trendChart.destroy();
+ trendChart = new Chart(ctx, {
   type: "line",
   data: {
-   labels: points.map(p => p.date),
+   labels: points.map(p => p.label),
    datasets: [{
-    label: "Market Net Revision Ratio",
-    data: points.map(p => p.marketNrr),
+    label: "Beat rate",
+    data: points.map(p => p.beatRate),
     borderColor: "#d98a3d",
     backgroundColor: "#d98a3d",
     borderWidth: 1.5,
@@ -1010,76 +985,153 @@ function renderHistoryChart(){
    interaction: { mode: "index", intersect: false },
    plugins: {
     legend: { display: false },
-    tooltip: { callbacks: { label: ctx => "Net Revision Ratio: " + fmtRatio(ctx.parsed.y) } },
+    tooltip: {
+     callbacks: {
+      label: ctx => "Beat rate: " + fmtPlainPct(ctx.parsed.y) + " (n=" + points[ctx.dataIndex].count + ")",
+      afterLabel: ctx => "Avg. surprise: " + fmtPct(points[ctx.dataIndex].avgSurprise),
+     },
+    },
    },
    scales: {
-    x: { ticks: { color: themeMutedColor(), maxTicksLimit: 8 }, grid: { color: themeHairColor() } },
-    y: { ticks: { color: themeMutedColor() }, grid: { color: themeHairColor() } },
+    x: { ticks: { color: themeMutedColor(), maxTicksLimit: 12 }, grid: { color: themeHairColor() } },
+    y: { ticks: { color: themeMutedColor(), callback: v => v + "%" }, grid: { color: themeHairColor() } },
    },
   },
  });
 }
 
-function renderScatter(){
- const points = RAW.scatter || [];
- const bySector = {};
- for(const p of points){
-  if(!bySector[p.sector]) bySector[p.sector] = [];
-  bySector[p.sector].push({ x: p.netRevisionRatio30, y: p.drift30, ticker: p.ticker });
- }
+function renderSectorChart(){
+ const sectors = [...RAW.sectors].sort((a, b) => {
+  const av = SECTOR_MODE === "beatRate" ? a.beatRate : a.avgSurprise;
+  const bv = SECTOR_MODE === "beatRate" ? b.beatRate : b.avgSurprise;
+  return (bv ?? -Infinity) - (av ?? -Infinity);
+ });
 
- const datasets = Object.keys(bySector).map(sector => ({
-  label: sector,
-  data: bySector[sector],
-  backgroundColor: SECTOR_COLORS[sector] || "#8b9199",
-  pointRadius: 3.5,
-  showLine: false,
- }));
+ const values = sectors.map(s => SECTOR_MODE === "beatRate" ? s.beatRate : s.avgSurprise);
+ const colors = values.map(v => (v === null ? themeMutedColor() : (v >= 0 ? "#d98a3d" : "#6f8fac")));
 
- const ctx = document.getElementById("scatterChart").getContext("2d");
- if(scatterChart) scatterChart.destroy();
- scatterChart = new Chart(ctx, {
-  type: "scatter",
-  data: { datasets },
+ const ctx = document.getElementById("sectorChart").getContext("2d");
+ if(sectorChart) sectorChart.destroy();
+ sectorChart = new Chart(ctx, {
+  type: "bar",
+  data: {
+   labels: sectors.map(s => s.sector),
+   datasets: [{
+    label: SECTOR_MODE === "beatRate" ? "Beat rate (%)" : "Avg. surprise (%)",
+    data: values,
+    backgroundColor: colors,
+    borderRadius: 4,
+   }],
+  },
   options: {
+   indexAxis: "y",
    responsive: true,
    maintainAspectRatio: false,
    plugins: {
     legend: { display: false },
     tooltip: {
      callbacks: {
-      label: ctx => ctx.raw.ticker + " (" + ctx.dataset.label + "): NRR " + fmtRatio(ctx.raw.x) + ", drift " + fmtPct(ctx.raw.y),
+      label: ctx => (SECTOR_MODE === "beatRate"
+       ? "Beat rate: " + fmtPlainPct(ctx.parsed.x)
+       : "Avg. surprise: " + fmtPct(ctx.parsed.x)) + " (n=" + sectors[ctx.dataIndex].count + ")",
      },
     },
    },
    scales: {
-    x: { title: { display: true, text: "Net Revision Ratio (breadth)", color: themeMutedColor() }, ticks: { color: themeMutedColor() }, grid: { color: themeHairColor() } },
-    y: { title: { display: true, text: "30-day Estimate Drift (%, magnitude)", color: themeMutedColor() }, ticks: { color: themeMutedColor() }, grid: { color: themeHairColor() } },
+    x: {
+     ticks: { color: themeMutedColor() },
+     grid: { color: themeHairColor() },
+     title: { display: true, text: SECTOR_MODE === "beatRate" ? "Beat rate (%)" : "Avg. surprise (%)", color: themeMutedColor() },
+    },
+    y: { ticks: { color: themeMutedColor() }, grid: { display: false } },
    },
   },
  });
-
- const legend = document.getElementById("scatterLegend");
- legend.innerHTML = Object.keys(bySector).sort().map(sector =>
-  '<span><span class="dot" style="background:' + (SECTOR_COLORS[sector] || "#8b9199") + '"></span>' + sector + '</span>'
- ).join("");
 }
 
-function leaderboardRowHtml(r){
+document.getElementById("btnBeatRate").addEventListener("click", () => {
+ SECTOR_MODE = "beatRate";
+ document.getElementById("btnBeatRate").classList.add("active");
+ document.getElementById("btnMagnitude").classList.remove("active");
+ document.getElementById("sectorChartSub").textContent = "Beat rate: share of sector constituents beating consensus EPS.";
+ renderSectorChart();
+});
+document.getElementById("btnMagnitude").addEventListener("click", () => {
+ SECTOR_MODE = "magnitude";
+ document.getElementById("btnMagnitude").classList.add("active");
+ document.getElementById("btnBeatRate").classList.remove("active");
+ document.getElementById("sectorChartSub").textContent = "Avg. surprise %: mean gap between reported and estimated EPS, by sector.";
+ renderSectorChart();
+});
+
+function renderDistChart(){
+ const bins = RAW.distribution || [];
+ const ctx = document.getElementById("distChart").getContext("2d");
+ if(distChart) distChart.destroy();
+ distChart = new Chart(ctx, {
+  type: "bar",
+  data: {
+   labels: bins.map(b => b.label),
+   datasets: [{
+    label: "Reporters",
+    data: bins.map(b => b.count),
+    backgroundColor: bins.map(b => (b.hi <= 0 ? "#6f8fac" : "#d98a3d")),
+    borderRadius: 4,
+   }],
+  },
+  options: {
+   responsive: true,
+   maintainAspectRatio: false,
+   plugins: {
+    legend: { display: false },
+    tooltip: { callbacks: { label: ctx => ctx.parsed.y + " reporters" } },
+   },
+   scales: {
+    x: { ticks: { color: themeMutedColor() }, grid: { display: false }, title: { display: true, text: "Surprise %", color: themeMutedColor() } },
+    y: { ticks: { color: themeMutedColor() }, grid: { color: themeHairColor() }, title: { display: true, text: "Number of companies", color: themeMutedColor() } },
+   },
+  },
+ });
+}
+
+function renderPersistence(){
+ const p = RAW.persistence;
+ document.getElementById("persistAfterBeat").textContent = fmtPlainPct(p.beatRateAfterBeat) + " (n=" + p.nAfterBeat + ")";
+ document.getElementById("persistAfterMiss").textContent = fmtPlainPct(p.beatRateAfterMiss) + " (n=" + p.nAfterMiss + ")";
+ document.getElementById("persistUnconditional").textContent = fmtPlainPct(p.unconditionalBeatRate);
+ const zText = p.z === null ? "not enough data to test" : "z = " + p.z.toFixed(2) + ", p " + (p.pValue < 0.001 ? "< 0.001" : "= " + p.pValue);
+ document.getElementById("persistStats").textContent = "Two-proportion z-test, after-a-beat vs. after-a-miss: " + zText + ".";
+}
+
+function streakRowHtml(r, cls){
  return `<tr>
   <td>${r.ticker}</td>
   <td>${r.name}</td>
   <td>${r.sector}</td>
-  <td>${r.epsNow === null ? "—" : "$" + r.epsNow.toFixed(2)}</td>
-  <td class="${classForValue(r.drift30)}">${fmtPct(r.drift30)}</td>
-  <td>${r.up30}&uarr; / ${r.down30}&darr;</td>
+  <td class="${cls}">${r.streak}</td>
+  <td class="${classForValue(r.latestSurprisePct)}">${fmtPct(r.latestSurprisePct)}</td>
+ </tr>`;
+}
+
+function surpriseRowHtml(r){
+ return `<tr>
+  <td>${r.ticker}</td>
+  <td>${r.name}</td>
+  <td>${r.sector}</td>
+  <td>${r.reportedEPS === null ? "—" : "$" + r.reportedEPS.toFixed(2)}</td>
+  <td>${r.estimatedEPS === null ? "—" : "$" + r.estimatedEPS.toFixed(2)}</td>
+  <td class="${classForValue(r.surprisePct)}">${fmtPct(r.surprisePct)}</td>
  </tr>`;
 }
 
 function renderLeaderboards(){
- document.getElementById("upgradesBody").innerHTML = (RAW.upgrades || []).map(leaderboardRowHtml).join("")
+ document.getElementById("streaksBeatBody").innerHTML = (RAW.streaksBeat || []).map(r => streakRowHtml(r, "cell-pos")).join("")
+  || '<tr><td colspan="5" style="text-align:center; color:var(--muted); padding:20px;">No streaks &ge; 3 quarters</td></tr>';
+ document.getElementById("streaksMissBody").innerHTML = (RAW.streaksMiss || []).map(r => streakRowHtml(r, "cell-neg")).join("")
+  || '<tr><td colspan="5" style="text-align:center; color:var(--muted); padding:20px;">No streaks &ge; 3 quarters</td></tr>';
+ document.getElementById("biggestBeatsBody").innerHTML = (RAW.biggestBeats || []).map(surpriseRowHtml).join("")
   || '<tr><td colspan="6" style="text-align:center; color:var(--muted); padding:20px;">No data</td></tr>';
- document.getElementById("downgradesBody").innerHTML = (RAW.downgrades || []).map(leaderboardRowHtml).join("")
+ document.getElementById("biggestMissesBody").innerHTML = (RAW.biggestMisses || []).map(surpriseRowHtml).join("")
   || '<tr><td colspan="6" style="text-align:center; color:var(--muted); padding:20px;">No data</td></tr>';
 }
 

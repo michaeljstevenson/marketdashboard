@@ -127,6 +127,11 @@
   to = "/.netlify/functions/share-count-trends"
   status = 200
 
+[[redirects]]
+  from = "/api/earnings-surprise"
+  to = "/.netlify/functions/earnings-surprise"
+  status = 200
+
 # The Statistical Engine page was briefly at these paths.
 [[redirects]]
   from = "/streak-scanner"
@@ -306,3 +311,16 @@
   # because a single company's Form 4 filings are sparse enough that a
   # trailing-90-day aggregate barely moves day to day.
   schedule = "30 10 * * 6"
+
+[functions."scheduled-surprise-background"]
+  # Weekly, Saturday 11:10 UTC — 40 minutes after
+  # scheduled-insider-transactions-background (10:30 Sat) starts, giving its
+  # own ~503-call sweep (plus retry pass) room to finish before this one
+  # begins. Reads beeswarm-meta's meta.json for sector/name, same reuse
+  # pattern as the revisions and insider-transactions jobs. ~503 sequential
+  # Alpha Vantage EARNINGS calls at 1050ms spacing plus a retry pass.
+  # Weekly, not daily: this rebuilds the whole quarterly panel fresh each
+  # run (see scheduled-surprise-background.js for why no accumulating
+  # snapshot is needed here), and which companies have newly reported only
+  # changes meaningfully week to week, not day to day.
+  schedule = "10 11 * * 6"
