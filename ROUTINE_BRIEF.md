@@ -1,4 +1,12 @@
 Nightly Routine Brief — michaeljstevenson.co
+## ⚠️ DO NOT STOP AFTER ONE PAGE
+This is the single most important rule in this file, and it has been missed
+before: after finishing a page — including after it's tested, committed,
+pushed, and its PR is green and mergeable — **do not stop and do not consider
+the run "done."** Immediately move to the next backlog item (or propose a new
+one) and keep building. Only stop when the safety valve below is hit
+(~85% of the session window) or the idea backlog is genuinely exhausted.
+"I built one good page" is never a finishing condition on its own.
 Site context
 Independent markets-research portfolio site (data-driven research on markets, macro, and investor psychology). Existing sections: Behavioral/Positioning, Equities, Markets/Macro, Rates/Credit, Alternative/Cross-Asset, Thematic. Tone: professional, data-first, "not investment advice."
 Nightly task
