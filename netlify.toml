@@ -117,6 +117,11 @@
   to = "/.netlify/functions/insider-transactions"
   status = 200
 
+[[redirects]]
+  from = "/api/smallcap-largecap"
+  to = "/.netlify/functions/smallcap-largecap"
+  status = 200
+
 # The Statistical Engine page was briefly at these paths.
 [[redirects]]
   from = "/streak-scanner"
@@ -266,6 +271,17 @@
   # daily refresh, so weekly (not one of the weekday daily-close jobs)
   # matches how this site treats other full-index sweeps.
   schedule = "20 7 * * 6"
+
+[functions."scheduled-smallcap-background"]
+  # 21:15 UTC — in the gap between scheduled-oddstats (21:10) and
+  # scheduled-beeswarm-daily (21:40) in the once-daily post-close block.
+  # Only 5 Alpha Vantage calls total (3 full-history TIME_SERIES_DAILY_
+  # ADJUSTED + FEDERAL_FUNDS_RATE + TREASURY_YIELD, both monthly), so
+  # unlike the full-S&P-500-sweep jobs in this block there's no real
+  # rate-limit contention risk either way — staggered anyway to keep the
+  # daily block's logs easy to read in order. Daily, not weekly, since
+  # (unlike a sparse-event dataset) index levels move every trading day.
+  schedule = "15 21 * * 1-5"
 
 [functions."scheduled-insider-transactions-background"]
   # Weekly, Saturday 10:30 UTC — after the rest of the Saturday block
