@@ -152,7 +152,7 @@ document.addEventListener("DOMContentLoaded", function(){
 </script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Small Cap vs. Large Cap Spread — Michael J. Stevenson</title>
+<title>Sector Correlation Matrix — Michael J. Stevenson</title>
 
 <style>
 
@@ -399,10 +399,50 @@ h1{
 }
 
 .chart-canvas-wrap{
- height:380px;
+ height:340px;
 }
 
-.chart-canvas-wrap.short{ height:280px; }
+/* HEATMAP */
+
+.heatmap-wrap{
+ overflow-x:auto;
+}
+
+.heatmap{
+ border-collapse:collapse;
+ font-size:11px;
+ font-family:var(--mono);
+ min-width:640px;
+}
+
+.heatmap th{
+ padding:6px 4px;
+ color:var(--muted);
+ font-weight:600;
+ text-align:center;
+ white-space:nowrap;
+}
+
+.heatmap th.row-label{
+ text-align:right;
+ padding-right:8px;
+ font-family:var(--sans);
+}
+
+.heatmap td{
+ padding:0;
+ text-align:center;
+ width:46px;
+ height:34px;
+ color:#14181c;
+ font-weight:600;
+}
+
+.heatmap td.diag{
+ color:var(--muted);
+ background:var(--card-hover) !important;
+ font-weight:400;
+}
 
 /* TABLE */
 
@@ -427,14 +467,14 @@ h1{
 
 .table-box-header .chart-subhead{ margin-bottom:6px; }
 
-table{
+table.datatable{
  width:100%;
  border-collapse:collapse;
  font-size:13px;
- min-width:640px;
+ min-width:480px;
 }
 
-thead th{
+table.datatable thead th{
  text-align:right;
  padding:14px 12px;
  color:var(--muted);
@@ -445,11 +485,11 @@ thead th{
  border-bottom:1px solid var(--hair);
 }
 
-thead th:first-child{
+table.datatable thead th:first-child{
  text-align:left;
 }
 
-tbody td{
+table.datatable tbody td{
  padding:11px 12px;
  text-align:right;
  font-family:var(--mono);
@@ -457,29 +497,18 @@ tbody td{
  border-bottom:1px solid var(--hair);
 }
 
-tbody tr:last-child td{ border-bottom:none; }
+table.datatable tbody tr:last-child td{ border-bottom:none; }
+table.datatable tbody tr:hover{ background:var(--card-hover); }
 
-tbody tr:hover{ background:var(--card-hover); }
-
-tbody td:first-child{
+table.datatable tbody td:first-child{
  text-align:left;
  font-family:var(--sans);
-}
-
-.cell-pos{ color:var(--ink); }
-.cell-neg{ color:var(--ink); }
-.cell-na{ color:var(--muted); }
-
-.table-footnote{
- padding:2px 20px 16px;
- color:var(--muted);
- font-size:11px;
 }
 
 /* SCATTER / METHOD TABLE (mirrors /factor-analysis) */
 
 .scatter-canvas-wrap{
- height:260px;
+ height:300px;
  margin-bottom:12px;
  position:relative;
 }
@@ -660,9 +689,9 @@ tbody td:first-child{
 <a href="/concentration.html">Concentration</a>
 <a href="/earnings-revisions.html">Earnings Revisions</a>
 <a href="/insider-buying-selling.html">Insider Buying/Selling</a>
-<a href="/small-cap-vs-large-cap.html" class="active">Small Cap vs. Large Cap Spread</a>
+<a href="/small-cap-vs-large-cap.html">Small Cap vs. Large Cap Spread</a>
 <a href="/share-count-trends.html">Share Count Trends</a>
-<a href="/sector-correlation.html">Sector Correlation Matrix</a>
+<a href="/sector-correlation.html" class="active">Sector Correlation Matrix</a>
 </div>
 </div>
 
@@ -729,66 +758,52 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 
 <div class="header">
 <div>
-<h1>Small Cap vs. Large Cap Spread</h1>
-<div class="subtitle">Relative strength of small-cap (IWM) and mid-cap (MDY) stocks against large-caps (SPY), indexed since IWM's 2000 inception, conditioned on the Fed rate cycle and 10-year Treasury yield moves.</div>
+<h1>Sector Correlation Matrix</h1>
+<div class="subtitle">How closely the 11 SPDR sector ETFs move together, trailing ~2 years of daily returns — the full pairwise matrix, how the average correlation drifts over time, and its relationship to market volatility.</div>
 </div>
 <div class="updated" id="updated">Loading...</div>
 </div>
 
 <div class="stat-grid">
 <div class="stat-card">
-<div class="stat-label">Small/Large Ratio</div>
-<div class="stat-value" id="statRatio">—</div>
-<div class="stat-note" id="statRatioNote">Indexed to 100 at IWM's inception</div>
+<div class="stat-label">Current Avg. Pairwise Correlation</div>
+<div class="stat-value" id="statAvgCorr">—</div>
+<div class="stat-note" id="statAvgCorrNote">Trailing 63 trading days</div>
 </div>
 <div class="stat-card">
-<div class="stat-label">12-Month Relative Return</div>
-<div class="stat-value" id="statRel12m">—</div>
-<div class="stat-note">IWM vs. SPY, trailing 252 trading days</div>
+<div class="stat-label">Most Correlated Pair</div>
+<div class="stat-value" id="statMaxPair" style="font-size:18px;">—</div>
+<div class="stat-note" id="statMaxPairNote">Full ~2-year period</div>
 </div>
 <div class="stat-card">
-<div class="stat-label">Current Fed Regime</div>
-<div class="stat-value" id="statRegime" style="font-size:20px;">—</div>
-<div class="stat-note" id="statRegimeNote">Avg. monthly spread return, this regime</div>
+<div class="stat-label">Most Diversifying Pair</div>
+<div class="stat-value" id="statMinPair" style="font-size:18px;">—</div>
+<div class="stat-note" id="statMinPairNote">Lowest pairwise correlation</div>
 </div>
 <div class="stat-card">
-<div class="stat-label">Correlation w/ 10Y Yield &Delta;</div>
-<div class="stat-value" id="statCorr" style="font-size:20px;">—</div>
-<div class="stat-note" id="statCorrNote">Monthly, Pearson r</div>
+<div class="stat-label">Correlation vs. Volatility</div>
+<div class="stat-value" id="statCorrVol" style="font-size:20px;">—</div>
+<div class="stat-note" id="statCorrVolNote">r, avg. correlation vs. SPY realized vol</div>
 </div>
 </div>
 
 <div class="chart-box">
 <div class="chart-box-header">
 <div>
-<h2>Small-cap / large-cap ratio, since 2000</h2>
-<div class="chart-subhead">IWM adjusted-close ÷ SPY adjusted-close, both indexed to 100 at IWM's inception — rising means small-caps are outperforming</div>
+<h2>Full-period pairwise correlation matrix</h2>
+<div class="chart-subhead">Pearson correlation of daily returns between each pair of sector ETFs, trailing ~2 years</div>
 </div>
 </div>
-<div class="chart-canvas-wrap">
-<canvas id="ratioChart"></canvas>
+<div class="heatmap-wrap">
+<table class="heatmap" id="heatmapTable"></table>
 </div>
-</div>
-
-<div class="table-box">
-<div class="table-box-header">
-<h2>Trailing return ladder</h2>
-<div class="chart-subhead">Total return (dividends reinvested) by cap size, as of the last close</div>
-</div>
-<table id="ladderTable">
-<thead><tr id="ladderHead"></tr></thead>
-<tbody id="ladderBody">
-<tr><td colspan="8" style="text-align:center; color:var(--muted); padding:24px;">Loading&hellip;</td></tr>
-</tbody>
-</table>
-<div class="table-footnote">1M–1Y are cumulative returns; 3Y/5Y/10Y are annualized. Small = IWM (Russell 2000 proxy), Mid = MDY (S&amp;P MidCap 400 proxy), Large = SPY (S&amp;P 500 proxy).</div>
 </div>
 
 <div class="chart-box">
 <div class="chart-box-header">
 <div>
-<h2>Rolling 12-month relative return</h2>
-<div class="chart-subhead">Small/large ratio's trailing 252-trading-day return — positive stretches are small-cap-leadership regimes, negative stretches are large-cap-leadership regimes</div>
+<h2>Average pairwise correlation over time</h2>
+<div class="chart-subhead">Rolling 63-trading-day average across all 55 sector pairs — rises when sectors move together (broad risk-on/risk-off), falls when sector-specific stories dominate</div>
 </div>
 </div>
 <div class="chart-canvas-wrap">
@@ -799,41 +814,39 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <div class="chart-box">
 <div class="chart-box-header">
 <div>
-<h2>Average monthly spread return by Fed rate regime</h2>
-<div class="chart-subhead">Months classified by the trailing 3-month change in the effective Fed funds rate; bars show the average small-vs-large monthly return within each regime</div>
-</div>
-</div>
-<div class="chart-canvas-wrap short">
-<canvas id="regimeChart"></canvas>
-</div>
-</div>
-
-<div class="chart-box">
-<div class="chart-box-header">
-<div>
-<h2>Monthly spread return vs. change in the 10-year Treasury yield</h2>
-<div class="chart-subhead">Each point is one month: x-axis is the month's change in the 10-year yield (percentage points), y-axis is that month's small-vs-large return</div>
+<h2>Average correlation vs. SPY realized volatility</h2>
+<div class="chart-subhead">Each point is one trading day: x-axis is that day's trailing-63-day annualized SPY realized volatility, y-axis is that day's trailing-63-day average pairwise sector correlation — testing the "correlations go to 1 in a crisis" claim directly</div>
 </div>
 </div>
 <div class="scatter-canvas-wrap">
-<canvas id="corrScatter"></canvas>
+<canvas id="corrVolScatter"></canvas>
 </div>
-<div id="corrMethodTable"></div>
+<div id="corrVolMethodTable"></div>
+</div>
+
+<div class="table-box">
+<div class="table-box-header">
+<h2>Correlation to the market</h2>
+<div class="chart-subhead">Each sector's correlation to SPY, full ~2-year period — lower means more diversifying against a broad market position</div>
+</div>
+<table class="datatable" id="marketCorrTable">
+<thead><tr><th>Sector</th><th>Corr. to SPY</th></tr></thead>
+<tbody id="marketCorrBody"><tr><td colspan="2" style="text-align:center; color:var(--muted); padding:24px;">Loading&hellip;</td></tr></tbody>
+</table>
 </div>
 
 <div class="explainer">
 <h2>Methodology</h2>
-<p>Small-cap and large-cap exposure are proxied by two liquid, dividend-adjusted ETFs rather than the underlying indices themselves: IWM (iShares Russell 2000 ETF) for small-caps and SPY (SPDR S&amp;P 500 ETF Trust) for large-caps, with MDY (SPDR S&amp;P MidCap 400 ETF Trust) added as a mid-cap rung for the return ladder below. Alpha Vantage's <code>TIME_SERIES_DAILY_ADJUSTED</code> adjusted-close series (dividends and splits applied) gives a true total-return comparison for all three. The ratio series is indexed to 100 at IWM's May 2000 inception — the binding constraint on how far back this page can go, even though SPY and MDY both trade back to the 1990s.</p>
-<p>The Fed-regime split classifies each calendar month by the trailing 3-month change in the effective federal funds rate (Alpha Vantage <code>FEDERAL_FUNDS_RATE</code>): a rise of more than 0.10 percentage points is "Hiking," a fall of more than 0.10pp is "Cutting," and anything in between is "Holding." The intuition being tested is that small-caps, which on average carry more floating-rate debt and less pricing power than large-caps, should be more sensitive to the direction and speed of rate changes — but note the sample sizes are modest (a few dozen months per regime across just one rate cycle's worth of history since 2000), so treat the regime averages as suggestive, not a robust statistical result.</p>
-<p>The scatter panel runs the same two-method check used throughout <a href="/factor-analysis.html">Factor Analysis</a>: Pearson (OLS) correlation alongside Spearman rank correlation, so a relationship can't be quietly resting on one or two extreme months. Both are shown; a low r&sup2; here isn't a bug — a single macro variable rarely explains much of a monthly return series, and the point of showing the regression is to be honest about how weak (or strong) that single-variable relationship actually is, not to oversell it.</p>
-<p>Refreshes once daily after the US market close (index levels move every trading day, unlike the site's sparse-event or weekly-refresh datasets); the Fed funds rate and Treasury yield series are re-pulled in full each run since both are cheap, low-volume monthly series.</p>
-<div class="source">Source: <a href="https://www.alphavantage.co/" target="_blank" rel="noopener">Alpha Vantage</a> — TIME_SERIES_DAILY_ADJUSTED, FEDERAL_FUNDS_RATE, TREASURY_YIELD</div>
+<p>Reuses the same daily adjusted-close history already fetched for <a href="/sector-analysis.html">Sector Performance</a> (the 11 SPDR sector ETFs plus SPY, ~2 years of daily bars) rather than pulling any new Alpha Vantage data — this page is pure client-side analysis of an existing dataset. Daily % returns are computed from those closes, and every pairwise Pearson correlation is computed directly from the aligned daily return series (no smoothing or resampling).</p>
+<p>The rolling correlation series takes a 63-trading-day (~one calendar quarter) trailing window, recomputes the average of all 55 sector-pair correlations at each day, and slides that window forward one day at a time. The scatter panel pairs that same rolling series against a rolling 63-day annualized realized volatility of SPY (standard deviation of daily returns &times; &radic;252), then runs the same Pearson/Spearman regression check used throughout <a href="/factor-analysis.html">Factor Analysis</a> — note that adjacent days in a rolling-window series share almost all of their underlying data, so this regression's n overstates how many truly independent observations exist. Treat the r/p values as a rough gauge of direction and strength, not as a rigorous hypothesis test the way the non-overlapping-annual checks on other pages are.</p>
+<p>The heatmap intentionally excludes SPY itself (an average of the sectors, not a peer of them) — the market-relationship table below the heatmap covers each sector's own correlation to SPY separately.</p>
+<div class="source">Source: Alpha Vantage (via the existing /api/sector-performance dataset) — TIME_SERIES_DAILY_ADJUSTED</div>
 </div>
 
 </div>
 
 <script>
-const DATA_URL = "/api/smallcap-largecap";
+const DATA_URL = "/api/sector-performance";
 
 let RAW = null;
 
@@ -841,18 +854,6 @@ function showError(message){
  const banner = document.getElementById("errorBanner");
  banner.textContent = message;
  banner.style.display = "block";
-}
-
-function showWarning(message){
- const banner = document.getElementById("warningBanner");
- banner.textContent = message;
- banner.style.display = "block";
-}
-
-function fmtPct(v, digits){
- if(v === null || v === undefined || isNaN(v)) return "—";
- digits = digits === undefined ? 2 : digits;
- return (v >= 0 ? "+" : "") + v.toFixed(digits) + "%";
 }
 
 function themeInkColor(){
@@ -871,14 +872,9 @@ function themeGreedColor(){
  const v = getComputedStyle(document.documentElement).getPropertyValue("--greed").trim();
  return v || "#d98a3d";
 }
-function themeFearColor(){
- const v = getComputedStyle(document.documentElement).getPropertyValue("--fear").trim();
- return v || "#6f8fac";
-}
 
 // ---- Stats helpers — same methodology as /factor-analysis, duplicated
 // here since every page on this site is self-contained (see CLAUDE.md). ----
-
 function linearRegression(xs, ys){
  const n = xs.length;
  const mx = xs.reduce((a, b) => a + b, 0) / n;
@@ -897,12 +893,7 @@ function linearRegression(xs, ys){
  const p = 2 * (1 - normalCdf(Math.abs(t)));
  return { n, slope, intercept, r, r2, t, dof, p, sse };
 }
-
-function normalCdf(x){
- return 0.5 * (1 + erf(x / Math.SQRT2));
-}
-
-// Abramowitz & Stegun 7.1.26 approximation — accurate to ~1e-7.
+function normalCdf(x){ return 0.5 * (1 + erf(x / Math.SQRT2)); }
 function erf(x){
  const sign = x < 0 ? -1 : 1;
  x = Math.abs(x);
@@ -911,7 +902,6 @@ function erf(x){
  const y = 1 - (((((a5 * t + a4) * t) + a3) * t + a2) * t + a1) * t * Math.exp(-x * x);
  return sign * y;
 }
-
 function rankArray(arr){
  const idx = arr.map((v, i) => i).sort((a, b) => arr[a] - arr[b]);
  const ranks = new Array(arr.length);
@@ -925,80 +915,32 @@ function rankArray(arr){
  }
  return ranks;
 }
+function spearmanRegression(xs, ys){ return linearRegression(rankArray(xs), rankArray(ys)); }
 
-function spearmanRegression(xs, ys){
- return linearRegression(rankArray(xs), rankArray(ys));
+function pearson(xs, ys){
+ const n = xs.length;
+ const mx = xs.reduce((a,b) => a+b, 0) / n;
+ const my = ys.reduce((a,b) => a+b, 0) / n;
+ const sxx = xs.reduce((s,x) => s + (x-mx)**2, 0);
+ const syy = ys.reduce((s,y) => s + (y-my)**2, 0);
+ const sxy = xs.reduce((s,x,i) => s + (x-mx)*(ys[i]-my), 0);
+ const denom = Math.sqrt(sxx * syy);
+ return denom === 0 ? 0 : sxy / denom;
 }
 
-function percentileRank(arr, value){
- let below = 0;
- for(const v of arr) if(v <= value) below++;
- return (below / arr.length) * 100;
-}
-
-// ---- Monthly aggregation: Fed regime classification, month-end ratio
-// resampling, and the monthly small-vs-large / rate-change pairing used by
-// the regime bar chart and the correlation scatter. ----
-
-function prevMonthKey(ym){
- let [y, m] = ym.split("-").map(Number);
- m -= 1;
- if(m < 1){ m = 12; y -= 1; }
- return y + "-" + String(m).padStart(2, "0");
-}
-
-function monthEndMap(dates, values){
- const map = new Map();
- for(let i = 0; i < dates.length; i++) map.set(dates[i].slice(0, 7), values[i]); // last write per key wins = month-end
- return map;
-}
-
-function buildMonthly(data){
- const ratioByMonth = monthEndMap(data.dates, data.ratioSmallLarge);
- const fedRows = data.fedFundsMonthly; // ascending
- const treasuryByMonth = new Map();
- for(let i = 1; i < data.treasury10yMonthly.length; i++){
-  const cur = data.treasury10yMonthly[i], prev = data.treasury10yMonthly[i - 1];
-  treasuryByMonth.set(cur.date.slice(0, 7), Math.round((cur.value - prev.value) * 1000) / 1000);
+function dailyReturns(history){
+ const closes = history.map(h => h.close);
+ const dates = history.map(h => h.date);
+ const rets = [];
+ const retDates = [];
+ for(let i = 1; i < closes.length; i++){
+  rets.push((closes[i] / closes[i-1]) - 1);
+  retDates.push(dates[i]);
  }
-
- const records = [];
- let currentRegime = null;
- for(let i = 3; i < fedRows.length; i++){
-  const ym = fedRows[i].date.slice(0, 7);
-  const change = fedRows[i].value - fedRows[i - 3].value;
-  const regime = change > 0.1 ? "Hiking" : change < -0.1 ? "Cutting" : "Holding";
-  currentRegime = regime; // fedRows is ascending, so the loop's last write is the latest month
-  const ratioNow = ratioByMonth.get(ym);
-  const ratioPrev = ratioByMonth.get(prevMonthKey(ym));
-  const relReturn = (ratioNow !== undefined && ratioPrev !== undefined)
-   ? Math.round((ratioNow / ratioPrev - 1) * 10000) / 100
-   : null;
-  const d10y = treasuryByMonth.has(ym) ? treasuryByMonth.get(ym) : null;
-  records.push({ ym, regime, relReturn, d10y });
- }
-
- const regimeGroups = { Hiking: [], Holding: [], Cutting: [] };
- for(const r of records){
-  if(r.relReturn === null) continue;
-  regimeGroups[r.regime].push(r.relReturn);
- }
- const regimeStats = {};
- for(const key of Object.keys(regimeGroups)){
-  const vals = regimeGroups[key];
-  const n = vals.length;
-  const mean = n ? vals.reduce((a, b) => a + b, 0) / n : null;
-  regimeStats[key] = { n, mean };
- }
-
- const corrPairs = records
-  .filter(r => r.relReturn !== null && r.d10y !== null)
-  .map(r => ({ x: r.d10y, y: r.relReturn, ym: r.ym }));
-
- return { records, regimeStats, currentRegime, corrPairs };
+ return { dates: retDates, returns: rets };
 }
 
-let ratioChart = null, rollingChart = null, regimeChart = null, corrScatter = null;
+let rollingChart = null, corrVolScatter = null;
 
 async function init(){
  try{
@@ -1008,143 +950,145 @@ async function init(){
 
   RAW = data;
   document.getElementById("updated").textContent =
-   "As of " + data.asOfDate + " · " + new Date(data.generated_at_utc).toLocaleString();
+   "As of " + data.benchmark.asOfDate + " · " + new Date(data.generated_at_utc).toLocaleString();
 
-  const monthly = buildMonthly(data);
-  renderStats(data, monthly);
-  renderRatioChart(data);
-  renderLadderTable(data);
-  renderRollingChart(data);
-  renderRegimeChart(monthly);
-  renderCorrScatter(monthly);
+  // Align every series to the common set of dates (SPY's calendar, which
+  // this dataset already builds every sector's history around).
+  const spyReturns = dailyReturns(data.benchmark.history);
+  const sectorReturns = data.sectors.map(s => ({ name: s.name, ticker: s.ticker, ...dailyReturns(s.history) }));
+
+  const n = spyReturns.returns.length;
+  const dates = spyReturns.dates;
+
+  renderHeatmap(sectorReturns);
+  renderMarketCorrTable(sectorReturns, spyReturns);
+
+  const WINDOW = 63;
+  const rollingAvgCorr = [];
+  const rollingSpyVol = [];
+  const rollingDates = [];
+  for(let end = WINDOW; end <= n; end++){
+   const start = end - WINDOW;
+   let sum = 0, count = 0;
+   for(let i = 0; i < sectorReturns.length; i++){
+    for(let j = i + 1; j < sectorReturns.length; j++){
+     sum += pearson(sectorReturns[i].returns.slice(start, end), sectorReturns[j].returns.slice(start, end));
+     count++;
+    }
+   }
+   rollingAvgCorr.push(sum / count);
+   const spySlice = spyReturns.returns.slice(start, end);
+   const mean = spySlice.reduce((a,b) => a+b, 0) / spySlice.length;
+   const variance = spySlice.reduce((s,v) => s + (v-mean)**2, 0) / (spySlice.length - 1);
+   rollingSpyVol.push(Math.sqrt(variance) * Math.sqrt(252) * 100);
+   rollingDates.push(dates[end - 1]);
+  }
+
+  renderStats(rollingAvgCorr, rollingSpyVol, sectorReturns);
+  renderRollingChart(rollingDates, rollingAvgCorr);
+  renderCorrVolScatter(rollingSpyVol, rollingAvgCorr, rollingDates);
 
  }catch(e){
-  showError("Couldn't load small-cap/large-cap data (" + e.message + "). The /api/smallcap-largecap function may not have run yet.");
+  showError("Couldn't load sector correlation data (" + e.message + "). The /api/sector-performance function may not have run yet.");
  }
 }
 
-function ordinal(n){
- const rem100 = n % 100;
- if(rem100 >= 11 && rem100 <= 13) return n + "th";
- switch(n % 10){
-  case 1: return n + "st";
-  case 2: return n + "nd";
-  case 3: return n + "rd";
-  default: return n + "th";
- }
-}
+function renderStats(rollingAvgCorr, rollingSpyVol, sectorReturns){
+ const current = rollingAvgCorr[rollingAvgCorr.length - 1];
+ const histMean = rollingAvgCorr.reduce((a,b) => a+b, 0) / rollingAvgCorr.length;
+ document.getElementById("statAvgCorr").textContent = current.toFixed(2);
+ document.getElementById("statAvgCorrNote").textContent =
+  (current >= histMean ? "+" : "") + (current - histMean).toFixed(2) + " vs. the ~2-year average of " + histMean.toFixed(2);
 
-function renderStats(data, monthly){
- const ratio = data.ratioSmallLarge;
- const current = ratio[ratio.length - 1];
- const pct = percentileRank(ratio, current);
- document.getElementById("statRatio").textContent = current.toFixed(1);
- document.getElementById("statRatioNote").textContent =
-  ordinal(Math.round(pct)) + " percentile of full history (since " + data.commonStartDate.slice(0, 4) + ")";
-
- const window252 = 252;
- let rel12m = null;
- if(ratio.length > window252) rel12m = (ratio[ratio.length - 1] / ratio[ratio.length - 1 - window252] - 1) * 100;
- const rel12mEl = document.getElementById("statRel12m");
- rel12mEl.textContent = fmtPct(rel12m);
- rel12mEl.classList.toggle("cell-neg", rel12m !== null && rel12m < 0);
-
- const regime = monthly.currentRegime;
- const stats = regime ? monthly.regimeStats[regime] : null;
- document.getElementById("statRegime").textContent = regime || "—";
- if(stats && stats.n){
-  document.getElementById("statRegimeNote").textContent =
-   "Avg. " + fmtPct(stats.mean) + "/mo in " + regime + " regimes (n=" + stats.n + " mo.)";
- }
-
- const corrEl = document.getElementById("statCorr");
- const corrNoteEl = document.getElementById("statCorrNote");
- if(monthly.corrPairs.length >= 8){
-  const reg = linearRegression(monthly.corrPairs.map(p => p.x), monthly.corrPairs.map(p => p.y));
-  corrEl.textContent = (reg.r >= 0 ? "+" : "") + reg.r.toFixed(2);
-  corrEl.classList.toggle("cell-neg", reg.r < 0);
-  let interp = "Weak linear relationship in this sample";
-  if(Math.abs(reg.r) >= 0.15){
-   interp = reg.r < 0
-    ? "Small-caps have tended to lag when yields rise"
-    : "Small-caps have tended to lead when yields rise";
+ let maxPair = null, minPair = null;
+ for(let i = 0; i < sectorReturns.length; i++){
+  for(let j = i + 1; j < sectorReturns.length; j++){
+   const r = pearson(sectorReturns[i].returns, sectorReturns[j].returns);
+   const pair = { a: sectorReturns[i].name, b: sectorReturns[j].name, r };
+   if(!maxPair || r > maxPair.r) maxPair = pair;
+   if(!minPair || r < minPair.r) minPair = pair;
   }
-  corrNoteEl.textContent = interp + " (n=" + reg.n + " mo.)";
  }
+ document.getElementById("statMaxPair").textContent = maxPair.a + " / " + maxPair.b;
+ document.getElementById("statMaxPairNote").textContent = "r = " + maxPair.r.toFixed(2);
+ document.getElementById("statMinPair").textContent = minPair.a + " / " + minPair.b;
+ document.getElementById("statMinPairNote").textContent = "r = " + minPair.r.toFixed(2);
+
+ const reg = linearRegression(rollingSpyVol, rollingAvgCorr);
+ const corrVolEl = document.getElementById("statCorrVol");
+ corrVolEl.textContent = (reg.r >= 0 ? "+" : "") + reg.r.toFixed(2);
+ document.getElementById("statCorrVolNote").textContent =
+  (reg.r > 0.15 ? "Correlations rise with volatility" : reg.r < -0.15 ? "Correlations fall with volatility" : "Weak relationship") + " (n=" + reg.n + " days)";
 }
 
-function renderRatioChart(data){
- const ctx = document.getElementById("ratioChart").getContext("2d");
- if(ratioChart) ratioChart.destroy();
- ratioChart = new Chart(ctx, {
-  type: "line",
-  data: {
-   labels: data.dates,
-   datasets: [
-    { label: "Small/Large ratio", data: data.ratioSmallLarge, borderColor: themeGreedColor(), backgroundColor: themeGreedColor(), borderWidth: 1.3, pointRadius: 0, fill: false },
-   ],
-  },
-  options: {
-   responsive: true,
-   maintainAspectRatio: false,
-   interaction: { mode: "index", intersect: false },
-   plugins: {
-    legend: { display: false },
-    tooltip: { callbacks: { label: ctx => "Ratio: " + ctx.parsed.y.toFixed(1) } },
-   },
-   scales: {
-    x: { ticks: { color: themeMutedColor(), maxTicksLimit: 8 }, grid: { color: themeHairColor() } },
-    y: { ticks: { color: themeMutedColor() }, grid: { color: themeHairColor() } },
-   },
-  },
- });
-}
+const HEATMAP_ABBREV = {
+ "Technology": "Tech", "Financials": "Fin", "Health Care": "HC", "Energy": "Enrg",
+ "Industrials": "Ind", "Consumer Discretionary": "ConsD", "Consumer Staples": "ConsS",
+ "Utilities": "Util", "Materials": "Matl", "Real Estate": "RE", "Communication Services": "Comm",
+};
 
-function fmtLadderCell(cell){
- if(!cell) return '<span class="cell-na">—</span>';
- return fmtPct(cell.cumPct);
-}
-
-function renderLadderTable(data){
- const periods = data.ladder.periods;
- const headEl = document.getElementById("ladderHead");
- headEl.innerHTML = "<th>Cap size</th>" + periods.map((p, i) => "<th>" + p + (i >= 4 ? "*" : "") + "</th>").join("");
-
- const rows = [
-  { label: "Small (IWM)", key: "small" },
-  { label: "Mid (MDY)", key: "mid" },
-  { label: "Large (SPY)", key: "large" },
- ];
- document.getElementById("ladderBody").innerHTML = rows.map(r => {
-  const cells = data.ladder[r.key].map(fmtLadderCell).join("</td><td>");
-  return "<tr><td>" + r.label + "</td><td>" + cells + "</td></tr>";
- }).join("");
-}
-
-function rollingRelReturn(ratio, window){
- const out = new Array(ratio.length).fill(null);
- for(let i = window; i < ratio.length; i++){
-  out[i] = Math.round((ratio[i] / ratio[i - window] - 1) * 10000) / 100;
+function heatColor(r){
+ // r in [-1,1] -> interpolate fear (low) to greed (high) through the
+ // card-hover neutral at r=0, reading the live CSS vars so this tracks
+ // the active theme rather than hardcoding one mode's palette.
+ const fear = getComputedStyle(document.documentElement).getPropertyValue("--fear").trim() || "#6f8fac";
+ const greed = getComputedStyle(document.documentElement).getPropertyValue("--greed").trim() || "#d98a3d";
+ function hexToRgb(hex){
+  const m = hex.replace("#","").match(/.{1,2}/g);
+  return m.map(h => parseInt(h,16));
  }
- return out;
+ const [fr,fg,fb] = hexToRgb(fear);
+ const [gr,gg,gb] = hexToRgb(greed);
+ const t = (r + 1) / 2; // 0..1
+ const mix = (a,b) => Math.round(a + (b-a)*t);
+ return `rgb(${mix(fr,gr)},${mix(fg,gg)},${mix(fb,gb)})`;
 }
 
-function renderRollingChart(data){
- const rolling = rollingRelReturn(data.ratioSmallLarge, 252);
- const firstValid = rolling.findIndex(v => v !== null);
- const dates = data.dates.slice(firstValid);
- const values = rolling.slice(firstValid);
+function renderHeatmap(sectorReturns){
+ const n = sectorReturns.length;
+ const matrix = [];
+ for(let i = 0; i < n; i++){
+  matrix.push([]);
+  for(let j = 0; j < n; j++){
+   matrix[i].push(i === j ? 1 : pearson(sectorReturns[i].returns, sectorReturns[j].returns));
+  }
+ }
 
+ let html = "<thead><tr><th></th>" + sectorReturns.map(s => `<th>${HEATMAP_ABBREV[s.name] || s.name}</th>`).join("") + "</tr></thead><tbody>";
+ for(let i = 0; i < n; i++){
+  html += `<tr><th class="row-label">${sectorReturns[i].name}</th>`;
+  for(let j = 0; j < n; j++){
+   if(i === j){
+    html += `<td class="diag">1.00</td>`;
+   }else{
+    const r = matrix[i][j];
+    html += `<td style="background:${heatColor(r)}">${r.toFixed(2)}</td>`;
+   }
+  }
+  html += "</tr>";
+ }
+ html += "</tbody>";
+ document.getElementById("heatmapTable").innerHTML = html;
+}
+
+function renderMarketCorrTable(sectorReturns, spyReturns){
+ const rows = sectorReturns
+  .map(s => ({ name: s.name, r: pearson(s.returns, spyReturns.returns) }))
+  .sort((a, b) => b.r - a.r);
+ document.getElementById("marketCorrBody").innerHTML = rows.map(row => `<tr>
+  <td>${row.name}</td>
+  <td>${row.r.toFixed(2)}</td>
+ </tr>`).join("");
+}
+
+function renderRollingChart(dates, series){
  const ctx = document.getElementById("rollingChart").getContext("2d");
  if(rollingChart) rollingChart.destroy();
  rollingChart = new Chart(ctx, {
   type: "line",
   data: {
    labels: dates,
-   datasets: [
-    { label: "12-mo. relative return", data: values, borderColor: themeInkColor(), backgroundColor: themeInkColor(), borderWidth: 1.2, pointRadius: 0, fill: false },
-    { label: "Zero", data: dates.map(() => 0), borderColor: themeMutedColor(), borderWidth: 1, borderDash: [4, 3], pointRadius: 0, fill: false },
-   ],
+   datasets: [{ label: "Avg. pairwise correlation", data: series, borderColor: themeGreedColor(), backgroundColor: themeGreedColor(), borderWidth: 1.5, pointRadius: 0, fill: false }],
   },
   options: {
    responsive: true,
@@ -1152,74 +1096,34 @@ function renderRollingChart(data){
    interaction: { mode: "index", intersect: false },
    plugins: {
     legend: { display: false },
-    tooltip: {
-     callbacks: {
-      label: ctx => ctx.dataset.label === "Zero" ? null : "12-mo. rel. return: " + fmtPct(ctx.parsed.y),
-     },
-    },
+    tooltip: { callbacks: { label: ctx => "Avg. correlation: " + ctx.parsed.y.toFixed(2) } },
    },
    scales: {
     x: { ticks: { color: themeMutedColor(), maxTicksLimit: 8 }, grid: { color: themeHairColor() } },
-    y: { ticks: { color: themeMutedColor(), callback: v => (Math.round(v * 100) / 100) + "%" }, grid: { color: themeHairColor() } },
+    y: { min: -0.2, max: 1, ticks: { color: themeMutedColor() }, grid: { color: themeHairColor() } },
    },
   },
  });
 }
 
-function renderRegimeChart(monthly){
- const order = ["Cutting", "Holding", "Hiking"];
- const stats = order.map(k => monthly.regimeStats[k]);
- const colors = stats.map(s => (s.mean === null ? themeMutedColor() : s.mean >= 0 ? themeGreedColor() : themeFearColor()));
+function renderCorrVolScatter(xs, ys, dates){
+ const pearsonReg = linearRegression(xs, ys);
+ const spear = spearmanRegression(xs, ys);
+ const points = xs.map((x, i) => ({ x, y: ys[i], date: dates[i] }));
 
- const ctx = document.getElementById("regimeChart").getContext("2d");
- if(regimeChart) regimeChart.destroy();
- regimeChart = new Chart(ctx, {
-  type: "bar",
-  data: {
-   labels: order,
-   datasets: [{ label: "Avg. monthly spread return", data: stats.map(s => s.mean), backgroundColor: colors, borderRadius: 4 }],
-  },
-  options: {
-   responsive: true,
-   maintainAspectRatio: false,
-   plugins: {
-    legend: { display: false },
-    tooltip: {
-     callbacks: {
-      label: ctx => {
-       const s = stats[ctx.dataIndex];
-       return ["Avg: " + fmtPct(s.mean), "n=" + s.n + " months"];
-      },
-     },
-    },
-   },
-   scales: {
-    x: { ticks: { color: themeMutedColor() }, grid: { display: false } },
-    y: { ticks: { color: themeMutedColor(), callback: v => (Math.round(v * 100) / 100) + "%" }, grid: { color: themeHairColor() } },
-   },
-  },
- });
-}
-
-function renderCorrScatter(monthly){
- const pairs = monthly.corrPairs;
- const pearson = linearRegression(pairs.map(p => p.x), pairs.map(p => p.y));
- const spear = spearmanRegression(pairs.map(p => p.x), pairs.map(p => p.y));
-
- const xs = pairs.map(p => p.x);
  const xMin = Math.min(...xs), xMax = Math.max(...xs);
  const linePoints = [
-  { x: xMin, y: pearson.intercept + pearson.slope * xMin },
-  { x: xMax, y: pearson.intercept + pearson.slope * xMax },
+  { x: xMin, y: pearsonReg.intercept + pearsonReg.slope * xMin },
+  { x: xMax, y: pearsonReg.intercept + pearsonReg.slope * xMax },
  ];
 
- const ctx = document.getElementById("corrScatter").getContext("2d");
- if(corrScatter) corrScatter.destroy();
- corrScatter = new Chart(ctx, {
+ const ctx = document.getElementById("corrVolScatter").getContext("2d");
+ if(corrVolScatter) corrVolScatter.destroy();
+ corrVolScatter = new Chart(ctx, {
   type: "scatter",
   data: {
    datasets: [
-    { label: "Months", data: pairs, backgroundColor: themeGreedColor(), pointRadius: 3.5, showLine: false },
+    { label: "Trading days", data: points, backgroundColor: "rgba(217,138,61,0.45)", pointRadius: 2.5, showLine: false },
     { label: "Regression fit", type: "line", data: linePoints, borderColor: themeInkColor(), borderWidth: 1.5, borderDash: [4, 3], pointRadius: 0, fill: false },
    ],
   },
@@ -1230,13 +1134,13 @@ function renderCorrScatter(monthly){
     legend: { display: false },
     tooltip: {
      callbacks: {
-      label: ctx => ctx.dataset.label === "Months" ? (ctx.raw.ym + ": Δ10Y " + fmtPct(ctx.raw.x) + "pp → " + fmtPct(ctx.raw.y)) : null,
+      label: ctx => ctx.dataset.label === "Trading days" ? (ctx.raw.date + ": vol " + ctx.raw.x.toFixed(1) + "%, corr " + ctx.raw.y.toFixed(2)) : null,
      },
     },
    },
    scales: {
-    x: { title: { display: true, text: "Δ 10Y yield (pp)", color: themeMutedColor(), font: { size: 10 } }, ticks: { color: themeMutedColor(), font: { size: 10 } }, grid: { color: themeHairColor() } },
-    y: { title: { display: true, text: "Monthly spread return (%)", color: themeMutedColor(), font: { size: 10 } }, ticks: { color: themeMutedColor(), font: { size: 10 } }, grid: { color: themeHairColor() } },
+    x: { title: { display: true, text: "SPY realized vol, annualized (%)", color: themeMutedColor(), font: { size: 10 } }, ticks: { color: themeMutedColor(), font: { size: 10 } }, grid: { color: themeHairColor() } },
+    y: { title: { display: true, text: "Avg. pairwise correlation", color: themeMutedColor(), font: { size: 10 } }, ticks: { color: themeMutedColor(), font: { size: 10 } }, grid: { color: themeHairColor() } },
    },
   },
  });
@@ -1248,18 +1152,17 @@ function renderCorrScatter(monthly){
    "<td>" + stats.n + "</td>" +
    "<td>" + stats.r.toFixed(2) + "</td>" +
    "<td>" + (stats.r2 * 100).toFixed(1) + "%</td>" +
-   "<td>" + (stats.slope >= 0 ? "+" : "") + stats.slope.toFixed(2) + "</td>" +
+   "<td>" + (stats.slope >= 0 ? "+" : "") + stats.slope.toFixed(3) + "</td>" +
    "<td>" + stats.t.toFixed(2) + "</td>" +
    '<td class="' + (sig ? "sig" : "") + '">' + (stats.p < 0.001 ? "<0.001" : stats.p.toFixed(3)) + "</td>" +
   "</tr>";
  }
-
- document.getElementById("corrMethodTable").innerHTML =
+ document.getElementById("corrVolMethodTable").innerHTML =
   '<table class="method-table">' +
    "<thead><tr><th>Method</th><th>n</th><th>r</th><th>r&sup2;</th><th>slope</th><th>t</th><th>p</th></tr></thead>" +
-   "<tbody>" + row("Pearson (OLS)", pearson) + row("Spearman (&rho;)", spear) + "</tbody>" +
+   "<tbody>" + row("Pearson (OLS)", pearsonReg) + row("Spearman (&rho;)", spear) + "</tbody>" +
   "</table>" +
-  '<div class="method-note">Slope is in percentage points of monthly spread return per 1pp move in the 10-year yield that month.</div>';
+  '<div class="method-note">n counts overlapping rolling-window days, not independent observations — see the methodology note below.</div>';
 }
 
 init();
