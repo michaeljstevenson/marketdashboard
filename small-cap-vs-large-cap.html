@@ -1,0 +1,1267 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<script>
+// Applied before first paint to avoid a flash of the wrong theme.
+(function(){
+ var saved = localStorage.getItem("theme");
+ if(saved === "light") document.documentElement.setAttribute("data-theme", "light");
+})();
+</script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom@2"></script>
+<script>
+// FRED-style zoom: drag horizontally on any chart to zoom into that range,
+// double-click to reset. Applied via Chart.defaults so every chart on the
+// page gets it without touching each individual new Chart(...) call.
+Chart.defaults.plugins.zoom = {
+ zoom: {
+  wheel: { enabled: false },
+  pinch: { enabled: false },
+  drag: { enabled: true, backgroundColor: "rgba(217,138,61,0.15)", borderColor: "rgba(217,138,61,0.4)", borderWidth: 1 },
+  mode: "x",
+ },
+ pan: { enabled: true, mode: "x", modifierKey: "shift" },
+};
+document.addEventListener("dblclick", function(e){
+ if(e.target.tagName === "CANVAS"){
+  var chart = Chart.getChart(e.target);
+  if(chart) chart.resetZoom();
+ }
+});
+document.addEventListener("DOMContentLoaded", function(){
+ document.querySelectorAll(".chart-canvas-wrap canvas").forEach(function(c){
+  c.title = "Drag to zoom · shift-drag to pan · double-click to reset";
+ });
+});
+</script>
+<style>
+.chart-fullscreen-btn{
+ position:absolute;
+ top:8px;
+ right:8px;
+ z-index:5;
+ background:var(--card, #1c2127);
+ border:1px solid var(--hair, #2b3138);
+ color:var(--muted, #8b9199);
+ border-radius:6px;
+ width:28px;
+ height:28px;
+ display:flex;
+ align-items:center;
+ justify-content:center;
+ cursor:pointer;
+ padding:0;
+ opacity:0.85;
+}
+.chart-fullscreen-btn:hover{ color:var(--ink, #eae6da); border-color:#3a424b; opacity:1; }
+.is-chart-fullscreen{
+ background:var(--bg, #14181c) !important;
+ padding:24px !important;
+ display:flex !important;
+ flex-direction:column !important;
+ overflow:auto !important;
+}
+.is-chart-fullscreen canvas{
+ max-height:none !important;
+}
+</style>
+<script>
+// Expand-to-fullscreen button on every chart, matching the pattern from
+// sites like GuruFocus: a small corner button on each chart's canvas
+// area that fullscreens the whole chart card (title, legend, controls
+// included) via the Fullscreen API. Finds every <canvas> generically
+// rather than relying on one wrapper class name, since different pages
+// on this site use different card markup (.chart-box, .scatter-box,
+// .chart, herd-mentality tiles, etc.).
+document.addEventListener("DOMContentLoaded", function(){
+ function requestFs(el){
+  var fn = el.requestFullscreen || el.webkitRequestFullscreen || el.mozRequestFullScreen || el.msRequestFullscreen;
+  if(fn) fn.call(el);
+ }
+ function exitFs(){
+  var fn = document.exitFullscreen || document.webkitExitFullscreen || document.mozCancelFullScreen || document.msExitFullscreen;
+  if(fn) fn.call(document);
+ }
+ function currentFsEl(){
+  return document.fullscreenElement || document.webkitFullscreenElement || document.mozFullScreenElement || document.msFullscreenElement;
+ }
+ function resolveCard(canvas){
+  return canvas.closest(".chart-box, .scatter-box, .herd-cell, .modal-chart")
+   || canvas.parentElement.closest("div")
+   || canvas.parentElement;
+ }
+ function resizeChartIn(wrap){
+  var canvas = wrap.querySelector("canvas");
+  var chart = canvas && window.Chart && Chart.getChart(canvas);
+  if(chart) chart.resize();
+ }
+
+ var entries = []; // { card, wrap }
+
+ document.querySelectorAll("canvas").forEach(function(canvas){
+  if(canvas.closest(".chart-fullscreen-btn")) return;
+  var card = resolveCard(canvas);
+  if(!card || card.querySelector(".chart-fullscreen-btn")) return; // one button per card, not per canvas
+
+  var wrap = canvas.parentElement;
+  var wrapStyle = getComputedStyle(wrap);
+  if(wrapStyle.position === "static") wrap.style.position = "relative";
+
+  var btn = document.createElement("button");
+  btn.type = "button";
+  btn.className = "chart-fullscreen-btn";
+  btn.title = "Expand chart";
+  btn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3H5a2 2 0 0 0-2 2v3"/><path d="M16 3h3a2 2 0 0 1 2 2v3"/><path d="M8 21H5a2 2 0 0 1-2-2v-3"/><path d="M16 21h3a2 2 0 0 0 2-2v-3"/></svg>';
+  btn.addEventListener("click", function(e){
+   e.stopPropagation();
+   if(currentFsEl() === card) exitFs();
+   else requestFs(card);
+  });
+  wrap.appendChild(btn);
+  entries.push({ card: card, wrap: wrap });
+
+  if(window.ResizeObserver){
+   new ResizeObserver(function(){ resizeChartIn(wrap); }).observe(wrap);
+  }
+ });
+
+ function onFsChange(){
+  var fsEl = currentFsEl();
+  entries.forEach(function(entry){
+   var isFs = fsEl === entry.card;
+   entry.card.classList.toggle("is-chart-fullscreen", isFs);
+   if(isFs){
+    entry.wrap.dataset.fsPrevHeight = entry.wrap.style.height || "";
+    entry.wrap.dataset.fsPrevFlex = entry.wrap.style.flex || "";
+    entry.wrap.style.flex = "1 1 auto";
+    entry.wrap.style.minHeight = "0";
+    entry.wrap.style.height = "auto";
+   }else if(entry.wrap.dataset.fsPrevHeight !== undefined){
+    entry.wrap.style.height = entry.wrap.dataset.fsPrevHeight;
+    entry.wrap.style.flex = entry.wrap.dataset.fsPrevFlex;
+    entry.wrap.style.minHeight = "";
+   }
+  });
+  entries.forEach(function(entry){ resizeChartIn(entry.wrap); });
+ }
+ ["fullscreenchange", "webkitfullscreenchange", "mozfullscreenchange", "MSFullscreenChange"].forEach(function(evt){
+  document.addEventListener(evt, onFsChange);
+ });
+});
+</script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Small Cap vs. Large Cap Spread — Michael J. Stevenson</title>
+
+<style>
+
+:root{
+  --bg:#14181c;
+  --card:#1c2127;
+  --card-hover:#20262d;
+  --ink:#eae6da;
+  --muted:#8b9199;
+  --hair:#2b3138;
+
+  --fear:#6f8fac;
+  --neutral:#7c828a;
+  --greed:#d98a3d;
+  --extreme:#b56f2a;
+
+  --serif:'Iowan Old Style','Palatino Linotype',Georgia,serif;
+  --mono:'SF Mono','JetBrains Mono',ui-monospace,Menlo,monospace;
+  --sans:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+}
+
+:root[data-theme="light"]{
+  --bg:#f7f5f0;
+  --card:#ffffff;
+  --card-hover:#f2efe6;
+  --ink:#1c1f24;
+  --muted:#6b6f76;
+  --hair:#e1dbcd;
+  --fear:#4f6f8c;
+  --neutral:#6c7178;
+  --greed:#b9701f;
+  --extreme:#96591c;
+}
+
+*{ box-sizing:border-box; }
+
+body{
+ margin:0;
+ background:var(--bg);
+ color:var(--ink);
+ font-family:var(--sans);
+}
+
+a{ color:inherit; }
+
+/* SITE NAV (shared with homepage) */
+
+.sitenav{
+ display:grid;
+ grid-template-columns:1fr auto 1fr;
+ align-items:center;
+ padding:16px 24px;
+ border-bottom:1px solid var(--hair);
+ position:relative;
+ z-index:50;
+}
+
+.sitenav .brand{
+ justify-self:start;
+}
+
+.sitenav .brand{
+ font-family:var(--serif);
+ font-size:17px;
+ color:var(--ink);
+ text-decoration:none;
+ letter-spacing:0.3px;
+}
+
+.navlinks{
+ display:flex;
+ gap:26px;
+ align-items:center;
+}
+
+.navlinks > a{
+ color:var(--muted);
+ font-size:13px;
+ text-decoration:none;
+ padding:6px 0;
+}
+
+.navlinks > a:hover, .navlinks > a.active{ color:var(--ink); }
+
+.navdrop{ position:relative; }
+
+
+.navdrop > .navlabel{
+ color:var(--muted);
+ font-size:13px;
+ cursor:default;
+ padding:6px 0;
+ user-select:none;
+}
+
+.navdrop:hover > .navlabel, .navdrop.open > .navlabel{ color:var(--ink); }
+
+.navdrop .dropdown{
+ display:none;
+ position:absolute;
+ top:100%;
+ left:0;
+ background:var(--card);
+ border:1px solid var(--hair);
+ border-radius:8px;
+ padding:8px 0;
+ min-width:230px;
+ margin-top:12px;
+ box-shadow:0 10px 30px rgba(0,0,0,0.45);
+}
+
+/* Driven by the .open class (see the script right after </nav>), not
+   pure :hover — see that script for why. */
+.navdrop.open .dropdown{ display:block; }
+
+.dropdown a{
+ display:block;
+ padding:9px 16px;
+ color:var(--muted);
+ text-decoration:none;
+ font-size:13px;
+}
+
+.dropdown a:hover{
+ background:var(--card-hover);
+ color:var(--ink);
+}
+
+.dropdown a.active{ color:var(--greed); }
+
+@media (max-width:720px){
+ .navlinks{ display:none; }
+}
+
+.container{
+ max-width:1100px;
+ margin:auto;
+ padding:30px 20px 60px;
+}
+
+/* HEADER */
+
+.header{
+ display:flex;
+ justify-content:space-between;
+ align-items:flex-end;
+ border-bottom:1px solid var(--hair);
+ padding-bottom:18px;
+ margin-bottom:25px;
+ flex-wrap:wrap;
+ gap:12px;
+}
+
+h1{
+ font-family:var(--serif);
+ font-size:28px;
+ font-weight:400;
+ margin:0;
+}
+
+.subtitle{
+ color:var(--muted);
+ font-size:13px;
+ margin-top:6px;
+ max-width:640px;
+}
+
+.updated{
+ color:var(--muted);
+ font-size:12px;
+}
+
+/* STAT ROW */
+
+.stat-grid{
+ display:grid;
+ grid-template-columns:repeat(4,1fr);
+ gap:16px;
+ margin-bottom:30px;
+}
+
+.stat-card{
+ background:var(--card);
+ border:1px solid var(--hair);
+ border-radius:10px;
+ padding:20px;
+}
+
+.stat-label{
+ color:var(--muted);
+ font-size:12px;
+ letter-spacing:0.04em;
+ margin-bottom:8px;
+}
+
+.stat-value{
+ font-family:var(--mono);
+ font-size:24px;
+ color:var(--greed);
+}
+
+.stat-value.cell-neg{ color:var(--fear); }
+
+.stat-note{
+ color:var(--muted);
+ font-size:12px;
+ margin-top:6px;
+}
+
+@media (max-width:900px){
+ .stat-grid{ grid-template-columns:repeat(2,1fr); }
+}
+
+/* CHART */
+
+.chart-box{
+ background:var(--card);
+ border:1px solid var(--hair);
+ border-radius:12px;
+ padding:20px;
+ margin-bottom:30px;
+}
+
+.chart-box-header{
+ display:flex;
+ justify-content:space-between;
+ align-items:center;
+ flex-wrap:wrap;
+ gap:10px;
+ margin-bottom:16px;
+}
+
+.chart-box h2{
+ font-family:var(--serif);
+ font-weight:400;
+ font-size:18px;
+ margin:0;
+}
+
+.chart-subhead{
+ color:var(--muted);
+ font-size:12px;
+ margin-top:4px;
+}
+
+.chart-canvas-wrap{
+ height:380px;
+}
+
+.chart-canvas-wrap.short{ height:280px; }
+
+/* TABLE */
+
+.table-box{
+ background:var(--card);
+ border:1px solid var(--hair);
+ border-radius:12px;
+ overflow-x:auto;
+ margin-bottom:30px;
+}
+
+.table-box-header{
+ padding:18px 20px 4px;
+}
+
+.table-box-header h2{
+ font-family:var(--serif);
+ font-weight:400;
+ font-size:18px;
+ margin:0;
+}
+
+.table-box-header .chart-subhead{ margin-bottom:6px; }
+
+table{
+ width:100%;
+ border-collapse:collapse;
+ font-size:13px;
+ min-width:640px;
+}
+
+thead th{
+ text-align:right;
+ padding:14px 12px;
+ color:var(--muted);
+ font-size:11px;
+ letter-spacing:0.04em;
+ font-weight:600;
+ white-space:nowrap;
+ border-bottom:1px solid var(--hair);
+}
+
+thead th:first-child{
+ text-align:left;
+}
+
+tbody td{
+ padding:11px 12px;
+ text-align:right;
+ font-family:var(--mono);
+ white-space:nowrap;
+ border-bottom:1px solid var(--hair);
+}
+
+tbody tr:last-child td{ border-bottom:none; }
+
+tbody tr:hover{ background:var(--card-hover); }
+
+tbody td:first-child{
+ text-align:left;
+ font-family:var(--sans);
+}
+
+.cell-pos{ color:var(--ink); }
+.cell-neg{ color:var(--ink); }
+.cell-na{ color:var(--muted); }
+
+.table-footnote{
+ padding:2px 20px 16px;
+ color:var(--muted);
+ font-size:11px;
+}
+
+/* SCATTER / METHOD TABLE (mirrors /factor-analysis) */
+
+.scatter-canvas-wrap{
+ height:260px;
+ margin-bottom:12px;
+ position:relative;
+}
+
+.method-table{
+ width:100%;
+ border-collapse:collapse;
+ font-family:var(--mono);
+ font-size:11px;
+ margin-top:8px;
+}
+
+.method-table th{
+ text-align:right;
+ padding:6px 5px;
+ color:var(--muted);
+ font-size:10px;
+ letter-spacing:0.03em;
+ font-weight:600;
+ border-bottom:1px solid var(--hair);
+ white-space:nowrap;
+}
+
+.method-table th:first-child{ text-align:left; }
+
+.method-table td{
+ padding:7px 5px;
+ text-align:right;
+ border-bottom:1px solid var(--hair);
+ white-space:nowrap;
+ color:var(--ink);
+}
+
+.method-table td:first-child{
+ text-align:left;
+ font-family:var(--sans);
+ color:var(--muted);
+}
+
+.method-table tr:last-child td{ border-bottom:none; }
+
+.method-table .sig{ color:var(--greed); }
+
+.method-note{
+ font-size:11px;
+ color:var(--muted);
+ margin-top:8px;
+ font-style:italic;
+}
+
+/* EXPLAINER */
+
+.explainer{
+ background:var(--card);
+ border:1px solid var(--hair);
+ border-radius:12px;
+ padding:24px 26px;
+ margin-bottom:30px;
+}
+
+.explainer h2{
+ font-family:var(--serif);
+ font-weight:400;
+ font-size:18px;
+ margin:0 0 12px;
+}
+
+.explainer p{
+ color:var(--muted);
+ font-size:14px;
+ line-height:1.7;
+ margin:0 0 14px;
+}
+
+.explainer code{
+ font-family:var(--mono);
+ background:var(--card-hover);
+ padding:2px 6px;
+ border-radius:4px;
+ font-size:0.92em;
+ white-space:nowrap;
+}
+
+.explainer p:last-child{ margin-bottom:0; }
+
+.explainer .source{
+ margin-top:16px;
+ font-size:11px;
+}
+
+.explainer .source a{
+ color:var(--muted);
+ text-decoration:none;
+ border-bottom:1px dotted var(--muted);
+}
+
+.explainer .source a:hover{ color:var(--ink); }
+
+.error-banner{
+ background:#2a1c1c;
+ border:1px solid #5a3030;
+ color:#e0a0a0;
+ border-radius:8px;
+ padding:12px 15px;
+ margin-bottom:20px;
+ font-size:13px;
+ display:none;
+}
+
+.warning-banner{
+ background:#2a2419;
+ border:1px solid #5a4f30;
+ color:#d9b877;
+ border-radius:8px;
+ padding:12px 15px;
+ margin-bottom:20px;
+ font-size:13px;
+ display:none;
+}
+
+
+.theme-toggle{
+ justify-self:end;
+ background:none;
+ border:1px solid var(--hair);
+ color:var(--muted);
+ border-radius:6px;
+ width:32px;
+ height:32px;
+ display:flex;
+ align-items:center;
+ justify-content:center;
+ cursor:pointer;
+ font-size:15px;
+ line-height:1;
+}
+
+.theme-toggle:hover{ color:var(--ink); border-color:var(--hair); }
+
+
+/* Light-theme overrides for hardcoded (non-var) dark colors */
+
+[data-theme="light"] .error-banner{
+ background:#fdecea;
+ border-color:#f0b8b0;
+ color:#a83a30;
+}
+
+[data-theme="light"] .warning-banner{
+ background:#fdf3d9;
+ border-color:#e9cf8a;
+ color:#8a6a1f;
+}
+</style>
+</head>
+<body>
+
+<nav class="sitenav">
+<a class="brand" href="/">Michael J. Stevenson, CAIA<span style="font-size:0.6em; vertical-align:super;">&reg;</span></a>
+<div class="navlinks">
+<div class="navdrop">
+<span class="navlabel">Behavioral/Positioning ▾</span>
+<div class="dropdown">
+<a href="/ipo-activity.html">IPO Activity</a>
+</div>
+</div>
+
+<div class="navdrop">
+<span class="navlabel">Equities ▾</span>
+<div class="dropdown">
+<a href="/sector-analysis.html">Sector Performance</a>
+<a href="/sector-beeswarm.html">Sector Beeswarm</a>
+<a href="/ath-index.html">All-Time Highs and Lows</a>
+<a href="/valuations.html">Valuations</a>
+<a href="/factor-analysis.html">Factor Analysis</a>
+<a href="/market-breadth.html">Market Breadth</a>
+<a href="/seasonality.html">Seasonality</a>
+<a href="/concentration.html">Concentration</a>
+<a href="/earnings-revisions.html">Earnings Revisions</a>
+<a href="/insider-buying-selling.html">Insider Buying/Selling</a>
+<a href="/small-cap-vs-large-cap.html" class="active">Small Cap vs. Large Cap Spread</a>
+</div>
+</div>
+
+<div class="navdrop">
+<span class="navlabel">Markets/Macro ▾</span>
+<div class="dropdown">
+<a href="/sentiment-index.html">Sentiment Index</a>
+<a href="/volatility.html">Implied vs. Realized Volatility</a>
+<a href="/implied-erp.html">Implied Equity Risk Premium</a>
+<a href="/yield-curves.html">Yield Curves</a>
+<a href="/expectations-vs-reality.html">Expectations vs. Reality</a>
+</div>
+</div>
+
+<a href="/portfolio-simulator.html">Portfolio Simulator</a>
+<a href="/backtesting.html">Backtesting</a>
+<a href="/statistical-engine">Statistical Engine</a>
+
+
+
+
+</div>
+<button class="theme-toggle" id="themeToggle" type="button" aria-label="Toggle light/dark mode" title="Toggle light/dark mode">&#9789;</button>
+</nav>
+<script>
+// Class-driven (not pure :hover) nav dropdowns: pure CSS :hover drops the
+// menu the instant the cursor leaves .navdrop, which includes the moment
+// it's crossing the gap between the label and the dropdown box below —
+// exactly the "sometimes works, sometimes doesn't" flakiness reported.
+// A short close-delay after mouseleave gives the cursor room to travel
+// down into the dropdown without losing it.
+document.querySelectorAll(".navdrop").forEach(function(navdrop){
+ var closeTimer = null;
+ navdrop.addEventListener("mouseenter", function(){
+  clearTimeout(closeTimer);
+  navdrop.classList.add("open");
+ });
+ navdrop.addEventListener("mouseleave", function(){
+  closeTimer = setTimeout(function(){ navdrop.classList.remove("open"); }, 300);
+ });
+});
+</script>
+<script>
+(function(){
+ var btn = document.getElementById("themeToggle");
+ if(!btn) return;
+ var theme = document.documentElement.getAttribute("data-theme") === "light" ? "light" : "dark";
+ btn.textContent = theme === "light" ? "☀" : "☽";
+ btn.addEventListener("click", function(){
+  var current = document.documentElement.getAttribute("data-theme") === "light" ? "light" : "dark";
+  var next = current === "light" ? "dark" : "light";
+  localStorage.setItem("theme", next);
+  location.reload();
+ });
+})();
+</script>
+
+
+
+<div class="container">
+
+<div class="error-banner" id="errorBanner"></div>
+<div class="warning-banner" id="warningBanner"></div>
+
+<div class="header">
+<div>
+<h1>Small Cap vs. Large Cap Spread</h1>
+<div class="subtitle">Relative strength of small-cap (IWM) and mid-cap (MDY) stocks against large-caps (SPY), indexed since IWM's 2000 inception, conditioned on the Fed rate cycle and 10-year Treasury yield moves.</div>
+</div>
+<div class="updated" id="updated">Loading...</div>
+</div>
+
+<div class="stat-grid">
+<div class="stat-card">
+<div class="stat-label">Small/Large Ratio</div>
+<div class="stat-value" id="statRatio">—</div>
+<div class="stat-note" id="statRatioNote">Indexed to 100 at IWM's inception</div>
+</div>
+<div class="stat-card">
+<div class="stat-label">12-Month Relative Return</div>
+<div class="stat-value" id="statRel12m">—</div>
+<div class="stat-note">IWM vs. SPY, trailing 252 trading days</div>
+</div>
+<div class="stat-card">
+<div class="stat-label">Current Fed Regime</div>
+<div class="stat-value" id="statRegime" style="font-size:20px;">—</div>
+<div class="stat-note" id="statRegimeNote">Avg. monthly spread return, this regime</div>
+</div>
+<div class="stat-card">
+<div class="stat-label">Correlation w/ 10Y Yield &Delta;</div>
+<div class="stat-value" id="statCorr" style="font-size:20px;">—</div>
+<div class="stat-note" id="statCorrNote">Monthly, Pearson r</div>
+</div>
+</div>
+
+<div class="chart-box">
+<div class="chart-box-header">
+<div>
+<h2>Small-cap / large-cap ratio, since 2000</h2>
+<div class="chart-subhead">IWM adjusted-close ÷ SPY adjusted-close, both indexed to 100 at IWM's inception — rising means small-caps are outperforming</div>
+</div>
+</div>
+<div class="chart-canvas-wrap">
+<canvas id="ratioChart"></canvas>
+</div>
+</div>
+
+<div class="table-box">
+<div class="table-box-header">
+<h2>Trailing return ladder</h2>
+<div class="chart-subhead">Total return (dividends reinvested) by cap size, as of the last close</div>
+</div>
+<table id="ladderTable">
+<thead><tr id="ladderHead"></tr></thead>
+<tbody id="ladderBody">
+<tr><td colspan="8" style="text-align:center; color:var(--muted); padding:24px;">Loading&hellip;</td></tr>
+</tbody>
+</table>
+<div class="table-footnote">1M–1Y are cumulative returns; 3Y/5Y/10Y are annualized. Small = IWM (Russell 2000 proxy), Mid = MDY (S&amp;P MidCap 400 proxy), Large = SPY (S&amp;P 500 proxy).</div>
+</div>
+
+<div class="chart-box">
+<div class="chart-box-header">
+<div>
+<h2>Rolling 12-month relative return</h2>
+<div class="chart-subhead">Small/large ratio's trailing 252-trading-day return — positive stretches are small-cap-leadership regimes, negative stretches are large-cap-leadership regimes</div>
+</div>
+</div>
+<div class="chart-canvas-wrap">
+<canvas id="rollingChart"></canvas>
+</div>
+</div>
+
+<div class="chart-box">
+<div class="chart-box-header">
+<div>
+<h2>Average monthly spread return by Fed rate regime</h2>
+<div class="chart-subhead">Months classified by the trailing 3-month change in the effective Fed funds rate; bars show the average small-vs-large monthly return within each regime</div>
+</div>
+</div>
+<div class="chart-canvas-wrap short">
+<canvas id="regimeChart"></canvas>
+</div>
+</div>
+
+<div class="chart-box">
+<div class="chart-box-header">
+<div>
+<h2>Monthly spread return vs. change in the 10-year Treasury yield</h2>
+<div class="chart-subhead">Each point is one month: x-axis is the month's change in the 10-year yield (percentage points), y-axis is that month's small-vs-large return</div>
+</div>
+</div>
+<div class="scatter-canvas-wrap">
+<canvas id="corrScatter"></canvas>
+</div>
+<div id="corrMethodTable"></div>
+</div>
+
+<div class="explainer">
+<h2>Methodology</h2>
+<p>Small-cap and large-cap exposure are proxied by two liquid, dividend-adjusted ETFs rather than the underlying indices themselves: IWM (iShares Russell 2000 ETF) for small-caps and SPY (SPDR S&amp;P 500 ETF Trust) for large-caps, with MDY (SPDR S&amp;P MidCap 400 ETF Trust) added as a mid-cap rung for the return ladder below. Alpha Vantage's <code>TIME_SERIES_DAILY_ADJUSTED</code> adjusted-close series (dividends and splits applied) gives a true total-return comparison for all three. The ratio series is indexed to 100 at IWM's May 2000 inception — the binding constraint on how far back this page can go, even though SPY and MDY both trade back to the 1990s.</p>
+<p>The Fed-regime split classifies each calendar month by the trailing 3-month change in the effective federal funds rate (Alpha Vantage <code>FEDERAL_FUNDS_RATE</code>): a rise of more than 0.10 percentage points is "Hiking," a fall of more than 0.10pp is "Cutting," and anything in between is "Holding." The intuition being tested is that small-caps, which on average carry more floating-rate debt and less pricing power than large-caps, should be more sensitive to the direction and speed of rate changes — but note the sample sizes are modest (a few dozen months per regime across just one rate cycle's worth of history since 2000), so treat the regime averages as suggestive, not a robust statistical result.</p>
+<p>The scatter panel runs the same two-method check used throughout <a href="/factor-analysis.html">Factor Analysis</a>: Pearson (OLS) correlation alongside Spearman rank correlation, so a relationship can't be quietly resting on one or two extreme months. Both are shown; a low r&sup2; here isn't a bug — a single macro variable rarely explains much of a monthly return series, and the point of showing the regression is to be honest about how weak (or strong) that single-variable relationship actually is, not to oversell it.</p>
+<p>Refreshes once daily after the US market close (index levels move every trading day, unlike the site's sparse-event or weekly-refresh datasets); the Fed funds rate and Treasury yield series are re-pulled in full each run since both are cheap, low-volume monthly series.</p>
+<div class="source">Source: <a href="https://www.alphavantage.co/" target="_blank" rel="noopener">Alpha Vantage</a> — TIME_SERIES_DAILY_ADJUSTED, FEDERAL_FUNDS_RATE, TREASURY_YIELD</div>
+</div>
+
+</div>
+
+<script>
+const DATA_URL = "/api/smallcap-largecap";
+
+let RAW = null;
+
+function showError(message){
+ const banner = document.getElementById("errorBanner");
+ banner.textContent = message;
+ banner.style.display = "block";
+}
+
+function showWarning(message){
+ const banner = document.getElementById("warningBanner");
+ banner.textContent = message;
+ banner.style.display = "block";
+}
+
+function fmtPct(v, digits){
+ if(v === null || v === undefined || isNaN(v)) return "—";
+ digits = digits === undefined ? 2 : digits;
+ return (v >= 0 ? "+" : "") + v.toFixed(digits) + "%";
+}
+
+function themeInkColor(){
+ const v = getComputedStyle(document.documentElement).getPropertyValue("--ink").trim();
+ return v || "#eae6da";
+}
+function themeMutedColor(){
+ const v = getComputedStyle(document.documentElement).getPropertyValue("--muted").trim();
+ return v || "#8b9199";
+}
+function themeHairColor(){
+ const v = getComputedStyle(document.documentElement).getPropertyValue("--hair").trim();
+ return v || "#2b3138";
+}
+function themeGreedColor(){
+ const v = getComputedStyle(document.documentElement).getPropertyValue("--greed").trim();
+ return v || "#d98a3d";
+}
+function themeFearColor(){
+ const v = getComputedStyle(document.documentElement).getPropertyValue("--fear").trim();
+ return v || "#6f8fac";
+}
+
+// ---- Stats helpers — same methodology as /factor-analysis, duplicated
+// here since every page on this site is self-contained (see CLAUDE.md). ----
+
+function linearRegression(xs, ys){
+ const n = xs.length;
+ const mx = xs.reduce((a, b) => a + b, 0) / n;
+ const my = ys.reduce((a, b) => a + b, 0) / n;
+ const sxx = xs.reduce((s, x) => s + (x - mx) ** 2, 0);
+ const sxy = xs.reduce((s, x, i) => s + (x - mx) * (ys[i] - my), 0);
+ const syy = ys.reduce((s, y) => s + (y - my) ** 2, 0);
+ const slope = sxy / sxx;
+ const intercept = my - slope * mx;
+ const r = sxy / Math.sqrt(sxx * syy);
+ const r2 = r * r;
+ const dof = n - 2;
+ const sse = ys.reduce((s, y, i) => s + (y - (intercept + slope * xs[i])) ** 2, 0);
+ const seSlope = Math.sqrt((sse / dof) / sxx);
+ const t = slope / seSlope;
+ const p = 2 * (1 - normalCdf(Math.abs(t)));
+ return { n, slope, intercept, r, r2, t, dof, p, sse };
+}
+
+function normalCdf(x){
+ return 0.5 * (1 + erf(x / Math.SQRT2));
+}
+
+// Abramowitz & Stegun 7.1.26 approximation — accurate to ~1e-7.
+function erf(x){
+ const sign = x < 0 ? -1 : 1;
+ x = Math.abs(x);
+ const a1 = 0.254829592, a2 = -0.284496736, a3 = 1.421413741, a4 = -1.453152027, a5 = 1.061405429, p = 0.3275911;
+ const t = 1 / (1 + p * x);
+ const y = 1 - (((((a5 * t + a4) * t) + a3) * t + a2) * t + a1) * t * Math.exp(-x * x);
+ return sign * y;
+}
+
+function rankArray(arr){
+ const idx = arr.map((v, i) => i).sort((a, b) => arr[a] - arr[b]);
+ const ranks = new Array(arr.length);
+ let i = 0;
+ while(i < idx.length){
+  let j = i;
+  while(j + 1 < idx.length && arr[idx[j + 1]] === arr[idx[i]]) j++;
+  const avgRank = (i + j) / 2 + 1;
+  for(let k = i; k <= j; k++) ranks[idx[k]] = avgRank;
+  i = j + 1;
+ }
+ return ranks;
+}
+
+function spearmanRegression(xs, ys){
+ return linearRegression(rankArray(xs), rankArray(ys));
+}
+
+function percentileRank(arr, value){
+ let below = 0;
+ for(const v of arr) if(v <= value) below++;
+ return (below / arr.length) * 100;
+}
+
+// ---- Monthly aggregation: Fed regime classification, month-end ratio
+// resampling, and the monthly small-vs-large / rate-change pairing used by
+// the regime bar chart and the correlation scatter. ----
+
+function prevMonthKey(ym){
+ let [y, m] = ym.split("-").map(Number);
+ m -= 1;
+ if(m < 1){ m = 12; y -= 1; }
+ return y + "-" + String(m).padStart(2, "0");
+}
+
+function monthEndMap(dates, values){
+ const map = new Map();
+ for(let i = 0; i < dates.length; i++) map.set(dates[i].slice(0, 7), values[i]); // last write per key wins = month-end
+ return map;
+}
+
+function buildMonthly(data){
+ const ratioByMonth = monthEndMap(data.dates, data.ratioSmallLarge);
+ const fedRows = data.fedFundsMonthly; // ascending
+ const treasuryByMonth = new Map();
+ for(let i = 1; i < data.treasury10yMonthly.length; i++){
+  const cur = data.treasury10yMonthly[i], prev = data.treasury10yMonthly[i - 1];
+  treasuryByMonth.set(cur.date.slice(0, 7), Math.round((cur.value - prev.value) * 1000) / 1000);
+ }
+
+ const records = [];
+ let currentRegime = null;
+ for(let i = 3; i < fedRows.length; i++){
+  const ym = fedRows[i].date.slice(0, 7);
+  const change = fedRows[i].value - fedRows[i - 3].value;
+  const regime = change > 0.1 ? "Hiking" : change < -0.1 ? "Cutting" : "Holding";
+  currentRegime = regime; // fedRows is ascending, so the loop's last write is the latest month
+  const ratioNow = ratioByMonth.get(ym);
+  const ratioPrev = ratioByMonth.get(prevMonthKey(ym));
+  const relReturn = (ratioNow !== undefined && ratioPrev !== undefined)
+   ? Math.round((ratioNow / ratioPrev - 1) * 10000) / 100
+   : null;
+  const d10y = treasuryByMonth.has(ym) ? treasuryByMonth.get(ym) : null;
+  records.push({ ym, regime, relReturn, d10y });
+ }
+
+ const regimeGroups = { Hiking: [], Holding: [], Cutting: [] };
+ for(const r of records){
+  if(r.relReturn === null) continue;
+  regimeGroups[r.regime].push(r.relReturn);
+ }
+ const regimeStats = {};
+ for(const key of Object.keys(regimeGroups)){
+  const vals = regimeGroups[key];
+  const n = vals.length;
+  const mean = n ? vals.reduce((a, b) => a + b, 0) / n : null;
+  regimeStats[key] = { n, mean };
+ }
+
+ const corrPairs = records
+  .filter(r => r.relReturn !== null && r.d10y !== null)
+  .map(r => ({ x: r.d10y, y: r.relReturn, ym: r.ym }));
+
+ return { records, regimeStats, currentRegime, corrPairs };
+}
+
+let ratioChart = null, rollingChart = null, regimeChart = null, corrScatter = null;
+
+async function init(){
+ try{
+  const res = await fetch(DATA_URL, { cache: "no-store" });
+  const data = await res.json();
+  if(!res.ok || data.error) throw new Error(data.error || "failed to load");
+
+  RAW = data;
+  document.getElementById("updated").textContent =
+   "As of " + data.asOfDate + " · " + new Date(data.generated_at_utc).toLocaleString();
+
+  const monthly = buildMonthly(data);
+  renderStats(data, monthly);
+  renderRatioChart(data);
+  renderLadderTable(data);
+  renderRollingChart(data);
+  renderRegimeChart(monthly);
+  renderCorrScatter(monthly);
+
+ }catch(e){
+  showError("Couldn't load small-cap/large-cap data (" + e.message + "). The /api/smallcap-largecap function may not have run yet.");
+ }
+}
+
+function ordinal(n){
+ const rem100 = n % 100;
+ if(rem100 >= 11 && rem100 <= 13) return n + "th";
+ switch(n % 10){
+  case 1: return n + "st";
+  case 2: return n + "nd";
+  case 3: return n + "rd";
+  default: return n + "th";
+ }
+}
+
+function renderStats(data, monthly){
+ const ratio = data.ratioSmallLarge;
+ const current = ratio[ratio.length - 1];
+ const pct = percentileRank(ratio, current);
+ document.getElementById("statRatio").textContent = current.toFixed(1);
+ document.getElementById("statRatioNote").textContent =
+  ordinal(Math.round(pct)) + " percentile of full history (since " + data.commonStartDate.slice(0, 4) + ")";
+
+ const window252 = 252;
+ let rel12m = null;
+ if(ratio.length > window252) rel12m = (ratio[ratio.length - 1] / ratio[ratio.length - 1 - window252] - 1) * 100;
+ const rel12mEl = document.getElementById("statRel12m");
+ rel12mEl.textContent = fmtPct(rel12m);
+ rel12mEl.classList.toggle("cell-neg", rel12m !== null && rel12m < 0);
+
+ const regime = monthly.currentRegime;
+ const stats = regime ? monthly.regimeStats[regime] : null;
+ document.getElementById("statRegime").textContent = regime || "—";
+ if(stats && stats.n){
+  document.getElementById("statRegimeNote").textContent =
+   "Avg. " + fmtPct(stats.mean) + "/mo in " + regime + " regimes (n=" + stats.n + " mo.)";
+ }
+
+ const corrEl = document.getElementById("statCorr");
+ const corrNoteEl = document.getElementById("statCorrNote");
+ if(monthly.corrPairs.length >= 8){
+  const reg = linearRegression(monthly.corrPairs.map(p => p.x), monthly.corrPairs.map(p => p.y));
+  corrEl.textContent = (reg.r >= 0 ? "+" : "") + reg.r.toFixed(2);
+  corrEl.classList.toggle("cell-neg", reg.r < 0);
+  let interp = "Weak linear relationship in this sample";
+  if(Math.abs(reg.r) >= 0.15){
+   interp = reg.r < 0
+    ? "Small-caps have tended to lag when yields rise"
+    : "Small-caps have tended to lead when yields rise";
+  }
+  corrNoteEl.textContent = interp + " (n=" + reg.n + " mo.)";
+ }
+}
+
+function renderRatioChart(data){
+ const ctx = document.getElementById("ratioChart").getContext("2d");
+ if(ratioChart) ratioChart.destroy();
+ ratioChart = new Chart(ctx, {
+  type: "line",
+  data: {
+   labels: data.dates,
+   datasets: [
+    { label: "Small/Large ratio", data: data.ratioSmallLarge, borderColor: themeGreedColor(), backgroundColor: themeGreedColor(), borderWidth: 1.3, pointRadius: 0, fill: false },
+   ],
+  },
+  options: {
+   responsive: true,
+   maintainAspectRatio: false,
+   interaction: { mode: "index", intersect: false },
+   plugins: {
+    legend: { display: false },
+    tooltip: { callbacks: { label: ctx => "Ratio: " + ctx.parsed.y.toFixed(1) } },
+   },
+   scales: {
+    x: { ticks: { color: themeMutedColor(), maxTicksLimit: 8 }, grid: { color: themeHairColor() } },
+    y: { ticks: { color: themeMutedColor() }, grid: { color: themeHairColor() } },
+   },
+  },
+ });
+}
+
+function fmtLadderCell(cell){
+ if(!cell) return '<span class="cell-na">—</span>';
+ return fmtPct(cell.cumPct);
+}
+
+function renderLadderTable(data){
+ const periods = data.ladder.periods;
+ const headEl = document.getElementById("ladderHead");
+ headEl.innerHTML = "<th>Cap size</th>" + periods.map((p, i) => "<th>" + p + (i >= 4 ? "*" : "") + "</th>").join("");
+
+ const rows = [
+  { label: "Small (IWM)", key: "small" },
+  { label: "Mid (MDY)", key: "mid" },
+  { label: "Large (SPY)", key: "large" },
+ ];
+ document.getElementById("ladderBody").innerHTML = rows.map(r => {
+  const cells = data.ladder[r.key].map(fmtLadderCell).join("</td><td>");
+  return "<tr><td>" + r.label + "</td><td>" + cells + "</td></tr>";
+ }).join("");
+}
+
+function rollingRelReturn(ratio, window){
+ const out = new Array(ratio.length).fill(null);
+ for(let i = window; i < ratio.length; i++){
+  out[i] = Math.round((ratio[i] / ratio[i - window] - 1) * 10000) / 100;
+ }
+ return out;
+}
+
+function renderRollingChart(data){
+ const rolling = rollingRelReturn(data.ratioSmallLarge, 252);
+ const firstValid = rolling.findIndex(v => v !== null);
+ const dates = data.dates.slice(firstValid);
+ const values = rolling.slice(firstValid);
+
+ const ctx = document.getElementById("rollingChart").getContext("2d");
+ if(rollingChart) rollingChart.destroy();
+ rollingChart = new Chart(ctx, {
+  type: "line",
+  data: {
+   labels: dates,
+   datasets: [
+    { label: "12-mo. relative return", data: values, borderColor: themeInkColor(), backgroundColor: themeInkColor(), borderWidth: 1.2, pointRadius: 0, fill: false },
+    { label: "Zero", data: dates.map(() => 0), borderColor: themeMutedColor(), borderWidth: 1, borderDash: [4, 3], pointRadius: 0, fill: false },
+   ],
+  },
+  options: {
+   responsive: true,
+   maintainAspectRatio: false,
+   interaction: { mode: "index", intersect: false },
+   plugins: {
+    legend: { display: false },
+    tooltip: {
+     callbacks: {
+      label: ctx => ctx.dataset.label === "Zero" ? null : "12-mo. rel. return: " + fmtPct(ctx.parsed.y),
+     },
+    },
+   },
+   scales: {
+    x: { ticks: { color: themeMutedColor(), maxTicksLimit: 8 }, grid: { color: themeHairColor() } },
+    y: { ticks: { color: themeMutedColor(), callback: v => (Math.round(v * 100) / 100) + "%" }, grid: { color: themeHairColor() } },
+   },
+  },
+ });
+}
+
+function renderRegimeChart(monthly){
+ const order = ["Cutting", "Holding", "Hiking"];
+ const stats = order.map(k => monthly.regimeStats[k]);
+ const colors = stats.map(s => (s.mean === null ? themeMutedColor() : s.mean >= 0 ? themeGreedColor() : themeFearColor()));
+
+ const ctx = document.getElementById("regimeChart").getContext("2d");
+ if(regimeChart) regimeChart.destroy();
+ regimeChart = new Chart(ctx, {
+  type: "bar",
+  data: {
+   labels: order,
+   datasets: [{ label: "Avg. monthly spread return", data: stats.map(s => s.mean), backgroundColor: colors, borderRadius: 4 }],
+  },
+  options: {
+   responsive: true,
+   maintainAspectRatio: false,
+   plugins: {
+    legend: { display: false },
+    tooltip: {
+     callbacks: {
+      label: ctx => {
+       const s = stats[ctx.dataIndex];
+       return ["Avg: " + fmtPct(s.mean), "n=" + s.n + " months"];
+      },
+     },
+    },
+   },
+   scales: {
+    x: { ticks: { color: themeMutedColor() }, grid: { display: false } },
+    y: { ticks: { color: themeMutedColor(), callback: v => (Math.round(v * 100) / 100) + "%" }, grid: { color: themeHairColor() } },
+   },
+  },
+ });
+}
+
+function renderCorrScatter(monthly){
+ const pairs = monthly.corrPairs;
+ const pearson = linearRegression(pairs.map(p => p.x), pairs.map(p => p.y));
+ const spear = spearmanRegression(pairs.map(p => p.x), pairs.map(p => p.y));
+
+ const xs = pairs.map(p => p.x);
+ const xMin = Math.min(...xs), xMax = Math.max(...xs);
+ const linePoints = [
+  { x: xMin, y: pearson.intercept + pearson.slope * xMin },
+  { x: xMax, y: pearson.intercept + pearson.slope * xMax },
+ ];
+
+ const ctx = document.getElementById("corrScatter").getContext("2d");
+ if(corrScatter) corrScatter.destroy();
+ corrScatter = new Chart(ctx, {
+  type: "scatter",
+  data: {
+   datasets: [
+    { label: "Months", data: pairs, backgroundColor: themeGreedColor(), pointRadius: 3.5, showLine: false },
+    { label: "Regression fit", type: "line", data: linePoints, borderColor: themeInkColor(), borderWidth: 1.5, borderDash: [4, 3], pointRadius: 0, fill: false },
+   ],
+  },
+  options: {
+   responsive: true,
+   maintainAspectRatio: false,
+   plugins: {
+    legend: { display: false },
+    tooltip: {
+     callbacks: {
+      label: ctx => ctx.dataset.label === "Months" ? (ctx.raw.ym + ": Δ10Y " + fmtPct(ctx.raw.x) + "pp → " + fmtPct(ctx.raw.y)) : null,
+     },
+    },
+   },
+   scales: {
+    x: { title: { display: true, text: "Δ 10Y yield (pp)", color: themeMutedColor(), font: { size: 10 } }, ticks: { color: themeMutedColor(), font: { size: 10 } }, grid: { color: themeHairColor() } },
+    y: { title: { display: true, text: "Monthly spread return (%)", color: themeMutedColor(), font: { size: 10 } }, ticks: { color: themeMutedColor(), font: { size: 10 } }, grid: { color: themeHairColor() } },
+   },
+  },
+ });
+
+ function row(label, stats){
+  const sig = stats.p < 0.05;
+  return "<tr>" +
+   "<td>" + label + "</td>" +
+   "<td>" + stats.n + "</td>" +
+   "<td>" + stats.r.toFixed(2) + "</td>" +
+   "<td>" + (stats.r2 * 100).toFixed(1) + "%</td>" +
+   "<td>" + (stats.slope >= 0 ? "+" : "") + stats.slope.toFixed(2) + "</td>" +
+   "<td>" + stats.t.toFixed(2) + "</td>" +
+   '<td class="' + (sig ? "sig" : "") + '">' + (stats.p < 0.001 ? "<0.001" : stats.p.toFixed(3)) + "</td>" +
+  "</tr>";
+ }
+
+ document.getElementById("corrMethodTable").innerHTML =
+  '<table class="method-table">' +
+   "<thead><tr><th>Method</th><th>n</th><th>r</th><th>r&sup2;</th><th>slope</th><th>t</th><th>p</th></tr></thead>" +
+   "<tbody>" + row("Pearson (OLS)", pearson) + row("Spearman (&rho;)", spear) + "</tbody>" +
+  "</table>" +
+  '<div class="method-note">Slope is in percentage points of monthly spread return per 1pp move in the 10-year yield that month.</div>';
+}
+
+init();
+</script>
+
+</body>
+</html>
