@@ -132,6 +132,11 @@
   to = "/.netlify/functions/earnings-surprise"
   status = 200
 
+[[redirects]]
+  from = "/api/dividend-growth"
+  to = "/.netlify/functions/dividend-growth"
+  status = 200
+
 # The Statistical Engine page was briefly at these paths.
 [[redirects]]
   from = "/streak-scanner"
@@ -324,3 +329,14 @@
   # snapshot is needed here), and which companies have newly reported only
   # changes meaningfully week to week, not day to day.
   schedule = "10 11 * * 6"
+
+[functions."scheduled-dividend-growth-background"]
+  # Weekly, Saturday 12:00 UTC — after scheduled-surprise-background
+  # (11:10 Sat), leaving that job's own ~503-call sweep (plus retry pass)
+  # room to finish first. Reads beeswarm-meta's meta.json for sector/name,
+  # same reuse pattern as the other full-sweep jobs. ~503 sequential Alpha
+  # Vantage DIVIDENDS calls at 1050ms spacing plus a retry pass — each call
+  # returns a company's whole dividend history, so unlike the daily-close
+  # jobs there's no reason to run this more than weekly; a new dividend
+  # increase only lands a few times a year per company at most.
+  schedule = "0 12 * * 6"
