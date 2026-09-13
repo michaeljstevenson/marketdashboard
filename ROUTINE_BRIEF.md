@@ -90,9 +90,10 @@ Output
 Already built
 (Update this list at the end of every run — do not re-attempt these)
 
-* (none yet)
+* **Earnings Revisions** (2026-09-13) — analyst EPS estimate revision breadth (Net Revision Ratio) and magnitude (Estimate Drift) across the S&P 500, by sector, with a historical trend, breadth-vs-magnitude scatter, and upgrade/downgrade leaderboards. Data: Alpha Vantage `EARNINGS_ESTIMATES` (weekly full-universe sweep), sector/name metadata reused from the Sector Beeswarm page's own weekly refresh. See `netlify/functions/scheduled-revisions-background.js` for full methodology notes.
+* **Index Concentration (top 10 weight vs. history)** — already live as `/concentration.html` (built prior to this routine's existence; noting it here so a future run doesn't re-derive it from the backlog).
 
 Already attempted, skipped
 (Update at the end of every run with why, so future runs don't re-try the same dead end)
 
-* (none yet)
+* (none yet — see "Anything needing a manual decision" in tonight's PR description for one open question worth a human call, not a dead end)
