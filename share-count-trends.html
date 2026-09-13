@@ -152,7 +152,7 @@ document.addEventListener("DOMContentLoaded", function(){
 </script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Insider Buying/Selling — Michael J. Stevenson</title>
+<title>Share Count Trends — Michael J. Stevenson</title>
 
 <style>
 
@@ -399,10 +399,21 @@ h1{
 }
 
 .chart-canvas-wrap{
- height:420px;
+ height:380px;
 }
 
 /* TABLE */
+
+.table-grid{
+ display:grid;
+ grid-template-columns:1fr 1fr;
+ gap:16px;
+ margin-bottom:30px;
+}
+
+@media (max-width:900px){
+ .table-grid{ grid-template-columns:1fr; }
+}
 
 .table-box{
  background:var(--card);
@@ -411,6 +422,8 @@ h1{
  overflow-x:auto;
  margin-bottom:30px;
 }
+
+.table-grid .table-box{ margin-bottom:0; }
 
 .table-box-header{
  padding:18px 20px 4px;
@@ -429,7 +442,7 @@ table{
  width:100%;
  border-collapse:collapse;
  font-size:13px;
- min-width:760px;
+ min-width:600px;
 }
 
 thead th{
@@ -490,13 +503,58 @@ tbody td:nth-child(2){
 .cell-neg{ color:var(--ink); }
 .cell-na{ color:var(--muted); }
 
-.badge-cluster{
- display:inline-block;
+/* SCATTER / METHOD TABLE (mirrors /factor-analysis) */
+
+.scatter-canvas-wrap{
+ height:300px;
+ margin-bottom:12px;
+ position:relative;
+}
+
+.method-table{
+ width:100%;
+ border-collapse:collapse;
+ font-family:var(--mono);
+ font-size:11px;
+ margin-top:8px;
+}
+
+.method-table th{
+ text-align:right;
+ padding:6px 5px;
+ color:var(--muted);
  font-size:10px;
- color:var(--greed);
- border:1px solid var(--greed);
- border-radius:4px;
- padding:1px 5px;
+ letter-spacing:0.03em;
+ font-weight:600;
+ border-bottom:1px solid var(--hair);
+ white-space:nowrap;
+}
+
+.method-table th:first-child{ text-align:left; }
+
+.method-table td{
+ padding:7px 5px;
+ text-align:right;
+ border-bottom:1px solid var(--hair);
+ white-space:nowrap;
+ color:var(--ink);
+}
+
+.method-table td:first-child{
+ text-align:left;
+ font-family:var(--sans);
+ color:var(--muted);
+}
+
+.method-table tr:last-child td{ border-bottom:none; }
+
+.method-table .sig{ color:var(--greed); }
+
+.method-note{
+ font-size:11px;
+ color:var(--muted);
+ margin-top:8px;
+ font-style:italic;
 }
 
 /* EXPLAINER */
@@ -628,9 +686,9 @@ tbody td:nth-child(2){
 <a href="/seasonality.html">Seasonality</a>
 <a href="/concentration.html">Concentration</a>
 <a href="/earnings-revisions.html">Earnings Revisions</a>
-<a href="/insider-buying-selling.html" class="active">Insider Buying/Selling</a>
+<a href="/insider-buying-selling.html">Insider Buying/Selling</a>
 <a href="/small-cap-vs-large-cap.html">Small Cap vs. Large Cap Spread</a>
-<a href="/share-count-trends.html">Share Count Trends</a>
+<a href="/share-count-trends.html" class="active">Share Count Trends</a>
 </div>
 </div>
 
@@ -697,169 +755,128 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 
 <div class="header">
 <div>
-<h1>Insider Buying/Selling</h1>
-<div class="subtitle">Officers, directors, and 10%+ owners file a Form 4 within two business days of trading their own company's stock. Aggregated open-market-style activity, trailing 90 days, across the full S&amp;P 500.</div>
+<h1>Share Count Trends</h1>
+<div class="subtitle">Buybacks vs. dilution across the full S&amp;P 500, read directly off quarterly shares-outstanding history — no separate buyback-dollar data needed, since share count is the net of every buyback, issuance, and option exercise combined.</div>
 </div>
 <div class="updated" id="updated">Loading...</div>
 </div>
 
 <div class="stat-grid">
 <div class="stat-card">
-<div class="stat-label">Net Insider $ Flow</div>
-<div class="stat-value" id="statNetFlow">—</div>
-<div class="stat-note">Buy $ minus sell $, trailing 90 days</div>
+<div class="stat-label">Avg. 1-Year Share Count Change</div>
+<div class="stat-value" id="statAvgChange">—</div>
+<div class="stat-note" id="statAvgChangeNote">Simple average across companies</div>
 </div>
 <div class="stat-card">
-<div class="stat-label">Buy $ / Sell $</div>
-<div class="stat-value" id="statBuySell" style="font-size:18px;">—</div>
-<div class="stat-note">Total dollar volume, both directions</div>
+<div class="stat-label">Buybacks vs. Dilution</div>
+<div class="stat-value" id="statBuybackDilution" style="font-size:20px;">—</div>
+<div class="stat-note" id="statBuybackDilutionNote">Of companies classified</div>
 </div>
 <div class="stat-card">
-<div class="stat-label">Companies Net Buying</div>
-<div class="stat-value" id="statCompaniesBuying" style="font-size:20px;">—</div>
-<div class="stat-note" id="statCompaniesNote">Of companies with any activity</div>
+<div class="stat-label">Year-over-Year Persistence</div>
+<div class="stat-value" id="statPersistence" style="font-size:20px;">—</div>
+<div class="stat-note" id="statPersistenceNote">Pearson r, last year's change vs. this year's</div>
 </div>
 <div class="stat-card">
-<div class="stat-label">Cluster-Buy Signals</div>
-<div class="stat-value" id="statClusterBuys">—</div>
-<div class="stat-note">2+ insiders buying, zero sellers</div>
+<div class="stat-label">Active Buyback Streaks</div>
+<div class="stat-value" id="statStreaks">—</div>
+<div class="stat-note" id="statStreaksNote">Companies with 2+ consecutive years shrinking share count</div>
 </div>
 </div>
 
 <div class="chart-box">
 <div class="chart-box-header">
 <div>
-<h2>Net insider $ flow by sector, trailing 90 days</h2>
-<div class="chart-subhead">Buy $ minus sell $ across Common Stock transactions, pooled across each sector's constituents</div>
+<h2>Average 1-year share count change by sector</h2>
+<div class="chart-subhead">Negative = net buybacks (fewer shares outstanding); positive = net dilution</div>
 </div>
 </div>
 <div class="chart-canvas-wrap">
-<canvas id="sectorFlowChart"></canvas>
+<canvas id="sectorChart"></canvas>
 </div>
 </div>
 
+<div class="chart-box">
+<div class="chart-box-header">
+<div>
+<h2>Does last year's buyback/dilution rate predict this year's?</h2>
+<div class="chart-subhead">Each point is one company: x-axis is the prior non-overlapping year's share-count change, y-axis is the most recent year's — same "non-overlapping annual" construction as the momentum test on /factor-analysis</div>
+</div>
+</div>
+<div class="scatter-canvas-wrap">
+<canvas id="persistenceScatter"></canvas>
+</div>
+<div id="persistenceMethodTable"></div>
+</div>
+
+<div class="table-grid">
 <div class="table-box">
 <div class="table-box-header">
-<h2>Cluster buying</h2>
-<div class="chart-subhead">Companies with 2+ distinct insiders buying and zero insiders selling in the window — the least ambiguous signal this data can offer</div>
+<h2>Biggest buybacks</h2>
+<div class="chart-subhead">Largest 3-year cumulative reduction in shares outstanding</div>
 </div>
-<table id="clusterTable">
-<thead>
-<tr>
-<th>Symbol</th>
-<th>Sector</th>
-<th>Buyers</th>
-<th>Shares Bought</th>
-<th>$ Bought</th>
-</tr>
-</thead>
-<tbody id="clusterTableBody">
-<tr><td colspan="5" style="text-align:center; color:var(--muted); padding:24px;">Loading&hellip;</td></tr>
-</tbody>
+<table id="buybackTable">
+<thead><tr><th>Symbol</th><th>Sector</th><th>1Y</th><th>3Y</th></tr></thead>
+<tbody id="buybackBody"><tr><td colspan="4" style="text-align:center; color:var(--muted); padding:24px;">Loading&hellip;</td></tr></tbody>
 </table>
 </div>
-
 <div class="table-box">
 <div class="table-box-header">
-<h2>Largest individual purchases</h2>
-<div class="chart-subhead">Single largest priced open-market-style buys, by dollar value</div>
+<h2>Biggest dilution</h2>
+<div class="chart-subhead">Largest 3-year cumulative increase in shares outstanding</div>
 </div>
-<table id="buysTable">
-<thead>
-<tr>
-<th>Date</th>
-<th>Symbol</th>
-<th>Executive</th>
-<th>Title</th>
-<th>Shares</th>
-<th>Price</th>
-<th>Value</th>
-</tr>
-</thead>
-<tbody id="buysTableBody">
-<tr><td colspan="7" style="text-align:center; color:var(--muted); padding:24px;">Loading&hellip;</td></tr>
-</tbody>
+<table id="dilutionTable">
+<thead><tr><th>Symbol</th><th>Sector</th><th>1Y</th><th>3Y</th></tr></thead>
+<tbody id="dilutionBody"><tr><td colspan="4" style="text-align:center; color:var(--muted); padding:24px;">Loading&hellip;</td></tr></tbody>
 </table>
 </div>
-
-<div class="table-box">
-<div class="table-box-header">
-<h2>Largest individual sales</h2>
-<div class="chart-subhead">Shown for completeness — insider selling is common and often reflects diversification, taxes, or a pre-scheduled 10b5-1 plan rather than a bearish view (see methodology)</div>
-</div>
-<table id="sellsTable">
-<thead>
-<tr>
-<th>Date</th>
-<th>Symbol</th>
-<th>Executive</th>
-<th>Title</th>
-<th>Shares</th>
-<th>Price</th>
-<th>Value</th>
-</tr>
-</thead>
-<tbody id="sellsTableBody">
-<tr><td colspan="7" style="text-align:center; color:var(--muted); padding:24px;">Loading&hellip;</td></tr>
-</tbody>
-</table>
 </div>
 
 <div class="table-box">
 <div class="table-box-header">
-<h2>All companies with activity</h2>
-<div class="chart-subhead">Every S&amp;P 500 name with at least one qualifying transaction in the trailing 90 days</div>
+<h2>All companies with balance-sheet history on file</h2>
+<div class="chart-subhead">1/3/5-year cumulative share-count change, full S&amp;P 500</div>
 </div>
 <table id="stockTable">
 <thead>
 <tr>
 <th data-key="symbol">Symbol</th>
 <th data-key="sector">Sector</th>
-<th data-key="buyValue">Buy $<span class="sort-arrow">▾</span></th>
-<th data-key="sellValue">Sell $<span class="sort-arrow">▾</span></th>
-<th data-key="netValue">Net $<span class="sort-arrow">▾</span></th>
-<th data-key="buyCount">Buys<span class="sort-arrow">▾</span></th>
-<th data-key="sellCount">Sells<span class="sort-arrow">▾</span></th>
-<th data-key="uniqueBuyers">Buyers<span class="sort-arrow">▾</span></th>
+<th data-key="change1Y">1Y<span class="sort-arrow">▾</span></th>
+<th data-key="change3Y">3Y<span class="sort-arrow">▾</span></th>
+<th data-key="change5Y">5Y<span class="sort-arrow">▾</span></th>
+<th data-key="classification">Classification<span class="sort-arrow">▾</span></th>
+<th data-key="currentStreak">Streak<span class="sort-arrow">▾</span></th>
 </tr>
 </thead>
 <tbody id="tableBody">
-<tr><td colspan="8" style="text-align:center; color:var(--muted); padding:30px;">Loading insider transactions data&hellip;</td></tr>
+<tr><td colspan="7" style="text-align:center; color:var(--muted); padding:30px;">Loading share count data&hellip;</td></tr>
 </tbody>
 </table>
 </div>
 
 <div class="explainer">
 <h2>Methodology</h2>
-<p>Universe is the full S&amp;P 500. For every constituent, Alpha Vantage's <code>INSIDER_TRANSACTIONS</code> endpoint returns each Form 4 line item filed by officers, directors, and 10%+ owners — company, filer, security type, transaction date, shares, price, and whether it was an acquisition or disposal. Only transactions dated within the trailing 90 days as of the last refresh are counted.</p>
-<p>Raw Form 4 data is dominated by routine equity-compensation mechanics, not discretionary trading decisions: RSUs vesting, options being exercised, and the automatic tax-withholding sale that immediately follows a vesting event. None of that reflects an insider choosing to buy or sell. This page keeps only <code>security_type = Common Stock</code> transactions reporting a real, positive share price — RSU vesting and stock awards report a blank or zero price, so this filters most of that noise out. It is an honest partial fix, not a complete one: a pre-scheduled 10b5-1 plan sale (an executive who set up automatic periodic sales months in advance, unrelated to any current view on the stock) still reports a normal share price and passes this filter indistinguishably from a discretionary open-market sale. Treat the sell side of this data with real skepticism for that reason.</p>
-<p>Insider buying doesn't have the same problem — there's no routine, automatic mechanism that makes an executive spend their own cash to buy more stock, which is why academic research on this topic (e.g. Lakonishok &amp; Lee, 2001, <i>Are Insider Trades Informative?</i>) consistently finds insider purchases carry more signal than insider sales. This page reflects that asymmetry directly: cluster buying (2+ distinct insiders buying with zero sellers in the window) is surfaced as the headline signal, and the largest individual purchases get their own table, while the largest sales are shown only for completeness with an explicit caveat rather than framed as bearish.</p>
-<p>Sector and company name come from the same weekly metadata Alpha Vantage sweep that backs <a href="/sector-beeswarm.html">Sector Beeswarm</a>, reused here rather than paying for a second full-index pass just for labels. Refreshes weekly (Saturday mornings) — a single company's insider filings are sparse enough that a trailing-90-day aggregate has little reason to move day to day.</p>
-<div class="source">Source: <a href="https://www.alphavantage.co/" target="_blank" rel="noopener">Alpha Vantage — INSIDER_TRANSACTIONS</a></div>
+<p>Universe is the full S&amp;P 500. For every constituent, Alpha Vantage's <code>BALANCE_SHEET</code> endpoint returns <code>commonStockSharesOutstanding</code> for each of the last ~21 quarterly filings. Share count at 1/3/5-year lookbacks is read directly off the quarter 4/12/20 filings back, rather than derived from any separate buyback-announcement or dollar-value data — this deliberately captures the <i>net</i> effect of buybacks, new share issuance, and employee stock-based-compensation dilution all at once, which is what actually matters to a existing shareholder's ownership stake. A company can announce a large buyback program and still show rising share count if stock-based comp issuance outruns it; this page would correctly show that as net dilution.</p>
+<p>A company is classified "buyback" if its share count fell &gt;0.5% over the trailing year, "dilution" if it rose &gt;0.5%, and "flat" in between — the threshold exists because quarter-to-quarter share counts move slightly from routine option exercises and rounding even with no real capital-allocation story either way.</p>
+<p>The year-over-year persistence check takes each company's most recent two non-overlapping annual share-count changes and runs the same Pearson/Spearman regression check used throughout <a href="/factor-analysis.html">Factor Analysis</a> — a positive, significant relationship would mean a company's buyback (or dilution) pace tends to continue year to year rather than reset randomly; see that page's own methodology notes for why non-overlapping periods matter for a test like this (overlapping windows share underlying data points and mechanically inflate any apparent persistence).</p>
+<p>Refreshes weekly (Saturday mornings) — a share count only changes when a company actually files a new 10-Q/10-K. Sector and company name come from the same weekly metadata sweep that backs <a href="/sector-beeswarm.html">Sector Beeswarm</a>, reused here rather than paying for a second full-index pass just for labels.</p>
+<div class="source">Source: <a href="https://www.alphavantage.co/" target="_blank" rel="noopener">Alpha Vantage — BALANCE_SHEET</a></div>
 </div>
 
 </div>
 
 <script>
-const DATA_URL = "/api/insider-transactions";
+const DATA_URL = "/api/share-count-trends";
 
 let RAW = null;
-let SORT_KEY = "netValue";
-let SORT_DIR = -1;
+let SORT_KEY = "change1Y";
+let SORT_DIR = 1;
 
-function fmtUsd(v){
- if(v === null || v === undefined) return null;
- const abs = Math.abs(v);
- const sign = v < 0 ? "-" : "";
- if(abs >= 1e9) return sign + "$" + (abs/1e9).toFixed(2) + "B";
- if(abs >= 1e6) return sign + "$" + (abs/1e6).toFixed(2) + "M";
- if(abs >= 1e3) return sign + "$" + (abs/1e3).toFixed(1) + "K";
- return sign + "$" + abs.toFixed(0);
-}
-
-function fmtUsdSigned(v){
- if(v === null || v === undefined) return null;
- return (v >= 0 ? "+" : "") + fmtUsd(v);
+function fmtPct(v, digits){
+ if(v === null || v === undefined || isNaN(v)) return "—";
+ digits = digits === undefined ? 1 : digits;
+ return (v >= 0 ? "+" : "") + v.toFixed(digits) + "%";
 }
 
 function showError(message){
@@ -867,12 +884,78 @@ function showError(message){
  banner.textContent = message;
  banner.style.display = "block";
 }
-
 function showWarning(message){
  const banner = document.getElementById("warningBanner");
  banner.textContent = message;
  banner.style.display = "block";
 }
+
+function themeInkColor(){
+ const v = getComputedStyle(document.documentElement).getPropertyValue("--ink").trim();
+ return v || "#eae6da";
+}
+function themeMutedColor(){
+ const v = getComputedStyle(document.documentElement).getPropertyValue("--muted").trim();
+ return v || "#8b9199";
+}
+function themeHairColor(){
+ const v = getComputedStyle(document.documentElement).getPropertyValue("--hair").trim();
+ return v || "#2b3138";
+}
+function themeGreedColor(){
+ const v = getComputedStyle(document.documentElement).getPropertyValue("--greed").trim();
+ return v || "#d98a3d";
+}
+function themeFearColor(){
+ const v = getComputedStyle(document.documentElement).getPropertyValue("--fear").trim();
+ return v || "#6f8fac";
+}
+
+// ---- Stats helpers — same methodology as /factor-analysis, duplicated
+// here since every page on this site is self-contained (see CLAUDE.md). ----
+function linearRegression(xs, ys){
+ const n = xs.length;
+ const mx = xs.reduce((a, b) => a + b, 0) / n;
+ const my = ys.reduce((a, b) => a + b, 0) / n;
+ const sxx = xs.reduce((s, x) => s + (x - mx) ** 2, 0);
+ const sxy = xs.reduce((s, x, i) => s + (x - mx) * (ys[i] - my), 0);
+ const syy = ys.reduce((s, y) => s + (y - my) ** 2, 0);
+ const slope = sxy / sxx;
+ const intercept = my - slope * mx;
+ const r = sxy / Math.sqrt(sxx * syy);
+ const r2 = r * r;
+ const dof = n - 2;
+ const sse = ys.reduce((s, y, i) => s + (y - (intercept + slope * xs[i])) ** 2, 0);
+ const seSlope = Math.sqrt((sse / dof) / sxx);
+ const t = slope / seSlope;
+ const p = 2 * (1 - normalCdf(Math.abs(t)));
+ return { n, slope, intercept, r, r2, t, dof, p, sse };
+}
+function normalCdf(x){ return 0.5 * (1 + erf(x / Math.SQRT2)); }
+function erf(x){
+ const sign = x < 0 ? -1 : 1;
+ x = Math.abs(x);
+ const a1 = 0.254829592, a2 = -0.284496736, a3 = 1.421413741, a4 = -1.453152027, a5 = 1.061405429, p = 0.3275911;
+ const t = 1 / (1 + p * x);
+ const y = 1 - (((((a5 * t + a4) * t) + a3) * t + a2) * t + a1) * t * Math.exp(-x * x);
+ return sign * y;
+}
+function rankArray(arr){
+ const idx = arr.map((v, i) => i).sort((a, b) => arr[a] - arr[b]);
+ const ranks = new Array(arr.length);
+ let i = 0;
+ while(i < idx.length){
+  let j = i;
+  while(j + 1 < idx.length && arr[idx[j + 1]] === arr[idx[i]]) j++;
+  const avgRank = (i + j) / 2 + 1;
+  for(let k = i; k <= j; k++) ranks[idx[k]] = avgRank;
+  i = j + 1;
+ }
+ return ranks;
+}
+function spearmanRegression(xs, ys){ return linearRegression(rankArray(xs), rankArray(ys)); }
+
+let sectorChart = null, persistenceScatter = null;
 
 async function init(){
  try{
@@ -881,8 +964,7 @@ async function init(){
   if(!res.ok || data.error) throw new Error(data.error || "failed to load");
 
   RAW = data;
-  document.getElementById("updated").textContent =
-   "As of " + data.asOfDate + " · " + new Date(data.generated_at_utc).toLocaleString();
+  document.getElementById("updated").textContent = "As of " + new Date(data.generated_at_utc).toLocaleString();
 
   if(data.loadedCount < data.universeSize){
    showWarning("Only " + data.loadedCount + " of " + data.universeSize + " S&P 500 constituents loaded this run — some data may be temporarily unavailable.");
@@ -890,64 +972,54 @@ async function init(){
 
   renderStats();
   renderSectorChart();
-  renderClusterTable();
-  renderTransactionTable(data.notableBuys, "buysTableBody");
-  renderTransactionTable(data.notableSells, "sellsTableBody");
+  renderPersistenceScatter();
+  renderLeaderTable(data.buybackLeaders, "buybackBody");
+  renderLeaderTable(data.dilutionLeaders, "dilutionBody");
   renderTable();
 
  }catch(e){
-  showError("Couldn't load insider transactions data (" + e.message + "). The /api/insider-transactions function may not have run yet.");
+  showError("Couldn't load share count trends data (" + e.message + "). The /api/share-count-trends function may not have run yet.");
   document.getElementById("tableBody").innerHTML =
-   '<tr><td colspan="8" style="text-align:center; color:var(--muted); padding:30px;">No data available.</td></tr>';
+   '<tr><td colspan="7" style="text-align:center; color:var(--muted); padding:30px;">No data available.</td></tr>';
  }
 }
 
 function renderStats(){
  const m = RAW.market;
+ const avgEl = document.getElementById("statAvgChange");
+ avgEl.textContent = fmtPct(m.avgChange1Y);
+ avgEl.classList.toggle("cell-neg", m.avgChange1Y !== null && m.avgChange1Y > 0);
+ document.getElementById("statAvgChangeNote").textContent = "n=" + m.companyCount + " companies";
 
- const netEl = document.getElementById("statNetFlow");
- netEl.textContent = fmtUsdSigned(m.netValue) || "—";
- netEl.classList.toggle("cell-neg", m.netValue !== null && m.netValue < 0);
+ document.getElementById("statBuybackDilution").textContent = m.buybackCount + " / " + m.dilutionCount;
+ document.getElementById("statBuybackDilutionNote").textContent =
+  m.buybackCount + " buying back, " + m.dilutionCount + " diluting, " + m.flatCount + " roughly flat";
 
- document.getElementById("statBuySell").textContent = (fmtUsd(m.buyValue) || "—") + " / " + (fmtUsd(m.sellValue) || "—");
- document.getElementById("statCompaniesBuying").textContent = m.companiesNetBuying + " / " + m.companiesNetSelling + " selling";
- document.getElementById("statCompaniesNote").textContent = m.companiesWithActivity + " of " + RAW.universeSize + " had any qualifying activity";
- document.getElementById("statClusterBuys").textContent = m.clusterBuyCount;
+ const pairs = RAW.persistencePairs;
+ const pEl = document.getElementById("statPersistence");
+ const pNoteEl = document.getElementById("statPersistenceNote");
+ if(pairs.length >= 10){
+  const reg = linearRegression(pairs.map(p => p.x), pairs.map(p => p.y));
+  pEl.textContent = (reg.r >= 0 ? "+" : "") + reg.r.toFixed(2);
+  pNoteEl.textContent = "n=" + reg.n + " companies, p=" + (reg.p < 0.001 ? "<0.001" : reg.p.toFixed(3));
+ }else{
+  pEl.textContent = "n/a";
+  pNoteEl.textContent = "Not enough two-year histories to test";
+ }
+
+ document.getElementById("statStreaks").textContent = RAW.companies.filter(c => c.currentStreak >= 2).length;
 }
 
-const SECTOR_COLORS = {
- "Technology": "#d98a3d",
- "Information Technology": "#d98a3d",
- "Financials": "#6f8fac",
- "Health Care": "#8e7cc3",
- "Consumer Discretionary": "#e0b04f",
- "Communication Services": "#4f7ae0",
- "Industrials": "#5a9d6f",
- "Consumer Staples": "#4fb0c0",
- "Energy": "#c0564f",
- "Utilities": "#b56f2a",
- "Materials": "#9a9a9a",
- "Real Estate": "#c77dbd",
-};
-
-let sectorFlowChart = null;
-
 function renderSectorChart(){
- const sorted = [...RAW.sectors].sort((a, b) => (b.netValue ?? -Infinity) - (a.netValue ?? -Infinity));
- const colors = sorted.map(s => s.netValue >= 0 ? "rgba(217,138,61,0.75)" : "rgba(111,143,172,0.75)");
-
- const ctx = document.getElementById("sectorFlowChart").getContext("2d");
- if(sectorFlowChart) sectorFlowChart.destroy();
- sectorFlowChart = new Chart(ctx, {
+ const sorted = [...RAW.sectors].sort((a, b) => a.avgChange1Y - b.avgChange1Y);
+ const colors = sorted.map(s => s.avgChange1Y <= 0 ? themeGreedColor() : themeFearColor());
+ const ctx = document.getElementById("sectorChart").getContext("2d");
+ if(sectorChart) sectorChart.destroy();
+ sectorChart = new Chart(ctx, {
   type: "bar",
   data: {
    labels: sorted.map(s => s.sector),
-   datasets: [{
-    label: "Net $ flow",
-    data: sorted.map(s => s.netValue),
-    backgroundColor: colors,
-    borderRadius: 4,
-   }],
+   datasets: [{ label: "Avg. 1Y change", data: sorted.map(s => s.avgChange1Y), backgroundColor: colors, borderRadius: 4 }],
   },
   options: {
    indexAxis: "y",
@@ -960,53 +1032,92 @@ function renderSectorChart(){
       label: ctx => {
        const s = sorted[ctx.dataIndex];
        return [
-        "Net: " + (fmtUsdSigned(s.netValue) || "—"),
-        "Buy: " + (fmtUsd(s.buyValue) || "—") + " (" + s.buyCount + " txns)",
-        "Sell: " + (fmtUsd(s.sellValue) || "—") + " (" + s.sellCount + " txns)",
-        s.stockCount + " companies with activity",
+        "Avg. 1Y change: " + fmtPct(s.avgChange1Y),
+        "Avg. 3Y change: " + fmtPct(s.avgChange3Y),
+        s.buybackCount + " buying back, " + s.dilutionCount + " diluting, of " + s.companyCount,
        ];
       },
      },
     },
    },
    scales: {
-    x: { ticks: { color: "#8b9199", callback: v => fmtUsd(v) }, grid: { color: "#2b3138" } },
-    y: { ticks: { color: "#8b9199" }, grid: { display: false } },
+    x: { ticks: { color: themeMutedColor(), callback: v => (Math.round(v * 100) / 100) + "%" }, grid: { color: themeHairColor() } },
+    y: { ticks: { color: themeMutedColor() }, grid: { display: false } },
    },
   },
  });
 }
 
-function renderClusterTable(){
- const clusters = RAW.stocks.filter(s => s.clusterBuy).sort((a, b) => b.buyValue - a.buyValue);
- const tbody = document.getElementById("clusterTableBody");
- if(!clusters.length){
-  tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; color:var(--muted); padding:24px;">No cluster-buy signals in the current window.</td></tr>';
-  return;
+function renderPersistenceScatter(){
+ const pairs = RAW.persistencePairs;
+ const pearson = linearRegression(pairs.map(p => p.x), pairs.map(p => p.y));
+ const spear = spearmanRegression(pairs.map(p => p.x), pairs.map(p => p.y));
+
+ const xs = pairs.map(p => p.x);
+ const xMin = Math.min(...xs), xMax = Math.max(...xs);
+ const linePoints = [
+  { x: xMin, y: pearson.intercept + pearson.slope * xMin },
+  { x: xMax, y: pearson.intercept + pearson.slope * xMax },
+ ];
+
+ const ctx = document.getElementById("persistenceScatter").getContext("2d");
+ if(persistenceScatter) persistenceScatter.destroy();
+ persistenceScatter = new Chart(ctx, {
+  type: "scatter",
+  data: {
+   datasets: [
+    { label: "Companies", data: pairs, backgroundColor: themeGreedColor(), pointRadius: 3, showLine: false },
+    { label: "Regression fit", type: "line", data: linePoints, borderColor: themeInkColor(), borderWidth: 1.5, borderDash: [4, 3], pointRadius: 0, fill: false },
+   ],
+  },
+  options: {
+   responsive: true,
+   maintainAspectRatio: false,
+   plugins: {
+    legend: { display: false },
+    tooltip: {
+     callbacks: {
+      label: ctx => ctx.dataset.label === "Companies" ? (ctx.raw.symbol + ": " + fmtPct(ctx.raw.x) + " → " + fmtPct(ctx.raw.y)) : null,
+     },
+    },
+   },
+   scales: {
+    x: { title: { display: true, text: "Prior year change (%)", color: themeMutedColor(), font: { size: 10 } }, ticks: { color: themeMutedColor(), font: { size: 10 } }, grid: { color: themeHairColor() } },
+    y: { title: { display: true, text: "Most recent year change (%)", color: themeMutedColor(), font: { size: 10 } }, ticks: { color: themeMutedColor(), font: { size: 10 } }, grid: { color: themeHairColor() } },
+   },
+  },
+ });
+
+ function row(label, stats){
+  const sig = stats.p < 0.05;
+  return "<tr>" +
+   "<td>" + label + "</td>" +
+   "<td>" + stats.n + "</td>" +
+   "<td>" + stats.r.toFixed(2) + "</td>" +
+   "<td>" + (stats.r2 * 100).toFixed(1) + "%</td>" +
+   "<td>" + (stats.slope >= 0 ? "+" : "") + stats.slope.toFixed(2) + "</td>" +
+   "<td>" + stats.t.toFixed(2) + "</td>" +
+   '<td class="' + (sig ? "sig" : "") + '">' + (stats.p < 0.001 ? "<0.001" : stats.p.toFixed(3)) + "</td>" +
+  "</tr>";
  }
- tbody.innerHTML = clusters.map(s => `<tr>
-  <td><span class="sector-name">${s.symbol}</span></td>
-  <td><span class="sector-ticker">${s.sector || "—"}</span></td>
-  <td>${s.uniqueBuyers}</td>
-  <td>${s.buyCount}</td>
-  <td class="cell-pos">${fmtUsd(s.buyValue) || "—"}</td>
- </tr>`).join("");
+ document.getElementById("persistenceMethodTable").innerHTML =
+  '<table class="method-table">' +
+   "<thead><tr><th>Method</th><th>n</th><th>r</th><th>r&sup2;</th><th>slope</th><th>t</th><th>p</th></tr></thead>" +
+   "<tbody>" + row("Pearson (OLS)", pearson) + row("Spearman (&rho;)", spear) + "</tbody>" +
+  "</table>";
 }
 
-function renderTransactionTable(rows, tbodyId){
+function renderLeaderTable(rows, tbodyId){
  const tbody = document.getElementById(tbodyId);
  if(!rows || !rows.length){
-  tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; color:var(--muted); padding:24px;">No qualifying transactions in the current window.</td></tr>';
+  tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; color:var(--muted); padding:24px;">No qualifying companies.</td></tr>';
   return;
  }
- tbody.innerHTML = rows.map(t => `<tr>
-  <td><span class="sector-ticker">${t.date}</span></td>
-  <td><span class="sector-name">${t.symbol}</span></td>
-  <td style="font-family:var(--sans); text-align:left;">${t.executive}</td>
-  <td style="font-family:var(--sans); text-align:left; color:var(--muted); font-size:12px;">${t.title || "—"}</td>
-  <td>${t.shares.toLocaleString()}</td>
-  <td>${fmtUsd(t.price)}</td>
-  <td>${fmtUsd(t.value)}</td>
+ tbody.innerHTML = rows.map(r => `<tr>
+  <td><span class="sector-name">${r.symbol}</span></td>
+  <td><span class="sector-ticker">${r.sector || "—"}</span></td>
+  <td>${fmtPct(r.change1Y)}</td>
+  <td>${fmtPct(r.change3Y)}</td>
  </tr>`).join("");
 }
 
@@ -1015,13 +1126,13 @@ function sortBy(key){
   SORT_DIR = -SORT_DIR;
  }else{
   SORT_KEY = key;
-  SORT_DIR = -1;
+  SORT_DIR = 1;
  }
  renderTable();
 }
 
 function renderTable(){
- const rows = [...RAW.stocks].sort((a, b) => {
+ const rows = [...RAW.companies].sort((a, b) => {
   const av = a[SORT_KEY], bv = b[SORT_KEY];
   if(av === null || av === undefined) return 1;
   if(bv === null || bv === undefined) return -1;
@@ -1031,17 +1142,16 @@ function renderTable(){
 
  const tbody = document.getElementById("tableBody");
  tbody.innerHTML = rows.map(r => {
-  const netCls = r.netValue >= 0 ? "cell-pos" : "cell-neg";
-  const clusterBadge = r.clusterBuy ? ' <span class="badge-cluster">cluster</span>' : "";
+  const streakText = r.currentStreak > 0 ? "+" + r.currentStreak : r.currentStreak;
+  const streakCls = r.currentStreak > 0 ? "cell-pos" : r.currentStreak < 0 ? "cell-neg" : "cell-na";
   return `<tr>
-   <td><span class="sector-name">${r.symbol}</span>${clusterBadge}</td>
+   <td><span class="sector-name">${r.symbol}</span></td>
    <td><span class="sector-ticker">${r.sector || "—"}</span></td>
-   <td>${fmtUsd(r.buyValue) || "—"}</td>
-   <td>${fmtUsd(r.sellValue) || "—"}</td>
-   <td class="${netCls}">${fmtUsdSigned(r.netValue) || "—"}</td>
-   <td>${r.buyCount}</td>
-   <td>${r.sellCount}</td>
-   <td>${r.uniqueBuyers}</td>
+   <td>${fmtPct(r.change1Y)}</td>
+   <td>${fmtPct(r.change3Y)}</td>
+   <td>${fmtPct(r.change5Y)}</td>
+   <td>${r.classification || "—"}</td>
+   <td class="${streakCls}">${streakText}</td>
   </tr>`;
  }).join("");
 
