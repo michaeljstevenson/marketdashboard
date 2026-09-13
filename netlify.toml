@@ -112,6 +112,11 @@
   to = "/.netlify/functions/earnings-revisions"
   status = 200
 
+[[redirects]]
+  from = "/api/insider-transactions"
+  to = "/.netlify/functions/insider-transactions"
+  status = 200
+
 # The Statistical Engine page was briefly at these paths.
 [[redirects]]
   from = "/streak-scanner"
@@ -261,3 +266,14 @@
   # daily refresh, so weekly (not one of the weekday daily-close jobs)
   # matches how this site treats other full-index sweeps.
   schedule = "20 7 * * 6"
+
+[functions."scheduled-insider-transactions-background"]
+  # Weekly, Saturday 10:30 UTC — after the rest of the Saturday block
+  # (beeswarm-meta at 07:00, whose meta.json this job reads for company
+  # name/sector; concentration-history at 10:00). ~503 sequential Alpha
+  # Vantage INSIDER_TRANSACTIONS calls at 1050ms spacing plus a retry
+  # pass — the same pacing proven safe at this exact universe size by
+  # scheduled-beeswarm-meta-background.js's OVERVIEW sweep. Weekly
+  # because a single company's Form 4 filings are sparse enough that a
+  # trailing-90-day aggregate barely moves day to day.
+  schedule = "30 10 * * 6"

@@ -152,7 +152,7 @@ document.addEventListener("DOMContentLoaded", function(){
 </script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Earnings Revisions — Michael J. Stevenson</title>
+<title>Insider Buying/Selling — Michael J. Stevenson</title>
 
 <style>
 
@@ -264,6 +264,8 @@ a{ color:inherit; }
  box-shadow:0 10px 30px rgba(0,0,0,0.45);
 }
 
+/* Driven by the .open class (see the script right after </nav>), not
+   pure :hover — see that script for why. */
 .navdrop.open .dropdown{ display:block; }
 
 .dropdown a{
@@ -348,12 +350,11 @@ h1{
 
 .stat-value{
  font-family:var(--mono);
- font-size:26px;
+ font-size:24px;
  color:var(--greed);
 }
 
-.stat-value.down{ color:var(--fear); }
-.stat-value.neutral{ color:var(--ink); }
+.stat-value.cell-neg{ color:var(--fear); }
 
 .stat-note{
  color:var(--muted);
@@ -361,31 +362,8 @@ h1{
  margin-top:6px;
 }
 
-/* CONTROLS */
-
-.toggle-group{
- display:inline-flex;
- background:var(--card);
- border:1px solid var(--hair);
- border-radius:8px;
- padding:3px;
-}
-
-.toggle-btn{
- background:none;
- border:none;
- color:var(--muted);
- font-family:var(--sans);
- font-size:13px;
- padding:7px 16px;
- border-radius:6px;
- cursor:pointer;
-}
-
-.toggle-btn.active{
- background:var(--greed);
- color:#1a1408;
- font-weight:600;
+@media (max-width:900px){
+ .stat-grid{ grid-template-columns:repeat(2,1fr); }
 }
 
 /* CHART */
@@ -398,13 +376,6 @@ h1{
  margin-bottom:30px;
 }
 
-.chart-box h2{
- font-family:var(--serif);
- font-weight:400;
- font-size:18px;
- margin:0;
-}
-
 .chart-box-header{
  display:flex;
  justify-content:space-between;
@@ -414,7 +385,14 @@ h1{
  margin-bottom:16px;
 }
 
-.chart-box-sub{
+.chart-box h2{
+ font-family:var(--serif);
+ font-weight:400;
+ font-size:18px;
+ margin:0;
+}
+
+.chart-subhead{
  color:var(--muted);
  font-size:12px;
  margin-top:4px;
@@ -424,24 +402,34 @@ h1{
  height:420px;
 }
 
-.chart-canvas-wrap.tall{ height:460px; }
-.chart-canvas-wrap.short{ height:320px; }
-
-/* TABLES */
+/* TABLE */
 
 .table-box{
  background:var(--card);
  border:1px solid var(--hair);
  border-radius:12px;
  overflow-x:auto;
- margin-bottom:22px;
+ margin-bottom:30px;
 }
+
+.table-box-header{
+ padding:18px 20px 4px;
+}
+
+.table-box-header h2{
+ font-family:var(--serif);
+ font-weight:400;
+ font-size:18px;
+ margin:0;
+}
+
+.table-box-header .chart-subhead{ margin-bottom:6px; }
 
 table{
  width:100%;
  border-collapse:collapse;
  font-size:13px;
- min-width:600px;
+ min-width:760px;
 }
 
 thead th{
@@ -451,13 +439,27 @@ thead th{
  font-size:11px;
  letter-spacing:0.04em;
  font-weight:600;
+ cursor:pointer;
+ user-select:none;
  white-space:nowrap;
  border-bottom:1px solid var(--hair);
 }
 
-thead th:first-child, thead th:nth-child(2), thead th:nth-child(3){
+thead th:first-child, thead th:nth-child(2){
  text-align:left;
 }
+
+thead th:hover{ color:var(--ink); }
+
+thead th .sort-arrow{
+ opacity:0.4;
+ margin-left:3px;
+ font-size:10px;
+}
+
+thead th.sorted .sort-arrow{ opacity:1; color:var(--greed); }
+
+thead th:not([data-key]){ cursor:default; }
 
 tbody td{
  padding:11px 12px;
@@ -468,59 +470,33 @@ tbody td{
 }
 
 tbody tr:last-child td{ border-bottom:none; }
+
 tbody tr:hover{ background:var(--card-hover); }
 
-tbody td:first-child, tbody td:nth-child(2), tbody td:nth-child(3){
+tbody td:first-child{
  text-align:left;
  font-family:var(--sans);
 }
 
-tbody td:nth-child(2){ color:var(--muted); }
-tbody td:nth-child(3){ color:var(--muted); font-size:11px; }
-
-.cell-pos{ color:var(--greed); }
-.cell-neg{ color:var(--fear); }
-
-.leaderboard-grid{
- display:grid;
- grid-template-columns:1fr 1fr;
- gap:16px;
- margin-bottom:22px;
-}
-
-.leaderboard-col h3{
- font-family:var(--serif);
- font-weight:400;
- font-size:15px;
- margin:0 0 10px;
+tbody td:nth-child(2){
+ text-align:left;
  color:var(--muted);
 }
 
-.leaderboard-col h3.up{ color:var(--greed); }
-.leaderboard-col h3.down{ color:var(--fear); }
+.sector-name{ color:var(--ink); }
+.sector-ticker{ color:var(--muted); font-size:11px; }
 
-@media (max-width:800px){
- .leaderboard-grid{ grid-template-columns:1fr; }
-}
+.cell-pos{ color:var(--ink); }
+.cell-neg{ color:var(--ink); }
+.cell-na{ color:var(--muted); }
 
-/* SECTOR LEGEND (scatter) */
-
-.sector-legend{
- display:flex;
- flex-wrap:wrap;
- gap:10px 16px;
- margin-top:14px;
- font-size:11px;
- color:var(--muted);
-}
-
-.sector-legend .dot{
+.badge-cluster{
  display:inline-block;
- width:8px;
- height:8px;
- border-radius:50%;
- margin-right:5px;
- vertical-align:middle;
+ font-size:10px;
+ color:var(--greed);
+ border:1px solid var(--greed);
+ border-radius:4px;
+ padding:1px 5px;
 }
 
 /* EXPLAINER */
@@ -530,7 +506,7 @@ tbody td:nth-child(3){ color:var(--muted); font-size:11px; }
  border:1px solid var(--hair);
  border-radius:12px;
  padding:24px 26px;
- margin-bottom:22px;
+ margin-bottom:30px;
 }
 
 .explainer h2{
@@ -545,6 +521,15 @@ tbody td:nth-child(3){ color:var(--muted); font-size:11px; }
  font-size:14px;
  line-height:1.7;
  margin:0 0 14px;
+}
+
+.explainer code{
+ font-family:var(--mono);
+ background:var(--card-hover);
+ padding:2px 6px;
+ border-radius:4px;
+ font-size:0.92em;
+ white-space:nowrap;
 }
 
 .explainer p:last-child{ margin-bottom:0; }
@@ -584,6 +569,7 @@ tbody td:nth-child(3){ color:var(--muted); font-size:11px; }
  display:none;
 }
 
+
 .theme-toggle{
  justify-self:end;
  background:none;
@@ -602,9 +588,6 @@ tbody td:nth-child(3){ color:var(--muted); font-size:11px; }
 
 .theme-toggle:hover{ color:var(--ink); border-color:var(--hair); }
 
-@media (max-width:720px){
- .stat-grid{ grid-template-columns:1fr 1fr; }
-}
 
 /* Light-theme overrides for hardcoded (non-var) dark colors */
 
@@ -644,8 +627,8 @@ tbody td:nth-child(3){ color:var(--muted); font-size:11px; }
 <a href="/market-breadth.html">Market Breadth</a>
 <a href="/seasonality.html">Seasonality</a>
 <a href="/concentration.html">Concentration</a>
-<a href="/earnings-revisions.html" class="active">Earnings Revisions</a>
-<a href="/insider-buying-selling.html">Insider Buying/Selling</a>
+<a href="/earnings-revisions.html">Earnings Revisions</a>
+<a href="/insider-buying-selling.html" class="active">Insider Buying/Selling</a>
 </div>
 </div>
 
@@ -704,6 +687,7 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 </script>
 
 
+
 <div class="container">
 
 <div class="error-banner" id="errorBanner"></div>
@@ -711,134 +695,170 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 
 <div class="header">
 <div>
-<h1>Earnings Revisions</h1>
-<div class="subtitle">How Wall Street analysts are revising S&amp;P 500 earnings estimates — how many are moving their numbers, which way, and by how much — broken out by sector.</div>
+<h1>Insider Buying/Selling</h1>
+<div class="subtitle">Officers, directors, and 10%+ owners file a Form 4 within two business days of trading their own company's stock. Aggregated open-market-style activity, trailing 90 days, across the full S&amp;P 500.</div>
 </div>
 <div class="updated" id="updated">Loading...</div>
 </div>
 
 <div class="stat-grid">
 <div class="stat-card">
-<div class="stat-label">Market Net Revision Ratio</div>
-<div class="stat-value" id="statNrr">—</div>
-<div class="stat-note">Trailing 30 days, equal-weighted</div>
+<div class="stat-label">Net Insider $ Flow</div>
+<div class="stat-value" id="statNetFlow">—</div>
+<div class="stat-note">Buy $ minus sell $, trailing 90 days</div>
 </div>
 <div class="stat-card">
-<div class="stat-label">Market Estimate Drift</div>
-<div class="stat-value" id="statDrift">—</div>
-<div class="stat-note">30-day change in consensus FY1 EPS</div>
+<div class="stat-label">Buy $ / Sell $</div>
+<div class="stat-value" id="statBuySell" style="font-size:18px;">—</div>
+<div class="stat-note">Total dollar volume, both directions</div>
 </div>
 <div class="stat-card">
-<div class="stat-label">Upgrades vs. Downgrades</div>
-<div class="stat-value neutral" id="statUpDown">—</div>
-<div class="stat-note">Analyst estimate revisions, trailing 30 days</div>
+<div class="stat-label">Companies Net Buying</div>
+<div class="stat-value" id="statCompaniesBuying" style="font-size:20px;">—</div>
+<div class="stat-note" id="statCompaniesNote">Of companies with any activity</div>
 </div>
 <div class="stat-card">
-<div class="stat-label">Coverage</div>
-<div class="stat-value neutral" id="statCoverage">—</div>
-<div class="stat-note">S&amp;P 500 constituents with usable estimates</div>
+<div class="stat-label">Cluster-Buy Signals</div>
+<div class="stat-value" id="statClusterBuys">—</div>
+<div class="stat-note">2+ insiders buying, zero sellers</div>
 </div>
 </div>
 
 <div class="chart-box">
 <div class="chart-box-header">
 <div>
-<h2>By sector</h2>
-<div class="chart-box-sub" id="sectorChartSub">Net Revision Ratio: share of analysts revising up minus down, trailing 30 days.</div>
-</div>
-<div class="toggle-group">
-<button class="toggle-btn active" id="btnBreadth">Breadth (Net Revision Ratio)</button>
-<button class="toggle-btn" id="btnMagnitude">Magnitude (Estimate Drift)</button>
+<h2>Net insider $ flow by sector, trailing 90 days</h2>
+<div class="chart-subhead">Buy $ minus sell $ across Common Stock transactions, pooled across each sector's constituents</div>
 </div>
 </div>
 <div class="chart-canvas-wrap">
-<canvas id="sectorChart"></canvas>
+<canvas id="sectorFlowChart"></canvas>
 </div>
 </div>
 
-<div class="chart-box">
-<div class="chart-box-header">
-<div>
-<h2>Market Net Revision Ratio over time</h2>
-<div class="chart-box-sub">Weekly snapshots, accumulated since this page began tracking — not backfilled (see methodology below).</div>
-</div>
-</div>
-<div class="chart-canvas-wrap short">
-<canvas id="historyChart"></canvas>
-</div>
-</div>
-
-<div class="chart-box">
-<div class="chart-box-header">
-<div>
-<h2>Breadth vs. magnitude, by stock</h2>
-<div class="chart-box-sub">Each point is one S&amp;P 500 constituent. Upper-right: broadly and sharply upgraded. Lower-left: broadly and sharply downgraded.</div>
-</div>
-</div>
-<div class="chart-canvas-wrap tall">
-<canvas id="scatterChart"></canvas>
-</div>
-<div class="sector-legend" id="scatterLegend"></div>
-</div>
-
-<div class="leaderboard-grid">
-<div class="leaderboard-col">
-<h3 class="up">Biggest upgrades</h3>
 <div class="table-box">
-<table>
+<div class="table-box-header">
+<h2>Cluster buying</h2>
+<div class="chart-subhead">Companies with 2+ distinct insiders buying and zero insiders selling in the window — the least ambiguous signal this data can offer</div>
+</div>
+<table id="clusterTable">
 <thead>
-<tr><th>Ticker</th><th>Company</th><th>Sector</th><th>FY1 EPS est.</th><th>30D drift</th><th>Analysts &uarr;/&darr;</th></tr>
+<tr>
+<th>Symbol</th>
+<th>Sector</th>
+<th>Buyers</th>
+<th>Shares Bought</th>
+<th>$ Bought</th>
+</tr>
 </thead>
-<tbody id="upgradesBody"><tr><td colspan="6" style="text-align:center; color:var(--muted); padding:20px;">Loading&hellip;</td></tr></tbody>
+<tbody id="clusterTableBody">
+<tr><td colspan="5" style="text-align:center; color:var(--muted); padding:24px;">Loading&hellip;</td></tr>
+</tbody>
 </table>
 </div>
-</div>
-<div class="leaderboard-col">
-<h3 class="down">Biggest downgrades</h3>
+
 <div class="table-box">
-<table>
+<div class="table-box-header">
+<h2>Largest individual purchases</h2>
+<div class="chart-subhead">Single largest priced open-market-style buys, by dollar value</div>
+</div>
+<table id="buysTable">
 <thead>
-<tr><th>Ticker</th><th>Company</th><th>Sector</th><th>FY1 EPS est.</th><th>30D drift</th><th>Analysts &uarr;/&darr;</th></tr>
+<tr>
+<th>Date</th>
+<th>Symbol</th>
+<th>Executive</th>
+<th>Title</th>
+<th>Shares</th>
+<th>Price</th>
+<th>Value</th>
+</tr>
 </thead>
-<tbody id="downgradesBody"><tr><td colspan="6" style="text-align:center; color:var(--muted); padding:20px;">Loading&hellip;</td></tr></tbody>
+<tbody id="buysTableBody">
+<tr><td colspan="7" style="text-align:center; color:var(--muted); padding:24px;">Loading&hellip;</td></tr>
+</tbody>
 </table>
 </div>
+
+<div class="table-box">
+<div class="table-box-header">
+<h2>Largest individual sales</h2>
+<div class="chart-subhead">Shown for completeness — insider selling is common and often reflects diversification, taxes, or a pre-scheduled 10b5-1 plan rather than a bearish view (see methodology)</div>
 </div>
+<table id="sellsTable">
+<thead>
+<tr>
+<th>Date</th>
+<th>Symbol</th>
+<th>Executive</th>
+<th>Title</th>
+<th>Shares</th>
+<th>Price</th>
+<th>Value</th>
+</tr>
+</thead>
+<tbody id="sellsTableBody">
+<tr><td colspan="7" style="text-align:center; color:var(--muted); padding:24px;">Loading&hellip;</td></tr>
+</tbody>
+</table>
+</div>
+
+<div class="table-box">
+<div class="table-box-header">
+<h2>All companies with activity</h2>
+<div class="chart-subhead">Every S&amp;P 500 name with at least one qualifying transaction in the trailing 90 days</div>
+</div>
+<table id="stockTable">
+<thead>
+<tr>
+<th data-key="symbol">Symbol</th>
+<th data-key="sector">Sector</th>
+<th data-key="buyValue">Buy $<span class="sort-arrow">▾</span></th>
+<th data-key="sellValue">Sell $<span class="sort-arrow">▾</span></th>
+<th data-key="netValue">Net $<span class="sort-arrow">▾</span></th>
+<th data-key="buyCount">Buys<span class="sort-arrow">▾</span></th>
+<th data-key="sellCount">Sells<span class="sort-arrow">▾</span></th>
+<th data-key="uniqueBuyers">Buyers<span class="sort-arrow">▾</span></th>
+</tr>
+</thead>
+<tbody id="tableBody">
+<tr><td colspan="8" style="text-align:center; color:var(--muted); padding:30px;">Loading insider transactions data&hellip;</td></tr>
+</tbody>
+</table>
 </div>
 
 <div class="explainer">
 <h2>Methodology</h2>
-<p>Two different questions get asked about analyst earnings revisions, and they don't always point the same way: <em>how many</em> analysts are changing their minds, and <em>how much</em> the number is actually moving. The <strong>Net Revision Ratio</strong> answers the first: for each stock's current-fiscal-year (FY1) consensus EPS estimate, it's (upward revisions &minus; downward revisions) &divide; total revisions over the trailing 30 days, a breadth measure that runs from &minus;1 (every revision was down) to +1 (every revision was up). The <strong>Estimate Drift</strong> answers the second: the trailing-30-day percent change in the consensus FY1 EPS estimate itself. A stock (or sector) can have wide breadth with almost no drift &mdash; a dozen analysts each nudging their number a penny in the same direction &mdash; or the reverse: one or two analysts making a large call that moves the average a lot without most of the Street having weighed in yet. Sector and market figures are the equal-weighted mean of each metric across that group's constituents with usable data, not cap-weighted &mdash; a $50B mid-cap's analyst revisions count the same as a Magnificent Seven name's.</p>
-<p>The universe is the S&amp;P 500 (the same constituent list used elsewhere on this site &mdash; see <a href="/sector-beeswarm.html">Sector Beeswarm</a>), with sector classification pulled from that page's own weekly company-metadata refresh rather than a second, redundant lookup. The leaderboards exclude stocks with fewer than 3 covering analysts, since a one- or two-analyst estimate can swing double digits on a single revision with no real breadth behind it.</p>
-<p>The "over time" chart is not a backfilled series &mdash; Alpha Vantage's estimates endpoint returns only the current snapshot's trailing-window figures, not a history of past snapshots, so there was no way to reconstruct what the Net Revision Ratio looked like a year or five years ago. Instead, this page takes its own weekly snapshot and appends it, meaning the trend line will only get more useful over time as more weekly points accumulate; treat an early, short line as exactly that &mdash; a start, not a full cycle.</p>
-<p>Recomputed weekly (Saturday) across all ~500 constituents, sequentially and rate-limited, rather than daily &mdash; trailing-30-day revision counts and 30-day drift don't move enough day to day to justify the extra API load.</p>
-<div class="source">Source: <a href="https://www.alphavantage.co/" target="_blank" rel="noopener">Alpha Vantage — EARNINGS_ESTIMATES</a>. Not investment advice.</div>
+<p>Universe is the full S&amp;P 500. For every constituent, Alpha Vantage's <code>INSIDER_TRANSACTIONS</code> endpoint returns each Form 4 line item filed by officers, directors, and 10%+ owners — company, filer, security type, transaction date, shares, price, and whether it was an acquisition or disposal. Only transactions dated within the trailing 90 days as of the last refresh are counted.</p>
+<p>Raw Form 4 data is dominated by routine equity-compensation mechanics, not discretionary trading decisions: RSUs vesting, options being exercised, and the automatic tax-withholding sale that immediately follows a vesting event. None of that reflects an insider choosing to buy or sell. This page keeps only <code>security_type = Common Stock</code> transactions reporting a real, positive share price — RSU vesting and stock awards report a blank or zero price, so this filters most of that noise out. It is an honest partial fix, not a complete one: a pre-scheduled 10b5-1 plan sale (an executive who set up automatic periodic sales months in advance, unrelated to any current view on the stock) still reports a normal share price and passes this filter indistinguishably from a discretionary open-market sale. Treat the sell side of this data with real skepticism for that reason.</p>
+<p>Insider buying doesn't have the same problem — there's no routine, automatic mechanism that makes an executive spend their own cash to buy more stock, which is why academic research on this topic (e.g. Lakonishok &amp; Lee, 2001, <i>Are Insider Trades Informative?</i>) consistently finds insider purchases carry more signal than insider sales. This page reflects that asymmetry directly: cluster buying (2+ distinct insiders buying with zero sellers in the window) is surfaced as the headline signal, and the largest individual purchases get their own table, while the largest sales are shown only for completeness with an explicit caveat rather than framed as bearish.</p>
+<p>Sector and company name come from the same weekly metadata Alpha Vantage sweep that backs <a href="/sector-beeswarm.html">Sector Beeswarm</a>, reused here rather than paying for a second full-index pass just for labels. Refreshes weekly (Saturday mornings) — a single company's insider filings are sparse enough that a trailing-90-day aggregate has little reason to move day to day.</p>
+<div class="source">Source: <a href="https://www.alphavantage.co/" target="_blank" rel="noopener">Alpha Vantage — INSIDER_TRANSACTIONS</a></div>
 </div>
 
 </div>
 
 <script>
-const DATA_URL = "/api/earnings-revisions";
-
-const SECTOR_COLORS = {
- "Information Technology": "#d98a3d",
- "Financials": "#6f8fac",
- "Health Care": "#8e7cc3",
- "Energy": "#c0564f",
- "Industrials": "#5a9d6f",
- "Consumer Discretionary": "#e0b04f",
- "Consumer Staples": "#4fb0c0",
- "Utilities": "#b56f2a",
- "Materials": "#9a9a9a",
- "Real Estate": "#c77dbd",
- "Communication Services": "#4f7ae0",
-};
+const DATA_URL = "/api/insider-transactions";
 
 let RAW = null;
-let sectorChart = null;
-let historyChart = null;
-let scatterChart = null;
-let SECTOR_MODE = "breadth"; // "breadth" | "magnitude"
+let SORT_KEY = "netValue";
+let SORT_DIR = -1;
+
+function fmtUsd(v){
+ if(v === null || v === undefined) return null;
+ const abs = Math.abs(v);
+ const sign = v < 0 ? "-" : "";
+ if(abs >= 1e9) return sign + "$" + (abs/1e9).toFixed(2) + "B";
+ if(abs >= 1e6) return sign + "$" + (abs/1e6).toFixed(2) + "M";
+ if(abs >= 1e3) return sign + "$" + (abs/1e3).toFixed(1) + "K";
+ return sign + "$" + abs.toFixed(0);
+}
+
+function fmtUsdSigned(v){
+ if(v === null || v === undefined) return null;
+ return (v >= 0 ? "+" : "") + fmtUsd(v);
+}
 
 function showError(message){
  const banner = document.getElementById("errorBanner");
@@ -852,31 +872,6 @@ function showWarning(message){
  banner.style.display = "block";
 }
 
-function fmtRatio(v){
- if(v === null || v === undefined || isNaN(v)) return "—";
- return (v >= 0 ? "+" : "") + v.toFixed(2);
-}
-
-function fmtPct(v, digits){
- if(v === null || v === undefined || isNaN(v)) return "—";
- return (v >= 0 ? "+" : "") + v.toFixed(digits === undefined ? 2 : digits) + "%";
-}
-
-function classForValue(v){
- if(v === null || v === undefined || isNaN(v)) return "";
- return v >= 0 ? "cell-pos" : "cell-neg";
-}
-
-function themeMutedColor(){
- return getComputedStyle(document.documentElement).getPropertyValue("--muted").trim() || "#8b9199";
-}
-function themeHairColor(){
- return getComputedStyle(document.documentElement).getPropertyValue("--hair").trim() || "#2b3138";
-}
-function themeInkColor(){
- return getComputedStyle(document.documentElement).getPropertyValue("--ink").trim() || "#eae6da";
-}
-
 async function init(){
  try{
   const res = await fetch(DATA_URL, { cache: "no-store" });
@@ -884,52 +879,70 @@ async function init(){
   if(!res.ok || data.error) throw new Error(data.error || "failed to load");
 
   RAW = data;
-  document.getElementById("updated").textContent = "As of " + new Date(data.generated_at_utc).toLocaleString();
+  document.getElementById("updated").textContent =
+   "As of " + data.asOfDate + " · " + new Date(data.generated_at_utc).toLocaleString();
 
-  if(data.universe_size < data.universe_total * 0.85){
-   showWarning("Only " + data.universe_size + " of " + data.universe_total + " S&P 500 constituents had usable estimates this run — some sector figures may be based on partial coverage.");
+  if(data.loadedCount < data.universeSize){
+   showWarning("Only " + data.loadedCount + " of " + data.universeSize + " S&P 500 constituents loaded this run — some data may be temporarily unavailable.");
   }
 
   renderStats();
   renderSectorChart();
-  renderHistoryChart();
-  renderScatter();
-  renderLeaderboards();
+  renderClusterTable();
+  renderTransactionTable(data.notableBuys, "buysTableBody");
+  renderTransactionTable(data.notableSells, "sellsTableBody");
+  renderTable();
 
  }catch(e){
-  showError("Couldn't load earnings revisions data (" + e.message + "). The /api/earnings-revisions function may be unreachable.");
+  showError("Couldn't load insider transactions data (" + e.message + "). The /api/insider-transactions function may not have run yet.");
+  document.getElementById("tableBody").innerHTML =
+   '<tr><td colspan="8" style="text-align:center; color:var(--muted); padding:30px;">No data available.</td></tr>';
  }
 }
 
 function renderStats(){
  const m = RAW.market;
- document.getElementById("statNrr").textContent = fmtRatio(m.netRevisionRatio30);
- document.getElementById("statNrr").className = "stat-value" + (m.netRevisionRatio30 < 0 ? " down" : "");
- document.getElementById("statDrift").textContent = fmtPct(m.drift30);
- document.getElementById("statDrift").className = "stat-value" + (m.drift30 < 0 ? " down" : "");
- document.getElementById("statUpDown").textContent = m.upTotal + " / " + m.downTotal;
- document.getElementById("statCoverage").textContent = RAW.universe_size + " / " + RAW.universe_total;
+
+ const netEl = document.getElementById("statNetFlow");
+ netEl.textContent = fmtUsdSigned(m.netValue) || "—";
+ netEl.classList.toggle("cell-neg", m.netValue !== null && m.netValue < 0);
+
+ document.getElementById("statBuySell").textContent = (fmtUsd(m.buyValue) || "—") + " / " + (fmtUsd(m.sellValue) || "—");
+ document.getElementById("statCompaniesBuying").textContent = m.companiesNetBuying + " / " + m.companiesNetSelling + " selling";
+ document.getElementById("statCompaniesNote").textContent = m.companiesWithActivity + " of " + RAW.universeSize + " had any qualifying activity";
+ document.getElementById("statClusterBuys").textContent = m.clusterBuyCount;
 }
 
+const SECTOR_COLORS = {
+ "Technology": "#d98a3d",
+ "Information Technology": "#d98a3d",
+ "Financials": "#6f8fac",
+ "Health Care": "#8e7cc3",
+ "Consumer Discretionary": "#e0b04f",
+ "Communication Services": "#4f7ae0",
+ "Industrials": "#5a9d6f",
+ "Consumer Staples": "#4fb0c0",
+ "Energy": "#c0564f",
+ "Utilities": "#b56f2a",
+ "Materials": "#9a9a9a",
+ "Real Estate": "#c77dbd",
+};
+
+let sectorFlowChart = null;
+
 function renderSectorChart(){
- const sectors = [...RAW.sectors].sort((a, b) => {
-  const av = SECTOR_MODE === "breadth" ? a.netRevisionRatio30 : a.drift30;
-  const bv = SECTOR_MODE === "breadth" ? b.netRevisionRatio30 : b.drift30;
-  return (bv ?? -Infinity) - (av ?? -Infinity);
- });
+ const sorted = [...RAW.sectors].sort((a, b) => (b.netValue ?? -Infinity) - (a.netValue ?? -Infinity));
+ const colors = sorted.map(s => s.netValue >= 0 ? "rgba(217,138,61,0.75)" : "rgba(111,143,172,0.75)");
 
- const values = sectors.map(s => SECTOR_MODE === "breadth" ? s.netRevisionRatio30 : s.drift30);
- const colors = values.map(v => (v === null ? themeMutedColor() : (v >= 0 ? "#d98a3d" : "#6f8fac")));
-
- const ctx = document.getElementById("sectorChart").getContext("2d");
- if(sectorChart) sectorChart.destroy();
- sectorChart = new Chart(ctx, {
+ const ctx = document.getElementById("sectorFlowChart").getContext("2d");
+ if(sectorFlowChart) sectorFlowChart.destroy();
+ sectorFlowChart = new Chart(ctx, {
   type: "bar",
   data: {
-   labels: sectors.map(s => s.sector),
+   labels: sorted.map(s => s.sector),
    datasets: [{
-    label: SECTOR_MODE === "breadth" ? "Net Revision Ratio" : "Estimate Drift (30D, %)",
-    data: values,
+    label: "Net $ flow",
+    data: sorted.map(s => s.netValue),
     backgroundColor: colors,
     borderRadius: 4,
    }],
@@ -942,141 +955,106 @@ function renderSectorChart(){
     legend: { display: false },
     tooltip: {
      callbacks: {
-      label: ctx => SECTOR_MODE === "breadth"
-       ? "Net Revision Ratio: " + fmtRatio(ctx.parsed.x) + " (n=" + sectors[ctx.dataIndex].count + ")"
-       : "Estimate Drift: " + fmtPct(ctx.parsed.x) + " (n=" + sectors[ctx.dataIndex].count + ")",
+      label: ctx => {
+       const s = sorted[ctx.dataIndex];
+       return [
+        "Net: " + (fmtUsdSigned(s.netValue) || "—"),
+        "Buy: " + (fmtUsd(s.buyValue) || "—") + " (" + s.buyCount + " txns)",
+        "Sell: " + (fmtUsd(s.sellValue) || "—") + " (" + s.sellCount + " txns)",
+        s.stockCount + " companies with activity",
+       ];
+      },
      },
     },
    },
    scales: {
-    x: {
-     ticks: { color: themeMutedColor() },
-     grid: { color: themeHairColor() },
-     title: { display: true, text: SECTOR_MODE === "breadth" ? "Net Revision Ratio (−1..+1)" : "30-day estimate drift (%)", color: themeMutedColor() },
-    },
-    y: { ticks: { color: themeMutedColor() }, grid: { display: false } },
+    x: { ticks: { color: "#8b9199", callback: v => fmtUsd(v) }, grid: { color: "#2b3138" } },
+    y: { ticks: { color: "#8b9199" }, grid: { display: false } },
    },
   },
  });
 }
 
-document.getElementById("btnBreadth").addEventListener("click", () => {
- SECTOR_MODE = "breadth";
- document.getElementById("btnBreadth").classList.add("active");
- document.getElementById("btnMagnitude").classList.remove("active");
- document.getElementById("sectorChartSub").textContent = "Net Revision Ratio: share of analysts revising up minus down, trailing 30 days.";
- renderSectorChart();
-});
-document.getElementById("btnMagnitude").addEventListener("click", () => {
- SECTOR_MODE = "magnitude";
- document.getElementById("btnMagnitude").classList.add("active");
- document.getElementById("btnBreadth").classList.remove("active");
- document.getElementById("sectorChartSub").textContent = "Estimate Drift: 30-day % change in the consensus FY1 EPS estimate.";
- renderSectorChart();
-});
-
-function renderHistoryChart(){
- const points = RAW.history || [];
- const ctx = document.getElementById("historyChart").getContext("2d");
- if(historyChart) historyChart.destroy();
-
- if(points.length < 2){
-  // Not enough history yet to draw a meaningful line — still render the
-  // single available point (or none) rather than erroring.
+function renderClusterTable(){
+ const clusters = RAW.stocks.filter(s => s.clusterBuy).sort((a, b) => b.buyValue - a.buyValue);
+ const tbody = document.getElementById("clusterTableBody");
+ if(!clusters.length){
+  tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; color:var(--muted); padding:24px;">No cluster-buy signals in the current window.</td></tr>';
+  return;
  }
-
- historyChart = new Chart(ctx, {
-  type: "line",
-  data: {
-   labels: points.map(p => p.date),
-   datasets: [{
-    label: "Market Net Revision Ratio",
-    data: points.map(p => p.marketNrr),
-    borderColor: "#d98a3d",
-    backgroundColor: "#d98a3d",
-    borderWidth: 1.5,
-    pointRadius: points.length < 8 ? 3 : 0,
-    fill: false,
-   }],
-  },
-  options: {
-   responsive: true,
-   maintainAspectRatio: false,
-   interaction: { mode: "index", intersect: false },
-   plugins: {
-    legend: { display: false },
-    tooltip: { callbacks: { label: ctx => "Net Revision Ratio: " + fmtRatio(ctx.parsed.y) } },
-   },
-   scales: {
-    x: { ticks: { color: themeMutedColor(), maxTicksLimit: 8 }, grid: { color: themeHairColor() } },
-    y: { ticks: { color: themeMutedColor() }, grid: { color: themeHairColor() } },
-   },
-  },
- });
+ tbody.innerHTML = clusters.map(s => `<tr>
+  <td><span class="sector-name">${s.symbol}</span></td>
+  <td><span class="sector-ticker">${s.sector || "—"}</span></td>
+  <td>${s.uniqueBuyers}</td>
+  <td>${s.buyCount}</td>
+  <td class="cell-pos">${fmtUsd(s.buyValue) || "—"}</td>
+ </tr>`).join("");
 }
 
-function renderScatter(){
- const points = RAW.scatter || [];
- const bySector = {};
- for(const p of points){
-  if(!bySector[p.sector]) bySector[p.sector] = [];
-  bySector[p.sector].push({ x: p.netRevisionRatio30, y: p.drift30, ticker: p.ticker });
+function renderTransactionTable(rows, tbodyId){
+ const tbody = document.getElementById(tbodyId);
+ if(!rows || !rows.length){
+  tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; color:var(--muted); padding:24px;">No qualifying transactions in the current window.</td></tr>';
+  return;
  }
+ tbody.innerHTML = rows.map(t => `<tr>
+  <td><span class="sector-ticker">${t.date}</span></td>
+  <td><span class="sector-name">${t.symbol}</span></td>
+  <td style="font-family:var(--sans); text-align:left;">${t.executive}</td>
+  <td style="font-family:var(--sans); text-align:left; color:var(--muted); font-size:12px;">${t.title || "—"}</td>
+  <td>${t.shares.toLocaleString()}</td>
+  <td>${fmtUsd(t.price)}</td>
+  <td>${fmtUsd(t.value)}</td>
+ </tr>`).join("");
+}
 
- const datasets = Object.keys(bySector).map(sector => ({
-  label: sector,
-  data: bySector[sector],
-  backgroundColor: SECTOR_COLORS[sector] || "#8b9199",
-  pointRadius: 3.5,
-  showLine: false,
- }));
+function sortBy(key){
+ if(SORT_KEY === key){
+  SORT_DIR = -SORT_DIR;
+ }else{
+  SORT_KEY = key;
+  SORT_DIR = -1;
+ }
+ renderTable();
+}
 
- const ctx = document.getElementById("scatterChart").getContext("2d");
- if(scatterChart) scatterChart.destroy();
- scatterChart = new Chart(ctx, {
-  type: "scatter",
-  data: { datasets },
-  options: {
-   responsive: true,
-   maintainAspectRatio: false,
-   plugins: {
-    legend: { display: false },
-    tooltip: {
-     callbacks: {
-      label: ctx => ctx.raw.ticker + " (" + ctx.dataset.label + "): NRR " + fmtRatio(ctx.raw.x) + ", drift " + fmtPct(ctx.raw.y),
-     },
-    },
-   },
-   scales: {
-    x: { title: { display: true, text: "Net Revision Ratio (breadth)", color: themeMutedColor() }, ticks: { color: themeMutedColor() }, grid: { color: themeHairColor() } },
-    y: { title: { display: true, text: "30-day Estimate Drift (%, magnitude)", color: themeMutedColor() }, ticks: { color: themeMutedColor() }, grid: { color: themeHairColor() } },
-   },
-  },
+function renderTable(){
+ const rows = [...RAW.stocks].sort((a, b) => {
+  const av = a[SORT_KEY], bv = b[SORT_KEY];
+  if(av === null || av === undefined) return 1;
+  if(bv === null || bv === undefined) return -1;
+  if(typeof av === "string") return av.localeCompare(bv) * SORT_DIR;
+  return (av - bv) * SORT_DIR;
  });
 
- const legend = document.getElementById("scatterLegend");
- legend.innerHTML = Object.keys(bySector).sort().map(sector =>
-  '<span><span class="dot" style="background:' + (SECTOR_COLORS[sector] || "#8b9199") + '"></span>' + sector + '</span>'
- ).join("");
+ const tbody = document.getElementById("tableBody");
+ tbody.innerHTML = rows.map(r => {
+  const netCls = r.netValue >= 0 ? "cell-pos" : "cell-neg";
+  const clusterBadge = r.clusterBuy ? ' <span class="badge-cluster">cluster</span>' : "";
+  return `<tr>
+   <td><span class="sector-name">${r.symbol}</span>${clusterBadge}</td>
+   <td><span class="sector-ticker">${r.sector || "—"}</span></td>
+   <td>${fmtUsd(r.buyValue) || "—"}</td>
+   <td>${fmtUsd(r.sellValue) || "—"}</td>
+   <td class="${netCls}">${fmtUsdSigned(r.netValue) || "—"}</td>
+   <td>${r.buyCount}</td>
+   <td>${r.sellCount}</td>
+   <td>${r.uniqueBuyers}</td>
+  </tr>`;
+ }).join("");
+
+ document.querySelectorAll("#stockTable thead th").forEach(th => {
+  const key = th.dataset.key;
+  th.classList.toggle("sorted", key === SORT_KEY);
+  const arrow = th.querySelector(".sort-arrow");
+  if(arrow) arrow.textContent = (key === SORT_KEY && SORT_DIR === 1) ? "▴" : "▾";
+ });
 }
 
-function leaderboardRowHtml(r){
- return `<tr>
-  <td>${r.ticker}</td>
-  <td>${r.name}</td>
-  <td>${r.sector}</td>
-  <td>${r.epsNow === null ? "—" : "$" + r.epsNow.toFixed(2)}</td>
-  <td class="${classForValue(r.drift30)}">${fmtPct(r.drift30)}</td>
-  <td>${r.up30}&uarr; / ${r.down30}&darr;</td>
- </tr>`;
-}
-
-function renderLeaderboards(){
- document.getElementById("upgradesBody").innerHTML = (RAW.upgrades || []).map(leaderboardRowHtml).join("")
-  || '<tr><td colspan="6" style="text-align:center; color:var(--muted); padding:20px;">No data</td></tr>';
- document.getElementById("downgradesBody").innerHTML = (RAW.downgrades || []).map(leaderboardRowHtml).join("")
-  || '<tr><td colspan="6" style="text-align:center; color:var(--muted); padding:20px;">No data</td></tr>';
-}
+document.querySelectorAll("#stockTable thead th").forEach(th => {
+ const key = th.dataset.key;
+ if(key) th.addEventListener("click", () => sortBy(key));
+});
 
 init();
 </script>
