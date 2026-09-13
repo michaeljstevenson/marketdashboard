@@ -107,6 +107,11 @@
   to = "/.netlify/functions/concentration-history"
   status = 200
 
+[[redirects]]
+  from = "/api/earnings-revisions"
+  to = "/.netlify/functions/earnings-revisions"
+  status = 200
+
 # The Statistical Engine page was briefly at these paths.
 [[redirects]]
   from = "/streak-scanner"
@@ -245,3 +250,14 @@
   # the top-10-share history and annual return-contribution charts;
   # quarterly/annual data that only moves at each quarter-end.
   schedule = "0 10 * * 6"
+
+[functions."scheduled-revisions-background"]
+  # Weekly, Saturday 07:20 UTC — 20 minutes after
+  # scheduled-beeswarm-meta-background (07:00 UTC), which this job depends
+  # on for per-ticker sector/name (see scheduled-revisions-background.js
+  # for why it reads that job's blob instead of its own OVERVIEW calls).
+  # ~503 sequential EARNINGS_ESTIMATES calls, same ~1.05s pacing as the
+  # meta job; trailing-30-day revision counts and 30-day drift don't need
+  # daily refresh, so weekly (not one of the weekday daily-close jobs)
+  # matches how this site treats other full-index sweeps.
+  schedule = "20 7 * * 6"

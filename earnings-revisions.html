@@ -1,0 +1,1084 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<script>
+// Applied before first paint to avoid a flash of the wrong theme.
+(function(){
+ var saved = localStorage.getItem("theme");
+ if(saved === "light") document.documentElement.setAttribute("data-theme", "light");
+})();
+</script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom@2"></script>
+<script>
+// FRED-style zoom: drag horizontally on any chart to zoom into that range,
+// double-click to reset. Applied via Chart.defaults so every chart on the
+// page gets it without touching each individual new Chart(...) call.
+Chart.defaults.plugins.zoom = {
+ zoom: {
+  wheel: { enabled: false },
+  pinch: { enabled: false },
+  drag: { enabled: true, backgroundColor: "rgba(217,138,61,0.15)", borderColor: "rgba(217,138,61,0.4)", borderWidth: 1 },
+  mode: "x",
+ },
+ pan: { enabled: true, mode: "x", modifierKey: "shift" },
+};
+document.addEventListener("dblclick", function(e){
+ if(e.target.tagName === "CANVAS"){
+  var chart = Chart.getChart(e.target);
+  if(chart) chart.resetZoom();
+ }
+});
+document.addEventListener("DOMContentLoaded", function(){
+ document.querySelectorAll(".chart-canvas-wrap canvas").forEach(function(c){
+  c.title = "Drag to zoom · shift-drag to pan · double-click to reset";
+ });
+});
+</script>
+<style>
+.chart-fullscreen-btn{
+ position:absolute;
+ top:8px;
+ right:8px;
+ z-index:5;
+ background:var(--card, #1c2127);
+ border:1px solid var(--hair, #2b3138);
+ color:var(--muted, #8b9199);
+ border-radius:6px;
+ width:28px;
+ height:28px;
+ display:flex;
+ align-items:center;
+ justify-content:center;
+ cursor:pointer;
+ padding:0;
+ opacity:0.85;
+}
+.chart-fullscreen-btn:hover{ color:var(--ink, #eae6da); border-color:#3a424b; opacity:1; }
+.is-chart-fullscreen{
+ background:var(--bg, #14181c) !important;
+ padding:24px !important;
+ display:flex !important;
+ flex-direction:column !important;
+ overflow:auto !important;
+}
+.is-chart-fullscreen canvas{
+ max-height:none !important;
+}
+</style>
+<script>
+// Expand-to-fullscreen button on every chart, matching the pattern from
+// sites like GuruFocus: a small corner button on each chart's canvas
+// area that fullscreens the whole chart card (title, legend, controls
+// included) via the Fullscreen API. Finds every <canvas> generically
+// rather than relying on one wrapper class name, since different pages
+// on this site use different card markup (.chart-box, .scatter-box,
+// .chart, herd-mentality tiles, etc.).
+document.addEventListener("DOMContentLoaded", function(){
+ function requestFs(el){
+  var fn = el.requestFullscreen || el.webkitRequestFullscreen || el.mozRequestFullScreen || el.msRequestFullscreen;
+  if(fn) fn.call(el);
+ }
+ function exitFs(){
+  var fn = document.exitFullscreen || document.webkitExitFullscreen || document.mozCancelFullScreen || document.msExitFullscreen;
+  if(fn) fn.call(document);
+ }
+ function currentFsEl(){
+  return document.fullscreenElement || document.webkitFullscreenElement || document.mozFullScreenElement || document.msFullscreenElement;
+ }
+ function resolveCard(canvas){
+  return canvas.closest(".chart-box, .scatter-box, .herd-cell, .modal-chart")
+   || canvas.parentElement.closest("div")
+   || canvas.parentElement;
+ }
+ function resizeChartIn(wrap){
+  var canvas = wrap.querySelector("canvas");
+  var chart = canvas && window.Chart && Chart.getChart(canvas);
+  if(chart) chart.resize();
+ }
+
+ var entries = []; // { card, wrap }
+
+ document.querySelectorAll("canvas").forEach(function(canvas){
+  if(canvas.closest(".chart-fullscreen-btn")) return;
+  var card = resolveCard(canvas);
+  if(!card || card.querySelector(".chart-fullscreen-btn")) return; // one button per card, not per canvas
+
+  var wrap = canvas.parentElement;
+  var wrapStyle = getComputedStyle(wrap);
+  if(wrapStyle.position === "static") wrap.style.position = "relative";
+
+  var btn = document.createElement("button");
+  btn.type = "button";
+  btn.className = "chart-fullscreen-btn";
+  btn.title = "Expand chart";
+  btn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3H5a2 2 0 0 0-2 2v3"/><path d="M16 3h3a2 2 0 0 1 2 2v3"/><path d="M8 21H5a2 2 0 0 1-2-2v-3"/><path d="M16 21h3a2 2 0 0 0 2-2v-3"/></svg>';
+  btn.addEventListener("click", function(e){
+   e.stopPropagation();
+   if(currentFsEl() === card) exitFs();
+   else requestFs(card);
+  });
+  wrap.appendChild(btn);
+  entries.push({ card: card, wrap: wrap });
+
+  if(window.ResizeObserver){
+   new ResizeObserver(function(){ resizeChartIn(wrap); }).observe(wrap);
+  }
+ });
+
+ function onFsChange(){
+  var fsEl = currentFsEl();
+  entries.forEach(function(entry){
+   var isFs = fsEl === entry.card;
+   entry.card.classList.toggle("is-chart-fullscreen", isFs);
+   if(isFs){
+    entry.wrap.dataset.fsPrevHeight = entry.wrap.style.height || "";
+    entry.wrap.dataset.fsPrevFlex = entry.wrap.style.flex || "";
+    entry.wrap.style.flex = "1 1 auto";
+    entry.wrap.style.minHeight = "0";
+    entry.wrap.style.height = "auto";
+   }else if(entry.wrap.dataset.fsPrevHeight !== undefined){
+    entry.wrap.style.height = entry.wrap.dataset.fsPrevHeight;
+    entry.wrap.style.flex = entry.wrap.dataset.fsPrevFlex;
+    entry.wrap.style.minHeight = "";
+   }
+  });
+  entries.forEach(function(entry){ resizeChartIn(entry.wrap); });
+ }
+ ["fullscreenchange", "webkitfullscreenchange", "mozfullscreenchange", "MSFullscreenChange"].forEach(function(evt){
+  document.addEventListener(evt, onFsChange);
+ });
+});
+</script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Earnings Revisions — Michael J. Stevenson</title>
+
+<style>
+
+:root{
+  --bg:#14181c;
+  --card:#1c2127;
+  --card-hover:#20262d;
+  --ink:#eae6da;
+  --muted:#8b9199;
+  --hair:#2b3138;
+
+  --fear:#6f8fac;
+  --neutral:#7c828a;
+  --greed:#d98a3d;
+  --extreme:#b56f2a;
+
+  --serif:'Iowan Old Style','Palatino Linotype',Georgia,serif;
+  --mono:'SF Mono','JetBrains Mono',ui-monospace,Menlo,monospace;
+  --sans:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+}
+
+:root[data-theme="light"]{
+  --bg:#f7f5f0;
+  --card:#ffffff;
+  --card-hover:#f2efe6;
+  --ink:#1c1f24;
+  --muted:#6b6f76;
+  --hair:#e1dbcd;
+  --fear:#4f6f8c;
+  --neutral:#6c7178;
+  --greed:#b9701f;
+  --extreme:#96591c;
+}
+
+*{ box-sizing:border-box; }
+
+body{
+ margin:0;
+ background:var(--bg);
+ color:var(--ink);
+ font-family:var(--sans);
+}
+
+a{ color:inherit; }
+
+/* SITE NAV (shared with homepage) */
+
+.sitenav{
+ display:grid;
+ grid-template-columns:1fr auto 1fr;
+ align-items:center;
+ padding:16px 24px;
+ border-bottom:1px solid var(--hair);
+ position:relative;
+ z-index:50;
+}
+
+.sitenav .brand{
+ justify-self:start;
+}
+
+.sitenav .brand{
+ font-family:var(--serif);
+ font-size:17px;
+ color:var(--ink);
+ text-decoration:none;
+ letter-spacing:0.3px;
+}
+
+.navlinks{
+ display:flex;
+ gap:26px;
+ align-items:center;
+}
+
+.navlinks > a{
+ color:var(--muted);
+ font-size:13px;
+ text-decoration:none;
+ padding:6px 0;
+}
+
+.navlinks > a:hover, .navlinks > a.active{ color:var(--ink); }
+
+.navdrop{ position:relative; }
+
+
+.navdrop > .navlabel{
+ color:var(--muted);
+ font-size:13px;
+ cursor:default;
+ padding:6px 0;
+ user-select:none;
+}
+
+.navdrop:hover > .navlabel, .navdrop.open > .navlabel{ color:var(--ink); }
+
+.navdrop .dropdown{
+ display:none;
+ position:absolute;
+ top:100%;
+ left:0;
+ background:var(--card);
+ border:1px solid var(--hair);
+ border-radius:8px;
+ padding:8px 0;
+ min-width:230px;
+ margin-top:12px;
+ box-shadow:0 10px 30px rgba(0,0,0,0.45);
+}
+
+.navdrop.open .dropdown{ display:block; }
+
+.dropdown a{
+ display:block;
+ padding:9px 16px;
+ color:var(--muted);
+ text-decoration:none;
+ font-size:13px;
+}
+
+.dropdown a:hover{
+ background:var(--card-hover);
+ color:var(--ink);
+}
+
+.dropdown a.active{ color:var(--greed); }
+
+@media (max-width:720px){
+ .navlinks{ display:none; }
+}
+
+.container{
+ max-width:1100px;
+ margin:auto;
+ padding:30px 20px 60px;
+}
+
+/* HEADER */
+
+.header{
+ display:flex;
+ justify-content:space-between;
+ align-items:flex-end;
+ border-bottom:1px solid var(--hair);
+ padding-bottom:18px;
+ margin-bottom:25px;
+ flex-wrap:wrap;
+ gap:12px;
+}
+
+h1{
+ font-family:var(--serif);
+ font-size:28px;
+ font-weight:400;
+ margin:0;
+}
+
+.subtitle{
+ color:var(--muted);
+ font-size:13px;
+ margin-top:6px;
+ max-width:640px;
+}
+
+.updated{
+ color:var(--muted);
+ font-size:12px;
+}
+
+/* STAT ROW */
+
+.stat-grid{
+ display:grid;
+ grid-template-columns:repeat(4,1fr);
+ gap:16px;
+ margin-bottom:30px;
+}
+
+.stat-card{
+ background:var(--card);
+ border:1px solid var(--hair);
+ border-radius:10px;
+ padding:20px;
+}
+
+.stat-label{
+ color:var(--muted);
+ font-size:12px;
+ letter-spacing:0.04em;
+ margin-bottom:8px;
+}
+
+.stat-value{
+ font-family:var(--mono);
+ font-size:26px;
+ color:var(--greed);
+}
+
+.stat-value.down{ color:var(--fear); }
+.stat-value.neutral{ color:var(--ink); }
+
+.stat-note{
+ color:var(--muted);
+ font-size:12px;
+ margin-top:6px;
+}
+
+/* CONTROLS */
+
+.toggle-group{
+ display:inline-flex;
+ background:var(--card);
+ border:1px solid var(--hair);
+ border-radius:8px;
+ padding:3px;
+}
+
+.toggle-btn{
+ background:none;
+ border:none;
+ color:var(--muted);
+ font-family:var(--sans);
+ font-size:13px;
+ padding:7px 16px;
+ border-radius:6px;
+ cursor:pointer;
+}
+
+.toggle-btn.active{
+ background:var(--greed);
+ color:#1a1408;
+ font-weight:600;
+}
+
+/* CHART */
+
+.chart-box{
+ background:var(--card);
+ border:1px solid var(--hair);
+ border-radius:12px;
+ padding:20px;
+ margin-bottom:30px;
+}
+
+.chart-box h2{
+ font-family:var(--serif);
+ font-weight:400;
+ font-size:18px;
+ margin:0;
+}
+
+.chart-box-header{
+ display:flex;
+ justify-content:space-between;
+ align-items:center;
+ flex-wrap:wrap;
+ gap:10px;
+ margin-bottom:16px;
+}
+
+.chart-box-sub{
+ color:var(--muted);
+ font-size:12px;
+ margin-top:4px;
+}
+
+.chart-canvas-wrap{
+ height:420px;
+}
+
+.chart-canvas-wrap.tall{ height:460px; }
+.chart-canvas-wrap.short{ height:320px; }
+
+/* TABLES */
+
+.table-box{
+ background:var(--card);
+ border:1px solid var(--hair);
+ border-radius:12px;
+ overflow-x:auto;
+ margin-bottom:22px;
+}
+
+table{
+ width:100%;
+ border-collapse:collapse;
+ font-size:13px;
+ min-width:600px;
+}
+
+thead th{
+ text-align:right;
+ padding:14px 12px;
+ color:var(--muted);
+ font-size:11px;
+ letter-spacing:0.04em;
+ font-weight:600;
+ white-space:nowrap;
+ border-bottom:1px solid var(--hair);
+}
+
+thead th:first-child, thead th:nth-child(2), thead th:nth-child(3){
+ text-align:left;
+}
+
+tbody td{
+ padding:11px 12px;
+ text-align:right;
+ font-family:var(--mono);
+ white-space:nowrap;
+ border-bottom:1px solid var(--hair);
+}
+
+tbody tr:last-child td{ border-bottom:none; }
+tbody tr:hover{ background:var(--card-hover); }
+
+tbody td:first-child, tbody td:nth-child(2), tbody td:nth-child(3){
+ text-align:left;
+ font-family:var(--sans);
+}
+
+tbody td:nth-child(2){ color:var(--muted); }
+tbody td:nth-child(3){ color:var(--muted); font-size:11px; }
+
+.cell-pos{ color:var(--greed); }
+.cell-neg{ color:var(--fear); }
+
+.leaderboard-grid{
+ display:grid;
+ grid-template-columns:1fr 1fr;
+ gap:16px;
+ margin-bottom:22px;
+}
+
+.leaderboard-col h3{
+ font-family:var(--serif);
+ font-weight:400;
+ font-size:15px;
+ margin:0 0 10px;
+ color:var(--muted);
+}
+
+.leaderboard-col h3.up{ color:var(--greed); }
+.leaderboard-col h3.down{ color:var(--fear); }
+
+@media (max-width:800px){
+ .leaderboard-grid{ grid-template-columns:1fr; }
+}
+
+/* SECTOR LEGEND (scatter) */
+
+.sector-legend{
+ display:flex;
+ flex-wrap:wrap;
+ gap:10px 16px;
+ margin-top:14px;
+ font-size:11px;
+ color:var(--muted);
+}
+
+.sector-legend .dot{
+ display:inline-block;
+ width:8px;
+ height:8px;
+ border-radius:50%;
+ margin-right:5px;
+ vertical-align:middle;
+}
+
+/* EXPLAINER */
+
+.explainer{
+ background:var(--card);
+ border:1px solid var(--hair);
+ border-radius:12px;
+ padding:24px 26px;
+ margin-bottom:22px;
+}
+
+.explainer h2{
+ font-family:var(--serif);
+ font-weight:400;
+ font-size:18px;
+ margin:0 0 12px;
+}
+
+.explainer p{
+ color:var(--muted);
+ font-size:14px;
+ line-height:1.7;
+ margin:0 0 14px;
+}
+
+.explainer p:last-child{ margin-bottom:0; }
+
+.explainer .source{
+ margin-top:16px;
+ font-size:11px;
+}
+
+.explainer .source a{
+ color:var(--muted);
+ text-decoration:none;
+ border-bottom:1px dotted var(--muted);
+}
+
+.explainer .source a:hover{ color:var(--ink); }
+
+.error-banner{
+ background:#2a1c1c;
+ border:1px solid #5a3030;
+ color:#e0a0a0;
+ border-radius:8px;
+ padding:12px 15px;
+ margin-bottom:20px;
+ font-size:13px;
+ display:none;
+}
+
+.warning-banner{
+ background:#2a2419;
+ border:1px solid #5a4f30;
+ color:#d9b877;
+ border-radius:8px;
+ padding:12px 15px;
+ margin-bottom:20px;
+ font-size:13px;
+ display:none;
+}
+
+.theme-toggle{
+ justify-self:end;
+ background:none;
+ border:1px solid var(--hair);
+ color:var(--muted);
+ border-radius:6px;
+ width:32px;
+ height:32px;
+ display:flex;
+ align-items:center;
+ justify-content:center;
+ cursor:pointer;
+ font-size:15px;
+ line-height:1;
+}
+
+.theme-toggle:hover{ color:var(--ink); border-color:var(--hair); }
+
+@media (max-width:720px){
+ .stat-grid{ grid-template-columns:1fr 1fr; }
+}
+
+/* Light-theme overrides for hardcoded (non-var) dark colors */
+
+[data-theme="light"] .error-banner{
+ background:#fdecea;
+ border-color:#f0b8b0;
+ color:#a83a30;
+}
+
+[data-theme="light"] .warning-banner{
+ background:#fdf3d9;
+ border-color:#e9cf8a;
+ color:#8a6a1f;
+}
+</style>
+</head>
+<body>
+
+<nav class="sitenav">
+<a class="brand" href="/">Michael J. Stevenson, CAIA<span style="font-size:0.6em; vertical-align:super;">&reg;</span></a>
+<div class="navlinks">
+<div class="navdrop">
+<span class="navlabel">Behavioral/Positioning ▾</span>
+<div class="dropdown">
+<a href="/ipo-activity.html">IPO Activity</a>
+</div>
+</div>
+
+<div class="navdrop">
+<span class="navlabel">Equities ▾</span>
+<div class="dropdown">
+<a href="/sector-analysis.html">Sector Performance</a>
+<a href="/sector-beeswarm.html">Sector Beeswarm</a>
+<a href="/ath-index.html">All-Time Highs and Lows</a>
+<a href="/valuations.html">Valuations</a>
+<a href="/factor-analysis.html">Factor Analysis</a>
+<a href="/market-breadth.html">Market Breadth</a>
+<a href="/seasonality.html">Seasonality</a>
+<a href="/concentration.html">Concentration</a>
+<a href="/earnings-revisions.html" class="active">Earnings Revisions</a>
+</div>
+</div>
+
+<div class="navdrop">
+<span class="navlabel">Markets/Macro ▾</span>
+<div class="dropdown">
+<a href="/sentiment-index.html">Sentiment Index</a>
+<a href="/volatility.html">Implied vs. Realized Volatility</a>
+<a href="/implied-erp.html">Implied Equity Risk Premium</a>
+<a href="/yield-curves.html">Yield Curves</a>
+<a href="/expectations-vs-reality.html">Expectations vs. Reality</a>
+</div>
+</div>
+
+<a href="/portfolio-simulator.html">Portfolio Simulator</a>
+<a href="/backtesting.html">Backtesting</a>
+<a href="/statistical-engine">Statistical Engine</a>
+
+
+
+
+</div>
+<button class="theme-toggle" id="themeToggle" type="button" aria-label="Toggle light/dark mode" title="Toggle light/dark mode">&#9789;</button>
+</nav>
+<script>
+// Class-driven (not pure :hover) nav dropdowns: pure CSS :hover drops the
+// menu the instant the cursor leaves .navdrop, which includes the moment
+// it's crossing the gap between the label and the dropdown box below —
+// exactly the "sometimes works, sometimes doesn't" flakiness reported.
+// A short close-delay after mouseleave gives the cursor room to travel
+// down into the dropdown without losing it.
+document.querySelectorAll(".navdrop").forEach(function(navdrop){
+ var closeTimer = null;
+ navdrop.addEventListener("mouseenter", function(){
+  clearTimeout(closeTimer);
+  navdrop.classList.add("open");
+ });
+ navdrop.addEventListener("mouseleave", function(){
+  closeTimer = setTimeout(function(){ navdrop.classList.remove("open"); }, 300);
+ });
+});
+</script>
+<script>
+(function(){
+ var btn = document.getElementById("themeToggle");
+ if(!btn) return;
+ var theme = document.documentElement.getAttribute("data-theme") === "light" ? "light" : "dark";
+ btn.textContent = theme === "light" ? "☀" : "☽";
+ btn.addEventListener("click", function(){
+  var current = document.documentElement.getAttribute("data-theme") === "light" ? "light" : "dark";
+  var next = current === "light" ? "dark" : "light";
+  localStorage.setItem("theme", next);
+  location.reload();
+ });
+})();
+</script>
+
+
+<div class="container">
+
+<div class="error-banner" id="errorBanner"></div>
+<div class="warning-banner" id="warningBanner"></div>
+
+<div class="header">
+<div>
+<h1>Earnings Revisions</h1>
+<div class="subtitle">How Wall Street analysts are revising S&amp;P 500 earnings estimates — how many are moving their numbers, which way, and by how much — broken out by sector.</div>
+</div>
+<div class="updated" id="updated">Loading...</div>
+</div>
+
+<div class="stat-grid">
+<div class="stat-card">
+<div class="stat-label">Market Net Revision Ratio</div>
+<div class="stat-value" id="statNrr">—</div>
+<div class="stat-note">Trailing 30 days, equal-weighted</div>
+</div>
+<div class="stat-card">
+<div class="stat-label">Market Estimate Drift</div>
+<div class="stat-value" id="statDrift">—</div>
+<div class="stat-note">30-day change in consensus FY1 EPS</div>
+</div>
+<div class="stat-card">
+<div class="stat-label">Upgrades vs. Downgrades</div>
+<div class="stat-value neutral" id="statUpDown">—</div>
+<div class="stat-note">Analyst estimate revisions, trailing 30 days</div>
+</div>
+<div class="stat-card">
+<div class="stat-label">Coverage</div>
+<div class="stat-value neutral" id="statCoverage">—</div>
+<div class="stat-note">S&amp;P 500 constituents with usable estimates</div>
+</div>
+</div>
+
+<div class="chart-box">
+<div class="chart-box-header">
+<div>
+<h2>By sector</h2>
+<div class="chart-box-sub" id="sectorChartSub">Net Revision Ratio: share of analysts revising up minus down, trailing 30 days.</div>
+</div>
+<div class="toggle-group">
+<button class="toggle-btn active" id="btnBreadth">Breadth (Net Revision Ratio)</button>
+<button class="toggle-btn" id="btnMagnitude">Magnitude (Estimate Drift)</button>
+</div>
+</div>
+<div class="chart-canvas-wrap">
+<canvas id="sectorChart"></canvas>
+</div>
+</div>
+
+<div class="chart-box">
+<div class="chart-box-header">
+<div>
+<h2>Market Net Revision Ratio over time</h2>
+<div class="chart-box-sub">Weekly snapshots, accumulated since this page began tracking — not backfilled (see methodology below).</div>
+</div>
+</div>
+<div class="chart-canvas-wrap short">
+<canvas id="historyChart"></canvas>
+</div>
+</div>
+
+<div class="chart-box">
+<div class="chart-box-header">
+<div>
+<h2>Breadth vs. magnitude, by stock</h2>
+<div class="chart-box-sub">Each point is one S&amp;P 500 constituent. Upper-right: broadly and sharply upgraded. Lower-left: broadly and sharply downgraded.</div>
+</div>
+</div>
+<div class="chart-canvas-wrap tall">
+<canvas id="scatterChart"></canvas>
+</div>
+<div class="sector-legend" id="scatterLegend"></div>
+</div>
+
+<div class="leaderboard-grid">
+<div class="leaderboard-col">
+<h3 class="up">Biggest upgrades</h3>
+<div class="table-box">
+<table>
+<thead>
+<tr><th>Ticker</th><th>Company</th><th>Sector</th><th>FY1 EPS est.</th><th>30D drift</th><th>Analysts &uarr;/&darr;</th></tr>
+</thead>
+<tbody id="upgradesBody"><tr><td colspan="6" style="text-align:center; color:var(--muted); padding:20px;">Loading&hellip;</td></tr></tbody>
+</table>
+</div>
+</div>
+<div class="leaderboard-col">
+<h3 class="down">Biggest downgrades</h3>
+<div class="table-box">
+<table>
+<thead>
+<tr><th>Ticker</th><th>Company</th><th>Sector</th><th>FY1 EPS est.</th><th>30D drift</th><th>Analysts &uarr;/&darr;</th></tr>
+</thead>
+<tbody id="downgradesBody"><tr><td colspan="6" style="text-align:center; color:var(--muted); padding:20px;">Loading&hellip;</td></tr></tbody>
+</table>
+</div>
+</div>
+</div>
+
+<div class="explainer">
+<h2>Methodology</h2>
+<p>Two different questions get asked about analyst earnings revisions, and they don't always point the same way: <em>how many</em> analysts are changing their minds, and <em>how much</em> the number is actually moving. The <strong>Net Revision Ratio</strong> answers the first: for each stock's current-fiscal-year (FY1) consensus EPS estimate, it's (upward revisions &minus; downward revisions) &divide; total revisions over the trailing 30 days, a breadth measure that runs from &minus;1 (every revision was down) to +1 (every revision was up). The <strong>Estimate Drift</strong> answers the second: the trailing-30-day percent change in the consensus FY1 EPS estimate itself. A stock (or sector) can have wide breadth with almost no drift &mdash; a dozen analysts each nudging their number a penny in the same direction &mdash; or the reverse: one or two analysts making a large call that moves the average a lot without most of the Street having weighed in yet. Sector and market figures are the equal-weighted mean of each metric across that group's constituents with usable data, not cap-weighted &mdash; a $50B mid-cap's analyst revisions count the same as a Magnificent Seven name's.</p>
+<p>The universe is the S&amp;P 500 (the same constituent list used elsewhere on this site &mdash; see <a href="/sector-beeswarm.html">Sector Beeswarm</a>), with sector classification pulled from that page's own weekly company-metadata refresh rather than a second, redundant lookup. The leaderboards exclude stocks with fewer than 3 covering analysts, since a one- or two-analyst estimate can swing double digits on a single revision with no real breadth behind it.</p>
+<p>The "over time" chart is not a backfilled series &mdash; Alpha Vantage's estimates endpoint returns only the current snapshot's trailing-window figures, not a history of past snapshots, so there was no way to reconstruct what the Net Revision Ratio looked like a year or five years ago. Instead, this page takes its own weekly snapshot and appends it, meaning the trend line will only get more useful over time as more weekly points accumulate; treat an early, short line as exactly that &mdash; a start, not a full cycle.</p>
+<p>Recomputed weekly (Saturday) across all ~500 constituents, sequentially and rate-limited, rather than daily &mdash; trailing-30-day revision counts and 30-day drift don't move enough day to day to justify the extra API load.</p>
+<div class="source">Source: <a href="https://www.alphavantage.co/" target="_blank" rel="noopener">Alpha Vantage — EARNINGS_ESTIMATES</a>. Not investment advice.</div>
+</div>
+
+</div>
+
+<script>
+const DATA_URL = "/api/earnings-revisions";
+
+const SECTOR_COLORS = {
+ "Information Technology": "#d98a3d",
+ "Financials": "#6f8fac",
+ "Health Care": "#8e7cc3",
+ "Energy": "#c0564f",
+ "Industrials": "#5a9d6f",
+ "Consumer Discretionary": "#e0b04f",
+ "Consumer Staples": "#4fb0c0",
+ "Utilities": "#b56f2a",
+ "Materials": "#9a9a9a",
+ "Real Estate": "#c77dbd",
+ "Communication Services": "#4f7ae0",
+};
+
+let RAW = null;
+let sectorChart = null;
+let historyChart = null;
+let scatterChart = null;
+let SECTOR_MODE = "breadth"; // "breadth" | "magnitude"
+
+function showError(message){
+ const banner = document.getElementById("errorBanner");
+ banner.textContent = message;
+ banner.style.display = "block";
+}
+
+function showWarning(message){
+ const banner = document.getElementById("warningBanner");
+ banner.textContent = message;
+ banner.style.display = "block";
+}
+
+function fmtRatio(v){
+ if(v === null || v === undefined || isNaN(v)) return "—";
+ return (v >= 0 ? "+" : "") + v.toFixed(2);
+}
+
+function fmtPct(v, digits){
+ if(v === null || v === undefined || isNaN(v)) return "—";
+ return (v >= 0 ? "+" : "") + v.toFixed(digits === undefined ? 2 : digits) + "%";
+}
+
+function classForValue(v){
+ if(v === null || v === undefined || isNaN(v)) return "";
+ return v >= 0 ? "cell-pos" : "cell-neg";
+}
+
+function themeMutedColor(){
+ return getComputedStyle(document.documentElement).getPropertyValue("--muted").trim() || "#8b9199";
+}
+function themeHairColor(){
+ return getComputedStyle(document.documentElement).getPropertyValue("--hair").trim() || "#2b3138";
+}
+function themeInkColor(){
+ return getComputedStyle(document.documentElement).getPropertyValue("--ink").trim() || "#eae6da";
+}
+
+async function init(){
+ try{
+  const res = await fetch(DATA_URL, { cache: "no-store" });
+  const data = await res.json();
+  if(!res.ok || data.error) throw new Error(data.error || "failed to load");
+
+  RAW = data;
+  document.getElementById("updated").textContent = "As of " + new Date(data.generated_at_utc).toLocaleString();
+
+  if(data.universe_size < data.universe_total * 0.85){
+   showWarning("Only " + data.universe_size + " of " + data.universe_total + " S&P 500 constituents had usable estimates this run — some sector figures may be based on partial coverage.");
+  }
+
+  renderStats();
+  renderSectorChart();
+  renderHistoryChart();
+  renderScatter();
+  renderLeaderboards();
+
+ }catch(e){
+  showError("Couldn't load earnings revisions data (" + e.message + "). The /api/earnings-revisions function may be unreachable.");
+ }
+}
+
+function renderStats(){
+ const m = RAW.market;
+ document.getElementById("statNrr").textContent = fmtRatio(m.netRevisionRatio30);
+ document.getElementById("statNrr").className = "stat-value" + (m.netRevisionRatio30 < 0 ? " down" : "");
+ document.getElementById("statDrift").textContent = fmtPct(m.drift30);
+ document.getElementById("statDrift").className = "stat-value" + (m.drift30 < 0 ? " down" : "");
+ document.getElementById("statUpDown").textContent = m.upTotal + " / " + m.downTotal;
+ document.getElementById("statCoverage").textContent = RAW.universe_size + " / " + RAW.universe_total;
+}
+
+function renderSectorChart(){
+ const sectors = [...RAW.sectors].sort((a, b) => {
+  const av = SECTOR_MODE === "breadth" ? a.netRevisionRatio30 : a.drift30;
+  const bv = SECTOR_MODE === "breadth" ? b.netRevisionRatio30 : b.drift30;
+  return (bv ?? -Infinity) - (av ?? -Infinity);
+ });
+
+ const values = sectors.map(s => SECTOR_MODE === "breadth" ? s.netRevisionRatio30 : s.drift30);
+ const colors = values.map(v => (v === null ? themeMutedColor() : (v >= 0 ? "#d98a3d" : "#6f8fac")));
+
+ const ctx = document.getElementById("sectorChart").getContext("2d");
+ if(sectorChart) sectorChart.destroy();
+ sectorChart = new Chart(ctx, {
+  type: "bar",
+  data: {
+   labels: sectors.map(s => s.sector),
+   datasets: [{
+    label: SECTOR_MODE === "breadth" ? "Net Revision Ratio" : "Estimate Drift (30D, %)",
+    data: values,
+    backgroundColor: colors,
+    borderRadius: 4,
+   }],
+  },
+  options: {
+   indexAxis: "y",
+   responsive: true,
+   maintainAspectRatio: false,
+   plugins: {
+    legend: { display: false },
+    tooltip: {
+     callbacks: {
+      label: ctx => SECTOR_MODE === "breadth"
+       ? "Net Revision Ratio: " + fmtRatio(ctx.parsed.x) + " (n=" + sectors[ctx.dataIndex].count + ")"
+       : "Estimate Drift: " + fmtPct(ctx.parsed.x) + " (n=" + sectors[ctx.dataIndex].count + ")",
+     },
+    },
+   },
+   scales: {
+    x: {
+     ticks: { color: themeMutedColor() },
+     grid: { color: themeHairColor() },
+     title: { display: true, text: SECTOR_MODE === "breadth" ? "Net Revision Ratio (−1..+1)" : "30-day estimate drift (%)", color: themeMutedColor() },
+    },
+    y: { ticks: { color: themeMutedColor() }, grid: { display: false } },
+   },
+  },
+ });
+}
+
+document.getElementById("btnBreadth").addEventListener("click", () => {
+ SECTOR_MODE = "breadth";
+ document.getElementById("btnBreadth").classList.add("active");
+ document.getElementById("btnMagnitude").classList.remove("active");
+ document.getElementById("sectorChartSub").textContent = "Net Revision Ratio: share of analysts revising up minus down, trailing 30 days.";
+ renderSectorChart();
+});
+document.getElementById("btnMagnitude").addEventListener("click", () => {
+ SECTOR_MODE = "magnitude";
+ document.getElementById("btnMagnitude").classList.add("active");
+ document.getElementById("btnBreadth").classList.remove("active");
+ document.getElementById("sectorChartSub").textContent = "Estimate Drift: 30-day % change in the consensus FY1 EPS estimate.";
+ renderSectorChart();
+});
+
+function renderHistoryChart(){
+ const points = RAW.history || [];
+ const ctx = document.getElementById("historyChart").getContext("2d");
+ if(historyChart) historyChart.destroy();
+
+ if(points.length < 2){
+  // Not enough history yet to draw a meaningful line — still render the
+  // single available point (or none) rather than erroring.
+ }
+
+ historyChart = new Chart(ctx, {
+  type: "line",
+  data: {
+   labels: points.map(p => p.date),
+   datasets: [{
+    label: "Market Net Revision Ratio",
+    data: points.map(p => p.marketNrr),
+    borderColor: "#d98a3d",
+    backgroundColor: "#d98a3d",
+    borderWidth: 1.5,
+    pointRadius: points.length < 8 ? 3 : 0,
+    fill: false,
+   }],
+  },
+  options: {
+   responsive: true,
+   maintainAspectRatio: false,
+   interaction: { mode: "index", intersect: false },
+   plugins: {
+    legend: { display: false },
+    tooltip: { callbacks: { label: ctx => "Net Revision Ratio: " + fmtRatio(ctx.parsed.y) } },
+   },
+   scales: {
+    x: { ticks: { color: themeMutedColor(), maxTicksLimit: 8 }, grid: { color: themeHairColor() } },
+    y: { ticks: { color: themeMutedColor() }, grid: { color: themeHairColor() } },
+   },
+  },
+ });
+}
+
+function renderScatter(){
+ const points = RAW.scatter || [];
+ const bySector = {};
+ for(const p of points){
+  if(!bySector[p.sector]) bySector[p.sector] = [];
+  bySector[p.sector].push({ x: p.netRevisionRatio30, y: p.drift30, ticker: p.ticker });
+ }
+
+ const datasets = Object.keys(bySector).map(sector => ({
+  label: sector,
+  data: bySector[sector],
+  backgroundColor: SECTOR_COLORS[sector] || "#8b9199",
+  pointRadius: 3.5,
+  showLine: false,
+ }));
+
+ const ctx = document.getElementById("scatterChart").getContext("2d");
+ if(scatterChart) scatterChart.destroy();
+ scatterChart = new Chart(ctx, {
+  type: "scatter",
+  data: { datasets },
+  options: {
+   responsive: true,
+   maintainAspectRatio: false,
+   plugins: {
+    legend: { display: false },
+    tooltip: {
+     callbacks: {
+      label: ctx => ctx.raw.ticker + " (" + ctx.dataset.label + "): NRR " + fmtRatio(ctx.raw.x) + ", drift " + fmtPct(ctx.raw.y),
+     },
+    },
+   },
+   scales: {
+    x: { title: { display: true, text: "Net Revision Ratio (breadth)", color: themeMutedColor() }, ticks: { color: themeMutedColor() }, grid: { color: themeHairColor() } },
+    y: { title: { display: true, text: "30-day Estimate Drift (%, magnitude)", color: themeMutedColor() }, ticks: { color: themeMutedColor() }, grid: { color: themeHairColor() } },
+   },
+  },
+ });
+
+ const legend = document.getElementById("scatterLegend");
+ legend.innerHTML = Object.keys(bySector).sort().map(sector =>
+  '<span><span class="dot" style="background:' + (SECTOR_COLORS[sector] || "#8b9199") + '"></span>' + sector + '</span>'
+ ).join("");
+}
+
+function leaderboardRowHtml(r){
+ return `<tr>
+  <td>${r.ticker}</td>
+  <td>${r.name}</td>
+  <td>${r.sector}</td>
+  <td>${r.epsNow === null ? "—" : "$" + r.epsNow.toFixed(2)}</td>
+  <td class="${classForValue(r.drift30)}">${fmtPct(r.drift30)}</td>
+  <td>${r.up30}&uarr; / ${r.down30}&darr;</td>
+ </tr>`;
+}
+
+function renderLeaderboards(){
+ document.getElementById("upgradesBody").innerHTML = (RAW.upgrades || []).map(leaderboardRowHtml).join("")
+  || '<tr><td colspan="6" style="text-align:center; color:var(--muted); padding:20px;">No data</td></tr>';
+ document.getElementById("downgradesBody").innerHTML = (RAW.downgrades || []).map(leaderboardRowHtml).join("")
+  || '<tr><td colspan="6" style="text-align:center; color:var(--muted); padding:20px;">No data</td></tr>';
+}
+
+init();
+</script>
+
+</body>
+</html>
