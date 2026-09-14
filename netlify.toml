@@ -338,7 +338,6 @@
   # share counts only change when a company files a new 10-Q/10-K.
   schedule = "50 10 * * 6"
 
-<<<<<<< HEAD
 [functions."scheduled-dispersion-background"]
   # Weekly, Saturday 11:40 UTC — originally 11:10, but that collided
   # exactly with scheduled-surprise-background (also Saturday 11:10 UTC,
@@ -363,26 +362,35 @@
   # 11:40, after this job's sweep finishes, to resolve a same-minute
   # collision with scheduled-surprise-background.)
   schedule = "25 11 * * 6"
-=======
+
 [functions."scheduled-splits-background"]
-  # Weekly, Saturday 11:10 UTC — after scheduled-share-count-background
-  # (10:50 UTC). Stage 1 (~503 sequential SPLITS calls at the same 1050ms
-  # pacing) mirrors the other full-index sweeps above; stage 2 (a much
-  # smaller TIME_SERIES_DAILY_ADJUSTED, outputsize=full pull, only for
-  # tickers with a split in the last 5 years) runs right after within the
-  # same invocation. Weekly, not daily: a stock split is a rare, discrete
-  # event, not something that needs a daily re-check.
-  schedule = "10 11 * * 6"
->>>>>>> 9a35171 (Add Stock Split Tracker page (Equities section))
+  # Weekly, Saturday 12:20 UTC — originally 11:10, but that collided
+  # exactly with scheduled-surprise-background (also Saturday 11:10 UTC,
+  # a separate PR's ~503-call EARNINGS sweep, built concurrently and
+  # unaware of this one). Moved to 12:20 instead: after
+  # scheduled-dividend-growth-background (12:00 UTC, finishes ~12:09),
+  # the last job in the existing Saturday block. Stage 1 (~503 sequential
+  # SPLITS calls at the same 1050ms pacing) mirrors the other full-index
+  # sweeps above; stage 2 (a much smaller TIME_SERIES_DAILY_ADJUSTED,
+  # outputsize=full pull, only for tickers with a split in the last 5
+  # years) runs right after within the same invocation. Weekly, not
+  # daily: a stock split is a rare, discrete event, not something that
+  # needs a daily re-check.
+  schedule = "20 12 * * 6"
 
 [functions."scheduled-pe-divergence-background"]
-  # Weekly, Saturday 11:40 UTC — after scheduled-splits-background (11:10
-  # UTC), leaving room for that job's own two-stage sweep to clear the
-  # rate limit before this one's ~503 sequential OVERVIEW calls start.
-  # Snapshot-only endpoint (no history), so the market-wide median is
-  # appended to a running weekly time series each run rather than
-  # overwritten — see scheduled-pe-divergence-background.js.
-  schedule = "40 11 * * 6"
+  # Weekly, Saturday 12:45 UTC — originally 11:40, but that collided
+  # exactly with scheduled-dispersion-background (also moved to 11:40 —
+  # see that function's own schedule comment for the unrelated collision
+  # it was resolving). Moved to 12:45 instead: after
+  # scheduled-splits-background's two-stage sweep (starts 12:20, finishes
+  # ~12:30-12:35 depending on how many tickers need stage 2), leaving
+  # room for this job's own ~503 sequential OVERVIEW calls to run without
+  # competing for the rate limit. Snapshot-only endpoint (no history), so
+  # the market-wide median is appended to a running weekly time series
+  # each run rather than overwritten — see
+  # scheduled-pe-divergence-background.js.
+  schedule = "45 12 * * 6"
 
 [functions."scheduled-insider-transactions-background"]
   # Weekly, Saturday 10:30 UTC — after the rest of the Saturday block
