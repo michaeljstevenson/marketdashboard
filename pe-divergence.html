@@ -152,7 +152,7 @@ document.addEventListener("DOMContentLoaded", function(){
 </script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Stock Split Tracker — Michael J. Stevenson</title>
+<title>Forward vs. Trailing P/E Divergence — Michael J. Stevenson</title>
 
 <style>
 
@@ -503,16 +503,6 @@ tbody td:nth-child(2){
 .cell-neg{ color:var(--ink); }
 .cell-na{ color:var(--muted); }
 
-.tag{
- display:inline-block;
- font-size:10px;
- padding:2px 6px;
- border-radius:4px;
- font-family:var(--sans);
-}
-.tag-forward{ background:rgba(217,138,61,0.15); color:var(--greed); }
-.tag-reverse{ background:rgba(111,143,172,0.15); color:var(--fear); }
-
 /* SCATTER / METHOD TABLE (mirrors /factor-analysis) */
 
 .scatter-canvas-wrap{
@@ -701,8 +691,9 @@ tbody td:nth-child(2){
 <a href="/share-count-trends.html">Share Count Trends</a>
 <a href="/sector-correlation.html">Sector Correlation Matrix</a>
 <a href="/sector-rotation.html">Sector Rotation Model</a>
-<a href="/stock-split-tracker.html" class="active">Stock Split Tracker</a>
+<a href="/stock-split-tracker.html">Stock Split Tracker</a>
 <a href="/pe-divergence.html">Forward vs. Trailing P/E Divergence</a>
+<a href="/pe-divergence.html" class="active">Forward vs. Trailing P/E Divergence</a>
 </div>
 </div>
 
@@ -769,64 +760,52 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 
 <div class="header">
 <div>
-<h1>Stock Split Tracker</h1>
-<div class="subtitle">Split activity across the full S&amp;P 500 — is the stock split coming back after two quiet decades? — plus an event study of relative price performance vs. SPY in the trading days around each recent split.</div>
+<h1>Forward vs. Trailing P/E Divergence</h1>
+<div class="subtitle">The market's own implied year-ahead EPS growth rate, read directly off the gap between forward and trailing P/E — no separate earnings-estimate data needed, since both ratios share the same price.</div>
 </div>
 <div class="updated" id="updated">Loading...</div>
 </div>
 
 <div class="stat-grid">
 <div class="stat-card">
-<div class="stat-label">Splits, trailing 5 years</div>
-<div class="stat-value" id="statRecentCount">—</div>
-<div class="stat-note" id="statRecentCountNote">Forward / reverse, full S&amp;P 500</div>
+<div class="stat-label">Median implied EPS growth</div>
+<div class="stat-value" id="statMedianGrowth">—</div>
+<div class="stat-note" id="statMedianGrowthNote">Full S&amp;P 500, companies with a meaningful P/E</div>
 </div>
 <div class="stat-card">
-<div class="stat-label">Avg. relative return, 120 trading days post-split</div>
-<div class="stat-value" id="statAvgForward">—</div>
-<div class="stat-note" id="statAvgForwardNote">Forward splits only, vs. SPY</div>
+<div class="stat-label">Avg. trailing P/E vs. forward P/E</div>
+<div class="stat-value" id="statPePair" style="font-size:20px;">—</div>
+<div class="stat-note" id="statPePairNote">Simple average across companies</div>
 </div>
 <div class="stat-card">
-<div class="stat-label">Bigger split, bigger move?</div>
-<div class="stat-value" id="statSizeEffect" style="font-size:20px;">—</div>
-<div class="stat-note" id="statSizeEffectNote">Pearson r, split ratio (log2) vs. 120-day relative return</div>
+<div class="stat-label">Implied vs. actual growth</div>
+<div class="stat-value" id="statGrowthCorr" style="font-size:20px;">—</div>
+<div class="stat-note" id="statGrowthCorrNote">Pearson r — trailing YoY growth vs. market's implied forward growth</div>
 </div>
 <div class="stat-card">
-<div class="stat-label">Most active sector</div>
+<div class="stat-label">Highest implied growth sector</div>
 <div class="stat-value" id="statTopSector" style="font-size:18px;">—</div>
-<div class="stat-note" id="statTopSectorNote">By split count, trailing 5 years</div>
+<div class="stat-note" id="statTopSectorNote">By median implied EPS growth</div>
 </div>
 </div>
 
 <div class="chart-box">
 <div class="chart-box-header">
 <div>
-<h2>Stock splits per year, full S&amp;P 500</h2>
-<div class="chart-subhead">15-year history — forward (regular) splits vs. reverse splits, current constituents only</div>
+<h2>Market-wide implied EPS growth, over time</h2>
+<div class="chart-subhead">Median across the S&amp;P 500, snapshotted weekly — this line starts thin and gets more useful with each week's run</div>
 </div>
 </div>
 <div class="chart-canvas-wrap">
-<canvas id="frequencyChart"></canvas>
+<canvas id="historyChart"></canvas>
 </div>
 </div>
 
 <div class="chart-box">
 <div class="chart-box-header">
 <div>
-<h2>Relative return vs. SPY around the split date</h2>
-<div class="chart-subhead">Average path across all qualifying forward splits in the trailing 5 years, indexed to 0% on the last trading day before the split's effective date. Sample size (n) shrinks toward the edges — see methodology.</div>
-</div>
-</div>
-<div class="chart-canvas-wrap">
-<canvas id="eventStudyChart"></canvas>
-</div>
-</div>
-
-<div class="chart-box">
-<div class="chart-box-header">
-<div>
-<h2>Sector split activity, trailing 5 years</h2>
-<div class="chart-subhead">Number of split events by sector — forward vs. reverse</div>
+<h2>Median implied EPS growth by sector</h2>
+<div class="chart-subhead">Positive = forward P/E below trailing P/E (market expects earnings to grow); negative = the reverse</div>
 </div>
 </div>
 <div class="chart-canvas-wrap">
@@ -837,30 +816,54 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <div class="chart-box">
 <div class="chart-box-header">
 <div>
-<h2>Does a bigger split ratio mean a bigger post-split move?</h2>
-<div class="chart-subhead">Each point is one qualifying forward split: x-axis is log2(split ratio) — 1.0 = a 2-for-1, 2.0 = a 4-for-1, 3.3 = a 10-for-1 — y-axis is its 120-trading-day relative return vs. SPY</div>
+<h2>Distribution of implied EPS growth</h2>
+<div class="chart-subhead">All S&amp;P 500 companies with a meaningful trailing and forward P/E</div>
+</div>
+</div>
+<div class="chart-canvas-wrap">
+<canvas id="histogramChart"></canvas>
+</div>
+</div>
+
+<div class="chart-box">
+<div class="chart-box-header">
+<div>
+<h2>Does last quarter's actual growth predict the market's implied forward growth?</h2>
+<div class="chart-subhead">Each point is one company: x-axis is trailing quarterly EPS growth YoY, y-axis is the P/E-implied forward growth rate</div>
 </div>
 </div>
 <div class="scatter-canvas-wrap">
-<canvas id="sizeScatter"></canvas>
+<canvas id="growthScatter"></canvas>
 </div>
-<div id="sizeMethodTable"></div>
+<div id="growthMethodTable"></div>
 </div>
 
+<div class="table-grid">
 <div class="table-box">
 <div class="table-box-header">
-<h2>Most recent splits</h2>
-<div class="chart-subhead">Latest 15 qualifying split events, full S&amp;P 500</div>
+<h2>Highest implied growth</h2>
+<div class="chart-subhead">Cheapest forward P/E relative to trailing</div>
 </div>
-<table id="leaderTable">
-<thead><tr><th>Symbol</th><th>Sector</th><th>Date</th><th>Ratio</th><th>Return since split (vs. SPY)</th></tr></thead>
-<tbody id="leaderBody"><tr><td colspan="5" style="text-align:center; color:var(--muted); padding:24px;">Loading&hellip;</td></tr></tbody>
+<table id="growthTable">
+<thead><tr><th>Symbol</th><th>Sector</th><th>Trailing</th><th>Forward</th><th>Implied growth</th></tr></thead>
+<tbody id="growthBody"><tr><td colspan="5" style="text-align:center; color:var(--muted); padding:24px;">Loading&hellip;</td></tr></tbody>
 </table>
 </div>
+<div class="table-box">
+<div class="table-box-header">
+<h2>Implied decline</h2>
+<div class="chart-subhead">Forward P/E above trailing — market expects earnings to shrink</div>
+</div>
+<table id="declineTable">
+<thead><tr><th>Symbol</th><th>Sector</th><th>Trailing</th><th>Forward</th><th>Implied growth</th></tr></thead>
+<tbody id="declineBody"><tr><td colspan="5" style="text-align:center; color:var(--muted); padding:24px;">Loading&hellip;</td></tr></tbody>
+</table>
+</div>
+</div>
 
 <div class="table-box">
 <div class="table-box-header">
-<h2>All splits, trailing 5 years</h2>
+<h2>All companies with a meaningful P/E</h2>
 <div class="chart-subhead">Full S&amp;P 500 — click a column to sort</div>
 </div>
 <table id="stockTable">
@@ -868,41 +871,45 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <tr>
 <th data-key="symbol">Symbol</th>
 <th data-key="sector">Sector</th>
-<th data-key="date">Date<span class="sort-arrow">▾</span></th>
-<th data-key="label">Ratio</th>
-<th data-key="direction">Type<span class="sort-arrow">▾</span></th>
-<th data-key="returnSinceSplit">Return vs. SPY<span class="sort-arrow">▾</span></th>
+<th data-key="trailingPE">Trailing P/E<span class="sort-arrow">▾</span></th>
+<th data-key="forwardPE">Forward P/E<span class="sort-arrow">▾</span></th>
+<th data-key="impliedEpsGrowth">Implied growth<span class="sort-arrow">▾</span></th>
+<th data-key="quarterlyEarningsGrowthYoY">Trailing growth<span class="sort-arrow">▾</span></th>
 </tr>
 </thead>
 <tbody id="tableBody">
-<tr><td colspan="6" style="text-align:center; color:var(--muted); padding:30px;">Loading split data&hellip;</td></tr>
+<tr><td colspan="6" style="text-align:center; color:var(--muted); padding:30px;">Loading P/E data&hellip;</td></tr>
 </tbody>
 </table>
 </div>
 
 <div class="explainer">
 <h2>Methodology</h2>
-<p>Universe is the full S&amp;P 500. For every constituent, Alpha Vantage's <code>SPLITS</code> endpoint returns its entire historical split record; events from the last 15 years feed the frequency chart above, at zero extra cost since it's one call per ticker regardless of history depth. Only events within the last 5 years get a full price-history pull (<code>TIME_SERIES_DAILY_ADJUSTED</code>, <code>outputsize=full</code>) for the event study and tables below — a heavier per-ticker payload than <code>SPLITS</code>, and older splits aren't what a reader wants a price chart built around anyway.</p>
-<p><b>A real data-quality issue surfaced while building this page</b>: Alpha Vantage's <code>SPLITS</code> endpoint mixes in non-split corporate-action adjustment factors. GE, for example, shows "splits" of 1.2530 (2024-04-02) and 1.2810 (2023-01-04) — these are the GE Vernova and GE HealthCare spin-off share-adjustment ratios, not stock splits GE ever announced (its real splits are the clean 3-for-1 in 2000 and 1-for-8 reverse split in 2021, both correctly kept). Every event is checked against an allowlist of the ratios real splits actually use (2-for-1, 3-for-1, 3-for-2, 10-for-1, 1-for-8, etc.) within a tight 0.15% tolerance; anything that doesn't match — a spin-off adjustment, most likely — is dropped rather than miscounted as a split.</p>
-<p>The event study normalizes each qualifying <i>forward</i> split's own adjusted-close price series to 0% on the last trading day before its effective date, does the same for SPY over the identical calendar dates, and plots the average difference (stock return minus SPY return) at each trading-day offset from 20 days before to 120 days after. This is a simple relative-return comparison, not a CAPM-style beta-adjusted abnormal return — a stock's normal volatility and market sensitivity aren't backed out, so the same caveat that applies to every other relative-return chart on this site applies here too. Reverse splits are tracked and shown in the tables (rare among current S&amp;P 500 names — most companies that need one no longer qualify for the index) but excluded from the averaged path and the split-size regression, since a reverse split's usual context — a low-priced, often distressed stock avoiding delisting — is a different signal entirely from a forward split's "the stock did well enough that management wants a lower nominal price."</p>
-<p>The split-size regression and the post-split return's one-sample significance both use the same Pearson/Spearman-style linear-regression machinery as <a href="/factor-analysis.html">Factor Analysis</a> and this site's other regression checks, including its normal-approximation p-value rather than a small-sample t-distribution — consistent with, not more rigorous than, the rest of the site's methodology.</p>
-<p>Refreshes weekly (Saturday mornings). Sector and company name come from the same weekly metadata sweep that backs <a href="/sector-beeswarm.html">Sector Beeswarm</a>, reused here rather than paying for a second full-index pass just for labels.</p>
-<div class="source">Source: <a href="https://www.alphavantage.co/" target="_blank" rel="noopener">Alpha Vantage — SPLITS, TIME_SERIES_DAILY_ADJUSTED</a></div>
+<p>Universe is the full S&amp;P 500. For every constituent, Alpha Vantage's <code>OVERVIEW</code> endpoint returns <code>TrailingPE</code> (price over the last twelve months' EPS) and <code>ForwardPE</code> (price over the next twelve months' consensus EPS estimate). Both ratios share the same numerator — today's share price — so their ratio falls straight out to the market's own implied year-ahead EPS growth rate, with no separate earnings-estimate data needed: <code>TrailingPE &divide; ForwardPE - 1 = EPS<sub>forward</sub> &divide; EPS<sub>trailing</sub> - 1</code>. A positive number means the forward P/E is lower than the trailing P/E — the market is pricing in earnings growth; a negative number means the reverse.</p>
+<p>Companies with a trailing or forward P/E outside (0, 300] are excluded from every chart and average here — a company with near-zero trailing or forward earnings produces a P/E that's numerically enormous (or negative) without reflecting any real valuation signal, the same kind of near-zero-denominator distortion this site's other earnings-based pages have run into and filtered out.</p>
+<p>The history chart is a genuine accumulating time series, not a single snapshot: <code>OVERVIEW</code> only reports the current P/E pair, so each weekly run appends that week's market-wide median to a running series rather than replacing it — the same pattern <a href="/earnings-revisions.html">Earnings Revisions</a> uses for its own trend chart. It starts thin the week this page ships and becomes more informative with every subsequent run.</p>
+<p>The implied-vs-actual-growth check compares this page's forward-looking implied growth rate against each company's own trailing <code>QuarterlyEarningsGrowthYOY</code> (also from the same <code>OVERVIEW</code> call, at no extra API cost) using the same Pearson/Spearman regression convention as <a href="/factor-analysis.html">Factor Analysis</a> and this site's other regression checks — a weak or negative relationship would say analysts mostly expect mean reversion (a strong recent quarter doesn't repeat) rather than momentum.</p>
+<p>This page runs its own weekly Alpha Vantage sweep rather than reusing <a href="/sector-beeswarm.html">Sector Beeswarm</a>'s own weekly <code>OVERVIEW</code> pass, even though both hit the same endpoint for the same universe — that job doesn't persist the P/E fields this page needs, and this site's convention is not to modify an already-shipped page's backend to bolt on a second page's requirements. The tradeoff is accepted here the same way <a href="/insider-buying-selling.html">Insider Buying/Selling</a>'s and other pages' standalone sweeps accepted it.</p>
+<div class="source">Source: <a href="https://www.alphavantage.co/" target="_blank" rel="noopener">Alpha Vantage — OVERVIEW</a></div>
 </div>
 
 </div>
 
 <script>
-const DATA_URL = "/api/stock-splits";
+const DATA_URL = "/api/pe-divergence";
 
 let RAW = null;
-let SORT_KEY = "date";
+let SORT_KEY = "impliedEpsGrowth";
 let SORT_DIR = -1;
 
 function fmtPct(v, digits){
  if(v === null || v === undefined || isNaN(v)) return "—";
  digits = digits === undefined ? 1 : digits;
  return (v >= 0 ? "+" : "") + v.toFixed(digits) + "%";
+}
+function fmtPE(v){
+ if(v === null || v === undefined || isNaN(v)) return "—";
+ return v.toFixed(1) + "x";
 }
 
 function showError(message){
@@ -980,17 +987,8 @@ function rankArray(arr){
  return ranks;
 }
 function spearmanRegression(xs, ys){ return linearRegression(rankArray(xs), rankArray(ys)); }
-function oneSampleTTest(values){
- const n = values.length;
- const mean = values.reduce((a, b) => a + b, 0) / n;
- const variance = values.reduce((s, v) => s + (v - mean) ** 2, 0) / (n - 1);
- const se = Math.sqrt(variance / n);
- const t = mean / se;
- const p = 2 * (1 - normalCdf(Math.abs(t)));
- return { n, mean, t, p };
-}
 
-let frequencyChart = null, eventStudyChart = null, sectorChart = null, sizeScatter = null;
+let historyChart = null, sectorChart = null, histogramChart = null, growthScatter = null;
 
 async function init(){
  try{
@@ -1001,191 +999,177 @@ async function init(){
   RAW = data;
   document.getElementById("updated").textContent = "As of " + new Date(data.generated_at_utc).toLocaleString();
 
-  if(data.splitsLoadedCount < data.universeSize){
-   showWarning("Only " + data.splitsLoadedCount + " of " + data.universeSize + " S&P 500 constituents loaded this run — some split history may be temporarily unavailable.");
+  if(data.loadedCount < data.universeSize){
+   showWarning("Only " + data.loadedCount + " of " + data.universeSize + " S&P 500 constituents loaded this run — some data may be temporarily unavailable.");
   }
 
   renderStats();
-  renderFrequencyChart();
-  renderEventStudyChart();
+  renderHistoryChart();
   renderSectorChart();
-  renderSizeScatter();
-  renderLeaderTable();
+  renderHistogram();
+  renderGrowthScatter();
+  renderLeaderTable(data.growthLeaders, "growthBody");
+  renderLeaderTable(data.declineLeaders, "declineBody");
   renderTable();
 
  }catch(e){
-  showError("Couldn't load stock split data (" + e.message + "). The /api/stock-splits function may not have run yet.");
+  showError("Couldn't load P/E divergence data (" + e.message + "). The /api/pe-divergence function may not have run yet.");
   document.getElementById("tableBody").innerHTML =
    '<tr><td colspan="6" style="text-align:center; color:var(--muted); padding:30px;">No data available.</td></tr>';
  }
 }
 
 function renderStats(){
- const recent = RAW.recentSplits;
- const forwardCount = recent.filter(r => r.direction === "forward").length;
- const reverseCount = recent.filter(r => r.direction === "reverse").length;
- document.getElementById("statRecentCount").textContent = recent.length;
- document.getElementById("statRecentCountNote").textContent = forwardCount + " forward / " + reverseCount + " reverse";
+ const m = RAW.market;
+ const growthEl = document.getElementById("statMedianGrowth");
+ growthEl.textContent = fmtPct(m.medianImpliedEpsGrowth);
+ growthEl.classList.toggle("cell-neg", m.medianImpliedEpsGrowth !== null && m.medianImpliedEpsGrowth < 0);
+ document.getElementById("statMedianGrowthNote").textContent = "n=" + m.meaningfulPeCount + " of " + m.companyCount + " companies";
 
- const finals = RAW.regressionPoints;
- const avgEl = document.getElementById("statAvgForward");
- const avgNoteEl = document.getElementById("statAvgForwardNote");
- if(finals.length >= 5){
-  const tt = oneSampleTTest(finals.map(p => p.forwardReturn));
-  avgEl.textContent = fmtPct(tt.mean);
-  avgEl.classList.toggle("cell-neg", tt.mean < 0);
-  avgNoteEl.textContent = "n=" + tt.n + ", p=" + (tt.p < 0.001 ? "<0.001" : tt.p.toFixed(3)) + (tt.p < 0.05 ? " (significant)" : " (not significant)");
+ document.getElementById("statPePair").textContent = fmtPE(m.meanTrailingPE) + " → " + fmtPE(m.meanForwardPE);
+
+ const pairs = RAW.growthPairs;
+ const corrEl = document.getElementById("statGrowthCorr");
+ const corrNoteEl = document.getElementById("statGrowthCorrNote");
+ if(pairs.length >= 10){
+  const reg = linearRegression(pairs.map(p => p.x), pairs.map(p => p.y));
+  corrEl.textContent = (reg.r >= 0 ? "+" : "") + reg.r.toFixed(2);
+  corrNoteEl.textContent = "n=" + reg.n + ", p=" + (reg.p < 0.001 ? "<0.001" : reg.p.toFixed(3));
  }else{
-  avgEl.textContent = "n/a";
-  avgNoteEl.textContent = "Not enough forward splits with a full 120-day window yet (n=" + finals.length + ")";
+  corrEl.textContent = "n/a";
+  corrNoteEl.textContent = "Not enough companies with both figures this run";
  }
 
- const sizeEl = document.getElementById("statSizeEffect");
- const sizeNoteEl = document.getElementById("statSizeEffectNote");
- if(finals.length >= 8){
-  const reg = linearRegression(finals.map(p => p.logFactor), finals.map(p => p.forwardReturn));
-  sizeEl.textContent = (reg.r >= 0 ? "+" : "") + reg.r.toFixed(2);
-  sizeNoteEl.textContent = "n=" + reg.n + ", p=" + (reg.p < 0.001 ? "<0.001" : reg.p.toFixed(3));
- }else{
-  sizeEl.textContent = "n/a";
-  sizeNoteEl.textContent = "Not enough qualifying splits this run (n=" + finals.length + ")";
- }
-
- const sectors = [...RAW.sectors].sort((a, b) => (b.forwardCount + b.reverseCount) - (a.forwardCount + a.reverseCount));
+ const sectors = [...RAW.sectors].sort((a, b) => b.medianImpliedEpsGrowth - a.medianImpliedEpsGrowth);
  document.getElementById("statTopSector").textContent = sectors.length ? sectors[0].sector : "—";
- document.getElementById("statTopSectorNote").textContent = sectors.length ? (sectors[0].forwardCount + sectors[0].reverseCount) + " split(s), " + sectors[0].companyCount + " compan" + (sectors[0].companyCount === 1 ? "y" : "ies") : "";
+ document.getElementById("statTopSectorNote").textContent = sectors.length ? fmtPct(sectors[0].medianImpliedEpsGrowth) + ", n=" + sectors[0].companyCount : "";
 }
 
-function renderFrequencyChart(){
- const rows = RAW.splitsPerYear;
- const ctx = document.getElementById("frequencyChart").getContext("2d");
- if(frequencyChart) frequencyChart.destroy();
- frequencyChart = new Chart(ctx, {
-  type: "bar",
-  data: {
-   labels: rows.map(r => r.year),
-   datasets: [
-    { label: "Forward splits", data: rows.map(r => r.forwardCount), backgroundColor: themeGreedColor(), stack: "s" },
-    { label: "Reverse splits", data: rows.map(r => r.reverseCount), backgroundColor: themeFearColor(), stack: "s" },
-   ],
-  },
-  options: {
-   responsive: true,
-   maintainAspectRatio: false,
-   plugins: { legend: { position: "bottom", labels: { color: themeMutedColor() } } },
-   scales: {
-    x: { stacked: true, ticks: { color: themeMutedColor() }, grid: { display: false } },
-    y: { stacked: true, ticks: { color: themeMutedColor(), precision: 0 }, grid: { color: themeHairColor() } },
-   },
-  },
- });
-}
-
-function renderEventStudyChart(){
- const path = RAW.carPath;
- const ctx = document.getElementById("eventStudyChart").getContext("2d");
- if(eventStudyChart) eventStudyChart.destroy();
- if(!path.length){
-  document.getElementById("eventStudyChart").parentElement.insertAdjacentHTML("beforeend",
-   '<div style="text-align:center; color:var(--muted); padding-top:140px;">Not enough qualifying forward splits this run to build an event-study path.</div>');
+function renderHistoryChart(){
+ const rows = RAW.history;
+ const ctx = document.getElementById("historyChart").getContext("2d");
+ if(historyChart) historyChart.destroy();
+ if(!rows.length){
+  ctx.canvas.parentElement.insertAdjacentHTML("beforeend",
+   '<div style="text-align:center; color:var(--muted); padding-top:140px;">No history yet — check back after next week\'s run.</div>');
   return;
  }
- eventStudyChart = new Chart(ctx, {
+ historyChart = new Chart(ctx, {
   type: "line",
   data: {
-   labels: path.map(p => p.offset),
+   labels: rows.map(r => r.week),
    datasets: [{
-    label: "Avg. relative return vs. SPY",
-    data: path.map(p => p.avgRelative),
+    label: "Median implied EPS growth",
+    data: rows.map(r => r.medianImpliedEpsGrowth),
     borderColor: themeGreedColor(),
     backgroundColor: "transparent",
     borderWidth: 2,
-    pointRadius: 0,
-    tension: 0.1,
+    pointRadius: rows.length === 1 ? 4 : 1,
+    tension: 0.15,
    }],
   },
   options: {
    responsive: true,
    maintainAspectRatio: false,
-   interaction: { mode: "index", intersect: false },
-   plugins: {
-    legend: { display: false },
-    tooltip: {
-     callbacks: {
-      title: items => "Trading day " + (items[0].label >= 0 ? "+" : "") + items[0].label + " vs. split date",
-      label: ctx => {
-       const p = path[ctx.dataIndex];
-       return "Avg. relative return: " + fmtPct(p.avgRelative, 2) + " (n=" + p.n + ")";
-      },
-     },
-    },
-   },
+   plugins: { legend: { display: false } },
    scales: {
-    x: { title: { display: true, text: "Trading days relative to split effective date (0 = split day)", color: themeMutedColor(), font: { size: 10 } }, ticks: { color: themeMutedColor() }, grid: { color: themeHairColor() } },
-    y: { title: { display: true, text: "Cumulative relative return (%)", color: themeMutedColor(), font: { size: 10 } }, ticks: { color: themeMutedColor(), callback: v => v + "%" }, grid: { color: themeHairColor() } },
+    x: { ticks: { color: themeMutedColor(), maxTicksLimit: 12 }, grid: { display: false } },
+    y: { ticks: { color: themeMutedColor(), callback: v => v + "%" }, grid: { color: themeHairColor() } },
    },
   },
  });
 }
 
 function renderSectorChart(){
- const sorted = [...RAW.sectors].sort((a, b) => (b.forwardCount + b.reverseCount) - (a.forwardCount + a.reverseCount));
+ const sorted = [...RAW.sectors].sort((a, b) => a.medianImpliedEpsGrowth - b.medianImpliedEpsGrowth);
+ const colors = sorted.map(s => s.medianImpliedEpsGrowth >= 0 ? themeGreedColor() : themeFearColor());
  const ctx = document.getElementById("sectorChart").getContext("2d");
  if(sectorChart) sectorChart.destroy();
- if(!sorted.length){
-  ctx.canvas.parentElement.insertAdjacentHTML("beforeend",
-   '<div style="text-align:center; color:var(--muted); padding-top:140px;">No sector-level split activity in the trailing 5 years.</div>');
-  return;
- }
  sectorChart = new Chart(ctx, {
   type: "bar",
   data: {
    labels: sorted.map(s => s.sector),
-   datasets: [
-    { label: "Forward", data: sorted.map(s => s.forwardCount), backgroundColor: themeGreedColor(), borderRadius: 4 },
-    { label: "Reverse", data: sorted.map(s => s.reverseCount), backgroundColor: themeFearColor(), borderRadius: 4 },
-   ],
+   datasets: [{ label: "Median implied growth", data: sorted.map(s => s.medianImpliedEpsGrowth), backgroundColor: colors, borderRadius: 4 }],
   },
   options: {
    indexAxis: "y",
    responsive: true,
    maintainAspectRatio: false,
-   plugins: { legend: { position: "bottom", labels: { color: themeMutedColor() } } },
+   plugins: {
+    legend: { display: false },
+    tooltip: {
+     callbacks: {
+      label: ctx => {
+       const s = sorted[ctx.dataIndex];
+       return ["Median implied growth: " + fmtPct(s.medianImpliedEpsGrowth), "Avg. P/E: " + fmtPE(s.meanTrailingPE) + " → " + fmtPE(s.meanForwardPE), "n=" + s.companyCount];
+      },
+     },
+    },
+   },
    scales: {
-    x: { ticks: { color: themeMutedColor(), precision: 0 }, grid: { color: themeHairColor() } },
+    x: { ticks: { color: themeMutedColor(), callback: v => v + "%" }, grid: { color: themeHairColor() } },
     y: { ticks: { color: themeMutedColor() }, grid: { display: false } },
    },
   },
  });
 }
 
-function renderSizeScatter(){
- const points = RAW.regressionPoints;
- const box = document.getElementById("sizeScatter").parentElement;
- if(points.length < 8){
-  document.getElementById("sizeMethodTable").innerHTML =
-   '<div class="method-note">Not enough qualifying forward splits with a full 120-day post-split window this run (n=' + points.length + ', need at least 8) to run this regression.</div>';
+function renderHistogram(){
+ const buckets = [
+  { max: -20, label: "<-20%" }, { max: -10, label: "-20 to -10%" }, { max: 0, label: "-10 to 0%" },
+  { max: 10, label: "0 to 10%" }, { max: 20, label: "10 to 20%" }, { max: 30, label: "20 to 30%" },
+  { max: 50, label: "30 to 50%" }, { max: Infinity, label: ">50%" },
+ ];
+ const counts = buckets.map(() => 0);
+ RAW.companies.forEach(c => {
+  if(c.impliedEpsGrowth === null) return;
+  const idx = buckets.findIndex(b => c.impliedEpsGrowth < b.max);
+  counts[idx === -1 ? buckets.length - 1 : idx]++;
+ });
+
+ const ctx = document.getElementById("histogramChart").getContext("2d");
+ if(histogramChart) histogramChart.destroy();
+ histogramChart = new Chart(ctx, {
+  type: "bar",
+  data: { labels: buckets.map(b => b.label), datasets: [{ label: "Companies", data: counts, backgroundColor: themeGreedColor(), borderRadius: 4 }] },
+  options: {
+   responsive: true,
+   maintainAspectRatio: false,
+   plugins: { legend: { display: false } },
+   scales: {
+    x: { ticks: { color: themeMutedColor(), font: { size: 10 } }, grid: { display: false } },
+    y: { ticks: { color: themeMutedColor(), precision: 0 }, grid: { color: themeHairColor() } },
+   },
+  },
+ });
+}
+
+function renderGrowthScatter(){
+ const pairs = RAW.growthPairs;
+ const box = document.getElementById("growthScatter").parentElement;
+ if(pairs.length < 10){
+  document.getElementById("growthMethodTable").innerHTML =
+   '<div class="method-note">Not enough companies with both a trailing growth figure and a meaningful P/E pair this run (n=' + pairs.length + ', need at least 10) to run this regression.</div>';
   return;
  }
 
- const xs = points.map(p => p.logFactor);
- const ys = points.map(p => p.forwardReturn);
- const pearson = linearRegression(xs, ys);
- const spear = spearmanRegression(xs, ys);
+ const pearson = linearRegression(pairs.map(p => p.x), pairs.map(p => p.y));
+ const spear = spearmanRegression(pairs.map(p => p.x), pairs.map(p => p.y));
 
+ const xs = pairs.map(p => p.x);
  const xMin = Math.min(...xs), xMax = Math.max(...xs);
  const linePoints = [
   { x: xMin, y: pearson.intercept + pearson.slope * xMin },
   { x: xMax, y: pearson.intercept + pearson.slope * xMax },
  ];
 
- const ctx = document.getElementById("sizeScatter").getContext("2d");
- if(sizeScatter) sizeScatter.destroy();
- sizeScatter = new Chart(ctx, {
+ const ctx = document.getElementById("growthScatter").getContext("2d");
+ if(growthScatter) growthScatter.destroy();
+ growthScatter = new Chart(ctx, {
   type: "scatter",
   data: {
    datasets: [
-    { label: "Splits", data: points.map(p => ({ x: p.logFactor, y: p.forwardReturn, symbol: p.symbol })), backgroundColor: themeGreedColor(), pointRadius: 4, showLine: false },
+    { label: "Companies", data: pairs, backgroundColor: themeGreedColor(), pointRadius: 3, showLine: false },
     { label: "Regression fit", type: "line", data: linePoints, borderColor: themeInkColor(), borderWidth: 1.5, borderDash: [4, 3], pointRadius: 0, fill: false },
    ],
   },
@@ -1196,13 +1180,13 @@ function renderSizeScatter(){
     legend: { display: false },
     tooltip: {
      callbacks: {
-      label: ctx => ctx.dataset.label === "Splits" ? (ctx.raw.symbol + ": log2 ratio " + ctx.raw.x.toFixed(2) + " → " + fmtPct(ctx.raw.y)) : null,
+      label: ctx => ctx.dataset.label === "Companies" ? (ctx.raw.symbol + ": " + fmtPct(ctx.raw.x) + " → " + fmtPct(ctx.raw.y)) : null,
      },
     },
    },
    scales: {
-    x: { title: { display: true, text: "log2(split ratio)", color: themeMutedColor(), font: { size: 10 } }, ticks: { color: themeMutedColor(), font: { size: 10 } }, grid: { color: themeHairColor() } },
-    y: { title: { display: true, text: "120-day relative return vs. SPY (%)", color: themeMutedColor(), font: { size: 10 } }, ticks: { color: themeMutedColor(), font: { size: 10 } }, grid: { color: themeHairColor() } },
+    x: { title: { display: true, text: "Trailing quarterly EPS growth YoY (%)", color: themeMutedColor(), font: { size: 10 } }, ticks: { color: themeMutedColor(), font: { size: 10 } }, grid: { color: themeHairColor() } },
+    y: { title: { display: true, text: "P/E-implied forward growth (%)", color: themeMutedColor(), font: { size: 10 } }, ticks: { color: themeMutedColor(), font: { size: 10 } }, grid: { color: themeHairColor() } },
    },
   },
  });
@@ -1219,32 +1203,25 @@ function renderSizeScatter(){
    '<td class="' + (sig ? "sig" : "") + '">' + (stats.p < 0.001 ? "<0.001" : stats.p.toFixed(3)) + "</td>" +
   "</tr>";
  }
- document.getElementById("sizeMethodTable").innerHTML =
+ document.getElementById("growthMethodTable").innerHTML =
   '<table class="method-table">' +
    "<thead><tr><th>Method</th><th>n</th><th>r</th><th>r&sup2;</th><th>slope</th><th>t</th><th>p</th></tr></thead>" +
    "<tbody>" + row("Pearson (OLS)", pearson) + row("Spearman (&rho;)", spear) + "</tbody>" +
   "</table>";
 }
 
-function directionTag(direction){
- return direction === "forward"
-  ? '<span class="tag tag-forward">Forward</span>'
-  : '<span class="tag tag-reverse">Reverse</span>';
-}
-
-function renderLeaderTable(){
- const rows = RAW.recentLeaders;
- const tbody = document.getElementById("leaderBody");
+function renderLeaderTable(rows, tbodyId){
+ const tbody = document.getElementById(tbodyId);
  if(!rows || !rows.length){
-  tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; color:var(--muted); padding:24px;">No qualifying splits.</td></tr>';
+  tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; color:var(--muted); padding:24px;">No qualifying companies.</td></tr>';
   return;
  }
  tbody.innerHTML = rows.map(r => `<tr>
   <td><span class="sector-name">${r.symbol}</span></td>
   <td><span class="sector-ticker">${r.sector || "—"}</span></td>
-  <td>${r.date}</td>
-  <td>${r.label} ${directionTag(r.direction)}</td>
-  <td>${fmtPct(r.returnSinceSplit)}</td>
+  <td>${fmtPE(r.trailingPE)}</td>
+  <td>${fmtPE(r.forwardPE)}</td>
+  <td>${fmtPct(r.impliedEpsGrowth)}</td>
  </tr>`).join("");
 }
 
@@ -1259,7 +1236,7 @@ function sortBy(key){
 }
 
 function renderTable(){
- const rows = [...RAW.recentSplits].sort((a, b) => {
+ const rows = [...RAW.companies].sort((a, b) => {
   const av = a[SORT_KEY], bv = b[SORT_KEY];
   if(av === null || av === undefined) return 1;
   if(bv === null || bv === undefined) return -1;
@@ -1271,10 +1248,10 @@ function renderTable(){
  tbody.innerHTML = rows.map(r => `<tr>
   <td><span class="sector-name">${r.symbol}</span></td>
   <td><span class="sector-ticker">${r.sector || "—"}</span></td>
-  <td>${r.date}</td>
-  <td>${r.label}</td>
-  <td>${directionTag(r.direction)}</td>
-  <td>${fmtPct(r.returnSinceSplit)}</td>
+  <td>${fmtPE(r.trailingPE)}</td>
+  <td>${fmtPE(r.forwardPE)}</td>
+  <td>${fmtPct(r.impliedEpsGrowth)}</td>
+  <td>${fmtPct(r.quarterlyEarningsGrowthYoY)}</td>
  </tr>`).join("");
 
  document.querySelectorAll("#stockTable thead th").forEach(th => {
