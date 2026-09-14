@@ -152,7 +152,7 @@ document.addEventListener("DOMContentLoaded", function(){
 </script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Sector Rotation Model — Michael J. Stevenson</title>
+<title>Relative Strength Leaders/Laggards — Michael J. Stevenson</title>
 
 <style>
 
@@ -350,7 +350,7 @@ h1{
 
 .stat-value{
  font-family:var(--mono);
- font-size:22px;
+ font-size:24px;
  color:var(--greed);
 }
 
@@ -402,18 +402,18 @@ h1{
  height:380px;
 }
 
-.quadrant-labels{
+/* TABLE */
+
+.table-grid{
  display:grid;
  grid-template-columns:1fr 1fr;
- font-size:10px;
- color:var(--muted);
- letter-spacing:0.04em;
- margin-top:8px;
- text-transform:uppercase;
+ gap:16px;
+ margin-bottom:30px;
 }
-.quadrant-labels div{ text-align:center; padding:2px 0; }
 
-/* TABLE */
+@media (max-width:900px){
+ .table-grid{ grid-template-columns:1fr; }
+}
 
 .table-box{
  background:var(--card);
@@ -422,6 +422,8 @@ h1{
  overflow-x:auto;
  margin-bottom:30px;
 }
+
+.table-grid .table-box{ margin-bottom:0; }
 
 .table-box-header{
  padding:18px 20px 4px;
@@ -436,29 +438,43 @@ h1{
 
 .table-box-header .chart-subhead{ margin-bottom:6px; }
 
-table.datatable{
+table{
  width:100%;
  border-collapse:collapse;
  font-size:13px;
- min-width:640px;
+ min-width:600px;
 }
 
-table.datatable thead th{
+thead th{
  text-align:right;
  padding:14px 12px;
  color:var(--muted);
  font-size:11px;
  letter-spacing:0.04em;
  font-weight:600;
+ cursor:pointer;
+ user-select:none;
  white-space:nowrap;
  border-bottom:1px solid var(--hair);
 }
 
-table.datatable thead th:first-child{
+thead th:first-child, thead th:nth-child(2){
  text-align:left;
 }
 
-table.datatable tbody td{
+thead th:hover{ color:var(--ink); }
+
+thead th .sort-arrow{
+ opacity:0.4;
+ margin-left:3px;
+ font-size:10px;
+}
+
+thead th.sorted .sort-arrow{ opacity:1; color:var(--greed); }
+
+thead th:not([data-key]){ cursor:default; }
+
+tbody td{
  padding:11px 12px;
  text-align:right;
  font-family:var(--mono);
@@ -466,33 +482,42 @@ table.datatable tbody td{
  border-bottom:1px solid var(--hair);
 }
 
-table.datatable tbody tr:last-child td{ border-bottom:none; }
-table.datatable tbody tr:hover{ background:var(--card-hover); }
+tbody tr:last-child td{ border-bottom:none; }
 
-table.datatable tbody td:first-child{
+tbody tr:hover{ background:var(--card-hover); }
+
+tbody td:first-child{
  text-align:left;
  font-family:var(--sans);
 }
 
+tbody td:nth-child(2){
+ text-align:left;
+ color:var(--muted);
+}
+
+.sector-name{ color:var(--ink); }
+.sector-ticker{ color:var(--muted); font-size:11px; }
+
 .cell-pos{ color:var(--ink); }
 .cell-neg{ color:var(--ink); }
+.cell-na{ color:var(--muted); }
 
-.badge-quadrant{
+.badge-tag{
  display:inline-block;
  font-size:10px;
  border-radius:4px;
  padding:2px 6px;
  font-family:var(--sans);
 }
-.badge-leading{ color:var(--greed); border:1px solid var(--greed); }
-.badge-weakening{ color:var(--extreme); border:1px solid var(--extreme); }
-.badge-lagging{ color:var(--fear); border:1px solid var(--fear); }
-.badge-improving{ color:var(--neutral); border:1px solid var(--neutral); }
+.badge-leader{ color:var(--greed); border:1px solid var(--greed); }
+.badge-laggard{ color:var(--fear); border:1px solid var(--fear); }
+.badge-neutral{ color:var(--neutral); border:1px solid var(--neutral); }
 
 /* SCATTER / METHOD TABLE (mirrors /factor-analysis) */
 
 .scatter-canvas-wrap{
- height:340px;
+ height:300px;
  margin-bottom:12px;
  position:relative;
 }
@@ -676,8 +701,8 @@ table.datatable tbody td:first-child{
 <a href="/small-cap-vs-large-cap.html">Small Cap vs. Large Cap Spread</a>
 <a href="/share-count-trends.html">Share Count Trends</a>
 <a href="/sector-correlation.html">Sector Correlation Matrix</a>
-<a href="/sector-rotation.html" class="active">Sector Rotation Model</a>
-<a href="/relative-strength-leaders.html">Relative Strength Leaders/Laggards</a>
+<a href="/sector-rotation.html">Sector Rotation Model</a>
+<a href="/relative-strength-leaders.html" class="active">Relative Strength Leaders/Laggards</a>
 </div>
 </div>
 
@@ -744,68 +769,52 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 
 <div class="header">
 <div>
-<h1>Sector Rotation Model</h1>
-<div class="subtitle">A Relative Rotation Graph-style view of the 11 SPDR sector ETFs: which sectors are leading, weakening, lagging, or improving right now, and whether recent sector leadership actually tends to persist.</div>
+<h1>Relative Strength Leaders/Laggards</h1>
+<div class="subtitle">1-month and 3-month price momentum relative to SPY across the full S&amp;P 500 — who's outperforming, who's lagging, and whether this week's leaders tend to stay leaders.</div>
 </div>
 <div class="updated" id="updated">Loading...</div>
 </div>
 
 <div class="stat-grid">
 <div class="stat-card">
+<div class="stat-label">Outperforming SPY (3M)</div>
+<div class="stat-value" id="statBreadth">—</div>
+<div class="stat-note" id="statBreadthNote">Share of universe with positive relative return</div>
+</div>
+<div class="stat-card">
+<div class="stat-label">Median 3M Relative Return</div>
+<div class="stat-value" id="statMedian">—</div>
+<div class="stat-note" id="statMedianNote">vs. SPY, full universe</div>
+</div>
+<div class="stat-card">
 <div class="stat-label">Current Leader</div>
-<div class="stat-value" id="statLeader" style="font-size:18px;">—</div>
-<div class="stat-note" id="statLeaderNote">3-month relative return vs. SPY</div>
+<div class="stat-value" id="statLeader" style="font-size:20px;">—</div>
+<div class="stat-note" id="statLeaderNote">3-month relative return</div>
 </div>
 <div class="stat-card">
 <div class="stat-label">Current Laggard</div>
-<div class="stat-value" id="statLaggard" style="font-size:18px;">—</div>
-<div class="stat-note" id="statLaggardNote">3-month relative return vs. SPY</div>
-</div>
-<div class="stat-card">
-<div class="stat-label">Sectors in "Leading" Quadrant</div>
-<div class="stat-value" id="statLeadingCount">—</div>
-<div class="stat-note">Positive level and positive momentum</div>
-</div>
-<div class="stat-card">
-<div class="stat-label">Month-to-Month Rank Persistence</div>
-<div class="stat-value" id="statPersistence" style="font-size:20px;">—</div>
-<div class="stat-note" id="statPersistenceNote">Spearman &rho;, this month's leaders vs. next month's</div>
+<div class="stat-value" id="statLaggard" style="font-size:20px;">—</div>
+<div class="stat-note" id="statLaggardNote">3-month relative return</div>
 </div>
 </div>
 
 <div class="chart-box">
 <div class="chart-box-header">
 <div>
-<h2>Relative rotation graph</h2>
-<div class="chart-subhead">x-axis: 3-month change in relative strength (level). y-axis: 1-month change in relative strength (momentum). Each point is one sector, as of the latest close.</div>
+<h2>Average 3-month relative return by sector</h2>
+<div class="chart-subhead">Excess return vs. SPY over the trailing 63 trading days, averaged across each sector's constituents</div>
 </div>
 </div>
 <div class="chart-canvas-wrap">
-<canvas id="rrgChart"></canvas>
-</div>
-<div class="quadrant-labels">
-<div>&larr; Lagging / Improving &rarr;</div>
-<div>&larr; Weakening / Leading &rarr;</div>
+<canvas id="sectorChart"></canvas>
 </div>
 </div>
 
 <div class="chart-box">
 <div class="chart-box-header">
 <div>
-<h2>Relative return by sector, across lookback periods</h2>
-<div class="chart-subhead">Return relative to SPY over the trailing 1/3/6/12 months</div>
-</div>
-</div>
-<div class="chart-canvas-wrap">
-<canvas id="periodChart"></canvas>
-</div>
-</div>
-
-<div class="chart-box">
-<div class="chart-box-header">
-<div>
-<h2>Does this month's sector leadership predict next month's?</h2>
-<div class="chart-subhead">Each point is one sector-month: x-axis is that sector's relative-return rank that month (1 = best), y-axis is its rank the following month — testing whether chasing recent sector leadership actually works</div>
+<h2>Do this week's relative-strength leaders keep leading?</h2>
+<div class="chart-subhead">Each point is one stock in one week: x-axis is that week's 3-month relative-return rank (1 = strongest), y-axis is its realized relative return over the following week — a forward window that shares no trading days with the rank that predicts it, unlike comparing consecutive weeks' own 3-month ranks directly (see methodology)</div>
 </div>
 </div>
 <div class="scatter-canvas-wrap">
@@ -814,42 +823,91 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <div id="persistenceMethodTable"></div>
 </div>
 
+<div class="table-grid">
 <div class="table-box">
 <div class="table-box-header">
-<h2>Current rotation snapshot</h2>
-<div class="chart-subhead">Relative return vs. SPY, sorted by 3-month relative return</div>
+<h2>Leaders</h2>
+<div class="chart-subhead">Strongest 3-month relative return vs. SPY</div>
 </div>
-<table class="datatable" id="rotationTable">
-<thead><tr><th>Sector</th><th>1M</th><th>3M</th><th>6M</th><th>1Y</th><th>Quadrant</th></tr></thead>
-<tbody id="rotationBody"><tr><td colspan="6" style="text-align:center; color:var(--muted); padding:24px;">Loading&hellip;</td></tr></tbody>
+<table id="leaderTable">
+<thead><tr><th>Symbol</th><th>Sector</th><th>1M</th><th>3M</th></tr></thead>
+<tbody id="leaderBody"><tr><td colspan="4" style="text-align:center; color:var(--muted); padding:24px;">Loading&hellip;</td></tr></tbody>
+</table>
+</div>
+<div class="table-box">
+<div class="table-box-header">
+<h2>Laggards</h2>
+<div class="chart-subhead">Weakest 3-month relative return vs. SPY</div>
+</div>
+<table id="laggardTable">
+<thead><tr><th>Symbol</th><th>Sector</th><th>1M</th><th>3M</th></tr></thead>
+<tbody id="laggardBody"><tr><td colspan="4" style="text-align:center; color:var(--muted); padding:24px;">Loading&hellip;</td></tr></tbody>
+</table>
+</div>
+</div>
+
+<div class="table-box">
+<div class="table-box-header">
+<h2>Full S&amp;P 500</h2>
+<div class="chart-subhead">Price, trailing return, and return relative to SPY at 1-month and 3-month lookbacks</div>
+</div>
+<table id="stockTable">
+<thead>
+<tr>
+<th data-key="symbol">Symbol</th>
+<th data-key="sector">Sector</th>
+<th data-key="price">Price<span class="sort-arrow">▾</span></th>
+<th data-key="ret1M">1M<span class="sort-arrow">▾</span></th>
+<th data-key="ret3M">3M<span class="sort-arrow">▾</span></th>
+<th data-key="rel1M">Rel. 1M<span class="sort-arrow">▾</span></th>
+<th data-key="rel3M">Rel. 3M<span class="sort-arrow">▾</span></th>
+<th data-key="classification">Tag<span class="sort-arrow">▾</span></th>
+</tr>
+</thead>
+<tbody id="tableBody">
+<tr><td colspan="8" style="text-align:center; color:var(--muted); padding:30px;">Loading relative strength data&hellip;</td></tr>
+</tbody>
 </table>
 </div>
 
 <div class="explainer">
 <h2>Methodology</h2>
-<p>Reuses the same dataset as <a href="/sector-analysis.html">Sector Performance</a> and this session's Sector Correlation Matrix — the 11 SPDR sector ETFs' daily adjusted-close history against SPY, already fetched by that page's own background job. No new Alpha Vantage calls are made here.</p>
-<p>The rotation graph follows the standard Relative Rotation Graph (RRG) framework: a sector's <i>level</i> (x-axis) is its medium-term relative-strength trend (the 3-month change in its price-relative-to-SPY ratio), and its <i>momentum</i> (y-axis) is the short-term change in that same ratio (1-month). The four quadrants read as: <b>Leading</b> (positive level, positive momentum — outperforming and still accelerating), <b>Weakening</b> (positive level, negative momentum — still outperforming but losing steam), <b>Lagging</b> (negative level, negative momentum — underperforming and still falling behind), <b>Improving</b> (negative level, positive momentum — underperforming but starting to turn). Sectors classically rotate through these quadrants clockwise over a full cycle, though not on any fixed schedule.</p>
-<p>The persistence check ranks the 11 sectors by trailing 1-month relative return at each month-end over the available history, then correlates each sector's rank in one month against its rank the following month (Spearman, since ranks are ordinal by construction) across every sector-month pair. A near-zero or negative result would mean chasing last month's sector winners is no better than random — worth knowing before treating any single month's leaderboard as a signal.</p>
-<div class="source">Source: Alpha Vantage (via the existing /api/sector-performance dataset) — TIME_SERIES_DAILY_ADJUSTED</div>
+<p>Universe is the full S&amp;P 500. For every constituent plus SPY, Alpha Vantage's <code>TIME_SERIES_DAILY_ADJUSTED</code> endpoint (compact — the trailing ~100 trading days) provides split/dividend-adjusted daily closes. Trailing return is measured from the close 21 trading days ago (1-month) and 63 trading days ago (3-month) to the latest close. Relative — or "excess" — return is computed as <code>(1 + stock return) / (1 + SPY return) − 1</code> rather than a simple subtraction, so it compounds consistently at larger magnitudes; the same construction used on <a href="/small-cap-vs-large-cap.html">Small Cap vs. Large Cap Spread</a> and the International vs. US page.</p>
+<p>A stock is tagged "Leader" if its 3-month relative return ranks in the top fifth of the universe that week, "Laggard" if it ranks in the bottom fifth, and "Neutral" otherwise. This deliberately uses a 3-month, not 1-month, lookback for ranking — 1-month figures are shown for context but are noisier and more prone to single-event whipsaws (an earnings beat, a guidance cut).</p>
+<p>The persistence chart above tests whether this week's relative-strength ranking says anything about what happens next — but comparing one week's 3-month rank against <i>next</i> week's 3-month rank would be a trap: two 63-trading-day windows one week apart share 58 of those days, so their ranks would correlate almost mechanically regardless of any real momentum effect (the same overlapping-window pitfall called out in <a href="/share-count-trends.html">Share Count Trends</a>' own methodology). Instead, each point pairs a stock's rank as of one weekly snapshot against its realized relative return over the following snapshot interval — a forward window built from entirely new trading days, sharing nothing with the rank that predicts it. Pooled across every stock and every consecutive pair of snapshots retained (up to 20 weekly snapshots, roughly five months), a positive, statistically significant Pearson/Spearman relationship would mean today's leaders tend to keep outperforming going forward; a null or negative one would say the opposite — that relative strength mean-reverts, or says nothing about the future at this horizon. As with every regression on this site, both a linear (Pearson) and rank-based (Spearman) fit are reported since one can be misleading when the relationship is nonlinear or driven by outliers.</p>
+<p>Refreshes weekly (Saturday, after the rest of that morning's data jobs) — a 21/63-trading-day momentum read barely moves day to day, and the persistence test needs its weekly snapshots spaced apart to mean anything. Sector and company name come from the same weekly metadata sweep that backs <a href="/sector-beeswarm.html">Sector Beeswarm</a>, reused here rather than paying for a second full-index pass just for labels. Because the persistence test is built from accumulated weekly snapshots rather than a single run's data, it will show "not enough history yet" for the first week or two after this page goes live and fill in from there.</p>
+<div class="source">Source: <a href="https://www.alphavantage.co/" target="_blank" rel="noopener">Alpha Vantage — TIME_SERIES_DAILY_ADJUSTED</a></div>
 </div>
 
 </div>
 
 <script>
-const DATA_URL = "/api/sector-performance";
+const DATA_URL = "/api/relative-strength";
 
 let RAW = null;
+let SORT_KEY = "rank3M";
+let SORT_DIR = 1;
+
+function fmtPct(v, digits){
+ if(v === null || v === undefined || isNaN(v)) return "—";
+ digits = digits === undefined ? 1 : digits;
+ return (v >= 0 ? "+" : "") + v.toFixed(digits) + "%";
+}
+
+function fmtPrice(v){
+ if(v === null || v === undefined || isNaN(v)) return "—";
+ return "$" + v.toFixed(2);
+}
 
 function showError(message){
  const banner = document.getElementById("errorBanner");
  banner.textContent = message;
  banner.style.display = "block";
 }
-
-function fmtPct(v, digits){
- if(v === null || v === undefined || isNaN(v)) return "—";
- digits = digits === undefined ? 1 : digits;
- return (v >= 0 ? "+" : "") + v.toFixed(digits) + "%";
+function showWarning(message){
+ const banner = document.getElementById("warningBanner");
+ banner.textContent = message;
+ banner.style.display = "block";
 }
 
 function themeInkColor(){
@@ -917,20 +975,7 @@ function rankArray(arr){
 }
 function spearmanRegression(xs, ys){ return linearRegression(rankArray(xs), rankArray(ys)); }
 
-function dailyRatioSeries(sectorHistory, spyHistory){
- // Both histories share SPY's calendar already (see scheduled-sectors-
- // background.js), so a straight index-by-index ratio is safe.
- const n = Math.min(sectorHistory.length, spyHistory.length);
- const dates = [];
- const ratio = [];
- for(let i = 0; i < n; i++){
-  dates.push(sectorHistory[i].date);
-  ratio.push(sectorHistory[i].close / spyHistory[i].close);
- }
- return { dates, ratio };
-}
-
-let rrgChart = null, periodChart = null, persistenceScatter = null;
+let sectorChart = null, persistenceScatter = null;
 
 async function init(){
  try{
@@ -939,92 +984,60 @@ async function init(){
   if(!res.ok || data.error) throw new Error(data.error || "failed to load");
 
   RAW = data;
-  document.getElementById("updated").textContent =
-   "As of " + data.benchmark.asOfDate + " · " + new Date(data.generated_at_utc).toLocaleString();
+  document.getElementById("updated").textContent = "As of " + new Date(data.generated_at_utc).toLocaleString();
 
-  const spyHistory = data.benchmark.history;
-  const sectorSeries = data.sectors.map(s => ({ ticker: s.ticker, name: s.name, relative: s.relative, ...dailyRatioSeries(s.history, spyHistory) }));
+  if(data.loadedCount < data.universeSize){
+   showWarning("Only " + data.loadedCount + " of " + data.universeSize + " S&P 500 constituents loaded this run — some data may be temporarily unavailable.");
+  }
 
-  renderStats(sectorSeries);
-  renderRrgChart(sectorSeries);
-  renderPeriodChart();
-  renderRotationTable(sectorSeries);
-  renderPersistence(sectorSeries);
+  renderStats();
+  renderSectorChart();
+  renderPersistence();
+  renderLeaderTable(data.leaders, "leaderBody");
+  renderLeaderTable(data.laggards, "laggardBody");
+  renderTable();
 
  }catch(e){
-  showError("Couldn't load sector rotation data (" + e.message + "). The /api/sector-performance function may not have run yet.");
+  showError("Couldn't load relative strength data (" + e.message + "). The /api/relative-strength function may not have run yet.");
+  document.getElementById("tableBody").innerHTML =
+   '<tr><td colspan="8" style="text-align:center; color:var(--muted); padding:30px;">No data available.</td></tr>';
  }
 }
 
-function ratioChangePct(series, monthsBack){
- const n = series.ratio.length;
- const idx = Math.max(0, n - 1 - Math.round(monthsBack * 21));
- return ((series.ratio[n - 1] / series.ratio[idx]) - 1) * 100;
+function renderStats(){
+ const m = RAW.market;
+ document.getElementById("statBreadth").textContent = m.pctOutperforming3M === null ? "—" : m.pctOutperforming3M.toFixed(1) + "%";
+ document.getElementById("statBreadthNote").textContent = "n=" + m.companyCount + " companies · SPY 3M: " + fmtPct(m.spyRet3M);
+
+ const medEl = document.getElementById("statMedian");
+ medEl.textContent = fmtPct(m.medianRel3M);
+ medEl.classList.toggle("cell-neg", m.medianRel3M !== null && m.medianRel3M < 0);
+
+ const leader = RAW.leaders[0];
+ if(leader){
+  document.getElementById("statLeader").textContent = leader.symbol;
+  document.getElementById("statLeaderNote").textContent = fmtPct(leader.rel3M) + " vs. SPY";
+ }
+ const laggard = RAW.laggards[0];
+ if(laggard){
+  document.getElementById("statLaggard").textContent = laggard.symbol;
+  document.getElementById("statLaggardNote").textContent = fmtPct(laggard.rel3M) + " vs. SPY";
+ }
 }
 
-function quadrantOf(level, momentum){
- if(level >= 0 && momentum >= 0) return "Leading";
- if(level >= 0 && momentum < 0) return "Weakening";
- if(level < 0 && momentum < 0) return "Lagging";
- return "Improving";
-}
-
-function renderStats(sectorSeries){
- const sorted = [...RAW.sectors].sort((a, b) => (b.relative.m3 ?? -Infinity) - (a.relative.m3 ?? -Infinity));
- document.getElementById("statLeader").textContent = sorted[0].name;
- document.getElementById("statLeaderNote").textContent = fmtPct(sorted[0].relative.m3) + " vs. SPY";
- const worst = sorted[sorted.length - 1];
- document.getElementById("statLaggard").textContent = worst.name;
- document.getElementById("statLaggardNote").textContent = fmtPct(worst.relative.m3) + " vs. SPY";
-
- const quadrants = sectorSeries.map(s => quadrantOf(ratioChangePct(s, 3), ratioChangePct(s, 1)));
- document.getElementById("statLeadingCount").textContent = quadrants.filter(q => q === "Leading").length + " / " + sectorSeries.length;
-
- // filled in by renderPersistence()
-}
-
-function renderRrgChart(sectorSeries){
- const points = sectorSeries.map(s => ({
-  x: ratioChangePct(s, 3), y: ratioChangePct(s, 1), name: s.name,
- }));
- const colors = points.map(p => quadrantOf(p.x, p.y) === "Leading" ? themeGreedColor()
-  : quadrantOf(p.x, p.y) === "Lagging" ? themeFearColor() : themeMutedColor());
-
- const xs = points.map(p => Math.abs(p.x));
- const ys = points.map(p => Math.abs(p.y));
- const maxAbs = Math.max(...xs, ...ys, 1) * 1.2;
-
- const labelPlugin = {
-  id: "rrgLabels",
-  afterDatasetsDraw(chart){
-   const { ctx, chartArea } = chart;
-   const meta = chart.getDatasetMeta(0);
-   ctx.save();
-   ctx.font = "11px -apple-system, sans-serif";
-   ctx.fillStyle = themeInkColor();
-   ctx.textBaseline = "middle";
-   meta.data.forEach((el, i) => {
-    // Flip the label to the point's left, right-aligned, when there isn't
-    // room to the right — otherwise a point near the chart's right edge
-    // (a strong "Leading" sector, the most interesting case) draws its
-    // label straight off the canvas.
-    const label = points[i].name;
-    const labelWidth = ctx.measureText(label).width;
-    const fitsRight = el.x + 8 + labelWidth <= chartArea.right;
-    ctx.textAlign = fitsRight ? "left" : "right";
-    ctx.fillText(label, fitsRight ? el.x + 8 : el.x - 8, el.y);
-   });
-   ctx.restore();
+function renderSectorChart(){
+ const sorted = [...RAW.sectors].sort((a, b) => (b.avgRel3M ?? -Infinity) - (a.avgRel3M ?? -Infinity));
+ const colors = sorted.map(s => (s.avgRel3M ?? 0) >= 0 ? themeGreedColor() : themeFearColor());
+ const ctx = document.getElementById("sectorChart").getContext("2d");
+ if(sectorChart) sectorChart.destroy();
+ sectorChart = new Chart(ctx, {
+  type: "bar",
+  data: {
+   labels: sorted.map(s => s.sector),
+   datasets: [{ label: "Avg. 3M relative return", data: sorted.map(s => s.avgRel3M), backgroundColor: colors, borderRadius: 4 }],
   },
- };
-
- const ctx = document.getElementById("rrgChart").getContext("2d");
- if(rrgChart) rrgChart.destroy();
- rrgChart = new Chart(ctx, {
-  type: "scatter",
-  data: { datasets: [{ label: "Sectors", data: points, backgroundColor: colors, pointRadius: 5, showLine: false }] },
-  plugins: [labelPlugin],
   options: {
+   indexAxis: "y",
    responsive: true,
    maintainAspectRatio: false,
    plugins: {
@@ -1032,124 +1045,43 @@ function renderRrgChart(sectorSeries){
     tooltip: {
      callbacks: {
       label: ctx => {
-       const p = points[ctx.dataIndex];
-       return p.name + ": level " + fmtPct(p.x) + ", momentum " + fmtPct(p.y);
+       const s = sorted[ctx.dataIndex];
+       return [
+        "Avg. 3M relative return: " + fmtPct(s.avgRel3M),
+        "Avg. 1M relative return: " + fmtPct(s.avgRel1M),
+        s.leaderCount + " leaders, " + s.laggardCount + " laggards, of " + s.companyCount,
+       ];
       },
      },
     },
    },
    scales: {
-    x: { min: -maxAbs, max: maxAbs, title: { display: true, text: "Level (3M ratio change, %)", color: themeMutedColor(), font: { size: 10 } }, ticks: { color: themeMutedColor() }, grid: { color: themeHairColor() } },
-    y: { min: -maxAbs, max: maxAbs, title: { display: true, text: "Momentum (1M ratio change, %)", color: themeMutedColor(), font: { size: 10 } }, ticks: { color: themeMutedColor() }, grid: { color: themeHairColor() } },
+    x: { ticks: { color: themeMutedColor(), callback: v => (Math.round(v * 100) / 100) + "%" }, grid: { color: themeHairColor() } },
+    y: { ticks: { color: themeMutedColor() }, grid: { display: false } },
    },
   },
  });
 }
 
-function renderPeriodChart(){
- const sorted = [...RAW.sectors].sort((a, b) => (b.relative.m3 ?? -Infinity) - (a.relative.m3 ?? -Infinity));
- const periods = [
-  { key: "m1", label: "1M" }, { key: "m3", label: "3M" }, { key: "m6", label: "6M" }, { key: "y1", label: "1Y" },
- ];
- const colors = ["#d98a3d", "#b56f2a", "#8e7cc3", "#6f8fac"];
- const ctx = document.getElementById("periodChart").getContext("2d");
- if(periodChart) periodChart.destroy();
- periodChart = new Chart(ctx, {
-  type: "bar",
-  data: {
-   labels: sorted.map(s => s.name),
-   datasets: periods.map((p, i) => ({
-    label: p.label,
-    data: sorted.map(s => s.relative[p.key]),
-    backgroundColor: colors[i],
-    borderRadius: 3,
-   })),
-  },
-  options: {
-   responsive: true,
-   maintainAspectRatio: false,
-   plugins: {
-    legend: { labels: { color: themeMutedColor() } },
-    tooltip: { callbacks: { label: ctx => ctx.dataset.label + ": " + fmtPct(ctx.parsed.y) } },
-   },
-   scales: {
-    x: { ticks: { color: themeMutedColor(), maxRotation: 45, minRotation: 45 }, grid: { display: false } },
-    y: { ticks: { color: themeMutedColor(), callback: v => v + "%" }, grid: { color: themeHairColor() } },
-   },
-  },
- });
-}
+function renderPersistence(){
+ const pairs = RAW.persistencePairs;
+ const wrap = document.querySelector("#persistenceScatter").closest(".chart-box");
 
-function renderRotationTable(sectorSeries){
- const rows = sectorSeries.map(s => ({
-  name: s.name, relative: s.relative,
-  quadrant: quadrantOf(ratioChangePct(s, 3), ratioChangePct(s, 1)),
- })).sort((a, b) => (b.relative.m3 ?? -Infinity) - (a.relative.m3 ?? -Infinity));
-
- document.getElementById("rotationBody").innerHTML = rows.map(r => `<tr>
-  <td>${r.name}</td>
-  <td>${fmtPct(r.relative.m1)}</td>
-  <td>${fmtPct(r.relative.m3)}</td>
-  <td>${fmtPct(r.relative.m6)}</td>
-  <td>${fmtPct(r.relative.y1)}</td>
-  <td><span class="badge-quadrant badge-${r.quadrant.toLowerCase()}">${r.quadrant}</span></td>
- </tr>`).join("");
-}
-
-function renderPersistence(sectorSeries){
- // Month-end snapshots across the available history: at each trading day
- // that starts a new calendar month, rank all 11 sectors by their
- // trailing-21-trading-day ratio change, then pair each sector's rank
- // that month against its rank the following month.
- const n = sectorSeries[0].dates.length;
- const monthStarts = [];
- for(let i = 21; i < n; i++){
-  const prevMonth = sectorSeries[0].dates[i - 1].slice(0, 7);
-  const curMonth = sectorSeries[0].dates[i].slice(0, 7);
-  if(curMonth !== prevMonth) monthStarts.push(i);
+ if(!pairs || pairs.length < 30){
+  if(persistenceScatter){ persistenceScatter.destroy(); persistenceScatter = null; }
+  document.getElementById("persistenceMethodTable").innerHTML =
+   '<div class="method-note">Not enough weekly history accumulated yet (' + RAW.weeksAccumulated + ' snapshot' + (RAW.weeksAccumulated === 1 ? "" : "s") + ' so far) — check back in a few weeks as this page\'s weekly snapshots build up.</div>';
+  return;
  }
 
- const monthlyRanks = []; // one array of {name, rank} per month boundary
- for(const idx of monthStarts){
-  const changes = sectorSeries.map(s => ({
-   name: s.name,
-   change: ((s.ratio[idx] / s.ratio[idx - 21]) - 1) * 100,
-  }));
-  const sorted = [...changes].sort((a, b) => b.change - a.change);
-  const ranks = {};
-  sorted.forEach((c, i) => { ranks[c.name] = i + 1; });
-  monthlyRanks.push(ranks);
- }
-
- const pairs = [];
- for(let m = 0; m + 1 < monthlyRanks.length; m++){
-  for(const s of sectorSeries){
-   pairs.push({ x: monthlyRanks[m][s.name], y: monthlyRanks[m + 1][s.name] });
-  }
- }
-
- const pEl = document.getElementById("statPersistence");
- const pNoteEl = document.getElementById("statPersistenceNote");
- if(pairs.length >= 20){
-  const spear = spearmanRegression(pairs.map(p => p.x), pairs.map(p => p.y));
-  pEl.textContent = (spear.r >= 0 ? "+" : "") + spear.r.toFixed(2);
-  pNoteEl.textContent = "n=" + spear.n + " sector-months, p=" + (spear.p < 0.001 ? "<0.001" : spear.p.toFixed(3));
-  renderPersistenceScatter(pairs);
- }else{
-  pEl.textContent = "n/a";
-  pNoteEl.textContent = "Not enough month boundaries in the available history";
-  document.getElementById("persistenceMethodTable").innerHTML = '<div class="method-note">Not enough history to test.</div>';
- }
-}
-
-function renderPersistenceScatter(pairs){
- const pearsonReg = linearRegression(pairs.map(p => p.x), pairs.map(p => p.y));
+ const pearson = linearRegression(pairs.map(p => p.x), pairs.map(p => p.y));
  const spear = spearmanRegression(pairs.map(p => p.x), pairs.map(p => p.y));
 
- const xMin = Math.min(...pairs.map(p => p.x)), xMax = Math.max(...pairs.map(p => p.x));
+ const xs = pairs.map(p => p.x);
+ const xMin = Math.min(...xs), xMax = Math.max(...xs);
  const linePoints = [
-  { x: xMin, y: pearsonReg.intercept + pearsonReg.slope * xMin },
-  { x: xMax, y: pearsonReg.intercept + pearsonReg.slope * xMax },
+  { x: xMin, y: pearson.intercept + pearson.slope * xMin },
+  { x: xMax, y: pearson.intercept + pearson.slope * xMax },
  ];
 
  const ctx = document.getElementById("persistenceScatter").getContext("2d");
@@ -1158,7 +1090,7 @@ function renderPersistenceScatter(pairs){
   type: "scatter",
   data: {
    datasets: [
-    { label: "Sector-months", data: pairs, backgroundColor: "rgba(217,138,61,0.5)", pointRadius: 4, showLine: false },
+    { label: "Stock-weeks", data: pairs, backgroundColor: themeGreedColor(), pointRadius: 2, pointHoverRadius: 4, showLine: false },
     { label: "Regression fit", type: "line", data: linePoints, borderColor: themeInkColor(), borderWidth: 1.5, borderDash: [4, 3], pointRadius: 0, fill: false },
    ],
   },
@@ -1169,13 +1101,13 @@ function renderPersistenceScatter(pairs){
     legend: { display: false },
     tooltip: {
      callbacks: {
-      label: ctx => ctx.dataset.label === "Sector-months" ? ("Rank " + ctx.raw.x + " → " + ctx.raw.y) : null,
+      label: ctx => ctx.dataset.label === "Stock-weeks" ? (ctx.raw.symbol + " (rank " + ctx.raw.x + "): " + fmtPct(ctx.raw.y) + " forward") : null,
      },
     },
    },
    scales: {
-    x: { reverse: false, title: { display: true, text: "Rank this month (1 = best)", color: themeMutedColor(), font: { size: 10 } }, ticks: { color: themeMutedColor(), stepSize: 1 }, grid: { color: themeHairColor() } },
-    y: { title: { display: true, text: "Rank next month (1 = best)", color: themeMutedColor(), font: { size: 10 } }, ticks: { color: themeMutedColor(), stepSize: 1 }, grid: { color: themeHairColor() } },
+    x: { title: { display: true, text: "3-month relative-return rank (1 = strongest)", color: themeMutedColor(), font: { size: 10 } }, ticks: { color: themeMutedColor(), font: { size: 10 } }, grid: { color: themeHairColor() } },
+    y: { title: { display: true, text: "Forward relative return to next snapshot (%)", color: themeMutedColor(), font: { size: 10 } }, ticks: { color: themeMutedColor(), font: { size: 10 } }, grid: { color: themeHairColor() } },
    },
   },
  });
@@ -1187,7 +1119,7 @@ function renderPersistenceScatter(pairs){
    "<td>" + stats.n + "</td>" +
    "<td>" + stats.r.toFixed(2) + "</td>" +
    "<td>" + (stats.r2 * 100).toFixed(1) + "%</td>" +
-   "<td>" + (stats.slope >= 0 ? "+" : "") + stats.slope.toFixed(2) + "</td>" +
+   "<td>" + (stats.slope >= 0 ? "+" : "") + stats.slope.toFixed(3) + "</td>" +
    "<td>" + stats.t.toFixed(2) + "</td>" +
    '<td class="' + (sig ? "sig" : "") + '">' + (stats.p < 0.001 ? "<0.001" : stats.p.toFixed(3)) + "</td>" +
   "</tr>";
@@ -1195,10 +1127,74 @@ function renderPersistenceScatter(pairs){
  document.getElementById("persistenceMethodTable").innerHTML =
   '<table class="method-table">' +
    "<thead><tr><th>Method</th><th>n</th><th>r</th><th>r&sup2;</th><th>slope</th><th>t</th><th>p</th></tr></thead>" +
-   "<tbody>" + row("Pearson (OLS)", pearsonReg) + row("Spearman (&rho;)", spear) + "</tbody>" +
+   "<tbody>" + row("Pearson (OLS)", pearson) + row("Spearman (&rho;)", spear) + "</tbody>" +
   "</table>" +
-  '<div class="method-note">Ranks are 1 (best relative return that month) through 11 (worst); a positive slope near +1 would mean this month\'s rank order simply repeats next month.</div>';
+  '<div class="method-note">Pooled across ' + RAW.weeksAccumulated + ' weekly snapshot' + (RAW.weeksAccumulated === 1 ? "" : "s") + '. A negative slope means better-ranked (rank closer to 1) stocks earned higher forward relative returns — i.e. leadership persisted; a positive slope means it reversed.</div>';
 }
+
+function renderLeaderTable(rows, tbodyId){
+ const tbody = document.getElementById(tbodyId);
+ if(!rows || !rows.length){
+  tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; color:var(--muted); padding:24px;">No qualifying stocks.</td></tr>';
+  return;
+ }
+ tbody.innerHTML = rows.map(r => `<tr>
+  <td><span class="sector-name">${r.symbol}</span></td>
+  <td><span class="sector-ticker">${r.sector || "—"}</span></td>
+  <td>${fmtPct(r.rel1M)}</td>
+  <td>${fmtPct(r.rel3M)}</td>
+ </tr>`).join("");
+}
+
+function badgeFor(classification){
+ if(!classification) return '<span class="cell-na">—</span>';
+ const cls = classification.toLowerCase();
+ return '<span class="badge-tag badge-' + cls + '">' + classification + '</span>';
+}
+
+function sortBy(key){
+ if(SORT_KEY === key){
+  SORT_DIR = -SORT_DIR;
+ }else{
+  SORT_KEY = key;
+  SORT_DIR = key === "rank3M" ? 1 : -1;
+ }
+ renderTable();
+}
+
+function renderTable(){
+ const rows = [...RAW.companies].sort((a, b) => {
+  const av = a[SORT_KEY], bv = b[SORT_KEY];
+  if(av === null || av === undefined) return 1;
+  if(bv === null || bv === undefined) return -1;
+  if(typeof av === "string") return av.localeCompare(bv) * SORT_DIR;
+  return (av - bv) * SORT_DIR;
+ });
+
+ const tbody = document.getElementById("tableBody");
+ tbody.innerHTML = rows.map(r => `<tr>
+   <td><span class="sector-name">${r.symbol}</span></td>
+   <td><span class="sector-ticker">${r.sector || "—"}</span></td>
+   <td>${fmtPrice(r.price)}</td>
+   <td>${fmtPct(r.ret1M)}</td>
+   <td>${fmtPct(r.ret3M)}</td>
+   <td>${fmtPct(r.rel1M)}</td>
+   <td>${fmtPct(r.rel3M)}</td>
+   <td>${badgeFor(r.classification)}</td>
+  </tr>`).join("");
+
+ document.querySelectorAll("#stockTable thead th").forEach(th => {
+  const key = th.dataset.key;
+  th.classList.toggle("sorted", key === SORT_KEY);
+  const arrow = th.querySelector(".sort-arrow");
+  if(arrow) arrow.textContent = (key === SORT_KEY && SORT_DIR === 1) ? "▴" : "▾";
+ });
+}
+
+document.querySelectorAll("#stockTable thead th").forEach(th => {
+ const key = th.dataset.key;
+ if(key) th.addEventListener("click", () => sortBy(key));
+});
 
 init();
 </script>
