@@ -152,7 +152,7 @@ document.addEventListener("DOMContentLoaded", function(){
 </script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Insider Buying/Selling — Michael J. Stevenson</title>
+<title>Equity Risk Premium by Sector — Michael J. Stevenson</title>
 
 <style>
 
@@ -399,10 +399,21 @@ h1{
 }
 
 .chart-canvas-wrap{
- height:420px;
+ height:380px;
 }
 
 /* TABLE */
+
+.table-grid{
+ display:grid;
+ grid-template-columns:1fr 1fr;
+ gap:16px;
+ margin-bottom:30px;
+}
+
+@media (max-width:900px){
+ .table-grid{ grid-template-columns:1fr; }
+}
 
 .table-box{
  background:var(--card);
@@ -411,6 +422,8 @@ h1{
  overflow-x:auto;
  margin-bottom:30px;
 }
+
+.table-grid .table-box{ margin-bottom:0; }
 
 .table-box-header{
  padding:18px 20px 4px;
@@ -429,7 +442,7 @@ table{
  width:100%;
  border-collapse:collapse;
  font-size:13px;
- min-width:760px;
+ min-width:600px;
 }
 
 thead th{
@@ -490,13 +503,58 @@ tbody td:nth-child(2){
 .cell-neg{ color:var(--ink); }
 .cell-na{ color:var(--muted); }
 
-.badge-cluster{
- display:inline-block;
+/* SCATTER / METHOD TABLE (mirrors /factor-analysis) */
+
+.scatter-canvas-wrap{
+ height:300px;
+ margin-bottom:12px;
+ position:relative;
+}
+
+.method-table{
+ width:100%;
+ border-collapse:collapse;
+ font-family:var(--mono);
+ font-size:11px;
+ margin-top:8px;
+}
+
+.method-table th{
+ text-align:right;
+ padding:6px 5px;
+ color:var(--muted);
  font-size:10px;
- color:var(--greed);
- border:1px solid var(--greed);
- border-radius:4px;
- padding:1px 5px;
+ letter-spacing:0.03em;
+ font-weight:600;
+ border-bottom:1px solid var(--hair);
+ white-space:nowrap;
+}
+
+.method-table th:first-child{ text-align:left; }
+
+.method-table td{
+ padding:7px 5px;
+ text-align:right;
+ border-bottom:1px solid var(--hair);
+ white-space:nowrap;
+ color:var(--ink);
+}
+
+.method-table td:first-child{
+ text-align:left;
+ font-family:var(--sans);
+ color:var(--muted);
+}
+
+.method-table tr:last-child td{ border-bottom:none; }
+
+.method-table .sig{ color:var(--greed); }
+
+.method-note{
+ font-size:11px;
+ color:var(--muted);
+ margin-top:8px;
+ font-style:italic;
 }
 
 /* EXPLAINER */
@@ -628,20 +686,13 @@ tbody td:nth-child(2){
 <a href="/seasonality.html">Seasonality</a>
 <a href="/concentration.html">Concentration</a>
 <a href="/earnings-revisions.html">Earnings Revisions</a>
-<a href="/earnings-surprise.html">Earnings Surprise History</a>
-<a href="/insider-buying-selling.html" class="active">Insider Buying/Selling</a>
+<a href="/insider-buying-selling.html">Insider Buying/Selling</a>
 <a href="/small-cap-vs-large-cap.html">Small Cap vs. Large Cap Spread</a>
 <a href="/share-count-trends.html">Share Count Trends</a>
 <a href="/sector-correlation.html">Sector Correlation Matrix</a>
 <a href="/sector-rotation.html">Sector Rotation Model</a>
-<a href="/dividend-growth-screener.html">Dividend Growth Screener</a>
-<a href="/international-vs-us.html">International vs. US Relative Performance</a>
-<a href="/analyst-estimate-dispersion.html">Analyst Estimate Dispersion</a>
-<a href="/shareholder-yield.html">Shareholder Yield</a>
-<a href="/stock-split-tracker.html">Stock Split Tracker</a>
-<a href="/pe-divergence.html">Forward vs. Trailing P/E Divergence</a>
 <a href="/relative-strength-leaders.html">Relative Strength Leaders/Laggards</a>
-<a href="/equity-risk-premium.html">Equity Risk Premium by Sector</a>
+<a href="/equity-risk-premium.html" class="active">Equity Risk Premium by Sector</a>
 </div>
 </div>
 
@@ -708,169 +759,145 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 
 <div class="header">
 <div>
-<h1>Insider Buying/Selling</h1>
-<div class="subtitle">Officers, directors, and 10%+ owners file a Form 4 within two business days of trading their own company's stock. Aggregated open-market-style activity, trailing 90 days, across the full S&amp;P 500.</div>
+<h1>Equity Risk Premium by Sector</h1>
+<div class="subtitle">A simple, locally-computed earnings-yield-minus-Treasury-yield premium across the full S&amp;P 500 and its 11 GICS sectors — a different, cruder lens than the Damodaran DCF model behind Implied Equity Risk Premium.</div>
 </div>
 <div class="updated" id="updated">Loading...</div>
 </div>
 
 <div class="stat-grid">
 <div class="stat-card">
-<div class="stat-label">Net Insider $ Flow</div>
-<div class="stat-value" id="statNetFlow">—</div>
-<div class="stat-note">Buy $ minus sell $, trailing 90 days</div>
+<div class="stat-label">Market Median ERP</div>
+<div class="stat-value" id="statMedianErp">—</div>
+<div class="stat-note" id="statMedianErpNote">Earnings yield − 10Y Treasury</div>
 </div>
 <div class="stat-card">
-<div class="stat-label">Buy $ / Sell $</div>
-<div class="stat-value" id="statBuySell" style="font-size:18px;">—</div>
-<div class="stat-note">Total dollar volume, both directions</div>
+<div class="stat-label">10-Year Treasury Yield</div>
+<div class="stat-value" id="statRiskFree" style="color:var(--ink);">—</div>
+<div class="stat-note" id="statRiskFreeNote">Risk-free rate used below</div>
 </div>
 <div class="stat-card">
-<div class="stat-label">Companies Net Buying</div>
-<div class="stat-value" id="statCompaniesBuying" style="font-size:20px;">—</div>
-<div class="stat-note" id="statCompaniesNote">Of companies with any activity</div>
+<div class="stat-label">Highest-ERP Sector</div>
+<div class="stat-value" id="statBestSector" style="font-size:20px;">—</div>
+<div class="stat-note" id="statBestSectorNote">Median sector ERP</div>
 </div>
 <div class="stat-card">
-<div class="stat-label">Cluster-Buy Signals</div>
-<div class="stat-value" id="statClusterBuys">—</div>
-<div class="stat-note">2+ insiders buying, zero sellers</div>
+<div class="stat-label">Lowest-ERP Sector</div>
+<div class="stat-value" id="statWorstSector" style="font-size:20px;">—</div>
+<div class="stat-note" id="statWorstSectorNote">Median sector ERP</div>
 </div>
 </div>
 
 <div class="chart-box">
 <div class="chart-box-header">
 <div>
-<h2>Net insider $ flow by sector, trailing 90 days</h2>
-<div class="chart-subhead">Buy $ minus sell $ across Common Stock transactions, pooled across each sector's constituents</div>
+<h2>Median equity risk premium by sector</h2>
+<div class="chart-subhead">Median (1 / trailing P/E) − 10-year Treasury yield, across each sector's constituents with a positive trailing P/E on file</div>
 </div>
 </div>
 <div class="chart-canvas-wrap">
-<canvas id="sectorFlowChart"></canvas>
+<canvas id="sectorChart"></canvas>
 </div>
 </div>
 
+<div class="chart-box">
+<div class="chart-box-header">
+<div>
+<h2>Market median ERP over time</h2>
+<div class="chart-subhead">Accumulated one weekly snapshot at a time — will be short until this page has run for a while</div>
+</div>
+</div>
+<div class="chart-canvas-wrap">
+<canvas id="historyChart"></canvas>
+</div>
+</div>
+
+<div class="chart-box">
+<div class="chart-box-header">
+<div>
+<h2>Does the market actually price risk into the premium?</h2>
+<div class="chart-subhead">Each point is one stock: x-axis is its Alpha Vantage-reported beta, y-axis is its equity risk premium — a rational risk/return tradeoff would put higher-beta stocks at a higher ERP (positive slope)</div>
+</div>
+</div>
+<div class="scatter-canvas-wrap">
+<canvas id="betaScatter"></canvas>
+</div>
+<div id="betaMethodTable"></div>
+</div>
+
+<div class="table-grid">
 <div class="table-box">
 <div class="table-box-header">
-<h2>Cluster buying</h2>
-<div class="chart-subhead">Companies with 2+ distinct insiders buying and zero insiders selling in the window — the least ambiguous signal this data can offer</div>
+<h2>Highest ERP</h2>
+<div class="chart-subhead">Cheapest earnings yield relative to the risk-free rate</div>
 </div>
-<table id="clusterTable">
-<thead>
-<tr>
-<th>Symbol</th>
-<th>Sector</th>
-<th>Buyers</th>
-<th>Shares Bought</th>
-<th>$ Bought</th>
-</tr>
-</thead>
-<tbody id="clusterTableBody">
-<tr><td colspan="5" style="text-align:center; color:var(--muted); padding:24px;">Loading&hellip;</td></tr>
-</tbody>
+<table id="leaderTable">
+<thead><tr><th>Symbol</th><th>Sector</th><th>P/E</th><th>ERP</th></tr></thead>
+<tbody id="leaderBody"><tr><td colspan="4" style="text-align:center; color:var(--muted); padding:24px;">Loading&hellip;</td></tr></tbody>
 </table>
 </div>
-
 <div class="table-box">
 <div class="table-box-header">
-<h2>Largest individual purchases</h2>
-<div class="chart-subhead">Single largest priced open-market-style buys, by dollar value</div>
+<h2>Lowest ERP</h2>
+<div class="chart-subhead">Richest earnings yield relative to the risk-free rate</div>
 </div>
-<table id="buysTable">
-<thead>
-<tr>
-<th>Date</th>
-<th>Symbol</th>
-<th>Executive</th>
-<th>Title</th>
-<th>Shares</th>
-<th>Price</th>
-<th>Value</th>
-</tr>
-</thead>
-<tbody id="buysTableBody">
-<tr><td colspan="7" style="text-align:center; color:var(--muted); padding:24px;">Loading&hellip;</td></tr>
-</tbody>
+<table id="laggardTable">
+<thead><tr><th>Symbol</th><th>Sector</th><th>P/E</th><th>ERP</th></tr></thead>
+<tbody id="laggardBody"><tr><td colspan="4" style="text-align:center; color:var(--muted); padding:24px;">Loading&hellip;</td></tr></tbody>
 </table>
 </div>
-
-<div class="table-box">
-<div class="table-box-header">
-<h2>Largest individual sales</h2>
-<div class="chart-subhead">Shown for completeness — insider selling is common and often reflects diversification, taxes, or a pre-scheduled 10b5-1 plan rather than a bearish view (see methodology)</div>
-</div>
-<table id="sellsTable">
-<thead>
-<tr>
-<th>Date</th>
-<th>Symbol</th>
-<th>Executive</th>
-<th>Title</th>
-<th>Shares</th>
-<th>Price</th>
-<th>Value</th>
-</tr>
-</thead>
-<tbody id="sellsTableBody">
-<tr><td colspan="7" style="text-align:center; color:var(--muted); padding:24px;">Loading&hellip;</td></tr>
-</tbody>
-</table>
 </div>
 
 <div class="table-box">
 <div class="table-box-header">
-<h2>All companies with activity</h2>
-<div class="chart-subhead">Every S&amp;P 500 name with at least one qualifying transaction in the trailing 90 days</div>
+<h2>Full S&amp;P 500</h2>
+<div class="chart-subhead">Trailing P/E, earnings yield, beta, and equity risk premium per constituent</div>
 </div>
 <table id="stockTable">
 <thead>
 <tr>
 <th data-key="symbol">Symbol</th>
 <th data-key="sector">Sector</th>
-<th data-key="buyValue">Buy $<span class="sort-arrow">▾</span></th>
-<th data-key="sellValue">Sell $<span class="sort-arrow">▾</span></th>
-<th data-key="netValue">Net $<span class="sort-arrow">▾</span></th>
-<th data-key="buyCount">Buys<span class="sort-arrow">▾</span></th>
-<th data-key="sellCount">Sells<span class="sort-arrow">▾</span></th>
-<th data-key="uniqueBuyers">Buyers<span class="sort-arrow">▾</span></th>
+<th data-key="peRatio">P/E<span class="sort-arrow">▾</span></th>
+<th data-key="earningsYield">Earn. Yield<span class="sort-arrow">▾</span></th>
+<th data-key="beta">Beta<span class="sort-arrow">▾</span></th>
+<th data-key="erp">ERP<span class="sort-arrow">▾</span></th>
 </tr>
 </thead>
 <tbody id="tableBody">
-<tr><td colspan="8" style="text-align:center; color:var(--muted); padding:30px;">Loading insider transactions data&hellip;</td></tr>
+<tr><td colspan="6" style="text-align:center; color:var(--muted); padding:30px;">Loading equity risk premium data&hellip;</td></tr>
 </tbody>
 </table>
 </div>
 
 <div class="explainer">
 <h2>Methodology</h2>
-<p>Universe is the full S&amp;P 500. For every constituent, Alpha Vantage's <code>INSIDER_TRANSACTIONS</code> endpoint returns each Form 4 line item filed by officers, directors, and 10%+ owners — company, filer, security type, transaction date, shares, price, and whether it was an acquisition or disposal. Only transactions dated within the trailing 90 days as of the last refresh are counted.</p>
-<p>Raw Form 4 data is dominated by routine equity-compensation mechanics, not discretionary trading decisions: RSUs vesting, options being exercised, and the automatic tax-withholding sale that immediately follows a vesting event. None of that reflects an insider choosing to buy or sell. This page keeps only <code>security_type = Common Stock</code> transactions reporting a real, positive share price — RSU vesting and stock awards report a blank or zero price, so this filters most of that noise out. It is an honest partial fix, not a complete one: a pre-scheduled 10b5-1 plan sale (an executive who set up automatic periodic sales months in advance, unrelated to any current view on the stock) still reports a normal share price and passes this filter indistinguishably from a discretionary open-market sale. Treat the sell side of this data with real skepticism for that reason.</p>
-<p>Insider buying doesn't have the same problem — there's no routine, automatic mechanism that makes an executive spend their own cash to buy more stock, which is why academic research on this topic (e.g. Lakonishok &amp; Lee, 2001, <i>Are Insider Trades Informative?</i>) consistently finds insider purchases carry more signal than insider sales. This page reflects that asymmetry directly: cluster buying (2+ distinct insiders buying with zero sellers in the window) is surfaced as the headline signal, and the largest individual purchases get their own table, while the largest sales are shown only for completeness with an explicit caveat rather than framed as bearish.</p>
-<p>Sector and company name come from the same weekly metadata Alpha Vantage sweep that backs <a href="/sector-beeswarm.html">Sector Beeswarm</a>, reused here rather than paying for a second full-index pass just for labels. Refreshes weekly (Saturday mornings) — a single company's insider filings are sparse enough that a trailing-90-day aggregate has little reason to move day to day.</p>
-<div class="source">Source: <a href="https://www.alphavantage.co/" target="_blank" rel="noopener">Alpha Vantage — INSIDER_TRANSACTIONS</a></div>
+<p>Universe is the full S&amp;P 500. For every constituent, Alpha Vantage's <code>COMPANY_OVERVIEW</code> endpoint provides trailing P/E and beta; a single <code>TREASURY_YIELD</code> call (10-year, monthly) provides the risk-free rate. Earnings yield is <code>1 / trailing P/E</code>, expressed as a percentage; equity risk premium here is simply <code>earnings yield − 10-year Treasury yield</code>. Companies with a zero or negative trailing P/E (i.e. trailing losses) are excluded rather than clamped to zero or some floor value — a negative P/E doesn't imply a negative or zero earnings yield, it means the ratio isn't meaningful at all.</p>
+<p>This is deliberately a much simpler, cruder construction than <a href="/implied-erp.html">Implied Equity Risk Premium</a>, which sources Aswath Damodaran's FCFE/DCF-based model — a forward-looking cash-flow estimate, not a backward-looking accounting ratio. What's used here is the classic "Fed model" comparison (trailing earnings yield vs. the long bond), chosen because it's computable cross-sectionally, per sector and per stock, from data Alpha Vantage already provides — Damodaran's model is a single market-wide number, not a per-sector or per-stock one. The Fed model has well-known blind spots worth being upfront about: it ignores earnings growth expectations entirely (a fast grower and a stagnant company with the same trailing P/E get the same "premium" here), and it's sensitive to the inflation regime in ways the *equity* risk premium conceptually shouldn't be, since Treasury yields move with inflation expectations but reported trailing earnings don't adjust the same way.</p>
+<p>The beta-vs-ERP scatter tests a real question with this simpler measure: if the market prices risk rationally, riskier (higher-beta) stocks should trade at a higher earnings yield to compensate — a positive relationship here. A flat or negative one (which happens in practice — high-beta growth names often carry rich P/Es precisely because of their growth profile, not despite their risk) would say something genuinely informative about the current market, not just be a data artifact; both a linear (Pearson) and rank-based (Spearman) fit are reported since one can mislead when the relationship isn't linear.</p>
+<p>Refreshes weekly (Saturday, after that morning's other data jobs) — a trailing-P/E-derived earnings yield only moves when a company reports new earnings or its price moves meaningfully, so daily refresh would mostly reflect noise. Sector and company name come from each stock's own <code>COMPANY_OVERVIEW</code> response (GICS-normalized the same way <a href="/sector-beeswarm.html">Sector Beeswarm</a>'s own metadata sweep is), not a shared cross-page lookup, since this job already pays for the full sweep.</p>
+<div class="source">Source: <a href="https://www.alphavantage.co/" target="_blank" rel="noopener">Alpha Vantage — COMPANY_OVERVIEW, TREASURY_YIELD</a></div>
 </div>
 
 </div>
 
 <script>
-const DATA_URL = "/api/insider-transactions";
+const DATA_URL = "/api/equity-risk-premium";
 
 let RAW = null;
-let SORT_KEY = "netValue";
+let SORT_KEY = "erp";
 let SORT_DIR = -1;
 
-function fmtUsd(v){
- if(v === null || v === undefined) return null;
- const abs = Math.abs(v);
- const sign = v < 0 ? "-" : "";
- if(abs >= 1e9) return sign + "$" + (abs/1e9).toFixed(2) + "B";
- if(abs >= 1e6) return sign + "$" + (abs/1e6).toFixed(2) + "M";
- if(abs >= 1e3) return sign + "$" + (abs/1e3).toFixed(1) + "K";
- return sign + "$" + abs.toFixed(0);
+function fmtPct(v, digits){
+ if(v === null || v === undefined || isNaN(v)) return "—";
+ digits = digits === undefined ? 2 : digits;
+ return (v >= 0 ? "+" : "") + v.toFixed(digits) + "%";
 }
 
-function fmtUsdSigned(v){
- if(v === null || v === undefined) return null;
- return (v >= 0 ? "+" : "") + fmtUsd(v);
+function fmtNum(v, digits){
+ if(v === null || v === undefined || isNaN(v)) return "—";
+ digits = digits === undefined ? 2 : digits;
+ return v.toFixed(digits);
 }
 
 function showError(message){
@@ -878,12 +905,78 @@ function showError(message){
  banner.textContent = message;
  banner.style.display = "block";
 }
-
 function showWarning(message){
  const banner = document.getElementById("warningBanner");
  banner.textContent = message;
  banner.style.display = "block";
 }
+
+function themeInkColor(){
+ const v = getComputedStyle(document.documentElement).getPropertyValue("--ink").trim();
+ return v || "#eae6da";
+}
+function themeMutedColor(){
+ const v = getComputedStyle(document.documentElement).getPropertyValue("--muted").trim();
+ return v || "#8b9199";
+}
+function themeHairColor(){
+ const v = getComputedStyle(document.documentElement).getPropertyValue("--hair").trim();
+ return v || "#2b3138";
+}
+function themeGreedColor(){
+ const v = getComputedStyle(document.documentElement).getPropertyValue("--greed").trim();
+ return v || "#d98a3d";
+}
+function themeFearColor(){
+ const v = getComputedStyle(document.documentElement).getPropertyValue("--fear").trim();
+ return v || "#6f8fac";
+}
+
+// ---- Stats helpers — same methodology as /factor-analysis, duplicated
+// here since every page on this site is self-contained (see CLAUDE.md). ----
+function linearRegression(xs, ys){
+ const n = xs.length;
+ const mx = xs.reduce((a, b) => a + b, 0) / n;
+ const my = ys.reduce((a, b) => a + b, 0) / n;
+ const sxx = xs.reduce((s, x) => s + (x - mx) ** 2, 0);
+ const sxy = xs.reduce((s, x, i) => s + (x - mx) * (ys[i] - my), 0);
+ const syy = ys.reduce((s, y) => s + (y - my) ** 2, 0);
+ const slope = sxy / sxx;
+ const intercept = my - slope * mx;
+ const r = sxy / Math.sqrt(sxx * syy);
+ const r2 = r * r;
+ const dof = n - 2;
+ const sse = ys.reduce((s, y, i) => s + (y - (intercept + slope * xs[i])) ** 2, 0);
+ const seSlope = Math.sqrt((sse / dof) / sxx);
+ const t = slope / seSlope;
+ const p = 2 * (1 - normalCdf(Math.abs(t)));
+ return { n, slope, intercept, r, r2, t, dof, p, sse };
+}
+function normalCdf(x){ return 0.5 * (1 + erf(x / Math.SQRT2)); }
+function erf(x){
+ const sign = x < 0 ? -1 : 1;
+ x = Math.abs(x);
+ const a1 = 0.254829592, a2 = -0.284496736, a3 = 1.421413741, a4 = -1.453152027, a5 = 1.061405429, p = 0.3275911;
+ const t = 1 / (1 + p * x);
+ const y = 1 - (((((a5 * t + a4) * t) + a3) * t + a2) * t + a1) * t * Math.exp(-x * x);
+ return sign * y;
+}
+function rankArray(arr){
+ const idx = arr.map((v, i) => i).sort((a, b) => arr[a] - arr[b]);
+ const ranks = new Array(arr.length);
+ let i = 0;
+ while(i < idx.length){
+  let j = i;
+  while(j + 1 < idx.length && arr[idx[j + 1]] === arr[idx[i]]) j++;
+  const avgRank = (i + j) / 2 + 1;
+  for(let k = i; k <= j; k++) ranks[idx[k]] = avgRank;
+  i = j + 1;
+ }
+ return ranks;
+}
+function spearmanRegression(xs, ys){ return linearRegression(rankArray(xs), rankArray(ys)); }
+
+let sectorChart = null, historyChart = null, betaScatter = null;
 
 async function init(){
  try{
@@ -892,8 +985,7 @@ async function init(){
   if(!res.ok || data.error) throw new Error(data.error || "failed to load");
 
   RAW = data;
-  document.getElementById("updated").textContent =
-   "As of " + data.asOfDate + " · " + new Date(data.generated_at_utc).toLocaleString();
+  document.getElementById("updated").textContent = "As of " + new Date(data.generated_at_utc).toLocaleString();
 
   if(data.loadedCount < data.universeSize){
    showWarning("Only " + data.loadedCount + " of " + data.universeSize + " S&P 500 constituents loaded this run — some data may be temporarily unavailable.");
@@ -901,64 +993,49 @@ async function init(){
 
   renderStats();
   renderSectorChart();
-  renderClusterTable();
-  renderTransactionTable(data.notableBuys, "buysTableBody");
-  renderTransactionTable(data.notableSells, "sellsTableBody");
+  renderHistoryChart();
+  renderBetaScatter();
+  renderLeaderTable(data.leaders, "leaderBody");
+  renderLeaderTable(data.laggards, "laggardBody");
   renderTable();
 
  }catch(e){
-  showError("Couldn't load insider transactions data (" + e.message + "). The /api/insider-transactions function may not have run yet.");
+  showError("Couldn't load equity risk premium data (" + e.message + "). The /api/equity-risk-premium function may not have run yet.");
   document.getElementById("tableBody").innerHTML =
-   '<tr><td colspan="8" style="text-align:center; color:var(--muted); padding:30px;">No data available.</td></tr>';
+   '<tr><td colspan="6" style="text-align:center; color:var(--muted); padding:30px;">No data available.</td></tr>';
  }
 }
 
 function renderStats(){
  const m = RAW.market;
+ const medEl = document.getElementById("statMedianErp");
+ medEl.textContent = fmtPct(m.medianErp);
+ medEl.classList.toggle("cell-neg", m.medianErp !== null && m.medianErp < 0);
+ document.getElementById("statMedianErpNote").textContent = "n=" + m.companyCount + " companies";
 
- const netEl = document.getElementById("statNetFlow");
- netEl.textContent = fmtUsdSigned(m.netValue) || "—";
- netEl.classList.toggle("cell-neg", m.netValue !== null && m.netValue < 0);
+ document.getElementById("statRiskFree").textContent = m.riskFreeRate === null ? "—" : m.riskFreeRate.toFixed(2) + "%";
+ document.getElementById("statRiskFreeNote").textContent = "10Y Treasury, " + (m.riskFreeAsOf || "—");
 
- document.getElementById("statBuySell").textContent = (fmtUsd(m.buyValue) || "—") + " / " + (fmtUsd(m.sellValue) || "—");
- document.getElementById("statCompaniesBuying").textContent = m.companiesNetBuying + " / " + m.companiesNetSelling + " selling";
- document.getElementById("statCompaniesNote").textContent = m.companiesWithActivity + " of " + RAW.universeSize + " had any qualifying activity";
- document.getElementById("statClusterBuys").textContent = m.clusterBuyCount;
+ const sortedSectors = [...RAW.sectors].sort((a, b) => (b.medianErp ?? -Infinity) - (a.medianErp ?? -Infinity));
+ if(sortedSectors.length){
+  const best = sortedSectors[0], worst = sortedSectors[sortedSectors.length - 1];
+  document.getElementById("statBestSector").textContent = best.sector;
+  document.getElementById("statBestSectorNote").textContent = fmtPct(best.medianErp);
+  document.getElementById("statWorstSector").textContent = worst.sector;
+  document.getElementById("statWorstSectorNote").textContent = fmtPct(worst.medianErp);
+ }
 }
 
-const SECTOR_COLORS = {
- "Technology": "#d98a3d",
- "Information Technology": "#d98a3d",
- "Financials": "#6f8fac",
- "Health Care": "#8e7cc3",
- "Consumer Discretionary": "#e0b04f",
- "Communication Services": "#4f7ae0",
- "Industrials": "#5a9d6f",
- "Consumer Staples": "#4fb0c0",
- "Energy": "#c0564f",
- "Utilities": "#b56f2a",
- "Materials": "#9a9a9a",
- "Real Estate": "#c77dbd",
-};
-
-let sectorFlowChart = null;
-
 function renderSectorChart(){
- const sorted = [...RAW.sectors].sort((a, b) => (b.netValue ?? -Infinity) - (a.netValue ?? -Infinity));
- const colors = sorted.map(s => s.netValue >= 0 ? "rgba(217,138,61,0.75)" : "rgba(111,143,172,0.75)");
-
- const ctx = document.getElementById("sectorFlowChart").getContext("2d");
- if(sectorFlowChart) sectorFlowChart.destroy();
- sectorFlowChart = new Chart(ctx, {
+ const sorted = [...RAW.sectors].sort((a, b) => (b.medianErp ?? -Infinity) - (a.medianErp ?? -Infinity));
+ const colors = sorted.map(s => (s.medianErp ?? 0) >= 0 ? themeGreedColor() : themeFearColor());
+ const ctx = document.getElementById("sectorChart").getContext("2d");
+ if(sectorChart) sectorChart.destroy();
+ sectorChart = new Chart(ctx, {
   type: "bar",
   data: {
    labels: sorted.map(s => s.sector),
-   datasets: [{
-    label: "Net $ flow",
-    data: sorted.map(s => s.netValue),
-    backgroundColor: colors,
-    borderRadius: 4,
-   }],
+   datasets: [{ label: "Median ERP", data: sorted.map(s => s.medianErp), backgroundColor: colors, borderRadius: 4 }],
   },
   options: {
    indexAxis: "y",
@@ -971,53 +1048,134 @@ function renderSectorChart(){
       label: ctx => {
        const s = sorted[ctx.dataIndex];
        return [
-        "Net: " + (fmtUsdSigned(s.netValue) || "—"),
-        "Buy: " + (fmtUsd(s.buyValue) || "—") + " (" + s.buyCount + " txns)",
-        "Sell: " + (fmtUsd(s.sellValue) || "—") + " (" + s.sellCount + " txns)",
-        s.stockCount + " companies with activity",
+        "Median ERP: " + fmtPct(s.medianErp),
+        "Avg. ERP: " + fmtPct(s.avgErp),
+        "n=" + s.companyCount + " companies",
        ];
       },
      },
     },
    },
    scales: {
-    x: { ticks: { color: "#8b9199", callback: v => fmtUsd(v) }, grid: { color: "#2b3138" } },
-    y: { ticks: { color: "#8b9199" }, grid: { display: false } },
+    x: { ticks: { color: themeMutedColor(), callback: v => (Math.round(v * 100) / 100) + "%" }, grid: { color: themeHairColor() } },
+    y: { ticks: { color: themeMutedColor() }, grid: { display: false } },
    },
   },
  });
 }
 
-function renderClusterTable(){
- const clusters = RAW.stocks.filter(s => s.clusterBuy).sort((a, b) => b.buyValue - a.buyValue);
- const tbody = document.getElementById("clusterTableBody");
- if(!clusters.length){
-  tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; color:var(--muted); padding:24px;">No cluster-buy signals in the current window.</td></tr>';
-  return;
- }
- tbody.innerHTML = clusters.map(s => `<tr>
-  <td><span class="sector-name">${s.symbol}</span></td>
-  <td><span class="sector-ticker">${s.sector || "—"}</span></td>
-  <td>${s.uniqueBuyers}</td>
-  <td>${s.buyCount}</td>
-  <td class="cell-pos">${fmtUsd(s.buyValue) || "—"}</td>
- </tr>`).join("");
+function renderHistoryChart(){
+ const points = RAW.history || [];
+ const ctx = document.getElementById("historyChart").getContext("2d");
+ if(historyChart) historyChart.destroy();
+ historyChart = new Chart(ctx, {
+  type: "line",
+  data: {
+   labels: points.map(p => p.date),
+   datasets: [{
+    label: "Market Median ERP",
+    data: points.map(p => p.medianErp),
+    borderColor: themeGreedColor(),
+    backgroundColor: themeGreedColor(),
+    borderWidth: 1.5,
+    pointRadius: points.length < 8 ? 3 : 0,
+    fill: false,
+   }],
+  },
+  options: {
+   responsive: true,
+   maintainAspectRatio: false,
+   interaction: { mode: "index", intersect: false },
+   plugins: {
+    legend: { display: false },
+    tooltip: { callbacks: { label: ctx => "Median ERP: " + fmtPct(ctx.parsed.y) } },
+   },
+   scales: {
+    x: { ticks: { color: themeMutedColor(), maxTicksLimit: 8 }, grid: { color: themeHairColor() } },
+    y: { ticks: { color: themeMutedColor(), callback: v => (Math.round(v * 100) / 100) + "%" }, grid: { color: themeHairColor() } },
+   },
+  },
+ });
 }
 
-function renderTransactionTable(rows, tbodyId){
- const tbody = document.getElementById(tbodyId);
- if(!rows || !rows.length){
-  tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; color:var(--muted); padding:24px;">No qualifying transactions in the current window.</td></tr>';
+function renderBetaScatter(){
+ const pairs = RAW.betaPairs || [];
+ if(pairs.length < 20){
+  if(betaScatter){ betaScatter.destroy(); betaScatter = null; }
+  document.getElementById("betaMethodTable").innerHTML =
+   '<div class="method-note">Not enough stocks with both a valid ERP and a reported beta this run to test.</div>';
   return;
  }
- tbody.innerHTML = rows.map(t => `<tr>
-  <td><span class="sector-ticker">${t.date}</span></td>
-  <td><span class="sector-name">${t.symbol}</span></td>
-  <td style="font-family:var(--sans); text-align:left;">${t.executive}</td>
-  <td style="font-family:var(--sans); text-align:left; color:var(--muted); font-size:12px;">${t.title || "—"}</td>
-  <td>${t.shares.toLocaleString()}</td>
-  <td>${fmtUsd(t.price)}</td>
-  <td>${fmtUsd(t.value)}</td>
+
+ const pearson = linearRegression(pairs.map(p => p.x), pairs.map(p => p.y));
+ const spear = spearmanRegression(pairs.map(p => p.x), pairs.map(p => p.y));
+
+ const xs = pairs.map(p => p.x);
+ const xMin = Math.min(...xs), xMax = Math.max(...xs);
+ const linePoints = [
+  { x: xMin, y: pearson.intercept + pearson.slope * xMin },
+  { x: xMax, y: pearson.intercept + pearson.slope * xMax },
+ ];
+
+ const ctx = document.getElementById("betaScatter").getContext("2d");
+ if(betaScatter) betaScatter.destroy();
+ betaScatter = new Chart(ctx, {
+  type: "scatter",
+  data: {
+   datasets: [
+    { label: "Stocks", data: pairs, backgroundColor: themeGreedColor(), pointRadius: 2.5, pointHoverRadius: 4, showLine: false },
+    { label: "Regression fit", type: "line", data: linePoints, borderColor: themeInkColor(), borderWidth: 1.5, borderDash: [4, 3], pointRadius: 0, fill: false },
+   ],
+  },
+  options: {
+   responsive: true,
+   maintainAspectRatio: false,
+   plugins: {
+    legend: { display: false },
+    tooltip: {
+     callbacks: {
+      label: ctx => ctx.dataset.label === "Stocks" ? (ctx.raw.symbol + ": beta " + fmtNum(ctx.raw.x) + ", ERP " + fmtPct(ctx.raw.y)) : null,
+     },
+    },
+   },
+   scales: {
+    x: { title: { display: true, text: "Beta", color: themeMutedColor(), font: { size: 10 } }, ticks: { color: themeMutedColor(), font: { size: 10 } }, grid: { color: themeHairColor() } },
+    y: { title: { display: true, text: "Equity risk premium (%)", color: themeMutedColor(), font: { size: 10 } }, ticks: { color: themeMutedColor(), font: { size: 10 } }, grid: { color: themeHairColor() } },
+   },
+  },
+ });
+
+ function row(label, stats){
+  const sig = stats.p < 0.05;
+  return "<tr>" +
+   "<td>" + label + "</td>" +
+   "<td>" + stats.n + "</td>" +
+   "<td>" + stats.r.toFixed(2) + "</td>" +
+   "<td>" + (stats.r2 * 100).toFixed(1) + "%</td>" +
+   "<td>" + (stats.slope >= 0 ? "+" : "") + stats.slope.toFixed(3) + "</td>" +
+   "<td>" + stats.t.toFixed(2) + "</td>" +
+   '<td class="' + (sig ? "sig" : "") + '">' + (stats.p < 0.001 ? "<0.001" : stats.p.toFixed(3)) + "</td>" +
+  "</tr>";
+ }
+ document.getElementById("betaMethodTable").innerHTML =
+  '<table class="method-table">' +
+   "<thead><tr><th>Method</th><th>n</th><th>r</th><th>r&sup2;</th><th>slope</th><th>t</th><th>p</th></tr></thead>" +
+   "<tbody>" + row("Pearson (OLS)", pearson) + row("Spearman (&rho;)", spear) + "</tbody>" +
+  "</table>" +
+  '<div class="method-note">A positive slope means higher-beta stocks carry a higher equity risk premium — i.e. the market is pricing risk the way a rational risk/return tradeoff predicts; a flat or negative slope means it isn\'t, at least not through this lens.</div>';
+}
+
+function renderLeaderTable(rows, tbodyId){
+ const tbody = document.getElementById(tbodyId);
+ if(!rows || !rows.length){
+  tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; color:var(--muted); padding:24px;">No qualifying stocks.</td></tr>';
+  return;
+ }
+ tbody.innerHTML = rows.map(r => `<tr>
+  <td><span class="sector-name">${r.symbol}</span></td>
+  <td><span class="sector-ticker">${r.sector || "—"}</span></td>
+  <td>${fmtNum(r.peRatio)}</td>
+  <td>${fmtPct(r.erp)}</td>
  </tr>`).join("");
 }
 
@@ -1032,7 +1190,7 @@ function sortBy(key){
 }
 
 function renderTable(){
- const rows = [...RAW.stocks].sort((a, b) => {
+ const rows = [...RAW.companies].sort((a, b) => {
   const av = a[SORT_KEY], bv = b[SORT_KEY];
   if(av === null || av === undefined) return 1;
   if(bv === null || bv === undefined) return -1;
@@ -1041,20 +1199,14 @@ function renderTable(){
  });
 
  const tbody = document.getElementById("tableBody");
- tbody.innerHTML = rows.map(r => {
-  const netCls = r.netValue >= 0 ? "cell-pos" : "cell-neg";
-  const clusterBadge = r.clusterBuy ? ' <span class="badge-cluster">cluster</span>' : "";
-  return `<tr>
-   <td><span class="sector-name">${r.symbol}</span>${clusterBadge}</td>
+ tbody.innerHTML = rows.map(r => `<tr>
+   <td><span class="sector-name">${r.symbol}</span></td>
    <td><span class="sector-ticker">${r.sector || "—"}</span></td>
-   <td>${fmtUsd(r.buyValue) || "—"}</td>
-   <td>${fmtUsd(r.sellValue) || "—"}</td>
-   <td class="${netCls}">${fmtUsdSigned(r.netValue) || "—"}</td>
-   <td>${r.buyCount}</td>
-   <td>${r.sellCount}</td>
-   <td>${r.uniqueBuyers}</td>
-  </tr>`;
- }).join("");
+   <td>${fmtNum(r.peRatio)}</td>
+   <td>${fmtPct(r.earningsYield)}</td>
+   <td>${fmtNum(r.beta)}</td>
+   <td>${fmtPct(r.erp)}</td>
+  </tr>`).join("");
 
  document.querySelectorAll("#stockTable thead th").forEach(th => {
   const key = th.dataset.key;
