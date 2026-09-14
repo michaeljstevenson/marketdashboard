@@ -137,6 +137,11 @@
   to = "/.netlify/functions/equity-risk-premium"
   status = 200
 
+[[redirects]]
+  from = "/api/earnings-growth-divergence"
+  to = "/.netlify/functions/earnings-growth-divergence"
+  status = 200
+
 # The Statistical Engine page was briefly at these paths.
 [[redirects]]
   from = "/streak-scanner"
@@ -336,3 +341,15 @@
   # daily: a trailing P/E-derived earnings yield doesn't meaningfully move
   # day to day.
   schedule = "30 12 * * 6"
+
+[functions."scheduled-earnings-growth-divergence-background"]
+  # Weekly, Saturday 13:00 UTC — after both scheduled-relative-strength-
+  # background (12:00 UTC) and scheduled-equity-risk-premium-background
+  # (12:30 UTC). Real dependency, not just pacing: this job reads
+  # scheduled-relative-strength-background's own latest.json for 3-month
+  # price performance instead of running a second price sweep, so it needs
+  # that job to have already completed this same Saturday morning for
+  # fresh data (falls back to EPS-growth-only rows, not a crash, if it
+  # hasn't). ~503 sequential Alpha Vantage EARNINGS calls at 1050ms spacing
+  # plus a retry pass.
+  schedule = "0 13 * * 6"
