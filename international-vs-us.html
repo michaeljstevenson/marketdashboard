@@ -152,7 +152,7 @@ document.addEventListener("DOMContentLoaded", function(){
 </script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Small Cap vs. Large Cap Spread — Michael J. Stevenson</title>
+<title>International vs. US Relative Performance — Michael J. Stevenson</title>
 
 <style>
 
@@ -660,11 +660,11 @@ tbody td:first-child{
 <a href="/concentration.html">Concentration</a>
 <a href="/earnings-revisions.html">Earnings Revisions</a>
 <a href="/insider-buying-selling.html">Insider Buying/Selling</a>
-<a href="/small-cap-vs-large-cap.html" class="active">Small Cap vs. Large Cap Spread</a>
+<a href="/small-cap-vs-large-cap.html">Small Cap vs. Large Cap Spread</a>
 <a href="/share-count-trends.html">Share Count Trends</a>
 <a href="/sector-correlation.html">Sector Correlation Matrix</a>
 <a href="/sector-rotation.html">Sector Rotation Model</a>
-<a href="/international-vs-us.html">International vs. US Relative Performance</a>
+<a href="/international-vs-us.html" class="active">International vs. US Relative Performance</a>
 <a href="/analyst-estimate-dispersion.html">Analyst Estimate Dispersion</a>
 <a href="/shareholder-yield.html">Shareholder Yield</a>
 </div>
@@ -733,30 +733,30 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 
 <div class="header">
 <div>
-<h1>Small Cap vs. Large Cap Spread</h1>
-<div class="subtitle">Relative strength of small-cap (IWM) and mid-cap (MDY) stocks against large-caps (SPY), indexed since IWM's 2000 inception, conditioned on the Fed rate cycle and 10-year Treasury yield moves.</div>
+<h1>International vs. US Relative Performance</h1>
+<div class="subtitle">Relative strength of developed-markets-ex-US (EFA) and emerging-markets (EEM) stocks against the US (SPY), indexed since EEM's 2003 inception, conditioned on the direction of the US dollar.</div>
 </div>
 <div class="updated" id="updated">Loading...</div>
 </div>
 
 <div class="stat-grid">
 <div class="stat-card">
-<div class="stat-label">Small/Large Ratio</div>
+<div class="stat-label">Developed/US Ratio</div>
 <div class="stat-value" id="statRatio">—</div>
-<div class="stat-note" id="statRatioNote">Indexed to 100 at IWM's inception</div>
+<div class="stat-note" id="statRatioNote">Indexed to 100 at EEM's inception</div>
 </div>
 <div class="stat-card">
 <div class="stat-label">12-Month Relative Return</div>
 <div class="stat-value" id="statRel12m">—</div>
-<div class="stat-note">IWM vs. SPY, trailing 252 trading days</div>
+<div class="stat-note">EFA vs. SPY, trailing 252 trading days</div>
 </div>
 <div class="stat-card">
-<div class="stat-label">Current Fed Regime</div>
+<div class="stat-label">Current Dollar Regime</div>
 <div class="stat-value" id="statRegime" style="font-size:20px;">—</div>
 <div class="stat-note" id="statRegimeNote">Avg. monthly spread return, this regime</div>
 </div>
 <div class="stat-card">
-<div class="stat-label">Correlation w/ 10Y Yield &Delta;</div>
+<div class="stat-label">Correlation w/ EUR/USD &Delta;</div>
 <div class="stat-value" id="statCorr" style="font-size:20px;">—</div>
 <div class="stat-note" id="statCorrNote">Monthly, Pearson r</div>
 </div>
@@ -765,8 +765,8 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <div class="chart-box">
 <div class="chart-box-header">
 <div>
-<h2>Small-cap / large-cap ratio, since 2000</h2>
-<div class="chart-subhead">IWM adjusted-close ÷ SPY adjusted-close, both indexed to 100 at IWM's inception — rising means small-caps are outperforming</div>
+<h2>Developed &amp; emerging / US ratios, since 2003</h2>
+<div class="chart-subhead">EFA and EEM adjusted-close ÷ SPY adjusted-close, all indexed to 100 at EEM's inception — rising means international is outperforming</div>
 </div>
 </div>
 <div class="chart-canvas-wrap">
@@ -777,7 +777,7 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <div class="table-box">
 <div class="table-box-header">
 <h2>Trailing return ladder</h2>
-<div class="chart-subhead">Total return (dividends reinvested) by cap size, as of the last close</div>
+<div class="chart-subhead">Total return (dividends reinvested) by region, as of the last close</div>
 </div>
 <table id="ladderTable">
 <thead><tr id="ladderHead"></tr></thead>
@@ -785,14 +785,14 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <tr><td colspan="8" style="text-align:center; color:var(--muted); padding:24px;">Loading&hellip;</td></tr>
 </tbody>
 </table>
-<div class="table-footnote">1M–1Y are cumulative returns; 3Y/5Y/10Y are annualized. Small = IWM (Russell 2000 proxy), Mid = MDY (S&amp;P MidCap 400 proxy), Large = SPY (S&amp;P 500 proxy).</div>
+<div class="table-footnote">1M–1Y are cumulative returns; 3Y/5Y/10Y are annualized. Developed = EFA (MSCI EAFE proxy), Emerging = EEM (MSCI Emerging Markets proxy), US = SPY (S&amp;P 500 proxy).</div>
 </div>
 
 <div class="chart-box">
 <div class="chart-box-header">
 <div>
 <h2>Rolling 12-month relative return</h2>
-<div class="chart-subhead">Small/large ratio's trailing 252-trading-day return — positive stretches are small-cap-leadership regimes, negative stretches are large-cap-leadership regimes</div>
+<div class="chart-subhead">Developed/US ratio's trailing 252-trading-day return — positive stretches are international-leadership regimes, negative stretches are US-leadership regimes</div>
 </div>
 </div>
 <div class="chart-canvas-wrap">
@@ -803,8 +803,8 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <div class="chart-box">
 <div class="chart-box-header">
 <div>
-<h2>Average monthly spread return by Fed rate regime</h2>
-<div class="chart-subhead">Months classified by the trailing 3-month change in the effective Fed funds rate; bars show the average small-vs-large monthly return within each regime</div>
+<h2>Average monthly spread return by dollar regime</h2>
+<div class="chart-subhead">Months classified by the trailing 3-month change in EUR/USD; bars show the average developed-vs-US monthly return within each regime</div>
 </div>
 </div>
 <div class="chart-canvas-wrap short">
@@ -815,8 +815,8 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <div class="chart-box">
 <div class="chart-box-header">
 <div>
-<h2>Monthly spread return vs. change in the 10-year Treasury yield</h2>
-<div class="chart-subhead">Each point is one month: x-axis is the month's change in the 10-year yield (percentage points), y-axis is that month's small-vs-large return</div>
+<h2>Monthly spread return vs. change in EUR/USD</h2>
+<div class="chart-subhead">Each point is one month: x-axis is the month's % change in EUR/USD (a rising value means a weaker dollar), y-axis is that month's developed-vs-US return</div>
 </div>
 </div>
 <div class="scatter-canvas-wrap">
@@ -827,17 +827,17 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 
 <div class="explainer">
 <h2>Methodology</h2>
-<p>Small-cap and large-cap exposure are proxied by two liquid, dividend-adjusted ETFs rather than the underlying indices themselves: IWM (iShares Russell 2000 ETF) for small-caps and SPY (SPDR S&amp;P 500 ETF Trust) for large-caps, with MDY (SPDR S&amp;P MidCap 400 ETF Trust) added as a mid-cap rung for the return ladder below. Alpha Vantage's <code>TIME_SERIES_DAILY_ADJUSTED</code> adjusted-close series (dividends and splits applied) gives a true total-return comparison for all three. The ratio series is indexed to 100 at IWM's May 2000 inception — the binding constraint on how far back this page can go, even though SPY and MDY both trade back to the 1990s.</p>
-<p>The Fed-regime split classifies each calendar month by the trailing 3-month change in the effective federal funds rate (Alpha Vantage <code>FEDERAL_FUNDS_RATE</code>): a rise of more than 0.10 percentage points is "Hiking," a fall of more than 0.10pp is "Cutting," and anything in between is "Holding." The intuition being tested is that small-caps, which on average carry more floating-rate debt and less pricing power than large-caps, should be more sensitive to the direction and speed of rate changes — but note the sample sizes are modest (a few dozen months per regime across just one rate cycle's worth of history since 2000), so treat the regime averages as suggestive, not a robust statistical result.</p>
-<p>The scatter panel runs the same two-method check used throughout <a href="/factor-analysis.html">Factor Analysis</a>: Pearson (OLS) correlation alongside Spearman rank correlation, so a relationship can't be quietly resting on one or two extreme months. Both are shown; a low r&sup2; here isn't a bug — a single macro variable rarely explains much of a monthly return series, and the point of showing the regression is to be honest about how weak (or strong) that single-variable relationship actually is, not to oversell it.</p>
-<p>Refreshes once daily after the US market close (index levels move every trading day, unlike the site's sparse-event or weekly-refresh datasets); the Fed funds rate and Treasury yield series are re-pulled in full each run since both are cheap, low-volume monthly series.</p>
-<div class="source">Source: <a href="https://www.alphavantage.co/" target="_blank" rel="noopener">Alpha Vantage</a> — TIME_SERIES_DAILY_ADJUSTED, FEDERAL_FUNDS_RATE, TREASURY_YIELD</div>
+<p>International and US exposure are proxied by three liquid, dividend-adjusted ETFs rather than the underlying indices themselves: EFA (iShares MSCI EAFE ETF) for developed markets ex-US, EEM (iShares MSCI Emerging Markets ETF) for emerging markets, and SPY (SPDR S&amp;P 500 ETF Trust) for the US. Alpha Vantage's <code>TIME_SERIES_DAILY_ADJUSTED</code> adjusted-close series (dividends and splits applied) gives a true total-return comparison for all three, in US-dollar terms — the ETFs already embed whatever currency translation a US-based investor would actually experience, so no separate FX adjustment is applied to the ratio series itself. The ratio series is indexed to 100 at EEM's April 2003 inception — the binding constraint on how far back this page can go, even though EFA and SPY both trade back further (EFA to 2001, SPY to 1993).</p>
+<p>The dollar-regime split classifies each calendar month by the trailing 3-month % change in the EUR/USD exchange rate (Alpha Vantage <code>FX_MONTHLY</code>): a rise of more than 2% is "Dollar Weakening," a fall of more than 2% is "Dollar Strengthening," and anything in between is "Flat." EUR/USD is a single currency pair, not a broad trade-weighted dollar index — it's used here as a simple, freely-available proxy for dollar direction, not a precise measure of it, so treat the regime split as a first-order approximation. The intuition being tested is the textbook one: a weaker dollar should flatter unhedged international returns (translation effect) and, in practice, has often coincided with periods of relative US underperformance for other reasons too — but the regime averages below are a small, noisy sample (a couple dozen months per regime), so read them as suggestive rather than a robust statistical result.</p>
+<p>The scatter panel runs the same two-method check used throughout <a href="/factor-analysis.html">Factor Analysis</a> and <a href="/small-cap-vs-large-cap.html">Small Cap vs. Large Cap Spread</a>: Pearson (OLS) correlation alongside Spearman rank correlation, so a relationship can't be quietly resting on one or two extreme months. Both are shown; a low r&sup2; here isn't a bug — a single currency pair rarely explains much of a monthly equity-return series, and the point of showing the regression is to be honest about how weak (or strong) that single-variable relationship actually is, not to oversell it.</p>
+<p>Refreshes once daily after the US market close (index levels move every trading day); the EUR/USD monthly series is re-pulled in full each run since it's a cheap, low-volume series.</p>
+<div class="source">Source: <a href="https://www.alphavantage.co/" target="_blank" rel="noopener">Alpha Vantage</a> — TIME_SERIES_DAILY_ADJUSTED, FX_MONTHLY</div>
 </div>
 
 </div>
 
 <script>
-const DATA_URL = "/api/smallcap-largecap";
+const DATA_URL = "/api/international-us";
 
 let RAW = null;
 
@@ -940,9 +940,9 @@ function percentileRank(arr, value){
  return (below / arr.length) * 100;
 }
 
-// ---- Monthly aggregation: Fed regime classification, month-end ratio
-// resampling, and the monthly small-vs-large / rate-change pairing used by
-// the regime bar chart and the correlation scatter. ----
+// ---- Monthly aggregation: dollar regime classification, month-end ratio
+// resampling, and the monthly developed-vs-US / EUR-USD-change pairing
+// used by the regime bar chart and the correlation scatter. ----
 
 function prevMonthKey(ym){
  let [y, m] = ym.split("-").map(Number);
@@ -958,31 +958,40 @@ function monthEndMap(dates, values){
 }
 
 function buildMonthly(data){
- const ratioByMonth = monthEndMap(data.dates, data.ratioSmallLarge);
- const fedRows = data.fedFundsMonthly; // ascending
- const treasuryByMonth = new Map();
- for(let i = 1; i < data.treasury10yMonthly.length; i++){
-  const cur = data.treasury10yMonthly[i], prev = data.treasury10yMonthly[i - 1];
-  treasuryByMonth.set(cur.date.slice(0, 7), Math.round((cur.value - prev.value) * 1000) / 1000);
+ const ratioByMonth = monthEndMap(data.dates, data.ratioDevelopedUS);
+ const eurUsd = data.eurUsdMonthly; // ascending
+
+ const eurUsdChangeByMonth = new Map();
+ for(let i = 3; i < eurUsd.length; i++){
+  const ym = eurUsd[i].date.slice(0, 7);
+  const pctChange = ((eurUsd[i].value / eurUsd[i - 3].value) - 1) * 100;
+  eurUsdChangeByMonth.set(ym, Math.round(pctChange * 100) / 100);
+ }
+
+ const monthlyChangeByMonth = new Map();
+ for(let i = 1; i < eurUsd.length; i++){
+  const ym = eurUsd[i].date.slice(0, 7);
+  const pctChange = ((eurUsd[i].value / eurUsd[i - 1].value) - 1) * 100;
+  monthlyChangeByMonth.set(ym, Math.round(pctChange * 100) / 100);
  }
 
  const records = [];
  let currentRegime = null;
- for(let i = 3; i < fedRows.length; i++){
-  const ym = fedRows[i].date.slice(0, 7);
-  const change = fedRows[i].value - fedRows[i - 3].value;
-  const regime = change > 0.1 ? "Hiking" : change < -0.1 ? "Cutting" : "Holding";
-  currentRegime = regime; // fedRows is ascending, so the loop's last write is the latest month
+ const months = [...eurUsdChangeByMonth.keys()].sort();
+ for(const ym of months){
+  const change3m = eurUsdChangeByMonth.get(ym);
+  const regime = change3m > 2 ? "Dollar Weakening" : change3m < -2 ? "Dollar Strengthening" : "Flat";
+  currentRegime = regime; // months is ascending, so the loop's last write is the latest month
   const ratioNow = ratioByMonth.get(ym);
   const ratioPrev = ratioByMonth.get(prevMonthKey(ym));
   const relReturn = (ratioNow !== undefined && ratioPrev !== undefined)
    ? Math.round((ratioNow / ratioPrev - 1) * 10000) / 100
    : null;
-  const d10y = treasuryByMonth.has(ym) ? treasuryByMonth.get(ym) : null;
-  records.push({ ym, regime, relReturn, d10y });
+  const dEurUsd = monthlyChangeByMonth.has(ym) ? monthlyChangeByMonth.get(ym) : null;
+  records.push({ ym, regime, relReturn, dEurUsd });
  }
 
- const regimeGroups = { Hiking: [], Holding: [], Cutting: [] };
+ const regimeGroups = { "Dollar Strengthening": [], Flat: [], "Dollar Weakening": [] };
  for(const r of records){
   if(r.relReturn === null) continue;
   regimeGroups[r.regime].push(r.relReturn);
@@ -996,8 +1005,8 @@ function buildMonthly(data){
  }
 
  const corrPairs = records
-  .filter(r => r.relReturn !== null && r.d10y !== null)
-  .map(r => ({ x: r.d10y, y: r.relReturn, ym: r.ym }));
+  .filter(r => r.relReturn !== null && r.dEurUsd !== null)
+  .map(r => ({ x: r.dEurUsd, y: r.relReturn, ym: r.ym }));
 
  return { records, regimeStats, currentRegime, corrPairs };
 }
@@ -1023,7 +1032,7 @@ async function init(){
   renderCorrScatter(monthly);
 
  }catch(e){
-  showError("Couldn't load small-cap/large-cap data (" + e.message + "). The /api/smallcap-largecap function may not have run yet.");
+  showError("Couldn't load international-vs-US data (" + e.message + "). The /api/international-us function may not have run yet.");
  }
 }
 
@@ -1039,7 +1048,7 @@ function ordinal(n){
 }
 
 function renderStats(data, monthly){
- const ratio = data.ratioSmallLarge;
+ const ratio = data.ratioDevelopedUS;
  const current = ratio[ratio.length - 1];
  const pct = percentileRank(ratio, current);
  document.getElementById("statRatio").textContent = current.toFixed(1);
@@ -1058,7 +1067,7 @@ function renderStats(data, monthly){
  document.getElementById("statRegime").textContent = regime || "—";
  if(stats && stats.n){
   document.getElementById("statRegimeNote").textContent =
-   "Avg. " + fmtPct(stats.mean) + "/mo in " + regime + " regimes (n=" + stats.n + " mo.)";
+   "Avg. " + fmtPct(stats.mean) + "/mo in “" + regime + "” regimes (n=" + stats.n + " mo.)";
  }
 
  const corrEl = document.getElementById("statCorr");
@@ -1070,8 +1079,8 @@ function renderStats(data, monthly){
   let interp = "Weak linear relationship in this sample";
   if(Math.abs(reg.r) >= 0.15){
    interp = reg.r < 0
-    ? "Small-caps have tended to lag when yields rise"
-    : "Small-caps have tended to lead when yields rise";
+    ? "International has tended to lag when the dollar weakens"
+    : "International has tended to lead when the dollar weakens";
   }
   corrNoteEl.textContent = interp + " (n=" + reg.n + " mo.)";
  }
@@ -1085,7 +1094,8 @@ function renderRatioChart(data){
   data: {
    labels: data.dates,
    datasets: [
-    { label: "Small/Large ratio", data: data.ratioSmallLarge, borderColor: themeGreedColor(), backgroundColor: themeGreedColor(), borderWidth: 1.3, pointRadius: 0, fill: false },
+    { label: "Developed/US ratio", data: data.ratioDevelopedUS, borderColor: themeGreedColor(), backgroundColor: themeGreedColor(), borderWidth: 1.3, pointRadius: 0, fill: false },
+    { label: "Emerging/US ratio", data: data.ratioEmergingUS, borderColor: themeFearColor(), backgroundColor: themeFearColor(), borderWidth: 1.3, pointRadius: 0, fill: false },
    ],
   },
   options: {
@@ -1093,8 +1103,8 @@ function renderRatioChart(data){
    maintainAspectRatio: false,
    interaction: { mode: "index", intersect: false },
    plugins: {
-    legend: { display: false },
-    tooltip: { callbacks: { label: ctx => "Ratio: " + ctx.parsed.y.toFixed(1) } },
+    legend: { display: true, position: "top", labels: { color: themeMutedColor(), boxWidth: 12, font: { size: 11 } } },
+    tooltip: { callbacks: { label: ctx => ctx.dataset.label + ": " + ctx.parsed.y.toFixed(1) } },
    },
    scales: {
     x: { ticks: { color: themeMutedColor(), maxTicksLimit: 8 }, grid: { color: themeHairColor() } },
@@ -1112,12 +1122,12 @@ function fmtLadderCell(cell){
 function renderLadderTable(data){
  const periods = data.ladder.periods;
  const headEl = document.getElementById("ladderHead");
- headEl.innerHTML = "<th>Cap size</th>" + periods.map((p, i) => "<th>" + p + (i >= 4 ? "*" : "") + "</th>").join("");
+ headEl.innerHTML = "<th>Region</th>" + periods.map((p, i) => "<th>" + p + (i >= 4 ? "*" : "") + "</th>").join("");
 
  const rows = [
-  { label: "Small (IWM)", key: "small" },
-  { label: "Mid (MDY)", key: "mid" },
-  { label: "Large (SPY)", key: "large" },
+  { label: "Developed (EFA)", key: "developed" },
+  { label: "Emerging (EEM)", key: "emerging" },
+  { label: "US (SPY)", key: "us" },
  ];
  document.getElementById("ladderBody").innerHTML = rows.map(r => {
   const cells = data.ladder[r.key].map(fmtLadderCell).join("</td><td>");
@@ -1134,7 +1144,7 @@ function rollingRelReturn(ratio, window){
 }
 
 function renderRollingChart(data){
- const rolling = rollingRelReturn(data.ratioSmallLarge, 252);
+ const rolling = rollingRelReturn(data.ratioDevelopedUS, 252);
  const firstValid = rolling.findIndex(v => v !== null);
  const dates = data.dates.slice(firstValid);
  const values = rolling.slice(firstValid);
@@ -1171,7 +1181,7 @@ function renderRollingChart(data){
 }
 
 function renderRegimeChart(monthly){
- const order = ["Cutting", "Holding", "Hiking"];
+ const order = ["Dollar Strengthening", "Flat", "Dollar Weakening"];
  const stats = order.map(k => monthly.regimeStats[k]);
  const colors = stats.map(s => (s.mean === null ? themeMutedColor() : s.mean >= 0 ? themeGreedColor() : themeFearColor()));
 
@@ -1234,12 +1244,12 @@ function renderCorrScatter(monthly){
     legend: { display: false },
     tooltip: {
      callbacks: {
-      label: ctx => ctx.dataset.label === "Months" ? (ctx.raw.ym + ": Δ10Y " + fmtPct(ctx.raw.x) + "pp → " + fmtPct(ctx.raw.y)) : null,
+      label: ctx => ctx.dataset.label === "Months" ? (ctx.raw.ym + ": Δ EUR/USD " + fmtPct(ctx.raw.x) + " → " + fmtPct(ctx.raw.y)) : null,
      },
     },
    },
    scales: {
-    x: { title: { display: true, text: "Δ 10Y yield (pp)", color: themeMutedColor(), font: { size: 10 } }, ticks: { color: themeMutedColor(), font: { size: 10 } }, grid: { color: themeHairColor() } },
+    x: { title: { display: true, text: "Δ EUR/USD (%, 1mo.)", color: themeMutedColor(), font: { size: 10 } }, ticks: { color: themeMutedColor(), font: { size: 10 } }, grid: { color: themeHairColor() } },
     y: { title: { display: true, text: "Monthly spread return (%)", color: themeMutedColor(), font: { size: 10 } }, ticks: { color: themeMutedColor(), font: { size: 10 } }, grid: { color: themeHairColor() } },
    },
   },
@@ -1263,7 +1273,7 @@ function renderCorrScatter(monthly){
    "<thead><tr><th>Method</th><th>n</th><th>r</th><th>r&sup2;</th><th>slope</th><th>t</th><th>p</th></tr></thead>" +
    "<tbody>" + row("Pearson (OLS)", pearson) + row("Spearman (&rho;)", spear) + "</tbody>" +
   "</table>" +
-  '<div class="method-note">Slope is in percentage points of monthly spread return per 1pp move in the 10-year yield that month.</div>';
+  '<div class="method-note">Slope is in percentage points of monthly developed-vs-US spread return per 1% move in EUR/USD that month.</div>';
 }
 
 init();
