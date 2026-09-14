@@ -132,6 +132,11 @@
   to = "/.netlify/functions/stock-splits"
   status = 200
 
+[[redirects]]
+  from = "/api/pe-divergence"
+  to = "/.netlify/functions/pe-divergence"
+  status = 200
+
 # The Statistical Engine page was briefly at these paths.
 [[redirects]]
   from = "/streak-scanner"
@@ -310,6 +315,15 @@
   # same invocation. Weekly, not daily: a stock split is a rare, discrete
   # event, not something that needs a daily re-check.
   schedule = "10 11 * * 6"
+
+[functions."scheduled-pe-divergence-background"]
+  # Weekly, Saturday 11:40 UTC — after scheduled-splits-background (11:10
+  # UTC), leaving room for that job's own two-stage sweep to clear the
+  # rate limit before this one's ~503 sequential OVERVIEW calls start.
+  # Snapshot-only endpoint (no history), so the market-wide median is
+  # appended to a running weekly time series each run rather than
+  # overwritten — see scheduled-pe-divergence-background.js.
+  schedule = "40 11 * * 6"
 
 [functions."scheduled-insider-transactions-background"]
   # Weekly, Saturday 10:30 UTC — after the rest of the Saturday block
