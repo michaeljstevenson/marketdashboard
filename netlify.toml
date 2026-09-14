@@ -137,6 +137,11 @@
   to = "/.netlify/functions/dividend-growth"
   status = 200
 
+[[redirects]]
+  from = "/api/international-us"
+  to = "/.netlify/functions/international-us"
+  status = 200
+
 # The Statistical Engine page was briefly at these paths.
 [[redirects]]
   from = "/streak-scanner"
@@ -297,6 +302,13 @@
   # daily block's logs easy to read in order. Daily, not weekly, since
   # (unlike a sparse-event dataset) index levels move every trading day.
   schedule = "15 21 * * 1-5"
+
+[functions."scheduled-international-background"]
+  # 21:20 UTC — right after scheduled-smallcap-background (21:15), the same
+  # kind of small fixed-basket job (4 Alpha Vantage calls here vs. that
+  # job's 5) with no real rate-limit contention risk. Daily, not weekly,
+  # since index levels move every trading day.
+  schedule = "20 21 * * 1-5"
 
 [functions."scheduled-share-count-background"]
   # Weekly, Saturday 10:50 UTC — after scheduled-insider-transactions-
