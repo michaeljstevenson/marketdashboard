@@ -152,7 +152,7 @@ document.addEventListener("DOMContentLoaded", function(){
 </script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Earnings Revisions — Michael J. Stevenson</title>
+<title>Shareholder Yield: Buybacks vs. Dividends — Michael J. Stevenson</title>
 
 <style>
 
@@ -264,6 +264,8 @@ a{ color:inherit; }
  box-shadow:0 10px 30px rgba(0,0,0,0.45);
 }
 
+/* Driven by the .open class (see the script right after </nav>), not
+   pure :hover — see that script for why. */
 .navdrop.open .dropdown{ display:block; }
 
 .dropdown a{
@@ -348,12 +350,11 @@ h1{
 
 .stat-value{
  font-family:var(--mono);
- font-size:26px;
+ font-size:24px;
  color:var(--greed);
 }
 
-.stat-value.down{ color:var(--fear); }
-.stat-value.neutral{ color:var(--ink); }
+.stat-value.cell-neg{ color:var(--fear); }
 
 .stat-note{
  color:var(--muted);
@@ -361,31 +362,8 @@ h1{
  margin-top:6px;
 }
 
-/* CONTROLS */
-
-.toggle-group{
- display:inline-flex;
- background:var(--card);
- border:1px solid var(--hair);
- border-radius:8px;
- padding:3px;
-}
-
-.toggle-btn{
- background:none;
- border:none;
- color:var(--muted);
- font-family:var(--sans);
- font-size:13px;
- padding:7px 16px;
- border-radius:6px;
- cursor:pointer;
-}
-
-.toggle-btn.active{
- background:var(--greed);
- color:#1a1408;
- font-weight:600;
+@media (max-width:900px){
+ .stat-grid{ grid-template-columns:repeat(2,1fr); }
 }
 
 /* CHART */
@@ -398,13 +376,6 @@ h1{
  margin-bottom:30px;
 }
 
-.chart-box h2{
- font-family:var(--serif);
- font-weight:400;
- font-size:18px;
- margin:0;
-}
-
 .chart-box-header{
  display:flex;
  justify-content:space-between;
@@ -414,34 +385,53 @@ h1{
  margin-bottom:16px;
 }
 
-.chart-box-sub{
+.chart-box h2{
+ font-family:var(--serif);
+ font-weight:400;
+ font-size:18px;
+ margin:0;
+}
+
+.chart-subhead{
  color:var(--muted);
  font-size:12px;
  margin-top:4px;
 }
 
 .chart-canvas-wrap{
- height:420px;
+ height:380px;
 }
 
-.chart-canvas-wrap.tall{ height:460px; }
-.chart-canvas-wrap.short{ height:320px; }
+.chart-canvas-wrap.short{ height:280px; }
 
-/* TABLES */
+/* TABLE */
 
 .table-box{
  background:var(--card);
  border:1px solid var(--hair);
  border-radius:12px;
  overflow-x:auto;
- margin-bottom:22px;
+ margin-bottom:30px;
 }
+
+.table-box-header{
+ padding:18px 20px 4px;
+}
+
+.table-box-header h2{
+ font-family:var(--serif);
+ font-weight:400;
+ font-size:18px;
+ margin:0;
+}
+
+.table-box-header .chart-subhead{ margin-bottom:6px; }
 
 table{
  width:100%;
  border-collapse:collapse;
  font-size:13px;
- min-width:600px;
+ min-width:640px;
 }
 
 thead th{
@@ -455,7 +445,7 @@ thead th{
  border-bottom:1px solid var(--hair);
 }
 
-thead th:first-child, thead th:nth-child(2), thead th:nth-child(3){
+thead th:first-child{
  text-align:left;
 }
 
@@ -468,59 +458,86 @@ tbody td{
 }
 
 tbody tr:last-child td{ border-bottom:none; }
+
 tbody tr:hover{ background:var(--card-hover); }
 
-tbody td:first-child, tbody td:nth-child(2), tbody td:nth-child(3){
+tbody td:first-child{
  text-align:left;
  font-family:var(--sans);
 }
 
-tbody td:nth-child(2){ color:var(--muted); }
-tbody td:nth-child(3){ color:var(--muted); font-size:11px; }
+.cell-pos{ color:var(--ink); }
+.cell-neg{ color:var(--ink); }
+.cell-na{ color:var(--muted); }
 
-.cell-pos{ color:var(--greed); }
-.cell-neg{ color:var(--fear); }
+.table-footnote{
+ padding:2px 20px 16px;
+ color:var(--muted);
+ font-size:11px;
+}
 
-.leaderboard-grid{
+.table-grid{
  display:grid;
  grid-template-columns:1fr 1fr;
- gap:16px;
- margin-bottom:22px;
+ gap:20px;
 }
 
-.leaderboard-col h3{
- font-family:var(--serif);
- font-weight:400;
- font-size:15px;
- margin:0 0 10px;
+@media (max-width:900px){
+ .table-grid{ grid-template-columns:1fr; }
+}
+
+/* SCATTER / METHOD TABLE (mirrors /factor-analysis) */
+
+.scatter-canvas-wrap{
+ height:320px;
+ margin-bottom:12px;
+ position:relative;
+}
+
+.method-table{
+ width:100%;
+ border-collapse:collapse;
+ font-family:var(--mono);
+ font-size:11px;
+ margin-top:8px;
+}
+
+.method-table th{
+ text-align:right;
+ padding:6px 5px;
+ color:var(--muted);
+ font-size:10px;
+ letter-spacing:0.03em;
+ font-weight:600;
+ border-bottom:1px solid var(--hair);
+ white-space:nowrap;
+}
+
+.method-table th:first-child{ text-align:left; }
+
+.method-table td{
+ padding:7px 5px;
+ text-align:right;
+ border-bottom:1px solid var(--hair);
+ white-space:nowrap;
+ color:var(--ink);
+}
+
+.method-table td:first-child{
+ text-align:left;
+ font-family:var(--sans);
  color:var(--muted);
 }
 
-.leaderboard-col h3.up{ color:var(--greed); }
-.leaderboard-col h3.down{ color:var(--fear); }
+.method-table tr:last-child td{ border-bottom:none; }
 
-@media (max-width:800px){
- .leaderboard-grid{ grid-template-columns:1fr; }
-}
+.method-table .sig{ color:var(--greed); }
 
-/* SECTOR LEGEND (scatter) */
-
-.sector-legend{
- display:flex;
- flex-wrap:wrap;
- gap:10px 16px;
- margin-top:14px;
+.method-note{
  font-size:11px;
  color:var(--muted);
-}
-
-.sector-legend .dot{
- display:inline-block;
- width:8px;
- height:8px;
- border-radius:50%;
- margin-right:5px;
- vertical-align:middle;
+ margin-top:8px;
+ font-style:italic;
 }
 
 /* EXPLAINER */
@@ -530,7 +547,7 @@ tbody td:nth-child(3){ color:var(--muted); font-size:11px; }
  border:1px solid var(--hair);
  border-radius:12px;
  padding:24px 26px;
- margin-bottom:22px;
+ margin-bottom:30px;
 }
 
 .explainer h2{
@@ -545,6 +562,15 @@ tbody td:nth-child(3){ color:var(--muted); font-size:11px; }
  font-size:14px;
  line-height:1.7;
  margin:0 0 14px;
+}
+
+.explainer code{
+ font-family:var(--mono);
+ background:var(--card-hover);
+ padding:2px 6px;
+ border-radius:4px;
+ font-size:0.92em;
+ white-space:nowrap;
 }
 
 .explainer p:last-child{ margin-bottom:0; }
@@ -584,6 +610,7 @@ tbody td:nth-child(3){ color:var(--muted); font-size:11px; }
  display:none;
 }
 
+
 .theme-toggle{
  justify-self:end;
  background:none;
@@ -602,9 +629,6 @@ tbody td:nth-child(3){ color:var(--muted); font-size:11px; }
 
 .theme-toggle:hover{ color:var(--ink); border-color:var(--hair); }
 
-@media (max-width:720px){
- .stat-grid{ grid-template-columns:1fr 1fr; }
-}
 
 /* Light-theme overrides for hardcoded (non-var) dark colors */
 
@@ -644,7 +668,7 @@ tbody td:nth-child(3){ color:var(--muted); font-size:11px; }
 <a href="/market-breadth.html">Market Breadth</a>
 <a href="/seasonality.html">Seasonality</a>
 <a href="/concentration.html">Concentration</a>
-<a href="/earnings-revisions.html" class="active">Earnings Revisions</a>
+<a href="/earnings-revisions.html">Earnings Revisions</a>
 <a href="/insider-buying-selling.html">Insider Buying/Selling</a>
 <a href="/small-cap-vs-large-cap.html">Small Cap vs. Large Cap Spread</a>
 <a href="/share-count-trends.html">Share Count Trends</a>
@@ -652,7 +676,7 @@ tbody td:nth-child(3){ color:var(--muted); font-size:11px; }
 <a href="/sector-rotation.html">Sector Rotation Model</a>
 <a href="/international-vs-us.html">International vs. US Relative Performance</a>
 <a href="/analyst-estimate-dispersion.html">Analyst Estimate Dispersion</a>
-<a href="/shareholder-yield.html">Shareholder Yield</a>
+<a href="/shareholder-yield.html" class="active">Shareholder Yield</a>
 </div>
 </div>
 
@@ -711,6 +735,7 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 </script>
 
 
+
 <div class="container">
 
 <div class="error-banner" id="errorBanner"></div>
@@ -718,44 +743,40 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 
 <div class="header">
 <div>
-<h1>Earnings Revisions</h1>
-<div class="subtitle">How Wall Street analysts are revising S&amp;P 500 earnings estimates — how many are moving their numbers, which way, and by how much — broken out by sector.</div>
+<h1>Shareholder Yield: Buybacks vs. Dividends</h1>
+<div class="subtitle">Dividend yield and buyback yield combined into one "shareholder yield" number across the S&amp;P 500 — and whether companies that pay more in dividends tend to buy back less, or the two go together.</div>
 </div>
 <div class="updated" id="updated">Loading...</div>
 </div>
 
 <div class="stat-grid">
 <div class="stat-card">
-<div class="stat-label">Market Net Revision Ratio</div>
-<div class="stat-value" id="statNrr">—</div>
-<div class="stat-note">Trailing 30 days, equal-weighted</div>
+<div class="stat-label">Market Avg. Shareholder Yield</div>
+<div class="stat-value" id="statTotal">—</div>
+<div class="stat-note">Dividend yield + buyback yield</div>
 </div>
 <div class="stat-card">
-<div class="stat-label">Market Estimate Drift</div>
-<div class="stat-value" id="statDrift">—</div>
-<div class="stat-note">30-day change in consensus FY1 EPS</div>
+<div class="stat-label">Market Avg. Dividend Yield</div>
+<div class="stat-value" id="statDiv">—</div>
+<div class="stat-note">Alpha Vantage trailing dividend yield</div>
 </div>
 <div class="stat-card">
-<div class="stat-label">Upgrades vs. Downgrades</div>
-<div class="stat-value neutral" id="statUpDown">—</div>
-<div class="stat-note">Analyst estimate revisions, trailing 30 days</div>
+<div class="stat-label">Market Avg. Buyback Yield</div>
+<div class="stat-value" id="statBuyback">—</div>
+<div class="stat-note">&minus;(trailing 1Y % change in shares out.)</div>
 </div>
 <div class="stat-card">
-<div class="stat-label">Coverage</div>
-<div class="stat-value neutral" id="statCoverage">—</div>
-<div class="stat-note">S&amp;P 500 constituents with usable estimates</div>
+<div class="stat-label">Dividend/Buyback Correlation</div>
+<div class="stat-value" id="statCorr" style="font-size:20px;">—</div>
+<div class="stat-note" id="statCorrNote">Across constituents, Pearson r</div>
 </div>
 </div>
 
 <div class="chart-box">
 <div class="chart-box-header">
 <div>
-<h2>By sector</h2>
-<div class="chart-box-sub" id="sectorChartSub">Net Revision Ratio: share of analysts revising up minus down, trailing 30 days.</div>
-</div>
-<div class="toggle-group">
-<button class="toggle-btn active" id="btnBreadth">Breadth (Net Revision Ratio)</button>
-<button class="toggle-btn" id="btnMagnitude">Magnitude (Estimate Drift)</button>
+<h2>Shareholder yield by sector</h2>
+<div class="chart-subhead">Average dividend yield and buyback yield, stacked, sectors ranked by combined total</div>
 </div>
 </div>
 <div class="chart-canvas-wrap">
@@ -766,86 +787,71 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <div class="chart-box">
 <div class="chart-box-header">
 <div>
-<h2>Market Net Revision Ratio over time</h2>
-<div class="chart-box-sub">Weekly snapshots, accumulated since this page began tracking — not backfilled (see methodology below).</div>
+<h2>Dividend yield vs. buyback yield, by stock</h2>
+<div class="chart-subhead">Each point is one S&amp;P 500 constituent. Upper-right: pays a large dividend and buys back aggressively. Lower-left: neither. A negative buyback yield means net dilution over the trailing year.</div>
 </div>
 </div>
-<div class="chart-canvas-wrap short">
-<canvas id="historyChart"></canvas>
+<div class="scatter-canvas-wrap">
+<canvas id="corrScatter"></canvas>
 </div>
-</div>
-
-<div class="chart-box">
-<div class="chart-box-header">
-<div>
-<h2>Breadth vs. magnitude, by stock</h2>
-<div class="chart-box-sub">Each point is one S&amp;P 500 constituent. Upper-right: broadly and sharply upgraded. Lower-left: broadly and sharply downgraded.</div>
-</div>
-</div>
-<div class="chart-canvas-wrap tall">
-<canvas id="scatterChart"></canvas>
-</div>
-<div class="sector-legend" id="scatterLegend"></div>
+<div id="corrMethodTable"></div>
 </div>
 
-<div class="leaderboard-grid">
-<div class="leaderboard-col">
-<h3 class="up">Biggest upgrades</h3>
 <div class="table-box">
+<div class="table-box-header">
+<h2>Highest combined shareholder yield</h2>
+<div class="chart-subhead">Dividend yield + buyback yield, highest first</div>
+</div>
 <table>
-<thead>
-<tr><th>Ticker</th><th>Company</th><th>Sector</th><th>FY1 EPS est.</th><th>30D drift</th><th>Analysts &uarr;/&darr;</th></tr>
-</thead>
-<tbody id="upgradesBody"><tr><td colspan="6" style="text-align:center; color:var(--muted); padding:20px;">Loading&hellip;</td></tr></tbody>
+<thead><tr><th>Ticker</th><th>Sector</th><th>Dividend Yield</th><th>Buyback Yield</th><th>Total</th></tr></thead>
+<tbody id="topTotalTable">
+<tr><td colspan="5" style="text-align:center; color:var(--muted); padding:24px;">Loading&hellip;</td></tr>
+</tbody>
 </table>
 </div>
-</div>
-<div class="leaderboard-col">
-<h3 class="down">Biggest downgrades</h3>
+
+<div class="table-grid">
 <div class="table-box">
+<div class="table-box-header">
+<h2>Highest dividend yield</h2>
+<div class="chart-subhead">By dividend yield alone, regardless of buyback activity</div>
+</div>
 <table>
-<thead>
-<tr><th>Ticker</th><th>Company</th><th>Sector</th><th>FY1 EPS est.</th><th>30D drift</th><th>Analysts &uarr;/&darr;</th></tr>
-</thead>
-<tbody id="downgradesBody"><tr><td colspan="6" style="text-align:center; color:var(--muted); padding:20px;">Loading&hellip;</td></tr></tbody>
+<thead><tr><th>Ticker</th><th>Sector</th><th>Dividend Yield</th><th>Buyback Yield</th></tr></thead>
+<tbody id="topDivTable">
+<tr><td colspan="4" style="text-align:center; color:var(--muted); padding:24px;">Loading&hellip;</td></tr>
+</tbody>
 </table>
 </div>
+
+<div class="table-box">
+<div class="table-box-header">
+<h2>Highest buyback yield</h2>
+<div class="chart-subhead">By buyback yield alone, regardless of dividend policy</div>
+</div>
+<table>
+<thead><tr><th>Ticker</th><th>Sector</th><th>Dividend Yield</th><th>Buyback Yield</th></tr></thead>
+<tbody id="topBuybackTable">
+<tr><td colspan="4" style="text-align:center; color:var(--muted); padding:24px;">Loading&hellip;</td></tr>
+</tbody>
+</table>
 </div>
 </div>
 
 <div class="explainer">
 <h2>Methodology</h2>
-<p>Two different questions get asked about analyst earnings revisions, and they don't always point the same way: <em>how many</em> analysts are changing their minds, and <em>how much</em> the number is actually moving. The <strong>Net Revision Ratio</strong> answers the first: for each stock's current-fiscal-year (FY1) consensus EPS estimate, it's (upward revisions &minus; downward revisions) &divide; total revisions over the trailing 30 days, a breadth measure that runs from &minus;1 (every revision was down) to +1 (every revision was up). The <strong>Estimate Drift</strong> answers the second: the trailing-30-day percent change in the consensus FY1 EPS estimate itself. A stock (or sector) can have wide breadth with almost no drift &mdash; a dozen analysts each nudging their number a penny in the same direction &mdash; or the reverse: one or two analysts making a large call that moves the average a lot without most of the Street having weighed in yet. Sector and market figures are the equal-weighted mean of each metric across that group's constituents with usable data, not cap-weighted &mdash; a $50B mid-cap's analyst revisions count the same as a Magnificent Seven name's.</p>
-<p>The universe is the S&amp;P 500 (the same constituent list used elsewhere on this site &mdash; see <a href="/sector-beeswarm.html">Sector Beeswarm</a>), with sector classification pulled from that page's own weekly company-metadata refresh rather than a second, redundant lookup. The leaderboards exclude stocks with fewer than 3 covering analysts, since a one- or two-analyst estimate can swing double digits on a single revision with no real breadth behind it.</p>
-<p>The "over time" chart is not a backfilled series &mdash; Alpha Vantage's estimates endpoint returns only the current snapshot's trailing-window figures, not a history of past snapshots, so there was no way to reconstruct what the Net Revision Ratio looked like a year or five years ago. Instead, this page takes its own weekly snapshot and appends it, meaning the trend line will only get more useful over time as more weekly points accumulate; treat an early, short line as exactly that &mdash; a start, not a full cycle.</p>
-<p>Recomputed weekly (Saturday) across all ~500 constituents, sequentially and rate-limited, rather than daily &mdash; trailing-30-day revision counts and 30-day drift don't move enough day to day to justify the extra API load.</p>
-<div class="source">Source: <a href="https://www.alphavantage.co/" target="_blank" rel="noopener">Alpha Vantage — EARNINGS_ESTIMATES</a>. Not investment advice.</div>
+<p>Dividend yield is Alpha Vantage's own <code>COMPANY_OVERVIEW</code> <code>DividendYield</code> field — a trailing, price-normalized yield sourced directly rather than re-derived from raw dividend payments and a separate price series. Buyback yield is <em>not</em> re-fetched here: it's the negative of the trailing-12-month % change in shares outstanding already computed by <a href="/share-count-trends.html">Share Count Trends</a> from quarterly <code>BALANCE_SHEET</code> filings — a shrinking share count is a buyback, a growing one is net dilution (from new issuance, option exercises, or stock-based comp outrunning any repurchases), so a negative "buyback yield" below means the company diluted shareholders over the period rather than returning capital via repurchases. Total shareholder yield is simply the two added together — dividends and buybacks are both ways cash gets returned to shareholders, and a company that leans on one over the other doesn't necessarily return less in total.</p>
+<p>The scatter panel tests a common claim: that dividend-payers and buyback-heavy companies are somewhat different populations — mature, stable-cash-flow businesses favor dividends (a commitment investors punish them for cutting), while companies with more variable earnings favor buybacks (fully discretionary, easy to pause). If that's right, dividend yield and buyback yield should show a weak or even negative correlation across the index. Both Pearson (OLS) and Spearman rank correlation are shown, the same two-method check used throughout <a href="/factor-analysis.html">Factor Analysis</a>, so the result isn't quietly resting on one or two extreme stocks either way.</p>
+<p>Sector and company name are joined from the <a href="/sector-beeswarm.html">Sector Beeswarm</a> page's own weekly metadata refresh rather than a second per-ticker lookup. Refreshes weekly (Saturday), after <a href="/share-count-trends.html">Share Count Trends</a>'s own sweep (so this page's buyback numbers are fresh) and after <a href="/analyst-estimate-dispersion.html">Analyst Estimate Dispersion</a>'s sweep (so the two full-index jobs don't compete for Alpha Vantage's rate limit) — a company's dividend policy and buyback pace don't move meaningfully day to day.</p>
+<div class="source">Source: <a href="https://www.alphavantage.co/" target="_blank" rel="noopener">Alpha Vantage</a> — COMPANY_OVERVIEW, BALANCE_SHEET (via Share Count Trends)</div>
 </div>
 
 </div>
 
 <script>
-const DATA_URL = "/api/earnings-revisions";
-
-const SECTOR_COLORS = {
- "Information Technology": "#d98a3d",
- "Financials": "#6f8fac",
- "Health Care": "#8e7cc3",
- "Energy": "#c0564f",
- "Industrials": "#5a9d6f",
- "Consumer Discretionary": "#e0b04f",
- "Consumer Staples": "#4fb0c0",
- "Utilities": "#b56f2a",
- "Materials": "#9a9a9a",
- "Real Estate": "#c77dbd",
- "Communication Services": "#4f7ae0",
-};
+const DATA_URL = "/api/shareholder-yield";
 
 let RAW = null;
-let sectorChart = null;
-let historyChart = null;
-let scatterChart = null;
-let SECTOR_MODE = "breadth"; // "breadth" | "magnitude"
 
 function showError(message){
  const banner = document.getElementById("errorBanner");
@@ -853,36 +859,88 @@ function showError(message){
  banner.style.display = "block";
 }
 
-function showWarning(message){
- const banner = document.getElementById("warningBanner");
- banner.textContent = message;
- banner.style.display = "block";
-}
-
-function fmtRatio(v){
- if(v === null || v === undefined || isNaN(v)) return "—";
- return (v >= 0 ? "+" : "") + v.toFixed(2);
-}
-
 function fmtPct(v, digits){
  if(v === null || v === undefined || isNaN(v)) return "—";
- return (v >= 0 ? "+" : "") + v.toFixed(digits === undefined ? 2 : digits) + "%";
+ digits = digits === undefined ? 2 : digits;
+ return (v >= 0 ? "+" : "") + v.toFixed(digits) + "%";
 }
 
-function classForValue(v){
- if(v === null || v === undefined || isNaN(v)) return "";
- return v >= 0 ? "cell-pos" : "cell-neg";
+function themeInkColor(){
+ const v = getComputedStyle(document.documentElement).getPropertyValue("--ink").trim();
+ return v || "#eae6da";
 }
-
 function themeMutedColor(){
- return getComputedStyle(document.documentElement).getPropertyValue("--muted").trim() || "#8b9199";
+ const v = getComputedStyle(document.documentElement).getPropertyValue("--muted").trim();
+ return v || "#8b9199";
 }
 function themeHairColor(){
- return getComputedStyle(document.documentElement).getPropertyValue("--hair").trim() || "#2b3138";
+ const v = getComputedStyle(document.documentElement).getPropertyValue("--hair").trim();
+ return v || "#2b3138";
 }
-function themeInkColor(){
- return getComputedStyle(document.documentElement).getPropertyValue("--ink").trim() || "#eae6da";
+function themeGreedColor(){
+ const v = getComputedStyle(document.documentElement).getPropertyValue("--greed").trim();
+ return v || "#d98a3d";
 }
+function themeFearColor(){
+ const v = getComputedStyle(document.documentElement).getPropertyValue("--fear").trim();
+ return v || "#6f8fac";
+}
+
+// ---- Stats helpers — same methodology as /factor-analysis, duplicated
+// here since every page on this site is self-contained (see CLAUDE.md). ----
+
+function linearRegression(xs, ys){
+ const n = xs.length;
+ const mx = xs.reduce((a, b) => a + b, 0) / n;
+ const my = ys.reduce((a, b) => a + b, 0) / n;
+ const sxx = xs.reduce((s, x) => s + (x - mx) ** 2, 0);
+ const sxy = xs.reduce((s, x, i) => s + (x - mx) * (ys[i] - my), 0);
+ const syy = ys.reduce((s, y) => s + (y - my) ** 2, 0);
+ const slope = sxy / sxx;
+ const intercept = my - slope * mx;
+ const r = sxy / Math.sqrt(sxx * syy);
+ const r2 = r * r;
+ const dof = n - 2;
+ const sse = ys.reduce((s, y, i) => s + (y - (intercept + slope * xs[i])) ** 2, 0);
+ const seSlope = Math.sqrt((sse / dof) / sxx);
+ const t = slope / seSlope;
+ const p = 2 * (1 - normalCdf(Math.abs(t)));
+ return { n, slope, intercept, r, r2, t, dof, p, sse };
+}
+
+function normalCdf(x){
+ return 0.5 * (1 + erf(x / Math.SQRT2));
+}
+
+// Abramowitz & Stegun 7.1.26 approximation — accurate to ~1e-7.
+function erf(x){
+ const sign = x < 0 ? -1 : 1;
+ x = Math.abs(x);
+ const a1 = 0.254829592, a2 = -0.284496736, a3 = 1.421413741, a4 = -1.453152027, a5 = 1.061405429, p = 0.3275911;
+ const t = 1 / (1 + p * x);
+ const y = 1 - (((((a5 * t + a4) * t) + a3) * t + a2) * t + a1) * t * Math.exp(-x * x);
+ return sign * y;
+}
+
+function rankArray(arr){
+ const idx = arr.map((v, i) => i).sort((a, b) => arr[a] - arr[b]);
+ const ranks = new Array(arr.length);
+ let i = 0;
+ while(i < idx.length){
+  let j = i;
+  while(j + 1 < idx.length && arr[idx[j + 1]] === arr[idx[i]]) j++;
+  const avgRank = (i + j) / 2 + 1;
+  for(let k = i; k <= j; k++) ranks[idx[k]] = avgRank;
+  i = j + 1;
+ }
+ return ranks;
+}
+
+function spearmanRegression(xs, ys){
+ return linearRegression(rankArray(xs), rankArray(ys));
+}
+
+let sectorChart = null, corrScatter = null;
 
 async function init(){
  try{
@@ -891,158 +949,103 @@ async function init(){
   if(!res.ok || data.error) throw new Error(data.error || "failed to load");
 
   RAW = data;
-  document.getElementById("updated").textContent = "As of " + new Date(data.generated_at_utc).toLocaleString();
+  document.getElementById("updated").textContent =
+   "As of " + new Date(data.generated_at_utc).toLocaleDateString() + " · " + data.universe_size + "/" + data.universe_total + " constituents covered";
 
-  if(data.universe_size < data.universe_total * 0.85){
-   showWarning("Only " + data.universe_size + " of " + data.universe_total + " S&P 500 constituents had usable estimates this run — some sector figures may be based on partial coverage.");
-  }
-
-  renderStats();
-  renderSectorChart();
-  renderHistoryChart();
-  renderScatter();
-  renderLeaderboards();
+  renderStats(data);
+  renderSectorChart(data);
+  renderCorrScatter(data);
+  renderLeaderboard("topTotalTable", data.topTotal, true);
+  renderLeaderboard("topDivTable", data.topDividendOnly, false);
+  renderLeaderboard("topBuybackTable", data.topBuybackOnly, false);
 
  }catch(e){
-  showError("Couldn't load earnings revisions data (" + e.message + "). The /api/earnings-revisions function may be unreachable.");
+  showError("Couldn't load shareholder yield data (" + e.message + "). The /api/shareholder-yield function may not have run yet.");
  }
 }
 
-function renderStats(){
- const m = RAW.market;
- document.getElementById("statNrr").textContent = fmtRatio(m.netRevisionRatio30);
- document.getElementById("statNrr").className = "stat-value" + (m.netRevisionRatio30 < 0 ? " down" : "");
- document.getElementById("statDrift").textContent = fmtPct(m.drift30);
- document.getElementById("statDrift").className = "stat-value" + (m.drift30 < 0 ? " down" : "");
- document.getElementById("statUpDown").textContent = m.upTotal + " / " + m.downTotal;
- document.getElementById("statCoverage").textContent = RAW.universe_size + " / " + RAW.universe_total;
+function renderStats(data){
+ document.getElementById("statTotal").textContent = fmtPct(data.market.avgTotalYield);
+ document.getElementById("statDiv").textContent = fmtPct(data.market.avgDividendYield);
+ const buybackEl = document.getElementById("statBuyback");
+ buybackEl.textContent = fmtPct(data.market.avgBuybackYield);
+ buybackEl.classList.toggle("cell-neg", data.market.avgBuybackYield !== null && data.market.avgBuybackYield < 0);
+
+ const corrEl = document.getElementById("statCorr");
+ const corrNoteEl = document.getElementById("statCorrNote");
+ const pairs = data.scatter || [];
+ if(pairs.length >= 8){
+  const reg = linearRegression(pairs.map(p => p.dividendYield), pairs.map(p => p.buybackYield));
+  corrEl.textContent = (reg.r >= 0 ? "+" : "") + reg.r.toFixed(2);
+  corrEl.classList.toggle("cell-neg", reg.r < 0);
+  let interp = "Little relationship across the index";
+  if(Math.abs(reg.r) >= 0.1){
+   interp = reg.r > 0
+    ? "Dividend payers have also tended to buy back more"
+    : "Dividend payers have tended to buy back less — some substitution";
+  }
+  corrNoteEl.textContent = interp + " (n=" + reg.n + ")";
+ }
 }
 
-function renderSectorChart(){
- const sectors = [...RAW.sectors].sort((a, b) => {
-  const av = SECTOR_MODE === "breadth" ? a.netRevisionRatio30 : a.drift30;
-  const bv = SECTOR_MODE === "breadth" ? b.netRevisionRatio30 : b.drift30;
-  return (bv ?? -Infinity) - (av ?? -Infinity);
- });
-
- const values = sectors.map(s => SECTOR_MODE === "breadth" ? s.netRevisionRatio30 : s.drift30);
- const colors = values.map(v => (v === null ? themeMutedColor() : (v >= 0 ? "#d98a3d" : "#6f8fac")));
-
+function renderSectorChart(data){
+ const sectors = [...data.sectors].sort((a, b) => (b.avgTotalYield || 0) - (a.avgTotalYield || 0));
  const ctx = document.getElementById("sectorChart").getContext("2d");
  if(sectorChart) sectorChart.destroy();
  sectorChart = new Chart(ctx, {
   type: "bar",
   data: {
    labels: sectors.map(s => s.sector),
-   datasets: [{
-    label: SECTOR_MODE === "breadth" ? "Net Revision Ratio" : "Estimate Drift (30D, %)",
-    data: values,
-    backgroundColor: colors,
-    borderRadius: 4,
-   }],
+   datasets: [
+    { label: "Dividend yield", data: sectors.map(s => s.avgDividendYield), backgroundColor: themeGreedColor(), stack: "yield" },
+    { label: "Buyback yield", data: sectors.map(s => s.avgBuybackYield), backgroundColor: themeFearColor(), stack: "yield" },
+   ],
   },
   options: {
+   responsive: true,
+   maintainAspectRatio: false,
    indexAxis: "y",
-   responsive: true,
-   maintainAspectRatio: false,
    plugins: {
-    legend: { display: false },
-    tooltip: {
-     callbacks: {
-      label: ctx => SECTOR_MODE === "breadth"
-       ? "Net Revision Ratio: " + fmtRatio(ctx.parsed.x) + " (n=" + sectors[ctx.dataIndex].count + ")"
-       : "Estimate Drift: " + fmtPct(ctx.parsed.x) + " (n=" + sectors[ctx.dataIndex].count + ")",
-     },
-    },
+    legend: { display: true, position: "top", labels: { color: themeMutedColor(), boxWidth: 12, font: { size: 11 } } },
+    tooltip: { callbacks: { label: ctx => ctx.dataset.label + ": " + fmtPct(ctx.parsed.x) } },
    },
    scales: {
-    x: {
-     ticks: { color: themeMutedColor() },
-     grid: { color: themeHairColor() },
-     title: { display: true, text: SECTOR_MODE === "breadth" ? "Net Revision Ratio (−1..+1)" : "30-day estimate drift (%)", color: themeMutedColor() },
-    },
-    y: { ticks: { color: themeMutedColor() }, grid: { display: false } },
+    x: { stacked: true, ticks: { color: themeMutedColor(), callback: v => v + "%" }, grid: { color: themeHairColor() } },
+    y: { stacked: true, ticks: { color: themeMutedColor(), font: { size: 11 } }, grid: { display: false } },
    },
   },
  });
 }
 
-document.getElementById("btnBreadth").addEventListener("click", () => {
- SECTOR_MODE = "breadth";
- document.getElementById("btnBreadth").classList.add("active");
- document.getElementById("btnMagnitude").classList.remove("active");
- document.getElementById("sectorChartSub").textContent = "Net Revision Ratio: share of analysts revising up minus down, trailing 30 days.";
- renderSectorChart();
-});
-document.getElementById("btnMagnitude").addEventListener("click", () => {
- SECTOR_MODE = "magnitude";
- document.getElementById("btnMagnitude").classList.add("active");
- document.getElementById("btnBreadth").classList.remove("active");
- document.getElementById("sectorChartSub").textContent = "Estimate Drift: 30-day % change in the consensus FY1 EPS estimate.";
- renderSectorChart();
-});
-
-function renderHistoryChart(){
- const points = RAW.history || [];
- const ctx = document.getElementById("historyChart").getContext("2d");
- if(historyChart) historyChart.destroy();
-
- if(points.length < 2){
-  // Not enough history yet to draw a meaningful line — still render the
-  // single available point (or none) rather than erroring.
+function renderCorrScatter(data){
+ const pairs = data.scatter || [];
+ const ctx = document.getElementById("corrScatter").getContext("2d");
+ if(corrScatter) corrScatter.destroy();
+ if(pairs.length < 8){
+  document.getElementById("corrMethodTable").innerHTML = '<div class="method-note">Not enough constituents loaded yet for a regression.</div>';
+  corrScatter = new Chart(ctx, { type: "scatter", data: { datasets: [] }, options: { responsive: true, maintainAspectRatio: false } });
+  return;
  }
 
- historyChart = new Chart(ctx, {
-  type: "line",
-  data: {
-   labels: points.map(p => p.date),
-   datasets: [{
-    label: "Market Net Revision Ratio",
-    data: points.map(p => p.marketNrr),
-    borderColor: "#d98a3d",
-    backgroundColor: "#d98a3d",
-    borderWidth: 1.5,
-    pointRadius: points.length < 8 ? 3 : 0,
-    fill: false,
-   }],
-  },
-  options: {
-   responsive: true,
-   maintainAspectRatio: false,
-   interaction: { mode: "index", intersect: false },
-   plugins: {
-    legend: { display: false },
-    tooltip: { callbacks: { label: ctx => "Net Revision Ratio: " + fmtRatio(ctx.parsed.y) } },
-   },
-   scales: {
-    x: { ticks: { color: themeMutedColor(), maxTicksLimit: 8 }, grid: { color: themeHairColor() } },
-    y: { ticks: { color: themeMutedColor() }, grid: { color: themeHairColor() } },
-   },
-  },
- });
-}
+ const pearson = linearRegression(pairs.map(p => p.dividendYield), pairs.map(p => p.buybackYield));
+ const spear = spearmanRegression(pairs.map(p => p.dividendYield), pairs.map(p => p.buybackYield));
 
-function renderScatter(){
- const points = RAW.scatter || [];
- const bySector = {};
- for(const p of points){
-  if(!bySector[p.sector]) bySector[p.sector] = [];
-  bySector[p.sector].push({ x: p.netRevisionRatio30, y: p.drift30, ticker: p.ticker });
- }
+ const xs = pairs.map(p => p.dividendYield);
+ const xMin = Math.min(...xs), xMax = Math.max(...xs);
+ const linePoints = [
+  { x: xMin, y: pearson.intercept + pearson.slope * xMin },
+  { x: xMax, y: pearson.intercept + pearson.slope * xMax },
+ ];
 
- const datasets = Object.keys(bySector).map(sector => ({
-  label: sector,
-  data: bySector[sector],
-  backgroundColor: SECTOR_COLORS[sector] || "#8b9199",
-  pointRadius: 3.5,
-  showLine: false,
- }));
-
- const ctx = document.getElementById("scatterChart").getContext("2d");
- if(scatterChart) scatterChart.destroy();
- scatterChart = new Chart(ctx, {
+ corrScatter = new Chart(ctx, {
   type: "scatter",
-  data: { datasets },
+  data: {
+   datasets: [
+    { label: "Stocks", data: pairs.map(p => ({ x: p.dividendYield, y: p.buybackYield, ticker: p.ticker, sector: p.sector })), backgroundColor: themeGreedColor(), pointRadius: 3, showLine: false },
+    { label: "Regression fit", type: "line", data: linePoints, borderColor: themeInkColor(), borderWidth: 1.5, borderDash: [4, 3], pointRadius: 0, fill: false },
+    { label: "Zero", data: [{ x: xMin, y: 0 }, { x: xMax, y: 0 }], type: "line", borderColor: themeMutedColor(), borderWidth: 1, borderDash: [2, 3], pointRadius: 0, fill: false },
+   ],
+  },
   options: {
    responsive: true,
    maintainAspectRatio: false,
@@ -1050,39 +1053,49 @@ function renderScatter(){
     legend: { display: false },
     tooltip: {
      callbacks: {
-      label: ctx => ctx.raw.ticker + " (" + ctx.dataset.label + "): NRR " + fmtRatio(ctx.raw.x) + ", drift " + fmtPct(ctx.raw.y),
+      label: ctx => ctx.dataset.label === "Stocks" ? (ctx.raw.ticker + " (" + ctx.raw.sector + "): div " + fmtPct(ctx.raw.x) + ", buyback " + fmtPct(ctx.raw.y)) : null,
      },
     },
    },
    scales: {
-    x: { title: { display: true, text: "Net Revision Ratio (breadth)", color: themeMutedColor() }, ticks: { color: themeMutedColor() }, grid: { color: themeHairColor() } },
-    y: { title: { display: true, text: "30-day Estimate Drift (%, magnitude)", color: themeMutedColor() }, ticks: { color: themeMutedColor() }, grid: { color: themeHairColor() } },
+    x: { title: { display: true, text: "Dividend yield (%)", color: themeMutedColor(), font: { size: 10 } }, ticks: { color: themeMutedColor(), font: { size: 10 } }, grid: { color: themeHairColor() } },
+    y: { title: { display: true, text: "Buyback yield (%)", color: themeMutedColor(), font: { size: 10 } }, ticks: { color: themeMutedColor(), font: { size: 10 } }, grid: { color: themeHairColor() } },
    },
   },
  });
 
- const legend = document.getElementById("scatterLegend");
- legend.innerHTML = Object.keys(bySector).sort().map(sector =>
-  '<span><span class="dot" style="background:' + (SECTOR_COLORS[sector] || "#8b9199") + '"></span>' + sector + '</span>'
- ).join("");
+ function row(label, stats){
+  const sig = stats.p < 0.05;
+  return "<tr>" +
+   "<td>" + label + "</td>" +
+   "<td>" + stats.n + "</td>" +
+   "<td>" + stats.r.toFixed(2) + "</td>" +
+   "<td>" + (stats.r2 * 100).toFixed(1) + "%</td>" +
+   "<td>" + (stats.slope >= 0 ? "+" : "") + stats.slope.toFixed(2) + "</td>" +
+   "<td>" + stats.t.toFixed(2) + "</td>" +
+   '<td class="' + (sig ? "sig" : "") + '">' + (stats.p < 0.001 ? "<0.001" : stats.p.toFixed(3)) + "</td>" +
+  "</tr>";
+ }
+
+ document.getElementById("corrMethodTable").innerHTML =
+  '<table class="method-table">' +
+   "<thead><tr><th>Method</th><th>n</th><th>r</th><th>r&sup2;</th><th>slope</th><th>t</th><th>p</th></tr></thead>" +
+   "<tbody>" + row("Pearson (OLS)", pearson) + row("Spearman (&rho;)", spear) + "</tbody>" +
+  "</table>" +
+  '<div class="method-note">Slope is in percentage points of buyback yield per 1 percentage point of dividend yield.</div>';
 }
 
-function leaderboardRowHtml(r){
- return `<tr>
-  <td>${r.ticker}</td>
-  <td>${r.name}</td>
-  <td>${r.sector}</td>
-  <td>${r.epsNow === null ? "—" : "$" + r.epsNow.toFixed(2)}</td>
-  <td class="${classForValue(r.drift30)}">${fmtPct(r.drift30)}</td>
-  <td>${r.up30}&uarr; / ${r.down30}&darr;</td>
- </tr>`;
-}
-
-function renderLeaderboards(){
- document.getElementById("upgradesBody").innerHTML = (RAW.upgrades || []).map(leaderboardRowHtml).join("")
-  || '<tr><td colspan="6" style="text-align:center; color:var(--muted); padding:20px;">No data</td></tr>';
- document.getElementById("downgradesBody").innerHTML = (RAW.downgrades || []).map(leaderboardRowHtml).join("")
-  || '<tr><td colspan="6" style="text-align:center; color:var(--muted); padding:20px;">No data</td></tr>';
+function renderLeaderboard(elId, rows, withTotal){
+ const el = document.getElementById(elId);
+ const cols = withTotal ? 5 : 4;
+ if(!rows || !rows.length){
+  el.innerHTML = '<tr><td colspan="' + cols + '" style="text-align:center; color:var(--muted); padding:24px;">No data yet</td></tr>';
+  return;
+ }
+ el.innerHTML = rows.map(r => {
+  const base = "<tr><td>" + r.ticker + "</td><td>" + r.sector + "</td><td>" + fmtPct(r.dividendYield) + "</td><td>" + fmtPct(r.buybackYield) + "</td>";
+  return withTotal ? base + "<td>" + fmtPct(r.totalShareholderYield) + "</td></tr>" : base + "</tr>";
+ }).join("");
 }
 
 init();
