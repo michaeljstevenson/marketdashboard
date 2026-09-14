@@ -147,6 +147,11 @@
   to = "/.netlify/functions/dispersion"
   status = 200
 
+[[redirects]]
+  from = "/api/shareholder-yield"
+  to = "/.netlify/functions/shareholder-yield"
+  status = 200
+
 # The Statistical Engine page was briefly at these paths.
 [[redirects]]
   from = "/streak-scanner"
@@ -331,6 +336,14 @@
   # Weekly, not daily: a current-fiscal-year analyst estimate's high/low
   # spread barely moves day to day.
   schedule = "10 11 * * 6"
+
+[functions."scheduled-shareholder-yield-background"]
+  # Weekly, Saturday 11:25 UTC — after scheduled-share-count-background
+  # (10:50 UTC, finishes ~11:00; this job reads its trends.json for buyback
+  # yield) and after scheduled-dispersion-background's own ~503-call sweep
+  # (starts 11:10, finishes ~11:19), so this job's own ~503 sequential
+  # COMPANY_OVERVIEW calls don't compete with either for the rate limit.
+  schedule = "25 11 * * 6"
 
 [functions."scheduled-insider-transactions-background"]
   # Weekly, Saturday 10:30 UTC — after the rest of the Saturday block
