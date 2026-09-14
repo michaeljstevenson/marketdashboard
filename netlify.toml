@@ -132,6 +132,11 @@
   to = "/.netlify/functions/relative-strength"
   status = 200
 
+[[redirects]]
+  from = "/api/equity-risk-premium"
+  to = "/.netlify/functions/equity-risk-premium"
+  status = 200
+
 # The Statistical Engine page was briefly at these paths.
 [[redirects]]
   from = "/streak-scanner"
@@ -321,3 +326,13 @@
   # 3-month momentum read doesn't meaningfully change day to day, and the
   # forward-return persistence test needs snapshots spaced apart.
   schedule = "0 12 * * 6"
+
+[functions."scheduled-equity-risk-premium-background"]
+  # Weekly, Saturday 12:30 UTC — 30 minutes after scheduled-relative-
+  # strength-background (12:00 UTC), the last job in this Saturday block as
+  # of when this was added, leaving headroom even if that job's own retry
+  # pass runs long. ~504 sequential Alpha Vantage COMPANY_OVERVIEW/
+  # TREASURY_YIELD calls at 1050ms spacing plus a retry pass. Weekly, not
+  # daily: a trailing P/E-derived earnings yield doesn't meaningfully move
+  # day to day.
+  schedule = "30 12 * * 6"
