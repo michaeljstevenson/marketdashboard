@@ -127,6 +127,21 @@
   to = "/.netlify/functions/share-count-trends"
   status = 200
 
+[[redirects]]
+  from = "/api/relative-strength"
+  to = "/.netlify/functions/relative-strength"
+  status = 200
+
+[[redirects]]
+  from = "/api/equity-risk-premium"
+  to = "/.netlify/functions/equity-risk-premium"
+  status = 200
+
+[[redirects]]
+  from = "/api/earnings-growth-divergence"
+  to = "/.netlify/functions/earnings-growth-divergence"
+  status = 200
+
 # The Statistical Engine page was briefly at these paths.
 [[redirects]]
   from = "/streak-scanner"
@@ -306,3 +321,35 @@
   # because a single company's Form 4 filings are sparse enough that a
   # trailing-90-day aggregate barely moves day to day.
   schedule = "30 10 * * 6"
+
+[functions."scheduled-relative-strength-background"]
+  # Weekly, Saturday 12:00 UTC — a full hour after scheduled-share-count-
+  # background (10:50 UTC, last job in this Saturday block as of when this
+  # was added), leaving comfortable headroom even if that job's own retry
+  # pass runs long. ~504 sequential Alpha Vantage TIME_SERIES_DAILY_ADJUSTED
+  # calls at 1050ms spacing plus a retry pass. Weekly, not daily: a 1-month/
+  # 3-month momentum read doesn't meaningfully change day to day, and the
+  # forward-return persistence test needs snapshots spaced apart.
+  schedule = "0 12 * * 6"
+
+[functions."scheduled-equity-risk-premium-background"]
+  # Weekly, Saturday 12:30 UTC — 30 minutes after scheduled-relative-
+  # strength-background (12:00 UTC), the last job in this Saturday block as
+  # of when this was added, leaving headroom even if that job's own retry
+  # pass runs long. ~504 sequential Alpha Vantage COMPANY_OVERVIEW/
+  # TREASURY_YIELD calls at 1050ms spacing plus a retry pass. Weekly, not
+  # daily: a trailing P/E-derived earnings yield doesn't meaningfully move
+  # day to day.
+  schedule = "30 12 * * 6"
+
+[functions."scheduled-earnings-growth-divergence-background"]
+  # Weekly, Saturday 13:00 UTC — after both scheduled-relative-strength-
+  # background (12:00 UTC) and scheduled-equity-risk-premium-background
+  # (12:30 UTC). Real dependency, not just pacing: this job reads
+  # scheduled-relative-strength-background's own latest.json for 3-month
+  # price performance instead of running a second price sweep, so it needs
+  # that job to have already completed this same Saturday morning for
+  # fresh data (falls back to EPS-growth-only rows, not a crash, if it
+  # hasn't). ~503 sequential Alpha Vantage EARNINGS calls at 1050ms spacing
+  # plus a retry pass.
+  schedule = "0 13 * * 6"
