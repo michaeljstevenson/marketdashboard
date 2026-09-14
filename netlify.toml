@@ -142,6 +142,11 @@
   to = "/.netlify/functions/international-us"
   status = 200
 
+[[redirects]]
+  from = "/api/dispersion"
+  to = "/.netlify/functions/dispersion"
+  status = 200
+
 # The Statistical Engine page was briefly at these paths.
 [[redirects]]
   from = "/streak-scanner"
@@ -317,6 +322,15 @@
   # calls don't compete with it for the rate limit. Weekly, not daily:
   # share counts only change when a company files a new 10-Q/10-K.
   schedule = "50 10 * * 6"
+
+[functions."scheduled-dispersion-background"]
+  # Weekly, Saturday 11:10 UTC — after scheduled-share-count-background
+  # (10:50 UTC, ~9-10 minutes for its own ~503-call sweep at the same
+  # 1050ms pacing), so this job's own ~503 sequential Alpha Vantage
+  # EARNINGS_ESTIMATES calls don't compete with it for the rate limit.
+  # Weekly, not daily: a current-fiscal-year analyst estimate's high/low
+  # spread barely moves day to day.
+  schedule = "10 11 * * 6"
 
 [functions."scheduled-insider-transactions-background"]
   # Weekly, Saturday 10:30 UTC — after the rest of the Saturday block
