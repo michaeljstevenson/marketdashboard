@@ -162,6 +162,11 @@
   to = "/.netlify/functions/pe-divergence"
   status = 200
 
+[[redirects]]
+  from = "/api/relative-strength"
+  to = "/.netlify/functions/relative-strength"
+  status = 200
+
 # The Statistical Engine page was briefly at these paths.
 [[redirects]]
   from = "/streak-scanner"
@@ -426,3 +431,17 @@
   # jobs there's no reason to run this more than weekly; a new dividend
   # increase only lands a few times a year per company at most.
   schedule = "0 12 * * 6"
+
+[functions."scheduled-relative-strength-background"]
+  # Weekly, Saturday 13:10 UTC — originally 12:00, but that collided
+  # exactly with scheduled-dividend-growth-background (also Saturday 12:00
+  # UTC, built concurrently and unaware of this one — see that function's
+  # own schedule comment). Moved to 13:10 instead: after
+  # scheduled-pe-divergence-background (12:45 UTC, finishes ~12:54), the
+  # last job in the Saturday block as of when this was added, leaving
+  # headroom even if that job's own retry pass runs long. ~504 sequential
+  # Alpha Vantage TIME_SERIES_DAILY_ADJUSTED calls at 1050ms spacing plus a
+  # retry pass. Weekly, not daily: a 1-month/3-month momentum read doesn't
+  # meaningfully change day to day, and the forward-return persistence test
+  # needs snapshots spaced apart.
+  schedule = "10 13 * * 6"
