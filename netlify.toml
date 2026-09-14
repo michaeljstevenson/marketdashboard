@@ -152,6 +152,11 @@
   to = "/.netlify/functions/shareholder-yield"
   status = 200
 
+[[redirects]]
+  from = "/api/stock-splits"
+  to = "/.netlify/functions/stock-splits"
+  status = 200
+
 # The Statistical Engine page was briefly at these paths.
 [[redirects]]
   from = "/streak-scanner"
@@ -328,6 +333,7 @@
   # share counts only change when a company files a new 10-Q/10-K.
   schedule = "50 10 * * 6"
 
+<<<<<<< HEAD
 [functions."scheduled-dispersion-background"]
   # Weekly, Saturday 11:40 UTC — originally 11:10, but that collided
   # exactly with scheduled-surprise-background (also Saturday 11:10 UTC,
@@ -352,6 +358,17 @@
   # 11:40, after this job's sweep finishes, to resolve a same-minute
   # collision with scheduled-surprise-background.)
   schedule = "25 11 * * 6"
+=======
+[functions."scheduled-splits-background"]
+  # Weekly, Saturday 11:10 UTC — after scheduled-share-count-background
+  # (10:50 UTC). Stage 1 (~503 sequential SPLITS calls at the same 1050ms
+  # pacing) mirrors the other full-index sweeps above; stage 2 (a much
+  # smaller TIME_SERIES_DAILY_ADJUSTED, outputsize=full pull, only for
+  # tickers with a split in the last 5 years) runs right after within the
+  # same invocation. Weekly, not daily: a stock split is a rare, discrete
+  # event, not something that needs a daily re-check.
+  schedule = "10 11 * * 6"
+>>>>>>> 9a35171 (Add Stock Split Tracker page (Equities section))
 
 [functions."scheduled-insider-transactions-background"]
   # Weekly, Saturday 10:30 UTC — after the rest of the Saturday block
