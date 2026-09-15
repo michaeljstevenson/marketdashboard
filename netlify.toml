@@ -192,6 +192,11 @@
   to = "/.netlify/functions/spinoff-performance"
   status = 200
 
+[[redirects]]
+  from = "/api/margin-leverage"
+  to = "/.netlify/functions/margin-leverage"
+  status = 200
+
 # The Statistical Engine page was briefly at these paths.
 [[redirects]]
   from = "/streak-scanner"
@@ -555,3 +560,20 @@
   # sparse list of ~19 historical events, not a live universe that changes
   # day to day.
   schedule = "2 11 * * 6"
+
+[functions."scheduled-margin-leverage-background"]
+  # Weekly, Saturday 14:35 UTC — originally 11:20 (after this PR's own
+  # scheduled-share-count-background, assumed the last job in the block at
+  # 10:50 UTC), but this job's own sweep pulls two statements per company
+  # (~1006 calls, ~17.6 minutes at 1050ms spacing) rather than the ~503-
+  # call/~9-minute jobs the rest of this file is paced around — at 11:20
+  # that runs until ~11:38, directly overlapping scheduled-shareholder-
+  # yield-background (11:25-~11:34, a separate, concurrently-built PR's
+  # own sweep, unaware of this one — see that function's own schedule
+  # comment) and crowding scheduled-dispersion-background's 11:40 start.
+  # Moved to 14:35 instead: after scheduled-smallcap-liquidity-background
+  # (14:20 UTC, finishes ~14:24), the last job in the Saturday block as of
+  # this fix, leaving headroom for this job's own longer runtime. Weekly,
+  # not daily: fundamentals only change when a company files a new
+  # 10-Q/10-K.
+  schedule = "35 14 * * 6"
