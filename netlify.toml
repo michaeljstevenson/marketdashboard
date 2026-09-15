@@ -127,6 +127,16 @@
   to = "/.netlify/functions/share-count-trends"
   status = 200
 
+[[redirects]]
+  from = "/api/international-vs-us"
+  to = "/.netlify/functions/international-vs-us"
+  status = 200
+
+[[redirects]]
+  from = "/api/stock-splits"
+  to = "/.netlify/functions/stock-splits"
+  status = 200
+
 # The Statistical Engine page was briefly at these paths.
 [[redirects]]
   from = "/streak-scanner"
@@ -288,6 +298,16 @@
   # (unlike a sparse-event dataset) index levels move every trading day.
   schedule = "15 21 * * 1-5"
 
+[functions."scheduled-intl-background"]
+  # 21:20 UTC — in the gap between scheduled-smallcap (21:15) and
+  # scheduled-beeswarm-daily (21:40) in the once-daily post-close block.
+  # Only 4 Alpha Vantage calls total (4 full-history TIME_SERIES_DAILY_
+  # ADJUSTED: SPY, EFA, EEM, UUP), so like scheduled-smallcap-background
+  # there's no real rate-limit contention risk — staggered anyway to keep
+  # the daily block's logs easy to read in order. Daily, not weekly, since
+  # (unlike a sparse-event dataset) index levels move every trading day.
+  schedule = "20 21 * * 1-5"
+
 [functions."scheduled-share-count-background"]
   # Weekly, Saturday 10:50 UTC — after scheduled-insider-transactions-
   # background (10:30 UTC, ~9 minutes for its own ~503-call sweep at the
@@ -295,6 +315,20 @@
   # calls don't compete with it for the rate limit. Weekly, not daily:
   # share counts only change when a company files a new 10-Q/10-K.
   schedule = "50 10 * * 6"
+
+[functions."scheduled-splits-background"]
+  # Weekly, Saturday 11:10 UTC — after scheduled-share-count-background
+  # (10:50 UTC, ~9 minutes for its own ~503-call sweep at the same 1050ms
+  # pacing), so this job's own ~503-call SPLITS sweep doesn't compete with
+  # it for the rate limit. This job runs a bit longer than the other
+  # full-universe sweeps — the ~503 SPLITS calls plus a second, smaller
+  # pass of TIME_SERIES_DAILY_ADJUSTED calls (only for tickers with a
+  # recent forward split old enough to score a 1-year forward return) —
+  # but nothing else is scheduled for the rest of the Saturday block, so
+  # there's no contention risk either way. Weekly, not daily: split events
+  # are sparse (most companies never split in a given week), so a daily
+  # re-sweep would mostly refetch unchanged history.
+  schedule = "10 11 * * 6"
 
 [functions."scheduled-insider-transactions-background"]
   # Weekly, Saturday 10:30 UTC — after the rest of the Saturday block
