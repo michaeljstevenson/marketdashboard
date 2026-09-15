@@ -1,0 +1,1403 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<script>
+// Applied before first paint to avoid a flash of the wrong theme.
+(function(){
+ var saved = localStorage.getItem("theme");
+ if(saved === "light") document.documentElement.setAttribute("data-theme", "light");
+})();
+</script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom@2"></script>
+<script>
+// FRED-style zoom: drag horizontally on any chart to zoom into that range,
+// double-click to reset. Applied via Chart.defaults so every chart on the
+// page gets it without touching each individual new Chart(...) call.
+Chart.defaults.plugins.zoom = {
+ zoom: {
+  wheel: { enabled: false },
+  pinch: { enabled: false },
+  drag: { enabled: true, backgroundColor: "rgba(217,138,61,0.15)", borderColor: "rgba(217,138,61,0.4)", borderWidth: 1 },
+  mode: "x",
+ },
+ pan: { enabled: true, mode: "x", modifierKey: "shift" },
+};
+document.addEventListener("dblclick", function(e){
+ if(e.target.tagName === "CANVAS"){
+  var chart = Chart.getChart(e.target);
+  if(chart) chart.resetZoom();
+ }
+});
+document.addEventListener("DOMContentLoaded", function(){
+ document.querySelectorAll(".chart-canvas-wrap canvas").forEach(function(c){
+  c.title = "Drag to zoom · shift-drag to pan · double-click to reset";
+ });
+});
+</script>
+<style>
+.chart-fullscreen-btn{
+ position:absolute;
+ top:8px;
+ right:8px;
+ z-index:5;
+ background:var(--card, #1c2127);
+ border:1px solid var(--hair, #2b3138);
+ color:var(--muted, #8b9199);
+ border-radius:6px;
+ width:28px;
+ height:28px;
+ display:flex;
+ align-items:center;
+ justify-content:center;
+ cursor:pointer;
+ padding:0;
+ opacity:0.85;
+}
+.chart-fullscreen-btn:hover{ color:var(--ink, #eae6da); border-color:#3a424b; opacity:1; }
+.is-chart-fullscreen{
+ background:var(--bg, #14181c) !important;
+ padding:24px !important;
+ display:flex !important;
+ flex-direction:column !important;
+ overflow:auto !important;
+}
+.is-chart-fullscreen canvas{
+ max-height:none !important;
+}
+</style>
+<script>
+// Expand-to-fullscreen button on every chart, matching the pattern from
+// sites like GuruFocus: a small corner button on each chart's canvas
+// area that fullscreens the whole chart card (title, legend, controls
+// included) via the Fullscreen API. Finds every <canvas> generically
+// rather than relying on one wrapper class name, since different pages
+// on this site use different card markup (.chart-box, .scatter-box,
+// .chart, herd-mentality tiles, etc.).
+document.addEventListener("DOMContentLoaded", function(){
+ function requestFs(el){
+  var fn = el.requestFullscreen || el.webkitRequestFullscreen || el.mozRequestFullScreen || el.msRequestFullscreen;
+  if(fn) fn.call(el);
+ }
+ function exitFs(){
+  var fn = document.exitFullscreen || document.webkitExitFullscreen || document.mozCancelFullScreen || document.msExitFullscreen;
+  if(fn) fn.call(document);
+ }
+ function currentFsEl(){
+  return document.fullscreenElement || document.webkitFullscreenElement || document.mozFullScreenElement || document.msFullscreenElement;
+ }
+ function resolveCard(canvas){
+  return canvas.closest(".chart-box, .scatter-box, .herd-cell, .modal-chart")
+   || canvas.parentElement.closest("div")
+   || canvas.parentElement;
+ }
+ function resizeChartIn(wrap){
+  var canvas = wrap.querySelector("canvas");
+  var chart = canvas && window.Chart && Chart.getChart(canvas);
+  if(chart) chart.resize();
+ }
+
+ var entries = []; // { card, wrap }
+
+ document.querySelectorAll("canvas").forEach(function(canvas){
+  if(canvas.closest(".chart-fullscreen-btn")) return;
+  var card = resolveCard(canvas);
+  if(!card || card.querySelector(".chart-fullscreen-btn")) return; // one button per card, not per canvas
+
+  var wrap = canvas.parentElement;
+  var wrapStyle = getComputedStyle(wrap);
+  if(wrapStyle.position === "static") wrap.style.position = "relative";
+
+  var btn = document.createElement("button");
+  btn.type = "button";
+  btn.className = "chart-fullscreen-btn";
+  btn.title = "Expand chart";
+  btn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3H5a2 2 0 0 0-2 2v3"/><path d="M16 3h3a2 2 0 0 1 2 2v3"/><path d="M8 21H5a2 2 0 0 1-2-2v-3"/><path d="M16 21h3a2 2 0 0 0 2-2v-3"/></svg>';
+  btn.addEventListener("click", function(e){
+   e.stopPropagation();
+   if(currentFsEl() === card) exitFs();
+   else requestFs(card);
+  });
+  wrap.appendChild(btn);
+  entries.push({ card: card, wrap: wrap });
+
+  if(window.ResizeObserver){
+   new ResizeObserver(function(){ resizeChartIn(wrap); }).observe(wrap);
+  }
+ });
+
+ function onFsChange(){
+  var fsEl = currentFsEl();
+  entries.forEach(function(entry){
+   var isFs = fsEl === entry.card;
+   entry.card.classList.toggle("is-chart-fullscreen", isFs);
+   if(isFs){
+    entry.wrap.dataset.fsPrevHeight = entry.wrap.style.height || "";
+    entry.wrap.dataset.fsPrevFlex = entry.wrap.style.flex || "";
+    entry.wrap.style.flex = "1 1 auto";
+    entry.wrap.style.minHeight = "0";
+    entry.wrap.style.height = "auto";
+   }else if(entry.wrap.dataset.fsPrevHeight !== undefined){
+    entry.wrap.style.height = entry.wrap.dataset.fsPrevHeight;
+    entry.wrap.style.flex = entry.wrap.dataset.fsPrevFlex;
+    entry.wrap.style.minHeight = "";
+   }
+  });
+  entries.forEach(function(entry){ resizeChartIn(entry.wrap); });
+ }
+ ["fullscreenchange", "webkitfullscreenchange", "mozfullscreenchange", "MSFullscreenChange"].forEach(function(evt){
+  document.addEventListener(evt, onFsChange);
+ });
+});
+</script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Spin-Off Performance Tracker — Michael J. Stevenson</title>
+
+<style>
+
+:root{
+  --bg:#14181c;
+  --card:#1c2127;
+  --card-hover:#20262d;
+  --ink:#eae6da;
+  --muted:#8b9199;
+  --hair:#2b3138;
+
+  --fear:#6f8fac;
+  --neutral:#7c828a;
+  --greed:#d98a3d;
+  --extreme:#b56f2a;
+
+  --serif:'Iowan Old Style','Palatino Linotype',Georgia,serif;
+  --mono:'SF Mono','JetBrains Mono',ui-monospace,Menlo,monospace;
+  --sans:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+}
+
+:root[data-theme="light"]{
+  --bg:#f7f5f0;
+  --card:#ffffff;
+  --card-hover:#f2efe6;
+  --ink:#1c1f24;
+  --muted:#6b6f76;
+  --hair:#e1dbcd;
+  --fear:#4f6f8c;
+  --neutral:#6c7178;
+  --greed:#b9701f;
+  --extreme:#96591c;
+}
+
+*{ box-sizing:border-box; }
+
+body{
+ margin:0;
+ background:var(--bg);
+ color:var(--ink);
+ font-family:var(--sans);
+}
+
+a{ color:inherit; }
+
+/* SITE NAV (shared with homepage) */
+
+.sitenav{
+ display:grid;
+ grid-template-columns:1fr auto 1fr;
+ align-items:center;
+ padding:16px 24px;
+ border-bottom:1px solid var(--hair);
+ position:relative;
+ z-index:50;
+}
+
+.sitenav .brand{
+ justify-self:start;
+}
+
+.sitenav .brand{
+ font-family:var(--serif);
+ font-size:17px;
+ color:var(--ink);
+ text-decoration:none;
+ letter-spacing:0.3px;
+}
+
+.navlinks{
+ display:flex;
+ gap:26px;
+ align-items:center;
+}
+
+.navlinks > a{
+ color:var(--muted);
+ font-size:13px;
+ text-decoration:none;
+ padding:6px 0;
+}
+
+.navlinks > a:hover, .navlinks > a.active{ color:var(--ink); }
+
+.navdrop{ position:relative; }
+
+
+.navdrop > .navlabel{
+ color:var(--muted);
+ font-size:13px;
+ cursor:default;
+ padding:6px 0;
+ user-select:none;
+}
+
+.navdrop:hover > .navlabel, .navdrop.open > .navlabel{ color:var(--ink); }
+
+.navdrop .dropdown{
+ display:none;
+ position:absolute;
+ top:100%;
+ left:0;
+ background:var(--card);
+ border:1px solid var(--hair);
+ border-radius:8px;
+ padding:8px 0;
+ min-width:230px;
+ margin-top:12px;
+ box-shadow:0 10px 30px rgba(0,0,0,0.45);
+}
+
+/* Driven by the .open class (see the script right after </nav>), not
+   pure :hover — see that script for why. */
+.navdrop.open .dropdown{ display:block; }
+
+.dropdown a{
+ display:block;
+ padding:9px 16px;
+ color:var(--muted);
+ text-decoration:none;
+ font-size:13px;
+}
+
+.dropdown a:hover{
+ background:var(--card-hover);
+ color:var(--ink);
+}
+
+.dropdown a.active{ color:var(--greed); }
+
+@media (max-width:720px){
+ .navlinks{ display:none; }
+}
+
+.container{
+ max-width:1100px;
+ margin:auto;
+ padding:30px 20px 60px;
+}
+
+/* HEADER */
+
+.header{
+ display:flex;
+ justify-content:space-between;
+ align-items:flex-end;
+ border-bottom:1px solid var(--hair);
+ padding-bottom:18px;
+ margin-bottom:25px;
+ flex-wrap:wrap;
+ gap:12px;
+}
+
+h1{
+ font-family:var(--serif);
+ font-size:28px;
+ font-weight:400;
+ margin:0;
+}
+
+.subtitle{
+ color:var(--muted);
+ font-size:13px;
+ margin-top:6px;
+ max-width:640px;
+}
+
+.updated{
+ color:var(--muted);
+ font-size:12px;
+}
+
+/* STAT ROW */
+
+.stat-grid{
+ display:grid;
+ grid-template-columns:repeat(4,1fr);
+ gap:16px;
+ margin-bottom:30px;
+}
+
+.stat-card{
+ background:var(--card);
+ border:1px solid var(--hair);
+ border-radius:10px;
+ padding:20px;
+}
+
+.stat-label{
+ color:var(--muted);
+ font-size:12px;
+ letter-spacing:0.04em;
+ margin-bottom:8px;
+}
+
+.stat-value{
+ font-family:var(--mono);
+ font-size:24px;
+ color:var(--greed);
+}
+
+.stat-value.cell-neg{ color:var(--fear); }
+
+.stat-note{
+ color:var(--muted);
+ font-size:12px;
+ margin-top:6px;
+}
+
+@media (max-width:900px){
+ .stat-grid{ grid-template-columns:repeat(2,1fr); }
+}
+
+/* CHART */
+
+.chart-box{
+ background:var(--card);
+ border:1px solid var(--hair);
+ border-radius:12px;
+ padding:20px;
+ margin-bottom:30px;
+}
+
+.chart-box-header{
+ display:flex;
+ justify-content:space-between;
+ align-items:center;
+ flex-wrap:wrap;
+ gap:10px;
+ margin-bottom:16px;
+}
+
+.chart-box h2{
+ font-family:var(--serif);
+ font-weight:400;
+ font-size:18px;
+ margin:0;
+}
+
+.chart-subhead{
+ color:var(--muted);
+ font-size:12px;
+ margin-top:4px;
+}
+
+.chart-canvas-wrap{
+ height:380px;
+}
+
+/* TABLE */
+
+.table-grid{
+ display:grid;
+ grid-template-columns:1fr 1fr;
+ gap:16px;
+ margin-bottom:30px;
+}
+
+@media (max-width:900px){
+ .table-grid{ grid-template-columns:1fr; }
+}
+
+.table-box{
+ background:var(--card);
+ border:1px solid var(--hair);
+ border-radius:12px;
+ overflow-x:auto;
+ margin-bottom:30px;
+}
+
+.table-grid .table-box{ margin-bottom:0; }
+
+.table-box-header{
+ padding:18px 20px 4px;
+}
+
+.table-box-header h2{
+ font-family:var(--serif);
+ font-weight:400;
+ font-size:18px;
+ margin:0;
+}
+
+.table-box-header .chart-subhead{ margin-bottom:6px; }
+
+table{
+ width:100%;
+ border-collapse:collapse;
+ font-size:13px;
+ min-width:600px;
+}
+
+thead th{
+ text-align:right;
+ padding:14px 12px;
+ color:var(--muted);
+ font-size:11px;
+ letter-spacing:0.04em;
+ font-weight:600;
+ cursor:pointer;
+ user-select:none;
+ white-space:nowrap;
+ border-bottom:1px solid var(--hair);
+}
+
+thead th:first-child, thead th:nth-child(2){
+ text-align:left;
+}
+
+thead th:hover{ color:var(--ink); }
+
+thead th .sort-arrow{
+ opacity:0.4;
+ margin-left:3px;
+ font-size:10px;
+}
+
+thead th.sorted .sort-arrow{ opacity:1; color:var(--greed); }
+
+thead th:not([data-key]){ cursor:default; }
+
+tbody td{
+ padding:11px 12px;
+ text-align:right;
+ font-family:var(--mono);
+ white-space:nowrap;
+ border-bottom:1px solid var(--hair);
+}
+
+tbody tr:last-child td{ border-bottom:none; }
+
+tbody tr:hover{ background:var(--card-hover); }
+
+tbody td:first-child{
+ text-align:left;
+ font-family:var(--sans);
+}
+
+tbody td:nth-child(2){
+ text-align:left;
+ color:var(--muted);
+}
+
+.sector-name{ color:var(--ink); }
+.sector-ticker{ color:var(--muted); font-size:11px; }
+
+.cell-pos{ color:var(--ink); }
+.cell-neg{ color:var(--ink); }
+.cell-na{ color:var(--muted); }
+
+.tag{
+ display:inline-block;
+ font-family:var(--sans);
+ font-size:10px;
+ letter-spacing:0.03em;
+ padding:2px 7px;
+ border-radius:20px;
+ border:1px solid var(--hair);
+ color:var(--muted);
+}
+.tag.spinco{ color:var(--greed); border-color:var(--greed); }
+.tag.parent{ color:var(--fear); border-color:var(--fear); }
+
+/* SCATTER / METHOD TABLE (mirrors /factor-analysis) */
+
+.scatter-canvas-wrap{
+ height:320px;
+ margin-bottom:12px;
+ position:relative;
+}
+
+.method-table{
+ width:100%;
+ border-collapse:collapse;
+ font-family:var(--mono);
+ font-size:11px;
+ margin-top:8px;
+}
+
+.method-table th{
+ text-align:right;
+ padding:6px 5px;
+ color:var(--muted);
+ font-size:10px;
+ letter-spacing:0.03em;
+ font-weight:600;
+ border-bottom:1px solid var(--hair);
+ white-space:nowrap;
+}
+
+.method-table th:first-child{ text-align:left; }
+
+.method-table td{
+ padding:7px 5px;
+ text-align:right;
+ border-bottom:1px solid var(--hair);
+ white-space:nowrap;
+ color:var(--ink);
+}
+
+.method-table td:first-child{
+ text-align:left;
+ font-family:var(--sans);
+ color:var(--muted);
+}
+
+.method-table tr:last-child td{ border-bottom:none; }
+
+.method-table .sig{ color:var(--greed); }
+
+.method-note{
+ font-size:11px;
+ color:var(--muted);
+ margin-top:8px;
+ font-style:italic;
+}
+
+/* Unlike /share-count-trends and /factor-analysis, these method tables
+   sit directly in a .chart-box rather than a .table-box, so they need
+   their own overflow-x:auto — otherwise the global table{min-width:600px}
+   rule forces the whole page wider than a phone viewport. */
+#statsMethodTable, #scatterMethodTable{ overflow-x:auto; }
+
+/* EXPLAINER */
+
+.explainer{
+ background:var(--card);
+ border:1px solid var(--hair);
+ border-radius:12px;
+ padding:24px 26px;
+ margin-bottom:30px;
+}
+
+.explainer h2{
+ font-family:var(--serif);
+ font-weight:400;
+ font-size:18px;
+ margin:0 0 12px;
+}
+
+.explainer p{
+ color:var(--muted);
+ font-size:14px;
+ line-height:1.7;
+ margin:0 0 14px;
+}
+
+.explainer code{
+ font-family:var(--mono);
+ background:var(--card-hover);
+ padding:2px 6px;
+ border-radius:4px;
+ font-size:0.92em;
+ white-space:nowrap;
+}
+
+.explainer ul{
+ color:var(--muted);
+ font-size:13px;
+ line-height:1.7;
+ margin:0 0 14px;
+ padding-left:20px;
+}
+
+.explainer li{ margin-bottom:6px; }
+
+.explainer p:last-child, .explainer ul:last-child{ margin-bottom:0; }
+
+.explainer .source{
+ margin-top:16px;
+ font-size:11px;
+}
+
+.explainer .source a{
+ color:var(--muted);
+ text-decoration:none;
+ border-bottom:1px dotted var(--muted);
+}
+
+.explainer .source a:hover{ color:var(--ink); }
+
+.error-banner{
+ background:#2a1c1c;
+ border:1px solid #5a3030;
+ color:#e0a0a0;
+ border-radius:8px;
+ padding:12px 15px;
+ margin-bottom:20px;
+ font-size:13px;
+ display:none;
+}
+
+.warning-banner{
+ background:#2a2419;
+ border:1px solid #5a4f30;
+ color:#d9b877;
+ border-radius:8px;
+ padding:12px 15px;
+ margin-bottom:20px;
+ font-size:13px;
+ display:none;
+}
+
+
+.theme-toggle{
+ justify-self:end;
+ background:none;
+ border:1px solid var(--hair);
+ color:var(--muted);
+ border-radius:6px;
+ width:32px;
+ height:32px;
+ display:flex;
+ align-items:center;
+ justify-content:center;
+ cursor:pointer;
+ font-size:15px;
+ line-height:1;
+}
+
+.theme-toggle:hover{ color:var(--ink); border-color:var(--hair); }
+
+
+/* Light-theme overrides for hardcoded (non-var) dark colors */
+
+[data-theme="light"] .error-banner{
+ background:#fdecea;
+ border-color:#f0b8b0;
+ color:#a83a30;
+}
+
+[data-theme="light"] .warning-banner{
+ background:#fdf3d9;
+ border-color:#e9cf8a;
+ color:#8a6a1f;
+}
+</style>
+</head>
+<body>
+
+<nav class="sitenav">
+<a class="brand" href="/">Michael J. Stevenson, CAIA<span style="font-size:0.6em; vertical-align:super;">&reg;</span></a>
+<div class="navlinks">
+<div class="navdrop">
+<span class="navlabel">Behavioral/Positioning ▾</span>
+<div class="dropdown">
+<a href="/ipo-activity.html">IPO Activity</a>
+</div>
+</div>
+
+<div class="navdrop">
+<span class="navlabel">Equities ▾</span>
+<div class="dropdown">
+<a href="/sector-analysis.html">Sector Performance</a>
+<a href="/sector-beeswarm.html">Sector Beeswarm</a>
+<a href="/ath-index.html">All-Time Highs and Lows</a>
+<a href="/valuations.html">Valuations</a>
+<a href="/factor-analysis.html">Factor Analysis</a>
+<a href="/market-breadth.html">Market Breadth</a>
+<a href="/seasonality.html">Seasonality</a>
+<a href="/concentration.html">Concentration</a>
+<a href="/earnings-revisions.html">Earnings Revisions</a>
+<a href="/insider-buying-selling.html">Insider Buying/Selling</a>
+<a href="/small-cap-vs-large-cap.html">Small Cap vs. Large Cap Spread</a>
+<a href="/share-count-trends.html">Share Count Trends</a>
+<a href="/sector-correlation.html">Sector Correlation Matrix</a>
+<a href="/sector-rotation.html">Sector Rotation Model</a>
+<a href="/spin-off-performance.html" class="active">Spin-Off Performance Tracker</a>
+</div>
+</div>
+
+<div class="navdrop">
+<span class="navlabel">Markets/Macro ▾</span>
+<div class="dropdown">
+<a href="/sentiment-index.html">Sentiment Index</a>
+<a href="/volatility.html">Implied vs. Realized Volatility</a>
+<a href="/implied-erp.html">Implied Equity Risk Premium</a>
+<a href="/yield-curves.html">Yield Curves</a>
+<a href="/expectations-vs-reality.html">Expectations vs. Reality</a>
+</div>
+</div>
+
+<a href="/portfolio-simulator.html">Portfolio Simulator</a>
+<a href="/backtesting.html">Backtesting</a>
+<a href="/statistical-engine">Statistical Engine</a>
+
+
+
+
+</div>
+<button class="theme-toggle" id="themeToggle" type="button" aria-label="Toggle light/dark mode" title="Toggle light/dark mode">&#9789;</button>
+</nav>
+<script>
+// Class-driven (not pure :hover) nav dropdowns: pure CSS :hover drops the
+// menu the instant the cursor leaves .navdrop, which includes the moment
+// it's crossing the gap between the label and the dropdown box below —
+// exactly the "sometimes works, sometimes doesn't" flakiness reported.
+// A short close-delay after mouseleave gives the cursor room to travel
+// down into the dropdown without losing it.
+document.querySelectorAll(".navdrop").forEach(function(navdrop){
+ var closeTimer = null;
+ navdrop.addEventListener("mouseenter", function(){
+  clearTimeout(closeTimer);
+  navdrop.classList.add("open");
+ });
+ navdrop.addEventListener("mouseleave", function(){
+  closeTimer = setTimeout(function(){ navdrop.classList.remove("open"); }, 300);
+ });
+});
+</script>
+<script>
+(function(){
+ var btn = document.getElementById("themeToggle");
+ if(!btn) return;
+ var theme = document.documentElement.getAttribute("data-theme") === "light" ? "light" : "dark";
+ btn.textContent = theme === "light" ? "☀" : "☽";
+ btn.addEventListener("click", function(){
+  var current = document.documentElement.getAttribute("data-theme") === "light" ? "light" : "dark";
+  var next = current === "light" ? "dark" : "light";
+  localStorage.setItem("theme", next);
+  location.reload();
+ });
+})();
+</script>
+
+
+
+<div class="container">
+
+<div class="error-banner" id="errorBanner"></div>
+<div class="warning-banner" id="warningBanner"></div>
+
+<div class="header">
+<div>
+<h1>Spin-Off Performance Tracker</h1>
+<div class="subtitle">Does the well-known "spin-off effect" actually show up in the data? Cumulative total return vs. SPY for 19 hand-compiled corporate spinoffs since 2015, for both the newly independent spinco and the remaining parent, indexed to each company's own separation date.</div>
+</div>
+<div class="updated" id="updated">Loading...</div>
+</div>
+
+<div class="stat-grid">
+<div class="stat-card">
+<div class="stat-label">Events Tracked</div>
+<div class="stat-value" id="statEventCount">—</div>
+<div class="stat-note" id="statEventCountNote">Spinoffs since 2015</div>
+</div>
+<div class="stat-card">
+<div class="stat-label">Avg. Spinco Excess Return (1Y)</div>
+<div class="stat-value" id="statSpincoExcess">—</div>
+<div class="stat-note" id="statSpincoExcessNote">vs. SPY over the same window</div>
+</div>
+<div class="stat-card">
+<div class="stat-label">Avg. Parent Excess Return (1Y)</div>
+<div class="stat-value" id="statParentExcess">—</div>
+<div class="stat-note" id="statParentExcessNote">vs. SPY over the same window</div>
+</div>
+<div class="stat-card">
+<div class="stat-label">Spinco Effect Significant?</div>
+<div class="stat-value" id="statSignificance" style="font-size:18px;">—</div>
+<div class="stat-note" id="statSignificanceNote">t-test / sign test at the 1-year mark</div>
+</div>
+</div>
+
+<div class="chart-box">
+<div class="chart-box-header">
+<div>
+<h2>Average cumulative excess return, indexed to the spinoff date</h2>
+<div class="chart-subhead">Every spinco and parent leg aligned to trading day 0 = its own separation date, then averaged at each elapsed trading day. Sample size (N, right axis) shrinks at longer horizons as younger events run out of history — read the right tail with that in mind.</div>
+</div>
+</div>
+<div class="chart-canvas-wrap">
+<canvas id="eventTimeChart"></canvas>
+</div>
+</div>
+
+<div class="table-grid">
+<div class="table-box">
+<div class="table-box-header">
+<h2>Best-performing spincos</h2>
+<div class="chart-subhead">By cumulative excess return since separation</div>
+</div>
+<table id="bestSpincoTable">
+<thead><tr><th>Spinco</th><th>Sector</th><th>Since</th><th>Excess</th></tr></thead>
+<tbody id="bestSpincoBody"><tr><td colspan="4" style="text-align:center; color:var(--muted); padding:24px;">Loading&hellip;</td></tr></tbody>
+</table>
+</div>
+<div class="table-box">
+<div class="table-box-header">
+<h2>Worst-performing spincos</h2>
+<div class="chart-subhead">By cumulative excess return since separation</div>
+</div>
+<table id="worstSpincoTable">
+<thead><tr><th>Spinco</th><th>Sector</th><th>Since</th><th>Excess</th></tr></thead>
+<tbody id="worstSpincoBody"><tr><td colspan="4" style="text-align:center; color:var(--muted); padding:24px;">Loading&hellip;</td></tr></tbody>
+</table>
+</div>
+</div>
+
+<div class="table-grid">
+<div class="table-box">
+<div class="table-box-header">
+<h2>Best-performing parents</h2>
+<div class="chart-subhead">The remaining company, by cumulative excess return since separation</div>
+</div>
+<table id="bestParentTable">
+<thead><tr><th>Parent</th><th>Sector</th><th>Since</th><th>Excess</th></tr></thead>
+<tbody id="bestParentBody"><tr><td colspan="4" style="text-align:center; color:var(--muted); padding:24px;">Loading&hellip;</td></tr></tbody>
+</table>
+</div>
+<div class="table-box">
+<div class="table-box-header">
+<h2>Worst-performing parents</h2>
+<div class="chart-subhead">The remaining company, by cumulative excess return since separation</div>
+</div>
+<table id="worstParentTable">
+<thead><tr><th>Parent</th><th>Sector</th><th>Since</th><th>Excess</th></tr></thead>
+<tbody id="worstParentBody"><tr><td colspan="4" style="text-align:center; color:var(--muted); padding:24px;">Loading&hellip;</td></tr></tbody>
+</table>
+</div>
+</div>
+
+<div class="chart-box">
+<div class="chart-box-header">
+<div>
+<h2>Is the spin-off effect statistically real, or noise?</h2>
+<div class="chart-subhead">One-sample t-test and an exact two-sided sign test on excess return at the 1-year mark, run separately for spinco legs and parent legs — same two-method-check spirit as /factor-analysis and /small-cap-vs-large-cap</div>
+</div>
+</div>
+<div id="statsMethodTable"></div>
+<div class="method-note">N here is legs, not companies — a handful of parent tickers (DD, DHR, GE) anchor more than one event on this list, at different dates, so they contribute one observation per event, not per ticker.</div>
+</div>
+
+<div class="chart-box">
+<div class="chart-box-header">
+<div>
+<h2>Spinco excess return vs. parent excess return</h2>
+<div class="chart-subhead">Each point is one event with both legs available (excludes Otis/Carrier, which had no remaining-parent leg). Cumulative excess return since separation, to date.</div>
+</div>
+</div>
+<div class="scatter-canvas-wrap">
+<canvas id="scatterChart"></canvas>
+</div>
+<div id="scatterMethodTable"></div>
+</div>
+
+<div class="chart-box">
+<div class="chart-box-header">
+<div>
+<h2>Excess return by sector</h2>
+<div class="chart-subhead">Average cumulative excess return since separation, spinco and parent legs shown separately</div>
+</div>
+</div>
+<div class="chart-canvas-wrap">
+<canvas id="sectorChart"></canvas>
+</div>
+</div>
+
+<div class="table-box">
+<div class="table-box-header">
+<h2>Every event and leg</h2>
+<div class="chart-subhead">Full return and excess-return detail for every spinco and parent leg tracked</div>
+</div>
+<table id="legsTable">
+<thead>
+<tr>
+<th data-key="label">Company</th>
+<th data-key="role">Leg</th>
+<th data-key="sector">Sector</th>
+<th data-key="eventDate">Event Date</th>
+<th data-key="excess6M">6M Excess</th>
+<th data-key="excess1Y">1Y Excess</th>
+<th data-key="excess3Y">3Y Excess</th>
+<th data-key="returnToDate">To-Date Return</th>
+<th data-key="excessToDate">To-Date Excess</th>
+</tr>
+</thead>
+<tbody id="legsBody">
+<tr><td colspan="9" style="text-align:center; color:var(--muted); padding:30px;">Loading spin-off data&hellip;</td></tr>
+</tbody>
+</table>
+</div>
+
+<div class="explainer">
+<h2>Methodology</h2>
+<p>The "spin-off effect" is one of the more durable findings in corporate-finance literature: after a company separates a division into its own independent public stock, both the new spinco and the remaining parent have historically tended to outperform the market for a stretch afterward — one common explanation is forced, valuation-insensitive selling by index funds that hold the parent but have no mandate to hold an unfamiliar new small-cap, which can temporarily depress the spinco's price for reasons that have nothing to do with its fundamentals.</p>
+<p>The event list below — which company spun off which division, and on what date — is hand-compiled from public record, the same "curated metadata, real market data" split this site already uses for <a href="/expectations-vs-reality.html">Expectations vs. Reality</a>. Every return number, though, comes from a live Alpha Vantage <code>TIME_SERIES_DAILY_ADJUSTED</code> pull (adjusted close, so dividends are accounted for) — nothing about the price data itself is estimated or fabricated. The anchor date for every event is the spinco's first day of regular trading; both legs, spinco and parent, are measured against SPY over the identical calendar window so the excess-return numbers are directly comparable.</p>
+<p>19 events are tracked, going back to eBay's 2015 spinoff of PayPal. Two of them — United Technologies' simultaneous 2020 spinoffs of Otis and Carrier — have no parent leg at all: UTC didn't continue as an independent company, it merged into Raytheon the same day, so there's nothing to measure a "remaining parent" against. A few others carry a footnote rather than a clean spinoff label: Viatris (Pfizer's Upjohn unit combined with Mylan via a Reverse Morris Trust, not a pure spinoff), Kenvue (anchored to the exchange-offer completion date, not the earlier IPO carve-out), Kellanova/WK Kellogg (the parent ticker K kept trading under a new name rather than the spinco inheriting it), and the 2015 HP split (both HPQ and HPE are technically new companies; HPQ, which kept the legacy ticker, is treated here as the parent-continuation leg). Any ticker whose price history doesn't reach back to its event's anchor date is dropped from that one leg rather than blocking the whole page or being replaced with a guess.</p>
+<p>The headline chart aligns every leg to trading day 0 = its own separation date, then averages the cumulative excess return across every leg at each elapsed trading day — this is the standard event-time construction for asking "does an effect show up around an event," applied here to spinoffs the way this site's other pages apply it to earnings, rebalances, or Fed decisions. The sample size shrinks as the horizon lengthens, since younger events (GE Vernova, Solventum) haven't lived long enough to contribute to the 3-year mark yet — the chart reports N alongside the average rather than hiding that shrinkage.</p>
+<p>The significance check is a plain one-sample t-test (is the mean excess return across legs different from zero?) plus an exact two-sided sign test (of the legs with a nonzero excess return, are "up" and "down" roughly 50/50, or lopsided?) at the 1-year mark, run once for spinco legs and once for parent legs. Be honest about what this is and isn't: with roughly 15-19 independent events, this is nowhere near the sample size academic studies of the spin-off effect use, and several events share an underlying corporate family (three Danaher spinoffs, two General Electric spinoffs, two DowDuPont spinoffs) rather than being fully independent draws. Treat the result as illustrative, not as a rigorous test of the effect's existence.</p>
+<p>Refreshes weekly. A fixed list of 19 historical events doesn't need daily re-pulling — the only thing that moves week to week is one more week of price history for the "to-date" return column.</p>
+<div class="source">Source: <a href="https://www.alphavantage.co/" target="_blank" rel="noopener">Alpha Vantage — TIME_SERIES_DAILY_ADJUSTED</a>. Event dates and tickers hand-compiled from public record (company press releases and SEC filings around each separation).</div>
+</div>
+
+</div>
+
+<script>
+const DATA_URL = "/api/spin-off-performance";
+
+let RAW = null;
+let SORT_KEY = "excessToDate";
+let SORT_DIR = -1;
+
+function fmtPct(v, digits){
+ if(v === null || v === undefined || isNaN(v)) return "n/a";
+ digits = digits === undefined ? 1 : digits;
+ return (v >= 0 ? "+" : "") + v.toFixed(digits) + "%";
+}
+
+function showError(message){
+ const banner = document.getElementById("errorBanner");
+ banner.textContent = message;
+ banner.style.display = "block";
+}
+function showWarning(message){
+ const banner = document.getElementById("warningBanner");
+ banner.textContent = message;
+ banner.style.display = "block";
+}
+
+function themeInkColor(){
+ const v = getComputedStyle(document.documentElement).getPropertyValue("--ink").trim();
+ return v || "#eae6da";
+}
+function themeMutedColor(){
+ const v = getComputedStyle(document.documentElement).getPropertyValue("--muted").trim();
+ return v || "#8b9199";
+}
+function themeHairColor(){
+ const v = getComputedStyle(document.documentElement).getPropertyValue("--hair").trim();
+ return v || "#2b3138";
+}
+function themeGreedColor(){
+ const v = getComputedStyle(document.documentElement).getPropertyValue("--greed").trim();
+ return v || "#d98a3d";
+}
+function themeFearColor(){
+ const v = getComputedStyle(document.documentElement).getPropertyValue("--fear").trim();
+ return v || "#6f8fac";
+}
+
+// ---- Stats helpers — same methodology as /factor-analysis and
+// /share-count-trends, duplicated here since every page on this site is
+// self-contained (see CLAUDE.md), plus a one-sample t-test and an exact
+// sign test that those other pages didn't need. ----
+function linearRegression(xs, ys){
+ const n = xs.length;
+ const mx = xs.reduce((a, b) => a + b, 0) / n;
+ const my = ys.reduce((a, b) => a + b, 0) / n;
+ const sxx = xs.reduce((s, x) => s + (x - mx) ** 2, 0);
+ const sxy = xs.reduce((s, x, i) => s + (x - mx) * (ys[i] - my), 0);
+ const syy = ys.reduce((s, y) => s + (y - my) ** 2, 0);
+ const slope = sxy / sxx;
+ const intercept = my - slope * mx;
+ const r = sxy / Math.sqrt(sxx * syy);
+ const r2 = r * r;
+ const dof = n - 2;
+ const sse = ys.reduce((s, y, i) => s + (y - (intercept + slope * xs[i])) ** 2, 0);
+ const seSlope = Math.sqrt((sse / dof) / sxx);
+ const t = slope / seSlope;
+ const p = 2 * (1 - normalCdf(Math.abs(t)));
+ return { n, slope, intercept, r, r2, t, dof, p, sse };
+}
+function normalCdf(x){ return 0.5 * (1 + erf(x / Math.SQRT2)); }
+function erf(x){
+ const sign = x < 0 ? -1 : 1;
+ x = Math.abs(x);
+ const a1 = 0.254829592, a2 = -0.284496736, a3 = 1.421413741, a4 = -1.453152027, a5 = 1.061405429, p = 0.3275911;
+ const t = 1 / (1 + p * x);
+ const y = 1 - (((((a5 * t + a4) * t) + a3) * t + a2) * t + a1) * t * Math.exp(-x * x);
+ return sign * y;
+}
+function rankArray(arr){
+ const idx = arr.map((v, i) => i).sort((a, b) => arr[a] - arr[b]);
+ const ranks = new Array(arr.length);
+ let i = 0;
+ while(i < idx.length){
+  let j = i;
+  while(j + 1 < idx.length && arr[idx[j + 1]] === arr[idx[i]]) j++;
+  const avgRank = (i + j) / 2 + 1;
+  for(let k = i; k <= j; k++) ranks[idx[k]] = avgRank;
+  i = j + 1;
+ }
+ return ranks;
+}
+function spearmanRegression(xs, ys){ return linearRegression(rankArray(xs), rankArray(ys)); }
+
+// One-sample t-test against mu=0. Uses the same normal-approximation
+// p-value convention as linearRegression above (this site treats t as
+// approximately normal for these small-sample significance checks
+// throughout, rather than pulling in a full t-distribution table).
+function oneSampleTTest(values){
+ const v = values.filter(x => x !== null && x !== undefined && !isNaN(x));
+ const n = v.length;
+ if(n < 2) return null;
+ const mean = v.reduce((a, b) => a + b, 0) / n;
+ const variance = v.reduce((s, x) => s + (x - mean) ** 2, 0) / (n - 1);
+ const sd = Math.sqrt(variance);
+ const se = sd / Math.sqrt(n);
+ const t = se > 0 ? mean / se : 0;
+ const dof = n - 1;
+ const p = 2 * (1 - normalCdf(Math.abs(t)));
+ return { n, mean, sd, se, t, dof, p };
+}
+
+// Exact two-sided sign test against a 50/50 split (values exactly at zero
+// are dropped, standard sign-test convention). Computed exactly rather
+// than via a normal approximation — safe and simple at this page's sample
+// sizes (well under n=30).
+function signTest(values){
+ const v = values.filter(x => x !== null && x !== undefined && !isNaN(x) && x !== 0);
+ const n = v.length;
+ if(n < 1) return null;
+ const plus = v.filter(x => x > 0).length;
+ const minus = n - plus;
+ const k = Math.max(plus, minus);
+ function choose(a, b){ let r = 1; for(let i = 0; i < b; i++) r = r * (a - i) / (i + 1); return r; }
+ let tail = 0;
+ for(let i = k; i <= n; i++) tail += choose(n, i) * Math.pow(0.5, n);
+ const p = Math.min(1, tail * 2);
+ return { n, plus, minus, p };
+}
+
+let eventTimeChart = null, scatterChart = null, sectorChart = null;
+
+async function init(){
+ try{
+  const res = await fetch(DATA_URL, { cache: "no-store" });
+  const data = await res.json();
+  if(!res.ok || data.error) throw new Error(data.error || "failed to load");
+
+  RAW = data;
+  document.getElementById("updated").textContent = "As of " + new Date(data.generated_at_utc).toLocaleString();
+
+  if(data.loadedTickerCount < data.universeTickerCount){
+   showWarning("Only " + data.loadedTickerCount + " of " + data.universeTickerCount + " tickers loaded this run — some legs may be missing below.");
+  }
+
+  renderStats();
+  renderEventTimeChart();
+  renderLeaderTable(data.leaderboards.bestSpincos, "bestSpincoBody");
+  renderLeaderTable(data.leaderboards.worstSpincos, "worstSpincoBody");
+  renderLeaderTable(data.leaderboards.bestParents, "bestParentBody");
+  renderLeaderTable(data.leaderboards.worstParents, "worstParentBody");
+  renderStatsMethodTable();
+  renderScatter();
+  renderSectorChart();
+  renderLegsTable();
+
+ }catch(e){
+  showError("Couldn't load spin-off performance data (" + e.message + "). The /api/spin-off-performance function may not have run yet.");
+  document.getElementById("legsBody").innerHTML =
+   '<tr><td colspan="9" style="text-align:center; color:var(--muted); padding:30px;">No data available.</td></tr>';
+ }
+}
+
+function spincoExcess(horizonKey){
+ return RAW.legs.filter(l => l.role === "spinco" && l.excess[horizonKey] !== null).map(l => l.excess[horizonKey]);
+}
+function parentExcess(horizonKey){
+ return RAW.legs.filter(l => l.role === "parent" && l.excess[horizonKey] !== null).map(l => l.excess[horizonKey]);
+}
+
+function renderStats(){
+ document.getElementById("statEventCount").textContent = RAW.events.length;
+ document.getElementById("statEventCountNote").textContent = RAW.legs.length + " legs (spinco + parent) tracked";
+
+ const spincoVals = spincoExcess("oneYear");
+ const parentVals = parentExcess("oneYear");
+
+ const spincoEl = document.getElementById("statSpincoExcess");
+ if(spincoVals.length){
+  const avg = spincoVals.reduce((a, b) => a + b, 0) / spincoVals.length;
+  spincoEl.textContent = fmtPct(avg);
+  spincoEl.classList.toggle("cell-neg", avg < 0);
+  document.getElementById("statSpincoExcessNote").textContent = "n=" + spincoVals.length + " spinco legs, 1Y mark";
+ }else{
+  spincoEl.textContent = "n/a";
+ }
+
+ const parentEl = document.getElementById("statParentExcess");
+ if(parentVals.length){
+  const avg = parentVals.reduce((a, b) => a + b, 0) / parentVals.length;
+  parentEl.textContent = fmtPct(avg);
+  parentEl.classList.toggle("cell-neg", avg < 0);
+  document.getElementById("statParentExcessNote").textContent = "n=" + parentVals.length + " parent legs, 1Y mark";
+ }else{
+  parentEl.textContent = "n/a";
+ }
+
+ const tSpinco = oneSampleTTest(spincoVals);
+ const sSpinco = signTest(spincoVals);
+ const sigEl = document.getElementById("statSignificance");
+ const sigNoteEl = document.getElementById("statSignificanceNote");
+ if(tSpinco && sSpinco){
+  const bothSig = tSpinco.p < 0.05 && sSpinco.p < 0.05;
+  const eitherSig = tSpinco.p < 0.05 || sSpinco.p < 0.05;
+  sigEl.textContent = bothSig ? "Both tests, yes" : eitherSig ? "One test, mixed" : "No";
+  sigNoteEl.textContent = "t p=" + (tSpinco.p < 0.001 ? "<0.001" : tSpinco.p.toFixed(3)) + ", sign p=" + (sSpinco.p < 0.001 ? "<0.001" : sSpinco.p.toFixed(3)) + " (n=" + tSpinco.n + ")";
+ }else{
+  sigEl.textContent = "n/a";
+ }
+}
+
+function renderEventTimeChart(){
+ const curve = RAW.eventTimeCurve;
+ const ctx = document.getElementById("eventTimeChart").getContext("2d");
+ if(eventTimeChart) eventTimeChart.destroy();
+ eventTimeChart = new Chart(ctx, {
+  data: {
+   labels: curve.t,
+   datasets: [
+    {
+     type: "line", label: "Avg. cumulative excess return", data: curve.avgExcess,
+     borderColor: themeGreedColor(), backgroundColor: "transparent", borderWidth: 1.75,
+     pointRadius: 0, tension: 0, yAxisID: "y",
+    },
+    {
+     type: "line", label: "N (legs with data)", data: curve.n,
+     borderColor: themeMutedColor(), backgroundColor: "transparent", borderWidth: 1, borderDash: [3, 3],
+     pointRadius: 0, tension: 0, yAxisID: "y2",
+    },
+   ],
+  },
+  options: {
+   responsive: true,
+   maintainAspectRatio: false,
+   interaction: { mode: "index", intersect: false },
+   plugins: {
+    legend: { labels: { color: themeMutedColor(), font: { size: 11 } } },
+    tooltip: {
+     callbacks: {
+      title: items => "Trading day " + items[0].label + " since separation",
+      label: ctx => ctx.dataset.label === "N (legs with data)" ? "N: " + ctx.raw : "Avg. excess return: " + fmtPct(ctx.raw),
+     },
+    },
+   },
+   scales: {
+    x: { ticks: { color: themeMutedColor(), maxTicksLimit: 10 }, grid: { color: themeHairColor() }, title: { display: true, text: "Trading days since separation", color: themeMutedColor(), font: { size: 10 } } },
+    y: { position: "left", ticks: { color: themeMutedColor(), callback: v => v + "%" }, grid: { color: themeHairColor() }, title: { display: true, text: "Avg. cumulative excess return", color: themeMutedColor(), font: { size: 10 } } },
+    y2: { position: "right", ticks: { color: themeMutedColor() }, grid: { display: false }, title: { display: true, text: "N", color: themeMutedColor(), font: { size: 10 } } },
+   },
+  },
+ });
+}
+
+function renderLeaderTable(rows, tbodyId){
+ const tbody = document.getElementById(tbodyId);
+ if(!rows || !rows.length){
+  tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; color:var(--muted); padding:24px;">No qualifying legs.</td></tr>';
+  return;
+ }
+ tbody.innerHTML = rows.map(r => `<tr>
+  <td><span class="sector-name">${r.label}</span> <span class="sector-ticker">${r.ticker}</span></td>
+  <td><span class="sector-ticker">${r.sector || "—"}</span></td>
+  <td>${r.eventDate}</td>
+  <td>${fmtPct(r.excessToDate)}</td>
+ </tr>`).join("");
+}
+
+function renderStatsMethodTable(){
+ const horizonLabel = "1-Year";
+ function row(label, values){
+  const t = oneSampleTTest(values);
+  const s = signTest(values);
+  if(!t || !s){
+   return "<tr><td>" + label + "</td><td colspan='6' style='text-align:center; color:var(--muted);'>Not enough legs with 1-year data yet.</td></tr>";
+  }
+  const tSig = t.p < 0.05;
+  const sSig = s.p < 0.05;
+  return "<tr>" +
+   "<td>" + label + "</td>" +
+   "<td>" + t.n + "</td>" +
+   "<td>" + fmtPct(t.mean) + "</td>" +
+   "<td>" + t.t.toFixed(2) + "</td>" +
+   '<td class="' + (tSig ? "sig" : "") + '">' + (t.p < 0.001 ? "<0.001" : t.p.toFixed(3)) + "</td>" +
+   "<td>" + s.plus + "&ndash;" + s.minus + "</td>" +
+   '<td class="' + (sSig ? "sig" : "") + '">' + (s.p < 0.001 ? "<0.001" : s.p.toFixed(3)) + "</td>" +
+  "</tr>";
+ }
+ document.getElementById("statsMethodTable").innerHTML =
+  '<table class="method-table">' +
+   "<thead><tr><th>Leg (" + horizonLabel + ")</th><th>n</th><th>mean excess</th><th>t-stat</th><th>t-test p</th><th>+ / &minus; split</th><th>sign-test p</th></tr></thead>" +
+   "<tbody>" + row("Spinco legs", spincoExcess("oneYear")) + row("Parent legs", parentExcess("oneYear")) + "</tbody>" +
+  "</table>";
+}
+
+function renderScatter(){
+ const pairs = RAW.scatter;
+ const wrap = document.getElementById("scatterChart").closest(".chart-box");
+ if(!pairs || pairs.length < 3){
+  document.getElementById("scatterMethodTable").innerHTML = '<div class="method-note">Not enough events with both legs available yet to fit a regression.</div>';
+ }
+ const ctx = document.getElementById("scatterChart").getContext("2d");
+ if(scatterChart) scatterChart.destroy();
+
+ const datasets = [
+  { label: "Events", data: pairs.map(p => ({ x: p.x, y: p.y, label: p.spincoLabel + " / " + p.parentLabel })), backgroundColor: themeGreedColor(), pointRadius: 4, showLine: false },
+ ];
+
+ if(pairs.length >= 3){
+  const pearson = linearRegression(pairs.map(p => p.x), pairs.map(p => p.y));
+  const spear = spearmanRegression(pairs.map(p => p.x), pairs.map(p => p.y));
+  const xs = pairs.map(p => p.x);
+  const xMin = Math.min(...xs), xMax = Math.max(...xs);
+  datasets.push({
+   label: "Regression fit", type: "line",
+   data: [{ x: xMin, y: pearson.intercept + pearson.slope * xMin }, { x: xMax, y: pearson.intercept + pearson.slope * xMax }],
+   borderColor: themeInkColor(), borderWidth: 1.5, borderDash: [4, 3], pointRadius: 0, fill: false,
+  });
+
+  function row(label, stats){
+   const sig = stats.p < 0.05;
+   return "<tr>" +
+    "<td>" + label + "</td>" +
+    "<td>" + stats.n + "</td>" +
+    "<td>" + stats.r.toFixed(2) + "</td>" +
+    "<td>" + (stats.r2 * 100).toFixed(1) + "%</td>" +
+    "<td>" + (stats.slope >= 0 ? "+" : "") + stats.slope.toFixed(2) + "</td>" +
+    "<td>" + stats.t.toFixed(2) + "</td>" +
+    '<td class="' + (sig ? "sig" : "") + '">' + (stats.p < 0.001 ? "<0.001" : stats.p.toFixed(3)) + "</td>" +
+   "</tr>";
+  }
+  document.getElementById("scatterMethodTable").innerHTML =
+   '<table class="method-table">' +
+    "<thead><tr><th>Method</th><th>n</th><th>r</th><th>r&sup2;</th><th>slope</th><th>t</th><th>p</th></tr></thead>" +
+    "<tbody>" + row("Pearson (OLS)", pearson) + row("Spearman (&rho;)", spear) + "</tbody>" +
+   "</table>";
+ }
+
+ scatterChart = new Chart(ctx, {
+  type: "scatter",
+  data: { datasets },
+  options: {
+   responsive: true,
+   maintainAspectRatio: false,
+   plugins: {
+    legend: { display: false },
+    tooltip: { callbacks: { label: ctx => ctx.dataset.label === "Events" ? (ctx.raw.label + ": parent " + fmtPct(ctx.raw.x) + ", spinco " + fmtPct(ctx.raw.y)) : null } },
+   },
+   scales: {
+    x: { title: { display: true, text: "Parent excess return, to date (%)", color: themeMutedColor(), font: { size: 10 } }, ticks: { color: themeMutedColor(), font: { size: 10 } }, grid: { color: themeHairColor() } },
+    y: { title: { display: true, text: "Spinco excess return, to date (%)", color: themeMutedColor(), font: { size: 10 } }, ticks: { color: themeMutedColor(), font: { size: 10 } }, grid: { color: themeHairColor() } },
+   },
+  },
+ });
+}
+
+function renderSectorChart(){
+ const rows = RAW.sectorBreakdown;
+ const ctx = document.getElementById("sectorChart").getContext("2d");
+ if(sectorChart) sectorChart.destroy();
+ sectorChart = new Chart(ctx, {
+  type: "bar",
+  data: {
+   labels: rows.map(r => r.sector),
+   datasets: [
+    { label: "Spinco", data: rows.map(r => r.avgSpincoExcess), backgroundColor: themeGreedColor(), borderRadius: 4 },
+    { label: "Parent", data: rows.map(r => r.avgParentExcess), backgroundColor: themeFearColor(), borderRadius: 4 },
+   ],
+  },
+  options: {
+   indexAxis: "y",
+   responsive: true,
+   maintainAspectRatio: false,
+   plugins: {
+    legend: { labels: { color: themeMutedColor(), font: { size: 11 } } },
+    tooltip: {
+     callbacks: {
+      label: ctx => {
+       const r = rows[ctx.dataIndex];
+       const n = ctx.dataset.label === "Spinco" ? r.spincoCount : r.parentCount;
+       return ctx.dataset.label + " avg. excess: " + fmtPct(ctx.raw) + " (n=" + n + ")";
+      },
+     },
+    },
+   },
+   scales: {
+    x: { ticks: { color: themeMutedColor(), callback: v => v + "%" }, grid: { color: themeHairColor() } },
+    y: { ticks: { color: themeMutedColor() }, grid: { display: false } },
+   },
+  },
+ });
+}
+
+function legRowValues(l){
+ return {
+  eventId: l.eventId, label: l.label, ticker: l.ticker, role: l.role, sector: l.sector, eventDate: l.eventDate,
+  excess6M: l.excess.sixMonth, excess1Y: l.excess.oneYear, excess3Y: l.excess.threeYear,
+  returnToDate: l.returns.toDate, excessToDate: l.excess.toDate,
+ };
+}
+
+function sortBy(key){
+ if(SORT_KEY === key){
+  SORT_DIR = -SORT_DIR;
+ }else{
+  SORT_KEY = key;
+  SORT_DIR = 1;
+ }
+ renderLegsTable();
+}
+
+function renderLegsTable(){
+ const rows = RAW.legs.map(legRowValues).sort((a, b) => {
+  const av = a[SORT_KEY], bv = b[SORT_KEY];
+  if(av === null || av === undefined) return 1;
+  if(bv === null || bv === undefined) return -1;
+  if(typeof av === "string") return av.localeCompare(bv) * SORT_DIR;
+  return (av - bv) * SORT_DIR;
+ });
+
+ const tbody = document.getElementById("legsBody");
+ tbody.innerHTML = rows.map(r => `<tr>
+  <td><span class="sector-name">${r.label}</span> <span class="sector-ticker">${r.ticker}</span></td>
+  <td><span class="tag ${r.role}">${r.role}</span></td>
+  <td><span class="sector-ticker">${r.sector || "—"}</span></td>
+  <td>${r.eventDate}</td>
+  <td>${fmtPct(r.excess6M)}</td>
+  <td>${fmtPct(r.excess1Y)}</td>
+  <td>${fmtPct(r.excess3Y)}</td>
+  <td>${fmtPct(r.returnToDate)}</td>
+  <td>${fmtPct(r.excessToDate)}</td>
+ </tr>`).join("");
+
+ document.querySelectorAll("#legsTable thead th").forEach(th => {
+  const key = th.dataset.key;
+  th.classList.toggle("sorted", key === SORT_KEY);
+  const arrow = th.querySelector(".sort-arrow");
+  if(arrow) arrow.textContent = (key === SORT_KEY && SORT_DIR === 1) ? "▴" : "▾";
+ });
+}
+
+document.querySelectorAll("#legsTable thead th").forEach(th => {
+ const key = th.dataset.key;
+ if(key){
+  const arrow = document.createElement("span");
+  arrow.className = "sort-arrow";
+  arrow.textContent = "▾";
+  th.appendChild(arrow);
+  th.addEventListener("click", () => sortBy(key));
+ }
+});
+
+init();
+</script>
+
+</body>
+</html>

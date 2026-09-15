@@ -187,6 +187,11 @@
   to = "/.netlify/functions/ipo-pipeline"
   status = 200
 
+[[redirects]]
+  from = "/api/spin-off-performance"
+  to = "/.netlify/functions/spinoff-performance"
+  status = 200
+
 # The Statistical Engine page was briefly at these paths.
 [[redirects]]
   from = "/streak-scanner"
@@ -535,3 +540,18 @@
   # each newly-listed name's day-1/5/10/20 returns once those trading days
   # have actually elapsed, not continuously.
   schedule = "20 13 * * 6"
+
+[functions."scheduled-spinoff-background"]
+  # Weekly, Saturday 11:02 UTC — originally 11:10, but that collided
+  # exactly with scheduled-surprise-background (also Saturday 11:10 UTC,
+  # a separate, concurrently-built PR's ~503-call sweep, unaware of this
+  # one — see that function's own schedule comment). Moved to 11:02
+  # instead: after scheduled-share-count-background (10:50 UTC, finishes
+  # ~11:00) and comfortably before scheduled-surprise-background starts at
+  # 11:10 — safe because this job only touches ~33 unique tickers (19
+  # spincos + 13 unique parent tickers + SPY, ~35 seconds of calls at
+  # 1050ms spacing), nowhere near the rate-limit contention risk of this
+  # file's full-S&P-500-sweep jobs. Weekly, not daily: this is a fixed,
+  # sparse list of ~19 historical events, not a live universe that changes
+  # day to day.
+  schedule = "2 11 * * 6"
