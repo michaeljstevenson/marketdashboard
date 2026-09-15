@@ -182,6 +182,11 @@
   to = "/.netlify/functions/smallcap-liquidity"
   status = 200
 
+[[redirects]]
+  from = "/api/ipo-pipeline"
+  to = "/.netlify/functions/ipo-pipeline"
+  status = 200
+
 # The Statistical Engine page was briefly at these paths.
 [[redirects]]
   from = "/streak-scanner"
@@ -514,3 +519,19 @@
   # rerun would just redo the same heavy sweep for a cohort that barely
   # changes week to week.
   schedule = "20 14 * * 6"
+
+[functions."scheduled-ipo-pipeline-background"]
+  # Weekly, Saturday 13:20 UTC. Sits in the gap between scheduled-share-
+  # count-background (10:50 UTC, done well before 13:00) and scheduled-
+  # smallcap-liquidity-background (13:35 UTC, that job's own comment notes
+  # every job in this file is done by ~11:00-13:15 UTC) — 13:20 leaves 15
+  # minutes of clearance on both sides. Trivial call volume: 1 IPO_CALENDAR
+  # pull, plus up to ~15 TIME_SERIES_DAILY_ADJUSTED (outputsize=compact)
+  # calls for roster entries whose IPO date has passed or is still being
+  # tracked, plus one shared SPY compact pull reused across all of them —
+  # nothing close to the pacing concerns of this file's full-S&P-500-sweep
+  # jobs. Weekly, not daily: IPO_CALENDAR's forward window barely moves
+  # day to day, and the aftermarket-tracking roster only needs to check
+  # each newly-listed name's day-1/5/10/20 returns once those trading days
+  # have actually elapsed, not continuously.
+  schedule = "20 13 * * 6"
