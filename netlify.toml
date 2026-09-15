@@ -177,6 +177,11 @@
   to = "/.netlify/functions/earnings-growth-divergence"
   status = 200
 
+[[redirects]]
+  from = "/api/smallcap-liquidity"
+  to = "/.netlify/functions/smallcap-liquidity"
+  status = 200
+
 # The Statistical Engine page was briefly at these paths.
 [[redirects]]
   from = "/streak-scanner"
@@ -489,3 +494,23 @@
   # Saturday block as of this fix. ~503 sequential Alpha Vantage EARNINGS
   # calls at 1050ms spacing plus a retry pass.
   schedule = "0 14 * * 6"
+
+[functions."scheduled-smallcap-liquidity-background"]
+  # Weekly, Saturday 14:20 UTC — originally 13:35, chosen to clear every
+  # Saturday job visible to this branch at the time (which wrapped up by
+  # ~11:00 UTC) plus a guessed buffer past other concurrently-open PRs'
+  # jobs (assumed to finish ~13:00-13:15 UTC). That guess landed exactly
+  # on scheduled-equity-risk-premium-background's own 13:35 slot once
+  # every PR's schedule fixes were actually applied — see that function's
+  # own schedule comment for its unrelated collision/move. Moved to 14:20
+  # instead: after scheduled-earnings-growth-divergence-background (14:00
+  # UTC, finishes ~14:09), the last job in the Saturday block as of this
+  # fix. ~200 sequential TIME_SERIES_DAILY_ADJUSTED (outputsize=full)
+  # calls at ~1050ms spacing plus a retry pass, same pattern as
+  # scheduled-share-count-background.js / scheduled-countries-
+  # background.js. Weekly, not daily: it reads meta.json (itself only
+  # refreshed weekly) for cohort membership, and each run recomputes the
+  # full ~2-year window from scratch rather than incrementally, so a daily
+  # rerun would just redo the same heavy sweep for a cohort that barely
+  # changes week to week.
+  schedule = "20 14 * * 6"
