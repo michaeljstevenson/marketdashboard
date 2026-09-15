@@ -127,6 +127,11 @@
   to = "/.netlify/functions/share-count-trends"
   status = 200
 
+[[redirects]]
+  from = "/api/margin-leverage"
+  to = "/.netlify/functions/margin-leverage"
+  status = 200
+
 # The Statistical Engine page was briefly at these paths.
 [[redirects]]
   from = "/streak-scanner"
@@ -306,3 +311,13 @@
   # because a single company's Form 4 filings are sparse enough that a
   # trailing-90-day aggregate barely moves day to day.
   schedule = "30 10 * * 6"
+
+[functions."scheduled-margin-leverage-background"]
+  # Weekly, Saturday 11:20 UTC — after scheduled-share-count-background
+  # (10:50 UTC, an ~9-minute single-statement sweep at similar pacing, so
+  # comfortably finished by 11:00). This job's own sweep pulls two
+  # statements per company (~1006 calls) rather than one, so it gets a
+  # wider gap after the prior job than the ~20-minute spacing used
+  # elsewhere in this block. Weekly, not daily: fundamentals only change
+  # when a company files a new 10-Q/10-K.
+  schedule = "20 11 * * 6"
