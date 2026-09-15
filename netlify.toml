@@ -127,6 +127,11 @@
   to = "/.netlify/functions/share-count-trends"
   status = 200
 
+[[redirects]]
+  from = "/api/spin-off-performance"
+  to = "/.netlify/functions/spinoff-performance"
+  status = 200
+
 # The Statistical Engine page was briefly at these paths.
 [[redirects]]
   from = "/streak-scanner"
@@ -306,3 +311,13 @@
   # because a single company's Form 4 filings are sparse enough that a
   # trailing-90-day aggregate barely moves day to day.
   schedule = "30 10 * * 6"
+
+[functions."scheduled-spinoff-background"]
+  # Weekly, Saturday 11:10 UTC — after scheduled-share-count-background
+  # (10:50 UTC, ~9 minutes for its own ~503-call sweep), well clear of the
+  # rest of the Saturday block. Only ~33 unique tickers (19 spincos + 13
+  # unique parent tickers + SPY), so no real rate-limit contention risk
+  # either way — staggered anyway to keep the Saturday block's logs easy
+  # to read in order. Weekly, not daily: this is a fixed, sparse list of
+  # ~19 historical events, not a live universe that changes day to day.
+  schedule = "10 11 * * 6"
