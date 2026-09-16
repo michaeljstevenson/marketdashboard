@@ -172,6 +172,20 @@ document.addEventListener("DOMContentLoaded", function(){
   --serif:'Iowan Old Style','Palatino Linotype',Georgia,serif;
   --mono:'SF Mono','JetBrains Mono',ui-monospace,Menlo,monospace;
   --sans:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+
+  /* NDR-style chart palette. Deliberately the SAME in light and dark —
+     these charts keep a constant warm-paper look as a homage to the Ned
+     Davis Research print charts that inspired the page. JS reads them via
+     getComputedStyle (per the site convention) rather than hardcoding. */
+  --ndr-plot:#f5f1e6;
+  --ndr-axis:#3c3a33;
+  --ndr-axis-soft:#6f6a5c;
+  --ndr-grid:#ddd6c2;
+  --ndr-red:#a83c36;
+  --ndr-green:#4f6f3f;
+  --ndr-gold:#c1902f;
+  --ndr-navy:#2f4b6e;
+  --ndr-slate:#7d8a99;
 }
 
 :root[data-theme="light"]{
@@ -410,6 +424,14 @@ h1{
  color:var(--muted);
  font-size:12px;
  margin-top:4px;
+}
+
+/* The warm-paper plot panel behind each canvas — the NDR homage. */
+.ndr-panel{
+ background:var(--ndr-plot);
+ border:1px solid var(--ndr-grid);
+ border-radius:8px;
+ padding:14px 14px 10px;
 }
 
 .chart-canvas-wrap{
@@ -832,8 +854,10 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 </div>
 </div>
 <div id="trendColdStart" class="cold-start-banner" style="display:none;"></div>
+<div class="ndr-panel">
 <div class="chart-canvas-wrap short">
 <canvas id="trendChart"></canvas>
+</div>
 </div>
 </div>
 
@@ -880,6 +904,45 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 </div>
 
 <script>
+// ---- NDR chart styling helpers -----------------------------------------
+// Colours come from the --ndr-* custom properties (constant across themes)
+// so the charts keep their warm-paper look while still following the
+// site's "read chart colours from CSS, don't hardcode" rule.
+function ndr(name){
+ return getComputedStyle(document.documentElement).getPropertyValue("--ndr-" + name).trim();
+}
+
+Chart.defaults.font.family = "'Iowan Old Style','Palatino Linotype',Georgia,serif";
+Chart.defaults.color = ndr("axis-soft");
+
+function ndrXScale(opts){
+ opts = opts || {};
+ return {
+  ticks: { color: ndr("axis"), maxTicksLimit: 9, maxRotation: 0, autoSkip: true, font: { size: 11 } },
+  grid: { color: "rgba(0,0,0,0)", borderColor: ndr("axis") },
+  title: opts.title ? { display: true, text: opts.title, color: ndr("axis-soft"), font: { size: 10 } } : { display: false },
+ };
+}
+
+function ndrYScale(opts){
+ opts = opts || {};
+ return {
+  type: opts.log ? "logarithmic" : "linear",
+  position: opts.position || "left",
+  grid: { color: ndr("grid"), drawBorder: false },
+  ticks: { color: ndr("axis"), font: { size: 11 }, callback: opts.fmt || undefined },
+  title: opts.title ? { display: true, text: opts.title, color: ndr("axis-soft"), font: { size: 10 } } : { display: false },
+  min: opts.min, max: opts.max,
+ };
+}
+
+function ndrLegend(){
+ return {
+  display: true, position: "top", align: "start",
+  labels: { boxWidth: 22, boxHeight: 2, color: ndr("axis"), font: { size: 11 } },
+ };
+}
+
 const DATA_URL = "/api/ipo-pipeline";
 
 const RITTER_CONTEXT = [
@@ -1046,8 +1109,8 @@ function renderTrendChart(){
    datasets: [{
     label: "Operating filings in ~3-month forward window",
     data: points.map(p => p.operatingCount),
-    borderColor: themeGreedColor(),
-    backgroundColor: themeGreedColor(),
+    borderColor: ndr("navy"),
+    backgroundColor: ndr("navy"),
     borderWidth: 1.5,
     pointRadius: points.length < 8 ? 3 : 0,
     fill: false,
@@ -1063,8 +1126,8 @@ function renderTrendChart(){
     tooltip: { callbacks: { label: ctx => "Operating filings: " + ctx.parsed.y } },
    },
    scales: {
-    x: { ticks: { color: themeMutedColor(), maxTicksLimit: 8 }, grid: { color: themeHairColor() } },
-    y: { beginAtZero: true, ticks: { color: themeMutedColor(), precision: 0 }, grid: { color: themeHairColor() } },
+    x: ndrXScale(),
+    y: ndrYScale({ min: 0, fmt: v => Number(v).toFixed(0) }),
    },
   },
  });
