@@ -359,11 +359,16 @@
   schedule = "15 21 * * 1-5"
 
 [functions."scheduled-international-background"]
-  # 21:20 UTC — right after scheduled-smallcap-background (21:15), the same
+  # One-time snapshot (2026-09-16) — no schedule. International vs. US is
+  # meant to read as "the research as it stood on this date," not a
+  # continuously-refreshed page, so the recurring schedule below was
+  # removed after the initial data pull. Run manually (Netlify dashboard
+  # "Run now") if a fresh snapshot is ever wanted later. Kept for
+  # reference, the original staggering rationale: 21:20 UTC — right after
+  # scheduled-smallcap-background (21:15), the same
   # kind of small fixed-basket job (4 Alpha Vantage calls here vs. that
   # job's 5) with no real rate-limit contention risk. Daily, not weekly,
   # since index levels move every trading day.
-  schedule = "20 21 * * 1-5"
 
 [functions."scheduled-share-count-background"]
   # Weekly, Saturday 10:50 UTC — after scheduled-insider-transactions-
@@ -374,7 +379,10 @@
   schedule = "50 10 * * 6"
 
 [functions."scheduled-dispersion-background"]
-  # Weekly, Saturday 11:40 UTC — originally 11:10, but that collided
+  # One-time snapshot (2026-09-16) — no schedule, same reasoning as
+  # scheduled-surprise-background above. Kept for reference, the original
+  # staggering rationale: Weekly, Saturday 11:40 UTC — originally 11:10,
+  # but that collided
   # exactly with scheduled-surprise-background (also Saturday 11:10 UTC,
   # a separate PR's ~503-call EARNINGS sweep, built concurrently and
   # unaware of this one). Moved to 11:40 instead: after
@@ -384,10 +392,12 @@
   # three full-index sweeps compete for the rate limit. Weekly, not daily:
   # a current-fiscal-year analyst estimate's high/low spread barely moves
   # day to day.
-  schedule = "40 11 * * 6"
 
 [functions."scheduled-shareholder-yield-background"]
-  # Weekly, Saturday 11:25 UTC — after scheduled-share-count-background
+  # One-time snapshot (2026-09-16) — no schedule, same reasoning as
+  # scheduled-surprise-background above. Kept for reference, the original
+  # staggering rationale: Weekly, Saturday 11:25 UTC — after
+  # scheduled-share-count-background
   # (10:50 UTC, finishes ~11:00; this job reads its trends.json for buyback
   # yield) and after scheduled-surprise-background's own ~503-call sweep
   # (starts 11:10, finishes ~11:19), so this job's own ~503 sequential
@@ -396,10 +406,12 @@
   # too — see that function's own schedule comment — but was moved to
   # 11:40, after this job's sweep finishes, to resolve a same-minute
   # collision with scheduled-surprise-background.)
-  schedule = "25 11 * * 6"
 
 [functions."scheduled-splits-background"]
-  # Weekly, Saturday 12:20 UTC — originally 11:10, but that collided
+  # One-time snapshot (2026-09-16) — no schedule, same reasoning as
+  # scheduled-surprise-background above. Kept for reference, the original
+  # staggering rationale: Weekly, Saturday 12:20 UTC — originally 11:10,
+  # but that collided
   # exactly with scheduled-surprise-background (also Saturday 11:10 UTC,
   # a separate PR's ~503-call EARNINGS sweep, built concurrently and
   # unaware of this one). Moved to 12:20 instead: after
@@ -411,10 +423,12 @@
   # years) runs right after within the same invocation. Weekly, not
   # daily: a stock split is a rare, discrete event, not something that
   # needs a daily re-check.
-  schedule = "20 12 * * 6"
 
 [functions."scheduled-pe-divergence-background"]
-  # Weekly, Saturday 12:45 UTC — originally 11:40, but that collided
+  # One-time snapshot (2026-09-16) — no schedule, same reasoning as
+  # scheduled-surprise-background above. Kept for reference, the original
+  # staggering rationale: Weekly, Saturday 12:45 UTC — originally 11:40,
+  # but that collided
   # exactly with scheduled-dispersion-background (also moved to 11:40 —
   # see that function's own schedule comment for the unrelated collision
   # it was resolving). Moved to 12:45 instead: after
@@ -425,7 +439,6 @@
   # the market-wide median is appended to a running weekly time series
   # each run rather than overwritten — see
   # scheduled-pe-divergence-background.js.
-  schedule = "45 12 * * 6"
 
 [functions."scheduled-insider-transactions-background"]
   # Weekly, Saturday 10:30 UTC — after the rest of the Saturday block
@@ -439,7 +452,13 @@
   schedule = "30 10 * * 6"
 
 [functions."scheduled-surprise-background"]
-  # Weekly, Saturday 11:10 UTC — 40 minutes after
+  # One-time snapshot (2026-09-16) — no schedule. Earnings Surprise History
+  # is meant to read as "the research as it stood on this date," not a
+  # continuously-refreshed page, so the recurring schedule below was
+  # removed after the initial data pull. Run manually (Netlify dashboard
+  # "Run now") if a fresh snapshot is ever wanted later. Kept for
+  # reference, the original staggering rationale: Weekly, Saturday 11:10
+  # UTC — 40 minutes after
   # scheduled-insider-transactions-background (10:30 Sat) starts, giving its
   # own ~503-call sweep (plus retry pass) room to finish before this one
   # begins. Reads beeswarm-meta's meta.json for sector/name, same reuse
@@ -449,10 +468,12 @@
   # run (see scheduled-surprise-background.js for why no accumulating
   # snapshot is needed here), and which companies have newly reported only
   # changes meaningfully week to week, not day to day.
-  schedule = "10 11 * * 6"
 
 [functions."scheduled-dividend-growth-background"]
-  # Weekly, Saturday 12:00 UTC — after scheduled-surprise-background
+  # One-time snapshot (2026-09-16) — no schedule, same reasoning as
+  # scheduled-surprise-background above. Kept for reference, the original
+  # staggering rationale: Weekly, Saturday 12:00 UTC — after
+  # scheduled-surprise-background
   # (11:10 Sat), leaving that job's own ~503-call sweep (plus retry pass)
   # room to finish first. Reads beeswarm-meta's meta.json for sector/name,
   # same reuse pattern as the other full-sweep jobs. ~503 sequential Alpha
@@ -460,10 +481,12 @@
   # returns a company's whole dividend history, so unlike the daily-close
   # jobs there's no reason to run this more than weekly; a new dividend
   # increase only lands a few times a year per company at most.
-  schedule = "0 12 * * 6"
 
 [functions."scheduled-relative-strength-background"]
-  # Weekly, Saturday 13:10 UTC — originally 12:00, but that collided
+  # One-time snapshot (2026-09-16) — no schedule, same reasoning as
+  # scheduled-surprise-background above. Kept for reference, the original
+  # staggering rationale: Weekly, Saturday 13:10 UTC — originally 12:00,
+  # but that collided
   # exactly with scheduled-dividend-growth-background (also Saturday 12:00
   # UTC, built concurrently and unaware of this one — see that function's
   # own schedule comment). Moved to 13:10 instead: after
@@ -474,10 +497,12 @@
   # retry pass. Weekly, not daily: a 1-month/3-month momentum read doesn't
   # meaningfully change day to day, and the forward-return persistence test
   # needs snapshots spaced apart.
-  schedule = "10 13 * * 6"
 
 [functions."scheduled-equity-risk-premium-background"]
-  # Weekly, Saturday 13:35 UTC — originally 12:30 (30 minutes after this
+  # One-time snapshot (2026-09-16) — no schedule, same reasoning as
+  # scheduled-surprise-background above. Kept for reference, the original
+  # staggering rationale: Weekly, Saturday 13:35 UTC — originally 12:30
+  # (30 minutes after this
   # PR's own scheduled-relative-strength-background, which it assumed was
   # still at 12:00 and the last job in the Saturday block), but that landed
   # in the middle of scheduled-splits-background's 12:20-~12:31 window (a
@@ -491,10 +516,12 @@
   # TREASURY_YIELD calls at 1050ms spacing plus a retry pass. Weekly, not
   # daily: a trailing P/E-derived earnings yield doesn't meaningfully move
   # day to day.
-  schedule = "35 13 * * 6"
 
 [functions."scheduled-earnings-growth-divergence-background"]
-  # Weekly, Saturday 14:00 UTC — originally 13:00 (after this PR's own
+  # One-time snapshot (2026-09-16) — no schedule, same reasoning as
+  # scheduled-surprise-background above. Kept for reference, the original
+  # staggering rationale: Weekly, Saturday 14:00 UTC — originally 13:00
+  # (after this PR's own
   # scheduled-relative-strength-background at 12:00 and scheduled-equity-
   # risk-premium-background at 12:30, both since moved — see those
   # functions' own schedule comments for the unrelated collisions that
@@ -508,10 +535,12 @@
   # background (13:35 UTC, finishes ~13:44), the last two jobs in the
   # Saturday block as of this fix. ~503 sequential Alpha Vantage EARNINGS
   # calls at 1050ms spacing plus a retry pass.
-  schedule = "0 14 * * 6"
 
 [functions."scheduled-smallcap-liquidity-background"]
-  # Weekly, Saturday 14:20 UTC — originally 13:35, chosen to clear every
+  # One-time snapshot (2026-09-16) — no schedule, same reasoning as
+  # scheduled-surprise-background above. Kept for reference, the original
+  # staggering rationale: Weekly, Saturday 14:20 UTC — originally 13:35,
+  # chosen to clear every
   # Saturday job visible to this branch at the time (which wrapped up by
   # ~11:00 UTC) plus a guessed buffer past other concurrently-open PRs'
   # jobs (assumed to finish ~13:00-13:15 UTC). That guess landed exactly
@@ -528,10 +557,12 @@
   # full ~2-year window from scratch rather than incrementally, so a daily
   # rerun would just redo the same heavy sweep for a cohort that barely
   # changes week to week.
-  schedule = "20 14 * * 6"
 
 [functions."scheduled-ipo-pipeline-background"]
-  # Weekly, Saturday 13:20 UTC. Sits in the gap between scheduled-share-
+  # One-time snapshot (2026-09-16) — no schedule, same reasoning as
+  # scheduled-surprise-background above. Kept for reference, the original
+  # staggering rationale: Weekly, Saturday 13:20 UTC. Sits in the gap
+  # between scheduled-share-
   # count-background (10:50 UTC, done well before 13:00) and scheduled-
   # smallcap-liquidity-background (13:35 UTC, that job's own comment notes
   # every job in this file is done by ~11:00-13:15 UTC) — 13:20 leaves 15
@@ -544,10 +575,12 @@
   # day to day, and the aftermarket-tracking roster only needs to check
   # each newly-listed name's day-1/5/10/20 returns once those trading days
   # have actually elapsed, not continuously.
-  schedule = "20 13 * * 6"
 
 [functions."scheduled-spinoff-background"]
-  # Weekly, Saturday 11:02 UTC — originally 11:10, but that collided
+  # One-time snapshot (2026-09-16) — no schedule, same reasoning as
+  # scheduled-surprise-background above. Kept for reference, the original
+  # staggering rationale: Weekly, Saturday 11:02 UTC — originally 11:10,
+  # but that collided
   # exactly with scheduled-surprise-background (also Saturday 11:10 UTC,
   # a separate, concurrently-built PR's ~503-call sweep, unaware of this
   # one — see that function's own schedule comment). Moved to 11:02
@@ -559,10 +592,12 @@
   # file's full-S&P-500-sweep jobs. Weekly, not daily: this is a fixed,
   # sparse list of ~19 historical events, not a live universe that changes
   # day to day.
-  schedule = "2 11 * * 6"
 
 [functions."scheduled-margin-leverage-background"]
-  # Weekly, Saturday 14:35 UTC — originally 11:20 (after this PR's own
+  # One-time snapshot (2026-09-16) — no schedule, same reasoning as
+  # scheduled-surprise-background above. Kept for reference, the original
+  # staggering rationale: Weekly, Saturday 14:35 UTC — originally 11:20
+  # (after this PR's own
   # scheduled-share-count-background, assumed the last job in the block at
   # 10:50 UTC), but this job's own sweep pulls two statements per company
   # (~1006 calls, ~17.6 minutes at 1050ms spacing) rather than the ~503-
@@ -576,4 +611,3 @@
   # this fix, leaving headroom for this job's own longer runtime. Weekly,
   # not daily: fundamentals only change when a company files a new
   # 10-Q/10-K.
-  schedule = "35 14 * * 6"
