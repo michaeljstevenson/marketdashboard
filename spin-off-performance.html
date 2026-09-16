@@ -172,6 +172,21 @@ document.addEventListener("DOMContentLoaded", function(){
   --serif:'Iowan Old Style','Palatino Linotype',Georgia,serif;
   --mono:'SF Mono','JetBrains Mono',ui-monospace,Menlo,monospace;
   --sans:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+
+  /* NDR-style chart palette. Deliberately the SAME in light and dark —
+     these charts keep a constant warm-paper look as a homage to the Ned
+     Davis Research print charts that inspired /concentration. JS reads
+     them via getComputedStyle (per the site convention) rather than
+     hardcoding. */
+  --ndr-plot:#f5f1e6;
+  --ndr-axis:#3c3a33;
+  --ndr-axis-soft:#6f6a5c;
+  --ndr-grid:#ddd6c2;
+  --ndr-red:#a83c36;
+  --ndr-green:#4f6f3f;
+  --ndr-gold:#c1902f;
+  --ndr-navy:#2f4b6e;
+  --ndr-slate:#7d8a99;
 }
 
 :root[data-theme="light"]{
@@ -400,6 +415,15 @@ h1{
 
 .chart-canvas-wrap{
  height:380px;
+}
+
+/* The warm-paper plot panel behind each canvas — the NDR homage
+   (matches /concentration). */
+.ndr-panel{
+ background:var(--ndr-plot);
+ border:1px solid var(--ndr-grid);
+ border-radius:8px;
+ padding:14px 14px 10px;
 }
 
 /* TABLE */
@@ -823,8 +847,10 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <div class="chart-subhead">Every spinco and parent leg aligned to trading day 0 = its own separation date, then averaged at each elapsed trading day. Sample size (N, right axis) shrinks at longer horizons as younger events run out of history — read the right tail with that in mind.</div>
 </div>
 </div>
+<div class="ndr-panel">
 <div class="chart-canvas-wrap">
 <canvas id="eventTimeChart"></canvas>
+</div>
 </div>
 </div>
 
@@ -892,8 +918,10 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <div class="chart-subhead">Each point is one event with both legs available (excludes Otis/Carrier, which had no remaining-parent leg). Cumulative excess return since separation, to date.</div>
 </div>
 </div>
+<div class="ndr-panel">
 <div class="scatter-canvas-wrap">
 <canvas id="scatterChart"></canvas>
+</div>
 </div>
 <div id="scatterMethodTable"></div>
 </div>
@@ -905,8 +933,10 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <div class="chart-subhead">Average cumulative excess return since separation, spinco and parent legs shown separately</div>
 </div>
 </div>
+<div class="ndr-panel">
 <div class="chart-canvas-wrap">
 <canvas id="sectorChart"></canvas>
+</div>
 </div>
 </div>
 
@@ -991,6 +1021,43 @@ function themeGreedColor(){
 function themeFearColor(){
  const v = getComputedStyle(document.documentElement).getPropertyValue("--fear").trim();
  return v || "#6f8fac";
+}
+
+// ---- NDR chart styling helpers (matches /concentration) ----------------
+// Colours come from the --ndr-* custom properties (constant across themes)
+// so the charts keep their warm-paper look while still following the
+// site's "read chart colours from CSS, don't hardcode" rule.
+function ndr(name){
+ return getComputedStyle(document.documentElement).getPropertyValue("--ndr-" + name).trim();
+}
+
+Chart.defaults.font.family = "'Iowan Old Style','Palatino Linotype',Georgia,serif";
+Chart.defaults.color = ndr("axis-soft");
+
+function ndrXScale(){
+ return {
+  ticks: { color: ndr("axis"), maxTicksLimit: 9, maxRotation: 0, autoSkip: true, font: { size: 11 } },
+  grid: { color: "rgba(0,0,0,0)", borderColor: ndr("axis") },
+ };
+}
+
+function ndrYScale(opts){
+ opts = opts || {};
+ return {
+  type: opts.log ? "logarithmic" : "linear",
+  position: opts.position || "left",
+  grid: { color: ndr("grid"), drawBorder: false },
+  ticks: { color: ndr("axis"), font: { size: 11 }, callback: opts.fmt || undefined },
+  title: opts.title ? { display: true, text: opts.title, color: ndr("axis-soft"), font: { size: 10 } } : { display: false },
+  min: opts.min, max: opts.max,
+ };
+}
+
+function ndrLegend(){
+ return {
+  display: true, position: "top", align: "start",
+  labels: { boxWidth: 22, boxHeight: 2, color: ndr("axis"), font: { size: 11 } },
+ };
 }
 
 // ---- Stats helpers — same methodology as /factor-analysis and
@@ -1166,12 +1233,12 @@ function renderEventTimeChart(){
    datasets: [
     {
      type: "line", label: "Avg. cumulative excess return", data: curve.avgExcess,
-     borderColor: themeGreedColor(), backgroundColor: "transparent", borderWidth: 1.75,
+     borderColor: ndr("navy"), backgroundColor: "transparent", borderWidth: 1.75,
      pointRadius: 0, tension: 0, yAxisID: "y",
     },
     {
      type: "line", label: "N (legs with data)", data: curve.n,
-     borderColor: themeMutedColor(), backgroundColor: "transparent", borderWidth: 1, borderDash: [3, 3],
+     borderColor: ndr("slate"), backgroundColor: "transparent", borderWidth: 1, borderDash: [3, 3],
      pointRadius: 0, tension: 0, yAxisID: "y2",
     },
    ],
@@ -1181,7 +1248,7 @@ function renderEventTimeChart(){
    maintainAspectRatio: false,
    interaction: { mode: "index", intersect: false },
    plugins: {
-    legend: { labels: { color: themeMutedColor(), font: { size: 11 } } },
+    legend: ndrLegend(),
     tooltip: {
      callbacks: {
       title: items => "Trading day " + items[0].label + " since separation",
@@ -1190,9 +1257,9 @@ function renderEventTimeChart(){
     },
    },
    scales: {
-    x: { ticks: { color: themeMutedColor(), maxTicksLimit: 10 }, grid: { color: themeHairColor() }, title: { display: true, text: "Trading days since separation", color: themeMutedColor(), font: { size: 10 } } },
-    y: { position: "left", ticks: { color: themeMutedColor(), callback: v => v + "%" }, grid: { color: themeHairColor() }, title: { display: true, text: "Avg. cumulative excess return", color: themeMutedColor(), font: { size: 10 } } },
-    y2: { position: "right", ticks: { color: themeMutedColor() }, grid: { display: false }, title: { display: true, text: "N", color: themeMutedColor(), font: { size: 10 } } },
+    x: { ...ndrXScale(), maxTicksLimit: 10, title: { display: true, text: "Trading days since separation", color: ndr("axis-soft"), font: { size: 10 } } },
+    y: ndrYScale({ position: "left", fmt: v => v + "%", title: "Avg. cumulative excess return" }),
+    y2: { position: "right", ticks: { color: ndr("axis"), font: { size: 11 } }, grid: { display: false }, title: { display: true, text: "N", color: ndr("axis-soft"), font: { size: 10 } } },
    },
   },
  });
@@ -1249,7 +1316,7 @@ function renderScatter(){
  if(scatterChart) scatterChart.destroy();
 
  const datasets = [
-  { label: "Events", data: pairs.map(p => ({ x: p.x, y: p.y, label: p.spincoLabel + " / " + p.parentLabel })), backgroundColor: themeGreedColor(), pointRadius: 4, showLine: false },
+  { label: "Events", data: pairs.map(p => ({ x: p.x, y: p.y, label: p.spincoLabel + " / " + p.parentLabel })), backgroundColor: ndr("gold"), pointRadius: 4, showLine: false },
  ];
 
  if(pairs.length >= 3){
@@ -1260,7 +1327,7 @@ function renderScatter(){
   datasets.push({
    label: "Regression fit", type: "line",
    data: [{ x: xMin, y: pearson.intercept + pearson.slope * xMin }, { x: xMax, y: pearson.intercept + pearson.slope * xMax }],
-   borderColor: themeInkColor(), borderWidth: 1.5, borderDash: [4, 3], pointRadius: 0, fill: false,
+   borderColor: ndr("navy"), borderWidth: 1.5, borderDash: [4, 3], pointRadius: 0, fill: false,
   });
 
   function row(label, stats){
@@ -1293,8 +1360,8 @@ function renderScatter(){
     tooltip: { callbacks: { label: ctx => ctx.dataset.label === "Events" ? (ctx.raw.label + ": parent " + fmtPct(ctx.raw.x) + ", spinco " + fmtPct(ctx.raw.y)) : null } },
    },
    scales: {
-    x: { title: { display: true, text: "Parent excess return, to date (%)", color: themeMutedColor(), font: { size: 10 } }, ticks: { color: themeMutedColor(), font: { size: 10 } }, grid: { color: themeHairColor() } },
-    y: { title: { display: true, text: "Spinco excess return, to date (%)", color: themeMutedColor(), font: { size: 10 } }, ticks: { color: themeMutedColor(), font: { size: 10 } }, grid: { color: themeHairColor() } },
+    x: ndrYScale({ position: "bottom", fmt: v => v + "%", title: "Parent excess return, to date (%)" }),
+    y: ndrYScale({ fmt: v => v + "%", title: "Spinco excess return, to date (%)" }),
    },
   },
  });
@@ -1309,8 +1376,8 @@ function renderSectorChart(){
   data: {
    labels: rows.map(r => r.sector),
    datasets: [
-    { label: "Spinco", data: rows.map(r => r.avgSpincoExcess), backgroundColor: themeGreedColor(), borderRadius: 4 },
-    { label: "Parent", data: rows.map(r => r.avgParentExcess), backgroundColor: themeFearColor(), borderRadius: 4 },
+    { label: "Spinco", data: rows.map(r => r.avgSpincoExcess), backgroundColor: ndr("gold"), borderRadius: 4 },
+    { label: "Parent", data: rows.map(r => r.avgParentExcess), backgroundColor: ndr("navy"), borderRadius: 4 },
    ],
   },
   options: {
@@ -1318,7 +1385,7 @@ function renderSectorChart(){
    responsive: true,
    maintainAspectRatio: false,
    plugins: {
-    legend: { labels: { color: themeMutedColor(), font: { size: 11 } } },
+    legend: ndrLegend(),
     tooltip: {
      callbacks: {
       label: ctx => {
@@ -1330,8 +1397,12 @@ function renderSectorChart(){
     },
    },
    scales: {
-    x: { ticks: { color: themeMutedColor(), callback: v => v + "%" }, grid: { color: themeHairColor() } },
-    y: { ticks: { color: themeMutedColor() }, grid: { display: false } },
+    // Horizontal bar: x is the value axis, y is the sector-name category
+    // axis — swapped from ndrXScale()/ndrYScale()'s usual line-chart roles,
+    // and the category axis skips ndrXScale()'s maxTicksLimit so a sector
+    // list longer than 9 doesn't get silently thinned.
+    x: ndrYScale({ position: "bottom", fmt: v => v + "%" }),
+    y: { ticks: { color: ndr("axis"), font: { size: 11 } }, grid: { color: "rgba(0,0,0,0)", borderColor: ndr("axis") } },
    },
   },
  });

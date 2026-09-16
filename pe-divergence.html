@@ -172,6 +172,20 @@ document.addEventListener("DOMContentLoaded", function(){
   --serif:'Iowan Old Style','Palatino Linotype',Georgia,serif;
   --mono:'SF Mono','JetBrains Mono',ui-monospace,Menlo,monospace;
   --sans:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+
+  /* NDR-style chart palette. Deliberately the SAME in light and dark —
+     these charts keep a constant warm-paper look as a homage to the Ned
+     Davis Research print charts that inspired the page. JS reads them via
+     getComputedStyle (per the site convention) rather than hardcoding. */
+  --ndr-plot:#f5f1e6;
+  --ndr-axis:#3c3a33;
+  --ndr-axis-soft:#6f6a5c;
+  --ndr-grid:#ddd6c2;
+  --ndr-red:#a83c36;
+  --ndr-green:#4f6f3f;
+  --ndr-gold:#c1902f;
+  --ndr-navy:#2f4b6e;
+  --ndr-slate:#7d8a99;
 }
 
 :root[data-theme="light"]{
@@ -400,6 +414,14 @@ h1{
 
 .chart-canvas-wrap{
  height:380px;
+}
+
+/* The warm-paper plot panel behind each canvas — the NDR homage. */
+.ndr-panel{
+ background:var(--ndr-plot);
+ border:1px solid var(--ndr-grid);
+ border-radius:8px;
+ padding:14px 14px 10px;
 }
 
 /* TABLE */
@@ -796,8 +818,10 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <div class="chart-subhead">Median across the S&amp;P 500, snapshotted weekly — this line starts thin and gets more useful with each week's run</div>
 </div>
 </div>
+<div class="ndr-panel">
 <div class="chart-canvas-wrap">
 <canvas id="historyChart"></canvas>
+</div>
 </div>
 </div>
 
@@ -808,8 +832,10 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <div class="chart-subhead">Positive = forward P/E below trailing P/E (market expects earnings to grow); negative = the reverse</div>
 </div>
 </div>
+<div class="ndr-panel">
 <div class="chart-canvas-wrap">
 <canvas id="sectorChart"></canvas>
+</div>
 </div>
 </div>
 
@@ -820,8 +846,10 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <div class="chart-subhead">All S&amp;P 500 companies with a meaningful trailing and forward P/E</div>
 </div>
 </div>
+<div class="ndr-panel">
 <div class="chart-canvas-wrap">
 <canvas id="histogramChart"></canvas>
+</div>
 </div>
 </div>
 
@@ -832,8 +860,10 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <div class="chart-subhead">Each point is one company: x-axis is trailing quarterly EPS growth YoY, y-axis is the P/E-implied forward growth rate</div>
 </div>
 </div>
+<div class="ndr-panel">
 <div class="scatter-canvas-wrap">
 <canvas id="growthScatter"></canvas>
+</div>
 </div>
 <div id="growthMethodTable"></div>
 </div>
@@ -896,6 +926,46 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 </div>
 
 <script>
+// ---- NDR chart styling helpers -----------------------------------------
+// Colours come from the --ndr-* custom properties (constant across themes)
+// so the charts keep their warm-paper look while still following the
+// site's "read chart colours from CSS, don't hardcode" rule.
+function ndr(name){
+ return getComputedStyle(document.documentElement).getPropertyValue("--ndr-" + name).trim();
+}
+
+Chart.defaults.font.family = "'Iowan Old Style','Palatino Linotype',Georgia,serif";
+Chart.defaults.color = ndr("axis-soft");
+
+function ndrXScale(opts){
+ opts = opts || {};
+ return {
+  type: opts.type || "category",
+  ticks: { color: ndr("axis"), maxTicksLimit: 9, maxRotation: 0, autoSkip: true, font: { size: 11 } },
+  grid: { color: "rgba(0,0,0,0)", borderColor: ndr("axis") },
+  title: opts.title ? { display: true, text: opts.title, color: ndr("axis-soft"), font: { size: 10 } } : { display: false },
+ };
+}
+
+function ndrYScale(opts){
+ opts = opts || {};
+ return {
+  type: opts.log ? "logarithmic" : "linear",
+  position: opts.position || "left",
+  grid: { color: ndr("grid"), drawBorder: false },
+  ticks: { color: ndr("axis"), font: { size: 11 }, callback: opts.fmt || undefined },
+  title: opts.title ? { display: true, text: opts.title, color: ndr("axis-soft"), font: { size: 10 } } : { display: false },
+  min: opts.min, max: opts.max,
+ };
+}
+
+function ndrLegend(){
+ return {
+  display: true, position: "top", align: "start",
+  labels: { boxWidth: 22, boxHeight: 2, color: ndr("axis"), font: { size: 11 } },
+ };
+}
+
 const DATA_URL = "/api/pe-divergence";
 
 let RAW = null;
@@ -1061,7 +1131,7 @@ function renderHistoryChart(){
    datasets: [{
     label: "Median implied EPS growth",
     data: rows.map(r => r.medianImpliedEpsGrowth),
-    borderColor: themeGreedColor(),
+    borderColor: ndr("navy"),
     backgroundColor: "transparent",
     borderWidth: 2,
     pointRadius: rows.length === 1 ? 4 : 1,
@@ -1073,8 +1143,8 @@ function renderHistoryChart(){
    maintainAspectRatio: false,
    plugins: { legend: { display: false } },
    scales: {
-    x: { ticks: { color: themeMutedColor(), maxTicksLimit: 12 }, grid: { display: false } },
-    y: { ticks: { color: themeMutedColor(), callback: v => v + "%" }, grid: { color: themeHairColor() } },
+    x: ndrXScale(),
+    y: ndrYScale({ fmt: (v) => v + "%" }),
    },
   },
  });
@@ -1082,7 +1152,7 @@ function renderHistoryChart(){
 
 function renderSectorChart(){
  const sorted = [...RAW.sectors].sort((a, b) => a.medianImpliedEpsGrowth - b.medianImpliedEpsGrowth);
- const colors = sorted.map(s => s.medianImpliedEpsGrowth >= 0 ? themeGreedColor() : themeFearColor());
+ const colors = sorted.map(s => s.medianImpliedEpsGrowth >= 0 ? ndr("green") : ndr("red"));
  const ctx = document.getElementById("sectorChart").getContext("2d");
  if(sectorChart) sectorChart.destroy();
  sectorChart = new Chart(ctx, {
@@ -1106,9 +1176,11 @@ function renderSectorChart(){
      },
     },
    },
+   // Horizontal bar: x is the value axis (needs the numeric formatter
+   // ndrYScale supports), y is the category axis (ndrXScale's job).
    scales: {
-    x: { ticks: { color: themeMutedColor(), callback: v => v + "%" }, grid: { color: themeHairColor() } },
-    y: { ticks: { color: themeMutedColor() }, grid: { display: false } },
+    x: ndrYScale({ fmt: (v) => v + "%" }),
+    y: ndrXScale(),
    },
   },
  });
@@ -1131,14 +1203,14 @@ function renderHistogram(){
  if(histogramChart) histogramChart.destroy();
  histogramChart = new Chart(ctx, {
   type: "bar",
-  data: { labels: buckets.map(b => b.label), datasets: [{ label: "Companies", data: counts, backgroundColor: themeGreedColor(), borderRadius: 4 }] },
+  data: { labels: buckets.map(b => b.label), datasets: [{ label: "Companies", data: counts, backgroundColor: ndr("gold"), borderRadius: 4 }] },
   options: {
    responsive: true,
    maintainAspectRatio: false,
    plugins: { legend: { display: false } },
    scales: {
-    x: { ticks: { color: themeMutedColor(), font: { size: 10 } }, grid: { display: false } },
-    y: { ticks: { color: themeMutedColor(), precision: 0 }, grid: { color: themeHairColor() } },
+    x: ndrXScale(),
+    y: ndrYScale({ fmt: (v) => Number(v).toFixed(0) }),
    },
   },
  });
@@ -1169,8 +1241,8 @@ function renderGrowthScatter(){
   type: "scatter",
   data: {
    datasets: [
-    { label: "Companies", data: pairs, backgroundColor: themeGreedColor(), pointRadius: 3, showLine: false },
-    { label: "Regression fit", type: "line", data: linePoints, borderColor: themeInkColor(), borderWidth: 1.5, borderDash: [4, 3], pointRadius: 0, fill: false },
+    { label: "Companies", data: pairs, backgroundColor: ndr("slate"), pointRadius: 3, showLine: false },
+    { label: "Regression fit", type: "line", data: linePoints, borderColor: ndr("red"), borderWidth: 1.5, borderDash: [4, 3], pointRadius: 0, fill: false },
    ],
   },
   options: {
@@ -1184,9 +1256,10 @@ function renderGrowthScatter(){
      },
     },
    },
+   // Scatter's x-axis is numeric, not category — override ndrXScale's type.
    scales: {
-    x: { title: { display: true, text: "Trailing quarterly EPS growth YoY (%)", color: themeMutedColor(), font: { size: 10 } }, ticks: { color: themeMutedColor(), font: { size: 10 } }, grid: { color: themeHairColor() } },
-    y: { title: { display: true, text: "P/E-implied forward growth (%)", color: themeMutedColor(), font: { size: 10 } }, ticks: { color: themeMutedColor(), font: { size: 10 } }, grid: { color: themeHairColor() } },
+    x: ndrXScale({ type: "linear", title: "Trailing quarterly EPS growth YoY (%)" }),
+    y: ndrYScale({ title: "P/E-implied forward growth (%)" }),
    },
   },
  });

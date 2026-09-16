@@ -172,6 +172,21 @@ document.addEventListener("DOMContentLoaded", function(){
   --serif:'Iowan Old Style','Palatino Linotype',Georgia,serif;
   --mono:'SF Mono','JetBrains Mono',ui-monospace,Menlo,monospace;
   --sans:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+
+  /* NDR-style chart palette. Deliberately the SAME in light and dark —
+     these charts keep a constant warm-paper look as a homage to the Ned
+     Davis Research print charts that inspired /concentration. JS reads
+     them via getComputedStyle (per the site convention) rather than
+     hardcoding. */
+  --ndr-plot:#f5f1e6;
+  --ndr-axis:#3c3a33;
+  --ndr-axis-soft:#6f6a5c;
+  --ndr-grid:#ddd6c2;
+  --ndr-red:#a83c36;
+  --ndr-green:#4f6f3f;
+  --ndr-gold:#c1902f;
+  --ndr-navy:#2f4b6e;
+  --ndr-slate:#7d8a99;
 }
 
 :root[data-theme="light"]{
@@ -400,6 +415,15 @@ h1{
 
 .chart-canvas-wrap{
  height:380px;
+}
+
+/* The warm-paper plot panel behind each canvas — the NDR homage
+   (matches /concentration). */
+.ndr-panel{
+ background:var(--ndr-plot);
+ border:1px solid var(--ndr-grid);
+ border-radius:8px;
+ padding:14px 14px 10px;
 }
 
 .metric-toggle{
@@ -870,8 +894,10 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <button type="button" data-metric="net">Net</button>
 </div>
 </div>
+<div class="ndr-panel">
 <div class="chart-canvas-wrap">
 <canvas id="sectorMarginChart"></canvas>
+</div>
 </div>
 <div class="sector-legend" id="marginLegend"></div>
 </div>
@@ -883,8 +909,10 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <div class="chart-subhead">Median net debt / trailing-twelve-month EBITDA by sector — higher means more balance-sheet leverage relative to cash earnings</div>
 </div>
 </div>
+<div class="ndr-panel">
 <div class="chart-canvas-wrap">
 <canvas id="sectorLeverageChart"></canvas>
+</div>
 </div>
 <div class="sector-legend" id="leverageLegend"></div>
 </div>
@@ -897,8 +925,10 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <div class="chart-subhead">Median quarter-over-quarter operating margin change (ppt), grouped by that quarter's Fed-funds regime</div>
 </div>
 </div>
+<div class="ndr-panel">
 <div class="chart-canvas-wrap" style="height:300px;">
 <canvas id="regimeMarginChart"></canvas>
+</div>
 </div>
 </div>
 <div class="chart-box">
@@ -908,8 +938,10 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <div class="chart-subhead">Median quarter-over-quarter net-debt/EBITDA change (turns), grouped by regime</div>
 </div>
 </div>
+<div class="ndr-panel">
 <div class="chart-canvas-wrap" style="height:300px;">
 <canvas id="regimeLeverageChart"></canvas>
+</div>
 </div>
 </div>
 
@@ -921,8 +953,10 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <div class="chart-subhead">Each point is one calendar quarter: x is the trailing 3-month change in the effective Fed funds rate, y is that quarter's median operating-margin change</div>
 </div>
 </div>
+<div class="ndr-panel">
 <div class="scatter-canvas-wrap">
 <canvas id="marginRateScatter"></canvas>
+</div>
 </div>
 <div id="marginRateMethodTable"></div>
 </div>
@@ -933,8 +967,10 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <div class="chart-subhead">Same construction, for the median net-debt/EBITDA change that quarter</div>
 </div>
 </div>
+<div class="ndr-panel">
 <div class="scatter-canvas-wrap">
 <canvas id="leverageRateScatter"></canvas>
+</div>
 </div>
 <div id="leverageRateMethodTable"></div>
 </div>
@@ -947,8 +983,10 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <div class="chart-subhead">Every company with both figures available: is thinner margin associated with more leverage right now, or not?</div>
 </div>
 </div>
+<div class="ndr-panel">
 <div class="scatter-canvas-wrap" style="height:380px;">
 <canvas id="marginLeverageScatter"></canvas>
+</div>
 </div>
 <div id="marginLeverageMethodTable"></div>
 <div class="sector-legend" id="scatterLegend"></div>
@@ -1113,6 +1151,43 @@ function themeGreedColor(){
 function themeFearColor(){
  const v = getComputedStyle(document.documentElement).getPropertyValue("--fear").trim();
  return v || "#6f8fac";
+}
+
+// ---- NDR chart styling helpers (matches /concentration) ----------------
+// Colours come from the --ndr-* custom properties (constant across themes)
+// so the charts keep their warm-paper look while still following the
+// site's "read chart colours from CSS, don't hardcode" rule.
+function ndr(name){
+ return getComputedStyle(document.documentElement).getPropertyValue("--ndr-" + name).trim();
+}
+
+Chart.defaults.font.family = "'Iowan Old Style','Palatino Linotype',Georgia,serif";
+Chart.defaults.color = ndr("axis-soft");
+
+function ndrXScale(){
+ return {
+  ticks: { color: ndr("axis"), maxTicksLimit: 9, maxRotation: 0, autoSkip: true, font: { size: 11 } },
+  grid: { color: "rgba(0,0,0,0)", borderColor: ndr("axis") },
+ };
+}
+
+function ndrYScale(opts){
+ opts = opts || {};
+ return {
+  type: opts.log ? "logarithmic" : "linear",
+  position: opts.position || "left",
+  grid: { color: ndr("grid"), drawBorder: false },
+  ticks: { color: ndr("axis"), font: { size: 11 }, callback: opts.fmt || undefined },
+  title: opts.title ? { display: true, text: opts.title, color: ndr("axis-soft"), font: { size: 10 } } : { display: false },
+  min: opts.min, max: opts.max,
+ };
+}
+
+function ndrLegend(){
+ return {
+  display: true, position: "top", align: "start",
+  labels: { boxWidth: 22, boxHeight: 2, color: ndr("axis"), font: { size: 11 } },
+ };
 }
 
 // ---- Stats helpers — same methodology as /factor-analysis, duplicated
@@ -1287,8 +1362,8 @@ function renderSectorMarginChart(){
     tooltip: { callbacks: { label: ctx => ctx.dataset.label + ": " + fmtPlainPct(ctx.parsed.y) } },
    },
    scales: {
-    x: { ticks: { color: themeMutedColor(), maxTicksLimit: 10 }, grid: { color: themeHairColor() } },
-    y: { ticks: { color: themeMutedColor(), callback: v => v + "%" }, grid: { color: themeHairColor() } },
+    x: { ...ndrXScale(), maxTicksLimit: 10 },
+    y: ndrYScale({ fmt: v => v + "%" }),
    },
   },
  });
@@ -1325,8 +1400,8 @@ function renderSectorLeverageChart(){
     tooltip: { callbacks: { label: ctx => ctx.dataset.label + ": " + fmtX(ctx.parsed.y) } },
    },
    scales: {
-    x: { ticks: { color: themeMutedColor(), maxTicksLimit: 10 }, grid: { color: themeHairColor() } },
-    y: { ticks: { color: themeMutedColor(), callback: v => v + "x" }, grid: { color: themeHairColor() } },
+    x: { ...ndrXScale(), maxTicksLimit: 10 },
+    y: ndrYScale({ fmt: v => v + "x" }),
    },
   },
  });
@@ -1364,7 +1439,7 @@ function renderRegimeCharts(){
  const leverageStats = buildRegimeStats("medianLeverageDelta");
 
  function draw(canvasId, stats, unitFmt, existing){
-  const colors = stats.map(s => s.mean === null ? themeMutedColor() : s.mean >= 0 ? themeGreedColor() : themeFearColor());
+  const colors = stats.map(s => s.mean === null ? ndr("slate") : s.mean >= 0 ? ndr("green") : ndr("red"));
   const ctx = document.getElementById(canvasId).getContext("2d");
   if(existing) existing.destroy();
   return new Chart(ctx, {
@@ -1378,8 +1453,8 @@ function renderRegimeCharts(){
      tooltip: { callbacks: { label: ctx => { const s = stats[ctx.dataIndex]; return ["Avg: " + unitFmt(s.mean), "n=" + s.n + " qtrs"]; } } },
     },
     scales: {
-     x: { ticks: { color: themeMutedColor() }, grid: { display: false } },
-     y: { ticks: { color: themeMutedColor(), callback: v => unitFmt(v) }, grid: { color: themeHairColor() } },
+     x: ndrXScale(),
+     y: ndrYScale({ fmt: v => unitFmt(v) }),
     },
    },
   });
@@ -1415,8 +1490,8 @@ function renderRateScatters(){
    type: "scatter",
    data: {
     datasets: [
-     { label: "Quarters", data: pts, backgroundColor: themeGreedColor(), pointRadius: 3.5, showLine: false },
-     { label: "Regression fit", type: "line", data: linePoints, borderColor: themeInkColor(), borderWidth: 1.5, borderDash: [4, 3], pointRadius: 0, fill: false },
+     { label: "Quarters", data: pts, backgroundColor: ndr("gold"), pointRadius: 3.5, showLine: false },
+     { label: "Regression fit", type: "line", data: linePoints, borderColor: ndr("navy"), borderWidth: 1.5, borderDash: [4, 3], pointRadius: 0, fill: false },
     ],
    },
    options: {
@@ -1427,8 +1502,8 @@ function renderRateScatters(){
      tooltip: { callbacks: { label: ctx => ctx.dataset.label === "Quarters" ? (ctx.raw.quarter + ": " + (ctx.raw.x >= 0 ? "+" : "") + ctx.raw.x.toFixed(2) + "pp → " + yFmt(ctx.raw.y)) : null } },
     },
     scales: {
-     x: { title: { display: true, text: "Δ Fed funds rate, trailing 3mo (pp)", color: themeMutedColor(), font: { size: 10 } }, ticks: { color: themeMutedColor(), font: { size: 10 } }, grid: { color: themeHairColor() } },
-     y: { title: { display: true, text: yLabel, color: themeMutedColor(), font: { size: 10 } }, ticks: { color: themeMutedColor(), font: { size: 10 } }, grid: { color: themeHairColor() } },
+     x: ndrYScale({ position: "bottom", title: "Δ Fed funds rate, trailing 3mo (pp)" }),
+     y: ndrYScale({ title: yLabel }),
     },
    },
   });
@@ -1463,7 +1538,7 @@ function renderMarginLeverageScatter(){
  const spear = spearmanRegression(allPoints.map(p => p.x), allPoints.map(p => p.y));
  const xs = allPoints.map(p => p.x);
  const xMin = Math.min(...xs), xMax = Math.max(...xs);
- datasets.push({ label: "Regression fit", type: "line", data: [{ x: xMin, y: pearson.intercept + pearson.slope * xMin }, { x: xMax, y: pearson.intercept + pearson.slope * xMax }], borderColor: themeInkColor(), borderWidth: 1.5, borderDash: [4, 3], pointRadius: 0, fill: false });
+ datasets.push({ label: "Regression fit", type: "line", data: [{ x: xMin, y: pearson.intercept + pearson.slope * xMin }, { x: xMax, y: pearson.intercept + pearson.slope * xMax }], borderColor: ndr("navy"), borderWidth: 1.5, borderDash: [4, 3], pointRadius: 0, fill: false });
 
  const ctx = document.getElementById("marginLeverageScatter").getContext("2d");
  if(marginLeverageScatter) marginLeverageScatter.destroy();
@@ -1478,8 +1553,8 @@ function renderMarginLeverageScatter(){
     tooltip: { callbacks: { label: ctx => ctx.dataset.label === "Regression fit" ? null : (ctx.raw.symbol + " (" + ctx.dataset.label + "): margin " + fmtPlainPct(ctx.raw.x) + ", " + fmtX(ctx.raw.y) + " net debt/EBITDA") } },
    },
    scales: {
-    x: { title: { display: true, text: "Operating margin (%)", color: themeMutedColor() }, ticks: { color: themeMutedColor() }, grid: { color: themeHairColor() } },
-    y: { title: { display: true, text: "Net debt / EBITDA (x)", color: themeMutedColor() }, ticks: { color: themeMutedColor() }, grid: { color: themeHairColor() } },
+    x: ndrYScale({ position: "bottom", fmt: v => v + "%", title: "Operating margin (%)" }),
+    y: ndrYScale({ fmt: v => v + "x", title: "Net debt / EBITDA (x)" }),
    },
   },
  });

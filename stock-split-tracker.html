@@ -172,6 +172,20 @@ document.addEventListener("DOMContentLoaded", function(){
   --serif:'Iowan Old Style','Palatino Linotype',Georgia,serif;
   --mono:'SF Mono','JetBrains Mono',ui-monospace,Menlo,monospace;
   --sans:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+
+  /* NDR-style chart palette. Deliberately the SAME in light and dark —
+     these charts keep a constant warm-paper look as a homage to the Ned
+     Davis Research print charts that inspired the page. JS reads them via
+     getComputedStyle (per the site convention) rather than hardcoding. */
+  --ndr-plot:#f5f1e6;
+  --ndr-axis:#3c3a33;
+  --ndr-axis-soft:#6f6a5c;
+  --ndr-grid:#ddd6c2;
+  --ndr-red:#a83c36;
+  --ndr-green:#4f6f3f;
+  --ndr-gold:#c1902f;
+  --ndr-navy:#2f4b6e;
+  --ndr-slate:#7d8a99;
 }
 
 :root[data-theme="light"]{
@@ -396,6 +410,14 @@ h1{
  color:var(--muted);
  font-size:12px;
  margin-top:4px;
+}
+
+/* The warm-paper plot panel behind each canvas — the NDR homage. */
+.ndr-panel{
+ background:var(--ndr-plot);
+ border:1px solid var(--ndr-grid);
+ border-radius:8px;
+ padding:14px 14px 10px;
 }
 
 .chart-canvas-wrap{
@@ -805,8 +827,10 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <div class="chart-subhead">15-year history — forward (regular) splits vs. reverse splits, current constituents only</div>
 </div>
 </div>
+<div class="ndr-panel">
 <div class="chart-canvas-wrap">
 <canvas id="frequencyChart"></canvas>
+</div>
 </div>
 </div>
 
@@ -817,8 +841,10 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <div class="chart-subhead">Average path across all qualifying forward splits in the trailing 5 years, indexed to 0% on the last trading day before the split's effective date. Sample size (n) shrinks toward the edges — see methodology.</div>
 </div>
 </div>
+<div class="ndr-panel">
 <div class="chart-canvas-wrap">
 <canvas id="eventStudyChart"></canvas>
+</div>
 </div>
 </div>
 
@@ -829,8 +855,10 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <div class="chart-subhead">Number of split events by sector — forward vs. reverse</div>
 </div>
 </div>
+<div class="ndr-panel">
 <div class="chart-canvas-wrap">
 <canvas id="sectorChart"></canvas>
+</div>
 </div>
 </div>
 
@@ -841,8 +869,10 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <div class="chart-subhead">Each point is one qualifying forward split: x-axis is log2(split ratio) — 1.0 = a 2-for-1, 2.0 = a 4-for-1, 3.3 = a 10-for-1 — y-axis is its 120-trading-day relative return vs. SPY</div>
 </div>
 </div>
+<div class="ndr-panel">
 <div class="scatter-canvas-wrap">
 <canvas id="sizeScatter"></canvas>
+</div>
 </div>
 <div id="sizeMethodTable"></div>
 </div>
@@ -935,6 +965,43 @@ function themeGreedColor(){
 function themeFearColor(){
  const v = getComputedStyle(document.documentElement).getPropertyValue("--fear").trim();
  return v || "#6f8fac";
+}
+
+// ---- NDR chart styling helpers -----------------------------------------
+// Colours come from the --ndr-* custom properties (constant across themes)
+// so the charts keep their warm-paper look while still following the
+// site's "read chart colours from CSS, don't hardcode" rule.
+function ndr(name){
+ return getComputedStyle(document.documentElement).getPropertyValue("--ndr-" + name).trim();
+}
+
+Chart.defaults.font.family = "'Iowan Old Style','Palatino Linotype',Georgia,serif";
+Chart.defaults.color = ndr("axis-soft");
+
+function ndrXScale(){
+ return {
+  ticks: { color: ndr("axis"), maxTicksLimit: 9, maxRotation: 0, autoSkip: true, font: { size: 11 } },
+  grid: { color: "rgba(0,0,0,0)", borderColor: ndr("axis") },
+ };
+}
+
+function ndrYScale(opts){
+ opts = opts || {};
+ return {
+  type: opts.log ? "logarithmic" : "linear",
+  position: opts.position || "left",
+  grid: { color: ndr("grid"), drawBorder: false },
+  ticks: { color: ndr("axis"), font: { size: 11 }, callback: opts.fmt || undefined },
+  title: opts.title ? { display: true, text: opts.title, color: ndr("axis-soft"), font: { size: 10 } } : { display: false },
+  min: opts.min, max: opts.max,
+ };
+}
+
+function ndrLegend(){
+ return {
+  display: true, position: "top", align: "start",
+  labels: { boxWidth: 22, boxHeight: 2, color: ndr("axis"), font: { size: 11 } },
+ };
 }
 
 // ---- Stats helpers — same methodology as /factor-analysis, duplicated
@@ -1065,17 +1132,17 @@ function renderFrequencyChart(){
   data: {
    labels: rows.map(r => r.year),
    datasets: [
-    { label: "Forward splits", data: rows.map(r => r.forwardCount), backgroundColor: themeGreedColor(), stack: "s" },
-    { label: "Reverse splits", data: rows.map(r => r.reverseCount), backgroundColor: themeFearColor(), stack: "s" },
+    { label: "Forward splits", data: rows.map(r => r.forwardCount), backgroundColor: ndr("green"), stack: "s" },
+    { label: "Reverse splits", data: rows.map(r => r.reverseCount), backgroundColor: ndr("red"), stack: "s" },
    ],
   },
   options: {
    responsive: true,
    maintainAspectRatio: false,
-   plugins: { legend: { position: "bottom", labels: { color: themeMutedColor() } } },
+   plugins: { legend: ndrLegend() },
    scales: {
-    x: { stacked: true, ticks: { color: themeMutedColor() }, grid: { display: false } },
-    y: { stacked: true, ticks: { color: themeMutedColor(), precision: 0 }, grid: { color: themeHairColor() } },
+    x: { ...ndrXScale(), stacked: true },
+    y: { ...ndrYScale({ fmt: v => Number(v).toFixed(0) }), stacked: true },
    },
   },
  });
@@ -1097,7 +1164,7 @@ function renderEventStudyChart(){
    datasets: [{
     label: "Avg. relative return vs. SPY",
     data: path.map(p => p.avgRelative),
-    borderColor: themeGreedColor(),
+    borderColor: ndr("navy"),
     backgroundColor: "transparent",
     borderWidth: 2,
     pointRadius: 0,
@@ -1121,8 +1188,8 @@ function renderEventStudyChart(){
     },
    },
    scales: {
-    x: { title: { display: true, text: "Trading days relative to split effective date (0 = split day)", color: themeMutedColor(), font: { size: 10 } }, ticks: { color: themeMutedColor() }, grid: { color: themeHairColor() } },
-    y: { title: { display: true, text: "Cumulative relative return (%)", color: themeMutedColor(), font: { size: 10 } }, ticks: { color: themeMutedColor(), callback: v => v + "%" }, grid: { color: themeHairColor() } },
+    x: { ...ndrXScale(), title: { display: true, text: "Trading days relative to split effective date (0 = split day)", color: ndr("axis-soft"), font: { size: 10 } } },
+    y: ndrYScale({ fmt: v => v + "%", title: "Cumulative relative return (%)" }),
    },
   },
  });
@@ -1142,18 +1209,23 @@ function renderSectorChart(){
   data: {
    labels: sorted.map(s => s.sector),
    datasets: [
-    { label: "Forward", data: sorted.map(s => s.forwardCount), backgroundColor: themeGreedColor(), borderRadius: 4 },
-    { label: "Reverse", data: sorted.map(s => s.reverseCount), backgroundColor: themeFearColor(), borderRadius: 4 },
+    { label: "Forward", data: sorted.map(s => s.forwardCount), backgroundColor: ndr("green"), borderRadius: 4 },
+    { label: "Reverse", data: sorted.map(s => s.reverseCount), backgroundColor: ndr("red"), borderRadius: 4 },
    ],
   },
   options: {
    indexAxis: "y",
    responsive: true,
    maintainAspectRatio: false,
-   plugins: { legend: { position: "bottom", labels: { color: themeMutedColor() } } },
+   plugins: { legend: ndrLegend() },
+   // Horizontal bar: x is the value (count) axis, y is the category
+   // (sector name) axis — the opposite pairing from ndrXScale/ndrYScale's
+   // usual x=category/y=value roles, so the helpers are swapped here. All
+   // sector names should show (unlike a date axis), so the category axis
+   // is built inline rather than reusing ndrXScale's maxTicksLimit/autoSkip.
    scales: {
-    x: { ticks: { color: themeMutedColor(), precision: 0 }, grid: { color: themeHairColor() } },
-    y: { ticks: { color: themeMutedColor() }, grid: { display: false } },
+    x: ndrYScale({ fmt: v => Number(v).toFixed(0) }),
+    y: { ticks: { color: ndr("axis"), font: { size: 11 } }, grid: { color: "rgba(0,0,0,0)", borderColor: ndr("axis") } },
    },
   },
  });
@@ -1185,8 +1257,8 @@ function renderSizeScatter(){
   type: "scatter",
   data: {
    datasets: [
-    { label: "Splits", data: points.map(p => ({ x: p.logFactor, y: p.forwardReturn, symbol: p.symbol })), backgroundColor: themeGreedColor(), pointRadius: 4, showLine: false },
-    { label: "Regression fit", type: "line", data: linePoints, borderColor: themeInkColor(), borderWidth: 1.5, borderDash: [4, 3], pointRadius: 0, fill: false },
+    { label: "Splits", data: points.map(p => ({ x: p.logFactor, y: p.forwardReturn, symbol: p.symbol })), backgroundColor: ndr("navy"), pointRadius: 4, showLine: false },
+    { label: "Regression fit", type: "line", data: linePoints, borderColor: ndr("red"), borderWidth: 1.5, borderDash: [4, 3], pointRadius: 0, fill: false },
    ],
   },
   options: {
@@ -1200,9 +1272,13 @@ function renderSizeScatter(){
      },
     },
    },
+   // Numeric x-axis (log2 split ratio), not a date/category axis, so
+   // ndrXScale's category-oriented tick options (maxTicksLimit,
+   // maxRotation) don't apply here — built inline instead, matching
+   // ndrXScale's colours.
    scales: {
-    x: { title: { display: true, text: "log2(split ratio)", color: themeMutedColor(), font: { size: 10 } }, ticks: { color: themeMutedColor(), font: { size: 10 } }, grid: { color: themeHairColor() } },
-    y: { title: { display: true, text: "120-day relative return vs. SPY (%)", color: themeMutedColor(), font: { size: 10 } }, ticks: { color: themeMutedColor(), font: { size: 10 } }, grid: { color: themeHairColor() } },
+    x: { title: { display: true, text: "log2(split ratio)", color: ndr("axis-soft"), font: { size: 10 } }, ticks: { color: ndr("axis"), font: { size: 10 } }, grid: { color: ndr("grid") } },
+    y: ndrYScale({ title: "120-day relative return vs. SPY (%)" }),
    },
   },
  });

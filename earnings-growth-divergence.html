@@ -172,6 +172,21 @@ document.addEventListener("DOMContentLoaded", function(){
   --serif:'Iowan Old Style','Palatino Linotype',Georgia,serif;
   --mono:'SF Mono','JetBrains Mono',ui-monospace,Menlo,monospace;
   --sans:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+
+  /* NDR-style chart palette. Deliberately the SAME in light and dark —
+     these charts keep a constant warm-paper look as a homage to the Ned
+     Davis Research print charts that inspired concentration.html. JS reads
+     them via getComputedStyle (per the site convention) rather than
+     hardcoding. */
+  --ndr-plot:#f5f1e6;
+  --ndr-axis:#3c3a33;
+  --ndr-axis-soft:#6f6a5c;
+  --ndr-grid:#ddd6c2;
+  --ndr-red:#a83c36;
+  --ndr-green:#4f6f3f;
+  --ndr-gold:#c1902f;
+  --ndr-navy:#2f4b6e;
+  --ndr-slate:#7d8a99;
 }
 
 :root[data-theme="light"]{
@@ -400,6 +415,15 @@ h1{
 
 .chart-canvas-wrap{
  height:380px;
+}
+
+/* The warm-paper plot panel behind each canvas — the NDR homage
+   (matches /concentration.html). */
+.ndr-panel{
+ background:var(--ndr-plot);
+ border:1px solid var(--ndr-grid);
+ border-radius:8px;
+ padding:14px 14px 10px;
 }
 
 /* TABLE */
@@ -796,8 +820,10 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <div class="chart-subhead">Two bars per sector — do they broadly agree, or diverge?</div>
 </div>
 </div>
+<div class="ndr-panel">
 <div class="chart-canvas-wrap">
 <canvas id="sectorChart"></canvas>
+</div>
 </div>
 </div>
 
@@ -808,8 +834,10 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <div class="chart-subhead">Each point is one stock: x-axis is trailing year-over-year EPS growth, y-axis is 3-month price return relative to SPY</div>
 </div>
 </div>
+<div class="ndr-panel">
 <div class="scatter-canvas-wrap">
 <canvas id="growthScatter"></canvas>
+</div>
 </div>
 <div id="growthMethodTable"></div>
 </div>
@@ -917,6 +945,66 @@ function themeGreedColor(){
 function themeFearColor(){
  const v = getComputedStyle(document.documentElement).getPropertyValue("--fear").trim();
  return v || "#6f8fac";
+}
+
+// ---- NDR chart styling helpers (matches /concentration.html) -----------
+// Colours come from the --ndr-* custom properties (constant across themes)
+// so the charts keep their warm-paper look while still following the
+// site's "read chart colours from CSS, don't hardcode" rule.
+function ndr(name){
+ return getComputedStyle(document.documentElement).getPropertyValue("--ndr-" + name).trim();
+}
+
+Chart.defaults.font.family = "'Iowan Old Style','Palatino Linotype',Georgia,serif";
+Chart.defaults.color = ndr("axis-soft");
+
+function ndrXScale(){
+ return {
+  ticks: { color: ndr("axis"), maxTicksLimit: 9, maxRotation: 0, autoSkip: true, font: { size: 11 } },
+  grid: { color: "rgba(0,0,0,0)", borderColor: ndr("axis") },
+ };
+}
+
+function ndrYScale(opts){
+ opts = opts || {};
+ return {
+  type: opts.log ? "logarithmic" : "linear",
+  position: opts.position || "left",
+  grid: { color: ndr("grid"), drawBorder: false },
+  ticks: { color: ndr("axis"), font: { size: 11 }, callback: opts.fmt || undefined },
+  title: opts.title ? { display: true, text: opts.title, color: ndr("axis-soft"), font: { size: 10 } } : { display: false },
+  min: opts.min, max: opts.max,
+ };
+}
+
+function ndrLegend(){
+ return {
+  display: true, position: "top", align: "start",
+  labels: { boxWidth: 22, boxHeight: 2, color: ndr("axis"), font: { size: 11 } },
+ };
+}
+
+// This page's sector chart flips to indexAxis:"y" (sector names on y,
+// values on x) — reuses ndr() colors but keeps the plain category
+// styling the original chart had (no ticks/grid on the label axis).
+function ndrCategoryScale(){
+ return {
+  ticks: { color: ndr("axis"), font: { size: 11 } },
+  grid: { display: false },
+ };
+}
+
+// This page's scatter chart uses a genuinely numeric (linear) x-axis —
+// EPS growth, not a date-string category axis — so it needs its own
+// scale helper rather than ndrXScale (which is category-shaped, per
+// concentration.html's "no date adapter" convention).
+function ndrNumericScale(opts){
+ opts = opts || {};
+ return {
+  title: opts.title ? { display: true, text: opts.title, color: ndr("axis-soft"), font: { size: 10 } } : { display: false },
+  ticks: { color: ndr("axis"), font: { size: 10 } },
+  grid: { color: ndr("grid"), drawBorder: false },
+ };
 }
 
 // ---- Stats helpers — same methodology as /factor-analysis, duplicated
@@ -1027,8 +1115,8 @@ function renderSectorChart(){
   data: {
    labels: sorted.map(s => s.sector),
    datasets: [
-    { label: "Median EPS growth YoY", data: sorted.map(s => s.medianEpsGrowth), backgroundColor: themeGreedColor(), borderRadius: 4 },
-    { label: "Median 3M relative price", data: sorted.map(s => s.medianRelPrice3M), backgroundColor: themeFearColor(), borderRadius: 4 },
+    { label: "Median EPS growth YoY", data: sorted.map(s => s.medianEpsGrowth), backgroundColor: ndr("green"), borderRadius: 4 },
+    { label: "Median 3M relative price", data: sorted.map(s => s.medianRelPrice3M), backgroundColor: ndr("navy"), borderRadius: 4 },
    ],
   },
   options: {
@@ -1036,12 +1124,14 @@ function renderSectorChart(){
    responsive: true,
    maintainAspectRatio: false,
    plugins: {
-    legend: { display: true, position: "top", labels: { color: themeMutedColor(), boxWidth: 12, font: { size: 11 } } },
+    legend: ndrLegend(),
     tooltip: { callbacks: { label: ctx => ctx.dataset.label + ": " + fmtPct(ctx.parsed.x) } },
    },
+   // indexAxis:"y" flips the usual roles: x is the value scale here, y
+   // is the sector-name category axis.
    scales: {
-    x: { ticks: { color: themeMutedColor(), callback: v => (Math.round(v * 100) / 100) + "%" }, grid: { color: themeHairColor() } },
-    y: { ticks: { color: themeMutedColor() }, grid: { display: false } },
+    x: ndrYScale({ fmt: (v) => (Math.round(v * 100) / 100) + "%" }),
+    y: ndrCategoryScale(),
    },
   },
  });
@@ -1072,8 +1162,8 @@ function renderScatter(){
   type: "scatter",
   data: {
    datasets: [
-    { label: "Stocks", data: pairs, backgroundColor: themeGreedColor(), pointRadius: 2.5, pointHoverRadius: 4, showLine: false },
-    { label: "Regression fit", type: "line", data: linePoints, borderColor: themeInkColor(), borderWidth: 1.5, borderDash: [4, 3], pointRadius: 0, fill: false },
+    { label: "Stocks", data: pairs, backgroundColor: ndr("navy"), pointRadius: 2.5, pointHoverRadius: 4, showLine: false },
+    { label: "Regression fit", type: "line", data: linePoints, borderColor: ndr("red"), borderWidth: 1.5, borderDash: [4, 3], pointRadius: 0, fill: false },
    ],
   },
   options: {
@@ -1088,8 +1178,8 @@ function renderScatter(){
     },
    },
    scales: {
-    x: { title: { display: true, text: "YoY EPS growth (%)", color: themeMutedColor(), font: { size: 10 } }, ticks: { color: themeMutedColor(), font: { size: 10 } }, grid: { color: themeHairColor() } },
-    y: { title: { display: true, text: "3-month relative price return (%)", color: themeMutedColor(), font: { size: 10 } }, ticks: { color: themeMutedColor(), font: { size: 10 } }, grid: { color: themeHairColor() } },
+    x: ndrNumericScale({ title: "YoY EPS growth (%)" }),
+    y: ndrNumericScale({ title: "3-month relative price return (%)" }),
    },
   },
  });

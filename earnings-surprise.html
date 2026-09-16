@@ -172,6 +172,20 @@ document.addEventListener("DOMContentLoaded", function(){
   --serif:'Iowan Old Style','Palatino Linotype',Georgia,serif;
   --mono:'SF Mono','JetBrains Mono',ui-monospace,Menlo,monospace;
   --sans:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+
+  /* NDR-style chart palette. Deliberately the SAME in light and dark —
+     these charts keep a constant warm-paper look as a homage to the Ned
+     Davis Research print charts that inspired the page. JS reads them via
+     getComputedStyle (per the site convention) rather than hardcoding. */
+  --ndr-plot:#f5f1e6;
+  --ndr-axis:#3c3a33;
+  --ndr-axis-soft:#6f6a5c;
+  --ndr-grid:#ddd6c2;
+  --ndr-red:#a83c36;
+  --ndr-green:#4f6f3f;
+  --ndr-gold:#c1902f;
+  --ndr-navy:#2f4b6e;
+  --ndr-slate:#7d8a99;
 }
 
 :root[data-theme="light"]{
@@ -418,6 +432,14 @@ h1{
  color:var(--muted);
  font-size:12px;
  margin-top:4px;
+}
+
+/* The warm-paper plot panel behind each canvas — the NDR homage. */
+.ndr-panel{
+ background:var(--ndr-plot);
+ border:1px solid var(--ndr-grid);
+ border-radius:8px;
+ padding:14px 14px 10px;
 }
 
 .chart-canvas-wrap{
@@ -762,8 +784,10 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <div class="chart-box-sub">Share of the mapped universe beating consensus EPS each calendarized reporting quarter, market-wide.</div>
 </div>
 </div>
+<div class="ndr-panel">
 <div class="chart-canvas-wrap short">
 <canvas id="trendChart"></canvas>
+</div>
 </div>
 </div>
 
@@ -778,8 +802,10 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <button class="toggle-btn" id="btnMagnitude">Avg. surprise %</button>
 </div>
 </div>
+<div class="ndr-panel">
 <div class="chart-canvas-wrap">
 <canvas id="sectorChart"></canvas>
+</div>
 </div>
 </div>
 
@@ -790,8 +816,10 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <div class="chart-box-sub">Latest quarter, all reporters with usable estimates. A longer right tail than left is the well-documented tendency for upside surprises to run larger than downside ones.</div>
 </div>
 </div>
+<div class="ndr-panel">
 <div class="chart-canvas-wrap short">
 <canvas id="distChart"></canvas>
+</div>
 </div>
 </div>
 
@@ -924,6 +952,43 @@ function themeHairColor(){
  return getComputedStyle(document.documentElement).getPropertyValue("--hair").trim() || "#2b3138";
 }
 
+// ---- NDR chart styling helpers -----------------------------------------
+// Colours come from the --ndr-* custom properties (constant across themes)
+// so the charts keep their warm-paper look while still following the
+// site's "read chart colours from CSS, don't hardcode" rule.
+function ndr(name){
+ return getComputedStyle(document.documentElement).getPropertyValue("--ndr-" + name).trim();
+}
+
+Chart.defaults.font.family = "'Iowan Old Style','Palatino Linotype',Georgia,serif";
+Chart.defaults.color = ndr("axis-soft");
+
+function ndrXScale(){
+ return {
+  ticks: { color: ndr("axis"), maxTicksLimit: 9, maxRotation: 0, autoSkip: true, font: { size: 11 } },
+  grid: { color: "rgba(0,0,0,0)", borderColor: ndr("axis") },
+ };
+}
+
+function ndrYScale(opts){
+ opts = opts || {};
+ return {
+  type: opts.log ? "logarithmic" : "linear",
+  position: opts.position || "left",
+  grid: { color: ndr("grid"), drawBorder: false },
+  ticks: { color: ndr("axis"), font: { size: 11 }, callback: opts.fmt || undefined },
+  title: opts.title ? { display: true, text: opts.title, color: ndr("axis-soft"), font: { size: 10 } } : { display: false },
+  min: opts.min, max: opts.max,
+ };
+}
+
+function ndrLegend(){
+ return {
+  display: true, position: "top", align: "start",
+  labels: { boxWidth: 22, boxHeight: 2, color: ndr("axis"), font: { size: 11 } },
+ };
+}
+
 async function init(){
  try{
   const res = await fetch(DATA_URL, { cache: "no-store" });
@@ -973,8 +1038,8 @@ function renderTrendChart(){
    datasets: [{
     label: "Beat rate",
     data: points.map(p => p.beatRate),
-    borderColor: "#d98a3d",
-    backgroundColor: "#d98a3d",
+    borderColor: ndr("navy"),
+    backgroundColor: ndr("navy"),
     borderWidth: 1.5,
     pointRadius: points.length < 8 ? 3 : 0,
     fill: false,
@@ -994,8 +1059,8 @@ function renderTrendChart(){
     },
    },
    scales: {
-    x: { ticks: { color: themeMutedColor(), maxTicksLimit: 12 }, grid: { color: themeHairColor() } },
-    y: { ticks: { color: themeMutedColor(), callback: v => v + "%" }, grid: { color: themeHairColor() } },
+    x: ndrXScale(),
+    y: ndrYScale({ fmt: v => v + "%" }),
    },
   },
  });
@@ -1009,7 +1074,7 @@ function renderSectorChart(){
  });
 
  const values = sectors.map(s => SECTOR_MODE === "beatRate" ? s.beatRate : s.avgSurprise);
- const colors = values.map(v => (v === null ? themeMutedColor() : (v >= 0 ? "#d98a3d" : "#6f8fac")));
+ const colors = values.map(v => (v === null ? ndr("slate") : (v >= 0 ? ndr("green") : ndr("red"))));
 
  const ctx = document.getElementById("sectorChart").getContext("2d");
  if(sectorChart) sectorChart.destroy();
@@ -1038,13 +1103,12 @@ function renderSectorChart(){
      },
     },
    },
+   // Horizontal bar: x is the value axis (numeric), y the category axis
+   // (sector names) — the reverse of the usual layout, so the ndr scale
+   // helpers (built for a category x / numeric y) are applied swapped.
    scales: {
-    x: {
-     ticks: { color: themeMutedColor() },
-     grid: { color: themeHairColor() },
-     title: { display: true, text: SECTOR_MODE === "beatRate" ? "Beat rate (%)" : "Avg. surprise (%)", color: themeMutedColor() },
-    },
-    y: { ticks: { color: themeMutedColor() }, grid: { display: false } },
+    x: ndrYScale({ title: SECTOR_MODE === "beatRate" ? "Beat rate (%)" : "Avg. surprise (%)" }),
+    y: { ticks: { color: ndr("axis"), font: { size: 11 } }, grid: { display: false } },
    },
   },
  });
@@ -1076,7 +1140,7 @@ function renderDistChart(){
    datasets: [{
     label: "Reporters",
     data: bins.map(b => b.count),
-    backgroundColor: bins.map(b => (b.hi <= 0 ? "#6f8fac" : "#d98a3d")),
+    backgroundColor: bins.map(b => (b.hi <= 0 ? ndr("red") : ndr("green"))),
     borderRadius: 4,
    }],
   },
@@ -1088,8 +1152,8 @@ function renderDistChart(){
     tooltip: { callbacks: { label: ctx => ctx.parsed.y + " reporters" } },
    },
    scales: {
-    x: { ticks: { color: themeMutedColor() }, grid: { display: false }, title: { display: true, text: "Surprise %", color: themeMutedColor() } },
-    y: { ticks: { color: themeMutedColor() }, grid: { color: themeHairColor() }, title: { display: true, text: "Number of companies", color: themeMutedColor() } },
+    x: { ...ndrXScale(), title: { display: true, text: "Surprise %", color: ndr("axis-soft"), font: { size: 10 } } },
+    y: ndrYScale({ title: "Number of companies", fmt: v => Number(v).toFixed(0) }),
    },
   },
  });

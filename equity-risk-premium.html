@@ -172,6 +172,21 @@ document.addEventListener("DOMContentLoaded", function(){
   --serif:'Iowan Old Style','Palatino Linotype',Georgia,serif;
   --mono:'SF Mono','JetBrains Mono',ui-monospace,Menlo,monospace;
   --sans:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+
+  /* NDR-style chart palette. Deliberately the SAME in light and dark —
+     these charts keep a constant warm-paper look as a homage to the Ned
+     Davis Research print charts that inspired concentration.html. JS reads
+     them via getComputedStyle (per the site convention) rather than
+     hardcoding. */
+  --ndr-plot:#f5f1e6;
+  --ndr-axis:#3c3a33;
+  --ndr-axis-soft:#6f6a5c;
+  --ndr-grid:#ddd6c2;
+  --ndr-red:#a83c36;
+  --ndr-green:#4f6f3f;
+  --ndr-gold:#c1902f;
+  --ndr-navy:#2f4b6e;
+  --ndr-slate:#7d8a99;
 }
 
 :root[data-theme="light"]{
@@ -400,6 +415,15 @@ h1{
 
 .chart-canvas-wrap{
  height:380px;
+}
+
+/* The warm-paper plot panel behind each canvas — the NDR homage
+   (matches /concentration.html). */
+.ndr-panel{
+ background:var(--ndr-plot);
+ border:1px solid var(--ndr-grid);
+ border-radius:8px;
+ padding:14px 14px 10px;
 }
 
 /* TABLE */
@@ -796,8 +820,10 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <div class="chart-subhead">Median (1 / trailing P/E) − 10-year Treasury yield, across each sector's constituents with a positive trailing P/E on file</div>
 </div>
 </div>
+<div class="ndr-panel">
 <div class="chart-canvas-wrap">
 <canvas id="sectorChart"></canvas>
+</div>
 </div>
 </div>
 
@@ -808,8 +834,10 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <div class="chart-subhead">Accumulated one weekly snapshot at a time — will be short until this page has run for a while</div>
 </div>
 </div>
+<div class="ndr-panel">
 <div class="chart-canvas-wrap">
 <canvas id="historyChart"></canvas>
+</div>
 </div>
 </div>
 
@@ -820,8 +848,10 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <div class="chart-subhead">Each point is one stock: x-axis is its Alpha Vantage-reported beta, y-axis is its equity risk premium — a rational risk/return tradeoff would put higher-beta stocks at a higher ERP (positive slope)</div>
 </div>
 </div>
+<div class="ndr-panel">
 <div class="scatter-canvas-wrap">
 <canvas id="betaScatter"></canvas>
+</div>
 </div>
 <div id="betaMethodTable"></div>
 </div>
@@ -933,6 +963,67 @@ function themeFearColor(){
  return v || "#6f8fac";
 }
 
+// ---- NDR chart styling helpers (matches /concentration.html) -----------
+// Colours come from the --ndr-* custom properties (constant across themes)
+// so the charts keep their warm-paper look while still following the
+// site's "read chart colours from CSS, don't hardcode" rule.
+function ndr(name){
+ return getComputedStyle(document.documentElement).getPropertyValue("--ndr-" + name).trim();
+}
+
+Chart.defaults.font.family = "'Iowan Old Style','Palatino Linotype',Georgia,serif";
+Chart.defaults.color = ndr("axis-soft");
+
+function ndrXScale(){
+ return {
+  ticks: { color: ndr("axis"), maxTicksLimit: 9, maxRotation: 0, autoSkip: true, font: { size: 11 } },
+  grid: { color: "rgba(0,0,0,0)", borderColor: ndr("axis") },
+ };
+}
+
+function ndrYScale(opts){
+ opts = opts || {};
+ return {
+  type: opts.log ? "logarithmic" : "linear",
+  position: opts.position || "left",
+  grid: { color: ndr("grid"), drawBorder: false },
+  ticks: { color: ndr("axis"), font: { size: 11 }, callback: opts.fmt || undefined },
+  title: opts.title ? { display: true, text: opts.title, color: ndr("axis-soft"), font: { size: 10 } } : { display: false },
+  min: opts.min, max: opts.max,
+ };
+}
+
+function ndrLegend(){
+ return {
+  display: true, position: "top", align: "start",
+  labels: { boxWidth: 22, boxHeight: 2, color: ndr("axis"), font: { size: 11 } },
+ };
+}
+
+// This page's category scale is a value axis (sector names on y) rather
+// than a date axis (unlike concentration.html) when the bar chart flips
+// to indexAxis:"y" — reuses ndr() colors but keeps the plain category
+// styling the original chart had (no ticks/grid on the label axis).
+function ndrCategoryScale(){
+ return {
+  ticks: { color: ndr("axis"), font: { size: 11 } },
+  grid: { display: false },
+ };
+}
+
+// This page's scatter charts use a genuinely numeric (linear) x-axis —
+// beta / EPS growth, not a date-string category axis — so it needs its
+// own scale helper rather than ndrXScale (which is category-shaped, per
+// concentration.html's "no date adapter" convention).
+function ndrNumericScale(opts){
+ opts = opts || {};
+ return {
+  title: opts.title ? { display: true, text: opts.title, color: ndr("axis-soft"), font: { size: 10 } } : { display: false },
+  ticks: { color: ndr("axis"), font: { size: 10 } },
+  grid: { color: ndr("grid"), drawBorder: false },
+ };
+}
+
 // ---- Stats helpers — same methodology as /factor-analysis, duplicated
 // here since every page on this site is self-contained (see CLAUDE.md). ----
 function linearRegression(xs, ys){
@@ -1029,7 +1120,7 @@ function renderStats(){
 
 function renderSectorChart(){
  const sorted = [...RAW.sectors].sort((a, b) => (b.medianErp ?? -Infinity) - (a.medianErp ?? -Infinity));
- const colors = sorted.map(s => (s.medianErp ?? 0) >= 0 ? themeGreedColor() : themeFearColor());
+ const colors = sorted.map(s => (s.medianErp ?? 0) >= 0 ? ndr("green") : ndr("red"));
  const ctx = document.getElementById("sectorChart").getContext("2d");
  if(sectorChart) sectorChart.destroy();
  sectorChart = new Chart(ctx, {
@@ -1057,9 +1148,11 @@ function renderSectorChart(){
      },
     },
    },
+   // indexAxis:"y" flips the usual roles: x is the value scale here, y
+   // is the sector-name category axis.
    scales: {
-    x: { ticks: { color: themeMutedColor(), callback: v => (Math.round(v * 100) / 100) + "%" }, grid: { color: themeHairColor() } },
-    y: { ticks: { color: themeMutedColor() }, grid: { display: false } },
+    x: ndrYScale({ fmt: (v) => (Math.round(v * 100) / 100) + "%" }),
+    y: ndrCategoryScale(),
    },
   },
  });
@@ -1076,8 +1169,8 @@ function renderHistoryChart(){
    datasets: [{
     label: "Market Median ERP",
     data: points.map(p => p.medianErp),
-    borderColor: themeGreedColor(),
-    backgroundColor: themeGreedColor(),
+    borderColor: ndr("navy"),
+    backgroundColor: ndr("navy"),
     borderWidth: 1.5,
     pointRadius: points.length < 8 ? 3 : 0,
     fill: false,
@@ -1092,8 +1185,8 @@ function renderHistoryChart(){
     tooltip: { callbacks: { label: ctx => "Median ERP: " + fmtPct(ctx.parsed.y) } },
    },
    scales: {
-    x: { ticks: { color: themeMutedColor(), maxTicksLimit: 8 }, grid: { color: themeHairColor() } },
-    y: { ticks: { color: themeMutedColor(), callback: v => (Math.round(v * 100) / 100) + "%" }, grid: { color: themeHairColor() } },
+    x: ndrXScale(),
+    y: ndrYScale({ fmt: (v) => (Math.round(v * 100) / 100) + "%" }),
    },
   },
  });
@@ -1124,8 +1217,8 @@ function renderBetaScatter(){
   type: "scatter",
   data: {
    datasets: [
-    { label: "Stocks", data: pairs, backgroundColor: themeGreedColor(), pointRadius: 2.5, pointHoverRadius: 4, showLine: false },
-    { label: "Regression fit", type: "line", data: linePoints, borderColor: themeInkColor(), borderWidth: 1.5, borderDash: [4, 3], pointRadius: 0, fill: false },
+    { label: "Stocks", data: pairs, backgroundColor: ndr("navy"), pointRadius: 2.5, pointHoverRadius: 4, showLine: false },
+    { label: "Regression fit", type: "line", data: linePoints, borderColor: ndr("red"), borderWidth: 1.5, borderDash: [4, 3], pointRadius: 0, fill: false },
    ],
   },
   options: {
@@ -1140,8 +1233,8 @@ function renderBetaScatter(){
     },
    },
    scales: {
-    x: { title: { display: true, text: "Beta", color: themeMutedColor(), font: { size: 10 } }, ticks: { color: themeMutedColor(), font: { size: 10 } }, grid: { color: themeHairColor() } },
-    y: { title: { display: true, text: "Equity risk premium (%)", color: themeMutedColor(), font: { size: 10 } }, ticks: { color: themeMutedColor(), font: { size: 10 } }, grid: { color: themeHairColor() } },
+    x: ndrNumericScale({ title: "Beta" }),
+    y: ndrNumericScale({ title: "Equity risk premium (%)" }),
    },
   },
  });

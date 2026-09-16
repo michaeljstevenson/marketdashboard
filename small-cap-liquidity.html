@@ -172,6 +172,20 @@ document.addEventListener("DOMContentLoaded", function(){
   --serif:'Iowan Old Style','Palatino Linotype',Georgia,serif;
   --mono:'SF Mono','JetBrains Mono',ui-monospace,Menlo,monospace;
   --sans:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+
+  /* NDR-style chart palette. Deliberately the SAME in light and dark —
+     these charts keep a constant warm-paper look as a homage to the Ned
+     Davis Research print charts that inspired the page. JS reads them via
+     getComputedStyle (per the site convention) rather than hardcoding. */
+  --ndr-plot:#f5f1e6;
+  --ndr-axis:#3c3a33;
+  --ndr-axis-soft:#6f6a5c;
+  --ndr-grid:#ddd6c2;
+  --ndr-red:#a83c36;
+  --ndr-green:#4f6f3f;
+  --ndr-gold:#c1902f;
+  --ndr-navy:#2f4b6e;
+  --ndr-slate:#7d8a99;
 }
 
 :root[data-theme="light"]{
@@ -397,6 +411,14 @@ h1{
  color:var(--muted);
  font-size:12px;
  margin-top:4px;
+}
+
+/* The warm-paper plot panel behind each canvas — the NDR homage. */
+.ndr-panel{
+ background:var(--ndr-plot);
+ border:1px solid var(--ndr-grid);
+ border-radius:8px;
+ padding:14px 14px 10px;
 }
 
 .chart-canvas-wrap{
@@ -805,8 +827,10 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <div class="chart-subhead">Equal-weighted average across each cohort (~100 tickers), 21-trading-day rolling average, log scale</div>
 </div>
 </div>
+<div class="ndr-panel">
 <div class="chart-canvas-wrap">
 <canvas id="volumeChart"></canvas>
+</div>
 </div>
 </div>
 
@@ -817,8 +841,10 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <div class="chart-subhead">Small-cap cohort's rolling Amihud ratio ÷ mega-cap cohort's — rising means small-caps are getting relatively less liquid</div>
 </div>
 </div>
+<div class="ndr-panel">
 <div class="chart-canvas-wrap short">
 <canvas id="gapChart"></canvas>
+</div>
 </div>
 </div>
 
@@ -829,8 +855,10 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <div class="chart-subhead">Equal-weighted average across each cohort, 21-trading-day rolling average of the Corwin &amp; Schultz (2012) high-low spread estimator</div>
 </div>
 </div>
+<div class="ndr-panel">
 <div class="chart-canvas-wrap">
 <canvas id="spreadChart"></canvas>
+</div>
 </div>
 </div>
 
@@ -843,8 +871,10 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 </div>
 <div class="warning-banner" id="regressionFallback"></div>
 <div id="regressionContent">
+<div class="ndr-panel">
 <div class="scatter-canvas-wrap">
 <canvas id="regressionScatter"></canvas>
+</div>
 </div>
 <div id="regressionMethodTable"></div>
 </div>
@@ -888,6 +918,45 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 </div>
 
 <script>
+// ---- NDR chart styling helpers -----------------------------------------
+// Colours come from the --ndr-* custom properties (constant across themes)
+// so the charts keep their warm-paper look while still following the
+// site's "read chart colours from CSS, don't hardcode" rule.
+function ndr(name){
+ return getComputedStyle(document.documentElement).getPropertyValue("--ndr-" + name).trim();
+}
+
+Chart.defaults.font.family = "'Iowan Old Style','Palatino Linotype',Georgia,serif";
+Chart.defaults.color = ndr("axis-soft");
+
+function ndrXScale(opts){
+ opts = opts || {};
+ return {
+  ticks: { color: ndr("axis"), maxTicksLimit: 9, maxRotation: 0, autoSkip: true, font: { size: 11 } },
+  grid: { color: "rgba(0,0,0,0)", borderColor: ndr("axis") },
+  title: opts.title ? { display: true, text: opts.title, color: ndr("axis-soft"), font: { size: 10 } } : { display: false },
+ };
+}
+
+function ndrYScale(opts){
+ opts = opts || {};
+ return {
+  type: opts.log ? "logarithmic" : "linear",
+  position: opts.position || "left",
+  grid: { color: ndr("grid"), drawBorder: false },
+  ticks: { color: ndr("axis"), font: { size: 11 }, callback: opts.fmt || undefined },
+  title: opts.title ? { display: true, text: opts.title, color: ndr("axis-soft"), font: { size: 10 } } : { display: false },
+  min: opts.min, max: opts.max,
+ };
+}
+
+function ndrLegend(){
+ return {
+  display: true, position: "top", align: "start",
+  labels: { boxWidth: 22, boxHeight: 2, color: ndr("axis"), font: { size: 11 } },
+ };
+}
+
 const DATA_URL = "/api/smallcap-liquidity";
 const SPREAD_DATA_URL = "/api/smallcap-largecap";
 
@@ -1132,8 +1201,8 @@ function renderVolumeChart(data){
   data: {
    labels: data.cohorts.small.dates,
    datasets: [
-    { label: "Small-Cap", data: data.cohorts.small.dollarVolume, borderColor: themeGreedColor(), backgroundColor: themeGreedColor(), borderWidth: 1.3, pointRadius: 0, fill: false },
-    { label: "Mega-Cap", data: data.cohorts.mega.dollarVolume, borderColor: themeFearColor(), backgroundColor: themeFearColor(), borderWidth: 1.3, pointRadius: 0, fill: false },
+    { label: "Small-Cap", data: data.cohorts.small.dollarVolume, borderColor: ndr("gold"), backgroundColor: ndr("gold"), borderWidth: 1.3, pointRadius: 0, fill: false },
+    { label: "Mega-Cap", data: data.cohorts.mega.dollarVolume, borderColor: ndr("navy"), backgroundColor: ndr("navy"), borderWidth: 1.3, pointRadius: 0, fill: false },
    ],
   },
   options: {
@@ -1141,12 +1210,12 @@ function renderVolumeChart(data){
    maintainAspectRatio: false,
    interaction: { mode: "index", intersect: false },
    plugins: {
-    legend: { labels: { color: themeMutedColor(), font: { size: 11 } } },
+    legend: ndrLegend(),
     tooltip: { callbacks: { label: ctx => ctx.dataset.label + ": " + fmtUsd(ctx.parsed.y) } },
    },
    scales: {
-    x: { ticks: { color: themeMutedColor(), maxTicksLimit: 8 }, grid: { color: themeHairColor() } },
-    y: { type: "logarithmic", ticks: { color: themeMutedColor(), callback: v => fmtUsd(v) }, grid: { color: themeHairColor() } },
+    x: ndrXScale(),
+    y: ndrYScale({ log: true, fmt: v => fmtUsd(v) }),
    },
   },
  });
@@ -1160,7 +1229,7 @@ function renderGapChart(data){
   data: {
    labels: data.ratioAmihud.dates,
    datasets: [
-    { label: "Small/Mega Amihud ratio", data: data.ratioAmihud.values, borderColor: themeInkColor(), backgroundColor: themeInkColor(), borderWidth: 1.3, pointRadius: 0, fill: false },
+    { label: "Small/Mega Amihud ratio", data: data.ratioAmihud.values, borderColor: ndr("red"), backgroundColor: ndr("red"), borderWidth: 1.3, pointRadius: 0, fill: false },
    ],
   },
   options: {
@@ -1172,8 +1241,8 @@ function renderGapChart(data){
     tooltip: { callbacks: { label: ctx => "Ratio: " + (ctx.parsed.y === null ? "—" : ctx.parsed.y.toFixed(2) + "x") } },
    },
    scales: {
-    x: { ticks: { color: themeMutedColor(), maxTicksLimit: 8 }, grid: { color: themeHairColor() } },
-    y: { ticks: { color: themeMutedColor(), callback: v => v.toFixed(1) + "x" }, grid: { color: themeHairColor() } },
+    x: ndrXScale(),
+    y: ndrYScale({ fmt: v => v.toFixed(1) + "x" }),
    },
   },
  });
@@ -1187,8 +1256,8 @@ function renderSpreadChart(data){
   data: {
    labels: data.cohorts.small.dates,
    datasets: [
-    { label: "Small-Cap", data: data.cohorts.small.corwinSchultz, borderColor: themeGreedColor(), backgroundColor: themeGreedColor(), borderWidth: 1.3, pointRadius: 0, fill: false },
-    { label: "Mega-Cap", data: data.cohorts.mega.corwinSchultz, borderColor: themeFearColor(), backgroundColor: themeFearColor(), borderWidth: 1.3, pointRadius: 0, fill: false },
+    { label: "Small-Cap", data: data.cohorts.small.corwinSchultz, borderColor: ndr("gold"), backgroundColor: ndr("gold"), borderWidth: 1.3, pointRadius: 0, fill: false },
+    { label: "Mega-Cap", data: data.cohorts.mega.corwinSchultz, borderColor: ndr("navy"), backgroundColor: ndr("navy"), borderWidth: 1.3, pointRadius: 0, fill: false },
    ],
   },
   options: {
@@ -1196,12 +1265,12 @@ function renderSpreadChart(data){
    maintainAspectRatio: false,
    interaction: { mode: "index", intersect: false },
    plugins: {
-    legend: { labels: { color: themeMutedColor(), font: { size: 11 } } },
+    legend: ndrLegend(),
     tooltip: { callbacks: { label: ctx => ctx.dataset.label + ": " + fmtSpreadPct(ctx.parsed.y) } },
    },
    scales: {
-    x: { ticks: { color: themeMutedColor(), maxTicksLimit: 8 }, grid: { color: themeHairColor() } },
-    y: { ticks: { color: themeMutedColor(), callback: v => (v * 100).toFixed(2) + "%" }, grid: { color: themeHairColor() } },
+    x: ndrXScale(),
+    y: ndrYScale({ fmt: v => (v * 100).toFixed(2) + "%" }),
    },
   },
  });
@@ -1224,8 +1293,8 @@ function renderRegression(pairs){
   type: "scatter",
   data: {
    datasets: [
-    { label: "Months", data: pairs, backgroundColor: themeGreedColor(), pointRadius: 3.5, showLine: false },
-    { label: "Regression fit", type: "line", data: linePoints, borderColor: themeInkColor(), borderWidth: 1.5, borderDash: [4, 3], pointRadius: 0, fill: false },
+    { label: "Months", data: pairs, backgroundColor: ndr("gold"), pointRadius: 3.5, showLine: false },
+    { label: "Regression fit", type: "line", data: linePoints, borderColor: ndr("navy"), borderWidth: 1.5, borderDash: [4, 3], pointRadius: 0, fill: false },
    ],
   },
   options: {
@@ -1240,8 +1309,8 @@ function renderRegression(pairs){
     },
    },
    scales: {
-    x: { title: { display: true, text: "Small-vs-large relative return that month (%)", color: themeMutedColor(), font: { size: 10 } }, ticks: { color: themeMutedColor(), font: { size: 10 } }, grid: { color: themeHairColor() } },
-    y: { title: { display: true, text: "Δ Small/Mega Amihud ratio (pts)", color: themeMutedColor(), font: { size: 10 } }, ticks: { color: themeMutedColor(), font: { size: 10 } }, grid: { color: themeHairColor() } },
+    x: ndrXScale({ title: "Small-vs-large relative return that month (%)" }),
+    y: ndrYScale({ title: "Δ Small/Mega Amihud ratio (pts)" }),
    },
   },
  });

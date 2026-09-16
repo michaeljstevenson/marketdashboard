@@ -172,6 +172,20 @@ document.addEventListener("DOMContentLoaded", function(){
   --serif:'Iowan Old Style','Palatino Linotype',Georgia,serif;
   --mono:'SF Mono','JetBrains Mono',ui-monospace,Menlo,monospace;
   --sans:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+
+  /* NDR-style chart palette. Deliberately the SAME in light and dark —
+     these charts keep a constant warm-paper look as a homage to the Ned
+     Davis Research print charts that inspired the treatment. JS reads them
+     via getComputedStyle (per the site convention) rather than hardcoding. */
+  --ndr-plot:#f5f1e6;
+  --ndr-axis:#3c3a33;
+  --ndr-axis-soft:#6f6a5c;
+  --ndr-grid:#ddd6c2;
+  --ndr-red:#a83c36;
+  --ndr-green:#4f6f3f;
+  --ndr-gold:#c1902f;
+  --ndr-navy:#2f4b6e;
+  --ndr-slate:#7d8a99;
 }
 
 :root[data-theme="light"]{
@@ -403,6 +417,14 @@ h1{
 }
 
 .chart-canvas-wrap.short{ height:280px; }
+
+/* The warm-paper plot panel behind each canvas — the NDR homage. */
+.ndr-panel{
+ background:var(--ndr-plot);
+ border:1px solid var(--ndr-grid);
+ border-radius:8px;
+ padding:14px 14px 10px;
+}
 
 /* TABLE */
 
@@ -769,8 +791,10 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <div class="chart-subhead">EFA and EEM adjusted-close ÷ SPY adjusted-close, all indexed to 100 at EEM's inception — rising means international is outperforming</div>
 </div>
 </div>
+<div class="ndr-panel">
 <div class="chart-canvas-wrap">
 <canvas id="ratioChart"></canvas>
+</div>
 </div>
 </div>
 
@@ -795,8 +819,10 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <div class="chart-subhead">Developed/US ratio's trailing 252-trading-day return — positive stretches are international-leadership regimes, negative stretches are US-leadership regimes</div>
 </div>
 </div>
+<div class="ndr-panel">
 <div class="chart-canvas-wrap">
 <canvas id="rollingChart"></canvas>
+</div>
 </div>
 </div>
 
@@ -807,8 +833,10 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <div class="chart-subhead">Months classified by the trailing 3-month change in EUR/USD; bars show the average developed-vs-US monthly return within each regime</div>
 </div>
 </div>
+<div class="ndr-panel">
 <div class="chart-canvas-wrap short">
 <canvas id="regimeChart"></canvas>
+</div>
 </div>
 </div>
 
@@ -819,8 +847,10 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <div class="chart-subhead">Each point is one month: x-axis is the month's % change in EUR/USD (a rising value means a weaker dollar), y-axis is that month's developed-vs-US return</div>
 </div>
 </div>
+<div class="ndr-panel">
 <div class="scatter-canvas-wrap">
 <canvas id="corrScatter"></canvas>
+</div>
 </div>
 <div id="corrMethodTable"></div>
 </div>
@@ -859,25 +889,46 @@ function fmtPct(v, digits){
  return (v >= 0 ? "+" : "") + v.toFixed(digits) + "%";
 }
 
-function themeInkColor(){
- const v = getComputedStyle(document.documentElement).getPropertyValue("--ink").trim();
- return v || "#eae6da";
+// ---- NDR chart styling helpers -----------------------------------------
+// Colours come from the --ndr-* custom properties (constant across themes)
+// so the charts keep their warm-paper look while still following the
+// site's "read chart colours from CSS, don't hardcode" rule.
+function ndr(name){
+ return getComputedStyle(document.documentElement).getPropertyValue("--ndr-" + name).trim();
 }
-function themeMutedColor(){
- const v = getComputedStyle(document.documentElement).getPropertyValue("--muted").trim();
- return v || "#8b9199";
+
+Chart.defaults.font.family = "'Iowan Old Style','Palatino Linotype',Georgia,serif";
+Chart.defaults.color = ndr("axis-soft");
+
+// `opts.title` is a deviation from concentration.html's ndrXScale (which
+// never needed an x-axis title) — this page's scatter panel has a numeric
+// x-axis that needs one, so it's supported here directly.
+function ndrXScale(opts){
+ opts = opts || {};
+ return {
+  ticks: { color: ndr("axis"), maxTicksLimit: 9, maxRotation: 0, autoSkip: true, font: { size: opts.fontSize || 11 } },
+  grid: { color: "rgba(0,0,0,0)", borderColor: ndr("axis") },
+  title: opts.title ? { display: true, text: opts.title, color: ndr("axis-soft"), font: { size: 10 } } : { display: false },
+ };
 }
-function themeHairColor(){
- const v = getComputedStyle(document.documentElement).getPropertyValue("--hair").trim();
- return v || "#2b3138";
+
+function ndrYScale(opts){
+ opts = opts || {};
+ return {
+  type: opts.log ? "logarithmic" : "linear",
+  position: opts.position || "left",
+  grid: { color: ndr("grid"), drawBorder: false },
+  ticks: { color: ndr("axis"), font: { size: opts.fontSize || 11 }, callback: opts.fmt || undefined },
+  title: opts.title ? { display: true, text: opts.title, color: ndr("axis-soft"), font: { size: 10 } } : { display: false },
+  min: opts.min, max: opts.max,
+ };
 }
-function themeGreedColor(){
- const v = getComputedStyle(document.documentElement).getPropertyValue("--greed").trim();
- return v || "#d98a3d";
-}
-function themeFearColor(){
- const v = getComputedStyle(document.documentElement).getPropertyValue("--fear").trim();
- return v || "#6f8fac";
+
+function ndrLegend(){
+ return {
+  display: true, position: "top", align: "start",
+  labels: { boxWidth: 22, boxHeight: 2, color: ndr("axis"), font: { size: 11 } },
+ };
 }
 
 // ---- Stats helpers — same methodology as /factor-analysis, duplicated
@@ -1094,8 +1145,8 @@ function renderRatioChart(data){
   data: {
    labels: data.dates,
    datasets: [
-    { label: "Developed/US ratio", data: data.ratioDevelopedUS, borderColor: themeGreedColor(), backgroundColor: themeGreedColor(), borderWidth: 1.3, pointRadius: 0, fill: false },
-    { label: "Emerging/US ratio", data: data.ratioEmergingUS, borderColor: themeFearColor(), backgroundColor: themeFearColor(), borderWidth: 1.3, pointRadius: 0, fill: false },
+    { label: "Developed/US ratio", data: data.ratioDevelopedUS, borderColor: ndr("navy"), backgroundColor: ndr("navy"), borderWidth: 1.3, pointRadius: 0, fill: false },
+    { label: "Emerging/US ratio", data: data.ratioEmergingUS, borderColor: ndr("gold"), backgroundColor: ndr("gold"), borderWidth: 1.3, pointRadius: 0, fill: false },
    ],
   },
   options: {
@@ -1103,12 +1154,12 @@ function renderRatioChart(data){
    maintainAspectRatio: false,
    interaction: { mode: "index", intersect: false },
    plugins: {
-    legend: { display: true, position: "top", labels: { color: themeMutedColor(), boxWidth: 12, font: { size: 11 } } },
+    legend: ndrLegend(),
     tooltip: { callbacks: { label: ctx => ctx.dataset.label + ": " + ctx.parsed.y.toFixed(1) } },
    },
    scales: {
-    x: { ticks: { color: themeMutedColor(), maxTicksLimit: 8 }, grid: { color: themeHairColor() } },
-    y: { ticks: { color: themeMutedColor() }, grid: { color: themeHairColor() } },
+    x: ndrXScale(),
+    y: ndrYScale(),
    },
   },
  });
@@ -1156,8 +1207,8 @@ function renderRollingChart(data){
   data: {
    labels: dates,
    datasets: [
-    { label: "12-mo. relative return", data: values, borderColor: themeInkColor(), backgroundColor: themeInkColor(), borderWidth: 1.2, pointRadius: 0, fill: false },
-    { label: "Zero", data: dates.map(() => 0), borderColor: themeMutedColor(), borderWidth: 1, borderDash: [4, 3], pointRadius: 0, fill: false },
+    { label: "12-mo. relative return", data: values, borderColor: ndr("navy"), backgroundColor: ndr("navy"), borderWidth: 1.2, pointRadius: 0, fill: false },
+    { label: "Zero", data: dates.map(() => 0), borderColor: ndr("slate"), borderWidth: 1, borderDash: [4, 3], pointRadius: 0, fill: false },
    ],
   },
   options: {
@@ -1173,8 +1224,8 @@ function renderRollingChart(data){
     },
    },
    scales: {
-    x: { ticks: { color: themeMutedColor(), maxTicksLimit: 8 }, grid: { color: themeHairColor() } },
-    y: { ticks: { color: themeMutedColor(), callback: v => (Math.round(v * 100) / 100) + "%" }, grid: { color: themeHairColor() } },
+    x: ndrXScale(),
+    y: ndrYScale({ fmt: v => (Math.round(v * 100) / 100) + "%" }),
    },
   },
  });
@@ -1183,7 +1234,7 @@ function renderRollingChart(data){
 function renderRegimeChart(monthly){
  const order = ["Dollar Strengthening", "Flat", "Dollar Weakening"];
  const stats = order.map(k => monthly.regimeStats[k]);
- const colors = stats.map(s => (s.mean === null ? themeMutedColor() : s.mean >= 0 ? themeGreedColor() : themeFearColor()));
+ const colors = stats.map(s => (s.mean === null ? ndr("slate") : s.mean >= 0 ? ndr("green") : ndr("red")));
 
  const ctx = document.getElementById("regimeChart").getContext("2d");
  if(regimeChart) regimeChart.destroy();
@@ -1208,8 +1259,8 @@ function renderRegimeChart(monthly){
     },
    },
    scales: {
-    x: { ticks: { color: themeMutedColor() }, grid: { display: false } },
-    y: { ticks: { color: themeMutedColor(), callback: v => (Math.round(v * 100) / 100) + "%" }, grid: { color: themeHairColor() } },
+    x: { ...ndrXScale(), grid: { display: false } },
+    y: ndrYScale({ fmt: v => (Math.round(v * 100) / 100) + "%" }),
    },
   },
  });
@@ -1233,8 +1284,8 @@ function renderCorrScatter(monthly){
   type: "scatter",
   data: {
    datasets: [
-    { label: "Months", data: pairs, backgroundColor: themeGreedColor(), pointRadius: 3.5, showLine: false },
-    { label: "Regression fit", type: "line", data: linePoints, borderColor: themeInkColor(), borderWidth: 1.5, borderDash: [4, 3], pointRadius: 0, fill: false },
+    { label: "Months", data: pairs, backgroundColor: ndr("slate"), pointRadius: 3.5, showLine: false },
+    { label: "Regression fit", type: "line", data: linePoints, borderColor: ndr("red"), borderWidth: 1.5, borderDash: [4, 3], pointRadius: 0, fill: false },
    ],
   },
   options: {
@@ -1249,8 +1300,8 @@ function renderCorrScatter(monthly){
     },
    },
    scales: {
-    x: { title: { display: true, text: "Δ EUR/USD (%, 1mo.)", color: themeMutedColor(), font: { size: 10 } }, ticks: { color: themeMutedColor(), font: { size: 10 } }, grid: { color: themeHairColor() } },
-    y: { title: { display: true, text: "Monthly spread return (%)", color: themeMutedColor(), font: { size: 10 } }, ticks: { color: themeMutedColor(), font: { size: 10 } }, grid: { color: themeHairColor() } },
+    x: ndrXScale({ title: "Δ EUR/USD (%, 1mo.)", fontSize: 10 }),
+    y: ndrYScale({ title: "Monthly spread return (%)", fontSize: 10 }),
    },
   },
  });
