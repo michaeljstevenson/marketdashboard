@@ -202,6 +202,11 @@
   to = "/.netlify/functions/institutional-ownership"
   status = 200
 
+[[redirects]]
+  from = "/api/post-earnings-drift"
+  to = "/.netlify/functions/post-earnings-drift"
+  status = 200
+
 # The Statistical Engine page was briefly at these paths.
 [[redirects]]
   from = "/streak-scanner"
@@ -399,6 +404,28 @@
   # aggregates, which is expected and noted in the page's methodology
   # section, not a bug.
   schedule = "10 11 * * 6"
+
+[functions."scheduled-post-earnings-drift-background"]
+  # Weekly, Saturday 11:30 UTC — real recurring schedule, not a one-time
+  # snapshot (same reasoning as scheduled-institutional-ownership-background
+  # above, which reversed 704645f's one-time-snapshot decision for pages
+  # built after 2026-09-16: this page needs a fresh compact price sweep
+  # every run for its rolling ~100-trading-day event window to stay
+  # meaningful, even though the earnings-surprise blob it reads its input
+  # from is itself frozen — see that job's own file for the staleness
+  # caveat this doesn't try to paper over). 11:30 is free as of this
+  # writing — double-checked against every other [functions.*] block in
+  # this file: scheduled-institutional-ownership-background (11:10) is the
+  # last function with an actual active schedule line before it, and
+  # every job listed after it below is one of 704645f's frozen one-time
+  # snapshots with no schedule line at all, so there is no live Saturday
+  # job for this to collide with past 11:10. 11:30 gives that job's own
+  # ~503-call INSTITUTIONAL_HOLDINGS sweep (starts 11:10, finishes ~11:19
+  # in the typical case) a comfortable buffer even if its own retry pass
+  # runs long. ~504 sequential Alpha Vantage TIME_SERIES_DAILY_ADJUSTED
+  # (outputsize=compact) calls at 1050ms spacing plus a retry pass — same
+  # pacing/scale as scheduled-relative-strength-background.js.
+  schedule = "30 11 * * 6"
 
 [functions."scheduled-dispersion-background"]
   # One-time snapshot (2026-09-16) — no schedule, same reasoning as
