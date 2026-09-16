@@ -152,7 +152,7 @@ document.addEventListener("DOMContentLoaded", function(){
 </script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Stock Split Tracker — Michael J. Stevenson</title>
+<title>Earnings Call Sentiment — Michael J. Stevenson</title>
 
 <style>
 
@@ -175,8 +175,9 @@ document.addEventListener("DOMContentLoaded", function(){
 
   /* NDR-style chart palette. Deliberately the SAME in light and dark —
      these charts keep a constant warm-paper look as a homage to the Ned
-     Davis Research print charts that inspired the page. JS reads them via
-     getComputedStyle (per the site convention) rather than hardcoding. */
+     Davis Research print charts that inspired /concentration. JS reads
+     them via getComputedStyle (per the site convention) rather than
+     hardcoding. */
   --ndr-plot:#f5f1e6;
   --ndr-axis:#3c3a33;
   --ndr-axis-soft:#6f6a5c;
@@ -353,6 +354,7 @@ h1{
  border:1px solid var(--hair);
  border-radius:10px;
  padding:20px;
+ min-width:0;
 }
 
 .stat-label{
@@ -412,7 +414,12 @@ h1{
  margin-top:4px;
 }
 
-/* The warm-paper plot panel behind each canvas — the NDR homage. */
+.chart-canvas-wrap{
+ height:340px;
+}
+
+/* The warm-paper plot panel behind each canvas — the NDR homage
+   (matches /concentration). */
 .ndr-panel{
  background:var(--ndr-plot);
  border:1px solid var(--ndr-grid);
@@ -420,8 +427,44 @@ h1{
  padding:14px 14px 10px;
 }
 
-.chart-canvas-wrap{
- height:380px;
+.metric-toggle{
+ display:flex;
+ gap:6px;
+}
+
+.metric-toggle button{
+ background:var(--card-hover);
+ border:1px solid var(--hair);
+ color:var(--muted);
+ border-radius:6px;
+ padding:5px 12px;
+ font-size:11px;
+ cursor:pointer;
+}
+
+.metric-toggle button.active{
+ color:var(--ink);
+ border-color:var(--greed);
+}
+
+/* Two charts / method-tables side by side, same breakpoint as table-grid */
+.chart-grid{
+ display:grid;
+ grid-template-columns:1fr 1fr;
+ gap:16px;
+ margin-bottom:30px;
+}
+
+.chart-grid .chart-box{
+ margin-bottom:0;
+ min-width:0; /* grid items default to min-width:auto (their content's min-content
+                 size), which a wide method table would otherwise force past this
+                 column's track width — same "grid blowout" the site-wide
+                 table{min-width:600px} rule creates if left unchecked here */
+}
+
+@media (max-width:900px){
+ .chart-grid{ grid-template-columns:1fr; }
 }
 
 /* TABLE */
@@ -443,6 +486,7 @@ h1{
  border-radius:12px;
  overflow-x:auto;
  margin-bottom:30px;
+ min-width:0;
 }
 
 .table-grid .table-box{ margin-bottom:0; }
@@ -525,16 +569,6 @@ tbody td:nth-child(2){
 .cell-neg{ color:var(--ink); }
 .cell-na{ color:var(--muted); }
 
-.tag{
- display:inline-block;
- font-size:10px;
- padding:2px 6px;
- border-radius:4px;
- font-family:var(--sans);
-}
-.tag-forward{ background:rgba(217,138,61,0.15); color:var(--greed); }
-.tag-reverse{ background:rgba(111,143,172,0.15); color:var(--fear); }
-
 /* SCATTER / METHOD TABLE (mirrors /factor-analysis) */
 
 .scatter-canvas-wrap{
@@ -545,10 +579,17 @@ tbody td:nth-child(2){
 
 .method-table{
  width:100%;
+ min-width:0; /* overrides the site-wide table{min-width:600px} rule below — two of these
+                 side by side in .chart-grid would otherwise force the whole page wider
+                 than its container even though a 7-column method table never needs 600px */
  border-collapse:collapse;
  font-family:var(--mono);
  font-size:11px;
  margin-top:8px;
+}
+
+#sentimentSurpriseMethodTable, #gapSurpriseMethodTable{
+ overflow-x:auto;
 }
 
 .method-table th{
@@ -587,6 +628,26 @@ tbody td:nth-child(2){
  color:var(--muted);
  margin-top:8px;
  font-style:italic;
+}
+
+/* SECTOR LEGEND (scatter / spaghetti charts) */
+
+.sector-legend{
+ display:flex;
+ flex-wrap:wrap;
+ gap:10px 16px;
+ margin-top:14px;
+ font-size:11px;
+ color:var(--muted);
+}
+
+.sector-legend .dot{
+ display:inline-block;
+ width:8px;
+ height:8px;
+ border-radius:50%;
+ margin-right:5px;
+ vertical-align:middle;
 }
 
 /* EXPLAINER */
@@ -723,9 +784,8 @@ tbody td:nth-child(2){
 <a href="/share-count-trends.html">Share Count Trends</a>
 <a href="/sector-correlation.html">Sector Correlation Matrix</a>
 <a href="/sector-rotation.html">Sector Rotation Model</a>
-<a href="/stock-split-tracker.html" class="active">Stock Split Tracker</a>
-<a href="/pe-divergence.html">Forward vs. Trailing P/E Divergence</a>
-<a href="/earnings-call-sentiment.html">Earnings Call Sentiment</a>
+<a href="/margin-leverage.html">Margin &amp; Leverage Cycle</a>
+<a href="/earnings-call-sentiment.html" class="active">Earnings Call Sentiment</a>
 </div>
 </div>
 
@@ -792,68 +852,45 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 
 <div class="header">
 <div>
-<h1>Stock Split Tracker</h1>
-<div class="subtitle">Split activity across the full S&amp;P 500 — is the stock split coming back after two quiet decades? — plus an event study of relative price performance vs. SPY in the trading days around each recent split.</div>
+<h1>Earnings Call Sentiment</h1>
+<div class="subtitle">Does management's own tone on the earnings call track the number they just reported — and how does it compare to the tone of the analysts questioning them? A one-time snapshot across the full S&amp;P 500's most recently indexed earnings call.</div>
 </div>
 <div class="updated" id="updated">Loading...</div>
 </div>
 
 <div class="stat-grid">
 <div class="stat-card">
-<div class="stat-label">Splits, trailing 5 years</div>
-<div class="stat-value" id="statRecentCount">—</div>
-<div class="stat-note" id="statRecentCountNote">Forward / reverse, full S&amp;P 500</div>
+<div class="stat-label">Companies Loaded</div>
+<div class="stat-value" id="statCompanies" style="font-size:20px;">—</div>
+<div class="stat-note" id="statCompaniesNote">Of full S&amp;P 500</div>
 </div>
 <div class="stat-card">
-<div class="stat-label">Avg. relative return, 120 trading days post-split</div>
-<div class="stat-value" id="statAvgForward">—</div>
-<div class="stat-note" id="statAvgForwardNote">Forward splits only, vs. SPY</div>
+<div class="stat-label">Median Management Tone</div>
+<div class="stat-value" id="statManagement">—</div>
+<div class="stat-note">0 (neutral/factual) to 1 (highly positive)</div>
 </div>
 <div class="stat-card">
-<div class="stat-label">Bigger split, bigger move?</div>
-<div class="stat-value" id="statSizeEffect" style="font-size:20px;">—</div>
-<div class="stat-note" id="statSizeEffectNote">Pearson r, split ratio (log2) vs. 120-day relative return</div>
+<div class="stat-label">Median Analyst Tone</div>
+<div class="stat-value" id="statAnalyst">—</div>
+<div class="stat-note">Tone of analysts' own questions</div>
 </div>
 <div class="stat-card">
-<div class="stat-label">Most active sector</div>
-<div class="stat-value" id="statTopSector" style="font-size:18px;">—</div>
-<div class="stat-note" id="statTopSectorNote">By split count, trailing 5 years</div>
+<div class="stat-label">Median Tone Gap</div>
+<div class="stat-value" id="statGap">—</div>
+<div class="stat-note">Management minus analyst</div>
 </div>
 </div>
 
 <div class="chart-box">
 <div class="chart-box-header">
 <div>
-<h2>Stock splits per year, full S&amp;P 500</h2>
-<div class="chart-subhead">15-year history — forward (regular) splits vs. reverse splits, current constituents only</div>
+<h2>Call tone by sector</h2>
+<div class="chart-subhead">Median tone across each SPDR sector's S&amp;P 500 constituents, most recently indexed call</div>
 </div>
-</div>
-<div class="ndr-panel">
-<div class="chart-canvas-wrap">
-<canvas id="frequencyChart"></canvas>
-</div>
-</div>
-</div>
-
-<div class="chart-box">
-<div class="chart-box-header">
-<div>
-<h2>Relative return vs. SPY around the split date</h2>
-<div class="chart-subhead">Average path across all qualifying forward splits in the trailing 5 years, indexed to 0% on the last trading day before the split's effective date. Sample size (n) shrinks toward the edges — see methodology.</div>
-</div>
-</div>
-<div class="ndr-panel">
-<div class="chart-canvas-wrap">
-<canvas id="eventStudyChart"></canvas>
-</div>
-</div>
-</div>
-
-<div class="chart-box">
-<div class="chart-box-header">
-<div>
-<h2>Sector split activity, trailing 5 years</h2>
-<div class="chart-subhead">Number of split events by sector — forward vs. reverse</div>
+<div class="metric-toggle" id="sectorMetricToggle">
+<button type="button" data-metric="management" class="active">Management</button>
+<button type="button" data-metric="analyst">Analyst</button>
+<button type="button" data-metric="gap">Gap</button>
 </div>
 </div>
 <div class="ndr-panel">
@@ -866,70 +903,161 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <div class="chart-box">
 <div class="chart-box-header">
 <div>
-<h2>Does a bigger split ratio mean a bigger post-split move?</h2>
-<div class="chart-subhead">Each point is one qualifying forward split: x-axis is log2(split ratio) — 1.0 = a 2-for-1, 2.0 = a 4-for-1, 3.3 = a 10-for-1 — y-axis is its 120-trading-day relative return vs. SPY</div>
+<h2>Distribution of management tone</h2>
+<div class="chart-subhead">Every company with a usable call, most recently indexed quarter</div>
+</div>
+</div>
+<div class="ndr-panel">
+<div class="chart-canvas-wrap" style="height:280px;">
+<canvas id="distributionChart"></canvas>
+</div>
+</div>
+</div>
+
+<div class="chart-grid">
+<div class="chart-box">
+<div class="chart-box-header">
+<div>
+<h2>Management tone vs. earnings surprise</h2>
+<div class="chart-subhead">Each point is one company: x is that quarter's EPS surprise %, y is management's own average call tone</div>
 </div>
 </div>
 <div class="ndr-panel">
 <div class="scatter-canvas-wrap">
-<canvas id="sizeScatter"></canvas>
+<canvas id="sentimentSurpriseScatter"></canvas>
 </div>
 </div>
-<div id="sizeMethodTable"></div>
+<div id="sentimentSurpriseMethodTable"></div>
+</div>
+<div class="chart-box">
+<div class="chart-box-header">
+<div>
+<h2>Tone gap vs. earnings surprise</h2>
+<div class="chart-subhead">Does the management-vs-analyst tone gap widen specifically on a big miss (or a big beat)?</div>
+</div>
+</div>
+<div class="ndr-panel">
+<div class="scatter-canvas-wrap">
+<canvas id="gapSurpriseScatter"></canvas>
+</div>
+</div>
+<div id="gapSurpriseMethodTable"></div>
+</div>
 </div>
 
+<div class="table-grid">
 <div class="table-box">
 <div class="table-box-header">
-<h2>Most recent splits</h2>
-<div class="chart-subhead">Latest 15 qualifying split events, full S&amp;P 500</div>
+<h2>Most bullish management tone</h2>
+<div class="chart-subhead">Highest average management sentiment (min. 3 management turns)</div>
 </div>
-<table id="leaderTable">
-<thead><tr><th>Symbol</th><th>Sector</th><th>Date</th><th>Ratio</th><th>Return since split (vs. SPY)</th></tr></thead>
-<tbody id="leaderBody"><tr><td colspan="5" style="text-align:center; color:var(--muted); padding:24px;">Loading&hellip;</td></tr></tbody>
+<table id="mostBullishTable">
+<thead><tr><th>Symbol</th><th>Sector</th><th>Mgmt Tone</th><th>Surprise%</th></tr></thead>
+<tbody id="mostBullishBody"><tr><td colspan="4" style="text-align:center; color:var(--muted); padding:24px;">Loading&hellip;</td></tr></tbody>
 </table>
 </div>
+<div class="table-box">
+<div class="table-box-header">
+<h2>Most guarded management tone</h2>
+<div class="chart-subhead">Lowest average management sentiment (min. 3 management turns)</div>
+</div>
+<table id="mostGuardedTable">
+<thead><tr><th>Symbol</th><th>Sector</th><th>Mgmt Tone</th><th>Surprise%</th></tr></thead>
+<tbody id="mostGuardedBody"><tr><td colspan="4" style="text-align:center; color:var(--muted); padding:24px;">Loading&hellip;</td></tr></tbody>
+</table>
+</div>
+</div>
+
+<div class="table-grid">
+<div class="table-box">
+<div class="table-box-header">
+<h2>Widest management-analyst gap</h2>
+<div class="chart-subhead">Management sounds most upbeat relative to the analysts questioning them</div>
+</div>
+<table id="widestGapTable">
+<thead><tr><th>Symbol</th><th>Sector</th><th>Gap</th><th>Surprise%</th></tr></thead>
+<tbody id="widestGapBody"><tr><td colspan="4" style="text-align:center; color:var(--muted); padding:24px;">Loading&hellip;</td></tr></tbody>
+</table>
+</div>
+<div class="table-box">
+<div class="table-box-header">
+<h2>Narrowest management-analyst gap</h2>
+<div class="chart-subhead">Management and analyst tone most closely aligned</div>
+</div>
+<table id="narrowestGapTable">
+<thead><tr><th>Symbol</th><th>Sector</th><th>Gap</th><th>Surprise%</th></tr></thead>
+<tbody id="narrowestGapBody"><tr><td colspan="4" style="text-align:center; color:var(--muted); padding:24px;">Loading&hellip;</td></tr></tbody>
+</table>
+</div>
+</div>
 
 <div class="table-box">
 <div class="table-box-header">
-<h2>All splits, trailing 5 years</h2>
-<div class="chart-subhead">Full S&amp;P 500 — click a column to sort</div>
+<h2>All companies with a usable call on file</h2>
+<div class="chart-subhead">Most recently indexed quarter, full S&amp;P 500</div>
 </div>
 <table id="stockTable">
 <thead>
 <tr>
 <th data-key="symbol">Symbol</th>
 <th data-key="sector">Sector</th>
-<th data-key="date">Date<span class="sort-arrow">▾</span></th>
-<th data-key="label">Ratio</th>
-<th data-key="direction">Type<span class="sort-arrow">▾</span></th>
-<th data-key="returnSinceSplit">Return vs. SPY<span class="sort-arrow">▾</span></th>
+<th data-key="quarterLabel">Quarter<span class="sort-arrow">▾</span></th>
+<th data-key="managementSentiment">Mgmt Tone<span class="sort-arrow">▾</span></th>
+<th data-key="analystSentiment">Analyst Tone<span class="sort-arrow">▾</span></th>
+<th data-key="sentimentGap">Gap<span class="sort-arrow">▾</span></th>
+<th data-key="surprisePct">Surprise%<span class="sort-arrow">▾</span></th>
 </tr>
 </thead>
 <tbody id="tableBody">
-<tr><td colspan="6" style="text-align:center; color:var(--muted); padding:30px;">Loading split data&hellip;</td></tr>
+<tr><td colspan="7" style="text-align:center; color:var(--muted); padding:30px;">Loading earnings call sentiment data&hellip;</td></tr>
 </tbody>
 </table>
 </div>
 
 <div class="explainer">
 <h2>Methodology</h2>
-<p>Universe is the full S&amp;P 500. For every constituent, Alpha Vantage's <code>SPLITS</code> endpoint returns its entire historical split record; events from the last 15 years feed the frequency chart above, at zero extra cost since it's one call per ticker regardless of history depth. Only events within the last 5 years get a full price-history pull (<code>TIME_SERIES_DAILY_ADJUSTED</code>, <code>outputsize=full</code>) for the event study and tables below — a heavier per-ticker payload than <code>SPLITS</code>, and older splits aren't what a reader wants a price chart built around anyway.</p>
-<p><b>A real data-quality issue surfaced while building this page</b>: Alpha Vantage's <code>SPLITS</code> endpoint mixes in non-split corporate-action adjustment factors. GE, for example, shows "splits" of 1.2530 (2024-04-02) and 1.2810 (2023-01-04) — these are the GE Vernova and GE HealthCare spin-off share-adjustment ratios, not stock splits GE ever announced (its real splits are the clean 3-for-1 in 2000 and 1-for-8 reverse split in 2021, both correctly kept). Every event is checked against an allowlist of the ratios real splits actually use (2-for-1, 3-for-1, 3-for-2, 10-for-1, 1-for-8, etc.) within a tight 0.15% tolerance; anything that doesn't match — a spin-off adjustment, most likely — is dropped rather than miscounted as a split.</p>
-<p>The event study normalizes each qualifying <i>forward</i> split's own adjusted-close price series to 0% on the last trading day before its effective date, does the same for SPY over the identical calendar dates, and plots the average difference (stock return minus SPY return) at each trading-day offset from 20 days before to 120 days after. This is a simple relative-return comparison, not a CAPM-style beta-adjusted abnormal return — a stock's normal volatility and market sensitivity aren't backed out, so the same caveat that applies to every other relative-return chart on this site applies here too. Reverse splits are tracked and shown in the tables (rare among current S&amp;P 500 names — most companies that need one no longer qualify for the index) but excluded from the averaged path and the split-size regression, since a reverse split's usual context — a low-priced, often distressed stock avoiding delisting — is a different signal entirely from a forward split's "the stock did well enough that management wants a lower nominal price."</p>
-<p>The split-size regression and the post-split return's one-sample significance both use the same Pearson/Spearman-style linear-regression machinery as <a href="/factor-analysis.html">Factor Analysis</a> and this site's other regression checks, including its normal-approximation p-value rather than a small-sample t-distribution — consistent with, not more rigorous than, the rest of the site's methodology.</p>
-<p>Refreshes weekly (Saturday mornings). Sector and company name come from the same weekly metadata sweep that backs <a href="/sector-beeswarm.html">Sector Beeswarm</a>, reused here rather than paying for a second full-index pass just for labels.</p>
-<div class="source">Source: <a href="https://www.alphavantage.co/" target="_blank" rel="noopener">Alpha Vantage — SPLITS, TIME_SERIES_DAILY_ADJUSTED</a></div>
+<p>Universe is the full S&amp;P 500. For every constituent, Alpha Vantage's <code>EARNINGS</code> endpoint resolves which fiscal-quarter label its most recently reported quarter corresponds to in Alpha Vantage's own numbering (each company's own fiscal quarter, e.g. Apple's June-2025-ending quarter is "Q3 Fiscal Year 2025" since Apple's fiscal year ends in September — not calendar Q2), derived from the fiscal year-end month (the most common month across that company's own <code>annualEarnings</code> history) and each quarter's own ending month. That label is then used to pull Alpha Vantage's <code>EARNINGS_CALL_TRANSCRIPT</code>, which carries an LLM-derived sentiment score (0 to 1) for every individual speaker turn on the call.</p>
+<p>Each turn is bucketed by speaker title: <b>management</b> is any CEO/CFO/COO/president/chair title, including named-segment variants like "CEO of Walmart U.S."; <b>analyst</b> is any title Alpha Vantage tags as Analyst; the operator and investor-relations host are excluded from both, since neither is the tone comparison this page is testing. A company's management tone (or analyst tone) is the unweighted average sentiment across its own turns in that bucket — a short answer and a long one count equally. The "gap" is management tone minus analyst tone for the same call.</p>
+<p>A real, disclosed limitation: Alpha Vantage's transcript indexing appears to lag the earnings release itself by some unknown number of weeks — confirmed directly while building this page, where a company that had reported about a month earlier had no transcript yet for that quarter while its prior quarter did. This snapshot does not fall back to a prior quarter when the latest one isn't indexed; that company is simply absent from this run rather than shown against a stale quarter, and reappears once a later manual refresh catches an indexed transcript.</p>
+<p>Earnings surprise % uses the same guardrails as <a href="/earnings-revisions.html">Earnings Revisions</a>' methodology neighbor, <a href="/insider-buying-selling.html">Insider Buying/Selling</a>'s sibling page for beat/miss history: a consensus estimate under a nickel is excluded (a percentage surprise off a near-zero base is noise, not signal), and prints beyond &plusmn;200% are clipped out rather than allowed to dominate the regression. Also note that Alpha Vantage's sentiment field never went negative in any transcript inspected while building this page, including calls delivered around a double-digit-percent earnings miss — it reads as a 0 (neutral/factual) to 1 (highly positive) scale, not a signed measure of genuinely negative tone, so a low score means "little positive framing," not "confirmed negative framing." That's a property of Alpha Vantage's own model, reported here rather than smoothed over.</p>
+<p>The two regressions (Pearson and Spearman, matching the two-method check used throughout <a href="/factor-analysis.html">Factor Analysis</a>) run once per company on its single most recent usable quarter — a cross-sectional test, not a time series, since this page is a one-time snapshot rather than an accumulating history. Leaderboards require at least 3 turns in the relevant bucket(s) so a one-line answer doesn't stand in for a company's "average" tone.</p>
+<div class="source">Source: <a href="https://www.alphavantage.co/" target="_blank" rel="noopener">Alpha Vantage — EARNINGS, EARNINGS_CALL_TRANSCRIPT</a></div>
 </div>
 
 </div>
 
 <script>
-const DATA_URL = "/api/stock-splits";
+const DATA_URL = "/api/earnings-call-sentiment";
+
+const SECTOR_COLORS = {
+ "Information Technology": "#d98a3d",
+ "Financials": "#6f8fac",
+ "Health Care": "#8e7cc3",
+ "Energy": "#c0564f",
+ "Industrials": "#5a9d6f",
+ "Consumer Discretionary": "#e0b04f",
+ "Consumer Staples": "#4fb0c0",
+ "Utilities": "#b56f2a",
+ "Materials": "#9a9a9a",
+ "Real Estate": "#c77dbd",
+ "Communication Services": "#4f7ae0",
+};
 
 let RAW = null;
-let SORT_KEY = "date";
+let SORT_KEY = "managementSentiment";
 let SORT_DIR = -1;
+let SECTOR_METRIC = "management";
 
+function fmtTone(v, digits){
+ if(v === null || v === undefined || isNaN(v)) return "—";
+ digits = digits === undefined ? 2 : digits;
+ return v.toFixed(digits);
+}
+function fmtGap(v, digits){
+ if(v === null || v === undefined || isNaN(v)) return "—";
+ digits = digits === undefined ? 2 : digits;
+ return (v >= 0 ? "+" : "") + v.toFixed(digits);
+}
 function fmtPct(v, digits){
  if(v === null || v === undefined || isNaN(v)) return "—";
  digits = digits === undefined ? 1 : digits;
@@ -947,31 +1075,7 @@ function showWarning(message){
  banner.style.display = "block";
 }
 
-function themeInkColor(){
- const v = getComputedStyle(document.documentElement).getPropertyValue("--ink").trim();
- return v || "#eae6da";
-}
-function themeMutedColor(){
- const v = getComputedStyle(document.documentElement).getPropertyValue("--muted").trim();
- return v || "#8b9199";
-}
-function themeHairColor(){
- const v = getComputedStyle(document.documentElement).getPropertyValue("--hair").trim();
- return v || "#2b3138";
-}
-function themeGreedColor(){
- const v = getComputedStyle(document.documentElement).getPropertyValue("--greed").trim();
- return v || "#d98a3d";
-}
-function themeFearColor(){
- const v = getComputedStyle(document.documentElement).getPropertyValue("--fear").trim();
- return v || "#6f8fac";
-}
-
-// ---- NDR chart styling helpers -----------------------------------------
-// Colours come from the --ndr-* custom properties (constant across themes)
-// so the charts keep their warm-paper look while still following the
-// site's "read chart colours from CSS, don't hardcode" rule.
+// ---- NDR chart styling helpers (matches /concentration, /margin-leverage) ----
 function ndr(name){
  return getComputedStyle(document.documentElement).getPropertyValue("--ndr-" + name).trim();
 }
@@ -981,7 +1085,7 @@ Chart.defaults.color = ndr("axis-soft");
 
 function ndrXScale(){
  return {
-  ticks: { color: ndr("axis"), maxTicksLimit: 9, maxRotation: 0, autoSkip: true, font: { size: 11 } },
+  ticks: { color: ndr("axis"), maxTicksLimit: 12, maxRotation: 0, autoSkip: true, font: { size: 11 } },
   grid: { color: "rgba(0,0,0,0)", borderColor: ndr("axis") },
  };
 }
@@ -995,13 +1099,6 @@ function ndrYScale(opts){
   ticks: { color: ndr("axis"), font: { size: 11 }, callback: opts.fmt || undefined },
   title: opts.title ? { display: true, text: opts.title, color: ndr("axis-soft"), font: { size: 10 } } : { display: false },
   min: opts.min, max: opts.max,
- };
-}
-
-function ndrLegend(){
- return {
-  display: true, position: "top", align: "start",
-  labels: { boxWidth: 22, boxHeight: 2, color: ndr("axis"), font: { size: 11 } },
  };
 }
 
@@ -1048,17 +1145,27 @@ function rankArray(arr){
  return ranks;
 }
 function spearmanRegression(xs, ys){ return linearRegression(rankArray(xs), rankArray(ys)); }
-function oneSampleTTest(values){
- const n = values.length;
- const mean = values.reduce((a, b) => a + b, 0) / n;
- const variance = values.reduce((s, v) => s + (v - mean) ** 2, 0) / (n - 1);
- const se = Math.sqrt(variance / n);
- const t = mean / se;
- const p = 2 * (1 - normalCdf(Math.abs(t)));
- return { n, mean, t, p };
+
+function methodTableHtml(pearson, spear, unitNote){
+ function row(label, stats){
+  const sig = stats.p < 0.05;
+  return "<tr>" +
+   "<td>" + label + "</td>" +
+   "<td>" + stats.n + "</td>" +
+   "<td>" + stats.r.toFixed(2) + "</td>" +
+   "<td>" + (stats.r2 * 100).toFixed(1) + "%</td>" +
+   "<td>" + (stats.slope >= 0 ? "+" : "") + stats.slope.toFixed(4) + "</td>" +
+   "<td>" + stats.t.toFixed(2) + "</td>" +
+   '<td class="' + (sig ? "sig" : "") + '">' + (stats.p < 0.001 ? "<0.001" : stats.p.toFixed(3)) + "</td>" +
+  "</tr>";
+ }
+ return '<table class="method-table">' +
+  "<thead><tr><th>Method</th><th>n</th><th>r</th><th>r&sup2;</th><th>slope</th><th>t</th><th>p</th></tr></thead>" +
+  "<tbody>" + row("Pearson (OLS)", pearson) + row("Spearman (&rho;)", spear) + "</tbody>" +
+ "</table>" + (unitNote ? '<div class="method-note">' + unitNote + "</div>" : "");
 }
 
-let frequencyChart = null, eventStudyChart = null, sectorChart = null, sizeScatter = null;
+let sectorChart = null, distributionChart = null, sentimentSurpriseScatter = null, gapSurpriseScatter = null;
 
 async function init(){
  try{
@@ -1069,259 +1176,169 @@ async function init(){
   RAW = data;
   document.getElementById("updated").textContent = "As of " + new Date(data.generated_at_utc).toLocaleString();
 
-  if(data.splitsLoadedCount < data.universeSize){
-   showWarning("Only " + data.splitsLoadedCount + " of " + data.universeSize + " S&P 500 constituents loaded this run — some split history may be temporarily unavailable.");
+  const notCovered = data.universeSize - data.loadedCount;
+  if(notCovered > 0){
+   showWarning(data.loadedCount + " of " + data.universeSize + " S&P 500 constituents have a usable call in this snapshot (" +
+    data.noTranscriptCount + " not yet transcript-indexed by Alpha Vantage, " + data.earningsFailedCount + " with no usable earnings history).");
   }
 
   renderStats();
-  renderFrequencyChart();
-  renderEventStudyChart();
   renderSectorChart();
-  renderSizeScatter();
-  renderLeaderTable();
+  renderDistributionChart();
+  renderScatters();
+  renderLeaderTable(data.mostBullish, "mostBullishBody", "management");
+  renderLeaderTable(data.mostGuarded, "mostGuardedBody", "management");
+  renderLeaderTable(data.widestGap, "widestGapBody", "gap");
+  renderLeaderTable(data.narrowestGap, "narrowestGapBody", "gap");
   renderTable();
 
  }catch(e){
-  showError("Couldn't load stock split data (" + e.message + "). The /api/stock-splits function may not have run yet.");
+  showError("Couldn't load earnings call sentiment data (" + e.message + "). The /api/earnings-call-sentiment function may not have run yet.");
   document.getElementById("tableBody").innerHTML =
-   '<tr><td colspan="6" style="text-align:center; color:var(--muted); padding:30px;">No data available.</td></tr>';
+   '<tr><td colspan="7" style="text-align:center; color:var(--muted); padding:30px;">No data available.</td></tr>';
  }
+}
+
+function marketMedian(values){
+ const v = values.filter(x => x !== null && x !== undefined && !isNaN(x)).sort((a, b) => a - b);
+ if(!v.length) return null;
+ const mid = Math.floor(v.length / 2);
+ return v.length % 2 ? v[mid] : (v[mid - 1] + v[mid]) / 2;
 }
 
 function renderStats(){
- const recent = RAW.recentSplits;
- const forwardCount = recent.filter(r => r.direction === "forward").length;
- const reverseCount = recent.filter(r => r.direction === "reverse").length;
- document.getElementById("statRecentCount").textContent = recent.length;
- document.getElementById("statRecentCountNote").textContent = forwardCount + " forward / " + reverseCount + " reverse";
+ document.getElementById("statCompanies").textContent = RAW.loadedCount;
+ document.getElementById("statCompaniesNote").textContent = RAW.loadedCount + " of " + RAW.universeSize + " loaded";
 
- const finals = RAW.regressionPoints;
- const avgEl = document.getElementById("statAvgForward");
- const avgNoteEl = document.getElementById("statAvgForwardNote");
- if(finals.length >= 5){
-  const tt = oneSampleTTest(finals.map(p => p.forwardReturn));
-  avgEl.textContent = fmtPct(tt.mean);
-  avgEl.classList.toggle("cell-neg", tt.mean < 0);
-  avgNoteEl.textContent = "n=" + tt.n + ", p=" + (tt.p < 0.001 ? "<0.001" : tt.p.toFixed(3)) + (tt.p < 0.05 ? " (significant)" : " (not significant)");
- }else{
-  avgEl.textContent = "n/a";
-  avgNoteEl.textContent = "Not enough forward splits with a full 120-day window yet (n=" + finals.length + ")";
- }
+ document.getElementById("statManagement").textContent = fmtTone(marketMedian(RAW.companies.map(c => c.managementSentiment)));
+ document.getElementById("statAnalyst").textContent = fmtTone(marketMedian(RAW.companies.map(c => c.analystSentiment)));
 
- const sizeEl = document.getElementById("statSizeEffect");
- const sizeNoteEl = document.getElementById("statSizeEffectNote");
- if(finals.length >= 8){
-  const reg = linearRegression(finals.map(p => p.logFactor), finals.map(p => p.forwardReturn));
-  sizeEl.textContent = (reg.r >= 0 ? "+" : "") + reg.r.toFixed(2);
-  sizeNoteEl.textContent = "n=" + reg.n + ", p=" + (reg.p < 0.001 ? "<0.001" : reg.p.toFixed(3));
- }else{
-  sizeEl.textContent = "n/a";
-  sizeNoteEl.textContent = "Not enough qualifying splits this run (n=" + finals.length + ")";
- }
-
- const sectors = [...RAW.sectors].sort((a, b) => (b.forwardCount + b.reverseCount) - (a.forwardCount + a.reverseCount));
- document.getElementById("statTopSector").textContent = sectors.length ? sectors[0].sector : "—";
- document.getElementById("statTopSectorNote").textContent = sectors.length ? (sectors[0].forwardCount + sectors[0].reverseCount) + " split(s), " + sectors[0].companyCount + " compan" + (sectors[0].companyCount === 1 ? "y" : "ies") : "";
-}
-
-function renderFrequencyChart(){
- const rows = RAW.splitsPerYear;
- const ctx = document.getElementById("frequencyChart").getContext("2d");
- if(frequencyChart) frequencyChart.destroy();
- frequencyChart = new Chart(ctx, {
-  type: "bar",
-  data: {
-   labels: rows.map(r => r.year),
-   datasets: [
-    { label: "Forward splits", data: rows.map(r => r.forwardCount), backgroundColor: ndr("green"), stack: "s" },
-    { label: "Reverse splits", data: rows.map(r => r.reverseCount), backgroundColor: ndr("red"), stack: "s" },
-   ],
-  },
-  options: {
-   responsive: true,
-   maintainAspectRatio: false,
-   plugins: { legend: ndrLegend() },
-   scales: {
-    x: { ...ndrXScale(), stacked: true },
-    y: { ...ndrYScale({ fmt: v => Number(v).toFixed(0) }), stacked: true },
-   },
-  },
- });
-}
-
-function renderEventStudyChart(){
- const path = RAW.carPath;
- const ctx = document.getElementById("eventStudyChart").getContext("2d");
- if(eventStudyChart) eventStudyChart.destroy();
- if(!path.length){
-  document.getElementById("eventStudyChart").parentElement.insertAdjacentHTML("beforeend",
-   '<div style="text-align:center; color:var(--muted); padding-top:140px;">Not enough qualifying forward splits this run to build an event-study path.</div>');
-  return;
- }
- eventStudyChart = new Chart(ctx, {
-  type: "line",
-  data: {
-   labels: path.map(p => p.offset),
-   datasets: [{
-    label: "Avg. relative return vs. SPY",
-    data: path.map(p => p.avgRelative),
-    borderColor: ndr("navy"),
-    backgroundColor: "transparent",
-    borderWidth: 2,
-    pointRadius: 0,
-    tension: 0.1,
-   }],
-  },
-  options: {
-   responsive: true,
-   maintainAspectRatio: false,
-   interaction: { mode: "index", intersect: false },
-   plugins: {
-    legend: { display: false },
-    tooltip: {
-     callbacks: {
-      title: items => "Trading day " + (items[0].label >= 0 ? "+" : "") + items[0].label + " vs. split date",
-      label: ctx => {
-       const p = path[ctx.dataIndex];
-       return "Avg. relative return: " + fmtPct(p.avgRelative, 2) + " (n=" + p.n + ")";
-      },
-     },
-    },
-   },
-   scales: {
-    x: { ...ndrXScale(), title: { display: true, text: "Trading days relative to split effective date (0 = split day)", color: ndr("axis-soft"), font: { size: 10 } } },
-    y: ndrYScale({ fmt: v => v + "%", title: "Cumulative relative return (%)" }),
-   },
-  },
- });
+ const gapEl = document.getElementById("statGap");
+ const gapVal = marketMedian(RAW.companies.map(c => c.sentimentGap));
+ gapEl.textContent = fmtGap(gapVal);
+ gapEl.classList.toggle("cell-neg", gapVal !== null && gapVal < 0);
 }
 
 function renderSectorChart(){
- const sorted = [...RAW.sectors].sort((a, b) => (b.forwardCount + b.reverseCount) - (a.forwardCount + a.reverseCount));
+ const field = SECTOR_METRIC === "analyst" ? "medianAnalystSentiment" : SECTOR_METRIC === "gap" ? "medianGap" : "medianManagementSentiment";
+ const sectors = [...RAW.sectors].sort((a, b) => (b[field] ?? -Infinity) - (a[field] ?? -Infinity));
+ const colors = sectors.map(s => SECTOR_METRIC === "gap" ? (s[field] >= 0 ? ndr("green") : ndr("red")) : (SECTOR_COLORS[s.sector] || ndr("gold")));
+
  const ctx = document.getElementById("sectorChart").getContext("2d");
  if(sectorChart) sectorChart.destroy();
- if(!sorted.length){
-  ctx.canvas.parentElement.insertAdjacentHTML("beforeend",
-   '<div style="text-align:center; color:var(--muted); padding-top:140px;">No sector-level split activity in the trailing 5 years.</div>');
-  return;
- }
  sectorChart = new Chart(ctx, {
   type: "bar",
-  data: {
-   labels: sorted.map(s => s.sector),
-   datasets: [
-    { label: "Forward", data: sorted.map(s => s.forwardCount), backgroundColor: ndr("green"), borderRadius: 4 },
-    { label: "Reverse", data: sorted.map(s => s.reverseCount), backgroundColor: ndr("red"), borderRadius: 4 },
-   ],
-  },
+  data: { labels: sectors.map(s => s.sector), datasets: [{ data: sectors.map(s => s[field]), backgroundColor: colors, borderRadius: 4 }] },
   options: {
    indexAxis: "y",
    responsive: true,
    maintainAspectRatio: false,
-   plugins: { legend: ndrLegend() },
-   // Horizontal bar: x is the value (count) axis, y is the category
-   // (sector name) axis — the opposite pairing from ndrXScale/ndrYScale's
-   // usual x=category/y=value roles, so the helpers are swapped here. All
-   // sector names should show (unlike a date axis), so the category axis
-   // is built inline rather than reusing ndrXScale's maxTicksLimit/autoSkip.
+   plugins: {
+    legend: { display: false },
+    tooltip: { callbacks: { label: ctx => { const s = sectors[ctx.dataIndex]; return [(SECTOR_METRIC === "gap" ? fmtGap(s[field]) : fmtTone(s[field])), "n=" + s.count]; } } },
+   },
    scales: {
-    x: ndrYScale({ fmt: v => Number(v).toFixed(0) }),
-    y: { ticks: { color: ndr("axis"), font: { size: 11 } }, grid: { color: "rgba(0,0,0,0)", borderColor: ndr("axis") } },
+    x: ndrYScale({ fmt: v => v.toFixed(1) }),
+    y: ndrXScale(),
    },
   },
  });
 }
 
-function renderSizeScatter(){
- const points = RAW.regressionPoints;
- const box = document.getElementById("sizeScatter").parentElement;
- if(points.length < 8){
-  document.getElementById("sizeMethodTable").innerHTML =
-   '<div class="method-note">Not enough qualifying forward splits with a full 120-day post-split window this run (n=' + points.length + ', need at least 8) to run this regression.</div>';
-  return;
- }
+document.querySelectorAll("#sectorMetricToggle button").forEach(btn => {
+ btn.addEventListener("click", () => {
+  SECTOR_METRIC = btn.dataset.metric;
+  document.querySelectorAll("#sectorMetricToggle button").forEach(b => b.classList.toggle("active", b === btn));
+  renderSectorChart();
+ });
+});
 
- const xs = points.map(p => p.logFactor);
- const ys = points.map(p => p.forwardReturn);
- const pearson = linearRegression(xs, ys);
- const spear = spearmanRegression(xs, ys);
-
- const xMin = Math.min(...xs), xMax = Math.max(...xs);
- const linePoints = [
-  { x: xMin, y: pearson.intercept + pearson.slope * xMin },
-  { x: xMax, y: pearson.intercept + pearson.slope * xMax },
- ];
-
- const ctx = document.getElementById("sizeScatter").getContext("2d");
- if(sizeScatter) sizeScatter.destroy();
- sizeScatter = new Chart(ctx, {
-  type: "scatter",
-  data: {
-   datasets: [
-    { label: "Splits", data: points.map(p => ({ x: p.logFactor, y: p.forwardReturn, symbol: p.symbol })), backgroundColor: ndr("navy"), pointRadius: 4, showLine: false },
-    { label: "Regression fit", type: "line", data: linePoints, borderColor: ndr("red"), borderWidth: 1.5, borderDash: [4, 3], pointRadius: 0, fill: false },
-   ],
-  },
+function renderDistributionChart(){
+ const dist = RAW.distribution || [];
+ const ctx = document.getElementById("distributionChart").getContext("2d");
+ if(distributionChart) distributionChart.destroy();
+ distributionChart = new Chart(ctx, {
+  type: "bar",
+  data: { labels: dist.map(d => d.label), datasets: [{ data: dist.map(d => d.count), backgroundColor: ndr("gold"), borderRadius: 3 }] },
   options: {
    responsive: true,
    maintainAspectRatio: false,
    plugins: {
     legend: { display: false },
-    tooltip: {
-     callbacks: {
-      label: ctx => ctx.dataset.label === "Splits" ? (ctx.raw.symbol + ": log2 ratio " + ctx.raw.x.toFixed(2) + " → " + fmtPct(ctx.raw.y)) : null,
-     },
-    },
+    tooltip: { callbacks: { label: ctx => ctx.parsed.y + " compan" + (ctx.parsed.y === 1 ? "y" : "ies") } },
    },
-   // Numeric x-axis (log2 split ratio), not a date/category axis, so
-   // ndrXScale's category-oriented tick options (maxTicksLimit,
-   // maxRotation) don't apply here — built inline instead, matching
-   // ndrXScale's colours.
    scales: {
-    x: { title: { display: true, text: "log2(split ratio)", color: ndr("axis-soft"), font: { size: 10 } }, ticks: { color: ndr("axis"), font: { size: 10 } }, grid: { color: ndr("grid") } },
-    y: ndrYScale({ title: "120-day relative return vs. SPY (%)" }),
+    x: ndrXScale(),
+    y: ndrYScale({ title: "Companies" }),
    },
   },
  });
+}
 
- function row(label, stats){
-  const sig = stats.p < 0.05;
-  return "<tr>" +
-   "<td>" + label + "</td>" +
-   "<td>" + stats.n + "</td>" +
-   "<td>" + stats.r.toFixed(2) + "</td>" +
-   "<td>" + (stats.r2 * 100).toFixed(1) + "%</td>" +
-   "<td>" + (stats.slope >= 0 ? "+" : "") + stats.slope.toFixed(2) + "</td>" +
-   "<td>" + stats.t.toFixed(2) + "</td>" +
-   '<td class="' + (sig ? "sig" : "") + '">' + (stats.p < 0.001 ? "<0.001" : stats.p.toFixed(3)) + "</td>" +
-  "</tr>";
+function renderScatters(){
+ function draw(canvasId, methodTableId, testObj, pts, yLabel, yFmt, existing, sigNote){
+  if(!testObj || pts.length < 10){
+   document.getElementById(methodTableId).innerHTML = '<div class="method-note">Not enough companies with both figures in this snapshot to test.</div>';
+   if(existing) existing.destroy();
+   return null;
+  }
+  const pearson = testObj.pearson, spear = testObj.spearman;
+  const xs = pts.map(p => p.x);
+  const xMin = Math.min(...xs), xMax = Math.max(...xs);
+  const linePoints = [{ x: xMin, y: pearson.intercept + pearson.slope * xMin }, { x: xMax, y: pearson.intercept + pearson.slope * xMax }];
+
+  const ctx = document.getElementById(canvasId).getContext("2d");
+  if(existing) existing.destroy();
+  const chart = new Chart(ctx, {
+   type: "scatter",
+   data: {
+    datasets: [
+     { label: "Companies", data: pts, backgroundColor: ndr("gold"), pointRadius: 3, showLine: false },
+     { label: "Regression fit", type: "line", data: linePoints, borderColor: ndr("navy"), borderWidth: 1.5, borderDash: [4, 3], pointRadius: 0, fill: false },
+    ],
+   },
+   options: {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+     legend: { display: false },
+     tooltip: { callbacks: { label: ctx => ctx.dataset.label === "Companies" ? (ctx.raw.symbol + ": " + fmtPct(ctx.raw.x) + " surprise → " + yFmt(ctx.raw.y)) : null } },
+    },
+    scales: {
+     x: ndrYScale({ position: "bottom", title: "EPS surprise %" }),
+     y: ndrYScale({ title: yLabel }),
+    },
+   },
+  });
+
+  document.getElementById(methodTableId).innerHTML = methodTableHtml(pearson, spear, sigNote + " n=" + pearson.n + " companies, most recently indexed quarter each.");
+  return chart;
  }
- document.getElementById("sizeMethodTable").innerHTML =
-  '<table class="method-table">' +
-   "<thead><tr><th>Method</th><th>n</th><th>r</th><th>r&sup2;</th><th>slope</th><th>t</th><th>p</th></tr></thead>" +
-   "<tbody>" + row("Pearson (OLS)", pearson) + row("Spearman (&rho;)", spear) + "</tbody>" +
-  "</table>";
+
+ const sentPairs = RAW.companies.filter(c => c.managementSentiment !== null && c.surprisePct !== null)
+  .map(c => ({ x: c.surprisePct, y: c.managementSentiment, symbol: c.symbol }));
+ const gapPairs = RAW.companies.filter(c => c.sentimentGap !== null && c.surprisePct !== null)
+  .map(c => ({ x: c.surprisePct, y: c.sentimentGap, symbol: c.symbol }));
+
+ sentimentSurpriseScatter = draw("sentimentSurpriseScatter", "sentimentSurpriseMethodTable", RAW.sentimentVsSurprise, sentPairs,
+  "Management tone", fmtTone, sentimentSurpriseScatter,
+  "A positive slope would mean management sounds more upbeat specifically on quarters that beat by more.");
+ gapSurpriseScatter = draw("gapSurpriseScatter", "gapSurpriseMethodTable", RAW.gapVsSurprise, gapPairs,
+  "Tone gap (mgmt − analyst)", fmtGap, gapSurpriseScatter,
+  "A negative slope would mean the gap widens on a miss — management staying relatively more upbeat than the analysts questioning them.");
 }
 
-function directionTag(direction){
- return direction === "forward"
-  ? '<span class="tag tag-forward">Forward</span>'
-  : '<span class="tag tag-reverse">Reverse</span>';
-}
-
-function renderLeaderTable(){
- const rows = RAW.recentLeaders;
- const tbody = document.getElementById("leaderBody");
+function renderLeaderTable(rows, tbodyId, kind){
+ const tbody = document.getElementById(tbodyId);
  if(!rows || !rows.length){
-  tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; color:var(--muted); padding:24px;">No qualifying splits.</td></tr>';
+  tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; color:var(--muted); padding:24px;">No qualifying companies.</td></tr>';
   return;
  }
  tbody.innerHTML = rows.map(r => `<tr>
   <td><span class="sector-name">${r.symbol}</span></td>
   <td><span class="sector-ticker">${r.sector || "—"}</span></td>
-  <td>${r.date}</td>
-  <td>${r.label} ${directionTag(r.direction)}</td>
-  <td>${fmtPct(r.returnSinceSplit)}</td>
+  <td>${kind === "gap" ? fmtGap(r.sentimentGap) : fmtTone(r.managementSentiment)}</td>
+  <td>${fmtPct(r.surprisePct)}</td>
  </tr>`).join("");
 }
 
@@ -1336,7 +1353,7 @@ function sortBy(key){
 }
 
 function renderTable(){
- const rows = [...RAW.recentSplits].sort((a, b) => {
+ const rows = [...RAW.companies].sort((a, b) => {
   const av = a[SORT_KEY], bv = b[SORT_KEY];
   if(av === null || av === undefined) return 1;
   if(bv === null || bv === undefined) return -1;
@@ -1348,10 +1365,11 @@ function renderTable(){
  tbody.innerHTML = rows.map(r => `<tr>
   <td><span class="sector-name">${r.symbol}</span></td>
   <td><span class="sector-ticker">${r.sector || "—"}</span></td>
-  <td>${r.date}</td>
-  <td>${r.label}</td>
-  <td>${directionTag(r.direction)}</td>
-  <td>${fmtPct(r.returnSinceSplit)}</td>
+  <td>${r.quarterLabel || "—"}</td>
+  <td>${fmtTone(r.managementSentiment)}</td>
+  <td>${fmtTone(r.analystSentiment)}</td>
+  <td>${fmtGap(r.sentimentGap)}</td>
+  <td>${fmtPct(r.surprisePct)}</td>
  </tr>`).join("");
 
  document.querySelectorAll("#stockTable thead th").forEach(th => {
