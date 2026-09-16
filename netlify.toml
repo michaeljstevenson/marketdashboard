@@ -202,6 +202,11 @@
   to = "/.netlify/functions/earnings-call-sentiment"
   status = 200
 
+[[redirects]]
+  from = "/api/congress-trades"
+  to = "/.netlify/functions/congress-trades"
+  status = 200
+
 # The Statistical Engine page was briefly at these paths.
 [[redirects]]
   from = "/streak-scanner"
@@ -627,3 +632,14 @@
   # 750ms pacing — see scheduled-earnings-call-sentiment-background.js for
   # why that matches scheduled-margin-leverage-background's pacing rather
   # than this file's usual ~1,050ms single-endpoint sweeps).
+
+[functions."scheduled-congress-trades-background"]
+  # One-time snapshot, no schedule — same convention as the two stanzas
+  # above. Re-run manually (Netlify dashboard "Run now") for a fresh pass.
+  # Single Alpha Vantage endpoint per company (CONGRESS_TRADES, ~503 calls,
+  # 1050ms pacing — same as this file's other single-endpoint full sweeps,
+  # e.g. scheduled-insider-transactions-background), plus a read (not a
+  # write) of scheduled-relative-strength-background's own latest.json for
+  # the page's one regression, so this job has no ordering dependency on
+  # that job having run first — it just shows the test as unavailable if
+  # that blob hasn't been populated yet.
