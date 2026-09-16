@@ -172,6 +172,20 @@ document.addEventListener("DOMContentLoaded", function(){
   --serif:'Iowan Old Style','Palatino Linotype',Georgia,serif;
   --mono:'SF Mono','JetBrains Mono',ui-monospace,Menlo,monospace;
   --sans:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+
+  /* NDR-style chart palette. Deliberately the SAME in light and dark —
+     these charts keep a constant warm-paper look as a homage to the Ned
+     Davis Research print charts that inspired the treatment. JS reads them
+     via getComputedStyle (per the site convention) rather than hardcoding. */
+  --ndr-plot:#f5f1e6;
+  --ndr-axis:#3c3a33;
+  --ndr-axis-soft:#6f6a5c;
+  --ndr-grid:#ddd6c2;
+  --ndr-red:#a83c36;
+  --ndr-green:#4f6f3f;
+  --ndr-gold:#c1902f;
+  --ndr-navy:#2f4b6e;
+  --ndr-slate:#7d8a99;
 }
 
 :root[data-theme="light"]{
@@ -403,6 +417,14 @@ h1{
 }
 
 .chart-canvas-wrap.short{ height:280px; }
+
+/* The warm-paper plot panel behind each canvas — the NDR homage. */
+.ndr-panel{
+ background:var(--ndr-plot);
+ border:1px solid var(--ndr-grid);
+ border-radius:8px;
+ padding:14px 14px 10px;
+}
 
 /* TABLE */
 
@@ -779,8 +801,10 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <div class="chart-subhead">Sectors ranked by how widely analysts' FY1 EPS estimates are spread, highest disagreement first</div>
 </div>
 </div>
+<div class="ndr-panel">
 <div class="chart-canvas-wrap">
 <canvas id="sectorChart"></canvas>
+</div>
 </div>
 </div>
 
@@ -791,8 +815,10 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <div class="chart-subhead">Every constituent with a usable FY1 estimate, binned by relative dispersion</div>
 </div>
 </div>
+<div class="ndr-panel">
 <div class="chart-canvas-wrap short">
 <canvas id="histChart"></canvas>
+</div>
 </div>
 </div>
 
@@ -803,8 +829,10 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <div class="chart-subhead">Weekly snapshots, accumulated since this page began tracking — not backfilled</div>
 </div>
 </div>
+<div class="ndr-panel">
 <div class="chart-canvas-wrap">
 <canvas id="historyChart"></canvas>
+</div>
 </div>
 </div>
 
@@ -815,8 +843,10 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <div class="chart-subhead">Each point is one S&amp;P 500 constituent (min. 5 covering analysts): x-axis is FY1 EPS dispersion, y-axis is the count of analysts who revised their estimate (either direction) in the trailing 30 days</div>
 </div>
 </div>
+<div class="ndr-panel">
 <div class="scatter-canvas-wrap">
 <canvas id="corrScatter"></canvas>
+</div>
 </div>
 <div id="corrMethodTable"></div>
 </div>
@@ -883,25 +913,46 @@ function fmtPct(v, digits){
  return v.toFixed(digits) + "%";
 }
 
-function themeInkColor(){
- const v = getComputedStyle(document.documentElement).getPropertyValue("--ink").trim();
- return v || "#eae6da";
+// ---- NDR chart styling helpers -----------------------------------------
+// Colours come from the --ndr-* custom properties (constant across themes)
+// so the charts keep their warm-paper look while still following the
+// site's "read chart colours from CSS, don't hardcode" rule.
+function ndr(name){
+ return getComputedStyle(document.documentElement).getPropertyValue("--ndr-" + name).trim();
 }
-function themeMutedColor(){
- const v = getComputedStyle(document.documentElement).getPropertyValue("--muted").trim();
- return v || "#8b9199";
+
+Chart.defaults.font.family = "'Iowan Old Style','Palatino Linotype',Georgia,serif";
+Chart.defaults.color = ndr("axis-soft");
+
+// `opts.title` is a deviation from concentration.html's ndrXScale (which
+// never needed an x-axis title) — this page's scatter panel has a numeric
+// x-axis that needs one, so it's supported here directly.
+function ndrXScale(opts){
+ opts = opts || {};
+ return {
+  ticks: { color: ndr("axis"), maxTicksLimit: 9, maxRotation: 0, autoSkip: true, font: { size: opts.fontSize || 11 } },
+  grid: { color: "rgba(0,0,0,0)", borderColor: ndr("axis") },
+  title: opts.title ? { display: true, text: opts.title, color: ndr("axis-soft"), font: { size: 10 } } : { display: false },
+ };
 }
-function themeHairColor(){
- const v = getComputedStyle(document.documentElement).getPropertyValue("--hair").trim();
- return v || "#2b3138";
+
+function ndrYScale(opts){
+ opts = opts || {};
+ return {
+  type: opts.log ? "logarithmic" : "linear",
+  position: opts.position || "left",
+  grid: { color: ndr("grid"), drawBorder: false },
+  ticks: { color: ndr("axis"), font: { size: opts.fontSize || 11 }, callback: opts.fmt || undefined },
+  title: opts.title ? { display: true, text: opts.title, color: ndr("axis-soft"), font: { size: 10 } } : { display: false },
+  min: opts.min, max: opts.max,
+ };
 }
-function themeGreedColor(){
- const v = getComputedStyle(document.documentElement).getPropertyValue("--greed").trim();
- return v || "#d98a3d";
-}
-function themeFearColor(){
- const v = getComputedStyle(document.documentElement).getPropertyValue("--fear").trim();
- return v || "#6f8fac";
+
+function ndrLegend(){
+ return {
+  display: true, position: "top", align: "start",
+  labels: { boxWidth: 22, boxHeight: 2, color: ndr("axis"), font: { size: 11 } },
+ };
 }
 
 // ---- Stats helpers — same methodology as /factor-analysis, duplicated
@@ -1023,7 +1074,7 @@ function renderSectorChart(data){
   type: "bar",
   data: {
    labels: sectors.map(s => s.sector),
-   datasets: [{ label: "Median dispersion", data: sectors.map(s => s.medianDispersion), backgroundColor: themeGreedColor(), borderRadius: 4 }],
+   datasets: [{ label: "Median dispersion", data: sectors.map(s => s.medianDispersion), backgroundColor: ndr("gold"), borderRadius: 4 }],
   },
   options: {
    responsive: true,
@@ -1033,9 +1084,13 @@ function renderSectorChart(data){
     legend: { display: false },
     tooltip: { callbacks: { label: ctx => "Median dispersion: " + fmtPct(ctx.parsed.x) + " (n=" + sectors[ctx.dataIndex].count + ")" } },
    },
+   // indexAxis:"y" swaps the usual roles — x is the numeric value axis here
+   // (so it takes ndrYScale's callback/grid treatment) and y is the
+   // category axis (sector names), so neither maps cleanly onto
+   // ndrXScale()/ndrYScale() as concentration.html defines them.
    scales: {
-    x: { ticks: { color: themeMutedColor(), callback: v => v + "%" }, grid: { color: themeHairColor() } },
-    y: { ticks: { color: themeMutedColor(), font: { size: 11 } }, grid: { display: false } },
+    x: { grid: { color: ndr("grid"), drawBorder: false }, ticks: { color: ndr("axis"), font: { size: 11 }, callback: v => v + "%" } },
+    y: { ticks: { color: ndr("axis"), font: { size: 11 } }, grid: { display: false } },
    },
   },
  });
@@ -1065,7 +1120,7 @@ function renderHistChart(data){
   type: "bar",
   data: {
    labels,
-   datasets: [{ label: "Constituents", data: bins.map(b => b.count), backgroundColor: themeFearColor(), borderRadius: 3 }],
+   datasets: [{ label: "Constituents", data: bins.map(b => b.count), backgroundColor: ndr("slate"), borderRadius: 3 }],
   },
   options: {
    responsive: true,
@@ -1075,8 +1130,8 @@ function renderHistChart(data){
     tooltip: { callbacks: { label: ctx => ctx.parsed.y + " stocks" } },
    },
    scales: {
-    x: { ticks: { color: themeMutedColor(), font: { size: 10 } }, grid: { display: false } },
-    y: { ticks: { color: themeMutedColor() }, grid: { color: themeHairColor() } },
+    x: { ...ndrXScale(), grid: { display: false } },
+    y: ndrYScale(),
    },
   },
  });
@@ -1094,7 +1149,7 @@ function renderHistoryChart(data){
   data: {
    labels: points.map(p => p.date),
    datasets: [
-    { label: "Market median dispersion", data: points.map(p => p.marketMedianDispersion), borderColor: themeGreedColor(), backgroundColor: themeGreedColor(), borderWidth: 1.5, pointRadius: points.length < 20 ? 3 : 0, fill: false },
+    { label: "Market median dispersion", data: points.map(p => p.marketMedianDispersion), borderColor: ndr("navy"), backgroundColor: ndr("navy"), borderWidth: 1.5, pointRadius: points.length < 20 ? 3 : 0, fill: false },
    ],
   },
   options: {
@@ -1106,8 +1161,8 @@ function renderHistoryChart(data){
     tooltip: { callbacks: { label: ctx => "Median dispersion: " + fmtPct(ctx.parsed.y) } },
    },
    scales: {
-    x: { ticks: { color: themeMutedColor(), maxTicksLimit: 8 }, grid: { color: themeHairColor() } },
-    y: { ticks: { color: themeMutedColor(), callback: v => v + "%" }, grid: { color: themeHairColor() } },
+    x: ndrXScale(),
+    y: ndrYScale({ fmt: v => v + "%" }),
    },
   },
  });
@@ -1137,8 +1192,8 @@ function renderCorrScatter(data){
   type: "scatter",
   data: {
    datasets: [
-    { label: "Stocks", data: pairs.map(p => ({ x: p.dispersion, y: p.revisionChurn30, ticker: p.ticker, sector: p.sector })), backgroundColor: themeGreedColor(), pointRadius: 3, showLine: false },
-    { label: "Regression fit", type: "line", data: linePoints, borderColor: themeInkColor(), borderWidth: 1.5, borderDash: [4, 3], pointRadius: 0, fill: false },
+    { label: "Stocks", data: pairs.map(p => ({ x: p.dispersion, y: p.revisionChurn30, ticker: p.ticker, sector: p.sector })), backgroundColor: ndr("slate"), pointRadius: 3, showLine: false },
+    { label: "Regression fit", type: "line", data: linePoints, borderColor: ndr("red"), borderWidth: 1.5, borderDash: [4, 3], pointRadius: 0, fill: false },
    ],
   },
   options: {
@@ -1153,8 +1208,8 @@ function renderCorrScatter(data){
     },
    },
    scales: {
-    x: { title: { display: true, text: "FY1 EPS dispersion (%)", color: themeMutedColor(), font: { size: 10 } }, ticks: { color: themeMutedColor(), font: { size: 10 } }, grid: { color: themeHairColor() } },
-    y: { title: { display: true, text: "Revisions, trailing 30d (count)", color: themeMutedColor(), font: { size: 10 } }, ticks: { color: themeMutedColor(), font: { size: 10 } }, grid: { color: themeHairColor() } },
+    x: ndrXScale({ title: "FY1 EPS dispersion (%)", fontSize: 10 }),
+    y: ndrYScale({ title: "Revisions, trailing 30d (count)", fontSize: 10 }),
    },
   },
  });
