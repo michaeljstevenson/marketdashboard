@@ -197,6 +197,16 @@
   to = "/.netlify/functions/margin-leverage"
   status = 200
 
+[[redirects]]
+  from = "/api/institutional-ownership"
+  to = "/.netlify/functions/institutional-ownership"
+  status = 200
+
+[[redirects]]
+  from = "/api/analyst-price-target"
+  to = "/.netlify/functions/analyst-price-target"
+  status = 200
+
 # The Statistical Engine page was briefly at these paths.
 [[redirects]]
   from = "/streak-scanner"
@@ -611,3 +621,25 @@
   # this fix, leaving headroom for this job's own longer runtime. Weekly,
   # not daily: fundamentals only change when a company files a new
   # 10-Q/10-K.
+
+[functions."scheduled-institutional-ownership-background"]
+  # One-time snapshot (2026-09-16) — no schedule. Matches this site's
+  # current convention for new full-universe Equities background jobs
+  # (see the "Stop auto-refresh on tonight's new Equities pages" commit
+  # earlier the same day, which removed the recurring schedule from the
+  # 14 background functions added that night): meant to read as "the
+  # research as it stood on this date," not a continuously-refreshed
+  # feed. Run manually (Netlify dashboard "Run now") for a fresh
+  # snapshot later. ~503 sequential INSTITUTIONAL_HOLDINGS calls at
+  # 1050ms spacing plus a retry pass — see
+  # scheduled-institutional-ownership-background.js for why each call's
+  # payload stays small despite some names having thousands of 13F
+  # holders on file.
+
+[functions."scheduled-analyst-price-target-background"]
+  # One-time snapshot (2026-09-16) — no schedule, same reasoning as
+  # scheduled-institutional-ownership-background above: matches this
+  # site's current convention for new full-universe Equities background
+  # jobs. Run manually (Netlify dashboard "Run now") for a fresh
+  # snapshot later. ~503 sequential COMPANY_OVERVIEW calls at 1050ms
+  # spacing plus a retry pass.
