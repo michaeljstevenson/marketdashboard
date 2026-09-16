@@ -64,8 +64,8 @@ async function fetchQuarterlyShares(apiKey, symbol) {
   );
   if (!res.ok) throw new Error(`HTTP ${res.status}`);
   const payload = await res.json();
-  if (payload.Note || payload.Information || payload.error) {
-    throw new Error(payload.Note || payload.Information || JSON.stringify(payload.error));
+  if (payload.Note || payload.Information || payload.error || payload["Error Message"]) {
+    throw new Error(payload.Note || payload.Information || payload["Error Message"] || JSON.stringify(payload.error));
   }
   const rows = payload.quarterlyReports;
   if (!Array.isArray(rows)) throw new Error(`unexpected response shape: ${JSON.stringify(payload).slice(0, 160)}`);
@@ -96,7 +96,7 @@ exports.handler = async () => {
         return true;
       } catch (err) {
         console.error(`scheduled-share-count-background: ${symbol} failed: ${err.message}`);
-        if (/rate limit|per minute/i.test(err.message)) await sleep(20000);
+        if (/rate limit|per minute|invalid api call|unexpected response shape/i.test(err.message)) await sleep(20000);
         return false;
       }
     }

@@ -36,7 +36,9 @@ async function fetchOverview(apiKey, symbol) {
   );
   if (!res.ok) throw new Error(`HTTP ${res.status}`);
   const p = await res.json();
-  if (p.Note || p.Information || p.error) throw new Error(p.Note || p.Information || JSON.stringify(p.error));
+  if (p.Note || p.Information || p.error || p["Error Message"]) {
+    throw new Error(p.Note || p.Information || p["Error Message"] || JSON.stringify(p.error));
+  }
   if (!p.Symbol) return null; // empty body — no data for this symbol
   return {
     name: p.Name || symbol,
@@ -69,7 +71,7 @@ exports.handler = async () => {
         // A long OVERVIEW run drifts into Alpha Vantage's minute-level cap
         // even at ~1/sec; when it trips, back off hard before the next
         // call rather than burning the rest of the batch on a closed window.
-        if (/rate limit|per minute/i.test(err.message)) await sleep(20000);
+        if (/rate limit|per minute|invalid api call/i.test(err.message)) await sleep(20000);
         return false;
       }
       if (!entry || !entry.sharesOutstanding) {
