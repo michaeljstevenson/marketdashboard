@@ -84,7 +84,7 @@ document.addEventListener("DOMContentLoaded", function(){
   if(fn) fn.call(document);
  }
  function currentFsEl(){
-  return document.fullscreenElement || document.webkitFullscreenElement || document.mozFullscreenElement || document.msFullscreenElement;
+  return document.fullscreenElement || document.webkitFullscreenElement || document.mozFullScreenElement || document.msFullscreenElement;
  }
  function resolveCard(canvas){
   return canvas.closest(".chart-box, .scatter-box, .herd-cell, .modal-chart")
@@ -152,7 +152,7 @@ document.addEventListener("DOMContentLoaded", function(){
 </script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Earnings Growth vs. Price Performance — Michael J. Stevenson</title>
+<title>Institutional Ownership &amp; 13F Flow Tracker — Michael J. Stevenson</title>
 
 <style>
 
@@ -174,10 +174,10 @@ document.addEventListener("DOMContentLoaded", function(){
   --sans:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
 
   /* NDR-style chart palette. Deliberately the SAME in light and dark —
-     these charts keep a constant warm-paper look as a homage to the Ned
-     Davis Research print charts that inspired concentration.html. JS reads
-     them via getComputedStyle (per the site convention) rather than
-     hardcoding. */
+     these charts keep a constant warm-paper look, matching the rest of
+     this site's newer Equities pages (see /concentration, /margin-
+     leverage). JS reads them via getComputedStyle (per the site
+     convention) rather than hardcoding. */
   --ndr-plot:#f5f1e6;
   --ndr-axis:#3c3a33;
   --ndr-axis-soft:#6f6a5c;
@@ -203,6 +203,21 @@ document.addEventListener("DOMContentLoaded", function(){
 }
 
 *{ box-sizing:border-box; }
+
+/* The full sortable table (8 columns) and the leaderboard tables each
+   scroll internally via their own .table-box{overflow-x:auto}, but on
+   narrow viewports their table{min-width:600px} content is wide enough
+   that Chromium's layout-overflow calculation still leaks into the
+   document's own scrollWidth — confirmed with real wheel/touch input that
+   this actually let the whole page pan horizontally on mobile (a bare
+   window.scrollTo() check is misleading here: Chromium still honors that
+   programmatically even with overflow-x:hidden, but blocks real
+   wheel/touch-driven scroll, which is what a mobile user would hit).
+   The viewport-scrolling element in standards mode is <html>, not
+   <body> — this has to go on html to actually block it. */
+html{
+ overflow-x:hidden;
+}
 
 body{
  margin:0;
@@ -415,15 +430,56 @@ h1{
 
 .chart-canvas-wrap{
  height:380px;
+ position:relative;
 }
 
 /* The warm-paper plot panel behind each canvas — the NDR homage
-   (matches /concentration.html). */
+   (matches /concentration, /margin-leverage). */
 .ndr-panel{
  background:var(--ndr-plot);
  border:1px solid var(--ndr-grid);
  border-radius:8px;
  padding:14px 14px 10px;
+}
+
+.metric-toggle{
+ display:flex;
+ gap:6px;
+}
+
+.metric-toggle button{
+ background:var(--card-hover);
+ border:1px solid var(--hair);
+ color:var(--muted);
+ border-radius:6px;
+ padding:5px 12px;
+ font-size:11px;
+ cursor:pointer;
+}
+
+.metric-toggle button.active{
+ color:var(--ink);
+ border-color:var(--greed);
+}
+
+/* Two charts / method-tables side by side, same breakpoint as table-grid */
+.chart-grid{
+ display:grid;
+ grid-template-columns:1fr 1fr;
+ gap:16px;
+ margin-bottom:30px;
+}
+
+.chart-grid .chart-box{
+ margin-bottom:0;
+ min-width:0; /* grid items default to min-width:auto (their content's min-content
+                 size), which a wide method table would otherwise force past this
+                 column's track width — same "grid blowout" the site-wide
+                 table{min-width:600px} rule creates if left unchecked here */
+}
+
+@media (max-width:900px){
+ .chart-grid{ grid-template-columns:1fr; }
 }
 
 /* TABLE */
@@ -527,7 +583,7 @@ tbody td:nth-child(2){
 .cell-neg{ color:var(--ink); }
 .cell-na{ color:var(--muted); }
 
-/* SCATTER / METHOD TABLE (mirrors /factor-analysis) */
+/* SCATTER / METHOD TABLE (mirrors /factor-analysis, /margin-leverage) */
 
 .scatter-canvas-wrap{
  height:300px;
@@ -537,10 +593,17 @@ tbody td:nth-child(2){
 
 .method-table{
  width:100%;
+ min-width:0; /* overrides the site-wide table{min-width:600px} rule below — this
+                 method table never needs 600px and shouldn't force the page wider
+                 than a phone viewport */
  border-collapse:collapse;
  font-family:var(--mono);
  font-size:11px;
  margin-top:8px;
+}
+
+#flowMomentumMethodTable{
+ overflow-x:auto;
 }
 
 .method-table th{
@@ -581,6 +644,26 @@ tbody td:nth-child(2){
  font-style:italic;
 }
 
+/* SECTOR LEGEND (scatter / spaghetti charts) */
+
+.sector-legend{
+ display:flex;
+ flex-wrap:wrap;
+ gap:10px 16px;
+ margin-top:14px;
+ font-size:11px;
+ color:var(--muted);
+}
+
+.sector-legend .dot{
+ display:inline-block;
+ width:8px;
+ height:8px;
+ border-radius:50%;
+ margin-right:5px;
+ vertical-align:middle;
+}
+
 /* EXPLAINER */
 
 .explainer{
@@ -612,6 +695,16 @@ tbody td:nth-child(2){
  border-radius:4px;
  font-size:0.92em;
  white-space:nowrap;
+}
+
+/* Unlike the short field/endpoint-name identifiers the site-wide rule above
+   is meant for, this page's two flow-metric formulas are full expressions
+   with spaces — kept as nowrap they're wide enough to force horizontal
+   overflow on a phone viewport (confirmed: this exact element was the
+   actual root cause of a page-wide horizontal-scroll bug caught in mobile
+   testing). Letting them wrap is the correct fix, not a workaround. */
+.explainer code.formula{
+ white-space:normal;
 }
 
 .explainer p:last-child{ margin-bottom:0; }
@@ -715,10 +808,8 @@ tbody td:nth-child(2){
 <a href="/share-count-trends.html">Share Count Trends</a>
 <a href="/sector-correlation.html">Sector Correlation Matrix</a>
 <a href="/sector-rotation.html">Sector Rotation Model</a>
-<a href="/relative-strength-leaders.html">Relative Strength Leaders/Laggards</a>
-<a href="/equity-risk-premium.html">Equity Risk Premium by Sector</a>
-<a href="/earnings-growth-divergence.html" class="active">Earnings Growth vs. Price Performance</a>
-<a href="/institutional-ownership.html">Institutional Ownership</a>
+<a href="/margin-leverage.html">Margin &amp; Leverage Cycle</a>
+<a href="/institutional-ownership.html" class="active">Institutional Ownership</a>
 </div>
 </div>
 
@@ -785,44 +876,48 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 
 <div class="header">
 <div>
-<h1>Earnings Growth vs. Price Performance</h1>
-<div class="subtitle">Where has the market already priced in a company's earnings growth — and where hasn't it? Trailing year-over-year EPS growth vs. 3-month price performance relative to SPY, across the full S&amp;P 500.</div>
+<h1>Institutional Ownership &amp; 13F Flow Tracker</h1>
+<div class="subtitle">Who owns the S&amp;P 500, and which way institutions are moving: sector ownership and flow, an accumulating market-median flow trend, a distribution of buying/selling intensity, leaderboards, and a direct test of whether institutional flow chases recent winners or recent laggards.</div>
 </div>
 <div class="updated" id="updated">Loading...</div>
 </div>
 
 <div class="stat-grid">
 <div class="stat-card">
-<div class="stat-label">Median YoY EPS Growth</div>
-<div class="stat-value" id="statMedianEps">—</div>
-<div class="stat-note" id="statMedianEpsNote">Full universe</div>
+<div class="stat-label">Companies Loaded</div>
+<div class="stat-value" id="statCompanies" style="font-size:20px;">—</div>
+<div class="stat-note" id="statCompaniesNote">Of full S&amp;P 500</div>
 </div>
 <div class="stat-card">
-<div class="stat-label">Median 3M Relative Return</div>
-<div class="stat-value" id="statMedianPrice">—</div>
-<div class="stat-note" id="statMedianPriceNote">vs. SPY, full universe</div>
+<div class="stat-label">Median Institutional Ownership</div>
+<div class="stat-value" id="statOwnership">—</div>
+<div class="stat-note">Market-wide, latest snapshot</div>
 </div>
 <div class="stat-card">
-<div class="stat-label">Growth Ahead of Price</div>
-<div class="stat-value" id="statGrowthAhead" style="font-size:20px;">—</div>
-<div class="stat-note" id="statGrowthAheadNote">Strongest earnings growth, weakest relative price</div>
+<div class="stat-label">Median Net Share Flow</div>
+<div class="stat-value" id="statFlow">—</div>
+<div class="stat-note">Shares bought minus sold, % of institutional base</div>
 </div>
 <div class="stat-card">
-<div class="stat-label">Price Ahead of Growth</div>
-<div class="stat-value" id="statPriceAhead" style="font-size:20px;">—</div>
-<div class="stat-note" id="statPriceAheadNote">Strongest relative price, weakest earnings growth</div>
+<div class="stat-label">Median Holder Breadth</div>
+<div class="stat-value" id="statBreadth">—</div>
+<div class="stat-note">% of holders that changed position who were adding</div>
 </div>
 </div>
 
 <div class="chart-box">
 <div class="chart-box-header">
 <div>
-<h2>Median YoY EPS growth vs. median 3-month relative return, by sector</h2>
-<div class="chart-subhead">Two bars per sector — do they broadly agree, or diverge?</div>
+<h2>Sector ownership and flow</h2>
+<div class="chart-subhead">Median across each SPDR sector's S&amp;P 500 constituents, latest snapshot</div>
+</div>
+<div class="metric-toggle" id="sectorMetricToggle">
+<button type="button" data-metric="ownership" class="active">Ownership %</button>
+<button type="button" data-metric="flow">Net Flow %</button>
 </div>
 </div>
 <div class="ndr-panel">
-<div class="chart-canvas-wrap">
+<div class="chart-canvas-wrap" style="height:340px;">
 <canvas id="sectorChart"></canvas>
 </div>
 </div>
@@ -831,89 +926,163 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <div class="chart-box">
 <div class="chart-box-header">
 <div>
-<h2>Does 3-month relative price performance track earnings growth?</h2>
-<div class="chart-subhead">Each point is one stock: x-axis is trailing year-over-year EPS growth, y-axis is 3-month price return relative to SPY</div>
+<h2>Market-median net share flow over time</h2>
+<div class="chart-subhead">Accumulates one point per weekly run — <code>INSTITUTIONAL_HOLDINGS</code> is a current-state snapshot, not a time series, so this trend builds up over successive runs</div>
 </div>
 </div>
 <div class="ndr-panel">
-<div class="scatter-canvas-wrap">
-<canvas id="growthScatter"></canvas>
+<div class="chart-canvas-wrap">
+<canvas id="historyChart"></canvas>
 </div>
 </div>
-<div id="growthMethodTable"></div>
+</div>
+
+<div class="chart-box">
+<div class="chart-box-header">
+<div>
+<h2>Distribution of net share flow</h2>
+<div class="chart-subhead">Every S&amp;P 500 constituent with a computable net share flow this run</div>
+</div>
+</div>
+<div class="ndr-panel">
+<div class="chart-canvas-wrap" style="height:300px;">
+<canvas id="histogramChart"></canvas>
+</div>
+</div>
 </div>
 
 <div class="table-grid">
 <div class="table-box">
 <div class="table-box-header">
-<h2>Growth Ahead of Price</h2>
-<div class="chart-subhead">Strong earnings growth the market hasn't rewarded (yet) — or has good reason not to</div>
+<h2>Strongest institutional accumulation</h2>
+<div class="chart-subhead">Highest net share flow % (min. 5 institutional holders on file)</div>
 </div>
-<table id="leaderTable">
-<thead><tr><th>Symbol</th><th>Sector</th><th>EPS YoY</th><th>Price 3M</th></tr></thead>
-<tbody id="leaderBody"><tr><td colspan="4" style="text-align:center; color:var(--muted); padding:24px;">Loading&hellip;</td></tr></tbody>
+<table id="accumulationTable">
+<thead><tr><th>Symbol</th><th>Sector</th><th>Net Flow</th><th>Ownership</th></tr></thead>
+<tbody id="accumulationBody"><tr><td colspan="4" style="text-align:center; color:var(--muted); padding:24px;">Loading&hellip;</td></tr></tbody>
 </table>
 </div>
 <div class="table-box">
 <div class="table-box-header">
-<h2>Price Ahead of Growth</h2>
-<div class="chart-subhead">Strong relative price performance without matching earnings growth</div>
+<h2>Strongest institutional distribution</h2>
+<div class="chart-subhead">Lowest net share flow % (min. 5 institutional holders on file)</div>
 </div>
-<table id="laggardTable">
-<thead><tr><th>Symbol</th><th>Sector</th><th>EPS YoY</th><th>Price 3M</th></tr></thead>
-<tbody id="laggardBody"><tr><td colspan="4" style="text-align:center; color:var(--muted); padding:24px;">Loading&hellip;</td></tr></tbody>
+<table id="distributionTable">
+<thead><tr><th>Symbol</th><th>Sector</th><th>Net Flow</th><th>Ownership</th></tr></thead>
+<tbody id="distributionBody"><tr><td colspan="4" style="text-align:center; color:var(--muted); padding:24px;">Loading&hellip;</td></tr></tbody>
 </table>
 </div>
 </div>
 
+<div class="table-grid">
 <div class="table-box">
 <div class="table-box-header">
-<h2>Full S&amp;P 500</h2>
-<div class="chart-subhead">Trailing year-over-year EPS growth and 3-month price return relative to SPY per constituent</div>
+<h2>Highest institutional ownership</h2>
+<div class="chart-subhead">Largest share of shares outstanding held by institutions</div>
+</div>
+<table id="highOwnershipTable">
+<thead><tr><th>Symbol</th><th>Sector</th><th>Ownership</th><th>Holders</th></tr></thead>
+<tbody id="highOwnershipBody"><tr><td colspan="4" style="text-align:center; color:var(--muted); padding:24px;">Loading&hellip;</td></tr></tbody>
+</table>
+</div>
+<div class="table-box">
+<div class="table-box-header">
+<h2>Lowest institutional ownership</h2>
+<div class="chart-subhead">Smallest share of shares outstanding held by institutions</div>
+</div>
+<table id="lowOwnershipTable">
+<thead><tr><th>Symbol</th><th>Sector</th><th>Ownership</th><th>Holders</th></tr></thead>
+<tbody id="lowOwnershipBody"><tr><td colspan="4" style="text-align:center; color:var(--muted); padding:24px;">Loading&hellip;</td></tr></tbody>
+</table>
+</div>
+</div>
+
+<div class="chart-box">
+<div class="chart-box-header">
+<div>
+<h2>Net share flow vs. trailing 3-month relative return</h2>
+<div class="chart-subhead">Each point is one company this snapshot: do institutions pile into recent winners (momentum-chasing) or recent laggards (contrarian)?</div>
+</div>
+</div>
+<div class="ndr-panel">
+<div class="scatter-canvas-wrap">
+<canvas id="flowMomentumScatter"></canvas>
+</div>
+</div>
+<div id="flowMomentumMethodTable"></div>
+</div>
+
+<div class="table-box">
+<div class="table-box-header">
+<h2>All companies with institutional holdings data on file</h2>
+<div class="chart-subhead">Latest snapshot, full S&amp;P 500</div>
 </div>
 <table id="stockTable">
 <thead>
 <tr>
 <th data-key="symbol">Symbol</th>
 <th data-key="sector">Sector</th>
-<th data-key="epsGrowthYoY">EPS YoY<span class="sort-arrow">▾</span></th>
-<th data-key="relPrice3M">Price 3M<span class="sort-arrow">▾</span></th>
-<th data-key="divergenceScore">Divergence<span class="sort-arrow">▾</span></th>
+<th data-key="ownershipPct">Ownership<span class="sort-arrow">▾</span></th>
+<th data-key="holdersIncreased">Inc.<span class="sort-arrow">▾</span></th>
+<th data-key="holdersDecreased">Dec.<span class="sort-arrow">▾</span></th>
+<th data-key="holdersUnchanged">Unch.<span class="sort-arrow">▾</span></th>
+<th data-key="netShareFlowPct">Net Flow<span class="sort-arrow">▾</span></th>
+<th data-key="holderBreadthPct">Breadth<span class="sort-arrow">▾</span></th>
 </tr>
 </thead>
 <tbody id="tableBody">
-<tr><td colspan="5" style="text-align:center; color:var(--muted); padding:30px;">Loading earnings growth data&hellip;</td></tr>
+<tr><td colspan="8" style="text-align:center; color:var(--muted); padding:30px;">Loading institutional ownership data&hellip;</td></tr>
 </tbody>
 </table>
 </div>
 
 <div class="explainer">
 <h2>Methodology</h2>
-<p>Universe is the full S&amp;P 500. For every constituent, Alpha Vantage's <code>EARNINGS</code> endpoint provides quarterly reported EPS; year-over-year growth compares the latest reported quarter against the same quarter one year prior (4 quarters back), not the prior quarter, to avoid seasonal noise (a retailer's Q4 vs. Q3, for instance). Companies with a loss (zero or negative EPS) in the year-ago quarter are excluded rather than shown with a distorted or infinite growth percentage — a swing from a loss to a profit isn't a "growth rate" in any meaningful sense.</p>
-<p>Price performance is this same night's <a href="/relative-strength-leaders.html">Relative Strength Leaders/Laggards</a> 3-month return relative to SPY, reused directly rather than computed again here — both pages refresh from the same Saturday morning data run, so joining them costs nothing in extra Alpha Vantage calls. A stock without a value on that page (recent IPO, data gap) simply won't have a price figure here either.</p>
-<p>The "divergence score" ranks every stock twice — once by EPS growth (1 = fastest growing), once by 3-month relative price return (1 = best performing) — and takes the difference. A large positive score means price performance ranks far better than earnings growth does (the market is paying up for something other than trailing fundamentals, or pricing in growth not yet reported); a large negative score means the reverse — earnings are growing faster than the stock is moving, which is either an overlooked opportunity or a market correctly discounting something the trailing EPS number doesn't capture (rising costs, a decelerating outlook, a one-off tax benefit inflating the reported figure). This page shows the divergence; it doesn't resolve which explanation applies to any individual name.</p>
-<p>Refreshes weekly (Saturday, after Relative Strength Leaders/Laggards and Equity Risk Premium by Sector that same morning) — a trailing-quarter EPS comparison only changes when a company actually reports, so daily refresh would add nothing. Sector and company name come from the same weekly metadata sweep that backs <a href="/sector-beeswarm.html">Sector Beeswarm</a>.</p>
-<div class="source">Source: <a href="https://www.alphavantage.co/" target="_blank" rel="noopener">Alpha Vantage — EARNINGS</a>, this site's own Relative Strength Leaders/Laggards data</div>
+<p>Universe is the full S&amp;P 500. For every constituent, Alpha Vantage's <code>INSTITUTIONAL_HOLDINGS</code> endpoint is pulled and only its top-level aggregate fields are kept — total institutional holders and shares, the counts and share totals of holders who increased, decreased, or left unchanged their position, and total institutional ownership as a % of shares outstanding. The endpoint also returns a full per-holder <code>holdings</code> list (thousands of individual rows for a mega-cap name) that this page never stores or processes — it's irrelevant to the sector- and market-level questions this page asks, and would bloat the data store for no benefit.</p>
+<p>Two flow metrics are shown side by side because they answer different questions. <b>Holder breadth</b> is <code class="formula">holders increased / (holders increased + holders decreased) × 100</code> — a headcount question: of the institutions that changed their position at all (unchanged holders are excluded from this ratio), what fraction were adding rather than trimming? Above 50% means more institutions added than trimmed. <b>Net share flow</b> is <code class="formula">(shares increased − shares decreased) / total institutional shares × 100</code> — a magnitude question, normalized to the size of the institutional share base, so a handful of large funds moving a lot of stock shows up even if most smaller holders didn't move at all. A stock can show positive breadth (most holders adding) and negative net flow (the holders who sold, sold a lot more) at the same time — that divergence is itself informative, which is why both are reported rather than collapsed into one number.</p>
+<p>The flow-vs-momentum test is deliberately a single-snapshot, contemporaneous cross-sectional regression — net share flow this run against each stock's own trailing 3-month return relative to SPY, read directly from <a href="/relative-strength-leaders.html">Relative Strength Leaders/Laggards</a>' own weekly output rather than a second price sweep (both Pearson and Spearman, matching the two-method check used throughout <a href="/factor-analysis.html">Factor Analysis</a>). It is <i>not</i> a forward-looking persistence test across snapshots: 13F positioning is too slow-moving week to week for that to be meaningful yet, the same reasoning behind the single-snapshot cross-sectional tests on <a href="/margin-leverage.html">Margin &amp; Leverage Cycle</a> and <a href="/equity-risk-premium.html">Equity Risk Premium by Sector</a>. If Relative Strength Leaders/Laggards hasn't produced a snapshot yet in this run's cycle, this section shows a warning and the rest of the page still renders off ownership/flow data alone.</p>
+<p><b>Real limitations, stated plainly.</b> 13F filings are quarterly and can lag by up to 45 days after quarter-end, so this is a slow-moving, backward-looking picture, not a live feed of what institutions are doing this week. Coverage is US institutional long-only managers with at least $100M in AUM who are required to file a 13F — it does not capture short positions, options or derivatives exposure, non-institutional/retail flow, or non-US institutional holders. A rising ownership % can also reflect share buybacks shrinking the denominator rather than net institutional buying, and a single quarter's 13F reshuffling among a handful of large index funds can swing net share flow for a stock with a small institutional base — leaderboards require at least 5 institutional holders on file specifically to reduce that noise.</p>
+<p>Sector medians are only published when at least 3 companies in that sector have a usable value. Refreshes weekly (Saturday mornings, after <a href="/share-count-trends.html">Share Count Trends</a>' own sweep) — real recurring schedule, since the whole point of this page is a flow <i>trend</i> that builds week over week, not a single dated snapshot. Sector and company name come from the same weekly metadata sweep that backs <a href="/sector-beeswarm.html">Sector Beeswarm</a>, reused here rather than paying for a second full-index pass just for labels.</p>
+<div class="source">Source: <a href="https://www.alphavantage.co/" target="_blank" rel="noopener">Alpha Vantage — INSTITUTIONAL_HOLDINGS</a>, cross-referenced with this site's own <a href="/relative-strength-leaders.html">Relative Strength Leaders/Laggards</a> output.</div>
 </div>
 
 </div>
 
 <script>
-const DATA_URL = "/api/earnings-growth-divergence";
+const DATA_URL = "/api/institutional-ownership";
+
+const SECTOR_COLORS = {
+ "Information Technology": "#d98a3d",
+ "Financials": "#6f8fac",
+ "Health Care": "#8e7cc3",
+ "Energy": "#c0564f",
+ "Industrials": "#5a9d6f",
+ "Consumer Discretionary": "#e0b04f",
+ "Consumer Staples": "#4fb0c0",
+ "Utilities": "#b56f2a",
+ "Materials": "#9a9a9a",
+ "Real Estate": "#c77dbd",
+ "Communication Services": "#4f7ae0",
+};
 
 let RAW = null;
-let SORT_KEY = "divergenceScore";
+let SORT_KEY = "netShareFlowPct";
 let SORT_DIR = -1;
+let SECTOR_METRIC = "ownership";
 
 function fmtPct(v, digits){
  if(v === null || v === undefined || isNaN(v)) return "—";
  digits = digits === undefined ? 1 : digits;
  return (v >= 0 ? "+" : "") + v.toFixed(digits) + "%";
 }
-
-function fmtNum(v){
+function fmtPlainPct(v, digits){
  if(v === null || v === undefined || isNaN(v)) return "—";
- return (v >= 0 ? "+" : "") + v;
+ digits = digits === undefined ? 1 : digits;
+ return v.toFixed(digits) + "%";
+}
+function fmtInt(v){
+ if(v === null || v === undefined || isNaN(v)) return "—";
+ return Math.round(v).toLocaleString();
 }
 
 function showError(message){
@@ -927,28 +1096,7 @@ function showWarning(message){
  banner.style.display = "block";
 }
 
-function themeInkColor(){
- const v = getComputedStyle(document.documentElement).getPropertyValue("--ink").trim();
- return v || "#eae6da";
-}
-function themeMutedColor(){
- const v = getComputedStyle(document.documentElement).getPropertyValue("--muted").trim();
- return v || "#8b9199";
-}
-function themeHairColor(){
- const v = getComputedStyle(document.documentElement).getPropertyValue("--hair").trim();
- return v || "#2b3138";
-}
-function themeGreedColor(){
- const v = getComputedStyle(document.documentElement).getPropertyValue("--greed").trim();
- return v || "#d98a3d";
-}
-function themeFearColor(){
- const v = getComputedStyle(document.documentElement).getPropertyValue("--fear").trim();
- return v || "#6f8fac";
-}
-
-// ---- NDR chart styling helpers (matches /concentration.html) -----------
+// ---- NDR chart styling helpers (matches /concentration, /margin-leverage) ----
 // Colours come from the --ndr-* custom properties (constant across themes)
 // so the charts keep their warm-paper look while still following the
 // site's "read chart colours from CSS, don't hardcode" rule.
@@ -959,10 +1107,13 @@ function ndr(name){
 Chart.defaults.font.family = "'Iowan Old Style','Palatino Linotype',Georgia,serif";
 Chart.defaults.color = ndr("axis-soft");
 
-function ndrXScale(){
+function ndrXScale(opts){
+ opts = opts || {};
  return {
+  type: opts.type || "category",
   ticks: { color: ndr("axis"), maxTicksLimit: 9, maxRotation: 0, autoSkip: true, font: { size: 11 } },
   grid: { color: "rgba(0,0,0,0)", borderColor: ndr("axis") },
+  title: opts.title ? { display: true, text: opts.title, color: ndr("axis-soft"), font: { size: 10 } } : { display: false },
  };
 }
 
@@ -975,36 +1126,6 @@ function ndrYScale(opts){
   ticks: { color: ndr("axis"), font: { size: 11 }, callback: opts.fmt || undefined },
   title: opts.title ? { display: true, text: opts.title, color: ndr("axis-soft"), font: { size: 10 } } : { display: false },
   min: opts.min, max: opts.max,
- };
-}
-
-function ndrLegend(){
- return {
-  display: true, position: "top", align: "start",
-  labels: { boxWidth: 22, boxHeight: 2, color: ndr("axis"), font: { size: 11 } },
- };
-}
-
-// This page's sector chart flips to indexAxis:"y" (sector names on y,
-// values on x) — reuses ndr() colors but keeps the plain category
-// styling the original chart had (no ticks/grid on the label axis).
-function ndrCategoryScale(){
- return {
-  ticks: { color: ndr("axis"), font: { size: 11 } },
-  grid: { display: false },
- };
-}
-
-// This page's scatter chart uses a genuinely numeric (linear) x-axis —
-// EPS growth, not a date-string category axis — so it needs its own
-// scale helper rather than ndrXScale (which is category-shaped, per
-// concentration.html's "no date adapter" convention).
-function ndrNumericScale(opts){
- opts = opts || {};
- return {
-  title: opts.title ? { display: true, text: opts.title, color: ndr("axis-soft"), font: { size: 10 } } : { display: false },
-  ticks: { color: ndr("axis"), font: { size: 10 } },
-  grid: { color: ndr("grid"), drawBorder: false },
  };
 }
 
@@ -1052,7 +1173,26 @@ function rankArray(arr){
 }
 function spearmanRegression(xs, ys){ return linearRegression(rankArray(xs), rankArray(ys)); }
 
-let sectorChart = null, growthScatter = null;
+function methodTableHtml(pearson, spear, unitNote){
+ function row(label, stats){
+  const sig = stats.p < 0.05;
+  return "<tr>" +
+   "<td>" + label + "</td>" +
+   "<td>" + stats.n + "</td>" +
+   "<td>" + stats.r.toFixed(2) + "</td>" +
+   "<td>" + (stats.r2 * 100).toFixed(1) + "%</td>" +
+   "<td>" + (stats.slope >= 0 ? "+" : "") + stats.slope.toFixed(3) + "</td>" +
+   "<td>" + stats.t.toFixed(2) + "</td>" +
+   '<td class="' + (sig ? "sig" : "") + '">' + (stats.p < 0.001 ? "<0.001" : stats.p.toFixed(3)) + "</td>" +
+  "</tr>";
+ }
+ return '<table class="method-table">' +
+  "<thead><tr><th>Method</th><th>n</th><th>r</th><th>r&sup2;</th><th>slope</th><th>t</th><th>p</th></tr></thead>" +
+  "<tbody>" + row("Pearson (OLS)", pearson) + row("Spearman (&rho;)", spear) + "</tbody>" +
+ "</table>" + (unitNote ? '<div class="method-note">' + unitNote + "</div>" : "");
+}
+
+let sectorChart = null, historyChart = null, histogramChart = null, flowMomentumScatter = null;
 
 async function init(){
  try{
@@ -1066,104 +1206,203 @@ async function init(){
   if(data.loadedCount < data.universeSize){
    showWarning("Only " + data.loadedCount + " of " + data.universeSize + " S&P 500 constituents loaded this run — some data may be temporarily unavailable.");
   }else if(!data.hasPriceData){
-   showWarning("Price-performance data isn't available yet (Relative Strength Leaders/Laggards hasn't run this cycle) — showing earnings growth only.");
+   showWarning("Price-performance data isn't available yet (Relative Strength Leaders/Laggards hasn't run this cycle) — the flow-vs-momentum test below can't run yet, but ownership/flow data below is unaffected.");
   }
 
   renderStats();
   renderSectorChart();
-  renderScatter();
-  renderLeaderTable(data.growthAheadOfPrice, "leaderBody");
-  renderLeaderTable(data.priceAheadOfGrowth, "laggardBody");
+  renderHistoryChart();
+  renderHistogram();
+  renderLeaderTable(data.leaders.accumulation, "accumulationBody", "flow");
+  renderLeaderTable(data.leaders.distribution, "distributionBody", "flow");
+  renderLeaderTable(data.leaders.highestOwnership, "highOwnershipBody", "ownership");
+  renderLeaderTable(data.leaders.lowestOwnership, "lowOwnershipBody", "ownership");
+  renderFlowMomentumScatter();
   renderTable();
 
  }catch(e){
-  showError("Couldn't load earnings growth divergence data (" + e.message + "). The /api/earnings-growth-divergence function may not have run yet.");
+  showError("Couldn't load institutional ownership data (" + e.message + "). The /api/institutional-ownership function may not have run yet.");
   document.getElementById("tableBody").innerHTML =
-   '<tr><td colspan="5" style="text-align:center; color:var(--muted); padding:30px;">No data available.</td></tr>';
+   '<tr><td colspan="8" style="text-align:center; color:var(--muted); padding:30px;">No data available.</td></tr>';
  }
 }
 
 function renderStats(){
+ document.getElementById("statCompanies").textContent = RAW.companyCount;
+ document.getElementById("statCompaniesNote").textContent = RAW.loadedCount + " of " + RAW.universeSize + " loaded";
+
  const m = RAW.market;
- const epsEl = document.getElementById("statMedianEps");
- epsEl.textContent = fmtPct(m.medianEpsGrowth);
- epsEl.classList.toggle("cell-neg", m.medianEpsGrowth !== null && m.medianEpsGrowth < 0);
- document.getElementById("statMedianEpsNote").textContent = "n=" + m.withEpsGrowth + " with a valid YoY figure";
+ document.getElementById("statOwnership").textContent = m.medianOwnershipPct === null ? "—" : fmtPlainPct(m.medianOwnershipPct);
 
- const priceEl = document.getElementById("statMedianPrice");
- priceEl.textContent = fmtPct(m.medianRelPrice3M);
- priceEl.classList.toggle("cell-neg", m.medianRelPrice3M !== null && m.medianRelPrice3M < 0);
- document.getElementById("statMedianPriceNote").textContent = "n=" + m.withPriceData + " with price data";
+ const flowEl = document.getElementById("statFlow");
+ flowEl.textContent = m.medianNetShareFlowPct === null ? "—" : fmtPct(m.medianNetShareFlowPct);
+ flowEl.classList.toggle("cell-neg", m.medianNetShareFlowPct !== null && m.medianNetShareFlowPct < 0);
 
- const growthAhead = RAW.growthAheadOfPrice[0];
- if(growthAhead){
-  document.getElementById("statGrowthAhead").textContent = growthAhead.symbol;
-  document.getElementById("statGrowthAheadNote").textContent = fmtPct(growthAhead.epsGrowthYoY) + " EPS, " + fmtPct(growthAhead.relPrice3M) + " price";
- }
- const priceAhead = RAW.priceAheadOfGrowth[0];
- if(priceAhead){
-  document.getElementById("statPriceAhead").textContent = priceAhead.symbol;
-  document.getElementById("statPriceAheadNote").textContent = fmtPct(priceAhead.relPrice3M) + " price, " + fmtPct(priceAhead.epsGrowthYoY) + " EPS";
- }
+ document.getElementById("statBreadth").textContent = m.medianHolderBreadthPct === null ? "—" : fmtPlainPct(m.medianHolderBreadthPct);
 }
 
 function renderSectorChart(){
- const sorted = [...RAW.sectors].sort((a, b) => (b.medianEpsGrowth ?? -Infinity) - (a.medianEpsGrowth ?? -Infinity));
+ const field = SECTOR_METRIC === "flow" ? "medianNetShareFlowPct" : "medianOwnershipPct";
+ const sorted = [...RAW.sectors].filter(s => s[field] !== null).sort((a, b) => b[field] - a[field]);
+ const colors = sorted.map(s => SECTOR_METRIC === "flow" ? (s[field] >= 0 ? ndr("green") : ndr("red")) : ndr("gold"));
+
  const ctx = document.getElementById("sectorChart").getContext("2d");
  if(sectorChart) sectorChart.destroy();
  sectorChart = new Chart(ctx, {
   type: "bar",
   data: {
    labels: sorted.map(s => s.sector),
-   datasets: [
-    { label: "Median EPS growth YoY", data: sorted.map(s => s.medianEpsGrowth), backgroundColor: ndr("green"), borderRadius: 4 },
-    { label: "Median 3M relative price", data: sorted.map(s => s.medianRelPrice3M), backgroundColor: ndr("navy"), borderRadius: 4 },
-   ],
+   datasets: [{ label: SECTOR_METRIC === "flow" ? "Median net share flow" : "Median ownership", data: sorted.map(s => s[field]), backgroundColor: colors, borderRadius: 4 }],
   },
   options: {
    indexAxis: "y",
    responsive: true,
    maintainAspectRatio: false,
    plugins: {
-    legend: ndrLegend(),
-    tooltip: { callbacks: { label: ctx => ctx.dataset.label + ": " + fmtPct(ctx.parsed.x) } },
+    legend: { display: false },
+    tooltip: {
+     callbacks: {
+      label: ctx => {
+       const s = sorted[ctx.dataIndex];
+       return [(SECTOR_METRIC === "flow" ? "Median net flow: " + fmtPct(s.medianNetShareFlowPct) : "Median ownership: " + fmtPlainPct(s.medianOwnershipPct)), "n=" + s.companyCount];
+      },
+     },
+    },
    },
-   // indexAxis:"y" flips the usual roles: x is the value scale here, y
-   // is the sector-name category axis.
    scales: {
-    x: ndrYScale({ fmt: (v) => (Math.round(v * 100) / 100) + "%" }),
-    y: ndrCategoryScale(),
+    x: ndrYScale({ fmt: v => v + "%" }),
+    y: ndrXScale(),
    },
   },
  });
 }
 
-function renderScatter(){
+document.querySelectorAll("#sectorMetricToggle button").forEach(btn => {
+ btn.addEventListener("click", () => {
+  SECTOR_METRIC = btn.dataset.metric;
+  document.querySelectorAll("#sectorMetricToggle button").forEach(b => b.classList.toggle("active", b === btn));
+  renderSectorChart();
+ });
+});
+
+function renderHistoryChart(){
+ const rows = RAW.history || [];
+ const ctx = document.getElementById("historyChart").getContext("2d");
+ if(historyChart) historyChart.destroy();
+ if(!rows.length){
+  ctx.canvas.parentElement.insertAdjacentHTML("beforeend",
+   '<div style="text-align:center; color:var(--muted); padding-top:140px;">Not enough history yet — check back after next week\'s run.</div>');
+  return;
+ }
+ historyChart = new Chart(ctx, {
+  type: "line",
+  data: {
+   labels: rows.map(r => r.week),
+   datasets: [{
+    label: "Median net share flow",
+    data: rows.map(r => r.medianNetShareFlowPct),
+    borderColor: ndr("navy"),
+    backgroundColor: "transparent",
+    borderWidth: 2,
+    pointRadius: rows.length === 1 ? 4 : 1,
+    tension: 0.15,
+   }],
+  },
+  options: {
+   responsive: true,
+   maintainAspectRatio: false,
+   plugins: { legend: { display: false } },
+   scales: {
+    x: ndrXScale(),
+    y: ndrYScale({ fmt: v => v + "%" }),
+   },
+  },
+ });
+}
+
+function renderHistogram(){
+ const buckets = [
+  { max: -15, label: "<-15%" }, { max: -5, label: "-15 to -5%" }, { max: 0, label: "-5 to 0%" },
+  { max: 5, label: "0 to 5%" }, { max: 15, label: "5 to 15%" }, { max: 30, label: "15 to 30%" },
+  { max: Infinity, label: ">30%" },
+ ];
+ const counts = buckets.map(() => 0);
+ RAW.companies.forEach(c => {
+  if(c.netShareFlowPct === null) return;
+  const idx = buckets.findIndex(b => c.netShareFlowPct < b.max);
+  counts[idx === -1 ? buckets.length - 1 : idx]++;
+ });
+
+ const ctx = document.getElementById("histogramChart").getContext("2d");
+ if(histogramChart) histogramChart.destroy();
+ histogramChart = new Chart(ctx, {
+  type: "bar",
+  data: { labels: buckets.map(b => b.label), datasets: [{ label: "Companies", data: counts, backgroundColor: ndr("gold"), borderRadius: 4 }] },
+  options: {
+   responsive: true,
+   maintainAspectRatio: false,
+   plugins: { legend: { display: false } },
+   scales: {
+    x: ndrXScale(),
+    y: ndrYScale({ fmt: v => Number(v).toFixed(0) }),
+   },
+  },
+ });
+}
+
+function renderLeaderTable(rows, tbodyId, kind){
+ const tbody = document.getElementById(tbodyId);
+ if(!rows || !rows.length){
+  tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; color:var(--muted); padding:24px;">No qualifying companies.</td></tr>';
+  return;
+ }
+ tbody.innerHTML = rows.map(r => {
+  if(kind === "flow"){
+   return `<tr>
+    <td><span class="sector-name">${r.symbol}</span></td>
+    <td><span class="sector-ticker">${r.sector || "—"}</span></td>
+    <td>${fmtPct(r.netShareFlowPct)}</td>
+    <td>${fmtPlainPct(r.ownershipPct)}</td>
+   </tr>`;
+  }
+  return `<tr>
+   <td><span class="sector-name">${r.symbol}</span></td>
+   <td><span class="sector-ticker">${r.sector || "—"}</span></td>
+   <td>${fmtPlainPct(r.ownershipPct)}</td>
+   <td>${fmtInt(r.totalHolders)}</td>
+  </tr>`;
+ }).join("");
+}
+
+function renderFlowMomentumScatter(){
+ const box = document.getElementById("flowMomentumScatter").parentElement;
+ const methodEl = document.getElementById("flowMomentumMethodTable");
  const pairs = RAW.scatterPairs || [];
- if(pairs.length < 20){
-  if(growthScatter){ growthScatter.destroy(); growthScatter = null; }
-  document.getElementById("growthMethodTable").innerHTML =
-   '<div class="method-note">Not enough stocks with both a valid EPS growth figure and price data this run to test.</div>';
+
+ if(!RAW.hasPriceData){
+  methodEl.innerHTML = '<div class="method-note">Relative Strength Leaders/Laggards hasn\'t produced a snapshot yet this cycle — this test needs its trailing 3-month relative-return figures and can\'t run until it has.</div>';
+  if(flowMomentumScatter) flowMomentumScatter.destroy();
+  return;
+ }
+ if(pairs.length < 10){
+  methodEl.innerHTML = '<div class="method-note">Not enough companies with both a net share flow figure and a relative-return figure this run (n=' + pairs.length + ', need at least 10) to run this regression.</div>';
+  if(flowMomentumScatter) flowMomentumScatter.destroy();
   return;
  }
 
  const pearson = linearRegression(pairs.map(p => p.x), pairs.map(p => p.y));
  const spear = spearmanRegression(pairs.map(p => p.x), pairs.map(p => p.y));
-
  const xs = pairs.map(p => p.x);
  const xMin = Math.min(...xs), xMax = Math.max(...xs);
- const linePoints = [
-  { x: xMin, y: pearson.intercept + pearson.slope * xMin },
-  { x: xMax, y: pearson.intercept + pearson.slope * xMax },
- ];
+ const linePoints = [{ x: xMin, y: pearson.intercept + pearson.slope * xMin }, { x: xMax, y: pearson.intercept + pearson.slope * xMax }];
 
- const ctx = document.getElementById("growthScatter").getContext("2d");
- if(growthScatter) growthScatter.destroy();
- growthScatter = new Chart(ctx, {
+ const ctx = document.getElementById("flowMomentumScatter").getContext("2d");
+ if(flowMomentumScatter) flowMomentumScatter.destroy();
+ flowMomentumScatter = new Chart(ctx, {
   type: "scatter",
   data: {
    datasets: [
-    { label: "Stocks", data: pairs, backgroundColor: ndr("navy"), pointRadius: 2.5, pointHoverRadius: 4, showLine: false },
+    { label: "Companies", data: pairs, backgroundColor: ndr("slate"), pointRadius: 3, showLine: false },
     { label: "Regression fit", type: "line", data: linePoints, borderColor: ndr("red"), borderWidth: 1.5, borderDash: [4, 3], pointRadius: 0, fill: false },
    ],
   },
@@ -1174,49 +1413,25 @@ function renderScatter(){
     legend: { display: false },
     tooltip: {
      callbacks: {
-      label: ctx => ctx.dataset.label === "Stocks" ? (ctx.raw.symbol + ": EPS " + fmtPct(ctx.raw.x) + ", price " + fmtPct(ctx.raw.y)) : null,
+      label: ctx => ctx.dataset.label === "Companies" ? (ctx.raw.symbol + ": " + fmtPct(ctx.raw.x) + " rel. return → " + fmtPct(ctx.raw.y) + " net flow") : null,
      },
     },
    },
    scales: {
-    x: ndrNumericScale({ title: "YoY EPS growth (%)" }),
-    y: ndrNumericScale({ title: "3-month relative price return (%)" }),
+    x: ndrXScale({ type: "linear", title: "Trailing 3-month return vs. SPY (%)" }),
+    y: ndrYScale({ title: "Net share flow (%)" }),
    },
   },
  });
 
- function row(label, stats){
-  const sig = stats.p < 0.05;
-  return "<tr>" +
-   "<td>" + label + "</td>" +
-   "<td>" + stats.n + "</td>" +
-   "<td>" + stats.r.toFixed(2) + "</td>" +
-   "<td>" + (stats.r2 * 100).toFixed(1) + "%</td>" +
-   "<td>" + (stats.slope >= 0 ? "+" : "") + stats.slope.toFixed(3) + "</td>" +
-   "<td>" + stats.t.toFixed(2) + "</td>" +
-   '<td class="' + (sig ? "sig" : "") + '">' + (stats.p < 0.001 ? "<0.001" : stats.p.toFixed(3)) + "</td>" +
-  "</tr>";
- }
- document.getElementById("growthMethodTable").innerHTML =
-  '<table class="method-table">' +
-   "<thead><tr><th>Method</th><th>n</th><th>r</th><th>r&sup2;</th><th>slope</th><th>t</th><th>p</th></tr></thead>" +
-   "<tbody>" + row("Pearson (OLS)", pearson) + row("Spearman (&rho;)", spear) + "</tbody>" +
-  "</table>" +
-  '<div class="method-note">A positive, significant relationship means faster earnings growth has coincided with stronger relative price performance over this same window; a weak or flat one means the market isn\'t (yet, or at all) rewarding trailing EPS growth the way a naive model would expect.</div>';
+ methodEl.innerHTML = methodTableHtml(pearson, spear,
+  "Positive would mean institutions favor recent winners (momentum-chasing); negative would mean recent laggards (contrarian). n=" + pearson.n + " companies, single contemporaneous snapshot — not a forward-looking test, see methodology below.");
 }
 
-function renderLeaderTable(rows, tbodyId){
- const tbody = document.getElementById(tbodyId);
- if(!rows || !rows.length){
-  tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; color:var(--muted); padding:24px;">No qualifying stocks.</td></tr>';
-  return;
- }
- tbody.innerHTML = rows.map(r => `<tr>
-  <td><span class="sector-name">${r.symbol}</span></td>
-  <td><span class="sector-ticker">${r.sector || "—"}</span></td>
-  <td>${fmtPct(r.epsGrowthYoY)}</td>
-  <td>${fmtPct(r.relPrice3M)}</td>
- </tr>`).join("");
+function trendArrow(dir){
+ if(dir === "up") return '<span class="cell-pos">&uarr; up</span>';
+ if(dir === "down") return '<span class="cell-neg">&darr; down</span>';
+ return '<span class="cell-na">—</span>';
 }
 
 function sortBy(key){
@@ -1224,7 +1439,7 @@ function sortBy(key){
   SORT_DIR = -SORT_DIR;
  }else{
   SORT_KEY = key;
-  SORT_DIR = -1;
+  SORT_DIR = 1;
  }
  renderTable();
 }
@@ -1240,12 +1455,15 @@ function renderTable(){
 
  const tbody = document.getElementById("tableBody");
  tbody.innerHTML = rows.map(r => `<tr>
-   <td><span class="sector-name">${r.symbol}</span></td>
-   <td><span class="sector-ticker">${r.sector || "—"}</span></td>
-   <td>${fmtPct(r.epsGrowthYoY)}</td>
-   <td>${fmtPct(r.relPrice3M)}</td>
-   <td>${fmtNum(r.divergenceScore)}</td>
-  </tr>`).join("");
+  <td><span class="sector-name">${r.symbol}</span></td>
+  <td><span class="sector-ticker">${r.sector || "—"}</span></td>
+  <td>${fmtPlainPct(r.ownershipPct)}</td>
+  <td>${fmtInt(r.holdersIncreased)}</td>
+  <td>${fmtInt(r.holdersDecreased)}</td>
+  <td>${fmtInt(r.holdersUnchanged)}</td>
+  <td>${fmtPct(r.netShareFlowPct)}</td>
+  <td>${fmtPlainPct(r.holderBreadthPct)}</td>
+ </tr>`).join("");
 
  document.querySelectorAll("#stockTable thead th").forEach(th => {
   const key = th.dataset.key;
