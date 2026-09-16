@@ -329,20 +329,28 @@
   schedule = "50 10 * * 6"
 
 [functions."scheduled-dispersion-background"]
-  # Weekly, Saturday 11:10 UTC — after scheduled-share-count-background
-  # (10:50 UTC, ~9-10 minutes for its own ~503-call sweep at the same
-  # 1050ms pacing), so this job's own ~503 sequential Alpha Vantage
-  # EARNINGS_ESTIMATES calls don't compete with it for the rate limit.
-  # Weekly, not daily: a current-fiscal-year analyst estimate's high/low
-  # spread barely moves day to day.
-  schedule = "10 11 * * 6"
+  # Weekly, Saturday 11:40 UTC — originally 11:10, but that collided
+  # exactly with scheduled-surprise-background (also Saturday 11:10 UTC,
+  # a separate PR's ~503-call EARNINGS sweep, built concurrently and
+  # unaware of this one). Moved to 11:40 instead: after
+  # scheduled-shareholder-yield-background's own ~503-call COMPANY_OVERVIEW
+  # sweep (starts 11:25, finishes ~11:34) and with a comfortable buffer
+  # before scheduled-dividend-growth-background at 12:00, so none of these
+  # three full-index sweeps compete for the rate limit. Weekly, not daily:
+  # a current-fiscal-year analyst estimate's high/low spread barely moves
+  # day to day.
+  schedule = "40 11 * * 6"
 
 [functions."scheduled-shareholder-yield-background"]
   # Weekly, Saturday 11:25 UTC — after scheduled-share-count-background
   # (10:50 UTC, finishes ~11:00; this job reads its trends.json for buyback
-  # yield) and after scheduled-dispersion-background's own ~503-call sweep
+  # yield) and after scheduled-surprise-background's own ~503-call sweep
   # (starts 11:10, finishes ~11:19), so this job's own ~503 sequential
   # COMPANY_OVERVIEW calls don't compete with either for the rate limit.
+  # (scheduled-dispersion-background used to run in this same 11:10 window
+  # too — see that function's own schedule comment — but was moved to
+  # 11:40, after this job's sweep finishes, to resolve a same-minute
+  # collision with scheduled-surprise-background.)
   schedule = "25 11 * * 6"
 
 [functions."scheduled-insider-transactions-background"]
