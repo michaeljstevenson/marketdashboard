@@ -177,6 +177,16 @@
   to = "/.netlify/functions/earnings-growth-divergence"
   status = 200
 
+[[redirects]]
+  from = "/api/smallcap-liquidity"
+  to = "/.netlify/functions/smallcap-liquidity"
+  status = 200
+
+[[redirects]]
+  from = "/api/ipo-pipeline"
+  to = "/.netlify/functions/ipo-pipeline"
+  status = 200
+
 # The Statistical Engine page was briefly at these paths.
 [[redirects]]
   from = "/streak-scanner"
@@ -489,3 +499,39 @@
   # Saturday block as of this fix. ~503 sequential Alpha Vantage EARNINGS
   # calls at 1050ms spacing plus a retry pass.
   schedule = "0 14 * * 6"
+
+[functions."scheduled-smallcap-liquidity-background"]
+  # Weekly, Saturday 14:20 UTC — originally 13:35, chosen to clear every
+  # Saturday job visible to this branch at the time (which wrapped up by
+  # ~11:00 UTC) plus a guessed buffer past other concurrently-open PRs'
+  # jobs (assumed to finish ~13:00-13:15 UTC). That guess landed exactly
+  # on scheduled-equity-risk-premium-background's own 13:35 slot once
+  # every PR's schedule fixes were actually applied — see that function's
+  # own schedule comment for its unrelated collision/move. Moved to 14:20
+  # instead: after scheduled-earnings-growth-divergence-background (14:00
+  # UTC, finishes ~14:09), the last job in the Saturday block as of this
+  # fix. ~200 sequential TIME_SERIES_DAILY_ADJUSTED (outputsize=full)
+  # calls at ~1050ms spacing plus a retry pass, same pattern as
+  # scheduled-share-count-background.js / scheduled-countries-
+  # background.js. Weekly, not daily: it reads meta.json (itself only
+  # refreshed weekly) for cohort membership, and each run recomputes the
+  # full ~2-year window from scratch rather than incrementally, so a daily
+  # rerun would just redo the same heavy sweep for a cohort that barely
+  # changes week to week.
+  schedule = "20 14 * * 6"
+
+[functions."scheduled-ipo-pipeline-background"]
+  # Weekly, Saturday 13:20 UTC. Sits in the gap between scheduled-share-
+  # count-background (10:50 UTC, done well before 13:00) and scheduled-
+  # smallcap-liquidity-background (13:35 UTC, that job's own comment notes
+  # every job in this file is done by ~11:00-13:15 UTC) — 13:20 leaves 15
+  # minutes of clearance on both sides. Trivial call volume: 1 IPO_CALENDAR
+  # pull, plus up to ~15 TIME_SERIES_DAILY_ADJUSTED (outputsize=compact)
+  # calls for roster entries whose IPO date has passed or is still being
+  # tracked, plus one shared SPY compact pull reused across all of them —
+  # nothing close to the pacing concerns of this file's full-S&P-500-sweep
+  # jobs. Weekly, not daily: IPO_CALENDAR's forward window barely moves
+  # day to day, and the aftermarket-tracking roster only needs to check
+  # each newly-listed name's day-1/5/10/20 returns once those trading days
+  # have actually elapsed, not continuously.
+  schedule = "20 13 * * 6"
