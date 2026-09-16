@@ -172,6 +172,20 @@ document.addEventListener("DOMContentLoaded", function(){
   --serif:'Iowan Old Style','Palatino Linotype',Georgia,serif;
   --mono:'SF Mono','JetBrains Mono',ui-monospace,Menlo,monospace;
   --sans:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+
+  /* NDR-style chart palette. Deliberately the SAME in light and dark —
+     these charts keep a constant warm-paper look as a homage to the Ned
+     Davis Research print charts that inspired the page. JS reads them via
+     getComputedStyle (per the site convention) rather than hardcoding. */
+  --ndr-plot:#f5f1e6;
+  --ndr-axis:#3c3a33;
+  --ndr-axis-soft:#6f6a5c;
+  --ndr-grid:#ddd6c2;
+  --ndr-red:#a83c36;
+  --ndr-green:#4f6f3f;
+  --ndr-gold:#c1902f;
+  --ndr-navy:#2f4b6e;
+  --ndr-slate:#7d8a99;
 }
 
 :root[data-theme="light"]{
@@ -396,6 +410,14 @@ h1{
  color:var(--muted);
  font-size:12px;
  margin-top:4px;
+}
+
+/* The warm-paper plot panel behind each canvas — the NDR homage. */
+.ndr-panel{
+ background:var(--ndr-plot);
+ border:1px solid var(--ndr-grid);
+ border-radius:8px;
+ padding:14px 14px 10px;
 }
 
 .chart-canvas-wrap{
@@ -779,8 +801,10 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <div class="chart-subhead">Average dividend yield and buyback yield, stacked, sectors ranked by combined total</div>
 </div>
 </div>
+<div class="ndr-panel">
 <div class="chart-canvas-wrap">
 <canvas id="sectorChart"></canvas>
+</div>
 </div>
 </div>
 
@@ -791,8 +815,10 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <div class="chart-subhead">Each point is one S&amp;P 500 constituent. Upper-right: pays a large dividend and buys back aggressively. Lower-left: neither. A negative buyback yield means net dilution over the trailing year.</div>
 </div>
 </div>
+<div class="ndr-panel">
 <div class="scatter-canvas-wrap">
 <canvas id="corrScatter"></canvas>
+</div>
 </div>
 <div id="corrMethodTable"></div>
 </div>
@@ -884,6 +910,43 @@ function themeGreedColor(){
 function themeFearColor(){
  const v = getComputedStyle(document.documentElement).getPropertyValue("--fear").trim();
  return v || "#6f8fac";
+}
+
+// ---- NDR chart styling helpers -----------------------------------------
+// Colours come from the --ndr-* custom properties (constant across themes)
+// so the charts keep their warm-paper look while still following the
+// site's "read chart colours from CSS, don't hardcode" rule.
+function ndr(name){
+ return getComputedStyle(document.documentElement).getPropertyValue("--ndr-" + name).trim();
+}
+
+Chart.defaults.font.family = "'Iowan Old Style','Palatino Linotype',Georgia,serif";
+Chart.defaults.color = ndr("axis-soft");
+
+function ndrXScale(){
+ return {
+  ticks: { color: ndr("axis"), maxTicksLimit: 9, maxRotation: 0, autoSkip: true, font: { size: 11 } },
+  grid: { color: "rgba(0,0,0,0)", borderColor: ndr("axis") },
+ };
+}
+
+function ndrYScale(opts){
+ opts = opts || {};
+ return {
+  type: opts.log ? "logarithmic" : "linear",
+  position: opts.position || "left",
+  grid: { color: ndr("grid"), drawBorder: false },
+  ticks: { color: ndr("axis"), font: { size: 11 }, callback: opts.fmt || undefined },
+  title: opts.title ? { display: true, text: opts.title, color: ndr("axis-soft"), font: { size: 10 } } : { display: false },
+  min: opts.min, max: opts.max,
+ };
+}
+
+function ndrLegend(){
+ return {
+  display: true, position: "top", align: "start",
+  labels: { boxWidth: 22, boxHeight: 2, color: ndr("axis"), font: { size: 11 } },
+ };
 }
 
 // ---- Stats helpers — same methodology as /factor-analysis, duplicated
@@ -997,8 +1060,8 @@ function renderSectorChart(data){
   data: {
    labels: sectors.map(s => s.sector),
    datasets: [
-    { label: "Dividend yield", data: sectors.map(s => s.avgDividendYield), backgroundColor: themeGreedColor(), stack: "yield" },
-    { label: "Buyback yield", data: sectors.map(s => s.avgBuybackYield), backgroundColor: themeFearColor(), stack: "yield" },
+    { label: "Dividend yield", data: sectors.map(s => s.avgDividendYield), backgroundColor: ndr("green"), stack: "yield" },
+    { label: "Buyback yield", data: sectors.map(s => s.avgBuybackYield), backgroundColor: ndr("navy"), stack: "yield" },
    ],
   },
   options: {
@@ -1006,12 +1069,17 @@ function renderSectorChart(data){
    maintainAspectRatio: false,
    indexAxis: "y",
    plugins: {
-    legend: { display: true, position: "top", labels: { color: themeMutedColor(), boxWidth: 12, font: { size: 11 } } },
+    legend: ndrLegend(),
     tooltip: { callbacks: { label: ctx => ctx.dataset.label + ": " + fmtPct(ctx.parsed.x) } },
    },
+   // Horizontal bar: x is the value (percentage) axis, y is the category
+   // (sector name) axis — the opposite pairing from ndrXScale/ndrYScale's
+   // usual x=category/y=value roles, so the helpers are swapped here.
    scales: {
-    x: { stacked: true, ticks: { color: themeMutedColor(), callback: v => v + "%" }, grid: { color: themeHairColor() } },
-    y: { stacked: true, ticks: { color: themeMutedColor(), font: { size: 11 } }, grid: { display: false } },
+    x: { ...ndrYScale({ fmt: v => v + "%" }), stacked: true },
+    // All sector names should show (unlike a date axis), so this drops
+    // ndrXScale's maxTicksLimit/autoSkip rather than truncating labels.
+    y: { ticks: { color: ndr("axis"), font: { size: 11 } }, grid: { color: "rgba(0,0,0,0)", borderColor: ndr("axis") }, stacked: true },
    },
   },
  });
@@ -1041,9 +1109,9 @@ function renderCorrScatter(data){
   type: "scatter",
   data: {
    datasets: [
-    { label: "Stocks", data: pairs.map(p => ({ x: p.dividendYield, y: p.buybackYield, ticker: p.ticker, sector: p.sector })), backgroundColor: themeGreedColor(), pointRadius: 3, showLine: false },
-    { label: "Regression fit", type: "line", data: linePoints, borderColor: themeInkColor(), borderWidth: 1.5, borderDash: [4, 3], pointRadius: 0, fill: false },
-    { label: "Zero", data: [{ x: xMin, y: 0 }, { x: xMax, y: 0 }], type: "line", borderColor: themeMutedColor(), borderWidth: 1, borderDash: [2, 3], pointRadius: 0, fill: false },
+    { label: "Stocks", data: pairs.map(p => ({ x: p.dividendYield, y: p.buybackYield, ticker: p.ticker, sector: p.sector })), backgroundColor: ndr("navy"), pointRadius: 3, showLine: false },
+    { label: "Regression fit", type: "line", data: linePoints, borderColor: ndr("red"), borderWidth: 1.5, borderDash: [4, 3], pointRadius: 0, fill: false },
+    { label: "Zero", data: [{ x: xMin, y: 0 }, { x: xMax, y: 0 }], type: "line", borderColor: ndr("slate"), borderWidth: 1, borderDash: [2, 3], pointRadius: 0, fill: false },
    ],
   },
   options: {
@@ -1057,9 +1125,13 @@ function renderCorrScatter(data){
      },
     },
    },
+   // Numeric x-axis (dividend yield %), not a date/category axis, so
+   // ndrXScale's category-oriented tick options (maxTicksLimit,
+   // maxRotation) don't apply here — built inline instead, matching
+   // ndrXScale's colours.
    scales: {
-    x: { title: { display: true, text: "Dividend yield (%)", color: themeMutedColor(), font: { size: 10 } }, ticks: { color: themeMutedColor(), font: { size: 10 } }, grid: { color: themeHairColor() } },
-    y: { title: { display: true, text: "Buyback yield (%)", color: themeMutedColor(), font: { size: 10 } }, ticks: { color: themeMutedColor(), font: { size: 10 } }, grid: { color: themeHairColor() } },
+    x: { title: { display: true, text: "Dividend yield (%)", color: ndr("axis-soft"), font: { size: 10 } }, ticks: { color: ndr("axis"), font: { size: 10 } }, grid: { color: ndr("grid") } },
+    y: ndrYScale({ title: "Buyback yield (%)" }),
    },
   },
  });
