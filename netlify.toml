@@ -197,6 +197,16 @@
   to = "/.netlify/functions/margin-leverage"
   status = 200
 
+[[redirects]]
+  from = "/api/institutional-ownership"
+  to = "/.netlify/functions/institutional-ownership"
+  status = 200
+
+[[redirects]]
+  from = "/api/post-earnings-drift"
+  to = "/.netlify/functions/post-earnings-drift"
+  status = 200
+
 # The Statistical Engine page was briefly at these paths.
 [[redirects]]
   from = "/streak-scanner"
@@ -377,6 +387,45 @@
   # calls don't compete with it for the rate limit. Weekly, not daily:
   # share counts only change when a company files a new 10-Q/10-K.
   schedule = "50 10 * * 6"
+
+[functions."scheduled-institutional-ownership-background"]
+  # Weekly, Saturday 11:10 UTC — real recurring schedule (not a one-time
+  # snapshot like the 14 functions commit 704645f froze on 2026-09-16; this
+  # page's whole point is a multi-week flow trend, so it needs to keep
+  # firing). Runs after scheduled-share-count-background (10:50 UTC,
+  # finishes ~11:00) so this job's own ~503 sequential
+  # INSTITUTIONAL_HOLDINGS calls don't compete with it for the rate limit.
+  # 11:10 itself is free as of this writing: it was scheduled-surprise-
+  # background's old slot before 704645f removed that job's recurrence —
+  # double-checked against every other [functions.*] block in this file
+  # before picking it. 13F filings are quarterly with up to a 45-day
+  # reporting lag, so a weekly re-sweep is generous, not wasteful — it just
+  # means most weeks will show little/no change in any one company's
+  # aggregates, which is expected and noted in the page's methodology
+  # section, not a bug.
+  schedule = "10 11 * * 6"
+
+[functions."scheduled-post-earnings-drift-background"]
+  # Weekly, Saturday 11:30 UTC — real recurring schedule, not a one-time
+  # snapshot (same reasoning as scheduled-institutional-ownership-background
+  # above, which reversed 704645f's one-time-snapshot decision for pages
+  # built after 2026-09-16: this page needs a fresh compact price sweep
+  # every run for its rolling ~100-trading-day event window to stay
+  # meaningful, even though the earnings-surprise blob it reads its input
+  # from is itself frozen — see that job's own file for the staleness
+  # caveat this doesn't try to paper over). 11:30 is free as of this
+  # writing — double-checked against every other [functions.*] block in
+  # this file: scheduled-institutional-ownership-background (11:10) is the
+  # last function with an actual active schedule line before it, and
+  # every job listed after it below is one of 704645f's frozen one-time
+  # snapshots with no schedule line at all, so there is no live Saturday
+  # job for this to collide with past 11:10. 11:30 gives that job's own
+  # ~503-call INSTITUTIONAL_HOLDINGS sweep (starts 11:10, finishes ~11:19
+  # in the typical case) a comfortable buffer even if its own retry pass
+  # runs long. ~504 sequential Alpha Vantage TIME_SERIES_DAILY_ADJUSTED
+  # (outputsize=compact) calls at 1050ms spacing plus a retry pass — same
+  # pacing/scale as scheduled-relative-strength-background.js.
+  schedule = "30 11 * * 6"
 
 [functions."scheduled-dispersion-background"]
   # One-time snapshot (2026-09-16) — no schedule, same reasoning as
