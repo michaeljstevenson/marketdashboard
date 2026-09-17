@@ -152,7 +152,7 @@ document.addEventListener("DOMContentLoaded", function(){
 </script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Equity Risk Premium by Sector — Michael J. Stevenson</title>
+<title>Free Cash Flow Yield — Michael J. Stevenson</title>
 
 <style>
 
@@ -175,7 +175,7 @@ document.addEventListener("DOMContentLoaded", function(){
 
   /* NDR-style chart palette. Deliberately the SAME in light and dark —
      these charts keep a constant warm-paper look as a homage to the Ned
-     Davis Research print charts that inspired concentration.html. JS reads
+     Davis Research print charts that inspired /concentration. JS reads
      them via getComputedStyle (per the site convention) rather than
      hardcoding. */
   --ndr-plot:#f5f1e6;
@@ -418,7 +418,7 @@ h1{
 }
 
 /* The warm-paper plot panel behind each canvas — the NDR homage
-   (matches /concentration.html). */
+   (matches /concentration, /margin-leverage). */
 .ndr-panel{
  background:var(--ndr-plot);
  border:1px solid var(--ndr-grid);
@@ -482,7 +482,7 @@ thead th{
  border-bottom:1px solid var(--hair);
 }
 
-thead th:first-child, thead th:nth-child(2){
+thead th:first-child, thead th:nth-child(2), thead th:nth-child(3){
  text-align:left;
 }
 
@@ -517,6 +517,15 @@ tbody td:first-child{
 
 tbody td:nth-child(2){
  text-align:left;
+ font-family:var(--sans);
+ color:var(--muted);
+ max-width:220px;
+ overflow:hidden;
+ text-overflow:ellipsis;
+}
+
+tbody td:nth-child(3){
+ text-align:left;
  color:var(--muted);
 }
 
@@ -527,20 +536,30 @@ tbody td:nth-child(2){
 .cell-neg{ color:var(--ink); }
 .cell-na{ color:var(--muted); }
 
-/* SCATTER / METHOD TABLE (mirrors /factor-analysis) */
+/* SCATTER / METHOD TABLE (mirrors /factor-analysis, /pe-divergence,
+   /margin-leverage) */
 
 .scatter-canvas-wrap{
- height:300px;
+ height:340px;
  margin-bottom:12px;
  position:relative;
 }
 
 .method-table{
  width:100%;
+ min-width:0; /* overrides the site-wide table{min-width:600px} rule above — a 7-column
+                 method table never needs 600px, and without this it can force the whole
+                 page wider than its container on mobile (a real bug caught on /margin-
+                 leverage.html and /small-cap-liquidity.html — see those pages' git
+                 history) */
  border-collapse:collapse;
  font-family:var(--mono);
  font-size:11px;
  margin-top:8px;
+}
+
+#fcfEarningsMethodTable{
+ overflow-x:auto;
 }
 
 .method-table th{
@@ -723,13 +742,13 @@ tbody td:nth-child(2){
 <a href="/stock-split-tracker.html">Stock Split Tracker</a>
 <a href="/pe-divergence.html">Forward vs. Trailing P/E Divergence</a>
 <a href="/relative-strength-leaders.html">Relative Strength Leaders/Laggards</a>
-<a href="/equity-risk-premium.html" class="active">Equity Risk Premium by Sector</a>
+<a href="/equity-risk-premium.html">Equity Risk Premium by Sector</a>
 <a href="/earnings-growth-divergence.html">Earnings Growth vs. Price Performance</a>
 <a href="/small-cap-liquidity.html">Small-Cap Liquidity</a>
 <a href="/ipo-pipeline.html">IPO Pipeline</a>
 <a href="/spin-off-performance.html">Spin-Off Performance Tracker</a>
 <a href="/margin-leverage.html">Margin &amp; Leverage Cycle</a>
-<a href="/fcf-yield.html">Free Cash Flow Yield</a>
+<a href="/fcf-yield.html" class="active">Free Cash Flow Yield</a>
 <a href="/institutional-ownership.html">Institutional Ownership Trends</a>
 </div>
 </div>
@@ -797,45 +816,45 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 
 <div class="header">
 <div>
-<h1>Equity Risk Premium by Sector</h1>
-<div class="subtitle">A simple, locally-computed earnings-yield-minus-Treasury-yield premium across the full S&amp;P 500 and its 11 GICS sectors — a different, cruder lens than the Damodaran DCF model behind Implied Equity Risk Premium.</div>
+<h1>Free Cash Flow Yield</h1>
+<div class="subtitle">TTM free cash flow divided by market cap across the S&amp;P 500 — a cash-based valuation read distinct from any P/E-family multiple, compared company-by-company against earnings yield to flag where reported earnings and actual cash generation diverge.</div>
 </div>
 <div class="updated" id="updated">Loading...</div>
 </div>
 
 <div class="stat-grid">
 <div class="stat-card">
-<div class="stat-label">Market Median ERP</div>
-<div class="stat-value" id="statMedianErp">—</div>
-<div class="stat-note" id="statMedianErpNote">Earnings yield − 10Y Treasury</div>
+<div class="stat-label">Companies Loaded</div>
+<div class="stat-value" id="statCompanies" style="font-size:20px;">—</div>
+<div class="stat-note" id="statCompaniesNote">Of full S&amp;P 500</div>
 </div>
 <div class="stat-card">
-<div class="stat-label">10-Year Treasury Yield</div>
-<div class="stat-value" id="statRiskFree" style="color:var(--ink);">—</div>
-<div class="stat-note" id="statRiskFreeNote">Risk-free rate used below</div>
+<div class="stat-label">Median FCF Yield</div>
+<div class="stat-value" id="statMedianFcfYield">—</div>
+<div class="stat-note" id="statMedianFcfYieldNote">Market-wide, this run</div>
 </div>
 <div class="stat-card">
-<div class="stat-label">Highest-ERP Sector</div>
-<div class="stat-value" id="statBestSector" style="font-size:20px;">—</div>
-<div class="stat-note" id="statBestSectorNote">Median sector ERP</div>
+<div class="stat-label">Median Divergence</div>
+<div class="stat-value" id="statMedianDivergence">—</div>
+<div class="stat-note" id="statMedianDivergenceNote">FCF yield minus earnings yield</div>
 </div>
 <div class="stat-card">
-<div class="stat-label">Lowest-ERP Sector</div>
-<div class="stat-value" id="statWorstSector" style="font-size:20px;">—</div>
-<div class="stat-note" id="statWorstSectorNote">Median sector ERP</div>
+<div class="stat-label">FCF vs. Earnings Yield Corr.</div>
+<div class="stat-value" id="statCorr" style="font-size:20px;">—</div>
+<div class="stat-note" id="statCorrNote">Pearson r, company-level</div>
 </div>
 </div>
 
 <div class="chart-box">
 <div class="chart-box-header">
 <div>
-<h2>Median equity risk premium by sector</h2>
-<div class="chart-subhead">Median (1 / trailing P/E) − 10-year Treasury yield, across each sector's constituents with a positive trailing P/E on file</div>
+<h2>Median FCF yield by sector</h2>
+<div class="chart-subhead">Median TTM free cash flow yield across each sector's S&amp;P 500 constituents</div>
 </div>
 </div>
 <div class="ndr-panel">
 <div class="chart-canvas-wrap">
-<canvas id="sectorChart"></canvas>
+<canvas id="sectorFcfChart"></canvas>
 </div>
 </div>
 </div>
@@ -843,8 +862,8 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <div class="chart-box">
 <div class="chart-box-header">
 <div>
-<h2>Market median ERP over time</h2>
-<div class="chart-subhead">Accumulated one weekly snapshot at a time — will be short until this page has run for a while</div>
+<h2>Market-wide median FCF yield, over time</h2>
+<div class="chart-subhead">Snapshotted weekly — this line starts thin and gets more useful with each week's run</div>
 </div>
 </div>
 <div class="ndr-panel">
@@ -857,91 +876,151 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <div class="chart-box">
 <div class="chart-box-header">
 <div>
-<h2>Does the market actually price risk into the premium?</h2>
-<div class="chart-subhead">Each point is one stock: x-axis is its Alpha Vantage-reported beta, y-axis is its equity risk premium — a rational risk/return tradeoff would put higher-beta stocks at a higher ERP (positive slope)</div>
+<h2>FCF yield vs. earnings yield — the cash-conversion check</h2>
+<div class="chart-subhead">Each point is one company: x is earnings yield (1&nbsp;&divide;&nbsp;trailing P/E), y is TTM FCF yield. Below the dashed y=x line, GAAP earnings are running ahead of actual cash; above it, the company converts earnings to cash unusually well.</div>
 </div>
 </div>
 <div class="ndr-panel">
 <div class="scatter-canvas-wrap">
-<canvas id="betaScatter"></canvas>
+<canvas id="fcfEarningsScatter"></canvas>
 </div>
 </div>
-<div id="betaMethodTable"></div>
+<div id="fcfEarningsMethodTable"></div>
 </div>
 
 <div class="table-grid">
 <div class="table-box">
 <div class="table-box-header">
-<h2>Highest ERP</h2>
-<div class="chart-subhead">Cheapest earnings yield relative to the risk-free rate</div>
+<h2>Highest FCF yield</h2>
+<div class="chart-subhead">Most free cash generated per dollar of market cap</div>
 </div>
-<table id="leaderTable">
-<thead><tr><th>Symbol</th><th>Sector</th><th>P/E</th><th>ERP</th></tr></thead>
-<tbody id="leaderBody"><tr><td colspan="4" style="text-align:center; color:var(--muted); padding:24px;">Loading&hellip;</td></tr></tbody>
+<table id="highestFcfTable">
+<thead><tr><th>Symbol</th><th>Sector</th><th>FCF Yield</th><th>Trailing P/E</th></tr></thead>
+<tbody id="highestFcfBody"><tr><td colspan="4" style="text-align:center; color:var(--muted); padding:24px;">Loading&hellip;</td></tr></tbody>
 </table>
 </div>
 <div class="table-box">
 <div class="table-box-header">
-<h2>Lowest ERP</h2>
-<div class="chart-subhead">Richest earnings yield relative to the risk-free rate</div>
+<h2>Most negative FCF yield</h2>
+<div class="chart-subhead">Burning the most cash relative to market cap — not necessarily a red flag on its own (heavy reinvestment, capital-intensive build-outs)</div>
 </div>
-<table id="laggardTable">
-<thead><tr><th>Symbol</th><th>Sector</th><th>P/E</th><th>ERP</th></tr></thead>
-<tbody id="laggardBody"><tr><td colspan="4" style="text-align:center; color:var(--muted); padding:24px;">Loading&hellip;</td></tr></tbody>
+<table id="lowestFcfTable">
+<thead><tr><th>Symbol</th><th>Sector</th><th>FCF Yield</th><th>Trailing P/E</th></tr></thead>
+<tbody id="lowestFcfBody"><tr><td colspan="4" style="text-align:center; color:var(--muted); padding:24px;">Loading&hellip;</td></tr></tbody>
+</table>
+</div>
+</div>
+
+<div class="table-grid">
+<div class="table-box">
+<div class="table-box-header">
+<h2>Biggest positive divergence</h2>
+<div class="chart-subhead">FCF yield furthest above earnings yield — unusually strong cash conversion</div>
+</div>
+<table id="posDivergenceTable">
+<thead><tr><th>Symbol</th><th>Sector</th><th>FCF Yield</th><th>Earnings Yield</th><th>Divergence</th></tr></thead>
+<tbody id="posDivergenceBody"><tr><td colspan="5" style="text-align:center; color:var(--muted); padding:24px;">Loading&hellip;</td></tr></tbody>
+</table>
+</div>
+<div class="table-box">
+<div class="table-box-header">
+<h2>Biggest negative divergence</h2>
+<div class="chart-subhead">Earnings yield furthest above FCF yield — accrual-heavy, GAAP earnings running ahead of cash</div>
+</div>
+<table id="negDivergenceTable">
+<thead><tr><th>Symbol</th><th>Sector</th><th>FCF Yield</th><th>Earnings Yield</th><th>Divergence</th></tr></thead>
+<tbody id="negDivergenceBody"><tr><td colspan="5" style="text-align:center; color:var(--muted); padding:24px;">Loading&hellip;</td></tr></tbody>
 </table>
 </div>
 </div>
 
 <div class="table-box">
 <div class="table-box-header">
-<h2>Full S&amp;P 500</h2>
-<div class="chart-subhead">Trailing P/E, earnings yield, beta, and equity risk premium per constituent</div>
+<h2>All companies with usable TTM FCF</h2>
+<div class="chart-subhead">Full S&amp;P 500 — click a column to sort</div>
 </div>
 <table id="stockTable">
 <thead>
 <tr>
 <th data-key="symbol">Symbol</th>
+<th data-key="name">Name</th>
 <th data-key="sector">Sector</th>
-<th data-key="peRatio">P/E<span class="sort-arrow">▾</span></th>
-<th data-key="earningsYield">Earn. Yield<span class="sort-arrow">▾</span></th>
-<th data-key="beta">Beta<span class="sort-arrow">▾</span></th>
-<th data-key="erp">ERP<span class="sort-arrow">▾</span></th>
+<th data-key="ttmFcf">TTM FCF<span class="sort-arrow">▾</span></th>
+<th data-key="marketCap">Market Cap<span class="sort-arrow">▾</span></th>
+<th data-key="fcfYield">FCF Yield<span class="sort-arrow">▾</span></th>
+<th data-key="trailingPE">Trailing P/E<span class="sort-arrow">▾</span></th>
+<th data-key="earningsYield">Earnings Yield<span class="sort-arrow">▾</span></th>
+<th data-key="divergence">Divergence<span class="sort-arrow">▾</span></th>
 </tr>
 </thead>
 <tbody id="tableBody">
-<tr><td colspan="6" style="text-align:center; color:var(--muted); padding:30px;">Loading equity risk premium data&hellip;</td></tr>
+<tr><td colspan="9" style="text-align:center; color:var(--muted); padding:30px;">Loading FCF yield data&hellip;</td></tr>
 </tbody>
 </table>
 </div>
 
 <div class="explainer">
 <h2>Methodology</h2>
-<p>Universe is the full S&amp;P 500. For every constituent, Alpha Vantage's <code>COMPANY_OVERVIEW</code> endpoint provides trailing P/E and beta; a single <code>TREASURY_YIELD</code> call (10-year, monthly) provides the risk-free rate. Earnings yield is <code>1 / trailing P/E</code>, expressed as a percentage; equity risk premium here is simply <code>earnings yield − 10-year Treasury yield</code>. Companies with a zero or negative trailing P/E (i.e. trailing losses) are excluded rather than clamped to zero or some floor value — a negative P/E doesn't imply a negative or zero earnings yield, it means the ratio isn't meaningful at all.</p>
-<p>This is deliberately a much simpler, cruder construction than <a href="/implied-erp.html">Implied Equity Risk Premium</a>, which sources Aswath Damodaran's FCFE/DCF-based model — a forward-looking cash-flow estimate, not a backward-looking accounting ratio. What's used here is the classic "Fed model" comparison (trailing earnings yield vs. the long bond), chosen because it's computable cross-sectionally, per sector and per stock, from data Alpha Vantage already provides — Damodaran's model is a single market-wide number, not a per-sector or per-stock one. The Fed model has well-known blind spots worth being upfront about: it ignores earnings growth expectations entirely (a fast grower and a stagnant company with the same trailing P/E get the same "premium" here), and it's sensitive to the inflation regime in ways the *equity* risk premium conceptually shouldn't be, since Treasury yields move with inflation expectations but reported trailing earnings don't adjust the same way.</p>
-<p>The beta-vs-ERP scatter tests a real question with this simpler measure: if the market prices risk rationally, riskier (higher-beta) stocks should trade at a higher earnings yield to compensate — a positive relationship here. A flat or negative one (which happens in practice — high-beta growth names often carry rich P/Es precisely because of their growth profile, not despite their risk) would say something genuinely informative about the current market, not just be a data artifact; both a linear (Pearson) and rank-based (Spearman) fit are reported since one can mislead when the relationship isn't linear.</p>
-<p>Refreshes weekly (Saturday, after that morning's other data jobs) — a trailing-P/E-derived earnings yield only moves when a company reports new earnings or its price moves meaningfully, so daily refresh would mostly reflect noise. Sector and company name come from each stock's own <code>COMPANY_OVERVIEW</code> response (GICS-normalized the same way <a href="/sector-beeswarm.html">Sector Beeswarm</a>'s own metadata sweep is), not a shared cross-page lookup, since this job already pays for the full sweep.</p>
-<div class="source">Source: <a href="https://www.alphavantage.co/" target="_blank" rel="noopener">Alpha Vantage — COMPANY_OVERVIEW, TREASURY_YIELD</a></div>
+<p>Universe is the full S&amp;P 500. For every constituent, Alpha Vantage's <code>CASH_FLOW</code> endpoint (quarterly reports) supplies the most recent 4 quarters' <code>operatingCashflow</code> and <code>capitalExpenditures</code>. TTM Free Cash Flow is TTM operating cash flow minus TTM capex, computed as <code>OCF &minus; |capex|</code> — the absolute value is deliberate: a live check against Alpha Vantage's data during this page's build showed <code>capitalExpenditures</code> reported as a <i>positive</i> outflow figure (not negative, the sign some other vendors use), and subtracting the absolute value keeps the math correct regardless of which convention a given ticker happens to use. A company is skipped entirely — not partially annualized — if any of its 4 most recent quarterly reports is missing either field.</p>
+<p>FCF yield is TTM FCF divided by market cap, as a percentage. Market cap, sector, and company name are not re-fetched here — they're read from the <a href="/sector-beeswarm.html">Sector Beeswarm</a> page's own weekly metadata sweep, the same reuse pattern several other pages on this site use rather than paying for a second full-index <code>OVERVIEW</code> pass just for labels. Trailing P/E comes from the <a href="/pe-divergence.html">Forward vs. Trailing P/E Divergence</a> page's own snapshot, read here read-only; earnings yield is simply <code>100 &divide; trailing P/E</code>. Because that page's own company list is itself already filtered to tickers with a sane trailing <i>and</i> forward P/E, earnings-yield coverage on this page is a subset of the full FCF-yield universe — a company can have a valid FCF yield with no earnings yield or divergence figure at all, shown as &mdash; rather than guessed at. Both of this page's cross-page dependencies are themselves one-time or occasionally-refreshed snapshots as of this writing, not continuously live feeds, so a company newly missing from either can briefly widen that gap further.</p>
+<p>A company's FCF yield is dropped entirely (not clamped or capped, just excluded from every chart, table, and average) if its magnitude exceeds &plusmn;60% — real S&amp;P 500 constituents essentially never print a genuine trailing FCF yield past that range even in a hard drawdown; a reading beyond it is overwhelmingly a market-cap/FCF unit or metadata-join mismatch, not a real valuation signal, the same kind of sanity bound <a href="/pe-divergence.html">Forward vs. Trailing P/E Divergence</a> applies to its own P/E ratios (excluded past 300x, not clamped to it).</p>
+<p>The history chart is a genuine accumulating time series, not a single snapshot: <code>CASH_FLOW</code> only reports each company's own trailing quarters, not a market-wide series, so each weekly run appends that week's cross-company median FCF yield to a running series rather than replacing it — the same pattern <a href="/earnings-revisions.html">Earnings Revisions</a> and <a href="/pe-divergence.html">P/E Divergence</a> use for their own trend lines. It starts thin the week this page ships and becomes more informative with every subsequent run.</p>
+<p>The cash-conversion scatter regresses each company's FCF yield against its own earnings yield using the same Pearson and Spearman two-method check used throughout <a href="/factor-analysis.html">Factor Analysis</a> and this site's other regression checks. A company sitting well below the dashed y=x reference line converts a smaller share of its reported earnings into actual cash (more accrual-heavy — larger non-cash charges, working-capital drag, or heavier capex than its income statement alone suggests); a company well above it converts earnings to cash unusually efficiently. A weak or noisy relationship overall is itself informative — it would say GAAP earnings and cash generation are, in practice, not tightly coupled cross-sectionally.</p>
+<p>Refreshes on manual runs for now (see this job's own <code>netlify.toml</code> comment) — a TTM free-cash-flow figure only moves when a company files a new 10-Q/10-K, so nothing here needs a daily or even a strict weekly cadence to stay current.</p>
+<div class="source">Source: <a href="https://www.alphavantage.co/" target="_blank" rel="noopener">Alpha Vantage — CASH_FLOW</a>, plus market cap/sector via Sector Beeswarm's <code>OVERVIEW</code>-derived metadata and trailing P/E via P/E Divergence's own <code>OVERVIEW</code> sweep</div>
 </div>
 
 </div>
 
 <script>
-const DATA_URL = "/api/equity-risk-premium";
+const DATA_URL = "/api/fcf-yield";
+
+const SECTOR_COLORS = {
+ "Information Technology": "#d98a3d",
+ "Financials": "#6f8fac",
+ "Health Care": "#8e7cc3",
+ "Energy": "#c0564f",
+ "Industrials": "#5a9d6f",
+ "Consumer Discretionary": "#e0b04f",
+ "Consumer Staples": "#4fb0c0",
+ "Utilities": "#b56f2a",
+ "Materials": "#9a9a9a",
+ "Real Estate": "#c77dbd",
+ "Communication Services": "#4f7ae0",
+};
 
 let RAW = null;
-let SORT_KEY = "erp";
+let SORT_KEY = "fcfYield";
 let SORT_DIR = -1;
 
 function fmtPct(v, digits){
  if(v === null || v === undefined || isNaN(v)) return "—";
- digits = digits === undefined ? 2 : digits;
+ digits = digits === undefined ? 1 : digits;
  return (v >= 0 ? "+" : "") + v.toFixed(digits) + "%";
 }
-
-function fmtNum(v, digits){
+function fmtPlainPct(v, digits){
  if(v === null || v === undefined || isNaN(v)) return "—";
- digits = digits === undefined ? 2 : digits;
- return v.toFixed(digits);
+ digits = digits === undefined ? 1 : digits;
+ return v.toFixed(digits) + "%";
+}
+function fmtPpt(v, digits){
+ if(v === null || v === undefined || isNaN(v)) return "—";
+ digits = digits === undefined ? 1 : digits;
+ return (v >= 0 ? "+" : "") + v.toFixed(digits) + "ppt";
+}
+function fmtPE(v){
+ if(v === null || v === undefined || isNaN(v)) return "—";
+ return v.toFixed(1) + "x";
+}
+function fmtUsd(v){
+ if(v === null || v === undefined || isNaN(v)) return "—";
+ const sign = v < 0 ? "-" : "";
+ const abs = Math.abs(v);
+ if(abs >= 1e12) return sign + "$" + (abs / 1e12).toFixed(2) + "T";
+ if(abs >= 1e9) return sign + "$" + (abs / 1e9).toFixed(2) + "B";
+ if(abs >= 1e6) return sign + "$" + (abs / 1e6).toFixed(1) + "M";
+ if(abs >= 1e3) return sign + "$" + (abs / 1e3).toFixed(1) + "K";
+ return sign + "$" + abs.toFixed(0);
 }
 
 function showError(message){
@@ -955,28 +1034,8 @@ function showWarning(message){
  banner.style.display = "block";
 }
 
-function themeInkColor(){
- const v = getComputedStyle(document.documentElement).getPropertyValue("--ink").trim();
- return v || "#eae6da";
-}
-function themeMutedColor(){
- const v = getComputedStyle(document.documentElement).getPropertyValue("--muted").trim();
- return v || "#8b9199";
-}
-function themeHairColor(){
- const v = getComputedStyle(document.documentElement).getPropertyValue("--hair").trim();
- return v || "#2b3138";
-}
-function themeGreedColor(){
- const v = getComputedStyle(document.documentElement).getPropertyValue("--greed").trim();
- return v || "#d98a3d";
-}
-function themeFearColor(){
- const v = getComputedStyle(document.documentElement).getPropertyValue("--fear").trim();
- return v || "#6f8fac";
-}
-
-// ---- NDR chart styling helpers (matches /concentration.html) -----------
+// ---- NDR chart styling helpers (matches /concentration, /pe-divergence,
+// /margin-leverage) ----------------------------------------------------
 // Colours come from the --ndr-* custom properties (constant across themes)
 // so the charts keep their warm-paper look while still following the
 // site's "read chart colours from CSS, don't hardcode" rule.
@@ -987,10 +1046,13 @@ function ndr(name){
 Chart.defaults.font.family = "'Iowan Old Style','Palatino Linotype',Georgia,serif";
 Chart.defaults.color = ndr("axis-soft");
 
-function ndrXScale(){
+function ndrXScale(opts){
+ opts = opts || {};
  return {
+  type: opts.type || "category",
   ticks: { color: ndr("axis"), maxTicksLimit: 9, maxRotation: 0, autoSkip: true, font: { size: 11 } },
   grid: { color: "rgba(0,0,0,0)", borderColor: ndr("axis") },
+  title: opts.title ? { display: true, text: opts.title, color: ndr("axis-soft"), font: { size: 10 } } : { display: false },
  };
 }
 
@@ -1003,37 +1065,6 @@ function ndrYScale(opts){
   ticks: { color: ndr("axis"), font: { size: 11 }, callback: opts.fmt || undefined },
   title: opts.title ? { display: true, text: opts.title, color: ndr("axis-soft"), font: { size: 10 } } : { display: false },
   min: opts.min, max: opts.max,
- };
-}
-
-function ndrLegend(){
- return {
-  display: true, position: "top", align: "start",
-  labels: { boxWidth: 22, boxHeight: 2, color: ndr("axis"), font: { size: 11 } },
- };
-}
-
-// This page's category scale is a value axis (sector names on y) rather
-// than a date axis (unlike concentration.html) when the bar chart flips
-// to indexAxis:"y" — reuses ndr() colors but keeps the plain category
-// styling the original chart had (no ticks/grid on the label axis).
-function ndrCategoryScale(){
- return {
-  ticks: { color: ndr("axis"), font: { size: 11 } },
-  grid: { display: false },
- };
-}
-
-// This page's scatter charts use a genuinely numeric (linear) x-axis —
-// beta / EPS growth, not a date-string category axis — so it needs its
-// own scale helper rather than ndrXScale (which is category-shaped, per
-// concentration.html's "no date adapter" convention).
-function ndrNumericScale(opts){
- opts = opts || {};
- return {
-  title: opts.title ? { display: true, text: opts.title, color: ndr("axis-soft"), font: { size: 10 } } : { display: false },
-  ticks: { color: ndr("axis"), font: { size: 10 } },
-  grid: { color: ndr("grid"), drawBorder: false },
  };
 }
 
@@ -1081,177 +1112,7 @@ function rankArray(arr){
 }
 function spearmanRegression(xs, ys){ return linearRegression(rankArray(xs), rankArray(ys)); }
 
-let sectorChart = null, historyChart = null, betaScatter = null;
-
-async function init(){
- try{
-  const res = await fetch(DATA_URL, { cache: "no-store" });
-  const data = await res.json();
-  if(!res.ok || data.error) throw new Error(data.error || "failed to load");
-
-  RAW = data;
-  document.getElementById("updated").textContent = "As of " + new Date(data.generated_at_utc).toLocaleString();
-
-  if(data.loadedCount < data.universeSize){
-   showWarning("Only " + data.loadedCount + " of " + data.universeSize + " S&P 500 constituents loaded this run — some data may be temporarily unavailable.");
-  }
-
-  renderStats();
-  renderSectorChart();
-  renderHistoryChart();
-  renderBetaScatter();
-  renderLeaderTable(data.leaders, "leaderBody");
-  renderLeaderTable(data.laggards, "laggardBody");
-  renderTable();
-
- }catch(e){
-  showError("Couldn't load equity risk premium data (" + e.message + "). The /api/equity-risk-premium function may not have run yet.");
-  document.getElementById("tableBody").innerHTML =
-   '<tr><td colspan="6" style="text-align:center; color:var(--muted); padding:30px;">No data available.</td></tr>';
- }
-}
-
-function renderStats(){
- const m = RAW.market;
- const medEl = document.getElementById("statMedianErp");
- medEl.textContent = fmtPct(m.medianErp);
- medEl.classList.toggle("cell-neg", m.medianErp !== null && m.medianErp < 0);
- document.getElementById("statMedianErpNote").textContent = "n=" + m.companyCount + " companies";
-
- document.getElementById("statRiskFree").textContent = m.riskFreeRate === null ? "—" : m.riskFreeRate.toFixed(2) + "%";
- document.getElementById("statRiskFreeNote").textContent = "10Y Treasury, " + (m.riskFreeAsOf || "—");
-
- const sortedSectors = [...RAW.sectors].sort((a, b) => (b.medianErp ?? -Infinity) - (a.medianErp ?? -Infinity));
- if(sortedSectors.length){
-  const best = sortedSectors[0], worst = sortedSectors[sortedSectors.length - 1];
-  document.getElementById("statBestSector").textContent = best.sector;
-  document.getElementById("statBestSectorNote").textContent = fmtPct(best.medianErp);
-  document.getElementById("statWorstSector").textContent = worst.sector;
-  document.getElementById("statWorstSectorNote").textContent = fmtPct(worst.medianErp);
- }
-}
-
-function renderSectorChart(){
- const sorted = [...RAW.sectors].sort((a, b) => (b.medianErp ?? -Infinity) - (a.medianErp ?? -Infinity));
- const colors = sorted.map(s => (s.medianErp ?? 0) >= 0 ? ndr("green") : ndr("red"));
- const ctx = document.getElementById("sectorChart").getContext("2d");
- if(sectorChart) sectorChart.destroy();
- sectorChart = new Chart(ctx, {
-  type: "bar",
-  data: {
-   labels: sorted.map(s => s.sector),
-   datasets: [{ label: "Median ERP", data: sorted.map(s => s.medianErp), backgroundColor: colors, borderRadius: 4 }],
-  },
-  options: {
-   indexAxis: "y",
-   responsive: true,
-   maintainAspectRatio: false,
-   plugins: {
-    legend: { display: false },
-    tooltip: {
-     callbacks: {
-      label: ctx => {
-       const s = sorted[ctx.dataIndex];
-       return [
-        "Median ERP: " + fmtPct(s.medianErp),
-        "Avg. ERP: " + fmtPct(s.avgErp),
-        "n=" + s.companyCount + " companies",
-       ];
-      },
-     },
-    },
-   },
-   // indexAxis:"y" flips the usual roles: x is the value scale here, y
-   // is the sector-name category axis.
-   scales: {
-    x: ndrYScale({ fmt: (v) => (Math.round(v * 100) / 100) + "%" }),
-    y: ndrCategoryScale(),
-   },
-  },
- });
-}
-
-function renderHistoryChart(){
- const points = RAW.history || [];
- const ctx = document.getElementById("historyChart").getContext("2d");
- if(historyChart) historyChart.destroy();
- historyChart = new Chart(ctx, {
-  type: "line",
-  data: {
-   labels: points.map(p => p.date),
-   datasets: [{
-    label: "Market Median ERP",
-    data: points.map(p => p.medianErp),
-    borderColor: ndr("navy"),
-    backgroundColor: ndr("navy"),
-    borderWidth: 1.5,
-    pointRadius: points.length < 8 ? 3 : 0,
-    fill: false,
-   }],
-  },
-  options: {
-   responsive: true,
-   maintainAspectRatio: false,
-   interaction: { mode: "index", intersect: false },
-   plugins: {
-    legend: { display: false },
-    tooltip: { callbacks: { label: ctx => "Median ERP: " + fmtPct(ctx.parsed.y) } },
-   },
-   scales: {
-    x: ndrXScale(),
-    y: ndrYScale({ fmt: (v) => (Math.round(v * 100) / 100) + "%" }),
-   },
-  },
- });
-}
-
-function renderBetaScatter(){
- const pairs = RAW.betaPairs || [];
- if(pairs.length < 20){
-  if(betaScatter){ betaScatter.destroy(); betaScatter = null; }
-  document.getElementById("betaMethodTable").innerHTML =
-   '<div class="method-note">Not enough stocks with both a valid ERP and a reported beta this run to test.</div>';
-  return;
- }
-
- const pearson = linearRegression(pairs.map(p => p.x), pairs.map(p => p.y));
- const spear = spearmanRegression(pairs.map(p => p.x), pairs.map(p => p.y));
-
- const xs = pairs.map(p => p.x);
- const xMin = Math.min(...xs), xMax = Math.max(...xs);
- const linePoints = [
-  { x: xMin, y: pearson.intercept + pearson.slope * xMin },
-  { x: xMax, y: pearson.intercept + pearson.slope * xMax },
- ];
-
- const ctx = document.getElementById("betaScatter").getContext("2d");
- if(betaScatter) betaScatter.destroy();
- betaScatter = new Chart(ctx, {
-  type: "scatter",
-  data: {
-   datasets: [
-    { label: "Stocks", data: pairs, backgroundColor: ndr("navy"), pointRadius: 2.5, pointHoverRadius: 4, showLine: false },
-    { label: "Regression fit", type: "line", data: linePoints, borderColor: ndr("red"), borderWidth: 1.5, borderDash: [4, 3], pointRadius: 0, fill: false },
-   ],
-  },
-  options: {
-   responsive: true,
-   maintainAspectRatio: false,
-   plugins: {
-    legend: { display: false },
-    tooltip: {
-     callbacks: {
-      label: ctx => ctx.dataset.label === "Stocks" ? (ctx.raw.symbol + ": beta " + fmtNum(ctx.raw.x) + ", ERP " + fmtPct(ctx.raw.y)) : null,
-     },
-    },
-   },
-   scales: {
-    x: ndrNumericScale({ title: "Beta" }),
-    y: ndrNumericScale({ title: "Equity risk premium (%)" }),
-   },
-  },
- });
-
+function methodTableHtml(pearson, spear, unitNote){
  function row(label, stats){
   const sig = stats.p < 0.05;
   return "<tr>" +
@@ -1264,26 +1125,242 @@ function renderBetaScatter(){
    '<td class="' + (sig ? "sig" : "") + '">' + (stats.p < 0.001 ? "<0.001" : stats.p.toFixed(3)) + "</td>" +
   "</tr>";
  }
- document.getElementById("betaMethodTable").innerHTML =
-  '<table class="method-table">' +
-   "<thead><tr><th>Method</th><th>n</th><th>r</th><th>r&sup2;</th><th>slope</th><th>t</th><th>p</th></tr></thead>" +
-   "<tbody>" + row("Pearson (OLS)", pearson) + row("Spearman (&rho;)", spear) + "</tbody>" +
-  "</table>" +
-  '<div class="method-note">A positive slope means higher-beta stocks carry a higher equity risk premium — i.e. the market is pricing risk the way a rational risk/return tradeoff predicts; a flat or negative slope means it isn\'t, at least not through this lens.</div>';
+ return '<table class="method-table">' +
+  "<thead><tr><th>Method</th><th>n</th><th>r</th><th>r&sup2;</th><th>slope</th><th>t</th><th>p</th></tr></thead>" +
+  "<tbody>" + row("Pearson (OLS)", pearson) + row("Spearman (&rho;)", spear) + "</tbody>" +
+ "</table>" + (unitNote ? '<div class="method-note">' + unitNote + "</div>" : "");
 }
 
-function renderLeaderTable(rows, tbodyId){
- const tbody = document.getElementById(tbodyId);
- if(!rows || !rows.length){
-  tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; color:var(--muted); padding:24px;">No qualifying stocks.</td></tr>';
+function marketMedian(values){
+ const v = values.filter(x => x !== null && x !== undefined && !isNaN(x)).sort((a, b) => a - b);
+ if(!v.length) return null;
+ const mid = Math.floor(v.length / 2);
+ return v.length % 2 ? v[mid] : (v[mid - 1] + v[mid]) / 2;
+}
+
+let sectorFcfChart = null, historyChart = null, fcfEarningsScatter = null;
+
+async function init(){
+ try{
+  const res = await fetch(DATA_URL, { cache: "no-store" });
+  const data = await res.json();
+  if(!res.ok || data.error) throw new Error(data.error || "failed to load");
+
+  RAW = data;
+  document.getElementById("updated").textContent = "As of " + new Date(data.generated_at_utc).toLocaleString();
+
+  if(data.loadedCount < data.universeSize){
+   showWarning("Only " + data.loadedCount + " of " + data.universeSize + " S&P 500 constituents loaded this run — some data may be temporarily unavailable.");
+  }else if(data.peDivergenceAvailable === false){
+   showWarning("The P/E Divergence snapshot this page reuses for trailing P/E isn't populated yet — FCF yield is shown for every company, but earnings yield and divergence are unavailable until that page's own job has run at least once.");
+  }
+
+  renderStats();
+  renderSectorChart();
+  renderHistoryChart();
+  renderScatter();
+  renderLeaderTable(RAW.leaders.highestFcfYield, "highestFcfBody", "fcf");
+  renderLeaderTable(RAW.leaders.lowestFcfYield, "lowestFcfBody", "fcf");
+  renderLeaderTable(RAW.leaders.biggestPositiveDivergence, "posDivergenceBody", "divergence");
+  renderLeaderTable(RAW.leaders.biggestNegativeDivergence, "negDivergenceBody", "divergence");
+  renderTable();
+
+ }catch(e){
+  showError("Couldn't load FCF yield data (" + e.message + "). The /api/fcf-yield function may not have run yet.");
+  document.getElementById("tableBody").innerHTML =
+   '<tr><td colspan="9" style="text-align:center; color:var(--muted); padding:30px;">No data available.</td></tr>';
+ }
+}
+
+function renderStats(){
+ const m = RAW.market;
+
+ document.getElementById("statCompanies").textContent = m.companyCount;
+ document.getElementById("statCompaniesNote").textContent = RAW.loadedCount + " of " + RAW.universeSize + " loaded, " + m.companyCount + " with usable TTM FCF";
+
+ const fcfEl = document.getElementById("statMedianFcfYield");
+ fcfEl.textContent = fmtPct(m.medianFcfYield);
+ fcfEl.classList.toggle("cell-neg", m.medianFcfYield !== null && m.medianFcfYield < 0);
+ document.getElementById("statMedianFcfYieldNote").textContent = "n=" + m.companyCount + " companies";
+
+ const divMedian = marketMedian(RAW.companies.map(c => c.divergence));
+ const divEl = document.getElementById("statMedianDivergence");
+ divEl.textContent = fmtPpt(divMedian);
+ divEl.classList.toggle("cell-neg", divMedian !== null && divMedian < 0);
+ document.getElementById("statMedianDivergenceNote").textContent = "n=" + m.earningsYieldCoverage + " with a trailing P/E on file";
+
+ const pairs = RAW.scatterPairs;
+ const corrEl = document.getElementById("statCorr");
+ const corrNoteEl = document.getElementById("statCorrNote");
+ if(pairs.length >= 10){
+  const reg = linearRegression(pairs.map(p => p.x), pairs.map(p => p.y));
+  corrEl.textContent = (reg.r >= 0 ? "+" : "") + reg.r.toFixed(2);
+  corrNoteEl.textContent = "n=" + reg.n + ", p=" + (reg.p < 0.001 ? "<0.001" : reg.p.toFixed(3));
+ }else{
+  corrEl.textContent = "n/a";
+  corrNoteEl.textContent = "Not enough companies with both figures this run";
+ }
+}
+
+function renderSectorChart(){
+ const sorted = [...RAW.sectors].sort((a, b) => a.medianFcfYield - b.medianFcfYield);
+ const colors = sorted.map(s => s.medianFcfYield >= 0 ? ndr("green") : ndr("red"));
+ const ctx = document.getElementById("sectorFcfChart").getContext("2d");
+ if(sectorFcfChart) sectorFcfChart.destroy();
+ sectorFcfChart = new Chart(ctx, {
+  type: "bar",
+  data: {
+   labels: sorted.map(s => s.sector),
+   datasets: [{ label: "Median FCF yield", data: sorted.map(s => s.medianFcfYield), backgroundColor: colors, borderRadius: 4 }],
+  },
+  options: {
+   indexAxis: "y",
+   responsive: true,
+   maintainAspectRatio: false,
+   plugins: {
+    legend: { display: false },
+    tooltip: {
+     callbacks: {
+      label: ctx => {
+       const s = sorted[ctx.dataIndex];
+       return ["Median FCF yield: " + fmtPct(s.medianFcfYield), "n=" + s.companyCount];
+      },
+     },
+    },
+   },
+   // Horizontal bar: x is the value axis (needs the numeric formatter
+   // ndrYScale supports), y is the category axis (ndrXScale's job).
+   scales: {
+    x: ndrYScale({ fmt: (v) => v + "%" }),
+    y: ndrXScale(),
+   },
+  },
+ });
+}
+
+function renderHistoryChart(){
+ const rows = RAW.history;
+ const ctx = document.getElementById("historyChart").getContext("2d");
+ if(historyChart) historyChart.destroy();
+ if(!rows.length){
+  ctx.canvas.parentElement.insertAdjacentHTML("beforeend",
+   '<div style="text-align:center; color:var(--muted); padding-top:140px;">No history yet — check back after next week\'s run.</div>');
   return;
  }
- tbody.innerHTML = rows.map(r => `<tr>
-  <td><span class="sector-name">${r.symbol}</span></td>
-  <td><span class="sector-ticker">${r.sector || "—"}</span></td>
-  <td>${fmtNum(r.peRatio)}</td>
-  <td>${fmtPct(r.erp)}</td>
- </tr>`).join("");
+ historyChart = new Chart(ctx, {
+  type: "line",
+  data: {
+   labels: rows.map(r => r.week),
+   datasets: [{
+    label: "Median FCF yield",
+    data: rows.map(r => r.medianFcfYield),
+    borderColor: ndr("navy"),
+    backgroundColor: "transparent",
+    borderWidth: 2,
+    pointRadius: rows.length === 1 ? 4 : 1,
+    tension: 0.15,
+   }],
+  },
+  options: {
+   responsive: true,
+   maintainAspectRatio: false,
+   plugins: { legend: { display: false } },
+   scales: {
+    x: ndrXScale(),
+    y: ndrYScale({ fmt: (v) => v + "%" }),
+   },
+  },
+ });
+}
+
+function renderScatter(){
+ const pairs = RAW.scatterPairs;
+ if(pairs.length < 10){
+  document.getElementById("fcfEarningsMethodTable").innerHTML =
+   '<div class="method-note">Not enough companies with both a usable FCF yield and a trailing P/E-derived earnings yield this run (n=' + pairs.length + ', need at least 10) to run this regression.</div>';
+  if(fcfEarningsScatter) fcfEarningsScatter.destroy();
+  return;
+ }
+
+ const pearson = linearRegression(pairs.map(p => p.x), pairs.map(p => p.y));
+ const spear = spearmanRegression(pairs.map(p => p.x), pairs.map(p => p.y));
+
+ const xs = pairs.map(p => p.x), ys = pairs.map(p => p.y);
+ const xMin = Math.min(...xs), xMax = Math.max(...xs);
+ const allMin = Math.min(xMin, Math.min(...ys)), allMax = Math.max(xMax, Math.max(...ys));
+ const fitPoints = [
+  { x: xMin, y: pearson.intercept + pearson.slope * xMin },
+  { x: xMax, y: pearson.intercept + pearson.slope * xMax },
+ ];
+ const equalLine = [{ x: allMin, y: allMin }, { x: allMax, y: allMax }];
+
+ const bySector = {};
+ for(const p of pairs){
+  if(!bySector[p.sector]) bySector[p.sector] = [];
+  bySector[p.sector].push(p);
+ }
+ const sectors = Object.keys(bySector).sort();
+ const datasets = sectors.map(sector => ({
+  label: sector,
+  data: bySector[sector],
+  backgroundColor: SECTOR_COLORS[sector] || "#8b9199",
+  pointRadius: 3,
+  showLine: false,
+ }));
+ datasets.push({ label: "Equal FCF/earnings yield (y=x)", type: "line", data: equalLine, borderColor: ndr("slate"), borderWidth: 1, borderDash: [2, 3], pointRadius: 0, fill: false });
+ datasets.push({ label: "Regression fit", type: "line", data: fitPoints, borderColor: ndr("red"), borderWidth: 1.5, borderDash: [4, 3], pointRadius: 0, fill: false });
+
+ const ctx = document.getElementById("fcfEarningsScatter").getContext("2d");
+ if(fcfEarningsScatter) fcfEarningsScatter.destroy();
+ fcfEarningsScatter = new Chart(ctx, {
+  type: "scatter",
+  data: { datasets },
+  options: {
+   responsive: true,
+   maintainAspectRatio: false,
+   plugins: {
+    legend: { display: false },
+    tooltip: {
+     callbacks: {
+      label: ctx => (ctx.dataset.label === "Regression fit" || ctx.dataset.label === "Equal FCF/earnings yield (y=x)") ? null : (ctx.raw.symbol + " (" + ctx.dataset.label + "): earnings yield " + fmtPlainPct(ctx.raw.x) + ", FCF yield " + fmtPlainPct(ctx.raw.y)),
+     },
+    },
+   },
+   scales: {
+    x: ndrXScale({ type: "linear", title: "Earnings yield (%)" }),
+    y: ndrYScale({ title: "TTM FCF yield (%)" }),
+   },
+  },
+ });
+
+ document.getElementById("fcfEarningsMethodTable").innerHTML = methodTableHtml(pearson, spear,
+  "Slope is the change in FCF yield (ppt) per 1ppt of earnings yield. n=" + pearson.n + " companies with both figures this run.");
+}
+
+function renderLeaderTable(rows, tbodyId, kind){
+ const tbody = document.getElementById(tbodyId);
+ const colspan = kind === "divergence" ? 5 : 4;
+ if(!rows || !rows.length){
+  tbody.innerHTML = '<tr><td colspan="' + colspan + '" style="text-align:center; color:var(--muted); padding:24px;">No qualifying companies.</td></tr>';
+  return;
+ }
+ tbody.innerHTML = rows.map(r => {
+  if(kind === "divergence"){
+   return `<tr>
+    <td><span class="sector-name">${r.symbol}</span></td>
+    <td><span class="sector-ticker">${r.sector || "—"}</span></td>
+    <td>${fmtPct(r.fcfYield)}</td>
+    <td>${fmtPct(r.earningsYield)}</td>
+    <td>${fmtPpt(r.divergence)}</td>
+   </tr>`;
+  }
+  return `<tr>
+   <td><span class="sector-name">${r.symbol}</span></td>
+   <td><span class="sector-ticker">${r.sector || "—"}</span></td>
+   <td>${fmtPct(r.fcfYield)}</td>
+   <td>${fmtPE(r.trailingPE)}</td>
+  </tr>`;
+ }).join("");
 }
 
 function sortBy(key){
@@ -1291,7 +1368,7 @@ function sortBy(key){
   SORT_DIR = -SORT_DIR;
  }else{
   SORT_KEY = key;
-  SORT_DIR = -1;
+  SORT_DIR = 1;
  }
  renderTable();
 }
@@ -1307,13 +1384,16 @@ function renderTable(){
 
  const tbody = document.getElementById("tableBody");
  tbody.innerHTML = rows.map(r => `<tr>
-   <td><span class="sector-name">${r.symbol}</span></td>
-   <td><span class="sector-ticker">${r.sector || "—"}</span></td>
-   <td>${fmtNum(r.peRatio)}</td>
-   <td>${fmtPct(r.earningsYield)}</td>
-   <td>${fmtNum(r.beta)}</td>
-   <td>${fmtPct(r.erp)}</td>
-  </tr>`).join("");
+  <td><span class="sector-name">${r.symbol}</span></td>
+  <td title="${r.name || ""}">${r.name || "—"}</td>
+  <td><span class="sector-ticker">${r.sector || "—"}</span></td>
+  <td>${fmtUsd(r.ttmFcf)}</td>
+  <td>${fmtUsd(r.marketCap)}</td>
+  <td>${fmtPct(r.fcfYield)}</td>
+  <td>${fmtPE(r.trailingPE)}</td>
+  <td>${fmtPct(r.earningsYield)}</td>
+  <td>${fmtPpt(r.divergence)}</td>
+ </tr>`).join("");
 
  document.querySelectorAll("#stockTable thead th").forEach(th => {
   const key = th.dataset.key;
