@@ -197,6 +197,11 @@
   to = "/.netlify/functions/margin-leverage"
   status = 200
 
+[[redirects]]
+  from = "/api/fcf-yield"
+  to = "/.netlify/functions/fcf-yield"
+  status = 200
+
 # The Statistical Engine page was briefly at these paths.
 [[redirects]]
   from = "/streak-scanner"
@@ -611,3 +616,22 @@
   # this fix, leaving headroom for this job's own longer runtime. Weekly,
   # not daily: fundamentals only change when a company files a new
   # 10-Q/10-K.
+
+[functions."scheduled-fcf-yield-background"]
+  # One-time snapshot (2026-09-17) — no schedule, matching the now-current
+  # site-wide convention (see scheduled-surprise-background's comment block
+  # above for the original reasoning: avoids Saturday cron collisions and
+  # redundant Alpha Vantage load; run manually via Netlify's dashboard
+  # "Run now" for now). For the record, a sensible Saturday slot would have
+  # been 15:00 UTC — after scheduled-margin-leverage-background (14:35 UTC,
+  # the last job in the Saturday block as of this addition, whose own
+  # ~1006-call/two-statement sweep runs until roughly 14:48-14:53
+  # depending on retries), leaving headroom before this job's own ~503
+  # sequential CASH_FLOW calls at 1050ms spacing (~503 calls, single
+  # statement per company, same pacing/shape as scheduled-pe-divergence-
+  # background's OVERVIEW sweep — plus a retry pass). Reads Sector
+  # Beeswarm's meta.json for company name/sector/market cap and P/E
+  # Divergence's own snapshot blob (read-only, with a graceful fallback if
+  # it isn't populated yet) for trailing P/E — no second OVERVIEW sweep.
+  # Weekly, not daily: a TTM free-cash-flow figure only moves when a
+  # company files a new 10-Q/10-K.
