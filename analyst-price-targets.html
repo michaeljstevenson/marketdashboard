@@ -152,7 +152,7 @@ document.addEventListener("DOMContentLoaded", function(){
 </script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Forward vs. Trailing P/E Divergence — Michael J. Stevenson</title>
+<title>Analyst Ratings &amp; Price Targets — Michael J. Stevenson</title>
 
 <style>
 
@@ -175,8 +175,9 @@ document.addEventListener("DOMContentLoaded", function(){
 
   /* NDR-style chart palette. Deliberately the SAME in light and dark —
      these charts keep a constant warm-paper look as a homage to the Ned
-     Davis Research print charts that inspired the page. JS reads them via
-     getComputedStyle (per the site convention) rather than hardcoding. */
+     Davis Research print charts that inspired concentration.html. JS reads
+     them via getComputedStyle (per the site convention) rather than
+     hardcoding. */
   --ndr-plot:#f5f1e6;
   --ndr-axis:#3c3a33;
   --ndr-axis-soft:#6f6a5c;
@@ -413,10 +414,32 @@ h1{
 }
 
 .chart-canvas-wrap{
- height:380px;
+ height:340px;
 }
 
-/* The warm-paper plot panel behind each canvas — the NDR homage. */
+/* Two charts / method-tables side by side, same breakpoint as table-grid.
+   min-width:0 avoids the CSS Grid "blowout" a wide method table would
+   otherwise force (grid items default to min-width:auto) — the same fix
+   margin-leverage.html and spin-off-performance.html each had to add
+   after the fact; baked in here from the start. */
+.chart-grid{
+ display:grid;
+ grid-template-columns:1fr 1fr;
+ gap:16px;
+ margin-bottom:30px;
+}
+
+.chart-grid .chart-box{
+ margin-bottom:0;
+ min-width:0;
+}
+
+@media (max-width:900px){
+ .chart-grid{ grid-template-columns:1fr; }
+}
+
+/* The warm-paper plot panel behind each canvas — the NDR homage
+   (matches /concentration.html). */
 .ndr-panel{
  background:var(--ndr-plot);
  border:1px solid var(--ndr-grid);
@@ -431,6 +454,13 @@ h1{
  grid-template-columns:1fr 1fr;
  gap:16px;
  margin-bottom:30px;
+}
+
+.table-grid .table-box{
+ min-width:0; /* same CSS Grid "blowout" fix as .chart-grid above — a grid item's
+                 default min-width:auto lets its 600px-min table force the whole
+                 column (and page, at mobile width where this collapses to one
+                 column) wider than the viewport even with overflow-x:auto set */
 }
 
 @media (max-width:900px){
@@ -528,17 +558,24 @@ tbody td:nth-child(2){
 /* SCATTER / METHOD TABLE (mirrors /factor-analysis) */
 
 .scatter-canvas-wrap{
- height:300px;
+ height:280px;
  margin-bottom:12px;
  position:relative;
 }
 
 .method-table{
  width:100%;
+ min-width:0; /* overrides the site-wide table{min-width:600px} rule below — two of these
+                 side by side in .chart-grid would otherwise force the whole page wider
+                 than its container even though a 7-column method table never needs 600px */
  border-collapse:collapse;
  font-family:var(--mono);
  font-size:11px;
  margin-top:8px;
+}
+
+#consensusUpsideMethodTable, #upsideMomentumMethodTable{
+ overflow-x:auto;
 }
 
 .method-table th{
@@ -719,7 +756,7 @@ tbody td:nth-child(2){
 <a href="/analyst-estimate-dispersion.html">Analyst Estimate Dispersion</a>
 <a href="/shareholder-yield.html">Shareholder Yield</a>
 <a href="/stock-split-tracker.html">Stock Split Tracker</a>
-<a href="/pe-divergence.html" class="active">Forward vs. Trailing P/E Divergence</a>
+<a href="/pe-divergence.html">Forward vs. Trailing P/E Divergence</a>
 <a href="/relative-strength-leaders.html">Relative Strength Leaders/Laggards</a>
 <a href="/equity-risk-premium.html">Equity Risk Premium by Sector</a>
 <a href="/earnings-growth-divergence.html">Earnings Growth vs. Price Performance</a>
@@ -727,7 +764,7 @@ tbody td:nth-child(2){
 <a href="/ipo-pipeline.html">IPO Pipeline</a>
 <a href="/spin-off-performance.html">Spin-Off Performance Tracker</a>
 <a href="/margin-leverage.html">Margin &amp; Leverage Cycle</a>
-<a href="/analyst-price-targets.html">Analyst Ratings &amp; Price Targets</a>
+<a href="/analyst-price-targets.html" class="active">Analyst Ratings &amp; Price Targets</a>
 <a href="/institutional-ownership.html">Institutional &amp; Insider Ownership</a>
 </div>
 </div>
@@ -795,59 +832,60 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 
 <div class="header">
 <div>
-<h1>Forward vs. Trailing P/E Divergence</h1>
-<div class="subtitle">The market's own implied year-ahead EPS growth rate, read directly off the gap between forward and trailing P/E — no separate earnings-estimate data needed, since both ratios share the same price.</div>
+<h1>Analyst Ratings &amp; Price Targets</h1>
+<div class="subtitle">Sell-side consensus ratings and price-target-implied upside across the full S&amp;P 500 — two independent analyst signals from the same data, tested against each other and against recent price momentum.</div>
 </div>
 <div class="updated" id="updated">Loading...</div>
 </div>
 
 <div class="stat-grid">
 <div class="stat-card">
-<div class="stat-label">Median implied EPS growth</div>
-<div class="stat-value" id="statMedianGrowth">—</div>
-<div class="stat-note" id="statMedianGrowthNote">Full S&amp;P 500, companies with a meaningful P/E</div>
+<div class="stat-label">Market Median Consensus</div>
+<div class="stat-value" id="statConsensus" style="color:var(--ink);">—</div>
+<div class="stat-note" id="statConsensusNote">1 = Strong Buy, 5 = Strong Sell</div>
 </div>
 <div class="stat-card">
-<div class="stat-label">Avg. trailing P/E vs. forward P/E</div>
-<div class="stat-value" id="statPePair" style="font-size:20px;">—</div>
-<div class="stat-note" id="statPePairNote">Simple average across companies</div>
+<div class="stat-label">Market Median Implied Upside</div>
+<div class="stat-value" id="statUpside">—</div>
+<div class="stat-note" id="statUpsideNote">Target price vs. 50-day average</div>
 </div>
 <div class="stat-card">
-<div class="stat-label">Implied vs. actual growth</div>
-<div class="stat-value" id="statGrowthCorr" style="font-size:20px;">—</div>
-<div class="stat-note" id="statGrowthCorrNote">Pearson r — trailing YoY growth vs. market's implied forward growth</div>
+<div class="stat-label">Most Bullish Sector</div>
+<div class="stat-value" id="statBestSector" style="font-size:20px;">—</div>
+<div class="stat-note" id="statBestSectorNote">Lowest median consensus score</div>
 </div>
 <div class="stat-card">
-<div class="stat-label">Highest implied growth sector</div>
-<div class="stat-value" id="statTopSector" style="font-size:18px;">—</div>
-<div class="stat-note" id="statTopSectorNote">By median implied EPS growth</div>
+<div class="stat-label">Analyst Coverage</div>
+<div class="stat-value" id="statCoverage" style="font-size:20px; color:var(--ink);">—</div>
+<div class="stat-note" id="statCoverageNote">Stocks with &ge;5 covering analysts</div>
 </div>
 </div>
 
+<div class="chart-grid">
 <div class="chart-box">
 <div class="chart-box-header">
 <div>
-<h2>Market-wide implied EPS growth, over time</h2>
-<div class="chart-subhead">Median across the S&amp;P 500, snapshotted weekly — this line starts thin and gets more useful with each week's run</div>
+<h2>Consensus rating by sector</h2>
+<div class="chart-subhead">Median analyst consensus score (1 = Strong Buy … 5 = Strong Sell)</div>
 </div>
 </div>
 <div class="ndr-panel">
 <div class="chart-canvas-wrap">
-<canvas id="historyChart"></canvas>
+<canvas id="consensusSectorChart"></canvas>
 </div>
 </div>
 </div>
-
 <div class="chart-box">
 <div class="chart-box-header">
 <div>
-<h2>Median implied EPS growth by sector</h2>
-<div class="chart-subhead">Positive = forward P/E below trailing P/E (market expects earnings to grow); negative = the reverse</div>
+<h2>Implied upside by sector</h2>
+<div class="chart-subhead">Median (target price / 50-day moving average − 1)</div>
 </div>
 </div>
 <div class="ndr-panel">
 <div class="chart-canvas-wrap">
-<canvas id="sectorChart"></canvas>
+<canvas id="upsideSectorChart"></canvas>
+</div>
 </div>
 </div>
 </div>
@@ -855,91 +893,164 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <div class="chart-box">
 <div class="chart-box-header">
 <div>
-<h2>Distribution of implied EPS growth</h2>
-<div class="chart-subhead">All S&amp;P 500 companies with a meaningful trailing and forward P/E</div>
+<h2>Distribution of implied upside</h2>
+<div class="chart-subhead">Every S&amp;P 500 constituent with both a target price and a 50-day moving average on file</div>
 </div>
 </div>
 <div class="ndr-panel">
 <div class="chart-canvas-wrap">
-<canvas id="histogramChart"></canvas>
+<canvas id="histChart"></canvas>
 </div>
 </div>
 </div>
 
+<div class="chart-grid">
 <div class="chart-box">
 <div class="chart-box-header">
 <div>
-<h2>Does last quarter's actual growth predict the market's implied forward growth?</h2>
-<div class="chart-subhead">Each point is one company: x-axis is trailing quarterly EPS growth YoY, y-axis is the P/E-implied forward growth rate</div>
+<h2>Do the two signals agree?</h2>
+<div class="chart-subhead">Consensus score (x) vs. implied upside (y) — a real relationship should be negative: more bullish ratings pairing with higher target-implied upside</div>
 </div>
 </div>
 <div class="ndr-panel">
 <div class="scatter-canvas-wrap">
-<canvas id="growthScatter"></canvas>
+<canvas id="consensusUpsideScatter"></canvas>
 </div>
 </div>
-<div id="growthMethodTable"></div>
+<div id="consensusUpsideMethodTable"></div>
+</div>
+<div class="chart-box">
+<div class="chart-box-header">
+<div>
+<h2>Do targets chase the trend?</h2>
+<div class="chart-subhead">Trailing 3-month return vs. SPY (x) vs. implied upside (y) — positive would mean analysts set richer targets on names that have already run</div>
+</div>
+</div>
+<div class="ndr-panel">
+<div class="scatter-canvas-wrap">
+<canvas id="upsideMomentumScatter"></canvas>
+</div>
+</div>
+<div id="upsideMomentumMethodTable"></div>
+</div>
 </div>
 
 <div class="table-grid">
 <div class="table-box">
 <div class="table-box-header">
-<h2>Highest implied growth</h2>
-<div class="chart-subhead">Cheapest forward P/E relative to trailing</div>
+<h2>Most Bullish</h2>
+<div class="chart-subhead">Lowest consensus score, min. 5 covering analysts</div>
 </div>
-<table id="growthTable">
-<thead><tr><th>Symbol</th><th>Sector</th><th>Trailing</th><th>Forward</th><th>Implied growth</th></tr></thead>
-<tbody id="growthBody"><tr><td colspan="5" style="text-align:center; color:var(--muted); padding:24px;">Loading&hellip;</td></tr></tbody>
+<table id="mostBullishTable">
+<thead><tr><th>Symbol</th><th>Sector</th><th>Score</th><th>Analysts</th></tr></thead>
+<tbody id="mostBullishBody"><tr><td colspan="4" style="text-align:center; color:var(--muted); padding:24px;">Loading&hellip;</td></tr></tbody>
 </table>
 </div>
 <div class="table-box">
 <div class="table-box-header">
-<h2>Implied decline</h2>
-<div class="chart-subhead">Forward P/E above trailing — market expects earnings to shrink</div>
+<h2>Least Bullish</h2>
+<div class="chart-subhead">Highest consensus score, min. 5 covering analysts</div>
 </div>
-<table id="declineTable">
-<thead><tr><th>Symbol</th><th>Sector</th><th>Trailing</th><th>Forward</th><th>Implied growth</th></tr></thead>
-<tbody id="declineBody"><tr><td colspan="5" style="text-align:center; color:var(--muted); padding:24px;">Loading&hellip;</td></tr></tbody>
+<table id="leastBullishTable">
+<thead><tr><th>Symbol</th><th>Sector</th><th>Score</th><th>Analysts</th></tr></thead>
+<tbody id="leastBullishBody"><tr><td colspan="4" style="text-align:center; color:var(--muted); padding:24px;">Loading&hellip;</td></tr></tbody>
+</table>
+</div>
+</div>
+
+<div class="table-grid">
+<div class="table-box">
+<div class="table-box-header">
+<h2>Highest Implied Upside</h2>
+<div class="chart-subhead">Target price furthest above the 50-day moving average</div>
+</div>
+<table id="highestUpsideTable">
+<thead><tr><th>Symbol</th><th>Sector</th><th>Target</th><th>Upside</th></tr></thead>
+<tbody id="highestUpsideBody"><tr><td colspan="4" style="text-align:center; color:var(--muted); padding:24px;">Loading&hellip;</td></tr></tbody>
+</table>
+</div>
+<div class="table-box">
+<div class="table-box-header">
+<h2>Lowest Implied Upside</h2>
+<div class="chart-subhead">Target price furthest below (or at a discount to) the 50-day moving average</div>
+</div>
+<table id="lowestUpsideTable">
+<thead><tr><th>Symbol</th><th>Sector</th><th>Target</th><th>Upside</th></tr></thead>
+<tbody id="lowestUpsideBody"><tr><td colspan="4" style="text-align:center; color:var(--muted); padding:24px;">Loading&hellip;</td></tr></tbody>
 </table>
 </div>
 </div>
 
 <div class="table-box">
 <div class="table-box-header">
-<h2>All companies with a meaningful P/E</h2>
-<div class="chart-subhead">Full S&amp;P 500 — click a column to sort</div>
+<h2>Full S&amp;P 500</h2>
+<div class="chart-subhead">Rating breakdown, consensus score, target price, and implied upside per constituent</div>
 </div>
 <table id="stockTable">
 <thead>
 <tr>
 <th data-key="symbol">Symbol</th>
 <th data-key="sector">Sector</th>
-<th data-key="trailingPE">Trailing P/E<span class="sort-arrow">▾</span></th>
-<th data-key="forwardPE">Forward P/E<span class="sort-arrow">▾</span></th>
-<th data-key="impliedEpsGrowth">Implied growth<span class="sort-arrow">▾</span></th>
-<th data-key="quarterlyEarningsGrowthYoY">Trailing growth<span class="sort-arrow">▾</span></th>
+<th data-key="totalAnalysts">Analysts<span class="sort-arrow">▾</span></th>
+<th data-key="consensusScore">Score<span class="sort-arrow">▾</span></th>
+<th data-key="targetPrice">Target<span class="sort-arrow">▾</span></th>
+<th data-key="priceProxy">50D Avg<span class="sort-arrow">▾</span></th>
+<th data-key="impliedUpside">Upside<span class="sort-arrow">▾</span></th>
 </tr>
 </thead>
 <tbody id="tableBody">
-<tr><td colspan="6" style="text-align:center; color:var(--muted); padding:30px;">Loading P/E data&hellip;</td></tr>
+<tr><td colspan="7" style="text-align:center; color:var(--muted); padding:30px;">Loading analyst ratings &amp; price target data&hellip;</td></tr>
 </tbody>
 </table>
 </div>
 
 <div class="explainer">
 <h2>Methodology</h2>
-<p>Universe is the full S&amp;P 500. For every constituent, Alpha Vantage's <code>OVERVIEW</code> endpoint returns <code>TrailingPE</code> (price over the last twelve months' EPS) and <code>ForwardPE</code> (price over the next twelve months' consensus EPS estimate). Both ratios share the same numerator — today's share price — so their ratio falls straight out to the market's own implied year-ahead EPS growth rate, with no separate earnings-estimate data needed: <code>TrailingPE &divide; ForwardPE - 1 = EPS<sub>forward</sub> &divide; EPS<sub>trailing</sub> - 1</code>. A positive number means the forward P/E is lower than the trailing P/E — the market is pricing in earnings growth; a negative number means the reverse.</p>
-<p>Companies with a trailing or forward P/E outside (0, 300] are excluded from every chart and average here — a company with near-zero trailing or forward earnings produces a P/E that's numerically enormous (or negative) without reflecting any real valuation signal, the same kind of near-zero-denominator distortion this site's other earnings-based pages have run into and filtered out.</p>
-<p>The history chart is a genuine accumulating time series, not a single snapshot: <code>OVERVIEW</code> only reports the current P/E pair, so each weekly run appends that week's market-wide median to a running series rather than replacing it — the same pattern <a href="/earnings-revisions.html">Earnings Revisions</a> uses for its own trend chart. It starts thin the week this page ships and becomes more informative with every subsequent run.</p>
-<p>The implied-vs-actual-growth check compares this page's forward-looking implied growth rate against each company's own trailing <code>QuarterlyEarningsGrowthYOY</code> (also from the same <code>OVERVIEW</code> call, at no extra API cost) using the same Pearson/Spearman regression convention as <a href="/factor-analysis.html">Factor Analysis</a> and this site's other regression checks — a weak or negative relationship would say analysts mostly expect mean reversion (a strong recent quarter doesn't repeat) rather than momentum.</p>
-<p>This page runs its own weekly Alpha Vantage sweep rather than reusing <a href="/sector-beeswarm.html">Sector Beeswarm</a>'s own weekly <code>OVERVIEW</code> pass, even though both hit the same endpoint for the same universe — that job doesn't persist the P/E fields this page needs, and this site's convention is not to modify an already-shipped page's backend to bolt on a second page's requirements. The tradeoff is accepted here the same way <a href="/insider-buying-selling.html">Insider Buying/Selling</a>'s and other pages' standalone sweeps accepted it.</p>
-<div class="source">Source: <a href="https://www.alphavantage.co/" target="_blank" rel="noopener">Alpha Vantage — OVERVIEW</a></div>
+<p>Universe is the full S&amp;P 500. Alpha Vantage's <code>COMPANY_OVERVIEW</code> endpoint carries two independent sell-side signals per stock: a breakdown of current analyst recommendations (<code>AnalystRatingStrongBuy</code>, <code>Buy</code>, <code>Hold</code>, <code>Sell</code>, and <code>StrongSell</code>) and a consensus <code>AnalystTargetPrice</code>. This page turns the rating breakdown into a single weighted <strong>consensus score</strong> on the standard 1–5 scale used by services like Zacks (1 = Strong Buy, 5 = Strong Sell, so lower is more bullish), and compares the target price against <code>50DayMovingAverage</code> to get an <strong>implied upside</strong> — <code>target / 50-day average − 1</code>. Stocks with fewer than 5 covering analysts are excluded from the consensus score (a 1-analyst "consensus" isn't one), matching the coverage threshold <a href="/analyst-estimate-dispersion.html">Analyst Estimate Dispersion</a> uses.</p>
+<p>The 50-day moving average stands in for "current price" deliberately, not a live quote: fetching an actual last price for all ~500 names would mean a second full sweep (Alpha Vantage has no current-price field on the <code>OVERVIEW</code> payload itself), doubling this page's Alpha Vantage cost for a gap that's usually small — a 50-day average lags a fast-moving stock by construction, so implied upside here should be read as "roughly where the stock has been trading lately," not today's exact closing print. The methodology note is the same trade-off <a href="/pe-divergence.html">Forward vs. Trailing P/E Divergence</a> and <a href="/equity-risk-premium.html">Equity Risk Premium by Sector</a> make elsewhere on this site: derive a second metric from fields a sweep already returns rather than pay for an additional one.</p>
+<p>The two scatter charts test real, distinct questions. The first: do a stock's rating breakdown and its price target actually point the same direction? They're reported independently by Alpha Vantage's underlying data provider, so agreement isn't guaranteed — a negative slope (more bullish ratings pairing with higher implied upside) is the "signals agree" case. The second reuses <a href="/relative-strength-leaders.html">Relative Strength Leaders/Laggards</a>' own trailing 3-month relative-return figure (no separate price sweep) to ask whether price targets simply extrapolate the recent trend — a positive slope would say analysts lean trend-following, a flat or negative one would say they don't (or are actively working against it, i.e. more contrarian on recent losers). Both a linear (Pearson) and rank-based (Spearman) fit are reported, since either can mislead on its own when a relationship isn't linear.</p>
+<p>This is a single-snapshot analysis, not an accumulating one: both statistical tests are cross-sectional (drawn from the same data pull), so — unlike some of this site's other analyst-data pages — there's no cold-start wait for history to build up, and no continuous refresh schedule. Re-run manually when a fresh pull is wanted. Sector and company name come from each stock's own <code>COMPANY_OVERVIEW</code> response (GICS-normalized the same way <a href="/sector-beeswarm.html">Sector Beeswarm</a>'s own metadata sweep is), not a shared cross-page lookup, since this job already pays for the full sweep. That same sweep also carries each stock's institutional/insider ownership percentage and market cap, used by <a href="/institutional-ownership.html">Institutional &amp; Insider Ownership</a> rather than paying for a second sweep of its own.</p>
+<div class="source">Source: <a href="https://www.alphavantage.co/" target="_blank" rel="noopener">Alpha Vantage — COMPANY_OVERVIEW</a>, cross-referenced against <a href="/relative-strength-leaders.html">Relative Strength Leaders/Laggards</a>' own TIME_SERIES_DAILY_ADJUSTED-derived relative return</div>
 </div>
 
 </div>
 
 <script>
-// ---- NDR chart styling helpers -----------------------------------------
+const DATA_URL = "/api/analyst-price-targets";
+
+let RAW = null;
+let SORT_KEY = "impliedUpside";
+let SORT_DIR = -1;
+
+function fmtPct(v, digits){
+ if(v === null || v === undefined || isNaN(v)) return "—";
+ digits = digits === undefined ? 2 : digits;
+ return (v >= 0 ? "+" : "") + v.toFixed(digits) + "%";
+}
+
+function fmtNum(v, digits){
+ if(v === null || v === undefined || isNaN(v)) return "—";
+ digits = digits === undefined ? 2 : digits;
+ return v.toFixed(digits);
+}
+
+function fmtPrice(v){
+ if(v === null || v === undefined || isNaN(v)) return "—";
+ return "$" + v.toFixed(2);
+}
+
+function showError(message){
+ const banner = document.getElementById("errorBanner");
+ banner.textContent = message;
+ banner.style.display = "block";
+}
+function showWarning(message){
+ const banner = document.getElementById("warningBanner");
+ banner.textContent = message;
+ banner.style.display = "block";
+}
+
+// ---- NDR chart styling helpers (matches /concentration.html) -----------
 // Colours come from the --ndr-* custom properties (constant across themes)
 // so the charts keep their warm-paper look while still following the
 // site's "read chart colours from CSS, don't hardcode" rule.
@@ -950,13 +1061,10 @@ function ndr(name){
 Chart.defaults.font.family = "'Iowan Old Style','Palatino Linotype',Georgia,serif";
 Chart.defaults.color = ndr("axis-soft");
 
-function ndrXScale(opts){
- opts = opts || {};
+function ndrXScale(){
  return {
-  type: opts.type || "category",
   ticks: { color: ndr("axis"), maxTicksLimit: 9, maxRotation: 0, autoSkip: true, font: { size: 11 } },
   grid: { color: "rgba(0,0,0,0)", borderColor: ndr("axis") },
-  title: opts.title ? { display: true, text: opts.title, color: ndr("axis-soft"), font: { size: 10 } } : { display: false },
  };
 }
 
@@ -972,59 +1080,20 @@ function ndrYScale(opts){
  };
 }
 
-function ndrLegend(){
+function ndrCategoryScale(){
  return {
-  display: true, position: "top", align: "start",
-  labels: { boxWidth: 22, boxHeight: 2, color: ndr("axis"), font: { size: 11 } },
+  ticks: { color: ndr("axis"), font: { size: 11 } },
+  grid: { display: false },
  };
 }
 
-const DATA_URL = "/api/pe-divergence";
-
-let RAW = null;
-let SORT_KEY = "impliedEpsGrowth";
-let SORT_DIR = -1;
-
-function fmtPct(v, digits){
- if(v === null || v === undefined || isNaN(v)) return "—";
- digits = digits === undefined ? 1 : digits;
- return (v >= 0 ? "+" : "") + v.toFixed(digits) + "%";
-}
-function fmtPE(v){
- if(v === null || v === undefined || isNaN(v)) return "—";
- return v.toFixed(1) + "x";
-}
-
-function showError(message){
- const banner = document.getElementById("errorBanner");
- banner.textContent = message;
- banner.style.display = "block";
-}
-function showWarning(message){
- const banner = document.getElementById("warningBanner");
- banner.textContent = message;
- banner.style.display = "block";
-}
-
-function themeInkColor(){
- const v = getComputedStyle(document.documentElement).getPropertyValue("--ink").trim();
- return v || "#eae6da";
-}
-function themeMutedColor(){
- const v = getComputedStyle(document.documentElement).getPropertyValue("--muted").trim();
- return v || "#8b9199";
-}
-function themeHairColor(){
- const v = getComputedStyle(document.documentElement).getPropertyValue("--hair").trim();
- return v || "#2b3138";
-}
-function themeGreedColor(){
- const v = getComputedStyle(document.documentElement).getPropertyValue("--greed").trim();
- return v || "#d98a3d";
-}
-function themeFearColor(){
- const v = getComputedStyle(document.documentElement).getPropertyValue("--fear").trim();
- return v || "#6f8fac";
+function ndrNumericScale(opts){
+ opts = opts || {};
+ return {
+  title: opts.title ? { display: true, text: opts.title, color: ndr("axis-soft"), font: { size: 10 } } : { display: false },
+  ticks: { color: ndr("axis"), font: { size: 10 } },
+  grid: { color: ndr("grid"), drawBorder: false },
+ };
 }
 
 // ---- Stats helpers — same methodology as /factor-analysis, duplicated
@@ -1071,7 +1140,23 @@ function rankArray(arr){
 }
 function spearmanRegression(xs, ys){ return linearRegression(rankArray(xs), rankArray(ys)); }
 
-let historyChart = null, sectorChart = null, histogramChart = null, growthScatter = null;
+function buildHistogram(values, floor, cap, binWidth){
+ const bins = [];
+ bins.push({ from: null, to: floor, count: 0 }); // underflow
+ for(let b = floor; b < cap; b += binWidth) bins.push({ from: b, to: b + binWidth, count: 0 });
+ bins.push({ from: cap, to: null, count: 0 }); // overflow
+ for(const v of values){
+  if(v === null || v === undefined || isNaN(v)) continue;
+  if(v < floor){ bins[0].count++; continue; }
+  if(v >= cap){ bins[bins.length - 1].count++; continue; }
+  const idx = 1 + Math.min(Math.floor((v - floor) / binWidth), bins.length - 3);
+  bins[idx].count++;
+ }
+ return bins;
+}
+
+let consensusSectorChart = null, upsideSectorChart = null, histChart = null;
+let consensusUpsideScatter = null, upsideMomentumScatter = null;
 
 async function init(){
  try{
@@ -1087,92 +1172,53 @@ async function init(){
   }
 
   renderStats();
-  renderHistoryChart();
-  renderSectorChart();
-  renderHistogram();
-  renderGrowthScatter();
-  renderLeaderTable(data.growthLeaders, "growthBody");
-  renderLeaderTable(data.declineLeaders, "declineBody");
+  renderConsensusSectorChart();
+  renderUpsideSectorChart();
+  renderHistChart();
+  renderConsensusUpsideScatter();
+  renderUpsideMomentumScatter();
+  renderLeaderTable(data.mostBullish, "mostBullishBody", "consensus");
+  renderLeaderTable(data.leastBullish, "leastBullishBody", "consensus");
+  renderLeaderTable(data.highestUpside, "highestUpsideBody", "upside");
+  renderLeaderTable(data.lowestUpside, "lowestUpsideBody", "upside");
   renderTable();
 
  }catch(e){
-  showError("Couldn't load P/E divergence data (" + e.message + "). The /api/pe-divergence function may not have run yet.");
+  showError("Couldn't load analyst ratings & price target data (" + e.message + "). The /api/analyst-price-targets function may not have run yet.");
   document.getElementById("tableBody").innerHTML =
-   '<tr><td colspan="6" style="text-align:center; color:var(--muted); padding:30px;">No data available.</td></tr>';
+   '<tr><td colspan="7" style="text-align:center; color:var(--muted); padding:30px;">No data available.</td></tr>';
  }
 }
 
 function renderStats(){
  const m = RAW.market;
- const growthEl = document.getElementById("statMedianGrowth");
- growthEl.textContent = fmtPct(m.medianImpliedEpsGrowth);
- growthEl.classList.toggle("cell-neg", m.medianImpliedEpsGrowth !== null && m.medianImpliedEpsGrowth < 0);
- document.getElementById("statMedianGrowthNote").textContent = "n=" + m.meaningfulPeCount + " of " + m.companyCount + " companies";
+ document.getElementById("statConsensus").textContent = fmtNum(m.medianConsensusScore);
+ document.getElementById("statConsensusNote").textContent = "n=" + m.coveredCount + " with ≥5 analysts";
 
- document.getElementById("statPePair").textContent = fmtPE(m.meanTrailingPE) + " → " + fmtPE(m.meanForwardPE);
+ const upEl = document.getElementById("statUpside");
+ upEl.textContent = fmtPct(m.medianImpliedUpside);
+ upEl.classList.toggle("cell-neg", m.medianImpliedUpside !== null && m.medianImpliedUpside < 0);
 
- const pairs = RAW.growthPairs;
- const corrEl = document.getElementById("statGrowthCorr");
- const corrNoteEl = document.getElementById("statGrowthCorrNote");
- if(pairs.length >= 10){
-  const reg = linearRegression(pairs.map(p => p.x), pairs.map(p => p.y));
-  corrEl.textContent = (reg.r >= 0 ? "+" : "") + reg.r.toFixed(2);
-  corrNoteEl.textContent = "n=" + reg.n + ", p=" + (reg.p < 0.001 ? "<0.001" : reg.p.toFixed(3));
- }else{
-  corrEl.textContent = "n/a";
-  corrNoteEl.textContent = "Not enough companies with both figures this run";
+ const sortedSectors = [...RAW.sectors].filter(s => s.medianConsensusScore !== null).sort((a, b) => a.medianConsensusScore - b.medianConsensusScore);
+ if(sortedSectors.length){
+  const best = sortedSectors[0];
+  document.getElementById("statBestSector").textContent = best.sector;
+  document.getElementById("statBestSectorNote").textContent = "Score " + fmtNum(best.medianConsensusScore);
  }
 
- const sectors = [...RAW.sectors].sort((a, b) => b.medianImpliedEpsGrowth - a.medianImpliedEpsGrowth);
- document.getElementById("statTopSector").textContent = sectors.length ? sectors[0].sector : "—";
- document.getElementById("statTopSectorNote").textContent = sectors.length ? fmtPct(sectors[0].medianImpliedEpsGrowth) + ", n=" + sectors[0].companyCount : "";
+ document.getElementById("statCoverage").textContent = m.coveredCount + " / " + m.companyCount;
 }
 
-function renderHistoryChart(){
- const rows = RAW.history;
- const ctx = document.getElementById("historyChart").getContext("2d");
- if(historyChart) historyChart.destroy();
- if(!rows.length){
-  ctx.canvas.parentElement.insertAdjacentHTML("beforeend",
-   '<div style="text-align:center; color:var(--muted); padding-top:140px;">No history yet — check back after next week\'s run.</div>');
-  return;
- }
- historyChart = new Chart(ctx, {
-  type: "line",
-  data: {
-   labels: rows.map(r => r.week),
-   datasets: [{
-    label: "Median implied EPS growth",
-    data: rows.map(r => r.medianImpliedEpsGrowth),
-    borderColor: ndr("navy"),
-    backgroundColor: "transparent",
-    borderWidth: 2,
-    pointRadius: rows.length === 1 ? 4 : 1,
-    tension: 0.15,
-   }],
-  },
-  options: {
-   responsive: true,
-   maintainAspectRatio: false,
-   plugins: { legend: { display: false } },
-   scales: {
-    x: ndrXScale(),
-    y: ndrYScale({ fmt: (v) => v + "%" }),
-   },
-  },
- });
-}
-
-function renderSectorChart(){
- const sorted = [...RAW.sectors].sort((a, b) => a.medianImpliedEpsGrowth - b.medianImpliedEpsGrowth);
- const colors = sorted.map(s => s.medianImpliedEpsGrowth >= 0 ? ndr("green") : ndr("red"));
- const ctx = document.getElementById("sectorChart").getContext("2d");
- if(sectorChart) sectorChart.destroy();
- sectorChart = new Chart(ctx, {
+function renderConsensusSectorChart(){
+ const sorted = [...RAW.sectors].filter(s => s.medianConsensusScore !== null).sort((a, b) => a.medianConsensusScore - b.medianConsensusScore);
+ const colors = sorted.map(s => s.medianConsensusScore <= 3 ? ndr("green") : ndr("red"));
+ const ctx = document.getElementById("consensusSectorChart").getContext("2d");
+ if(consensusSectorChart) consensusSectorChart.destroy();
+ consensusSectorChart = new Chart(ctx, {
   type: "bar",
   data: {
    labels: sorted.map(s => s.sector),
-   datasets: [{ label: "Median implied growth", data: sorted.map(s => s.medianImpliedEpsGrowth), backgroundColor: colors, borderRadius: 4 }],
+   datasets: [{ label: "Median Consensus Score", data: sorted.map(s => s.medianConsensusScore), backgroundColor: colors, borderRadius: 4 }],
   },
   options: {
    indexAxis: "y",
@@ -1184,62 +1230,121 @@ function renderSectorChart(){
      callbacks: {
       label: ctx => {
        const s = sorted[ctx.dataIndex];
-       return ["Median implied growth: " + fmtPct(s.medianImpliedEpsGrowth), "Avg. P/E: " + fmtPE(s.meanTrailingPE) + " → " + fmtPE(s.meanForwardPE), "n=" + s.companyCount];
+       return ["Median consensus score: " + fmtNum(s.medianConsensusScore), "n=" + s.companyCount + " companies"];
       },
      },
     },
    },
-   // Horizontal bar: x is the value axis (needs the numeric formatter
-   // ndrYScale supports), y is the category axis (ndrXScale's job).
    scales: {
-    x: ndrYScale({ fmt: (v) => v + "%" }),
-    y: ndrXScale(),
+    x: ndrYScale({ min: 1, max: 5 }),
+    y: ndrCategoryScale(),
    },
   },
  });
 }
 
-function renderHistogram(){
- const buckets = [
-  { max: -20, label: "<-20%" }, { max: -10, label: "-20 to -10%" }, { max: 0, label: "-10 to 0%" },
-  { max: 10, label: "0 to 10%" }, { max: 20, label: "10 to 20%" }, { max: 30, label: "20 to 30%" },
-  { max: 50, label: "30 to 50%" }, { max: Infinity, label: ">50%" },
- ];
- const counts = buckets.map(() => 0);
- RAW.companies.forEach(c => {
-  if(c.impliedEpsGrowth === null) return;
-  const idx = buckets.findIndex(b => c.impliedEpsGrowth < b.max);
-  counts[idx === -1 ? buckets.length - 1 : idx]++;
- });
-
- const ctx = document.getElementById("histogramChart").getContext("2d");
- if(histogramChart) histogramChart.destroy();
- histogramChart = new Chart(ctx, {
+function renderUpsideSectorChart(){
+ const sorted = [...RAW.sectors].filter(s => s.medianImpliedUpside !== null).sort((a, b) => b.medianImpliedUpside - a.medianImpliedUpside);
+ const colors = sorted.map(s => s.medianImpliedUpside >= 0 ? ndr("green") : ndr("red"));
+ const ctx = document.getElementById("upsideSectorChart").getContext("2d");
+ if(upsideSectorChart) upsideSectorChart.destroy();
+ upsideSectorChart = new Chart(ctx, {
   type: "bar",
-  data: { labels: buckets.map(b => b.label), datasets: [{ label: "Companies", data: counts, backgroundColor: ndr("gold"), borderRadius: 4 }] },
+  data: {
+   labels: sorted.map(s => s.sector),
+   datasets: [{ label: "Median Implied Upside", data: sorted.map(s => s.medianImpliedUpside), backgroundColor: colors, borderRadius: 4 }],
+  },
+  options: {
+   indexAxis: "y",
+   responsive: true,
+   maintainAspectRatio: false,
+   plugins: {
+    legend: { display: false },
+    tooltip: {
+     callbacks: {
+      label: ctx => {
+       const s = sorted[ctx.dataIndex];
+       return ["Median implied upside: " + fmtPct(s.medianImpliedUpside), "n=" + s.companyCount + " companies"];
+      },
+     },
+    },
+   },
+   scales: {
+    x: ndrYScale({ fmt: (v) => (Math.round(v * 100) / 100) + "%" }),
+    y: ndrCategoryScale(),
+   },
+  },
+ });
+}
+
+function renderHistChart(){
+ const values = RAW.companies.map(c => c.impliedUpside).filter(v => v !== null);
+ const bins = buildHistogram(values, -40, 80, 10);
+ const labels = bins.map((b, i) => {
+  if(i === 0) return "< " + b.to + "%";
+  if(b.to === null) return b.from + "%+";
+  return b.from + " to " + b.to + "%";
+ });
+ const ctx = document.getElementById("histChart").getContext("2d");
+ if(histChart) histChart.destroy();
+ histChart = new Chart(ctx, {
+  type: "bar",
+  data: {
+   labels,
+   datasets: [{ label: "Constituents", data: bins.map(b => b.count), backgroundColor: ndr("slate"), borderRadius: 3 }],
+  },
   options: {
    responsive: true,
    maintainAspectRatio: false,
-   plugins: { legend: { display: false } },
+   plugins: {
+    legend: { display: false },
+    tooltip: { callbacks: { label: ctx => ctx.parsed.y + " stocks" } },
+   },
    scales: {
-    x: ndrXScale(),
-    y: ndrYScale({ fmt: (v) => Number(v).toFixed(0) }),
+    x: { ...ndrXScale(), grid: { display: false } },
+    y: ndrYScale(),
    },
   },
  });
 }
 
-function renderGrowthScatter(){
- const pairs = RAW.growthPairs;
- const box = document.getElementById("growthScatter").parentElement;
- if(pairs.length < 10){
-  document.getElementById("growthMethodTable").innerHTML =
-   '<div class="method-note">Not enough companies with both a trailing growth figure and a meaningful P/E pair this run (n=' + pairs.length + ', need at least 10) to run this regression.</div>';
-  return;
+function renderMethodTable(elId, pairs, xLabel, yLabel, note){
+ if(pairs.length < 20){
+  document.getElementById(elId).innerHTML =
+   '<div class="method-note">Not enough qualifying stocks this run to test.</div>';
+  return null;
  }
-
  const pearson = linearRegression(pairs.map(p => p.x), pairs.map(p => p.y));
  const spear = spearmanRegression(pairs.map(p => p.x), pairs.map(p => p.y));
+
+ function row(label, stats){
+  const sig = stats.p < 0.05;
+  return "<tr>" +
+   "<td>" + label + "</td>" +
+   "<td>" + stats.n + "</td>" +
+   "<td>" + stats.r.toFixed(2) + "</td>" +
+   "<td>" + (stats.r2 * 100).toFixed(1) + "%</td>" +
+   "<td>" + (stats.slope >= 0 ? "+" : "") + stats.slope.toFixed(3) + "</td>" +
+   "<td>" + stats.t.toFixed(2) + "</td>" +
+   '<td class="' + (sig ? "sig" : "") + '">' + (stats.p < 0.001 ? "<0.001" : stats.p.toFixed(3)) + "</td>" +
+  "</tr>";
+ }
+ document.getElementById(elId).innerHTML =
+  '<table class="method-table">' +
+   "<thead><tr><th>Method</th><th>n</th><th>r</th><th>r&sup2;</th><th>slope</th><th>t</th><th>p</th></tr></thead>" +
+   "<tbody>" + row("Pearson (OLS)", pearson) + row("Spearman (&rho;)", spear) + "</tbody>" +
+  "</table>" +
+  '<div class="method-note">' + note + '</div>';
+ return pearson;
+}
+
+function renderConsensusUpsideScatter(){
+ const pairs = RAW.consensusUpsidePairs || [];
+ const pearson = renderMethodTable(
+  "consensusUpsideMethodTable", pairs, "Consensus score", "Implied upside (%)",
+  "A negative slope means the two independently-reported analyst signals agree — more bullish ratings pair with a richer price target."
+ );
+ if(!pearson){ if(consensusUpsideScatter){ consensusUpsideScatter.destroy(); consensusUpsideScatter = null; } return; }
 
  const xs = pairs.map(p => p.x);
  const xMin = Math.min(...xs), xMax = Math.max(...xs);
@@ -1248,13 +1353,13 @@ function renderGrowthScatter(){
   { x: xMax, y: pearson.intercept + pearson.slope * xMax },
  ];
 
- const ctx = document.getElementById("growthScatter").getContext("2d");
- if(growthScatter) growthScatter.destroy();
- growthScatter = new Chart(ctx, {
+ const ctx = document.getElementById("consensusUpsideScatter").getContext("2d");
+ if(consensusUpsideScatter) consensusUpsideScatter.destroy();
+ consensusUpsideScatter = new Chart(ctx, {
   type: "scatter",
   data: {
    datasets: [
-    { label: "Companies", data: pairs, backgroundColor: ndr("slate"), pointRadius: 3, showLine: false },
+    { label: "Stocks", data: pairs, backgroundColor: ndr("navy"), pointRadius: 2.5, pointHoverRadius: 4, showLine: false },
     { label: "Regression fit", type: "line", data: linePoints, borderColor: ndr("red"), borderWidth: 1.5, borderDash: [4, 3], pointRadius: 0, fill: false },
    ],
   },
@@ -1265,50 +1370,89 @@ function renderGrowthScatter(){
     legend: { display: false },
     tooltip: {
      callbacks: {
-      label: ctx => ctx.dataset.label === "Companies" ? (ctx.raw.symbol + ": " + fmtPct(ctx.raw.x) + " → " + fmtPct(ctx.raw.y)) : null,
+      label: ctx => ctx.dataset.label === "Stocks" ? (ctx.raw.symbol + ": score " + fmtNum(ctx.raw.x) + ", upside " + fmtPct(ctx.raw.y)) : null,
      },
     },
    },
-   // Scatter's x-axis is numeric, not category — override ndrXScale's type.
    scales: {
-    x: ndrXScale({ type: "linear", title: "Trailing quarterly EPS growth YoY (%)" }),
-    y: ndrYScale({ title: "P/E-implied forward growth (%)" }),
+    x: ndrNumericScale({ title: "Consensus score (1=Strong Buy, 5=Strong Sell)" }),
+    y: ndrNumericScale({ title: "Implied upside (%)" }),
    },
   },
  });
-
- function row(label, stats){
-  const sig = stats.p < 0.05;
-  return "<tr>" +
-   "<td>" + label + "</td>" +
-   "<td>" + stats.n + "</td>" +
-   "<td>" + stats.r.toFixed(2) + "</td>" +
-   "<td>" + (stats.r2 * 100).toFixed(1) + "%</td>" +
-   "<td>" + (stats.slope >= 0 ? "+" : "") + stats.slope.toFixed(2) + "</td>" +
-   "<td>" + stats.t.toFixed(2) + "</td>" +
-   '<td class="' + (sig ? "sig" : "") + '">' + (stats.p < 0.001 ? "<0.001" : stats.p.toFixed(3)) + "</td>" +
-  "</tr>";
- }
- document.getElementById("growthMethodTable").innerHTML =
-  '<table class="method-table">' +
-   "<thead><tr><th>Method</th><th>n</th><th>r</th><th>r&sup2;</th><th>slope</th><th>t</th><th>p</th></tr></thead>" +
-   "<tbody>" + row("Pearson (OLS)", pearson) + row("Spearman (&rho;)", spear) + "</tbody>" +
-  "</table>";
 }
 
-function renderLeaderTable(rows, tbodyId){
- const tbody = document.getElementById(tbodyId);
- if(!rows || !rows.length){
-  tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; color:var(--muted); padding:24px;">No qualifying companies.</td></tr>';
+function renderUpsideMomentumScatter(){
+ const pairs = RAW.upsideMomentumPairs || [];
+ if(!RAW.hasRelativeStrength || !pairs.length){
+  if(upsideMomentumScatter){ upsideMomentumScatter.destroy(); upsideMomentumScatter = null; }
+  document.getElementById("upsideMomentumMethodTable").innerHTML =
+   '<div class="method-note">Relative Strength Leaders/Laggards data wasn\'t available at the time of this run, so this test is skipped — no price data to compare against.</div>';
   return;
  }
- tbody.innerHTML = rows.map(r => `<tr>
-  <td><span class="sector-name">${r.symbol}</span></td>
-  <td><span class="sector-ticker">${r.sector || "—"}</span></td>
-  <td>${fmtPE(r.trailingPE)}</td>
-  <td>${fmtPE(r.forwardPE)}</td>
-  <td>${fmtPct(r.impliedEpsGrowth)}</td>
- </tr>`).join("");
+ const pearson = renderMethodTable(
+  "upsideMomentumMethodTable", pairs, "Trailing 3M relative return (%)", "Implied upside (%)",
+  "A positive slope means richer price targets sit on names that have already outperformed SPY over the last 3 months — targets extrapolating the trend rather than looking past it."
+ );
+ if(!pearson){ if(upsideMomentumScatter){ upsideMomentumScatter.destroy(); upsideMomentumScatter = null; } return; }
+
+ const xs = pairs.map(p => p.x);
+ const xMin = Math.min(...xs), xMax = Math.max(...xs);
+ const linePoints = [
+  { x: xMin, y: pearson.intercept + pearson.slope * xMin },
+  { x: xMax, y: pearson.intercept + pearson.slope * xMax },
+ ];
+
+ const ctx = document.getElementById("upsideMomentumScatter").getContext("2d");
+ if(upsideMomentumScatter) upsideMomentumScatter.destroy();
+ upsideMomentumScatter = new Chart(ctx, {
+  type: "scatter",
+  data: {
+   datasets: [
+    { label: "Stocks", data: pairs, backgroundColor: ndr("navy"), pointRadius: 2.5, pointHoverRadius: 4, showLine: false },
+    { label: "Regression fit", type: "line", data: linePoints, borderColor: ndr("red"), borderWidth: 1.5, borderDash: [4, 3], pointRadius: 0, fill: false },
+   ],
+  },
+  options: {
+   responsive: true,
+   maintainAspectRatio: false,
+   plugins: {
+    legend: { display: false },
+    tooltip: {
+     callbacks: {
+      label: ctx => ctx.dataset.label === "Stocks" ? (ctx.raw.symbol + ": rel. 3M " + fmtPct(ctx.raw.x) + ", upside " + fmtPct(ctx.raw.y)) : null,
+     },
+    },
+   },
+   scales: {
+    x: ndrNumericScale({ title: "Trailing 3M return vs. SPY (%)" }),
+    y: ndrNumericScale({ title: "Implied upside (%)" }),
+   },
+  },
+ });
+}
+
+function renderLeaderTable(rows, tbodyId, kind){
+ const tbody = document.getElementById(tbodyId);
+ if(!rows || !rows.length){
+  tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; color:var(--muted); padding:24px;">No qualifying stocks.</td></tr>';
+  return;
+ }
+ if(kind === "consensus"){
+  tbody.innerHTML = rows.map(r => `<tr>
+   <td><span class="sector-name">${r.symbol}</span></td>
+   <td><span class="sector-ticker">${r.sector || "—"}</span></td>
+   <td>${fmtNum(r.consensusScore)}</td>
+   <td>${r.totalAnalysts ?? "—"}</td>
+  </tr>`).join("");
+ }else{
+  tbody.innerHTML = rows.map(r => `<tr>
+   <td><span class="sector-name">${r.symbol}</span></td>
+   <td><span class="sector-ticker">${r.sector || "—"}</span></td>
+   <td>${fmtPrice(r.targetPrice)}</td>
+   <td>${fmtPct(r.impliedUpside)}</td>
+  </tr>`).join("");
+ }
 }
 
 function sortBy(key){
@@ -1316,7 +1460,7 @@ function sortBy(key){
   SORT_DIR = -SORT_DIR;
  }else{
   SORT_KEY = key;
-  SORT_DIR = 1;
+  SORT_DIR = -1;
  }
  renderTable();
 }
@@ -1332,13 +1476,14 @@ function renderTable(){
 
  const tbody = document.getElementById("tableBody");
  tbody.innerHTML = rows.map(r => `<tr>
-  <td><span class="sector-name">${r.symbol}</span></td>
-  <td><span class="sector-ticker">${r.sector || "—"}</span></td>
-  <td>${fmtPE(r.trailingPE)}</td>
-  <td>${fmtPE(r.forwardPE)}</td>
-  <td>${fmtPct(r.impliedEpsGrowth)}</td>
-  <td>${fmtPct(r.quarterlyEarningsGrowthYoY)}</td>
- </tr>`).join("");
+   <td><span class="sector-name">${r.symbol}</span></td>
+   <td><span class="sector-ticker">${r.sector || "—"}</span></td>
+   <td>${r.totalAnalysts ?? "—"}</td>
+   <td>${fmtNum(r.consensusScore)}</td>
+   <td>${fmtPrice(r.targetPrice)}</td>
+   <td>${fmtPrice(r.priceProxy)}</td>
+   <td>${fmtPct(r.impliedUpside)}</td>
+  </tr>`).join("");
 
  document.querySelectorAll("#stockTable thead th").forEach(th => {
   const key = th.dataset.key;

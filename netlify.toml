@@ -197,6 +197,11 @@
   to = "/.netlify/functions/margin-leverage"
   status = 200
 
+[[redirects]]
+  from = "/api/analyst-price-targets"
+  to = "/.netlify/functions/analyst-price-targets"
+  status = 200
+
 # The Statistical Engine page was briefly at these paths.
 [[redirects]]
   from = "/streak-scanner"
@@ -611,3 +616,17 @@
   # this fix, leaving headroom for this job's own longer runtime. Weekly,
   # not daily: fundamentals only change when a company files a new
   # 10-Q/10-K.
+
+[functions."scheduled-analyst-price-targets-background"]
+  # One-time snapshot (2026-09-17), no schedule from the start — same
+  # reasoning the site owner applied to every sibling analytical page above
+  # on 2026-09-16 (see scheduled-surprise-background's own comment): this
+  # page is meant to read as "the research as it stood on this date," not a
+  # continuously-refreshed one, and its statistical tests are both
+  # single-snapshot cross-sections (consensus-score-vs-implied-upside,
+  # implied-upside-vs-trailing-relative-return) rather than a longitudinal
+  # persistence test, so it has no need of accumulating weekly history
+  # either. Run manually (Netlify dashboard "Run now") to populate the
+  # initial snapshot after this deploys, and again whenever a fresh pull is
+  # wanted. ~503 sequential COMPANY_OVERVIEW calls at 1050ms spacing plus a
+  # retry pass, same pacing as scheduled-beeswarm-meta-background.js.
