@@ -197,6 +197,16 @@
   to = "/.netlify/functions/margin-leverage"
   status = 200
 
+[[redirects]]
+  from = "/api/buyback-effectiveness"
+  to = "/.netlify/functions/buyback-effectiveness"
+  status = 200
+
+[[redirects]]
+  from = "/api/fcf-yield"
+  to = "/.netlify/functions/fcf-yield"
+  status = 200
+
 # The Statistical Engine page was briefly at these paths.
 [[redirects]]
   from = "/streak-scanner"
@@ -592,6 +602,28 @@
   # file's full-S&P-500-sweep jobs. Weekly, not daily: this is a fixed,
   # sparse list of ~19 historical events, not a live universe that changes
   # day to day.
+
+[functions."scheduled-fcf-yield-background"]
+  # One-time snapshot (2026-09-17) — no schedule, same reasoning as
+  # scheduled-buyback-effectiveness-background above (this file's own
+  # convention for every page added since 2026-09-16). Independent of that
+  # job — reads only Sector Beeswarm's meta.json, no cross-page blob
+  # dependency. ~503 sequential CASH_FLOW calls at 1050ms spacing plus a
+  # retry pass.
+
+[functions."scheduled-buyback-effectiveness-background"]
+  # One-time snapshot (2026-09-17) — no schedule, matching the convention
+  # every page added since 2026-09-16 has settled into (see
+  # scheduled-surprise-background's own comment for the original
+  # reasoning): this page is meant to read as "the research as it stood on
+  # this date," and quarterly cash-flow data doesn't move day to day
+  # anyway. Run manually (Netlify dashboard "Run now") if a fresh snapshot
+  # is ever wanted later. Depends on scheduled-share-count-background
+  # having already run at least once (reads its trends.json for the net
+  # share-count side of the dilution-offset comparison) — no scheduling
+  # order to manage since neither runs on a recurring cron. ~503
+  # sequential CASH_FLOW calls at 1050ms spacing plus a retry pass, plus
+  # one FEDERAL_FUNDS_RATE call.
 
 [functions."scheduled-margin-leverage-background"]
   # One-time snapshot (2026-09-16) — no schedule, same reasoning as
