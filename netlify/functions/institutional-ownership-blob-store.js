@@ -1,0 +1,21 @@
+// Shared helper for opening the "institutional-ownership" Netlify Blobs
+// store, used by scheduled-institutional-ownership-background.js (writes)
+// and institutional-ownership.js (reads). Mirrors insider-blob-store.js /
+// fcf-yield-blob-store.js exactly — see breadth-blob-store.js for why the
+// explicit siteID/token fallback is needed on this site (automatic context
+// injection doesn't work here).
+
+const { getStore } = require("@netlify/blobs");
+
+const BLOB_STORE = "institutional-ownership";
+const BLOB_KEY = "snapshot.json";
+
+function getInstitutionalOwnershipStore() {
+  const { BLOBS_SITE_ID, BLOBS_API_TOKEN } = process.env;
+  if (BLOBS_SITE_ID && BLOBS_API_TOKEN) {
+    return getStore({ name: BLOB_STORE, siteID: BLOBS_SITE_ID, token: BLOBS_API_TOKEN });
+  }
+  return getStore(BLOB_STORE);
+}
+
+module.exports = { getInstitutionalOwnershipStore, BLOB_STORE, BLOB_KEY };

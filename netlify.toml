@@ -202,6 +202,11 @@
   to = "/.netlify/functions/fcf-yield"
   status = 200
 
+[[redirects]]
+  from = "/api/institutional-ownership"
+  to = "/.netlify/functions/institutional-ownership"
+  status = 200
+
 # The Statistical Engine page was briefly at these paths.
 [[redirects]]
   from = "/streak-scanner"
@@ -635,3 +640,23 @@
   # it isn't populated yet) for trailing P/E — no second OVERVIEW sweep.
   # Weekly, not daily: a TTM free-cash-flow figure only moves when a
   # company files a new 10-Q/10-K.
+
+[functions."scheduled-institutional-ownership-background"]
+  # One-time snapshot (2026-09-17) — no schedule, matching the current
+  # site-wide convention (see scheduled-fcf-yield-background's comment
+  # block above: avoids Saturday cron collisions and redundant Alpha
+  # Vantage load; run manually via Netlify's dashboard "Run now" for now).
+  # For the record, a sensible Saturday slot would have been 15:20 UTC —
+  # after scheduled-fcf-yield-background (15:00 UTC, its own ~503
+  # sequential CASH_FLOW calls finishing roughly 15:09-15:14 depending on
+  # retries), leaving headroom before this job's own ~503 sequential
+  # INSTITUTIONAL_HOLDINGS calls at 1050ms spacing (same pacing/shape,
+  # plus a retry pass). Reads Sector Beeswarm's meta.json for company
+  # name/sector (no second OVERVIEW sweep) and Relative Strength
+  # Leaders/Laggards' own latest.json (read-only, with a graceful
+  # fallback if it isn't populated yet) for the 3-month relative-return
+  # figure used in the breadth-vs-forward-return regression. Weekly, not
+  # daily: institutional ownership is reported off 13F filings, which
+  # update quarterly at most — a daily or even strict-weekly cadence
+  # wouldn't move this data any faster than Alpha Vantage's own source
+  # refreshes it.

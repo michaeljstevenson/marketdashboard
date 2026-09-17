@@ -152,7 +152,7 @@ document.addEventListener("DOMContentLoaded", function(){
 </script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Free Cash Flow Yield — Michael J. Stevenson</title>
+<title>Institutional Ownership Trends — Michael J. Stevenson</title>
 
 <style>
 
@@ -426,6 +426,28 @@ h1{
  padding:14px 14px 10px;
 }
 
+/* Sector chart ownership%/breadth toggle — mirrors /margin-leverage's
+   margin-metric toggle. */
+.metric-toggle{
+ display:flex;
+ gap:6px;
+}
+
+.metric-toggle button{
+ background:var(--card-hover);
+ border:1px solid var(--hair);
+ color:var(--muted);
+ border-radius:6px;
+ padding:5px 12px;
+ font-size:11px;
+ cursor:pointer;
+}
+
+.metric-toggle button.active{
+ color:var(--ink);
+ border-color:var(--greed);
+}
+
 /* TABLE */
 
 .table-grid{
@@ -558,7 +580,7 @@ tbody td:nth-child(3){
  margin-top:8px;
 }
 
-#fcfEarningsMethodTable{
+#breadthReturnMethodTable{
  overflow-x:auto;
 }
 
@@ -748,8 +770,8 @@ tbody td:nth-child(3){
 <a href="/ipo-pipeline.html">IPO Pipeline</a>
 <a href="/spin-off-performance.html">Spin-Off Performance Tracker</a>
 <a href="/margin-leverage.html">Margin &amp; Leverage Cycle</a>
-<a href="/fcf-yield.html" class="active">Free Cash Flow Yield</a>
-<a href="/institutional-ownership.html">Institutional Ownership Trends</a>
+<a href="/fcf-yield.html">Free Cash Flow Yield</a>
+<a href="/institutional-ownership.html" class="active">Institutional Ownership Trends</a>
 </div>
 </div>
 
@@ -816,8 +838,8 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 
 <div class="header">
 <div>
-<h1>Free Cash Flow Yield</h1>
-<div class="subtitle">TTM free cash flow divided by market cap across the S&amp;P 500 — a cash-based valuation read distinct from any P/E-family multiple, compared company-by-company against earnings yield to flag where reported earnings and actual cash generation diverge.</div>
+<h1>Institutional Ownership Trends</h1>
+<div class="subtitle">Aggregate 13F-derived institutional positioning across the S&amp;P 500 — how much of each company institutions own (a level) versus whether they're net adding or net trimming this reporting period (a breadth/flow measure), and whether that flow predicts subsequent relative price performance.</div>
 </div>
 <div class="updated" id="updated">Loading...</div>
 </div>
@@ -829,17 +851,17 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <div class="stat-note" id="statCompaniesNote">Of full S&amp;P 500</div>
 </div>
 <div class="stat-card">
-<div class="stat-label">Median FCF Yield</div>
-<div class="stat-value" id="statMedianFcfYield">—</div>
-<div class="stat-note" id="statMedianFcfYieldNote">Market-wide, this run</div>
+<div class="stat-label">Median Ownership %</div>
+<div class="stat-value" id="statMedianOwnership">—</div>
+<div class="stat-note" id="statMedianOwnershipNote">Market-wide, this run</div>
 </div>
 <div class="stat-card">
-<div class="stat-label">Median Divergence</div>
-<div class="stat-value" id="statMedianDivergence">—</div>
-<div class="stat-note" id="statMedianDivergenceNote">FCF yield minus earnings yield</div>
+<div class="stat-label">Median Net Accum. Breadth</div>
+<div class="stat-value" id="statMedianBreadth">—</div>
+<div class="stat-note" id="statMedianBreadthNote">More institutions adding vs. trimming</div>
 </div>
 <div class="stat-card">
-<div class="stat-label">FCF vs. Earnings Yield Corr.</div>
+<div class="stat-label">Breadth vs. Fwd. Return Corr.</div>
 <div class="stat-value" id="statCorr" style="font-size:20px;">—</div>
 <div class="stat-note" id="statCorrNote">Pearson r, company-level</div>
 </div>
@@ -848,13 +870,17 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <div class="chart-box">
 <div class="chart-box-header">
 <div>
-<h2>Median FCF yield by sector</h2>
-<div class="chart-subhead">Median TTM free cash flow yield across each sector's S&amp;P 500 constituents</div>
+<h2 id="sectorChartTitle">Median ownership % by sector</h2>
+<div class="chart-subhead" id="sectorChartSubhead">Median total institutional ownership across each sector's S&amp;P 500 constituents</div>
+</div>
+<div class="metric-toggle" id="sectorMetricToggle">
+<button type="button" data-metric="ownership" class="active">Ownership %</button>
+<button type="button" data-metric="breadth">Net Accum. Breadth</button>
 </div>
 </div>
 <div class="ndr-panel">
 <div class="chart-canvas-wrap">
-<canvas id="sectorFcfChart"></canvas>
+<canvas id="sectorChart"></canvas>
 </div>
 </div>
 </div>
@@ -862,7 +888,7 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <div class="chart-box">
 <div class="chart-box-header">
 <div>
-<h2>Market-wide median FCF yield, over time</h2>
+<h2>Market-wide median net accumulation breadth, over time</h2>
 <div class="chart-subhead">Snapshotted weekly — this line starts thin and gets more useful with each week's run</div>
 </div>
 </div>
@@ -876,67 +902,67 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <div class="chart-box">
 <div class="chart-box-header">
 <div>
-<h2>FCF yield vs. earnings yield — the cash-conversion check</h2>
-<div class="chart-subhead">Each point is one company: x is earnings yield (1&nbsp;&divide;&nbsp;trailing P/E), y is TTM FCF yield. Below the dashed y=x line, GAAP earnings are running ahead of actual cash; above it, the company converts earnings to cash unusually well.</div>
+<h2>Net accumulation breadth vs. subsequent relative return</h2>
+<div class="chart-subhead">Each point is one company: x is this run's net accumulation breadth, y is Relative Strength Leaders/Laggards' 3-month return relative to SPY (a separate snapshot, not a lagged version of this same metric).</div>
 </div>
 </div>
 <div class="ndr-panel">
 <div class="scatter-canvas-wrap">
-<canvas id="fcfEarningsScatter"></canvas>
+<canvas id="breadthReturnScatter"></canvas>
 </div>
 </div>
-<div id="fcfEarningsMethodTable"></div>
-</div>
-
-<div class="table-grid">
-<div class="table-box">
-<div class="table-box-header">
-<h2>Highest FCF yield</h2>
-<div class="chart-subhead">Most free cash generated per dollar of market cap</div>
-</div>
-<table id="highestFcfTable">
-<thead><tr><th>Symbol</th><th>Sector</th><th>FCF Yield</th><th>Trailing P/E</th></tr></thead>
-<tbody id="highestFcfBody"><tr><td colspan="4" style="text-align:center; color:var(--muted); padding:24px;">Loading&hellip;</td></tr></tbody>
-</table>
-</div>
-<div class="table-box">
-<div class="table-box-header">
-<h2>Most negative FCF yield</h2>
-<div class="chart-subhead">Burning the most cash relative to market cap — not necessarily a red flag on its own (heavy reinvestment, capital-intensive build-outs)</div>
-</div>
-<table id="lowestFcfTable">
-<thead><tr><th>Symbol</th><th>Sector</th><th>FCF Yield</th><th>Trailing P/E</th></tr></thead>
-<tbody id="lowestFcfBody"><tr><td colspan="4" style="text-align:center; color:var(--muted); padding:24px;">Loading&hellip;</td></tr></tbody>
-</table>
-</div>
+<div id="breadthReturnMethodTable"></div>
 </div>
 
 <div class="table-grid">
 <div class="table-box">
 <div class="table-box-header">
-<h2>Biggest positive divergence</h2>
-<div class="chart-subhead">FCF yield furthest above earnings yield — unusually strong cash conversion</div>
+<h2>Highest institutional ownership</h2>
+<div class="chart-subhead">Largest share of shares outstanding held by institutions</div>
 </div>
-<table id="posDivergenceTable">
-<thead><tr><th>Symbol</th><th>Sector</th><th>FCF Yield</th><th>Earnings Yield</th><th>Divergence</th></tr></thead>
-<tbody id="posDivergenceBody"><tr><td colspan="5" style="text-align:center; color:var(--muted); padding:24px;">Loading&hellip;</td></tr></tbody>
+<table id="highestOwnershipTable">
+<thead><tr><th>Symbol</th><th>Sector</th><th>Ownership %</th><th>Holders</th></tr></thead>
+<tbody id="highestOwnershipBody"><tr><td colspan="4" style="text-align:center; color:var(--muted); padding:24px;">Loading&hellip;</td></tr></tbody>
 </table>
 </div>
 <div class="table-box">
 <div class="table-box-header">
-<h2>Biggest negative divergence</h2>
-<div class="chart-subhead">Earnings yield furthest above FCF yield — accrual-heavy, GAAP earnings running ahead of cash</div>
+<h2>Lowest institutional ownership</h2>
+<div class="chart-subhead">Smallest share of shares outstanding held by institutions — not necessarily a red flag on its own (newer listings, insider-heavy cap tables)</div>
 </div>
-<table id="negDivergenceTable">
-<thead><tr><th>Symbol</th><th>Sector</th><th>FCF Yield</th><th>Earnings Yield</th><th>Divergence</th></tr></thead>
-<tbody id="negDivergenceBody"><tr><td colspan="5" style="text-align:center; color:var(--muted); padding:24px;">Loading&hellip;</td></tr></tbody>
+<table id="lowestOwnershipTable">
+<thead><tr><th>Symbol</th><th>Sector</th><th>Ownership %</th><th>Holders</th></tr></thead>
+<tbody id="lowestOwnershipBody"><tr><td colspan="4" style="text-align:center; color:var(--muted); padding:24px;">Loading&hellip;</td></tr></tbody>
+</table>
+</div>
+</div>
+
+<div class="table-grid">
+<div class="table-box">
+<div class="table-box-header">
+<h2>Biggest positive net accumulation breadth</h2>
+<div class="chart-subhead">Most institutions adding relative to those trimming this reporting period</div>
+</div>
+<table id="posBreadthTable">
+<thead><tr><th>Symbol</th><th>Sector</th><th>Net Accum. Breadth</th><th>Increased</th><th>Decreased</th></tr></thead>
+<tbody id="posBreadthBody"><tr><td colspan="5" style="text-align:center; color:var(--muted); padding:24px;">Loading&hellip;</td></tr></tbody>
+</table>
+</div>
+<div class="table-box">
+<div class="table-box-header">
+<h2>Biggest negative net accumulation breadth</h2>
+<div class="chart-subhead">Most institutions trimming relative to those adding — net distribution</div>
+</div>
+<table id="negBreadthTable">
+<thead><tr><th>Symbol</th><th>Sector</th><th>Net Accum. Breadth</th><th>Increased</th><th>Decreased</th></tr></thead>
+<tbody id="negBreadthBody"><tr><td colspan="5" style="text-align:center; color:var(--muted); padding:24px;">Loading&hellip;</td></tr></tbody>
 </table>
 </div>
 </div>
 
 <div class="table-box">
 <div class="table-box-header">
-<h2>All companies with usable TTM FCF</h2>
+<h2>All companies with usable institutional-holdings data</h2>
 <div class="chart-subhead">Full S&amp;P 500 — click a column to sort</div>
 </div>
 <table id="stockTable">
@@ -945,35 +971,37 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <th data-key="symbol">Symbol</th>
 <th data-key="name">Name</th>
 <th data-key="sector">Sector</th>
-<th data-key="ttmFcf">TTM FCF<span class="sort-arrow">▾</span></th>
-<th data-key="marketCap">Market Cap<span class="sort-arrow">▾</span></th>
-<th data-key="fcfYield">FCF Yield<span class="sort-arrow">▾</span></th>
-<th data-key="trailingPE">Trailing P/E<span class="sort-arrow">▾</span></th>
-<th data-key="earningsYield">Earnings Yield<span class="sort-arrow">▾</span></th>
-<th data-key="divergence">Divergence<span class="sort-arrow">▾</span></th>
+<th data-key="totalHolders">Holders<span class="sort-arrow">▾</span></th>
+<th data-key="ownershipPct">Ownership %<span class="sort-arrow">▾</span></th>
+<th data-key="netAccumulationBreadth">Net Accum. Breadth<span class="sort-arrow">▾</span></th>
+<th data-key="holdersIncreased">Holders Increased<span class="sort-arrow">▾</span></th>
+<th data-key="holdersDecreased">Holders Decreased<span class="sort-arrow">▾</span></th>
 </tr>
 </thead>
 <tbody id="tableBody">
-<tr><td colspan="9" style="text-align:center; color:var(--muted); padding:30px;">Loading FCF yield data&hellip;</td></tr>
+<tr><td colspan="8" style="text-align:center; color:var(--muted); padding:30px;">Loading institutional ownership data&hellip;</td></tr>
 </tbody>
 </table>
 </div>
 
 <div class="explainer">
 <h2>Methodology</h2>
-<p>Universe is the full S&amp;P 500. For every constituent, Alpha Vantage's <code>CASH_FLOW</code> endpoint (quarterly reports) supplies the most recent 4 quarters' <code>operatingCashflow</code> and <code>capitalExpenditures</code>. TTM Free Cash Flow is TTM operating cash flow minus TTM capex, computed as <code>OCF &minus; |capex|</code> — the absolute value is deliberate: a live check against Alpha Vantage's data during this page's build showed <code>capitalExpenditures</code> reported as a <i>positive</i> outflow figure (not negative, the sign some other vendors use), and subtracting the absolute value keeps the math correct regardless of which convention a given ticker happens to use. A company is skipped entirely — not partially annualized — if any of its 4 most recent quarterly reports is missing either field.</p>
-<p>FCF yield is TTM FCF divided by market cap, as a percentage. Market cap, sector, and company name are not re-fetched here — they're read from the <a href="/sector-beeswarm.html">Sector Beeswarm</a> page's own weekly metadata sweep, the same reuse pattern several other pages on this site use rather than paying for a second full-index <code>OVERVIEW</code> pass just for labels. Trailing P/E comes from the <a href="/pe-divergence.html">Forward vs. Trailing P/E Divergence</a> page's own snapshot, read here read-only; earnings yield is simply <code>100 &divide; trailing P/E</code>. Because that page's own company list is itself already filtered to tickers with a sane trailing <i>and</i> forward P/E, earnings-yield coverage on this page is a subset of the full FCF-yield universe — a company can have a valid FCF yield with no earnings yield or divergence figure at all, shown as &mdash; rather than guessed at. Both of this page's cross-page dependencies are themselves one-time or occasionally-refreshed snapshots as of this writing, not continuously live feeds, so a company newly missing from either can briefly widen that gap further.</p>
-<p>A company's FCF yield is dropped entirely (not clamped or capped, just excluded from every chart, table, and average) if its magnitude exceeds &plusmn;60% — real S&amp;P 500 constituents essentially never print a genuine trailing FCF yield past that range even in a hard drawdown; a reading beyond it is overwhelmingly a market-cap/FCF unit or metadata-join mismatch, not a real valuation signal, the same kind of sanity bound <a href="/pe-divergence.html">Forward vs. Trailing P/E Divergence</a> applies to its own P/E ratios (excluded past 300x, not clamped to it).</p>
-<p>The history chart is a genuine accumulating time series, not a single snapshot: <code>CASH_FLOW</code> only reports each company's own trailing quarters, not a market-wide series, so each weekly run appends that week's cross-company median FCF yield to a running series rather than replacing it — the same pattern <a href="/earnings-revisions.html">Earnings Revisions</a> and <a href="/pe-divergence.html">P/E Divergence</a> use for their own trend lines. It starts thin the week this page ships and becomes more informative with every subsequent run.</p>
-<p>The cash-conversion scatter regresses each company's FCF yield against its own earnings yield using the same Pearson and Spearman two-method check used throughout <a href="/factor-analysis.html">Factor Analysis</a> and this site's other regression checks. A company sitting well below the dashed y=x reference line converts a smaller share of its reported earnings into actual cash (more accrual-heavy — larger non-cash charges, working-capital drag, or heavier capex than its income statement alone suggests); a company well above it converts earnings to cash unusually efficiently. A weak or noisy relationship overall is itself informative — it would say GAAP earnings and cash generation are, in practice, not tightly coupled cross-sectionally.</p>
-<p>Refreshes on manual runs for now (see this job's own <code>netlify.toml</code> comment) — a TTM free-cash-flow figure only moves when a company files a new 10-Q/10-K, so nothing here needs a daily or even a strict weekly cadence to stay current.</p>
-<div class="source">Source: <a href="https://www.alphavantage.co/" target="_blank" rel="noopener">Alpha Vantage — CASH_FLOW</a>, plus market cap/sector via Sector Beeswarm's <code>OVERVIEW</code>-derived metadata and trailing P/E via P/E Divergence's own <code>OVERVIEW</code> sweep</div>
+<p>Universe is the full S&amp;P 500. For every constituent, Alpha Vantage's <code>INSTITUTIONAL_HOLDINGS</code> endpoint returns a set of top-level summary fields alongside a per-institution holder list (Vanguard, BlackRock, and so on — thousands of rows for a mega-cap). This page reads <i>only</i> the summary fields — <code>total_institutional_holders</code>, <code>total_institutional_shares</code>, <code>total_institutional_ownership_percentage</code>, the <code>holders_with_increased_holdings</code> / <code>holders_with_decreased_holdings</code> / <code>holders_with_unchanged_holdings</code> counts, and the corresponding <code>shares_with_*</code> counts — and never fetches, stores, or processes the underlying holder-by-holder list. This page is about aggregate institutional positioning across the index, not tracking individual 13F filers, and parsing thousands of holder rows per company across a ~503-company sweep would add real cost for no benefit to what's shown here.</p>
+<p>Two different questions, both answered on this page. <b>Total institutional ownership %</b> is a level — what share of shares outstanding institutions currently hold, as of the latest reporting period. <b>Net accumulation breadth</b> is a flow/breadth measure, computed per company as:</p>
+<p style="font-family:var(--mono); background:var(--card-hover); padding:10px 14px; border-radius:6px; font-size:12.5px;">net accumulation breadth = (holders increased &minus; holders decreased) &divide; total institutional holders &times; 100</p>
+<p>A positive score means more institutions added to their position than trimmed it this reporting period; negative means more trimmed than added. The two measures are deliberately kept separate because they can point opposite directions: a stock can carry very high institutional ownership that's completely flat or even net-distributing (a mature, widely-held name nobody's actively rotating into or out of), while a newer or smaller name can show a strongly positive breadth score off a much lower ownership base. This is the same structural idea as <a href="/earnings-revisions.html">Earnings Revisions</a>' "Net Revision Ratio" — a breadth ratio of how many entities are moving in each direction, not a magnitude — applied here to institutional holder counts instead of analyst estimates.</p>
+<p>A company is skipped entirely if <code>total_institutional_holders</code> is missing or zero (there's no meaningful ratio to compute against a zero denominator) or if <a href="/sector-beeswarm.html">Sector Beeswarm</a>'s own weekly metadata sweep has no sector for it — company name, sector, and market cap are reused from that page's <code>OVERVIEW</code>-derived <code>meta.json</code> rather than paying for a second full-index sweep just for labels, the same pattern several other pages on this site use. Separately, <code>total_institutional_ownership_percentage</code> is excluded — for that one field only, not the whole row — if it comes back above 100%: true institutional ownership can't exceed shares outstanding, and a reading past that bound is a known data-vendor double-count artifact (share-class/ETF look-through quirks in aggregated 13F data), not a real positioning signal. A company failing only that check still keeps its net accumulation breadth score, since that figure is computed from a separate set of fields and isn't affected by the ownership-% issue.</p>
+<p>The history chart is a genuine accumulating time series, not a single snapshot: <code>INSTITUTIONAL_HOLDINGS</code> only reports each company's own current-period summary, not a market-wide series, so each weekly run appends that week's cross-company median net accumulation breadth to a running series rather than replacing it — the same pattern <a href="/earnings-revisions.html">Earnings Revisions</a>, <a href="/pe-divergence.html">P/E Divergence</a>, and <a href="/fcf-yield.html">Free Cash Flow Yield</a> use for their own trend lines. It starts thin the week this page ships and becomes more informative with every subsequent run.</p>
+<p>The scatter tests whether net accumulation breadth predicts subsequent relative price performance: x is each company's net accumulation breadth this run, y is <a href="/relative-strength-leaders.html">Relative Strength Leaders/Laggards</a>' own 3-month return relative to SPY, reused read-only from that page's latest snapshot rather than running a second ~503-call price sweep — the same cross-page idiom <a href="/earnings-growth-divergence.html">Earnings Growth vs. Price Performance Divergence</a> already uses against the same blob. This is deliberately "this week's positioning vs. a separate forward/contemporaneous return snapshot," not "this week's rank vs. next week's rank" — two overlapping return windows measured a week apart would share almost all of their underlying trading days and correlate mechanically regardless of any real signal, the same overlapping-window pitfall Relative Strength Leaders/Laggards' own methodology avoids. If Relative Strength Leaders/Laggards' snapshot isn't populated yet, this page still shows every other chart and table normally — the scatter and its regression are simply empty until that page's own job has run at least once. Both cross-page dependencies (Sector Beeswarm and Relative Strength Leaders/Laggards) are themselves periodic snapshots, not continuously live feeds, so a company newly missing from either can briefly widen coverage gaps between them.</p>
+<p>The regression uses the same Pearson and Spearman two-method check used throughout <a href="/factor-analysis.html">Factor Analysis</a> and this site's other regression checks. A weak or noisy relationship is itself informative here — it would say institutional flow, at least at this weekly-snapshot cadence, doesn't mechanically lead near-term relative price performance.</p>
+<p>Refreshes on manual runs for now (see this job's own <code>netlify.toml</code> comment) — institutional ownership is reported off 13F filings, which update quarterly at most, so nothing here needs a daily or even a strict weekly cadence to stay current.</p>
+<div class="source">Source: <a href="https://www.alphavantage.co/" target="_blank" rel="noopener">Alpha Vantage — INSTITUTIONAL_HOLDINGS</a> (summary fields only), plus company name/sector/market cap via Sector Beeswarm's <code>OVERVIEW</code>-derived metadata and 3-month relative return via Relative Strength Leaders/Laggards' own snapshot</div>
 </div>
 
 </div>
 
 <script>
-const DATA_URL = "/api/fcf-yield";
+const DATA_URL = "/api/institutional-ownership";
 
 const SECTOR_COLORS = {
  "Information Technology": "#d98a3d",
@@ -990,8 +1018,9 @@ const SECTOR_COLORS = {
 };
 
 let RAW = null;
-let SORT_KEY = "fcfYield";
+let SORT_KEY = "netAccumulationBreadth";
 let SORT_DIR = -1;
+let SECTOR_METRIC = "ownership";
 
 function fmtPct(v, digits){
  if(v === null || v === undefined || isNaN(v)) return "—";
@@ -1008,19 +1037,9 @@ function fmtPpt(v, digits){
  digits = digits === undefined ? 1 : digits;
  return (v >= 0 ? "+" : "") + v.toFixed(digits) + "ppt";
 }
-function fmtPE(v){
+function fmtInt(v){
  if(v === null || v === undefined || isNaN(v)) return "—";
- return v.toFixed(1) + "x";
-}
-function fmtUsd(v){
- if(v === null || v === undefined || isNaN(v)) return "—";
- const sign = v < 0 ? "-" : "";
- const abs = Math.abs(v);
- if(abs >= 1e12) return sign + "$" + (abs / 1e12).toFixed(2) + "T";
- if(abs >= 1e9) return sign + "$" + (abs / 1e9).toFixed(2) + "B";
- if(abs >= 1e6) return sign + "$" + (abs / 1e6).toFixed(1) + "M";
- if(abs >= 1e3) return sign + "$" + (abs / 1e3).toFixed(1) + "K";
- return sign + "$" + abs.toFixed(0);
+ return Math.round(v).toLocaleString();
 }
 
 function showError(message){
@@ -1138,7 +1157,7 @@ function marketMedian(values){
  return v.length % 2 ? v[mid] : (v[mid - 1] + v[mid]) / 2;
 }
 
-let sectorFcfChart = null, historyChart = null, fcfEarningsScatter = null;
+let sectorChart = null, historyChart = null, breadthReturnScatter = null;
 
 async function init(){
  try{
@@ -1151,24 +1170,24 @@ async function init(){
 
   if(data.loadedCount < data.universeSize){
    showWarning("Only " + data.loadedCount + " of " + data.universeSize + " S&P 500 constituents loaded this run — some data may be temporarily unavailable.");
-  }else if(data.peDivergenceAvailable === false){
-   showWarning("The P/E Divergence snapshot this page reuses for trailing P/E isn't populated yet — FCF yield is shown for every company, but earnings yield and divergence are unavailable until that page's own job has run at least once.");
+  }else if(data.relativeStrengthAvailable === false){
+   showWarning("The Relative Strength Leaders/Laggards snapshot this page reuses for forward relative return isn't populated yet — ownership % and net accumulation breadth are shown for every company, but the breadth-vs-return scatter and regression are unavailable until that page's own job has run at least once.");
   }
 
   renderStats();
   renderSectorChart();
   renderHistoryChart();
   renderScatter();
-  renderLeaderTable(RAW.leaders.highestFcfYield, "highestFcfBody", "fcf");
-  renderLeaderTable(RAW.leaders.lowestFcfYield, "lowestFcfBody", "fcf");
-  renderLeaderTable(RAW.leaders.biggestPositiveDivergence, "posDivergenceBody", "divergence");
-  renderLeaderTable(RAW.leaders.biggestNegativeDivergence, "negDivergenceBody", "divergence");
+  renderLeaderTable(RAW.leaders.highestOwnership, "highestOwnershipBody", "ownership");
+  renderLeaderTable(RAW.leaders.lowestOwnership, "lowestOwnershipBody", "ownership");
+  renderLeaderTable(RAW.leaders.biggestPositiveBreadth, "posBreadthBody", "breadth");
+  renderLeaderTable(RAW.leaders.biggestNegativeBreadth, "negBreadthBody", "breadth");
   renderTable();
 
  }catch(e){
-  showError("Couldn't load FCF yield data (" + e.message + "). The /api/fcf-yield function may not have run yet.");
+  showError("Couldn't load institutional ownership data (" + e.message + "). The /api/institutional-ownership function may not have run yet.");
   document.getElementById("tableBody").innerHTML =
-   '<tr><td colspan="9" style="text-align:center; color:var(--muted); padding:30px;">No data available.</td></tr>';
+   '<tr><td colspan="8" style="text-align:center; color:var(--muted); padding:30px;">No data available.</td></tr>';
  }
 }
 
@@ -1176,18 +1195,16 @@ function renderStats(){
  const m = RAW.market;
 
  document.getElementById("statCompanies").textContent = m.companyCount;
- document.getElementById("statCompaniesNote").textContent = RAW.loadedCount + " of " + RAW.universeSize + " loaded, " + m.companyCount + " with usable TTM FCF";
+ document.getElementById("statCompaniesNote").textContent = RAW.loadedCount + " of " + RAW.universeSize + " loaded, " + m.companyCount + " with a usable holder count";
 
- const fcfEl = document.getElementById("statMedianFcfYield");
- fcfEl.textContent = fmtPct(m.medianFcfYield);
- fcfEl.classList.toggle("cell-neg", m.medianFcfYield !== null && m.medianFcfYield < 0);
- document.getElementById("statMedianFcfYieldNote").textContent = "n=" + m.companyCount + " companies";
+ const ownEl = document.getElementById("statMedianOwnership");
+ ownEl.textContent = fmtPlainPct(m.medianOwnershipPct);
+ document.getElementById("statMedianOwnershipNote").textContent = "n=" + m.ownershipPctCoverage + " with a sane ownership % on file";
 
- const divMedian = marketMedian(RAW.companies.map(c => c.divergence));
- const divEl = document.getElementById("statMedianDivergence");
- divEl.textContent = fmtPpt(divMedian);
- divEl.classList.toggle("cell-neg", divMedian !== null && divMedian < 0);
- document.getElementById("statMedianDivergenceNote").textContent = "n=" + m.earningsYieldCoverage + " with a trailing P/E on file";
+ const breadthEl = document.getElementById("statMedianBreadth");
+ breadthEl.textContent = fmtPpt(m.medianNetAccumulationBreadth);
+ breadthEl.classList.toggle("cell-neg", m.medianNetAccumulationBreadth !== null && m.medianNetAccumulationBreadth < 0);
+ document.getElementById("statMedianBreadthNote").textContent = "n=" + m.companyCount + " companies";
 
  const pairs = RAW.scatterPairs;
  const corrEl = document.getElementById("statCorr");
@@ -1202,16 +1219,29 @@ function renderStats(){
  }
 }
 
+const SECTOR_CHART_META = {
+ ownership: { field: "medianOwnershipPct", label: "Median ownership %", title: "Median ownership % by sector", subhead: "Median total institutional ownership across each sector's S&P 500 constituents", fmt: v => v + "%" },
+ breadth: { field: "medianNetAccumulationBreadth", label: "Median net accumulation breadth", title: "Median net accumulation breadth by sector", subhead: "Median (holders increased &minus; holders decreased) &divide; total holders across each sector's S&amp;P 500 constituents", fmt: v => v + "ppt" },
+};
+
 function renderSectorChart(){
- const sorted = [...RAW.sectors].sort((a, b) => a.medianFcfYield - b.medianFcfYield);
- const colors = sorted.map(s => s.medianFcfYield >= 0 ? ndr("green") : ndr("red"));
- const ctx = document.getElementById("sectorFcfChart").getContext("2d");
- if(sectorFcfChart) sectorFcfChart.destroy();
- sectorFcfChart = new Chart(ctx, {
+ const meta = SECTOR_CHART_META[SECTOR_METRIC];
+ document.getElementById("sectorChartTitle").textContent = meta.title;
+ document.getElementById("sectorChartSubhead").innerHTML = meta.subhead;
+
+ const withValue = RAW.sectors.filter(s => s[meta.field] !== null);
+ const sorted = [...withValue].sort((a, b) => a[meta.field] - b[meta.field]);
+ const colors = SECTOR_METRIC === "breadth"
+  ? sorted.map(s => s[meta.field] >= 0 ? ndr("green") : ndr("red"))
+  : sorted.map(() => ndr("navy"));
+
+ const ctx = document.getElementById("sectorChart").getContext("2d");
+ if(sectorChart) sectorChart.destroy();
+ sectorChart = new Chart(ctx, {
   type: "bar",
   data: {
    labels: sorted.map(s => s.sector),
-   datasets: [{ label: "Median FCF yield", data: sorted.map(s => s.medianFcfYield), backgroundColor: colors, borderRadius: 4 }],
+   datasets: [{ label: meta.label, data: sorted.map(s => s[meta.field]), backgroundColor: colors, borderRadius: 4 }],
   },
   options: {
    indexAxis: "y",
@@ -1223,7 +1253,7 @@ function renderSectorChart(){
      callbacks: {
       label: ctx => {
        const s = sorted[ctx.dataIndex];
-       return ["Median FCF yield: " + fmtPct(s.medianFcfYield), "n=" + s.companyCount];
+       return [meta.label + ": " + meta.fmt(s[meta.field]), "n=" + s.companyCount];
       },
      },
     },
@@ -1231,7 +1261,7 @@ function renderSectorChart(){
    // Horizontal bar: x is the value axis (needs the numeric formatter
    // ndrYScale supports), y is the category axis (ndrXScale's job).
    scales: {
-    x: ndrYScale({ fmt: (v) => v + "%" }),
+    x: ndrYScale({ fmt: meta.fmt }),
     y: ndrXScale(),
    },
   },
@@ -1252,8 +1282,8 @@ function renderHistoryChart(){
   data: {
    labels: rows.map(r => r.week),
    datasets: [{
-    label: "Median FCF yield",
-    data: rows.map(r => r.medianFcfYield),
+    label: "Median net accumulation breadth",
+    data: rows.map(r => r.medianNetAccumulationBreadth),
     borderColor: ndr("navy"),
     backgroundColor: "transparent",
     borderWidth: 2,
@@ -1267,7 +1297,7 @@ function renderHistoryChart(){
    plugins: { legend: { display: false } },
    scales: {
     x: ndrXScale(),
-    y: ndrYScale({ fmt: (v) => v + "%" }),
+    y: ndrYScale({ fmt: (v) => v + "ppt" }),
    },
   },
  });
@@ -1276,23 +1306,21 @@ function renderHistoryChart(){
 function renderScatter(){
  const pairs = RAW.scatterPairs;
  if(pairs.length < 10){
-  document.getElementById("fcfEarningsMethodTable").innerHTML =
-   '<div class="method-note">Not enough companies with both a usable FCF yield and a trailing P/E-derived earnings yield this run (n=' + pairs.length + ', need at least 10) to run this regression.</div>';
-  if(fcfEarningsScatter) fcfEarningsScatter.destroy();
+  document.getElementById("breadthReturnMethodTable").innerHTML =
+   '<div class="method-note">Not enough companies with both a usable net accumulation breadth and a Relative Strength Leaders/Laggards forward-return figure this run (n=' + pairs.length + ', need at least 10) to run this regression.</div>';
+  if(breadthReturnScatter) breadthReturnScatter.destroy();
   return;
  }
 
  const pearson = linearRegression(pairs.map(p => p.x), pairs.map(p => p.y));
  const spear = spearmanRegression(pairs.map(p => p.x), pairs.map(p => p.y));
 
- const xs = pairs.map(p => p.x), ys = pairs.map(p => p.y);
+ const xs = pairs.map(p => p.x);
  const xMin = Math.min(...xs), xMax = Math.max(...xs);
- const allMin = Math.min(xMin, Math.min(...ys)), allMax = Math.max(xMax, Math.max(...ys));
  const fitPoints = [
   { x: xMin, y: pearson.intercept + pearson.slope * xMin },
   { x: xMax, y: pearson.intercept + pearson.slope * xMax },
  ];
- const equalLine = [{ x: allMin, y: allMin }, { x: allMax, y: allMax }];
 
  const bySector = {};
  for(const p of pairs){
@@ -1307,12 +1335,11 @@ function renderScatter(){
   pointRadius: 3,
   showLine: false,
  }));
- datasets.push({ label: "Equal FCF/earnings yield (y=x)", type: "line", data: equalLine, borderColor: ndr("slate"), borderWidth: 1, borderDash: [2, 3], pointRadius: 0, fill: false });
  datasets.push({ label: "Regression fit", type: "line", data: fitPoints, borderColor: ndr("red"), borderWidth: 1.5, borderDash: [4, 3], pointRadius: 0, fill: false });
 
- const ctx = document.getElementById("fcfEarningsScatter").getContext("2d");
- if(fcfEarningsScatter) fcfEarningsScatter.destroy();
- fcfEarningsScatter = new Chart(ctx, {
+ const ctx = document.getElementById("breadthReturnScatter").getContext("2d");
+ if(breadthReturnScatter) breadthReturnScatter.destroy();
+ breadthReturnScatter = new Chart(ctx, {
   type: "scatter",
   data: { datasets },
   options: {
@@ -1322,43 +1349,43 @@ function renderScatter(){
     legend: { display: false },
     tooltip: {
      callbacks: {
-      label: ctx => (ctx.dataset.label === "Regression fit" || ctx.dataset.label === "Equal FCF/earnings yield (y=x)") ? null : (ctx.raw.symbol + " (" + ctx.dataset.label + "): earnings yield " + fmtPlainPct(ctx.raw.x) + ", FCF yield " + fmtPlainPct(ctx.raw.y)),
+      label: ctx => ctx.dataset.label === "Regression fit" ? null : (ctx.raw.symbol + " (" + ctx.dataset.label + "): net accum. breadth " + fmtPpt(ctx.raw.x) + ", 3M rel. return " + fmtPlainPct(ctx.raw.y)),
      },
     },
    },
    scales: {
-    x: ndrXScale({ type: "linear", title: "Earnings yield (%)" }),
-    y: ndrYScale({ title: "TTM FCF yield (%)" }),
+    x: ndrXScale({ type: "linear", title: "Net accumulation breadth (ppt)" }),
+    y: ndrYScale({ title: "3-month relative return vs. SPY (%)" }),
    },
   },
  });
 
- document.getElementById("fcfEarningsMethodTable").innerHTML = methodTableHtml(pearson, spear,
-  "Slope is the change in FCF yield (ppt) per 1ppt of earnings yield. n=" + pearson.n + " companies with both figures this run.");
+ document.getElementById("breadthReturnMethodTable").innerHTML = methodTableHtml(pearson, spear,
+  "Slope is the change in 3-month relative return (%) per 1ppt of net accumulation breadth. n=" + pearson.n + " companies with both figures this run.");
 }
 
 function renderLeaderTable(rows, tbodyId, kind){
  const tbody = document.getElementById(tbodyId);
- const colspan = kind === "divergence" ? 5 : 4;
+ const colspan = kind === "breadth" ? 5 : 4;
  if(!rows || !rows.length){
   tbody.innerHTML = '<tr><td colspan="' + colspan + '" style="text-align:center; color:var(--muted); padding:24px;">No qualifying companies.</td></tr>';
   return;
  }
  tbody.innerHTML = rows.map(r => {
-  if(kind === "divergence"){
+  if(kind === "breadth"){
    return `<tr>
     <td><span class="sector-name">${r.symbol}</span></td>
     <td><span class="sector-ticker">${r.sector || "—"}</span></td>
-    <td>${fmtPct(r.fcfYield)}</td>
-    <td>${fmtPct(r.earningsYield)}</td>
-    <td>${fmtPpt(r.divergence)}</td>
+    <td>${fmtPpt(r.netAccumulationBreadth)}</td>
+    <td>${fmtInt(r.holdersIncreased)}</td>
+    <td>${fmtInt(r.holdersDecreased)}</td>
    </tr>`;
   }
   return `<tr>
    <td><span class="sector-name">${r.symbol}</span></td>
    <td><span class="sector-ticker">${r.sector || "—"}</span></td>
-   <td>${fmtPct(r.fcfYield)}</td>
-   <td>${fmtPE(r.trailingPE)}</td>
+   <td>${fmtPlainPct(r.ownershipPct)}</td>
+   <td>${fmtInt(r.totalHolders)}</td>
   </tr>`;
  }).join("");
 }
@@ -1387,12 +1414,11 @@ function renderTable(){
   <td><span class="sector-name">${r.symbol}</span></td>
   <td title="${r.name || ""}">${r.name || "—"}</td>
   <td><span class="sector-ticker">${r.sector || "—"}</span></td>
-  <td>${fmtUsd(r.ttmFcf)}</td>
-  <td>${fmtUsd(r.marketCap)}</td>
-  <td>${fmtPct(r.fcfYield)}</td>
-  <td>${fmtPE(r.trailingPE)}</td>
-  <td>${fmtPct(r.earningsYield)}</td>
-  <td>${fmtPpt(r.divergence)}</td>
+  <td>${fmtInt(r.totalHolders)}</td>
+  <td>${fmtPlainPct(r.ownershipPct)}</td>
+  <td>${fmtPpt(r.netAccumulationBreadth)}</td>
+  <td>${fmtInt(r.holdersIncreased)}</td>
+  <td>${fmtInt(r.holdersDecreased)}</td>
  </tr>`).join("");
 
  document.querySelectorAll("#stockTable thead th").forEach(th => {
@@ -1406,6 +1432,14 @@ function renderTable(){
 document.querySelectorAll("#stockTable thead th").forEach(th => {
  const key = th.dataset.key;
  if(key) th.addEventListener("click", () => sortBy(key));
+});
+
+document.querySelectorAll("#sectorMetricToggle button").forEach(btn => {
+ btn.addEventListener("click", () => {
+  SECTOR_METRIC = btn.dataset.metric;
+  document.querySelectorAll("#sectorMetricToggle button").forEach(b => b.classList.toggle("active", b === btn));
+  renderSectorChart();
+ });
 });
 
 init();
