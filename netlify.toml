@@ -197,6 +197,31 @@
   to = "/.netlify/functions/margin-leverage"
   status = 200
 
+[[redirects]]
+  from = "/api/buyback-tracker"
+  to = "/.netlify/functions/buyback-tracker"
+  status = 200
+
+[[redirects]]
+  from = "/api/institutional-ownership"
+  to = "/.netlify/functions/institutional-ownership"
+  status = 200
+
+[[redirects]]
+  from = "/api/news-sentiment"
+  to = "/.netlify/functions/news-sentiment"
+  status = 200
+
+[[redirects]]
+  from = "/api/congressional-trading"
+  to = "/.netlify/functions/congressional-trading"
+  status = 200
+
+[[redirects]]
+  from = "/api/quality-lowvol-factors"
+  to = "/.netlify/functions/quality-lowvol-factors"
+  status = 200
+
 # The Statistical Engine page was briefly at these paths.
 [[redirects]]
   from = "/streak-scanner"
@@ -611,3 +636,135 @@
   # this fix, leaving headroom for this job's own longer runtime. Weekly,
   # not daily: fundamentals only change when a company files a new
   # 10-Q/10-K.
+
+[functions."scheduled-buyback-tracker-background"]
+  # One-time snapshot (2026-09-18) — no schedule, same reasoning as
+  # scheduled-surprise-background above (site owner converted most
+  # fundamentals-sweep background jobs to manually-triggered one-time
+  # snapshots on 2026-09-16 to control Alpha Vantage call volume). Run
+  # manually (Netlify dashboard "Run now") if a fresh snapshot is ever
+  # wanted later. For the historical record, the staggering this would have
+  # used if it were still scheduled: after scheduled-margin-leverage-
+  # background (14:35 UTC, the last job in the Saturday block as of this
+  # addition, finishing ~14:44 given its own ~1006-call two-statement
+  # sweep) — this job's own ~503 sequential CASH_FLOW calls at 1050ms
+  # spacing plus a retry pass would run comfortably after that. Real
+  # dependency, not just pacing: like scheduled-earnings-growth-divergence-
+  # background, this job reads scheduled-relative-strength-background's own
+  # latest.json for 3-month price performance (the buyback-intensity-vs-
+  # forward-return regression) instead of running a second price sweep, so
+  # it would ideally run after that job too — falls back to buyback-only
+  # rows (relPrice3M: null), not a crash, if that blob isn't populated.
+  # Weekly, not daily: a TTM buyback figure only changes when a company
+  # files a new 10-Q/10-K.
+
+[functions."scheduled-institutional-ownership-background"]
+  # One-time snapshot (2026-09-18) — no schedule, same reasoning as
+  # scheduled-surprise-background above (site owner converted most
+  # fundamentals-sweep background jobs to manually-triggered one-time
+  # snapshots on 2026-09-16 to control Alpha Vantage call volume). Run
+  # manually (Netlify dashboard "Run now") if a fresh snapshot is ever
+  # wanted later. For the historical record, the staggering this would have
+  # used if it were still scheduled: after scheduled-buyback-tracker-
+  # background (itself a one-time snapshot as of this same addition — see
+  # that function's own comment above — but for the record its ~503-call
+  # CASH_FLOW sweep at 1050ms spacing runs roughly 9 minutes end to end),
+  # leaving a few minutes of clearance before this job's own ~503
+  # sequential INSTITUTIONAL_HOLDINGS calls at 1050ms spacing plus a retry
+  # pass begin. Real dependency, not just pacing: like scheduled-buyback-
+  # tracker-background and scheduled-earnings-growth-divergence-background,
+  # this job reads scheduled-relative-strength-background's own latest.json
+  # for 3-month price performance (the net-flow-vs-forward-return "smart
+  # money" regression) instead of running a second price sweep, so it would
+  # ideally run after that job too — falls back to ownership/flow-only rows
+  # (relPrice3M: null), not a crash, if that blob isn't populated. Weekly,
+  # not daily: 13F-derived institutional ownership only changes on each
+  # quarter's 45-day-after-quarter-end filing deadline, not day to day.
+
+[functions."scheduled-news-sentiment-background"]
+  # One-time snapshot (2026-09-18) — no schedule, same reasoning as
+  # scheduled-surprise-background above (site owner converted most
+  # fundamentals-sweep background jobs to manually-triggered one-time
+  # snapshots on 2026-09-16 to control Alpha Vantage call volume). Run
+  # manually (Netlify dashboard "Run now") if a fresh snapshot is ever
+  # wanted later. For the historical record, the staggering this would have
+  # used if it were still scheduled: after scheduled-institutional-
+  # ownership-background (itself a one-time snapshot as of this same
+  # addition — see that function's own comment above — but for the record
+  # its ~503-call INSTITUTIONAL_HOLDINGS sweep at 1050ms spacing runs
+  # roughly 9 minutes end to end), leaving a few minutes of clearance
+  # before this job's own ~503 sequential NEWS_SENTIMENT calls at 1050ms
+  # spacing plus a retry pass begin — NEWS_SENTIMENT responses run notably
+  # larger than the other endpoints in this Saturday block (up to 50
+  # articles per call, each with nested topics/ticker_sentiment arrays), so
+  # this job budgets a little extra headroom past the other jobs' own
+  # ~9-minute sweeps even though the between-call pacing itself is
+  # unchanged. Real dependency, not just pacing: like
+  # scheduled-institutional-ownership-background and scheduled-buyback-
+  # tracker-background, this job reads scheduled-relative-strength-
+  # background's own latest.json for 3-month price performance (the
+  # sentiment-vs-forward-return "does media sentiment predict returns" test)
+  # instead of running a second price sweep, so it would ideally run after
+  # that job too — falls back to sentiment/attention-only rows
+  # (relPrice3M: null), not a crash, if that blob isn't populated. Weekly,
+  # not daily: this is a rolling latest-~50-articles snapshot, not a
+  # slow-moving fundamentals figure, but a daily sweep of ~503 companies'
+  # full news feeds would burn Alpha Vantage call volume disproportionately
+  # to how much the market-wide signal actually moves day to day.
+
+[functions."scheduled-congressional-trading-background"]
+  # One-time snapshot (2026-09-18) — no schedule, same reasoning as
+  # scheduled-surprise-background above (site owner converted most
+  # fundamentals-sweep background jobs to manually-triggered one-time
+  # snapshots on 2026-09-16 to control Alpha Vantage call volume). Run
+  # manually (Netlify dashboard "Run now") if a fresh snapshot is ever
+  # wanted later. For the historical record, the staggering this would have
+  # used if it were still scheduled: after scheduled-news-sentiment-
+  # background (itself a one-time snapshot as of this same addition — see
+  # that function's own comment above — but for the record its ~503-call
+  # NEWS_SENTIMENT sweep at 1050ms spacing runs roughly 9-10 minutes end to
+  # end given its larger responses), leaving a few minutes of clearance
+  # before this job's own ~503 sequential CONGRESS_TRADES calls at 1050ms
+  # spacing plus a retry pass begin — CONGRESS_TRADES has no from_date
+  # filter of its own (unlike INSIDER_TRANSACTIONS), so each call returns a
+  # company's full disclosed trading history and the trailing-12-month
+  # window is applied client-side in this job, same "full history per call,
+  # filter locally" shape as several endpoints already used on this site.
+  # Real dependency, not just pacing: like scheduled-news-sentiment-
+  # background and scheduled-institutional-ownership-background, this job
+  # reads scheduled-relative-strength-background's own latest.json for
+  # 3-month price performance (the "does congressional trading activity
+  # predict returns" regression) instead of running a second price sweep, so
+  # it would ideally run after that job too — falls back to congressional-
+  # trading-only rows (relPrice3M: null), not a crash, if that blob isn't
+  # populated. Weekly, not daily: STOCK Act disclosures carry up to a 45-day
+  # notification lag by statute, so this data has no reason to be swept more
+  # often than the site's other weekly fundamentals-style jobs.
+
+[functions."scheduled-quality-lowvol-background"]
+  # One-time snapshot (2026-09-18) — no schedule, same reasoning as
+  # scheduled-surprise-background above (site owner converted most
+  # fundamentals-sweep background jobs to manually-triggered one-time
+  # snapshots on 2026-09-16 to control Alpha Vantage call volume). Run
+  # manually (Netlify dashboard "Run now") if a fresh snapshot is ever
+  # wanted later. For the historical record, the staggering this would have
+  # used if it were still scheduled: after scheduled-congressional-trading-
+  # background (itself a one-time snapshot as of this same addition — see
+  # that function's own comment above — but for the record its ~503-call
+  # CONGRESS_TRADES sweep at 1050ms spacing runs roughly 9-10 minutes end to
+  # end), leaving a few minutes of clearance before this job's own ~503
+  # sequential TIME_SERIES_DAILY_ADJUSTED (compact) calls at 1050ms spacing
+  # plus a retry pass begin — same endpoint/outputsize/pacing scheduled-
+  # relative-strength-background already uses for this exact universe. Two
+  # real cross-page dependencies, not just pacing: this job REQUIRES
+  # scheduled-margin-leverage-background's own blob (the quality-score
+  # input — operating margin and net-debt/EBITDA) to have run at least once
+  # already, and aborts with a clear error rather than writing an empty
+  # snapshot if that blob is missing; it also reads scheduled-relative-
+  # strength-background's own latest.json for 3-month price performance
+  # (the "does the composite predict subsequent relative performance" test)
+  # with the same soft graceful fallback (relPrice3M: null, warning banner)
+  # every other page in this session's cross-page-read pattern uses if that
+  # one specifically isn't populated. Weekly, not daily: a 63-trading-day
+  # realized-vol read and quarterly margin/leverage figures both move far
+  # too slowly to justify a daily re-sweep of ~503 tickers.
