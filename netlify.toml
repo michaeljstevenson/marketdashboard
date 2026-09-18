@@ -197,6 +197,11 @@
   to = "/.netlify/functions/margin-leverage"
   status = 200
 
+[[redirects]]
+  from = "/api/buyback-tracker"
+  to = "/.netlify/functions/buyback-tracker"
+  status = 200
+
 # The Statistical Engine page was briefly at these paths.
 [[redirects]]
   from = "/streak-scanner"
@@ -611,3 +616,24 @@
   # this fix, leaving headroom for this job's own longer runtime. Weekly,
   # not daily: fundamentals only change when a company files a new
   # 10-Q/10-K.
+
+[functions."scheduled-buyback-tracker-background"]
+  # One-time snapshot (2026-09-18) — no schedule, same reasoning as
+  # scheduled-surprise-background above (site owner converted most
+  # fundamentals-sweep background jobs to manually-triggered one-time
+  # snapshots on 2026-09-16 to control Alpha Vantage call volume). Run
+  # manually (Netlify dashboard "Run now") if a fresh snapshot is ever
+  # wanted later. For the historical record, the staggering this would have
+  # used if it were still scheduled: after scheduled-margin-leverage-
+  # background (14:35 UTC, the last job in the Saturday block as of this
+  # addition, finishing ~14:44 given its own ~1006-call two-statement
+  # sweep) — this job's own ~503 sequential CASH_FLOW calls at 1050ms
+  # spacing plus a retry pass would run comfortably after that. Real
+  # dependency, not just pacing: like scheduled-earnings-growth-divergence-
+  # background, this job reads scheduled-relative-strength-background's own
+  # latest.json for 3-month price performance (the buyback-intensity-vs-
+  # forward-return regression) instead of running a second price sweep, so
+  # it would ideally run after that job too — falls back to buyback-only
+  # rows (relPrice3M: null), not a crash, if that blob isn't populated.
+  # Weekly, not daily: a TTM buyback figure only changes when a company
+  # files a new 10-Q/10-K.
