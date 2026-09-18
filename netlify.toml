@@ -217,6 +217,11 @@
   to = "/.netlify/functions/congressional-trading"
   status = 200
 
+[[redirects]]
+  from = "/api/quality-lowvol-factors"
+  to = "/.netlify/functions/quality-lowvol-factors"
+  status = 200
+
 # The Statistical Engine page was briefly at these paths.
 [[redirects]]
   from = "/streak-scanner"
@@ -735,3 +740,31 @@
   # populated. Weekly, not daily: STOCK Act disclosures carry up to a 45-day
   # notification lag by statute, so this data has no reason to be swept more
   # often than the site's other weekly fundamentals-style jobs.
+
+[functions."scheduled-quality-lowvol-background"]
+  # One-time snapshot (2026-09-18) — no schedule, same reasoning as
+  # scheduled-surprise-background above (site owner converted most
+  # fundamentals-sweep background jobs to manually-triggered one-time
+  # snapshots on 2026-09-16 to control Alpha Vantage call volume). Run
+  # manually (Netlify dashboard "Run now") if a fresh snapshot is ever
+  # wanted later. For the historical record, the staggering this would have
+  # used if it were still scheduled: after scheduled-congressional-trading-
+  # background (itself a one-time snapshot as of this same addition — see
+  # that function's own comment above — but for the record its ~503-call
+  # CONGRESS_TRADES sweep at 1050ms spacing runs roughly 9-10 minutes end to
+  # end), leaving a few minutes of clearance before this job's own ~503
+  # sequential TIME_SERIES_DAILY_ADJUSTED (compact) calls at 1050ms spacing
+  # plus a retry pass begin — same endpoint/outputsize/pacing scheduled-
+  # relative-strength-background already uses for this exact universe. Two
+  # real cross-page dependencies, not just pacing: this job REQUIRES
+  # scheduled-margin-leverage-background's own blob (the quality-score
+  # input — operating margin and net-debt/EBITDA) to have run at least once
+  # already, and aborts with a clear error rather than writing an empty
+  # snapshot if that blob is missing; it also reads scheduled-relative-
+  # strength-background's own latest.json for 3-month price performance
+  # (the "does the composite predict subsequent relative performance" test)
+  # with the same soft graceful fallback (relPrice3M: null, warning banner)
+  # every other page in this session's cross-page-read pattern uses if that
+  # one specifically isn't populated. Weekly, not daily: a 63-trading-day
+  # realized-vol read and quarterly margin/leverage figures both move far
+  # too slowly to justify a daily re-sweep of ~503 tickers.
