@@ -212,6 +212,11 @@
   to = "/.netlify/functions/news-sentiment"
   status = 200
 
+[[redirects]]
+  from = "/api/congressional-trading"
+  to = "/.netlify/functions/congressional-trading"
+  status = 200
+
 # The Statistical Engine page was briefly at these paths.
 [[redirects]]
   from = "/streak-scanner"
@@ -701,3 +706,32 @@
   # slow-moving fundamentals figure, but a daily sweep of ~503 companies'
   # full news feeds would burn Alpha Vantage call volume disproportionately
   # to how much the market-wide signal actually moves day to day.
+
+[functions."scheduled-congressional-trading-background"]
+  # One-time snapshot (2026-09-18) — no schedule, same reasoning as
+  # scheduled-surprise-background above (site owner converted most
+  # fundamentals-sweep background jobs to manually-triggered one-time
+  # snapshots on 2026-09-16 to control Alpha Vantage call volume). Run
+  # manually (Netlify dashboard "Run now") if a fresh snapshot is ever
+  # wanted later. For the historical record, the staggering this would have
+  # used if it were still scheduled: after scheduled-news-sentiment-
+  # background (itself a one-time snapshot as of this same addition — see
+  # that function's own comment above — but for the record its ~503-call
+  # NEWS_SENTIMENT sweep at 1050ms spacing runs roughly 9-10 minutes end to
+  # end given its larger responses), leaving a few minutes of clearance
+  # before this job's own ~503 sequential CONGRESS_TRADES calls at 1050ms
+  # spacing plus a retry pass begin — CONGRESS_TRADES has no from_date
+  # filter of its own (unlike INSIDER_TRANSACTIONS), so each call returns a
+  # company's full disclosed trading history and the trailing-12-month
+  # window is applied client-side in this job, same "full history per call,
+  # filter locally" shape as several endpoints already used on this site.
+  # Real dependency, not just pacing: like scheduled-news-sentiment-
+  # background and scheduled-institutional-ownership-background, this job
+  # reads scheduled-relative-strength-background's own latest.json for
+  # 3-month price performance (the "does congressional trading activity
+  # predict returns" regression) instead of running a second price sweep, so
+  # it would ideally run after that job too — falls back to congressional-
+  # trading-only rows (relPrice3M: null), not a crash, if that blob isn't
+  # populated. Weekly, not daily: STOCK Act disclosures carry up to a 45-day
+  # notification lag by statute, so this data has no reason to be swept more
+  # often than the site's other weekly fundamentals-style jobs.
