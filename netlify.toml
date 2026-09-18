@@ -207,6 +207,11 @@
   to = "/.netlify/functions/institutional-ownership"
   status = 200
 
+[[redirects]]
+  from = "/api/news-sentiment"
+  to = "/.netlify/functions/news-sentiment"
+  status = 200
+
 # The Statistical Engine page was briefly at these paths.
 [[redirects]]
   from = "/streak-scanner"
@@ -665,3 +670,34 @@
   # (relPrice3M: null), not a crash, if that blob isn't populated. Weekly,
   # not daily: 13F-derived institutional ownership only changes on each
   # quarter's 45-day-after-quarter-end filing deadline, not day to day.
+
+[functions."scheduled-news-sentiment-background"]
+  # One-time snapshot (2026-09-18) — no schedule, same reasoning as
+  # scheduled-surprise-background above (site owner converted most
+  # fundamentals-sweep background jobs to manually-triggered one-time
+  # snapshots on 2026-09-16 to control Alpha Vantage call volume). Run
+  # manually (Netlify dashboard "Run now") if a fresh snapshot is ever
+  # wanted later. For the historical record, the staggering this would have
+  # used if it were still scheduled: after scheduled-institutional-
+  # ownership-background (itself a one-time snapshot as of this same
+  # addition — see that function's own comment above — but for the record
+  # its ~503-call INSTITUTIONAL_HOLDINGS sweep at 1050ms spacing runs
+  # roughly 9 minutes end to end), leaving a few minutes of clearance
+  # before this job's own ~503 sequential NEWS_SENTIMENT calls at 1050ms
+  # spacing plus a retry pass begin — NEWS_SENTIMENT responses run notably
+  # larger than the other endpoints in this Saturday block (up to 50
+  # articles per call, each with nested topics/ticker_sentiment arrays), so
+  # this job budgets a little extra headroom past the other jobs' own
+  # ~9-minute sweeps even though the between-call pacing itself is
+  # unchanged. Real dependency, not just pacing: like
+  # scheduled-institutional-ownership-background and scheduled-buyback-
+  # tracker-background, this job reads scheduled-relative-strength-
+  # background's own latest.json for 3-month price performance (the
+  # sentiment-vs-forward-return "does media sentiment predict returns" test)
+  # instead of running a second price sweep, so it would ideally run after
+  # that job too — falls back to sentiment/attention-only rows
+  # (relPrice3M: null), not a crash, if that blob isn't populated. Weekly,
+  # not daily: this is a rolling latest-~50-articles snapshot, not a
+  # slow-moving fundamentals figure, but a daily sweep of ~503 companies'
+  # full news feeds would burn Alpha Vantage call volume disproportionately
+  # to how much the market-wide signal actually moves day to day.
