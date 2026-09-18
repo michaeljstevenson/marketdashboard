@@ -1,4 +1,31 @@
 Nightly Routine Brief — michaeljstevenson.co
+## 🛑 PR BACKLOG PILEUP — READ THIS FIRST (added 2026-09-18)
+`main` has not moved since **2026-09-16 02:11 UTC** (commit `5e892a9`), but **8 separate PRs
+have been opened against it since then and none have merged**: #19, #20, #21, #22, #23, #24,
+#25, #26. Because no merges have happened between runs, each session's "Already built" read of
+this file was stale by the time it started, and the same ideas got built independently, in full,
+multiple times:
+
+* **Institutional Ownership (13F) tracker** — built independently in #19, #21, #22, #24, #25,
+  and #26 (six separate implementations, most named `/institutional-ownership.html`).
+* **Analyst Price Targets** — built independently in #19 and #22.
+* **Congressional Trading Tracker** — built independently in #20 and #26.
+* **Free Cash Flow Yield** — built independently in #23 and #24.
+* **Buyback (dollar-value / effectiveness)** — built independently in #23 and #26, on top of
+  the already-shipped `/share-count-trends.html` and `/shareholder-yield.html`.
+
+Each PR touches the shared nav block across 40+ pages and `netlify.toml`, so merging any one of
+them will put every other open PR into conflict on those same lines. This is not a "pick the
+best one" problem for an automated session to resolve on its own — it needs a human to decide
+which implementation of each duplicated idea to keep, merge that one, and close the rest (or
+hand-merge the good parts). **This run did not open a 9th PR or build a new page**, to avoid
+adding to the pileup before it's resolved — instead it only added this note.
+
+**For the next automated run**: before building anything new, check `list_pull_requests` for
+open PRs against `main` and read their titles/bodies — if this pileup is still unresolved, don't
+build another page (the near-complete backlog is now several-times covered across those 8 PRs
+already); flag it again instead and stop.
+
 ## ⚠️ DO NOT STOP AFTER ONE PAGE
 This is the single most important rule in this file, and it has been missed
 before: after finishing a page — including after it's tested, committed,
