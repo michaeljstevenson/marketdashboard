@@ -197,6 +197,16 @@
   to = "/.netlify/functions/margin-leverage"
   status = 200
 
+[[redirects]]
+  from = "/api/short-sale-volume"
+  to = "/.netlify/functions/short-sale-volume"
+  status = 200
+
+[[redirects]]
+  from = "/api/institutional-holdings"
+  to = "/.netlify/functions/institutional-holdings"
+  status = 200
+
 # The Statistical Engine page was briefly at these paths.
 [[redirects]]
   from = "/streak-scanner"
@@ -611,3 +621,44 @@
   # this fix, leaving headroom for this job's own longer runtime. Weekly,
   # not daily: fundamentals only change when a company files a new
   # 10-Q/10-K.
+
+[functions."scheduled-short-sale-volume-background"]
+  # One-time snapshot — no schedule, same reasoning as
+  # scheduled-surprise-background above (this page's own snapshot is meant
+  # to read as "activity over the trailing ~3 months as of this run," and
+  # every other ~500-call full-sweep job added to this file after
+  # 2026-09-16 was deliberately kept off the recurring Saturday cron to
+  # avoid piling still more full-universe sweeps onto that one block —
+  # re-run manually via the Netlify dashboard "Run now" when a fresh
+  # snapshot is wanted). Original staggering rationale, kept for
+  # reference: Weekly, Saturday 14:50 UTC — after
+  # scheduled-margin-leverage-background (14:35 UTC, finishes ~14:44), the
+  # last job in the Saturday block as of this addition. Two independent
+  # data-fetch phases: first, ~60-130 unpaced/lightly-paced HTTP requests
+  # to FINRA's public Reg SHO daily short-sale-volume flat files (no API
+  # key, no Alpha Vantage budget consumed — see
+  # scheduled-short-sale-volume-background.js for the URL pattern), then
+  # the usual ~504 sequential Alpha Vantage TIME_SERIES_DAILY_ADJUSTED
+  # (compact) calls at 1050ms spacing plus a retry pass for the
+  # forward-return regression half of the page. Weekly, not daily: a
+  # ~3-month average short-sale-volume ratio doesn't meaningfully shift
+  # day to day.
+
+[functions."scheduled-institutional-holdings-background"]
+  # One-time snapshot — no schedule, same reasoning as
+  # scheduled-surprise-background above (kept off the recurring Saturday
+  # cron so as not to pile another ~503-call full sweep onto that block —
+  # re-run manually via the Netlify dashboard "Run now" when a fresh
+  # snapshot is wanted). Original staggering rationale, kept for
+  # reference: Weekly, Saturday 15:05 UTC — after
+  # scheduled-short-sale-volume-background (14:50 UTC, finishes ~15:00
+  # once its own FINRA + Alpha Vantage phases are both done), the last job
+  # in the Saturday block as of this addition. ~503 sequential Alpha
+  # Vantage INSTITUTIONAL_HOLDINGS calls at 1050ms spacing plus a retry
+  # pass — same pacing proven at this scale by
+  # scheduled-beeswarm-meta-background.js. Reads
+  # scheduled-equity-risk-premium-background.js's own latest.json for beta
+  # (falls back to no beta-scatter test, not a crash, if that blob isn't
+  # populated yet) rather than paying for a second COMPANY_OVERVIEW sweep.
+  # Weekly, not daily: institutional 13F-style holdings only update when
+  # a new reporting period's filings land, not day to day.
