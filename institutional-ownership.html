@@ -512,6 +512,16 @@ table{
  min-width:600px;
 }
 
+/* The four leaderboard tables (Highest/Lowest Ownership, Accumulation,
+   Distribution) don't need the 600px floor above — it's sized for the
+   many-column full table. Left at 600px in a .table-grid's ~522px-wide
+   column, the site-wide rule pushed the one value column that matters
+   (the actual figure) out past the box's visible width, requiring a
+   manual horizontal scroll to see it — same bug independently found and
+   fixed on /news-sentiment.html's own leaderboard tables; applied here
+   too since this page is still unmerged/not live. */
+#highestOwnershipTable, #lowestOwnershipTable, #accumulationTable, #distributionTable{ min-width:0; }
+
 thead th{
  text-align:right;
  padding:14px 12px;
