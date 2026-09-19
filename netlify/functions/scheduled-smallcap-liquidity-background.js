@@ -13,8 +13,8 @@
 // see the page's methodology blurb, and the code comment on COHORT_FRACTION
 // below.
 //
-// For each of the ~200 tickers, fetches TIME_SERIES_DAILY_ADJUSTED
-// (outputsize=full) and computes, per day: dollar volume, the Amihud
+// For each of the ~200 tickers, fetches Yahoo Finance's full daily OHLCV
+// history and computes, per day: dollar volume, the Amihud
 // (2002) illiquidity ratio, and the Corwin & Schultz (2012) high-low
 // spread estimator, then a 21-trading-day rolling average of each. Cohort
 // series (equal-weighted average across ~100 tickers/day) are what's
@@ -22,17 +22,12 @@
 // small; a latest-day-only snapshot per ticker is kept separately for the
 // full sortable table.
 //
-// ~200 sequential calls, ~1050ms apart with a retry pass — same pacing
-// proven at this scale by scheduled-beeswarm-meta-background.js and
-// scheduled-share-count-background.js's ~503-call sweeps.
+// ~200 sequential calls, ~300ms apart with a retry pass.
 
 const { getSmallcapLiquidityStore, LATEST_KEY } = require("./smallcap-liquidity-blob-store");
 const { getBeeswarmStore, META_KEY } = require("./beeswarm-blob-store");
-const { recordAvCall } = require("./av-call-counter");
+const { fetchDailyBars } = require("./yahoo-client");
 
-const ALPHA_VANTAGE_URL = "https://www.alphavantage.co/query";
-const USER_AGENT =
-  "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0 Safari/537.36";
 
 // Bottom/top 1/5 of the S&P 500 by market cap — ~100 names each out of
 // ~503 constituents. Not a true small-cap universe (see file header).
@@ -50,30 +45,8 @@ function round(v, d = 2) {
   return Math.round(v * f) / f;
 }
 
-async function fetchDailyAdjusted(apiKey, symbol) {
-  await recordAvCall();
-  const res = await fetch(
-    `${ALPHA_VANTAGE_URL}?function=TIME_SERIES_DAILY_ADJUSTED&symbol=${symbol}&outputsize=full&apikey=${apiKey}`,
-    { headers: { "User-Agent": USER_AGENT } }
-  );
-  if (!res.ok) throw new Error(`HTTP ${res.status}`);
-  const payload = await res.json();
-  if (payload.Note || payload.Information || payload.error) {
-    throw new Error(payload.Note || payload.Information || JSON.stringify(payload.error));
-  }
-  const series = payload["Time Series (Daily)"];
-  if (!series) throw new Error(`unexpected response shape: ${JSON.stringify(payload).slice(0, 160)}`);
-
-  return Object.entries(series)
-    .map(([date, day]) => ({
-      date,
-      high: parseFloat(day["2. high"]),
-      low: parseFloat(day["3. low"]),
-      close: parseFloat(day["4. close"]),
-      adjClose: parseFloat(day["5. adjusted close"]),
-      volume: parseFloat(day["6. volume"]),
-    }))
-    .sort((a, b) => (a.date < b.date ? -1 : 1));
+async function fetchDailyAdjusted(symbol) {
+  return fetchDailyBars(symbol);
 }
 
 // Amihud (2002) illiquidity ratio: |daily return| / dollar volume, scaled
@@ -159,8 +132,6 @@ function trimTickerSeries(computed) {
 exports.handler = async () => {
   console.log("scheduled-smallcap-liquidity-background: starting");
   try {
-    const apiKey = process.env.ALPHAVANTAGE_API_KEY;
-    if (!apiKey) throw new Error("ALPHAVANTAGE_API_KEY environment variable is not set");
 
     const beeswarmStore = getBeeswarmStore();
     const meta = await beeswarmStore.get(META_KEY, { type: "json" });
@@ -187,7 +158,7 @@ exports.handler = async () => {
 
     async function fetchInto(symbol) {
       try {
-        const raw = await fetchDailyAdjusted(apiKey, symbol);
+        const raw = await fetchDailyAdjusted(symbol);
         if (raw.length < ROLLING_WINDOW + 5) return false; // too little history to be useful
         const series = trimTickerSeries(computeTickerSeries(raw));
         if (!series.length) return false;
@@ -210,7 +181,7 @@ exports.handler = async () => {
       for (const symbol of todo) {
         const got = await fetchInto(symbol);
         if (!got && !tickerSeries.has(symbol)) missed.push(symbol);
-        await sleep(1050);
+        await sleep(300);
       }
       todo = missed;
     }

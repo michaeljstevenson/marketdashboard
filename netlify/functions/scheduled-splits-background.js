@@ -2,22 +2,22 @@
 // background"] in netlify.toml) for the /stock-split-tracker.html page.
 //
 // Two-stage sweep:
-//   1. Alpha Vantage's SPLITS endpoint across the full S&P 500 (~503 calls)
+//   1. Yahoo Finance's split events across the full S&P 500 (~503 calls)
 //      to find every split event in the last FREQUENCY_LOOKBACK_YEARS —
 //      cheap, one call per ticker regardless of how much split history it
 //      has, so this stage powers the long-run "is the stock split coming
 //      back?" frequency chart at no extra cost.
 //   2. For the much smaller set of tickers with a split inside the more
 //      recent EVENT_STUDY_LOOKBACK_YEARS window, a second sweep of
-//      TIME_SERIES_DAILY_ADJUSTED (outputsize=full) — plus SPY once — to
+//      full daily adjusted closes — plus SPY once — to
 //      build a real event study: relative return vs. SPY in the trading
 //      days before and after the split. Deliberately NOT fetched for
 //      every ticker with any split in 15 years — a full daily-adjusted
-//      pull is a much heavier payload than a SPLITS call, and splits from
+//      pull is a much heavier payload than a split-events call, and splits from
 //      a decade-plus ago aren't what a reader wants a price chart around.
 //
-// Data-quality filter (found while building this page): Alpha Vantage's
-// SPLITS endpoint mixes in non-split corporate-action adjustment factors —
+// Data-quality filter (found while building this page): the original
+// Alpha Vantage SPLITS feed mixed in non-split corporate-action adjustment factors —
 // e.g. GE shows "splits" of 1.2530 (2024-04-02) and 1.2810 (2023-01-04),
 // which are actually the GE Vernova and GE HealthCare spin-off adjustment
 // ratios, not stock splits GE ever announced. Real splits are always a
@@ -25,7 +25,7 @@
 // adjustment factors are arbitrary decimals derived from market prices at
 // the spin-off date. SPLIT_RATIOS below is an allowlist of the ratios
 // companies actually use, matched within a tight 0.15% tolerance — loose
-// enough to absorb Alpha Vantage's own rounding, tight enough that GE's
+// enough to absorb the source's own rounding, tight enough that GE's
 // 1.2530 (2.4% off the nearest real candidate, 5-for-4) is correctly
 // rejected rather than misread as a split.
 //
@@ -37,11 +37,8 @@ const { getSplitsStore, BLOB_KEY } = require("./splits-blob-store");
 const { getBeeswarmStore, META_KEY } = require("./beeswarm-blob-store");
 const { BREADTH_CONSTITUENTS } = require("./breadth-constituents");
 const { SECTOR_ORDER } = require("./beeswarm-sectors");
-const { recordAvCall } = require("./av-call-counter");
+const { fetchDailyHistory, fetchSplitEvents } = require("./yahoo-client");
 
-const ALPHA_VANTAGE_URL = "https://www.alphavantage.co/query";
-const USER_AGENT =
-  "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0 Safari/537.36";
 
 const FREQUENCY_LOOKBACK_YEARS = 15;
 const EVENT_STUDY_LOOKBACK_YEARS = 5;
@@ -85,42 +82,20 @@ function round(v, d = 2) {
   return Math.round(v * f) / f;
 }
 
-async function fetchJson(params) {
-  const apiKey = process.env.ALPHAVANTAGE_API_KEY;
-  await recordAvCall();
-  const res = await fetch(`${ALPHA_VANTAGE_URL}?${params}&apikey=${apiKey}`, { headers: { "User-Agent": USER_AGENT } });
-  if (!res.ok) throw new Error(`HTTP ${res.status}`);
-  const payload = await res.json();
-  if (payload.Note || payload.Information || payload.error) {
-    throw new Error(payload.Note || payload.Information || JSON.stringify(payload.error));
-  }
-  return payload;
-}
-
 async function fetchSplits(symbol) {
-  const payload = await fetchJson(`function=SPLITS&symbol=${symbol}`);
-  const rows = Array.isArray(payload.data) ? payload.data : [];
-  return rows
-    .map((r) => ({ date: r.effective_date, factor: parseFloat(r.split_factor) }))
-    .filter((r) => r.date && Number.isFinite(r.factor) && r.factor > 0);
+  return (await fetchSplitEvents(symbol)).filter((r) => Number.isFinite(r.factor) && r.factor > 0);
 }
 
 // -> ascending [{ date, adjClose }]
 async function fetchDailyAdjusted(symbol) {
-  const payload = await fetchJson(`function=TIME_SERIES_DAILY_ADJUSTED&symbol=${symbol}&outputsize=full`);
-  const series = payload["Time Series (Daily)"];
-  if (!series || !Object.keys(series).length) throw new Error(`unexpected response shape: ${JSON.stringify(payload).slice(0, 160)}`);
-  return Object.keys(series)
-    .sort()
-    .map((date) => ({ date, adjClose: parseFloat(series[date]["5. adjusted close"]) }))
-    .filter((r) => Number.isFinite(r.adjClose) && r.adjClose > 0);
+  return (await fetchDailyHistory(symbol))
+    .map((r) => ({ date: r.date, adjClose: r.close }))
+    .filter((r) => r.adjClose > 0);
 }
 
-// Runs fetchFn(symbol) across `symbols` sequentially at 1050ms spacing, two
-// passes with a 65s cooldown between them — the pacing this account's ~75
-// calls/minute entitlement has repeatedly proven safe at full-S&P-500 scale
-// (scheduled-share-count-background.js, scheduled-insider-transactions-
-// background.js, scheduled-beeswarm-meta-background.js).
+// Runs fetchFn(symbol) across `symbols` sequentially at 300ms spacing, two
+// passes with a 65s cooldown between them. Yahoo has no quota but 429s
+// intermittently, so the spacing and retry pass stay.
 async function sweepSequential(symbols, fetchFn, label) {
   const results = new Map();
   let todo = [...symbols];
@@ -138,7 +113,7 @@ async function sweepSequential(symbols, fetchFn, label) {
         if (/rate limit|per minute/i.test(err.message)) await sleep(20000);
         missed.push(symbol);
       }
-      await sleep(1050);
+      await sleep(300);
     }
     todo = missed;
   }
@@ -149,8 +124,6 @@ async function sweepSequential(symbols, fetchFn, label) {
 exports.handler = async () => {
   console.log(`scheduled-splits-background: starting, ${BREADTH_CONSTITUENTS.length} tickers`);
   try {
-    const apiKey = process.env.ALPHAVANTAGE_API_KEY;
-    if (!apiKey) throw new Error("ALPHAVANTAGE_API_KEY environment variable is not set");
 
     const beeswarmStore = getBeeswarmStore();
     const meta = (await beeswarmStore.get(META_KEY, { type: "json" })) || { tickers: {} };
@@ -195,7 +168,7 @@ exports.handler = async () => {
     const priceSymbols = [...new Set(recentSplits.map((s) => s.symbol))];
     console.log(`scheduled-splits-background: ${recentSplits.length} recent split event(s) across ${priceSymbols.length} ticker(s), fetching daily price history`);
 
-    const priceSeries = await sweepSequential([...priceSymbols, BENCHMARK], fetchDailyAdjusted, "TIME_SERIES_DAILY_ADJUSTED");
+    const priceSeries = await sweepSequential([...priceSymbols, BENCHMARK], fetchDailyAdjusted, "daily price history");
     const spySeries = priceSeries.get(BENCHMARK);
 
     function indexOfOnOrAfter(series, dateStr) {

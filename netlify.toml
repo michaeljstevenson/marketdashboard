@@ -419,16 +419,10 @@
   schedule = "15 22 * * 1-5"
 
 [functions."scheduled-international-background"]
-  # One-time snapshot (2026-09-16) — no schedule. International vs. US is
-  # meant to read as "the research as it stood on this date," not a
-  # continuously-refreshed page, so the recurring schedule below was
-  # removed after the initial data pull. Run manually (Netlify dashboard
-  # "Run now") if a fresh snapshot is ever wanted later. Kept for
-  # reference, the original staggering rationale: 21:20 UTC — right after
-  # scheduled-smallcap-background (21:15), the same
-  # kind of small fixed-basket job (4 Alpha Vantage calls here vs. that
-  # job's 5) with no real rate-limit contention risk. Daily, not weekly,
-  # since index levels move every trading day.
+  # Daily 22:20 UTC, right after scheduled-smallcap-background (22:15). Index
+  # levels move every trading day; a handful of Yahoo calls, no contention
+  # risk.
+  schedule = "20 22 * * *"
 
 [functions."scheduled-share-count-background"]
   # Weekly, Saturday 10:50 UTC — after scheduled-insider-transactions-
@@ -468,21 +462,10 @@
   # collision with scheduled-surprise-background.)
 
 [functions."scheduled-splits-background"]
-  # One-time snapshot (2026-09-16) — no schedule, same reasoning as
-  # scheduled-surprise-background above. Kept for reference, the original
-  # staggering rationale: Weekly, Saturday 12:20 UTC — originally 11:10,
-  # but that collided
-  # exactly with scheduled-surprise-background (also Saturday 11:10 UTC,
-  # a separate PR's ~503-call EARNINGS sweep, built concurrently and
-  # unaware of this one). Moved to 12:20 instead: after
-  # scheduled-dividend-growth-background (12:00 UTC, finishes ~12:09),
-  # the last job in the existing Saturday block. Stage 1 (~503 sequential
-  # SPLITS calls at the same 1050ms pacing) mirrors the other full-index
-  # sweeps above; stage 2 (a much smaller TIME_SERIES_DAILY_ADJUSTED,
-  # outputsize=full pull, only for tickers with a split in the last 5
-  # years) runs right after within the same invocation. Weekly, not
-  # daily: a stock split is a rare, discrete event, not something that
-  # needs a daily re-check.
+  # Weekly, Saturday 12:20 UTC, after dividend-growth (12:00). Splits are rare
+  # discrete events; the price pull only runs for tickers with a split in the
+  # last 5 years.
+  schedule = "20 12 * * 6"
 
 [functions."scheduled-pe-divergence-background"]
   # One-time snapshot (2026-09-16) — no schedule, same reasoning as
@@ -530,33 +513,15 @@
   # changes meaningfully week to week, not day to day.
 
 [functions."scheduled-dividend-growth-background"]
-  # One-time snapshot (2026-09-16) — no schedule, same reasoning as
-  # scheduled-surprise-background above. Kept for reference, the original
-  # staggering rationale: Weekly, Saturday 12:00 UTC — after
-  # scheduled-surprise-background
-  # (11:10 Sat), leaving that job's own ~503-call sweep (plus retry pass)
-  # room to finish first. Reads beeswarm-meta's meta.json for sector/name,
-  # same reuse pattern as the other full-sweep jobs. ~503 sequential Alpha
-  # Vantage DIVIDENDS calls at 1050ms spacing plus a retry pass — each call
-  # returns a company's whole dividend history, so unlike the daily-close
-  # jobs there's no reason to run this more than weekly; a new dividend
-  # increase only lands a few times a year per company at most.
+  # Weekly, Saturday 12:00 UTC, after post-earnings-drift (11:30). One Yahoo
+  # call returns a company's whole dividend history, and increases land only a
+  # few times a year, so weekly is plenty.
+  schedule = "0 12 * * 6"
 
 [functions."scheduled-relative-strength-background"]
-  # One-time snapshot (2026-09-16) — no schedule, same reasoning as
-  # scheduled-surprise-background above. Kept for reference, the original
-  # staggering rationale: Weekly, Saturday 13:10 UTC — originally 12:00,
-  # but that collided
-  # exactly with scheduled-dividend-growth-background (also Saturday 12:00
-  # UTC, built concurrently and unaware of this one — see that function's
-  # own schedule comment). Moved to 13:10 instead: after
-  # scheduled-pe-divergence-background (12:45 UTC, finishes ~12:54), the
-  # last job in the Saturday block as of when this was added, leaving
-  # headroom even if that job's own retry pass runs long. ~504 sequential
-  # Alpha Vantage TIME_SERIES_DAILY_ADJUSTED calls at 1050ms spacing plus a
-  # retry pass. Weekly, not daily: a 1-month/3-month momentum read doesn't
-  # meaningfully change day to day, and the forward-return persistence test
-  # needs snapshots spaced apart.
+  # Weekly, Saturday 13:10 UTC. A 1-month/3-month momentum read doesn't change
+  # day to day, and the persistence test needs snapshots spaced apart.
+  schedule = "10 13 * * 6"
 
 [functions."scheduled-equity-risk-premium-background"]
   # One-time snapshot (2026-09-16) — no schedule, same reasoning as
@@ -597,26 +562,10 @@
   # calls at 1050ms spacing plus a retry pass.
 
 [functions."scheduled-smallcap-liquidity-background"]
-  # One-time snapshot (2026-09-16) — no schedule, same reasoning as
-  # scheduled-surprise-background above. Kept for reference, the original
-  # staggering rationale: Weekly, Saturday 14:20 UTC — originally 13:35,
-  # chosen to clear every
-  # Saturday job visible to this branch at the time (which wrapped up by
-  # ~11:00 UTC) plus a guessed buffer past other concurrently-open PRs'
-  # jobs (assumed to finish ~13:00-13:15 UTC). That guess landed exactly
-  # on scheduled-equity-risk-premium-background's own 13:35 slot once
-  # every PR's schedule fixes were actually applied — see that function's
-  # own schedule comment for its unrelated collision/move. Moved to 14:20
-  # instead: after scheduled-earnings-growth-divergence-background (14:00
-  # UTC, finishes ~14:09), the last job in the Saturday block as of this
-  # fix. ~200 sequential TIME_SERIES_DAILY_ADJUSTED (outputsize=full)
-  # calls at ~1050ms spacing plus a retry pass, same pattern as
-  # scheduled-share-count-background.js / scheduled-countries-
-  # background.js. Weekly, not daily: it reads meta.json (itself only
-  # refreshed weekly) for cohort membership, and each run recomputes the
-  # full ~2-year window from scratch rather than incrementally, so a daily
-  # rerun would just redo the same heavy sweep for a cohort that barely
-  # changes week to week.
+  # Weekly, Saturday 14:20 UTC. Reads meta.json (itself refreshed weekly) for
+  # cohort membership and recomputes the full ~2-year window each run, so a
+  # daily rerun would redo the same sweep for a cohort that barely changes.
+  schedule = "20 14 * * 6"
 
 [functions."scheduled-ipo-pipeline-background"]
   # One-time snapshot (2026-09-16) — no schedule, same reasoning as
@@ -720,25 +669,9 @@
   schedule = "10 11 * * 6"
 
 [functions."scheduled-post-earnings-drift-background"]
-  # Weekly, Saturday 11:30 UTC — real recurring schedule, not a one-time
-  # snapshot (same reasoning as scheduled-institutional-ownership-background
-  # above, which reversed 704645f's one-time-snapshot decision for pages
-  # built after 2026-09-16: this page needs a fresh compact price sweep
-  # every run for its rolling ~100-trading-day event window to stay
-  # meaningful, even though the earnings-surprise blob it reads its input
-  # from is itself frozen — see that job's own file for the staleness
-  # caveat this doesn't try to paper over). 11:30 is free as of this
-  # writing — double-checked against every other [functions.*] block in
-  # this file: scheduled-institutional-ownership-background (11:10) is the
-  # last function with an actual active schedule line before it, and
-  # every job listed after it below is one of 704645f's frozen one-time
-  # snapshots with no schedule line at all, so there is no live Saturday
-  # job for this to collide with past 11:10. 11:30 gives that job's own
-  # ~503-call INSTITUTIONAL_HOLDINGS sweep (starts 11:10, finishes ~11:19
-  # in the typical case) a comfortable buffer even if its own retry pass
-  # runs long. ~504 sequential Alpha Vantage TIME_SERIES_DAILY_ADJUSTED
-  # (outputsize=compact) calls at 1050ms spacing plus a retry pass — same
-  # pacing/scale as scheduled-relative-strength-background.js.
+  # Weekly, Saturday 11:30 UTC, after institutional-ownership (11:10). Its
+  # rolling ~100-trading-day event window needs a fresh price sweep every run,
+  # though the earnings-surprise blob it reads is itself a frozen snapshot.
   schedule = "30 11 * * 6"
 
 [functions."scheduled-buyback-effectiveness-background"]
@@ -764,26 +697,9 @@
   # retry pass.
 
 [functions."scheduled-short-sale-volume-background"]
-  # One-time snapshot — no schedule, same reasoning as
-  # scheduled-surprise-background above (this page's own snapshot is meant
-  # to read as "activity over the trailing ~3 months as of this run," and
-  # every other ~500-call full-sweep job added to this file after
-  # 2026-09-16 was deliberately kept off the recurring Saturday cron to
-  # avoid piling still more full-universe sweeps onto that one block —
-  # re-run manually via the Netlify dashboard "Run now" when a fresh
-  # snapshot is wanted). Original staggering rationale, kept for
-  # reference: Weekly, Saturday 14:50 UTC — after
-  # scheduled-margin-leverage-background (14:35 UTC, finishes ~14:44), the
-  # last job in the Saturday block as of this addition. Two independent
-  # data-fetch phases: first, ~60-130 unpaced/lightly-paced HTTP requests
-  # to FINRA's public Reg SHO daily short-sale-volume flat files (no API
-  # key, no Alpha Vantage budget consumed — see
-  # scheduled-short-sale-volume-background.js for the URL pattern), then
-  # the usual ~504 sequential Alpha Vantage TIME_SERIES_DAILY_ADJUSTED
-  # (compact) calls at 1050ms spacing plus a retry pass for the
-  # forward-return regression half of the page. Weekly, not daily: a
-  # ~3-month average short-sale-volume ratio doesn't meaningfully shift
-  # day to day.
+  # Weekly, Saturday 14:50 UTC. A ~3-month average short-sale-volume ratio
+  # doesn't shift day to day.
+  schedule = "50 14 * * 6"
 
 [functions."scheduled-news-sentiment-background"]
   # One-time snapshot (2026-09-18) — no schedule, same reasoning as
@@ -817,32 +733,11 @@
   # to how much the market-wide signal actually moves day to day.
 
 [functions."scheduled-quality-lowvol-background"]
-  # One-time snapshot (2026-09-18) — no schedule, same reasoning as
-  # scheduled-surprise-background above (site owner converted most
-  # fundamentals-sweep background jobs to manually-triggered one-time
-  # snapshots on 2026-09-16 to control Alpha Vantage call volume). Run
-  # manually (Netlify dashboard "Run now") if a fresh snapshot is ever
-  # wanted later. For the historical record, the staggering this would have
-  # used if it were still scheduled: after scheduled-congressional-trading-
-  # background (itself a one-time snapshot as of this same addition — see
-  # that function's own comment above — but for the record its ~503-call
-  # CONGRESS_TRADES sweep at 1050ms spacing runs roughly 9-10 minutes end to
-  # end), leaving a few minutes of clearance before this job's own ~503
-  # sequential TIME_SERIES_DAILY_ADJUSTED (compact) calls at 1050ms spacing
-  # plus a retry pass begin — same endpoint/outputsize/pacing scheduled-
-  # relative-strength-background already uses for this exact universe. Two
-  # real cross-page dependencies, not just pacing: this job REQUIRES
-  # scheduled-margin-leverage-background's own blob (the quality-score
-  # input — operating margin and net-debt/EBITDA) to have run at least once
-  # already, and aborts with a clear error rather than writing an empty
-  # snapshot if that blob is missing; it also reads scheduled-relative-
-  # strength-background's own latest.json for 3-month price performance
-  # (the "does the composite predict subsequent relative performance" test)
-  # with the same soft graceful fallback (relPrice3M: null, warning banner)
-  # every other page in this session's cross-page-read pattern uses if that
-  # one specifically isn't populated. Weekly, not daily: a 63-trading-day
-  # realized-vol read and quarterly margin/leverage figures both move far
-  # too slowly to justify a daily re-sweep of ~503 tickers.
+  # Weekly, Saturday 13:40 UTC, after relative-strength (13:10), whose
+  # latest.json it reads for the 3-month performance test. Also requires
+  # scheduled-margin-leverage-background's blob to exist, and aborts with an
+  # error rather than writing an empty snapshot if it doesn't.
+  schedule = "40 13 * * 6"
 
 [functions."scheduled-quality-financials-background"]
   # One-time snapshot — no schedule, same convention as every full-index

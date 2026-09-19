@@ -29,14 +29,13 @@
 //      or fabricated snapshot. margin-leverage.html itself is NOT read from
 //      or modified beyond this read-only blob access.
 //
-//   2. LOW-VOLATILITY is this page's own new sweep: TIME_SERIES_DAILY_
-//      ADJUSTED, outputsize=compact (not full), across the full S&P 500 —
-//      same endpoint, same outputsize choice, and the same reasoning
+//   2. LOW-VOLATILITY is this page's own new sweep: Yahoo Finance daily
+//      adjusted closes trimmed to the last ~100 bars, across the full
+//      S&P 500 — same source, same window, and the same reasoning
 //      scheduled-relative-strength-background.js already made and
 //      documented for this exact ~503-ticker universe (a 63-trading-day
 //      lookback fits comfortably inside compact's ~100-bar window; full
-//      history was tested directly against Alpha Vantage by that job and
-//      found to run 5,000+ bars/ticker, disproportionate to what's needed
+//      history runs to 5,000+ bars/ticker, disproportionate to what's needed
 //      here). Trailing ~3-month (63 trading day) annualized realized
 //      volatility = stdev(daily log returns) * sqrt(252). Low-vol score =
 //      the NEGATIVE cross-sectional z-score of realized vol, so higher
@@ -68,19 +67,17 @@
 // raw daily price series is written to the blob (that would balloon the
 // payload for no benefit once realized vol is computed).
 //
-// Pacing: ~1050ms between-call, same as every other full-sweep job on this
-// site, plus a retry pass for anything that fails.
+// Pacing: ~300ms between calls (Yahoo has no quota but 429s intermittently),
+// plus a retry pass for anything that fails.
 
 const { getQualityLowVolStore, BLOB_KEY } = require("./quality-lowvol-blob-store");
 const { getMarginLeverageStore, BLOB_KEY: MARGIN_LEVERAGE_KEY } = require("./margin-leverage-blob-store");
 const { getRelativeStrengthStore, LATEST_KEY: RS_LATEST_KEY } = require("./relative-strength-blob-store");
 const { BREADTH_CONSTITUENTS } = require("./breadth-constituents");
 const { SECTOR_ORDER } = require("./beeswarm-sectors");
-const { recordAvCall } = require("./av-call-counter");
+const { fetchDailyHistory } = require("./yahoo-client");
+const COMPACT_DAYS = 100;
 
-const ALPHA_VANTAGE_URL = "https://www.alphavantage.co/query";
-const USER_AGENT =
-  "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0 Safari/537.36";
 
 const VOL_LOOKBACK_DAYS = 63; // ~3 trading months
 const LEADERBOARD_COUNT = 15;
@@ -124,23 +121,8 @@ function zscoreMap(items, getter) {
   return map;
 }
 
-async function fetchDailyAdjusted(apiKey, symbol) {
-  await recordAvCall();
-  const res = await fetch(
-    `${ALPHA_VANTAGE_URL}?function=TIME_SERIES_DAILY_ADJUSTED&symbol=${symbol}&outputsize=compact&apikey=${apiKey}`,
-    { headers: { "User-Agent": USER_AGENT } }
-  );
-  if (!res.ok) throw new Error(`HTTP ${res.status}`);
-  const payload = await res.json();
-  if (payload.Note || payload.Information || payload.error) {
-    throw new Error(payload.Note || payload.Information || JSON.stringify(payload.error));
-  }
-  const series = payload["Time Series (Daily)"];
-  if (!series) throw new Error(`unexpected response shape: ${JSON.stringify(payload).slice(0, 200)}`);
-  return Object.entries(series)
-    .map(([date, day]) => ({ date, close: parseFloat(day["5. adjusted close"]) }))
-    .filter((d) => Number.isFinite(d.close))
-    .sort((a, b) => (a.date < b.date ? -1 : 1));
+async function fetchDailyAdjusted(symbol) {
+  return (await fetchDailyHistory(symbol)).slice(-COMPACT_DAYS);
 }
 
 // Trailing VOL_LOOKBACK_DAYS-trading-day annualized realized volatility, in
@@ -168,8 +150,6 @@ function realizedVolatility(closes) {
 exports.handler = async () => {
   console.log(`scheduled-quality-lowvol-background: starting, ${BREADTH_CONSTITUENTS.length} tickers`);
   try {
-    const apiKey = process.env.ALPHAVANTAGE_API_KEY;
-    if (!apiKey) throw new Error("ALPHAVANTAGE_API_KEY environment variable is not set");
 
     // ---- Quality inputs: REQUIRED read of margin-leverage's own blob ----
     // Not a soft fallback like the relative-strength read below — the
@@ -214,7 +194,7 @@ exports.handler = async () => {
     const volResults = new Map(); // symbol -> realized vol (%)
 
     async function fetchOne(symbol) {
-      const closes = await fetchDailyAdjusted(apiKey, symbol);
+      const closes = await fetchDailyAdjusted(symbol);
       const vol = realizedVolatility(closes);
       if (vol !== null) volResults.set(symbol, vol);
     }
@@ -233,10 +213,10 @@ exports.handler = async () => {
           console.error(`scheduled-quality-lowvol-background: ${symbol} failed: ${err.message}`);
           if (/rate limit|per minute|per day|frequency/i.test(err.message)) await sleep(20000);
           missed.push(symbol);
-          await sleep(1050);
+          await sleep(300);
           continue;
         }
-        await sleep(1050);
+        await sleep(300);
       }
       todo = missed;
     }

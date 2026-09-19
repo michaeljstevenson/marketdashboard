@@ -39,7 +39,7 @@ async function fetchYahooJson(url) {
 // halted/incomplete days) are dropped.
 async function fetchDailyHistory(symbol, { adjusted = true } = {}) {
   const url =
-    `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(symbol)}` +
+    `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(YAHOO_ALIASES[symbol] || symbol)}` +
     `?period1=0&period2=${Math.floor(Date.now() / 1000)}&interval=1d&events=div,splits`;
   const payload = await fetchYahooJson(url);
   const result = payload.chart && payload.chart.result && payload.chart.result[0];
@@ -80,4 +80,70 @@ async function fetchQuotes(symbols) {
   return out;
 }
 
-module.exports = { fetchDailyHistory, fetchQuotes, sleep };
+async function fetchChartResult(symbol, { interval = "1d", events = "div,splits" } = {}) {
+  const url =
+    `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(YAHOO_ALIASES[symbol] || symbol)}` +
+    `?period1=0&period2=${Math.floor(Date.now() / 1000)}&interval=${interval}&events=${events}`;
+  const payload = await fetchYahooJson(url);
+  const result = payload.chart && payload.chart.result && payload.chart.result[0];
+  if (!result) throw new Error(`Yahoo returned no data for ${symbol}`);
+  return result;
+}
+
+const isoDate = (t) => new Date(t * 1000).toISOString().slice(0, 10);
+
+// Full daily OHLCV + adjusted close, ascending. Rows Yahoo pads with null
+// closes (halted/incomplete days) are dropped.
+async function fetchDailyBars(symbol) {
+  const result = await fetchChartResult(symbol);
+  const q = result.indicators.quote[0];
+  const adj = (result.indicators.adjclose && result.indicators.adjclose[0].adjclose) || q.close;
+  const out = [];
+  (result.timestamp || []).forEach((t, i) => {
+    if (q.close[i] == null || adj[i] == null) return;
+    out.push({ date: isoDate(t), high: q.high[i], low: q.low[i], close: q.close[i], adjClose: adj[i], volume: q.volume[i] });
+  });
+  if (!out.length) throw new Error(`Yahoo returned no closes for ${symbol}`);
+  return out;
+}
+
+// Cash dividends as [{ date (ex-date), amount }] ascending, split-adjusted
+// per share like Alpha Vantage's DIVIDENDS.
+async function fetchDividendEvents(symbol) {
+  const result = await fetchChartResult(symbol, { interval: "1mo", events: "div" });
+  const divs = (result.events && result.events.dividends) || {};
+  return Object.values(divs)
+    .map((d) => ({ date: isoDate(d.date), amount: d.amount }))
+    .sort((a, b) => (a.date < b.date ? -1 : 1));
+}
+
+// Splits as [{ date, factor }] ascending, factor = new shares per old share
+// (4-for-1 => 4, 1-for-10 reverse => 0.1), same convention as Alpha Vantage's
+// SPLITS split_factor.
+async function fetchSplitEvents(symbol) {
+  const result = await fetchChartResult(symbol, { interval: "1mo", events: "splits" });
+  const splits = (result.events && result.events.splits) || {};
+  return Object.values(splits)
+    .map((s) => ({ date: isoDate(s.date), factor: s.numerator / s.denominator }))
+    .sort((a, b) => (a.date < b.date ? -1 : 1));
+}
+
+// Month-end closes as [{ date (last trading day of month), close }], built
+// from daily bars so dates line up with Alpha Vantage's FX_MONTHLY rather
+// than Yahoo's first-of-month monthly bars.
+async function fetchMonthEndCloses(symbol) {
+  const daily = await fetchDailyHistory(symbol, { adjusted: false });
+  const byMonth = new Map();
+  for (const row of daily) byMonth.set(row.date.slice(0, 7), row);
+  return [...byMonth.values()];
+}
+
+module.exports = {
+  fetchDailyHistory,
+  fetchDailyBars,
+  fetchDividendEvents,
+  fetchSplitEvents,
+  fetchMonthEndCloses,
+  fetchQuotes,
+  sleep,
+};

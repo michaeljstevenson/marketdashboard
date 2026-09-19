@@ -24,14 +24,13 @@
 // below) rather than silently dropping to a confusing near-zero N with no
 // explanation. The page's methodology section documents this honestly.
 //
-// Price data is a fresh sweep of TIME_SERIES_DAILY_ADJUSTED across the full
-// S&P 500 (BREADTH_CONSTITUENTS) + SPY, outputsize=compact (last ~100
-// trading days) — same deliberate choice scheduled-relative-strength-
+// Price data is a fresh sweep of Yahoo Finance daily adjusted closes across
+// the full S&P 500 (BREADTH_CONSTITUENTS) + SPY, trimmed to the last ~100
+// trading days — same deliberate choice scheduled-relative-strength-
 // background.js made for the same reason: a short event window (+1/+5/+10/
 // +20 trading days from an earnings date) doesn't need, and shouldn't pay
-// the bandwidth/parse cost of, "full" history (~580K tokens for a single
-// mega-cap, confirmed directly against Alpha Vantage in that page's own
-// design).
+// the bandwidth/parse cost of, full history (10,000+ daily bars for a
+// single mega-cap).
 //
 // For each company with a reportedDate that falls inside the fetched
 // compact window, the anchor trading day is the first close on or after
@@ -62,20 +61,18 @@
 // no obvious "trend of PEAD over time" this page is trying to chart, and a
 // fresh snapshot is simpler and cheaper to reason about.
 //
-// ~504 sequential TIME_SERIES_DAILY_ADJUSTED calls (503 constituents +
-// SPY), 1050ms apart with a retry pass — identical pacing to
-// scheduled-relative-strength-background.js at the same scale.
+// ~504 sequential Yahoo chart calls (503 constituents + SPY), 300ms apart
+// with a retry pass. Yahoo has no quota, but it 429s intermittently, so the
+// spacing and yahoo-client.js's retries stay.
 
 const { getPeadStore, LATEST_KEY } = require("./post-earnings-drift-blob-store");
 const { getSurpriseStore, LATEST_KEY: SURPRISE_LATEST_KEY } = require("./surprise-blob-store");
 const { getBeeswarmStore, META_KEY } = require("./beeswarm-blob-store");
 const { BREADTH_CONSTITUENTS } = require("./breadth-constituents");
 const { SECTOR_ORDER } = require("./beeswarm-sectors");
-const { recordAvCall } = require("./av-call-counter");
+const { fetchDailyHistory } = require("./yahoo-client");
+const COMPACT_DAYS = 100;
 
-const ALPHA_VANTAGE_URL = "https://www.alphavantage.co/query";
-const USER_AGENT =
-  "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0 Safari/537.36";
 
 const HORIZONS = [1, 5, 10, 20];
 const LEADERBOARD_COUNT = 10;
@@ -111,24 +108,8 @@ function relativeReturn(stockRet, benchRet) {
   return ((1 + stockRet) / (1 + benchRet) - 1) * 100;
 }
 
-async function fetchDailyAdjusted(apiKey, symbol) {
-  await recordAvCall();
-  const res = await fetch(
-    `${ALPHA_VANTAGE_URL}?function=TIME_SERIES_DAILY_ADJUSTED&symbol=${symbol}&outputsize=compact&apikey=${apiKey}`,
-    { headers: { "User-Agent": USER_AGENT } }
-  );
-  if (!res.ok) throw new Error(`HTTP ${res.status}`);
-  const payload = await res.json();
-  if (payload.Note || payload.Information || payload.error) {
-    throw new Error(payload.Note || payload.Information || JSON.stringify(payload.error));
-  }
-  const series = payload["Time Series (Daily)"];
-  if (!series) throw new Error(`unexpected response shape: ${JSON.stringify(payload).slice(0, 200)}`);
-
-  const rows = Object.entries(series)
-    .map(([date, day]) => ({ date, close: parseFloat(day["5. adjusted close"]) }))
-    .filter((d) => Number.isFinite(d.close))
-    .sort((a, b) => (a.date < b.date ? -1 : 1));
+async function fetchDailyAdjusted(symbol) {
+  const rows = (await fetchDailyHistory(symbol)).slice(-COMPACT_DAYS);
   return { dates: rows.map((r) => r.date), closes: rows.map((r) => r.close) };
 }
 
@@ -152,8 +133,6 @@ function findAnchorIndex(dates, targetDate) {
 exports.handler = async () => {
   console.log(`scheduled-post-earnings-drift-background: starting, ${BREADTH_CONSTITUENTS.length} tickers + SPY`);
   try {
-    const apiKey = process.env.ALPHAVANTAGE_API_KEY;
-    if (!apiKey) throw new Error("ALPHAVANTAGE_API_KEY environment variable is not set");
 
     // ---- Reused input: each company's most recent reported surprise ----
     let surpriseByTicker = {};
@@ -178,14 +157,14 @@ exports.handler = async () => {
     let spy = null;
     for (let attempt = 0; attempt < 3 && !spy; attempt++) {
       try {
-        spy = await fetchDailyAdjusted(apiKey, "SPY");
+        spy = await fetchDailyAdjusted("SPY");
       } catch (err) {
         console.error(`scheduled-post-earnings-drift-background: SPY fetch failed (attempt ${attempt + 1}): ${err.message}`);
         await sleep(5000);
       }
     }
     if (!spy) throw new Error("Could not fetch SPY benchmark data after 3 attempts");
-    await sleep(1050);
+    await sleep(300);
 
     const beeswarmStore = getBeeswarmStore();
     const meta = (await beeswarmStore.get(META_KEY, { type: "json" })) || { tickers: {} };
@@ -195,7 +174,7 @@ exports.handler = async () => {
     const priceResults = new Map();
     async function fetchInto(symbol) {
       try {
-        const hist = await fetchDailyAdjusted(apiKey, symbol);
+        const hist = await fetchDailyAdjusted(symbol);
         if (hist.dates.length) priceResults.set(symbol, hist);
         return true;
       } catch (err) {
@@ -214,7 +193,7 @@ exports.handler = async () => {
       for (const symbol of todo) {
         const got = await fetchInto(symbol);
         if (!got) missed.push(symbol);
-        await sleep(1050);
+        await sleep(300);
       }
       todo = missed;
     }

@@ -7,17 +7,14 @@
 // direction proxy. Writes the result to Netlify Blobs for
 // international-us.js to serve.
 //
-// Only 4 Alpha Vantage calls (3x TIME_SERIES_DAILY_ADJUSTED full history +
-// 1x FX_MONTHLY), so like scheduled-smallcap-background.js this doesn't
-// need heavy rate-limit pacing — just simple spacing between the 4
+// Only 4 Yahoo Finance calls (3x daily adjusted full history +
+// 1x EURUSD=X, reduced to month-end closes), so like
+// scheduled-smallcap-background.js this doesn't need heavy pacing — just simple spacing between the 4
 // sequential calls. Runs daily since index levels move every trading day.
 
 const { getInternationalStore, BLOB_KEY } = require("./international-blob-store");
-const { recordAvCall } = require("./av-call-counter");
+const { fetchDailyHistory, fetchMonthEndCloses } = require("./yahoo-client");
 
-const ALPHA_VANTAGE_URL = "https://www.alphavantage.co/query";
-const USER_AGENT =
-  "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0 Safari/537.36";
 
 const DEVELOPED = "EFA"; // iShares MSCI EAFE ETF — developed markets ex-US, inception Aug 2001
 const EMERGING = "EEM"; // iShares MSCI Emerging Markets ETF, inception Apr 2003
@@ -27,30 +24,11 @@ function sleep(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-async function fetchJson(url) {
-  await recordAvCall();
-  const res = await fetch(url, { headers: { "User-Agent": USER_AGENT } });
-  if (!res.ok) throw new Error(`HTTP ${res.status}`);
-  const payload = await res.json();
-  if (payload.Note || payload.Information || payload.error_message) {
-    throw new Error(payload.Note || payload.Information || payload.error_message);
-  }
-  return payload;
-}
-
 // Full daily adjusted-close history -> { dates:[asc], closes:[parallel] }.
 // Adjusted close (dividends + splits) so this is a true total-return series
 // — same reasoning as scheduled-smallcap-background.js.
-async function fetchDailyAdjusted(apiKey, symbol) {
-  const payload = await fetchJson(
-    `${ALPHA_VANTAGE_URL}?function=TIME_SERIES_DAILY_ADJUSTED&symbol=${symbol}&outputsize=full&apikey=${apiKey}`
-  );
-  const series = payload["Time Series (Daily)"];
-  if (!series) throw new Error(`TIME_SERIES_DAILY_ADJUSTED missing for ${symbol}: ${JSON.stringify(payload).slice(0, 160)}`);
-  const rows = Object.entries(series)
-    .map(([date, r]) => ({ date, close: parseFloat(r["5. adjusted close"]) }))
-    .filter((r) => Number.isFinite(r.close))
-    .sort((a, b) => (a.date < b.date ? -1 : 1));
+async function fetchDailyAdjusted(symbol) {
+  const rows = await fetchDailyHistory(symbol);
   return { dates: rows.map((r) => r.date), closes: rows.map((r) => r.close) };
 }
 
@@ -59,16 +37,9 @@ async function fetchDailyAdjusted(apiKey, symbol) {
 // page's single-variable Fed-funds/Treasury-yield check: one macro variable
 // rarely explains much on its own, and the point of showing it is honesty
 // about that, not oversell.
-async function fetchEurUsdMonthly(apiKey) {
-  const payload = await fetchJson(
-    `${ALPHA_VANTAGE_URL}?function=FX_MONTHLY&from_symbol=EUR&to_symbol=USD&apikey=${apiKey}`
-  );
-  const series = payload["Time Series FX (Monthly)"];
-  if (!series) throw new Error(`FX_MONTHLY missing: ${JSON.stringify(payload).slice(0, 160)}`);
-  return Object.entries(series)
-    .map(([date, r]) => ({ date, value: parseFloat(r["4. close"]) }))
-    .filter((r) => Number.isFinite(r.value))
-    .sort((a, b) => (a.date < b.date ? -1 : 1));
+async function fetchEurUsdMonthly() {
+  const rows = await fetchMonthEndCloses("EURUSD=X");
+  return rows.map((r) => ({ date: r.date, value: r.close }));
 }
 
 // Latest close on or before targetDate (dates ascending). Binary search —
@@ -110,16 +81,14 @@ function trailingReturn(hist, latestDate, latestClose, monthsBack) {
 exports.handler = async () => {
   console.log("scheduled-international-background: starting");
   try {
-    const apiKey = process.env.ALPHAVANTAGE_API_KEY;
-    if (!apiKey) throw new Error("ALPHAVANTAGE_API_KEY environment variable is not set");
 
-    const histDeveloped = await fetchDailyAdjusted(apiKey, DEVELOPED);
+    const histDeveloped = await fetchDailyAdjusted(DEVELOPED);
     await sleep(900);
-    const histEmerging = await fetchDailyAdjusted(apiKey, EMERGING);
+    const histEmerging = await fetchDailyAdjusted(EMERGING);
     await sleep(900);
-    const histUS = await fetchDailyAdjusted(apiKey, US);
+    const histUS = await fetchDailyAdjusted(US);
     await sleep(900);
-    const eurUsdMonthly = await fetchEurUsdMonthly(apiKey);
+    const eurUsdMonthly = await fetchEurUsdMonthly();
 
     // Common trading-day calendar: SPY's own dates (longest history),
     // restricted to on/after the later of EFA's and EEM's first date — EEM

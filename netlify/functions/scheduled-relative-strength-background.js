@@ -1,17 +1,15 @@
 // Scheduled Background Function (see [functions."scheduled-relative-strength-background"]
-// in netlify.toml) that sweeps Alpha Vantage's TIME_SERIES_DAILY_ADJUSTED
+// in netlify.toml) that sweeps Yahoo Finance's daily adjusted closes
 // across the full S&P 500 (BREADTH_CONSTITUENTS, same list Market Breadth,
 // Sector Beeswarm, Earnings Revisions, etc. already sweep) plus SPY, and
 // computes trailing 1-month/3-month price momentum relative to SPY for
 // every constituent — the "Relative Strength Leaders/Laggards" page.
 //
-// Deliberately requests outputsize=compact (last ~100 trading days), not
-// "full": a 1-month (21 trading day) and 3-month (63 trading day) lookback
+// Deliberately trims to the last ~100 trading days, not full history: a 1-month (21 trading day) and 3-month (63 trading day) lookback
 // both fit comfortably inside that window with room to spare for holidays/
-// thin trading, and compact keeps each of the ~504 responses small — full
-// history per ticker (proven to run to 5,000+ daily bars per name, tested
-// directly against Alpha Vantage before writing this job) would multiply
-// the bandwidth and parse cost of this sweep by roughly two orders of
+// thin trading, and trimming keeps what's held in memory small — full
+// history per ticker (5,000+ daily bars per name) would multiply
+// the parse cost of this sweep by roughly two orders of
 // magnitude for lookback depth this page doesn't use. A 6-month/1-year
 // lookback ladder (like /small-cap-vs-large-cap's) was considered and
 // dropped for that reason — this page trades ladder depth for the
@@ -26,19 +24,15 @@
 // change day to day, and the rank-persistence test below needs snapshots
 // spaced far enough apart for the forward-return window to mean something.
 //
-// ~504 sequential calls (503 constituents + SPY), 1050ms apart with a
-// retry pass — same pacing proven at this exact scale by
-// scheduled-beeswarm-meta-background.js's OVERVIEW sweep and
-// scheduled-share-count-background.js's BALANCE_SHEET sweep.
+// ~504 sequential calls (503 constituents + SPY), 300ms apart with a
+// retry pass.
 
 const { getRelativeStrengthStore, LATEST_KEY, HISTORY_KEY } = require("./relative-strength-blob-store");
 const { getBeeswarmStore, META_KEY } = require("./beeswarm-blob-store");
 const { BREADTH_CONSTITUENTS } = require("./breadth-constituents");
-const { recordAvCall } = require("./av-call-counter");
+const { fetchDailyHistory } = require("./yahoo-client");
+const COMPACT_DAYS = 100;
 
-const ALPHA_VANTAGE_URL = "https://www.alphavantage.co/query";
-const USER_AGENT =
-  "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0 Safari/537.36";
 
 const LOOKBACK_1M_DAYS = 21;
 const LOOKBACK_3M_DAYS = 63;
@@ -67,24 +61,8 @@ function median(values) {
   return v.length % 2 ? v[mid] : (v[mid - 1] + v[mid]) / 2;
 }
 
-async function fetchDailyAdjusted(apiKey, symbol) {
-  await recordAvCall();
-  const res = await fetch(
-    `${ALPHA_VANTAGE_URL}?function=TIME_SERIES_DAILY_ADJUSTED&symbol=${symbol}&outputsize=compact&apikey=${apiKey}`,
-    { headers: { "User-Agent": USER_AGENT } }
-  );
-  if (!res.ok) throw new Error(`HTTP ${res.status}`);
-  const payload = await res.json();
-  if (payload.Note || payload.Information || payload.error) {
-    throw new Error(payload.Note || payload.Information || JSON.stringify(payload.error));
-  }
-  const series = payload["Time Series (Daily)"];
-  if (!series) throw new Error(`unexpected response shape: ${JSON.stringify(payload).slice(0, 200)}`);
-
-  return Object.entries(series)
-    .map(([date, day]) => ({ date, close: parseFloat(day["5. adjusted close"]) }))
-    .filter((d) => Number.isFinite(d.close))
-    .sort((a, b) => (a.date < b.date ? -1 : 1));
+async function fetchDailyAdjusted(symbol) {
+  return (await fetchDailyHistory(symbol)).slice(-COMPACT_DAYS);
 }
 
 // Trailing return from `lookbackDays` trading days ago to the most recent
@@ -111,8 +89,6 @@ function relativeReturn(stockRet, benchRet) {
 exports.handler = async () => {
   console.log(`scheduled-relative-strength-background: starting, ${BREADTH_CONSTITUENTS.length} tickers + SPY`);
   try {
-    const apiKey = process.env.ALPHAVANTAGE_API_KEY;
-    if (!apiKey) throw new Error("ALPHAVANTAGE_API_KEY environment variable is not set");
 
     // SPY is the benchmark every other number in this job depends on —
     // fetch it first and abort the whole run if it fails rather than
@@ -120,14 +96,14 @@ exports.handler = async () => {
     let spyCloses = null;
     for (let attempt = 0; attempt < 3 && !spyCloses; attempt++) {
       try {
-        spyCloses = await fetchDailyAdjusted(apiKey, "SPY");
+        spyCloses = await fetchDailyAdjusted("SPY");
       } catch (err) {
         console.error(`scheduled-relative-strength-background: SPY fetch failed (attempt ${attempt + 1}): ${err.message}`);
         await sleep(5000);
       }
     }
     if (!spyCloses) throw new Error("Could not fetch SPY benchmark data after 3 attempts");
-    await sleep(1050);
+    await sleep(300);
 
     const spyPrice = spyCloses[spyCloses.length - 1].close;
     const spyRet1M = trailingReturn(spyCloses, LOOKBACK_1M_DAYS);
@@ -141,7 +117,7 @@ exports.handler = async () => {
 
     async function fetchInto(symbol) {
       try {
-        const closes = await fetchDailyAdjusted(apiKey, symbol);
+        const closes = await fetchDailyAdjusted(symbol);
         if (closes.length >= LOOKBACK_1M_DAYS + 1) results.set(symbol, closes);
         return true;
       } catch (err) {
@@ -161,7 +137,7 @@ exports.handler = async () => {
       for (const symbol of todo) {
         const got = await fetchInto(symbol);
         if (!got) missed.push(symbol);
-        await sleep(1050);
+        await sleep(300);
       }
       todo = missed;
     }

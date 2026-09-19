@@ -12,14 +12,14 @@
 // trading activity as a share of total volume, not the *stock* of shares
 // currently held short. No registration or API key needed; these are
 // anonymous flat files FINRA has published daily since Nov 2009 at
-// http://regsho.finra.org/CNMSshvol<YYYYMMDD>.txt (mirrored by Nasdaq
+// https://cdn.finra.org/equity/regsho/daily/CNMSshvol<YYYYMMDD>.txt (mirrored by Nasdaq
 // Trader and Cboe). Short sale volume and short interest are related but
 // distinct — see the page's methodology section for why this isn't a
 // substitute for the still-unavailable short-interest number.
 //
 // The CNMS file covers one calendar day across ALL NMS-tape-eligible
 // symbols (tens of thousands of rows) in one request — cheap and doesn't
-// touch the Alpha Vantage budget at all. We walk backward from "yesterday"
+// touch any API budget at all. We walk backward from "yesterday"
 // (files post ~6pm ET same day, so today's may not exist yet) collecting
 // valid trading days until we have WINDOW_TRADING_DAYS of them, discarding
 // weekends/holidays (404s) along the way.
@@ -27,28 +27,26 @@
 // Per-symbol short-sale-volume ratio (SVR = ShortVolume / TotalVolume) is
 // computed for every S&P 500 constituent found in each day's file. That
 // alone powers the sector/leaderboard/table views and the market-median
-// trend line. The one Alpha Vantage-dependent piece is the "does elevated
-// short-selling predict weak forward returns" test: TIME_SERIES_DAILY_
-// ADJUSTED (compact, ~100 bars) for every constituent + SPY, split into
+// trend line. The one price-dependent piece is the "does elevated
+// short-selling predict weak forward returns" test: Yahoo Finance daily
+// adjusted closes (last ~100 bars) for every constituent + SPY, split into
 // two non-overlapping halves of the SAME window FINRA data covers — the
 // older half's average SVR (the predictor) against the newer half's
 // relative return vs SPY (the outcome) — avoiding the overlapping-window
 // pitfall called out in scheduled-share-count-background.js and
 // scheduled-relative-strength-background.js.
 //
-// Runtime budget: ~WINDOW_LOOKBACK_DAYS FINRA fetches (seconds, not
-// AV-paced) plus ~504 sequential Alpha Vantage calls at 1050ms with a
-// retry pass — the same ~9-11 minute shape as this file's sibling
-// full-sweep jobs (see scheduled-relative-strength-background.js), with
-// the FINRA phase adding well under a minute on top.
+// Runtime budget: ~WINDOW_LOOKBACK_DAYS FINRA fetches (seconds) plus ~504 sequential Yahoo calls at 300ms with a retry pass —
+// a few minutes end to end, with the FINRA phase adding well under a
+// minute on top.
 
 const { getShortSaleVolumeStore, LATEST_KEY } = require("./short-sale-volume-blob-store");
 const { getBeeswarmStore, META_KEY } = require("./beeswarm-blob-store");
 const { SECTOR_ORDER } = require("./beeswarm-sectors");
-const { recordAvCall } = require("./av-call-counter");
+const { fetchDailyHistory } = require("./yahoo-client");
+const COMPACT_DAYS = 100;
 
-const FINRA_URL = (yyyymmdd) => `http://regsho.finra.org/CNMSshvol${yyyymmdd}.txt`;
-const ALPHA_VANTAGE_URL = "https://www.alphavantage.co/query";
+const FINRA_URL = (yyyymmdd) => `https://cdn.finra.org/equity/regsho/daily/CNMSshvol${yyyymmdd}.txt`;
 const USER_AGENT =
   "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0 Safari/537.36";
 
@@ -60,7 +58,7 @@ const MIN_ROWS_FOR_VALID_FILE = 1000; // guards against a truncated/empty file m
 const LEADERBOARD_COUNT = 15;
 
 // A handful of S&P 500 dual-share-class tickers use a dash in this site's
-// own convention (BREADTH_CONSTITUENTS / Alpha Vantage) but FINRA's tape
+// own convention (BREADTH_CONSTITUENTS / Yahoo) but FINRA's tape
 // data uses a dot — try the dot form as a fallback lookup, skip gracefully
 // (see breadth-constituents.js's own file header) if neither matches.
 const FINRA_SYMBOL_ALIAS = { "BRK-B": "BRK.B", "BF-B": "BF.B" };
@@ -156,32 +154,16 @@ async function collectFinraWindow(wantedFinraSymbols) {
       console.error(`scheduled-short-sale-volume-background: FINRA fetch failed for ${yyyymmdd}: ${err.message}`);
     }
     cursor.setUTCDate(cursor.getUTCDate() - 1);
-    await sleep(150); // polite pacing — not an AV-budget concern, just courteous
+    await sleep(150); // polite pacing, just courteous
   }
 
   dates.reverse(); // oldest -> newest
   return { dates, perSymbolByDate };
 }
 
-async function fetchDailyAdjustedCompact(apiKey, symbol) {
-  await recordAvCall();
-  const res = await fetch(
-    `${ALPHA_VANTAGE_URL}?function=TIME_SERIES_DAILY_ADJUSTED&symbol=${symbol}&outputsize=compact&apikey=${apiKey}`,
-    { headers: { "User-Agent": USER_AGENT } }
-  );
-  if (!res.ok) throw new Error(`HTTP ${res.status}`);
-  const payload = await res.json();
-  if (payload.Note || payload.Information || payload.error) {
-    throw new Error(payload.Note || payload.Information || JSON.stringify(payload.error));
-  }
-  const series = payload["Time Series (Daily)"];
-  if (!series) throw new Error(`unexpected response shape: ${JSON.stringify(payload).slice(0, 160)}`);
-  const byDate = new Map();
-  for (const [date, day] of Object.entries(series)) {
-    const adjClose = parseFloat(day["5. adjusted close"]);
-    if (Number.isFinite(adjClose)) byDate.set(date, adjClose);
-  }
-  return byDate;
+async function fetchDailyAdjustedCompact(symbol) {
+  const rows = (await fetchDailyHistory(symbol)).slice(-COMPACT_DAYS);
+  return new Map(rows.map((r) => [r.date, r.close]));
 }
 
 // Pearson + Spearman, matching /factor-analysis's two-method-check convention.
@@ -218,8 +200,6 @@ function spearman(xs, ys) {
 exports.handler = async () => {
   console.log("scheduled-short-sale-volume-background: starting");
   try {
-    const apiKey = process.env.ALPHAVANTAGE_API_KEY;
-    if (!apiKey) throw new Error("ALPHAVANTAGE_API_KEY environment variable is not set");
 
     const beeswarmStore = getBeeswarmStore();
     const meta = await beeswarmStore.get(META_KEY, { type: "json" });
@@ -276,12 +256,12 @@ exports.handler = async () => {
       if (avg !== null) periodAAvgSvr.set(symbol, avg);
     }
 
-    console.log(`scheduled-short-sale-volume-background: fetching Alpha Vantage daily prices for ${symbols.length} tickers + SPY`);
+    console.log(`scheduled-short-sale-volume-background: fetching Yahoo daily prices for ${symbols.length} tickers + SPY`);
     const priceBySymbol = new Map();
 
     async function fetchInto(symbol) {
       try {
-        const byDate = await fetchDailyAdjustedCompact(apiKey, symbol);
+        const byDate = await fetchDailyAdjustedCompact(symbol);
         if (byDate.size < 5) return false;
         priceBySymbol.set(symbol, byDate);
         return true;
@@ -302,7 +282,7 @@ exports.handler = async () => {
       for (const symbol of todo) {
         const got = await fetchInto(symbol);
         if (!got && !priceBySymbol.has(symbol)) missed.push(symbol);
-        await sleep(1050);
+        await sleep(300);
       }
       todo = missed;
     }
