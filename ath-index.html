@@ -617,6 +617,16 @@ h1{
  color:#8a6a1f;
 }
 </style>
+<style>
+.dd-section{margin-bottom:28px;}
+.dd-header{display:flex;justify-content:flex-end;margin-bottom:8px;}
+.dd-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,420px),1fr));gap:16px;}
+.dd-box{margin-bottom:0;}
+.dd-stats{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap;margin:4px 0 10px;}
+.dd-now{font-size:30px;font-weight:600;color:var(--greed);}
+.dd-now.dd-off{color:var(--fear);}
+.dd-meta{font-size:12px;color:var(--muted,#8b9199);}
+</style>
 </head>
 <body>
 <nav class="sitenav">
@@ -731,6 +741,21 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <div class="subtitle">Share of the S&amp;P 500 currently trading at an all-time high or all-time low (split- and dividend-adjusted), and the running history of that breadth over time.</div>
 </div>
 <div class="updated" id="updated">Loading...</div>
+</div>
+<div class="dd-section">
+<div class="dd-header"><div class="range-controls" id="ddRangeControls"></div></div>
+<div class="dd-grid">
+<div class="chart-box dd-box">
+<h2>S&amp;P 500 (SPY) % off of all-time highs</h2>
+<div class="dd-stats"><span class="dd-now" id="ddNow-SPY">—</span><span class="dd-meta" id="ddMeta-SPY"></span></div>
+<div class="chart-canvas-wrap"><canvas id="ddChart-SPY"></canvas></div>
+</div>
+<div class="chart-box dd-box">
+<h2>MSCI World Index (URTH) % off of all-time highs</h2>
+<div class="dd-stats"><span class="dd-now" id="ddNow-URTH">—</span><span class="dd-meta" id="ddMeta-URTH"></span></div>
+<div class="chart-canvas-wrap"><canvas id="ddChart-URTH"></canvas></div>
+</div>
+</div>
 </div>
 <div class="tab-bar" id="tabBar">
 <button class="tab-btn active" data-tab="ath">All-Time Highs</button>
@@ -1138,7 +1163,123 @@ function renderChartRange(rangeKey){
  });
 }
 
+const DD_SYMBOLS = ["SPY", "URTH"];
+const DD_RANGES = [
+ { key: "1Y", days: 365 },
+ { key: "3Y", days: 365 * 3 },
+ { key: "5Y", days: 365 * 5 },
+ { key: "10Y", days: 365 * 10 },
+ { key: "Max", days: null },
+];
+let DD_RANGE = "5Y";
+const DD_ROWS = {};
+const DD_CHARTS = {};
+
+function computeDrawdown(bars){
+ let peak = -Infinity;
+ return bars.map(b => {
+  peak = Math.max(peak, b.rawClose);
+  return { date: b.date, dd: (b.rawClose / peak - 1) * 100, peakDate: null };
+ });
+}
+
+function renderDrawdownChart(sym){
+ const all = DD_ROWS[sym];
+ if(!all || !all.length) return;
+ const range = DD_RANGES.find(r => r.key === DD_RANGE);
+ let rows = all;
+ if(range.days){
+  const cutoff = new Date(all[all.length - 1].date + "T00:00:00Z").getTime() - range.days * 86400000;
+  const i = all.findIndex(r => new Date(r.date + "T00:00:00Z").getTime() >= cutoff);
+  rows = i === -1 ? all : all.slice(i);
+ }
+ const last = all[all.length - 1];
+ const now = document.getElementById("ddNow-" + sym);
+ now.textContent = last.dd.toFixed(1) + "%";
+ now.classList.toggle("dd-off", last.dd <= -0.05);
+ const worst = rows.reduce((m, r) => r.dd < m.dd ? r : m, rows[0]);
+ document.getElementById("ddMeta-" + sym).textContent =
+  (last.dd > -0.05 ? "At an all-time high" : "Below peak") + " as of " + last.date +
+  " · deepest in range: " + worst.dd.toFixed(1) + "% (" + worst.date + ")";
+
+ const ink = themeInkColor();
+ const ctx = document.getElementById("ddChart-" + sym).getContext("2d");
+ if(DD_CHARTS[sym]) DD_CHARTS[sym].destroy();
+ DD_CHARTS[sym] = new Chart(ctx, {
+  type: "line",
+  data: {
+   labels: rows.map(r => r.date),
+   datasets: [{
+    label: "% off ATH",
+    data: rows.map(r => +r.dd.toFixed(2)),
+    borderColor: LINE_COLOR,
+    backgroundColor: "rgba(111,143,172,0.30)",
+    borderWidth: 1.5,
+    pointRadius: 0,
+    fill: "origin",
+   }],
+  },
+  options: {
+   responsive: true,
+   maintainAspectRatio: false,
+   interaction: { mode: "index", intersect: false },
+   plugins: {
+    legend: { display: false },
+    tooltip: { callbacks: { label: c => "% off ATH: " + c.parsed.y.toFixed(1) + "%" } },
+   },
+   scales: {
+    x: { ticks: { color: "#8b9199", maxTicksLimit: 8 }, grid: { color: "#2b3138" } },
+    y: {
+     max: 0,
+     ticks: { color: "#8b9199", callback: v => v + "%" },
+     grid: { color: c => c.tick.value === 0 ? ink : "#2b3138" },
+    },
+   },
+  },
+ });
+}
+
+function renderDdRangeButtons(){
+ const container = document.getElementById("ddRangeControls");
+ container.innerHTML = "";
+ DD_RANGES.forEach(r => {
+  const btn = document.createElement("button");
+  btn.className = "range-btn" + (r.key === DD_RANGE ? " active" : "");
+  btn.textContent = r.key;
+  btn.addEventListener("click", () => {
+   container.querySelectorAll(".range-btn").forEach(b => b.classList.remove("active"));
+   btn.classList.add("active");
+   DD_RANGE = r.key;
+   DD_SYMBOLS.forEach(renderDrawdownChart);
+  });
+  container.appendChild(btn);
+ });
+}
+
+async function initDrawdowns(){
+ renderDdRangeButtons();
+ let data;
+ try{
+  const r = await fetch("/api/drawdown-history");
+  data = await r.json();
+  if(!r.ok || !data.series) throw new Error(data.error || "no data");
+ }catch(e){
+  DD_SYMBOLS.forEach(sym => { document.getElementById("ddMeta-" + sym).textContent = "Couldn't load price history."; });
+  return;
+ }
+ DD_SYMBOLS.forEach(sym => {
+  try{
+   const bars = data.series[sym].map(([date, rawClose]) => ({ date, rawClose }));
+   DD_ROWS[sym] = computeDrawdown(bars);
+   renderDrawdownChart(sym);
+  }catch(e){
+   document.getElementById("ddMeta-" + sym).textContent = "Couldn't load " + sym + " price history.";
+  }
+ });
+}
+
 init();
+initDrawdowns();
 </script>
 </body>
 </html>

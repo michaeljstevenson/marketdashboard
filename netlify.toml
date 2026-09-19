@@ -108,6 +108,11 @@
   status = 200
 
 [[redirects]]
+  from = "/api/drawdown-history"
+  to = "/.netlify/functions/drawdown-history"
+  status = 200
+
+[[redirects]]
   from = "/api/earnings-revisions"
   to = "/.netlify/functions/earnings-revisions"
   status = 200
@@ -309,6 +314,11 @@
   # 5 minutes after scheduled-ath-tradingview) so this one's 11 sequential
   # full-history fetches don't compete with theirs for the rate limit.
   schedule = "45 20 * * 1-5"
+
+[functions."scheduled-drawdown-background"]
+  # 20:55 UTC — after the other daily jobs. Yahoo, not Alpha Vantage, so
+  # no rate-limit contention; staggered to keep the daily jobs in one block.
+  schedule = "55 20 * * 1-5"
 
 [functions."scheduled-seasonality-background"]
   # 20:50 UTC — after the other daily jobs. Not an Alpha Vantage call
