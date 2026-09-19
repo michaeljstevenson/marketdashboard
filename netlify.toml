@@ -197,6 +197,11 @@
   to = "/.netlify/functions/margin-leverage"
   status = 200
 
+[[redirects]]
+  from = "/api/quality-score"
+  to = "/.netlify/functions/quality-score"
+  status = 200
+
 # The Statistical Engine page was briefly at these paths.
 [[redirects]]
   from = "/streak-scanner"
@@ -611,3 +616,25 @@
   # this fix, leaving headroom for this job's own longer runtime. Weekly,
   # not daily: fundamentals only change when a company files a new
   # 10-Q/10-K.
+
+[functions."scheduled-quality-financials-background"]
+  # One-time snapshot — no schedule, same convention as every full-index
+  # sweep added to this site since 2026-09-16 (see scheduled-surprise-
+  # background's own comment above for the original reasoning: these pages
+  # read as "the research as it stood on this date," not continuously-
+  # refreshed). Run manually via the Netlify dashboard's "Run now" whenever
+  # a fresh snapshot is wanted — and run this one before scheduled-quality-
+  # score-background, which depends on the blob it writes. ~1006 sequential
+  # BALANCE_SHEET/INCOME_STATEMENT calls (2 per company) at 750ms spacing,
+  # same shape and pacing as scheduled-margin-leverage-background's own
+  # 2-statement sweep — see this function's own file for why a 3-statement
+  # sweep (this job plus stage 2's CASH_FLOW pull) has to be split in two.
+
+[functions."scheduled-quality-score-background"]
+  # One-time snapshot — no schedule, same convention as scheduled-quality-
+  # financials-background above. Run manually via the Netlify dashboard's
+  # "Run now" *after* that job has populated its blob at least once — this
+  # one reads it directly and fails fast if it hasn't. ~503 sequential
+  # CASH_FLOW calls at 1050ms spacing plus a retry pass, same pacing as
+  # scheduled-share-count-background's BALANCE_SHEET sweep — see this
+  # function's own file for the full Piotroski F-Score methodology.
