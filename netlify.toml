@@ -197,6 +197,11 @@
   to = "/.netlify/functions/margin-leverage"
   status = 200
 
+[[redirects]]
+  from = "/api/earnings-call-sentiment"
+  to = "/.netlify/functions/earnings-call-sentiment"
+  status = 200
+
 # The Statistical Engine page was briefly at these paths.
 [[redirects]]
   from = "/streak-scanner"
@@ -611,3 +616,15 @@
   # this fix, leaving headroom for this job's own longer runtime. Weekly,
   # not daily: fundamentals only change when a company files a new
   # 10-Q/10-K.
+
+[functions."scheduled-earnings-sentiment-background"]
+  # One-time snapshot (2026-09-19) — no schedule, same "read as the research
+  # stood on this date" reasoning as this file's other recently-added
+  # Equities pages (see scheduled-margin-leverage-background above). Run
+  # manually (Netlify dashboard "Run now") if a fresh snapshot is ever
+  # wanted later. Not staggered against the Saturday block above since it
+  # never fires on its own — if it's ever converted back to a recurring
+  # schedule, budget for ~1,000 calls (503 EARNINGS + up to 503
+  # EARNINGS_CALL_TRANSCRIPT) at 800ms spacing, ~13-14 minutes, same volume
+  # class as scheduled-margin-leverage-background's two-call sweep — run it
+  # after that job (14:35 UTC) finishes, i.e. no earlier than ~14:50 UTC.
