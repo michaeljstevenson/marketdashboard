@@ -269,37 +269,33 @@
   status = 301
 
 [functions."scheduled-breadth-background"]
-  # 20:30 UTC = 4:30pm EDT (summer). Shifts to 3:30pm during EST (winter,
-  # roughly Nov-Mar) since Netlify's cron runs in UTC with no DST
-  # awareness — adjust to 21:30 for winter-accurate timing if that hour
-  # drift matters, though either is safely after the 4:00pm ET close.
-  schedule = "30 20 * * 1-5"
+  # 21:30 UTC = 5:30pm EDT (summer) / 4:30pm EST (winter). Netlify's cron
+  # runs in UTC with no DST awareness, so 21:30 keeps the whole daily
+  # block after the 4:00pm ET close in either regime.
+  schedule = "30 21 * * 1-5"
 
 [functions."scheduled-sectors-background"]
-  # Staggered 5 minutes after scheduled-breadth-background (20:35 vs
-  # 20:30 UTC) so the two heavy sequential-fetch jobs don't run
-  # concurrently and compete for Alpha Vantage's rate limit.
-  schedule = "35 20 * * 1-5"
+  # 5 minutes after scheduled-breadth-background (21:35 vs 21:30 UTC).
+  # Yahoo Finance, not Alpha Vantage, so no rate-limit contention with it.
+  schedule = "35 21 * * 1-5"
 
 [functions."scheduled-ath-tradingview"]
-  # Staggered after the Alpha-Vantage-based jobs above (20:40 UTC) even
+  # Staggered after the Alpha-Vantage-based jobs above (21:40 UTC) even
   # though this one hits a completely different data source (TradingView,
   # not Alpha Vantage) and only takes a single request — no real
   # contention risk, just keeping all the daily jobs in one predictable
   # block after the close.
-  schedule = "40 20 * * 1-5"
+  schedule = "40 21 * * 1-5"
 
 [functions."scheduled-ticker-background"]
   # Every 2 minutes during US market hours on weekdays (13:30-20:00 UTC =
   # 9:30am-4:00pm EDT summer; drifts an hour during EST winter, same
   # DST caveat as the jobs above). Unlike those once-daily jobs, the
-  # ticker tape is meant to feel current through the trading day. Each
-  # run actually takes ~2.3 minutes (paced to stay under Alpha Vantage's
-  # per-minute rate cap across ~156 calls — see scheduled-ticker-
-  # background.js), so back-to-back 2-minute ticks would overlap; the
-  # function's own lock (also in that file) makes an overlapping trigger
-  # a no-op rather than double-firing calls and re-tripping the rate
-  # limit, so the real-world cadence ends up ~2.3 minutes, back-to-back.
+  # ticker tape is meant to feel current through the trading day. Quotes
+  # now come from Yahoo's batched spark endpoint (a run takes seconds);
+  # only Fed Funds and WTI still use Alpha Vantage, at most every 30
+  # minutes (see scheduled-ticker-background.js). The function's own lock
+  # makes an overlapping trigger a no-op.
   schedule = "*/2 13-20 * * 1-5"
 
 [functions."scheduled-factors-background"]
@@ -310,21 +306,20 @@
   schedule = "0 9 * * 6"
 
 [functions."scheduled-countries-background"]
-  # Staggered after the other Alpha-Vantage-based daily jobs (20:45 UTC,
-  # 5 minutes after scheduled-ath-tradingview) so this one's 11 sequential
-  # full-history fetches don't compete with theirs for the rate limit.
-  schedule = "45 20 * * 1-5"
+  # 21:45 UTC, 5 minutes after scheduled-ath-tradingview. Yahoo Finance,
+  # not Alpha Vantage, so no rate-limit contention with the AV-based jobs.
+  schedule = "45 21 * * 1-5"
 
 [functions."scheduled-drawdown-background"]
-  # 20:55 UTC — after the other daily jobs. Yahoo, not Alpha Vantage, so
-  # no rate-limit contention; staggered to keep the daily jobs in one block.
-  schedule = "55 20 * * 1-5"
+  # 21:30 UTC = 5:30pm EDT / 4:30pm EST, after the close in either regime.
+  # Yahoo, not Alpha Vantage, so no rate-limit contention with the block.
+  schedule = "30 21 * * 1-5"
 
 [functions."scheduled-seasonality-background"]
-  # 20:50 UTC — after the other daily jobs. Not an Alpha Vantage call
+  # 21:50 UTC — after the other daily jobs. Not an Alpha Vantage call
   # (Yahoo, not AV), so there's no real rate-limit contention with them;
   # staggered anyway just to keep all the once-daily jobs in one block.
-  schedule = "50 20 * * 1-5"
+  schedule = "50 21 * * 1-5"
 
 [functions."scheduled-daychange-background"]
   # Hourly at :30 past, 13:30-19:30 UTC (9:30am-3:30pm EDT summer; drifts
@@ -332,46 +327,46 @@
   # covers the trading session without needing a call right at the open
   # (no prior-close-vs-now gap to measure yet) or close (the once-daily
   # scheduled-breadth-background job already captures that snapshot).
-  # Deliberately separate from that job: this one only needs GLOBAL_QUOTE
-  # (current price vs. previous close) per symbol, not full history, so
-  # it's cheap enough to run through the day — see
-  # scheduled-daychange-background.js for the rate-limit pacing.
+  # Deliberately separate from that job: this one only needs the current
+  # price vs. previous close per symbol, fetched from Yahoo's batched
+  # spark endpoint (no Alpha Vantage calls), so it's cheap enough to run
+  # through the day.
   schedule = "30 13-19 * * 1-5"
 
 [functions."scheduled-putcall-background"]
-  # 20:55 UTC — after the other daily jobs. Moved off the live request
+  # 21:55 UTC — after the other daily jobs. Moved off the live request
   # path (was inside data.js, refetched on every page load) after its
   # ~40 sequential per-date Alpha Vantage calls started pushing that
   # function's runtime past Netlify's timeout; see
   # scheduled-putcall-background.js for the full story.
-  schedule = "55 20 * * 1-5"
+  schedule = "55 21 * * 1-5"
 
 [functions."scheduled-sentiment-background"]
-  # 21:00 UTC — after scheduled-breadth-background (needs its blob) and
+  # 22:00 UTC — after scheduled-breadth-background (needs its blob) and
   # scheduled-putcall-background (needs its blob) have both finished.
   # Computes the whole U.S. Market Sentiment Index once daily and writes
   # it to Netlify Blobs; data.js just reads that blob now instead of
   # recomputing everything live on every page load — see
   # scheduled-sentiment-background.js for the full story.
-  schedule = "0 21 * * 1-5"
+  schedule = "0 22 * * 1-5"
 
 [functions."scheduled-oddstats-background"]
-  # 21:10 UTC — last of the daily block. Yahoo-only (no Alpha Vantage
+  # 22:10 UTC — last of the daily block. Yahoo-only (no Alpha Vantage
   # contention); runs the full streak scanner (~24 sequential Yahoo
   # fetches + ~360 analog scans) and writes the board to Netlify Blobs
   # for oddstats.js to serve. Background function for the long runtime —
   # see scheduled-oddstats-background.js.
-  schedule = "10 21 * * 1-5"
+  schedule = "10 22 * * 1-5"
 
 [functions."scheduled-beeswarm-daily-background"]
-  # 21:40 UTC — after the whole daily Alpha-Vantage block above has
+  # 22:40 UTC — after the whole daily Alpha-Vantage block above has
   # cleared (last of it, scheduled-oddstats, is Yahoo but the AV jobs
   # finish well before 21:40), so this job's ~504 GLOBAL_QUOTE calls
-  # don't compete for the rate limit. 21:40 UTC = 5:40pm EDT / 4:40pm EST
+  # don't compete for the rate limit. 22:40 UTC = 6:40pm EDT / 5:40pm EST
   # — always after the 4:00pm ET close plus the 15-minute quote delay,
   # in either DST regime. Captures the end-of-day sector-beeswarm
   # snapshot; see scheduled-beeswarm-daily-background.js.
-  schedule = "40 21 * * 1-5"
+  schedule = "40 22 * * 1-5"
 
 [functions."scheduled-beeswarm-meta-background"]
   # Weekly, Saturday 07:00 UTC — before scheduled-factors-background
@@ -421,7 +416,7 @@
   # rate-limit contention risk either way — staggered anyway to keep the
   # daily block's logs easy to read in order. Daily, not weekly, since
   # (unlike a sparse-event dataset) index levels move every trading day.
-  schedule = "15 21 * * 1-5"
+  schedule = "15 22 * * 1-5"
 
 [functions."scheduled-international-background"]
   # One-time snapshot (2026-09-16) — no schedule. International vs. US is

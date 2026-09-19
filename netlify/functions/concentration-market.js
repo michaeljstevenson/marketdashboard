@@ -8,50 +8,24 @@
 // the first common date and also plots the equal/cap relative-strength
 // ratio (chart D).
 //
-// Only two Alpha Vantage calls per invocation, so this runs live (with a
-// long cache header) rather than via a scheduled blob job like the
-// 500-symbol breadth feed.
+// Two Yahoo Finance calls per invocation (no Alpha Vantage quota), so this
+// runs live with a long cache header rather than via a scheduled blob job
+// like the 500-symbol breadth feed.
 
-const ALPHA_VANTAGE_URL = "https://www.alphavantage.co/query";
-const USER_AGENT =
-  "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0 Safari/537.36";
+const { fetchDailyHistory, sleep } = require("./yahoo-client");
 
 const SYMBOLS = ["SPY", "RSP"];
 
-function sleep(ms) {
-  return new Promise((resolve) => setTimeout(resolve, ms));
-}
-
-async function fetchDailyAdjusted(apiKey, symbol) {
-  const res = await fetch(
-    `${ALPHA_VANTAGE_URL}?function=TIME_SERIES_DAILY_ADJUSTED&symbol=${symbol}&outputsize=full&apikey=${apiKey}`,
-    { headers: { "User-Agent": USER_AGENT } }
-  );
-  if (!res.ok) throw new Error(`HTTP ${res.status} for ${symbol}`);
-  const payload = await res.json();
-  const series = payload["Time Series (Daily)"];
-  if (!series) {
-    throw new Error(
-      `Alpha Vantage TIME_SERIES_DAILY_ADJUSTED missing data for ${symbol}: ` +
-        (payload.Note || payload.Information || payload.error_message || JSON.stringify(payload).slice(0, 200))
-    );
-  }
-  const out = new Map();
-  for (const [date, day] of Object.entries(series)) {
-    const v = parseFloat(day["5. adjusted close"]);
-    if (Number.isFinite(v)) out.set(date, v);
-  }
-  return out;
+async function fetchDailyAdjusted(symbol) {
+  const bars = await fetchDailyHistory(symbol);
+  return new Map(bars.map((b) => [b.date, b.close]));
 }
 
 exports.handler = async () => {
   try {
-    const apiKey = process.env.ALPHAVANTAGE_API_KEY;
-    if (!apiKey) throw new Error("ALPHAVANTAGE_API_KEY environment variable is not set");
-
     const bySymbol = {};
     for (const symbol of SYMBOLS) {
-      bySymbol[symbol] = await fetchDailyAdjusted(apiKey, symbol);
+      bySymbol[symbol] = await fetchDailyAdjusted(symbol);
       await sleep(300);
     }
 
@@ -63,8 +37,8 @@ exports.handler = async () => {
 
     const rows = dates.map((date) => ({
       date,
-      spy: bySymbol.SPY.get(date),
-      rsp: bySymbol.RSP.get(date),
+      spy: Math.round(bySymbol.SPY.get(date) * 10000) / 10000,
+      rsp: Math.round(bySymbol.RSP.get(date) * 10000) / 10000,
     }));
 
     const payload = {

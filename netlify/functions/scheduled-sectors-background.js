@@ -6,33 +6,31 @@
 // full history already fetched for the return calculations, no extra API
 // calls) for the sector-analysis.html performance chart.
 //
+// Data comes from Yahoo Finance (see yahoo-client.js), not Alpha Vantage —
+// a dozen symbols of plain daily history don't need the AV quota. Yahoo's
+// adjusted close matched the previous AV-sourced series to within ~0.005%
+// (median) when this was switched, with identical trailing returns.
+//
 // Named with the "-background" suffix for the same reason as
-// scheduled-breadth-background.js: fetching full daily history for 12
-// symbols sequentially (with required inter-call spacing to avoid Alpha
-// Vantage's burst limiter) takes well over the ~30s a standard function
-// gets, so this needs a Background Function's up-to-15-minute window.
+// scheduled-breadth-background.js: sequential full-history fetches for 12
+// symbols can outrun the ~30s a standard function gets.
 //
 // Runs once daily after the close. Each run re-fetches full daily history
-// for every ticker (TIME_SERIES_DAILY_ADJUSTED, outputsize=full) and
-// recomputes every return from scratch rather than incrementally, for the
-// same reasons as the breadth job: simpler and self-healing.
+// for every ticker and recomputes every return from scratch rather than
+// incrementally, for the same reasons as the breadth job: simpler and
+// self-healing.
 //
-// Uses the split/dividend-adjusted close, not the raw close: plain
-// TIME_SERIES_DAILY doesn't retroactively adjust historical prices for
-// splits, so a sector ETF that split within the lookback window (this
-// happened with XLK, discovered when its "1Y" return came back as -28%
-// instead of the real ~+40%) produces wildly wrong trailing returns.
-// Adjusted close bundles in dividend reinvestment too, so these are true
-// total returns, not price-only returns.
+// Uses the split/dividend-adjusted close, not the raw close: a raw close
+// isn't retroactively adjusted for splits, so a sector ETF that split
+// within the lookback window (this happened with XLK, discovered when its
+// "1Y" return came back as -28% instead of the real ~+40%) produces wildly
+// wrong trailing returns. Adjusted close bundles in dividend reinvestment
+// too, so these are true total returns, not price-only returns.
 
 const { getSectorStore, BLOB_KEY } = require("./sector-blob-store");
-const { recordAvCall } = require("./av-call-counter");
+const { fetchDailyHistory, sleep } = require("./yahoo-client");
 
 const HISTORY_POINTS = 504; // ~2 trading years, same convention as data.js
-
-const ALPHA_VANTAGE_URL = "https://www.alphavantage.co/query";
-const USER_AGENT =
-  "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0 Safari/537.36";
 
 // The 11 SPDR sector ETFs, plus SPY as the market-cap-weighted S&P 500
 // benchmark used for relative (excess-return) performance.
@@ -50,33 +48,6 @@ const SECTORS = [
   { ticker: "XLC", name: "Communication Services" },
 ];
 const BENCHMARK = { ticker: "SPY", name: "S&P 500" };
-
-function sleep(ms) {
-  return new Promise((resolve) => setTimeout(resolve, ms));
-}
-
-async function fetchJson(url) {
-  await recordAvCall();
-  const res = await fetch(url, { headers: { "User-Agent": USER_AGENT } });
-  if (!res.ok) throw new Error(`HTTP ${res.status} for ${url}`);
-  return res.json();
-}
-
-async function fetchDailyCloses(apiKey, symbol) {
-  const payload = await fetchJson(
-    `${ALPHA_VANTAGE_URL}?function=TIME_SERIES_DAILY_ADJUSTED&symbol=${symbol}&outputsize=full&apikey=${apiKey}`
-  );
-  const series = payload["Time Series (Daily)"];
-  if (!series) {
-    throw new Error(
-      `Alpha Vantage TIME_SERIES_DAILY_ADJUSTED missing data for ${symbol}: ` +
-        (payload.Note || payload.Information || payload.error_message || JSON.stringify(payload).slice(0, 200))
-    );
-  }
-  return Object.entries(series)
-    .map(([date, day]) => ({ date, close: parseFloat(day["5. adjusted close"]) }))
-    .sort((a, b) => (a.date < b.date ? -1 : 1));
-}
 
 function addMonths(dateObj, months) {
   const d = new Date(dateObj);
@@ -166,26 +137,19 @@ function relativeReturns(sectorReturns, benchmarkReturns) {
 exports.handler = async () => {
   console.log(`scheduled-sectors-background: starting, ${SECTORS.length} sectors + benchmark`);
   try {
-    const apiKey = process.env.ALPHAVANTAGE_API_KEY;
-    if (!apiKey) throw new Error("ALPHAVANTAGE_API_KEY environment variable is not set");
-
     const allTickers = [BENCHMARK, ...SECTORS];
     const computed = new Map();
 
-    // 800ms between calls (not the 300ms used elsewhere) — those other jobs
-    // fetch short trailing windows, while this one pulls full daily history
-    // (outputsize=full) for 12 symbols back-to-back, which was tripping
-    // Alpha Vantage's burst limiter partway through the run and silently
-    // dropping whichever tickers landed on the throttled calls (e.g. only
-    // 7/11 sectors loading, a different 4 missing each run).
+    // Spacing between calls keeps a 12-symbol full-history sweep from
+    // tripping Yahoo's 429s.
     for (const { ticker } of allTickers) {
       try {
-        const closes = await fetchDailyCloses(apiKey, ticker);
+        const closes = await fetchDailyHistory(ticker);
         computed.set(ticker, { returns: computeReturns(closes), history: closes.slice(-HISTORY_POINTS) });
       } catch (err) {
         console.error(`scheduled-sectors-background: ${ticker} failed: ${err.message}`);
       }
-      await sleep(800);
+      await sleep(300);
     }
 
     // Retry pass: any ticker that failed above gets one more attempt after
@@ -197,12 +161,12 @@ exports.handler = async () => {
       await sleep(2000);
       for (const { ticker } of missing) {
         try {
-          const closes = await fetchDailyCloses(apiKey, ticker);
+          const closes = await fetchDailyHistory(ticker);
           computed.set(ticker, { returns: computeReturns(closes), history: closes.slice(-HISTORY_POINTS) });
         } catch (err) {
           console.error(`scheduled-sectors-background: ${ticker} retry failed: ${err.message}`);
         }
-        await sleep(800);
+        await sleep(300);
       }
     }
 

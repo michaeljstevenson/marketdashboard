@@ -1,10 +1,10 @@
 // Scheduled Background Function (see [functions."scheduled-countries-background"]
-// in netlify.toml) that fetches daily adjusted-close history for a set of
+// in netlify.toml) that fetches daily adjusted-close history (from Yahoo
+// Finance, see yahoo-client.js) for a set of
 // single-country/region ETF proxies plus a Value/Growth style pair, and
 // writes trimmed history to Netlify Blobs for country-performance.js to
 // serve. Mirrors scheduled-sectors-background.js's fetch/pace/retry
-// pattern — see that file for the rationale on adjusted close and the
-// 800ms inter-call spacing.
+// pattern — see that file for the rationale on adjusted close.
 //
 // This does NOT attempt true country-by-sector granularity (e.g. "Japan
 // Financials") — that isn't cleanly available via free ETF proxies for
@@ -17,13 +17,9 @@
 // couple of data points to show.
 
 const { getCountryStore, BLOB_KEY } = require("./country-blob-store");
-const { recordAvCall } = require("./av-call-counter");
+const { fetchDailyHistory, sleep } = require("./yahoo-client");
 
 const HISTORY_POINTS = 2600; // ~10 trading years
-
-const ALPHA_VANTAGE_URL = "https://www.alphavantage.co/query";
-const USER_AGENT =
-  "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0 Safari/537.36";
 
 const REGIONS = [
   { ticker: "SPY", name: "US", type: "region" },
@@ -39,49 +35,19 @@ const REGIONS = [
   { ticker: "IVW", name: "Growth", type: "style" },
 ];
 
-function sleep(ms) {
-  return new Promise((resolve) => setTimeout(resolve, ms));
-}
-
-async function fetchJson(url) {
-  await recordAvCall();
-  const res = await fetch(url, { headers: { "User-Agent": USER_AGENT } });
-  if (!res.ok) throw new Error(`HTTP ${res.status} for ${url}`);
-  return res.json();
-}
-
-async function fetchDailyCloses(apiKey, symbol) {
-  const payload = await fetchJson(
-    `${ALPHA_VANTAGE_URL}?function=TIME_SERIES_DAILY_ADJUSTED&symbol=${symbol}&outputsize=full&apikey=${apiKey}`
-  );
-  const series = payload["Time Series (Daily)"];
-  if (!series) {
-    throw new Error(
-      `Alpha Vantage TIME_SERIES_DAILY_ADJUSTED missing data for ${symbol}: ` +
-        (payload.Note || payload.Information || payload.error_message || JSON.stringify(payload).slice(0, 200))
-    );
-  }
-  return Object.entries(series)
-    .map(([date, day]) => ({ date, close: parseFloat(day["5. adjusted close"]) }))
-    .sort((a, b) => (a.date < b.date ? -1 : 1));
-}
-
 exports.handler = async () => {
   console.log(`scheduled-countries-background: starting, ${REGIONS.length} tickers`);
   try {
-    const apiKey = process.env.ALPHAVANTAGE_API_KEY;
-    if (!apiKey) throw new Error("ALPHAVANTAGE_API_KEY environment variable is not set");
-
     const computed = new Map();
 
     for (const { ticker } of REGIONS) {
       try {
-        const closes = await fetchDailyCloses(apiKey, ticker);
+        const closes = await fetchDailyHistory(ticker);
         computed.set(ticker, closes);
       } catch (err) {
         console.error(`scheduled-countries-background: ${ticker} failed: ${err.message}`);
       }
-      await sleep(800);
+      await sleep(300);
     }
 
     const missing = REGIONS.filter(({ ticker }) => !computed.has(ticker));
@@ -90,12 +56,12 @@ exports.handler = async () => {
       await sleep(2000);
       for (const { ticker } of missing) {
         try {
-          const closes = await fetchDailyCloses(apiKey, ticker);
+          const closes = await fetchDailyHistory(ticker);
           computed.set(ticker, closes);
         } catch (err) {
           console.error(`scheduled-countries-background: ${ticker} retry failed: ${err.message}`);
         }
-        await sleep(800);
+        await sleep(300);
       }
     }
 

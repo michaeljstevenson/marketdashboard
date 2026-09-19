@@ -11,7 +11,7 @@
 //
 // Yahoo has no per-day quota here (unlike Alpha Vantage), so there's no
 // rate-limit contention with the other scheduled-*-background jobs; it's
-// staggered after them (21:10 UTC) just to keep the daily jobs in one block.
+// staggered after them (22:10 UTC) just to keep the daily jobs in one block.
 //
 // Each run rebuilds everything from scratch — same self-healing rationale as
 // the breadth/sectors jobs.
