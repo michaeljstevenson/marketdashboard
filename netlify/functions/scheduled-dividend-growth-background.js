@@ -32,11 +32,8 @@ const { getDividendStore, LATEST_KEY } = require("./dividend-blob-store");
 const { getBeeswarmStore, META_KEY } = require("./beeswarm-blob-store");
 const { BREADTH_CONSTITUENTS } = require("./breadth-constituents");
 const { SECTOR_ORDER } = require("./beeswarm-sectors");
-const { recordAvCall } = require("./av-call-counter");
+const { fetchDividendEvents } = require("./yahoo-client");
 
-const ALPHA_VANTAGE_URL = "https://www.alphavantage.co/query";
-const USER_AGENT =
-  "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0 Safari/537.36";
 
 const MIN_FULL_YEARS = 3; // fewer than this and a CAGR/streak isn't meaningful
 const CAGR_WINDOW_YEARS = 5; // use up to this many years back for the CAGR, fewer if that's all there is
@@ -73,18 +70,9 @@ function mean(values) {
   return v.reduce((a, b) => a + b, 0) / v.length;
 }
 
-async function fetchDividends(apiKey, symbol, currentYear) {
-  await recordAvCall();
-  const res = await fetch(`${ALPHA_VANTAGE_URL}?function=DIVIDENDS&symbol=${symbol}&apikey=${apiKey}`, {
-    headers: { "User-Agent": USER_AGENT },
-  });
-  if (!res.ok) throw new Error(`HTTP ${res.status}`);
-  const payload = await res.json();
-  if (payload.Note || payload.Information || payload.error) {
-    throw new Error(payload.Note || payload.Information || JSON.stringify(payload.error));
-  }
-  const rows = payload.data;
-  if (!Array.isArray(rows) || !rows.length) return null;
+async function fetchDividends(symbol, currentYear) {
+  const rows = (await fetchDividendEvents(symbol)).map((d) => ({ amount: d.amount, ex_dividend_date: d.date }));
+  if (!rows.length) return null;
 
   const byYear = new Map();
   for (const r of rows) {
@@ -135,8 +123,6 @@ function latestYoyGrowth(years) {
 exports.handler = async () => {
   console.log(`scheduled-dividend-growth-background: starting, ${BREADTH_CONSTITUENTS.length} tickers`);
   try {
-    const apiKey = process.env.ALPHAVANTAGE_API_KEY;
-    if (!apiKey) throw new Error("ALPHAVANTAGE_API_KEY is not set");
 
     const currentYear = new Date().getUTCFullYear();
 
@@ -148,7 +134,7 @@ exports.handler = async () => {
 
     async function fetchInto(symbol) {
       try {
-        const years = await fetchDividends(apiKey, symbol, currentYear);
+        const years = await fetchDividends(symbol, currentYear);
         if (years) results.set(symbol, years);
         return true;
       } catch (err) {
@@ -168,7 +154,7 @@ exports.handler = async () => {
       for (const symbol of todo) {
         const got = await fetchInto(symbol);
         if (!got) missed.push(symbol);
-        await sleep(1050);
+        await sleep(300);
       }
       todo = missed;
     }
