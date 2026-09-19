@@ -18,6 +18,13 @@
 // scheduled-insider-transactions-background.js — avoids a second ~503-call
 // OVERVIEW sweep for data that page already refreshes weekly.
 //
+// Also writes `companiesLatest` — one row per company (ticker, sector,
+// reportedDate, surprisePct) for its single most recent reported quarter —
+// alongside the aggregates below. Added for /post-earnings-drift.html,
+// which reuses this blob (per this site's cross-page-reuse convention, see
+// scheduled-post-earnings-drift-background.js) instead of re-sweeping
+// EARNINGS itself; every other field in this file's output is unchanged.
+//
 // Runs weekly (Saturday), well after the rest of the Saturday block so it
 // doesn't overlap another full-universe sweep still finishing (see
 // netlify.toml). Earnings results only change once a quarter per company,
@@ -202,6 +209,18 @@ exports.handler = async () => {
     }
     if (!companies.length) throw new Error("No tickers resolved with both earnings data and sector metadata");
 
+    // One row per company for its single most recent reported quarter —
+    // c.quarters is newest-first (see fetchEarnings above), so [0] is it.
+    const companiesLatest = companies.map((c) => ({
+      ticker: c.ticker,
+      name: c.name,
+      sector: c.sector,
+      reportedDate: c.quarters[0].reportedDate,
+      fiscalDateEnding: c.quarters[0].fiscalDateEnding,
+      quarterLabel: c.quarters[0].label,
+      surprisePct: c.quarters[0].surprisePct,
+    }));
+
     // Group every (company, quarter) observation by calendarized quarter.
     const byQuarter = new Map();
     for (const c of companies) {
@@ -382,6 +401,7 @@ exports.handler = async () => {
       streaksMiss: streaksMiss.slice(0, 10).map(leaderboardRow),
       biggestBeats,
       biggestMisses,
+      companiesLatest,
     };
 
     const store = getSurpriseStore();
