@@ -1,0 +1,1518 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<script>
+// Applied before first paint to avoid a flash of the wrong theme.
+(function(){
+ var saved = localStorage.getItem("theme");
+ if(saved === "light") document.documentElement.setAttribute("data-theme", "light");
+})();
+</script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom@2"></script>
+<script>
+// FRED-style zoom: drag horizontally on any chart to zoom into that range,
+// double-click to reset. Applied via Chart.defaults so every chart on the
+// page gets it without touching each individual new Chart(...) call.
+Chart.defaults.plugins.zoom = {
+ zoom: {
+  wheel: { enabled: false },
+  pinch: { enabled: false },
+  drag: { enabled: true, backgroundColor: "rgba(217,138,61,0.15)", borderColor: "rgba(217,138,61,0.4)", borderWidth: 1 },
+  mode: "x",
+ },
+ pan: { enabled: true, mode: "x", modifierKey: "shift" },
+};
+document.addEventListener("dblclick", function(e){
+ if(e.target.tagName === "CANVAS"){
+  var chart = Chart.getChart(e.target);
+  if(chart) chart.resetZoom();
+ }
+});
+document.addEventListener("DOMContentLoaded", function(){
+ document.querySelectorAll(".chart-canvas-wrap canvas").forEach(function(c){
+  c.title = "Drag to zoom · shift-drag to pan · double-click to reset";
+ });
+});
+</script>
+<style>
+.chart-fullscreen-btn{
+ position:absolute;
+ top:8px;
+ right:8px;
+ z-index:5;
+ background:var(--card, #1c2127);
+ border:1px solid var(--hair, #2b3138);
+ color:var(--muted, #8b9199);
+ border-radius:6px;
+ width:28px;
+ height:28px;
+ display:flex;
+ align-items:center;
+ justify-content:center;
+ cursor:pointer;
+ padding:0;
+ opacity:0.85;
+}
+.chart-fullscreen-btn:hover{ color:var(--ink, #eae6da); border-color:#3a424b; opacity:1; }
+.is-chart-fullscreen{
+ background:var(--bg, #14181c) !important;
+ padding:24px !important;
+ display:flex !important;
+ flex-direction:column !important;
+ overflow:auto !important;
+}
+.is-chart-fullscreen canvas{
+ max-height:none !important;
+}
+</style>
+<script>
+// Expand-to-fullscreen button on every chart, matching the pattern from
+// sites like GuruFocus: a small corner button on each chart's canvas
+// area that fullscreens the whole chart card (title, legend, controls
+// included) via the Fullscreen API. Finds every <canvas> generically
+// rather than relying on one wrapper class name, since different pages
+// on this site use different card markup (.chart-box, .scatter-box,
+// .chart, herd-mentality tiles, etc.).
+document.addEventListener("DOMContentLoaded", function(){
+ function requestFs(el){
+  var fn = el.requestFullscreen || el.webkitRequestFullscreen || el.mozRequestFullScreen || el.msRequestFullscreen;
+  if(fn) fn.call(el);
+ }
+ function exitFs(){
+  var fn = document.exitFullscreen || document.webkitExitFullscreen || document.mozCancelFullScreen || document.msExitFullscreen;
+  if(fn) fn.call(document);
+ }
+ function currentFsEl(){
+  return document.fullscreenElement || document.webkitFullscreenElement || document.mozFullScreenElement || document.msFullscreenElement;
+ }
+ function resolveCard(canvas){
+  return canvas.closest(".chart-box, .scatter-box, .herd-cell, .modal-chart")
+   || canvas.parentElement.closest("div")
+   || canvas.parentElement;
+ }
+ function resizeChartIn(wrap){
+  var canvas = wrap.querySelector("canvas");
+  var chart = canvas && window.Chart && Chart.getChart(canvas);
+  if(chart) chart.resize();
+ }
+
+ var entries = []; // { card, wrap }
+
+ document.querySelectorAll("canvas").forEach(function(canvas){
+  if(canvas.closest(".chart-fullscreen-btn")) return;
+  var card = resolveCard(canvas);
+  if(!card || card.querySelector(".chart-fullscreen-btn")) return; // one button per card, not per canvas
+
+  var wrap = canvas.parentElement;
+  var wrapStyle = getComputedStyle(wrap);
+  if(wrapStyle.position === "static") wrap.style.position = "relative";
+
+  var btn = document.createElement("button");
+  btn.type = "button";
+  btn.className = "chart-fullscreen-btn";
+  btn.title = "Expand chart";
+  btn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3H5a2 2 0 0 0-2 2v3"/><path d="M16 3h3a2 2 0 0 1 2 2v3"/><path d="M8 21H5a2 2 0 0 1-2-2v-3"/><path d="M16 21h3a2 2 0 0 0 2-2v-3"/></svg>';
+  btn.addEventListener("click", function(e){
+   e.stopPropagation();
+   if(currentFsEl() === card) exitFs();
+   else requestFs(card);
+  });
+  wrap.appendChild(btn);
+  entries.push({ card: card, wrap: wrap });
+
+  if(window.ResizeObserver){
+   new ResizeObserver(function(){ resizeChartIn(wrap); }).observe(wrap);
+  }
+ });
+
+ function onFsChange(){
+  var fsEl = currentFsEl();
+  entries.forEach(function(entry){
+   var isFs = fsEl === entry.card;
+   entry.card.classList.toggle("is-chart-fullscreen", isFs);
+   if(isFs){
+    entry.wrap.dataset.fsPrevHeight = entry.wrap.style.height || "";
+    entry.wrap.dataset.fsPrevFlex = entry.wrap.style.flex || "";
+    entry.wrap.style.flex = "1 1 auto";
+    entry.wrap.style.minHeight = "0";
+    entry.wrap.style.height = "auto";
+   }else if(entry.wrap.dataset.fsPrevHeight !== undefined){
+    entry.wrap.style.height = entry.wrap.dataset.fsPrevHeight;
+    entry.wrap.style.flex = entry.wrap.dataset.fsPrevFlex;
+    entry.wrap.style.minHeight = "";
+   }
+  });
+  entries.forEach(function(entry){ resizeChartIn(entry.wrap); });
+ }
+ ["fullscreenchange", "webkitfullscreenchange", "mozfullscreenchange", "MSFullscreenChange"].forEach(function(evt){
+  document.addEventListener(evt, onFsChange);
+ });
+});
+</script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>News Sentiment Momentum — Michael J. Stevenson</title>
+
+<style>
+
+:root{
+  --bg:#14181c;
+  --card:#1c2127;
+  --card-hover:#20262d;
+  --ink:#eae6da;
+  --muted:#8b9199;
+  --hair:#2b3138;
+
+  --fear:#6f8fac;
+  --neutral:#7c828a;
+  --greed:#d98a3d;
+  --extreme:#b56f2a;
+
+  --serif:'Iowan Old Style','Palatino Linotype',Georgia,serif;
+  --mono:'SF Mono','JetBrains Mono',ui-monospace,Menlo,monospace;
+  --sans:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+
+  /* NDR-style chart palette. Deliberately the SAME in light and dark —
+     these charts keep a constant warm-paper look as a homage to the Ned
+     Davis Research print charts that inspired /concentration. JS reads
+     them via getComputedStyle (per the site convention) rather than
+     hardcoding. */
+  --ndr-plot:#f5f1e6;
+  --ndr-axis:#3c3a33;
+  --ndr-axis-soft:#6f6a5c;
+  --ndr-grid:#ddd6c2;
+  --ndr-red:#a83c36;
+  --ndr-green:#4f6f3f;
+  --ndr-gold:#c1902f;
+  --ndr-navy:#2f4b6e;
+  --ndr-slate:#7d8a99;
+}
+
+:root[data-theme="light"]{
+  --bg:#f7f5f0;
+  --card:#ffffff;
+  --card-hover:#f2efe6;
+  --ink:#1c1f24;
+  --muted:#6b6f76;
+  --hair:#e1dbcd;
+  --fear:#4f6f8c;
+  --neutral:#6c7178;
+  --greed:#b9701f;
+  --extreme:#96591c;
+}
+
+*{ box-sizing:border-box; }
+
+body{
+ margin:0;
+ background:var(--bg);
+ color:var(--ink);
+ font-family:var(--sans);
+}
+
+a{ color:inherit; }
+
+/* SITE NAV (shared with homepage) */
+
+.sitenav{
+ display:grid;
+ grid-template-columns:1fr auto 1fr;
+ align-items:center;
+ padding:16px 24px;
+ border-bottom:1px solid var(--hair);
+ position:relative;
+ z-index:50;
+}
+
+.sitenav .brand{
+ justify-self:start;
+}
+
+.sitenav .brand{
+ font-family:var(--serif);
+ font-size:17px;
+ color:var(--ink);
+ text-decoration:none;
+ letter-spacing:0.3px;
+}
+
+.navlinks{
+ display:flex;
+ gap:26px;
+ align-items:center;
+}
+
+.navlinks > a{
+ color:var(--muted);
+ font-size:13px;
+ text-decoration:none;
+ padding:6px 0;
+}
+
+.navlinks > a:hover, .navlinks > a.active{ color:var(--ink); }
+
+.navdrop{ position:relative; }
+
+
+.navdrop > .navlabel{
+ color:var(--muted);
+ font-size:13px;
+ cursor:default;
+ padding:6px 0;
+ user-select:none;
+}
+
+.navdrop:hover > .navlabel, .navdrop.open > .navlabel{ color:var(--ink); }
+
+.navdrop .dropdown{
+ display:none;
+ position:absolute;
+ top:100%;
+ left:0;
+ background:var(--card);
+ border:1px solid var(--hair);
+ border-radius:8px;
+ padding:8px 0;
+ min-width:230px;
+ margin-top:12px;
+ box-shadow:0 10px 30px rgba(0,0,0,0.45);
+}
+
+/* Driven by the .open class (see the script right after </nav>), not
+   pure :hover — see that script for why. */
+.navdrop.open .dropdown{ display:block; }
+
+.dropdown a{
+ display:block;
+ padding:9px 16px;
+ color:var(--muted);
+ text-decoration:none;
+ font-size:13px;
+}
+
+.dropdown a:hover{
+ background:var(--card-hover);
+ color:var(--ink);
+}
+
+.dropdown a.active{ color:var(--greed); }
+
+@media (max-width:720px){
+ .navlinks{ display:none; }
+}
+
+.container{
+ max-width:1100px;
+ margin:auto;
+ padding:30px 20px 60px;
+}
+
+/* HEADER */
+
+.header{
+ display:flex;
+ justify-content:space-between;
+ align-items:flex-end;
+ border-bottom:1px solid var(--hair);
+ padding-bottom:18px;
+ margin-bottom:25px;
+ flex-wrap:wrap;
+ gap:12px;
+}
+
+h1{
+ font-family:var(--serif);
+ font-size:28px;
+ font-weight:400;
+ margin:0;
+}
+
+.subtitle{
+ color:var(--muted);
+ font-size:13px;
+ margin-top:6px;
+ max-width:640px;
+}
+
+.updated{
+ color:var(--muted);
+ font-size:12px;
+}
+
+/* STAT ROW */
+
+.stat-grid{
+ display:grid;
+ grid-template-columns:repeat(4,1fr);
+ gap:16px;
+ margin-bottom:30px;
+}
+
+.stat-card{
+ background:var(--card);
+ border:1px solid var(--hair);
+ border-radius:10px;
+ padding:20px;
+}
+
+.stat-label{
+ color:var(--muted);
+ font-size:12px;
+ letter-spacing:0.04em;
+ margin-bottom:8px;
+}
+
+.stat-value{
+ font-family:var(--mono);
+ font-size:24px;
+ color:var(--greed);
+}
+
+.stat-value.cell-neg{ color:var(--fear); }
+
+.stat-note{
+ color:var(--muted);
+ font-size:12px;
+ margin-top:6px;
+}
+
+@media (max-width:900px){
+ .stat-grid{ grid-template-columns:repeat(2,1fr); }
+}
+
+/* CHART */
+
+.chart-box{
+ background:var(--card);
+ border:1px solid var(--hair);
+ border-radius:12px;
+ padding:20px;
+ margin-bottom:30px;
+}
+
+.chart-box-header{
+ display:flex;
+ justify-content:space-between;
+ align-items:center;
+ flex-wrap:wrap;
+ gap:10px;
+ margin-bottom:16px;
+}
+
+.chart-box h2{
+ font-family:var(--serif);
+ font-weight:400;
+ font-size:18px;
+ margin:0;
+}
+
+.chart-subhead{
+ color:var(--muted);
+ font-size:12px;
+ margin-top:4px;
+}
+
+.chart-canvas-wrap{
+ height:380px;
+}
+
+.chart-canvas-wrap.short{ height:260px; }
+
+/* The warm-paper plot panel behind each canvas — the NDR homage
+   (matches /concentration). */
+.ndr-panel{
+ background:var(--ndr-plot);
+ border:1px solid var(--ndr-grid);
+ border-radius:8px;
+ padding:14px 14px 10px;
+ position:relative;
+}
+
+.metric-toggle{
+ display:flex;
+ gap:6px;
+}
+
+.metric-toggle button{
+ background:var(--card-hover);
+ border:1px solid var(--hair);
+ color:var(--muted);
+ border-radius:6px;
+ padding:5px 12px;
+ font-size:11px;
+ cursor:pointer;
+}
+
+.metric-toggle button.active{
+ color:var(--ink);
+ border-color:var(--greed);
+}
+
+/* Two charts / method-tables side by side, same breakpoint as table-grid */
+.chart-grid{
+ display:grid;
+ grid-template-columns:1fr 1fr;
+ gap:16px;
+ margin-bottom:30px;
+}
+
+.chart-grid .chart-box{
+ margin-bottom:0;
+ min-width:0; /* grid items default to min-width:auto (their content's min-content
+                 size), which a wide method table would otherwise force past this
+                 column's track width — same "grid blowout" the site-wide
+                 table{min-width:600px} rule creates if left unchecked here */
+}
+
+@media (max-width:900px){
+ .chart-grid{ grid-template-columns:1fr; }
+}
+
+/* TABLE */
+
+.table-grid{
+ display:grid;
+ grid-template-columns:1fr 1fr;
+ gap:16px;
+ margin-bottom:30px;
+}
+
+@media (max-width:900px){
+ .table-grid{ grid-template-columns:1fr; }
+}
+
+.table-box{
+ background:var(--card);
+ border:1px solid var(--hair);
+ border-radius:12px;
+ overflow-x:auto;
+ margin-bottom:30px;
+}
+
+.table-grid .table-box{ margin-bottom:0; }
+
+.table-box-header{
+ padding:18px 20px 4px;
+}
+
+.table-box-header h2{
+ font-family:var(--serif);
+ font-weight:400;
+ font-size:18px;
+ margin:0;
+}
+
+.table-box-header .chart-subhead{ margin-bottom:6px; }
+
+table{
+ width:100%;
+ border-collapse:collapse;
+ font-size:13px;
+ min-width:600px;
+}
+
+/* The three-column leaderboard tables (Most Bullish/Bearish, Highest
+   Attention) don't need the 600px floor above — it's sized for the
+   many-column full table. Left at 600px in a .table-grid's ~522px-wide
+   column, the site-wide rule pushed the one value column that matters
+   (the actual score) out past the box's visible width, requiring a manual
+   horizontal scroll to see it — a real bug found in this page's own
+   Playwright pass (and, on inspection, present on /institutional-ownership
+   too, inherited from this same page markup/CSS — out of scope to fix
+   here per CLAUDE.md, not touched). */
+#mostBullishTable, #mostBearishTable, #highestAttentionTable{ min-width:0; }
+
+thead th{
+ text-align:right;
+ padding:14px 12px;
+ color:var(--muted);
+ font-size:11px;
+ letter-spacing:0.04em;
+ font-weight:600;
+ cursor:pointer;
+ user-select:none;
+ white-space:nowrap;
+ border-bottom:1px solid var(--hair);
+}
+
+thead th:first-child, thead th:nth-child(2){
+ text-align:left;
+}
+
+thead th:hover{ color:var(--ink); }
+
+thead th .sort-arrow{
+ opacity:0.4;
+ margin-left:3px;
+ font-size:10px;
+}
+
+thead th.sorted .sort-arrow{ opacity:1; color:var(--greed); }
+
+thead th:not([data-key]){ cursor:default; }
+
+tbody td{
+ padding:11px 12px;
+ text-align:right;
+ font-family:var(--mono);
+ white-space:nowrap;
+ border-bottom:1px solid var(--hair);
+}
+
+tbody tr:last-child td{ border-bottom:none; }
+
+tbody tr:hover{ background:var(--card-hover); }
+
+tbody td:first-child{
+ text-align:left;
+ font-family:var(--sans);
+}
+
+tbody td:nth-child(2){
+ text-align:left;
+ color:var(--muted);
+}
+
+.sector-name{ color:var(--ink); }
+.sector-ticker{ color:var(--muted); font-size:11px; }
+
+.cell-pos{ color:var(--ink); }
+.cell-neg{ color:var(--ink); }
+.cell-na{ color:var(--muted); }
+
+.trend-up{ color:var(--greed); }
+.trend-down{ color:var(--fear); }
+.trend-flat{ color:var(--muted); }
+
+/* SCATTER / METHOD TABLE (mirrors /factor-analysis) */
+
+.scatter-canvas-wrap{
+ height:300px;
+ margin-bottom:12px;
+ position:relative;
+}
+
+.method-table{
+ width:100%;
+ min-width:0; /* overrides the site-wide table{min-width:600px} rule below — two of these
+                 side by side in .chart-grid would otherwise force the whole page wider
+                 than its container even though a 7-column method table never needs 600px */
+ border-collapse:collapse;
+ font-family:var(--mono);
+ font-size:11px;
+ margin-top:8px;
+}
+
+#attentionMethodTable, #returnMethodTable{
+ overflow-x:auto;
+}
+
+.method-table th{
+ text-align:right;
+ padding:6px 5px;
+ color:var(--muted);
+ font-size:10px;
+ letter-spacing:0.03em;
+ font-weight:600;
+ border-bottom:1px solid var(--hair);
+ white-space:nowrap;
+}
+
+.method-table th:first-child{ text-align:left; }
+
+.method-table td{
+ padding:7px 5px;
+ text-align:right;
+ border-bottom:1px solid var(--hair);
+ white-space:nowrap;
+ color:var(--ink);
+}
+
+.method-table td:first-child{
+ text-align:left;
+ font-family:var(--sans);
+ color:var(--muted);
+}
+
+.method-table tr:last-child td{ border-bottom:none; }
+
+.method-table .sig{ color:var(--greed); }
+
+.method-note{
+ font-size:11px;
+ color:var(--muted);
+ margin-top:8px;
+ font-style:italic;
+}
+
+/* SECTOR LEGEND (scatter / spaghetti charts) */
+
+.sector-legend{
+ display:flex;
+ flex-wrap:wrap;
+ gap:10px 16px;
+ margin-top:14px;
+ font-size:11px;
+ color:var(--muted);
+}
+
+.sector-legend .dot{
+ display:inline-block;
+ width:8px;
+ height:8px;
+ border-radius:50%;
+ margin-right:5px;
+ vertical-align:middle;
+}
+
+/* EXPLAINER */
+
+.explainer{
+ background:var(--card);
+ border:1px solid var(--hair);
+ border-radius:12px;
+ padding:24px 26px;
+ margin-bottom:30px;
+}
+
+.explainer h2{
+ font-family:var(--serif);
+ font-weight:400;
+ font-size:18px;
+ margin:0 0 12px;
+}
+
+.explainer p{
+ color:var(--muted);
+ font-size:14px;
+ line-height:1.7;
+ margin:0 0 14px;
+}
+
+.explainer code{
+ font-family:var(--mono);
+ background:var(--card-hover);
+ padding:2px 6px;
+ border-radius:4px;
+ font-size:0.92em;
+ white-space:nowrap;
+}
+
+.explainer p:last-child{ margin-bottom:0; }
+
+.explainer .source{
+ margin-top:16px;
+ font-size:11px;
+}
+
+.explainer .source a{
+ color:var(--muted);
+ text-decoration:none;
+ border-bottom:1px dotted var(--muted);
+}
+
+.explainer .source a:hover{ color:var(--ink); }
+
+.error-banner{
+ background:#2a1c1c;
+ border:1px solid #5a3030;
+ color:#e0a0a0;
+ border-radius:8px;
+ padding:12px 15px;
+ margin-bottom:20px;
+ font-size:13px;
+ display:none;
+}
+
+.warning-banner{
+ background:#2a2419;
+ border:1px solid #5a4f30;
+ color:#d9b877;
+ border-radius:8px;
+ padding:12px 15px;
+ margin-bottom:20px;
+ font-size:13px;
+ display:none;
+}
+
+
+.theme-toggle{
+ justify-self:end;
+ background:none;
+ border:1px solid var(--hair);
+ color:var(--muted);
+ border-radius:6px;
+ width:32px;
+ height:32px;
+ display:flex;
+ align-items:center;
+ justify-content:center;
+ cursor:pointer;
+ font-size:15px;
+ line-height:1;
+}
+
+.theme-toggle:hover{ color:var(--ink); border-color:var(--hair); }
+
+
+/* Light-theme overrides for hardcoded (non-var) dark colors */
+
+[data-theme="light"] .error-banner{
+ background:#fdecea;
+ border-color:#f0b8b0;
+ color:#a83a30;
+}
+
+[data-theme="light"] .warning-banner{
+ background:#fdf3d9;
+ border-color:#e9cf8a;
+ color:#8a6a1f;
+}
+</style>
+</head>
+<body>
+
+<nav class="sitenav">
+<a class="brand" href="/">Michael J. Stevenson, CAIA<span style="font-size:0.6em; vertical-align:super;">&reg;</span></a>
+<div class="navlinks">
+<div class="navdrop">
+<span class="navlabel">Behavioral/Positioning ▾</span>
+<div class="dropdown">
+<a href="/ipo-activity.html">IPO Activity</a>
+</div>
+</div>
+
+<div class="navdrop">
+<span class="navlabel">Equities ▾</span>
+<div class="dropdown">
+<a href="/sector-analysis.html">Sector Performance</a>
+<a href="/sector-beeswarm.html">Sector Beeswarm</a>
+<a href="/ath-index.html">All-Time Highs and Lows</a>
+<a href="/valuations.html">Valuations</a>
+<a href="/factor-analysis.html">Factor Analysis</a>
+<a href="/market-breadth.html">Market Breadth</a>
+<a href="/seasonality.html">Seasonality</a>
+<a href="/concentration.html">Concentration</a>
+<a href="/earnings-revisions.html">Earnings Revisions</a>
+<a href="/earnings-surprise.html">Earnings Surprise History</a>
+<a href="/insider-buying-selling.html">Insider Buying/Selling</a>
+<a href="/small-cap-vs-large-cap.html">Small Cap vs. Large Cap Spread</a>
+<a href="/share-count-trends.html">Share Count Trends</a>
+<a href="/sector-correlation.html">Sector Correlation Matrix</a>
+<a href="/sector-rotation.html">Sector Rotation Model</a>
+<a href="/dividend-growth-screener.html">Dividend Growth Screener</a>
+<a href="/international-vs-us.html">International vs. US Relative Performance</a>
+<a href="/analyst-estimate-dispersion.html">Analyst Estimate Dispersion</a>
+<a href="/shareholder-yield.html">Shareholder Yield</a>
+<a href="/stock-split-tracker.html">Stock Split Tracker</a>
+<a href="/pe-divergence.html">Forward vs. Trailing P/E Divergence</a>
+<a href="/relative-strength-leaders.html">Relative Strength Leaders/Laggards</a>
+<a href="/equity-risk-premium.html">Equity Risk Premium by Sector</a>
+<a href="/earnings-growth-divergence.html">Earnings Growth vs. Price Performance</a>
+<a href="/small-cap-liquidity.html">Small-Cap Liquidity</a>
+<a href="/ipo-pipeline.html">IPO Pipeline</a>
+<a href="/spin-off-performance.html">Spin-Off Performance Tracker</a>
+<a href="/margin-leverage.html">Margin &amp; Leverage Cycle</a>
+<a href="/buyback-tracker.html">Buyback Dollar-Value Tracker</a>
+<a href="/institutional-ownership.html">Institutional Ownership &amp; Flow Tracker</a>
+<a href="/news-sentiment.html" class="active">News Sentiment Momentum</a>
+<a href="/congressional-trading.html">Congressional Trading Tracker</a>
+<a href="/quality-lowvol-factors.html">Quality &amp; Low-Volatility Factor Screen</a>
+<a href="/analyst-price-target.html">Analyst Price Target Upside</a>
+<a href="/post-earnings-drift.html">Post-Earnings Announcement Drift</a>
+<a href="/earnings-call-sentiment.html">Earnings Call Sentiment</a>
+<a href="/buyback-effectiveness.html">Buyback Effectiveness</a>
+<a href="/fcf-yield.html">Free Cash Flow Yield</a>
+<a href="/short-sale-volume.html">Short Sale Volume</a>
+<a href="/quality-score.html">Financial Quality Screener (Piotroski)</a>
+</div>
+</div>
+
+<div class="navdrop">
+<span class="navlabel">Markets/Macro ▾</span>
+<div class="dropdown">
+<a href="/sentiment-index.html">Sentiment Index</a>
+<a href="/volatility.html">Implied vs. Realized Volatility</a>
+<a href="/implied-erp.html">Implied Equity Risk Premium</a>
+<a href="/yield-curves.html">Yield Curves</a>
+<a href="/expectations-vs-reality.html">Expectations vs. Reality</a>
+</div>
+</div>
+
+<a href="/portfolio-simulator.html">Portfolio Simulator</a>
+<a href="/backtesting.html">Backtesting</a>
+<a href="/statistical-engine">Statistical Engine</a>
+
+
+
+
+</div>
+<button class="theme-toggle" id="themeToggle" type="button" aria-label="Toggle light/dark mode" title="Toggle light/dark mode">&#9789;</button>
+</nav>
+<script>
+// Class-driven (not pure :hover) nav dropdowns: pure CSS :hover drops the
+// menu the instant the cursor leaves .navdrop, which includes the moment
+// it's crossing the gap between the label and the dropdown box below —
+// exactly the "sometimes works, sometimes doesn't" flakiness reported.
+// A short close-delay after mouseleave gives the cursor room to travel
+// down into the dropdown without losing it.
+document.querySelectorAll(".navdrop").forEach(function(navdrop){
+ var closeTimer = null;
+ navdrop.addEventListener("mouseenter", function(){
+  clearTimeout(closeTimer);
+  navdrop.classList.add("open");
+ });
+ navdrop.addEventListener("mouseleave", function(){
+  closeTimer = setTimeout(function(){ navdrop.classList.remove("open"); }, 300);
+ });
+});
+</script>
+<script>
+(function(){
+ var btn = document.getElementById("themeToggle");
+ if(!btn) return;
+ var theme = document.documentElement.getAttribute("data-theme") === "light" ? "light" : "dark";
+ btn.textContent = theme === "light" ? "☀" : "☽";
+ btn.addEventListener("click", function(){
+  var current = document.documentElement.getAttribute("data-theme") === "light" ? "light" : "dark";
+  var next = current === "light" ? "dark" : "light";
+  localStorage.setItem("theme", next);
+  location.reload();
+ });
+})();
+</script>
+
+
+
+<div class="container">
+
+<div class="error-banner" id="errorBanner"></div>
+<div class="warning-banner" id="warningBanner"></div>
+
+<div class="header">
+<div>
+<h1>News Sentiment Momentum</h1>
+<div class="subtitle">Per-stock, per-sector financial-news sentiment across the S&amp;P 500, from the last ~50 news articles Alpha Vantage has matched to each company — not a market-wide gauge (see <a href="/sentiment-index.html">Sentiment Index</a> for that). Does heavier news coverage skew more positive or negative, and does the sentiment in a stock's recent headlines actually predict where its price goes next?</div>
+</div>
+<div class="updated" id="updated">Loading...</div>
+</div>
+
+<div class="stat-grid">
+<div class="stat-card">
+<div class="stat-label">Companies Loaded</div>
+<div class="stat-value" id="statCompanies" style="font-size:20px;">—</div>
+<div class="stat-note" id="statCompaniesNote">Of full S&amp;P 500</div>
+</div>
+<div class="stat-card">
+<div class="stat-label">Median Weighted Sentiment</div>
+<div class="stat-value" id="statMedianSentiment">—</div>
+<div class="stat-note" id="statMedianSentimentNote">Relevance-weighted, sufficiently-covered names only</div>
+</div>
+<div class="stat-card">
+<div class="stat-label">Articles Matched</div>
+<div class="stat-value" id="statArticles" style="font-size:20px;">—</div>
+<div class="stat-note" id="statArticlesNote">Total across all loaded companies this run</div>
+</div>
+<div class="stat-card">
+<div class="stat-label">Market Skew</div>
+<div class="stat-value" id="statSkew" style="font-size:20px;">—</div>
+<div class="stat-note" id="statSkewNote">Of sufficiently-covered names</div>
+</div>
+</div>
+
+<div class="chart-box">
+<div class="chart-box-header">
+<div>
+<h2>Sentiment by sector</h2>
+<div class="chart-subhead">Average relevance-weighted sentiment score across each sector's constituents (sufficiently-covered names only) — which corners of the market the recent news has been kindest and harshest to</div>
+</div>
+</div>
+<div class="ndr-panel">
+<div class="chart-canvas-wrap">
+<canvas id="sectorChart"></canvas>
+</div>
+</div>
+</div>
+
+<div class="chart-box">
+<div class="chart-box-header">
+<div>
+<h2>Does heavier news coverage skew more positive or negative?</h2>
+<div class="chart-subhead">Each point is one company: x-axis is matched-article count (attention), y-axis is relevance-weighted sentiment score. A genuinely open question — this page doesn't presuppose an answer</div>
+</div>
+</div>
+<div class="ndr-panel">
+<div class="scatter-canvas-wrap">
+<canvas id="attentionScatter"></canvas>
+</div>
+</div>
+<div id="attentionMethodTable"></div>
+</div>
+
+<div class="chart-box">
+<div class="chart-box-header">
+<div>
+<h2>Market-wide sentiment trend, over time</h2>
+<div class="chart-subhead" id="historyChartSub">Median relevance-weighted sentiment score, snapshotted weekly — this line starts thin and gets more useful with each week's run</div>
+</div>
+</div>
+<div class="ndr-panel">
+<div class="chart-canvas-wrap">
+<canvas id="historyChart"></canvas>
+</div>
+</div>
+</div>
+
+<div class="table-grid">
+<div class="table-box">
+<div class="table-box-header">
+<h2>Most bullish</h2>
+<div class="chart-subhead">Highest relevance-weighted sentiment score. Min. <span id="minArticlesNoteA">5</span> matched articles, to keep this off thinly-covered names</div>
+</div>
+<table id="mostBullishTable">
+<thead><tr><th>Symbol</th><th>Sector</th><th>Sentiment</th></tr></thead>
+<tbody id="mostBullishBody"><tr><td colspan="3" style="text-align:center; color:var(--muted); padding:24px;">Loading&hellip;</td></tr></tbody>
+</table>
+</div>
+<div class="table-box">
+<div class="table-box-header">
+<h2>Most bearish</h2>
+<div class="chart-subhead">Lowest relevance-weighted sentiment score. Same coverage floor as the leaderboard above</div>
+</div>
+<table id="mostBearishTable">
+<thead><tr><th>Symbol</th><th>Sector</th><th>Sentiment</th></tr></thead>
+<tbody id="mostBearishBody"><tr><td colspan="3" style="text-align:center; color:var(--muted); padding:24px;">Loading&hellip;</td></tr></tbody>
+</table>
+</div>
+</div>
+
+<div class="table-box">
+<div class="table-box-header">
+<h2>Highest news attention</h2>
+<div class="chart-subhead">Most matched articles in the last ~50-article window per company — where the news has been paying the most attention, independent of tone</div>
+</div>
+<table id="highestAttentionTable">
+<thead><tr><th>Symbol</th><th>Sector</th><th>Articles</th></tr></thead>
+<tbody id="highestAttentionBody"><tr><td colspan="3" style="text-align:center; color:var(--muted); padding:24px;">Loading&hellip;</td></tr></tbody>
+</table>
+</div>
+
+<div class="chart-box">
+<div class="chart-box-header">
+<div>
+<h2>Does news sentiment predict subsequent relative price performance?</h2>
+<div class="chart-subhead">The literal Tetlock (2007) "does media sentiment predict returns" question. Each point is one company: x-axis is relevance-weighted sentiment score, y-axis is 3-month price return relative to SPY</div>
+</div>
+</div>
+<div class="ndr-panel">
+<div class="scatter-canvas-wrap">
+<canvas id="returnScatter"></canvas>
+</div>
+</div>
+<div id="returnMethodTable"></div>
+</div>
+
+<div class="table-box">
+<div class="table-box-header">
+<h2>Full S&amp;P 500</h2>
+<div class="chart-subhead">Weighted sentiment score, matched article count, bullish/bearish article counts, and the dominant sentiment label per constituent</div>
+</div>
+<table id="stockTable">
+<thead>
+<tr>
+<th data-key="symbol">Symbol</th>
+<th data-key="sector">Sector</th>
+<th data-key="weightedSentiment">Sentiment<span class="sort-arrow">▾</span></th>
+<th data-key="articleCount">Articles<span class="sort-arrow">▾</span></th>
+<th data-key="bullishCount">Bullish<span class="sort-arrow">▾</span></th>
+<th data-key="bearishCount">Bearish<span class="sort-arrow">▾</span></th>
+<th data-key="dominantLabel">Dominant Label<span class="sort-arrow">▾</span></th>
+</tr>
+</thead>
+<tbody id="tableBody">
+<tr><td colspan="7" style="text-align:center; color:var(--muted); padding:30px;">Loading news sentiment data&hellip;</td></tr>
+</tbody>
+</table>
+</div>
+
+<div class="explainer">
+<h2>Methodology</h2>
+<p>This page is deliberately distinct from <a href="/sentiment-index.html">Sentiment Index</a>. That page is a single market-wide macro-sentiment gauge (put/call ratios, breadth, and related positioning indicators) — it produces one number for the whole market and lives under the site's Behavioral/Positioning section. This page screens individual companies and sectors by what's actually being written about them in recent financial news, under Equities — a different question and a different data source, and this page's own backend never touches that one's blob store or function.</p>
+<p>Universe is the full S&amp;P 500. For every constituent, Alpha Vantage's <code>NEWS_SENTIMENT</code> endpoint is queried with <code>tickers=&lt;symbol&gt;&amp;limit=50</code>, returning up to the 50 most recent news articles Alpha Vantage has matched to that company. For each article, the <code>ticker_sentiment</code> entry matching the queried symbol is located directly — not assumed to be the first entry in the array, since an article can mention several companies in any order, and defensively, an article can occasionally come back without a matching entry for the queried symbol at all, in which case that article is skipped for this company. Weighted sentiment score is the relevance-weighted average of each matched article's <code>ticker_sentiment_score</code>: <code>ticker_sentiment_score</code> multiplied by <code>relevance_score</code>, summed across matched articles, divided by the sum of <code>relevance_score</code>. Both fields arrive as strings and are parsed with <code>parseFloat</code>; an article is skipped from the sum if either fails to parse. Article count is simply how many articles matched — this page's attention/coverage signal, a distinct question from the sentiment score itself. Bullish/bearish article counts (and the neutral/somewhat-bullish/somewhat-bearish counts alongside them) are a straight tally of each matched article's own <code>ticker_sentiment_label</code>, Alpha Vantage's five-bucket scale — a secondary, outlier-robust view next to the continuous weighted average. Everything else about each article (topics, other companies' sentiment scores) is discarded immediately after these values are pulled out — never stored past that point, the same storage discipline <a href="/institutional-ownership.html">Institutional Ownership &amp; Flow Tracker</a> applies to its own much larger per-holder <code>holdings</code> array.</p>
+<p>A company with fewer than <span id="minArticlesNoteB">5</span> matched articles is tagged "insufficient coverage" in the full table below and excluded from the sector chart, both scatter charts, the regression, and all three leaderboards — with only a handful of real articles, the relevance-weighted average is dominated by whichever one or two happened to run that week, not a meaningful read on how the market is actually talking about that company. Five was chosen as a low-but-real floor: enough to blunt a single outlier article, while still leaving most of the S&amp;P 500 eligible in most weeks, since each company's own query already filters down to articles that mention it. The floor never removes a company from the full table itself.</p>
+<p><code>NEWS_SENTIMENT</code> is a snapshot endpoint — the latest ~50 articles as of the run, no historical time-series call of its own — the same category as <code>OVERVIEW</code> behind <a href="/pe-divergence.html">Forward vs. Trailing P/E Divergence</a> or <code>INSTITUTIONAL_HOLDINGS</code> behind Institutional Ownership &amp; Flow Tracker. The market-wide weekly median weighted-sentiment score is appended to a running history each run rather than fabricated as a synthetic time series — that trend line starts thin the week this page ships and only becomes meaningful after several weeks of real runs accumulate, and the chart says so honestly rather than implying a one- or two-point line means anything.</p>
+<p>The forward-return regression reuses this same cycle's <a href="/relative-strength-leaders.html">Relative Strength Leaders/Laggards</a> 3-month price return relative to SPY, the same cross-page pattern <a href="/buyback-tracker.html">Buyback Dollar-Value Tracker</a> and Institutional Ownership &amp; Flow Tracker use, rather than running a second full-universe price sweep. If that data hasn't refreshed yet this cycle, this page still shows every other chart and table — sentiment by sector, the attention-vs-sentiment scatter, the trend, all three leaderboards, the full company table — just without the regression, and a banner above says so.</p>
+<p>Sector and company name come from the same weekly metadata sweep that backs <a href="/sector-beeswarm.html">Sector Beeswarm</a>, reused here rather than paying for a second full-index pass just for labels. <code>NEWS_SENTIMENT</code> responses run notably larger than most other Alpha Vantage endpoints used on this site — up to 50 articles per call, each carrying nested <code>topics</code> and <code>ticker_sentiment</code> arrays — but the sweep runs at the same ~1050ms between-call pacing proven at this scale by Buyback Dollar-Value Tracker and Institutional Ownership &amp; Flow Tracker, plus a retry pass for anything that fails. As of September 2026 this and most other full-sweep pages on this site refresh as one-time snapshots (run manually from the Netlify dashboard) rather than on a recurring schedule, to control Alpha Vantage call volume — see this page's own scheduled background function for the current status.</p>
+<div class="source">Source: <a href="https://www.alphavantage.co/" target="_blank" rel="noopener">Alpha Vantage — NEWS_SENTIMENT</a>, this site's own Relative Strength Leaders/Laggards data</div>
+</div>
+
+</div>
+
+<script>
+const DATA_URL = "/api/news-sentiment";
+
+const SECTOR_COLORS = {
+ "Information Technology": "#d98a3d",
+ "Financials": "#6f8fac",
+ "Health Care": "#8e7cc3",
+ "Energy": "#c0564f",
+ "Industrials": "#5a9d6f",
+ "Consumer Discretionary": "#e0b04f",
+ "Consumer Staples": "#4fb0c0",
+ "Utilities": "#b56f2a",
+ "Materials": "#9a9a9a",
+ "Real Estate": "#c77dbd",
+ "Communication Services": "#4f7ae0",
+};
+
+let RAW = null;
+let SORT_KEY = "weightedSentiment";
+let SORT_DIR = -1;
+
+function fmtScore(v, digits){
+ if(v === null || v === undefined || isNaN(v)) return "—";
+ digits = digits === undefined ? 3 : digits;
+ return (v >= 0 ? "+" : "") + v.toFixed(digits);
+}
+function fmtPlainPct(v, digits){
+ if(v === null || v === undefined || isNaN(v)) return "—";
+ digits = digits === undefined ? 1 : digits;
+ return v.toFixed(digits) + "%";
+}
+function fmtCount(v){
+ if(v === null || v === undefined || isNaN(v)) return "—";
+ return Math.round(v).toLocaleString();
+}
+
+function showError(message){
+ const banner = document.getElementById("errorBanner");
+ banner.textContent = message;
+ banner.style.display = "block";
+}
+function showWarning(message){
+ const banner = document.getElementById("warningBanner");
+ banner.textContent = message;
+ banner.style.display = "block";
+}
+
+// ---- NDR chart styling helpers (matches /concentration) ----------------
+// Colours come from the --ndr-* custom properties (constant across themes)
+// so the charts keep their warm-paper look while still following the
+// site's "read chart colours from CSS, don't hardcode" rule.
+function ndr(name){
+ return getComputedStyle(document.documentElement).getPropertyValue("--ndr-" + name).trim();
+}
+
+Chart.defaults.font.family = "'Iowan Old Style','Palatino Linotype',Georgia,serif";
+Chart.defaults.color = ndr("axis-soft");
+
+function ndrXScale(){
+ return {
+  ticks: { color: ndr("axis"), maxTicksLimit: 9, maxRotation: 0, autoSkip: true, font: { size: 11 } },
+  grid: { color: "rgba(0,0,0,0)", borderColor: ndr("axis") },
+ };
+}
+
+function ndrYScale(opts){
+ opts = opts || {};
+ return {
+  type: opts.log ? "logarithmic" : "linear",
+  position: opts.position || "left",
+  grid: { color: ndr("grid"), drawBorder: false },
+  ticks: { color: ndr("axis"), font: { size: 11 }, callback: opts.fmt || undefined },
+  title: opts.title ? { display: true, text: opts.title, color: ndr("axis-soft"), font: { size: 10 } } : { display: false },
+  min: opts.min, max: opts.max,
+ };
+}
+
+function ndrCategoryScale(){
+ return {
+  ticks: { color: ndr("axis"), font: { size: 11 } },
+  grid: { display: false },
+ };
+}
+
+function ndrNumericScale(opts){
+ opts = opts || {};
+ return {
+  title: opts.title ? { display: true, text: opts.title, color: ndr("axis-soft"), font: { size: 10 } } : { display: false },
+  ticks: { color: ndr("axis"), font: { size: 10 } },
+  grid: { color: ndr("grid"), drawBorder: false },
+ };
+}
+
+// ---- Stats helpers — same methodology as /factor-analysis, duplicated
+// here since every page on this site is self-contained (see CLAUDE.md). ----
+function linearRegression(xs, ys){
+ const n = xs.length;
+ const mx = xs.reduce((a, b) => a + b, 0) / n;
+ const my = ys.reduce((a, b) => a + b, 0) / n;
+ const sxx = xs.reduce((s, x) => s + (x - mx) ** 2, 0);
+ const sxy = xs.reduce((s, x, i) => s + (x - mx) * (ys[i] - my), 0);
+ const syy = ys.reduce((s, y) => s + (y - my) ** 2, 0);
+ const slope = sxy / sxx;
+ const intercept = my - slope * mx;
+ const r = sxy / Math.sqrt(sxx * syy);
+ const r2 = r * r;
+ const dof = n - 2;
+ const sse = ys.reduce((s, y, i) => s + (y - (intercept + slope * xs[i])) ** 2, 0);
+ const seSlope = Math.sqrt((sse / dof) / sxx);
+ const t = slope / seSlope;
+ const p = 2 * (1 - normalCdf(Math.abs(t)));
+ return { n, slope, intercept, r, r2, t, dof, p, sse };
+}
+function normalCdf(x){ return 0.5 * (1 + erf(x / Math.SQRT2)); }
+function erf(x){
+ const sign = x < 0 ? -1 : 1;
+ x = Math.abs(x);
+ const a1 = 0.254829592, a2 = -0.284496736, a3 = 1.421413741, a4 = -1.453152027, a5 = 1.061405429, p = 0.3275911;
+ const t = 1 / (1 + p * x);
+ const y = 1 - (((((a5 * t + a4) * t) + a3) * t + a2) * t + a1) * t * Math.exp(-x * x);
+ return sign * y;
+}
+function rankArray(arr){
+ const idx = arr.map((v, i) => i).sort((a, b) => arr[a] - arr[b]);
+ const ranks = new Array(arr.length);
+ let i = 0;
+ while(i < idx.length){
+  let j = i;
+  while(j + 1 < idx.length && arr[idx[j + 1]] === arr[idx[i]]) j++;
+  const avgRank = (i + j) / 2 + 1;
+  for(let k = i; k <= j; k++) ranks[idx[k]] = avgRank;
+  i = j + 1;
+ }
+ return ranks;
+}
+function spearmanRegression(xs, ys){ return linearRegression(rankArray(xs), rankArray(ys)); }
+
+let sectorChart = null, attentionScatter = null, historyChart = null, returnScatter = null;
+
+async function init(){
+ try{
+  const res = await fetch(DATA_URL, { cache: "no-store" });
+  const data = await res.json();
+  if(!res.ok || data.error) throw new Error(data.error || "failed to load");
+
+  RAW = data;
+  document.getElementById("updated").textContent = "As of " + new Date(data.generated_at_utc).toLocaleString();
+
+  const minArticles = data.minArticlesForSentiment || 5;
+  document.getElementById("minArticlesNoteA").textContent = minArticles;
+  document.getElementById("minArticlesNoteB").textContent = minArticles;
+
+  if(data.loadedCount < data.universeSize){
+   showWarning("Only " + data.loadedCount + " of " + data.universeSize + " S&P 500 constituents loaded this run — some data may be temporarily unavailable.");
+  }else if(!data.hasPriceData){
+   showWarning("Price-performance data isn't available yet (Relative Strength Leaders/Laggards hasn't run this cycle) — showing sentiment/attention data only, the forward-return test below is unavailable.");
+  }
+
+  renderStats();
+  renderSectorChart();
+  renderAttentionScatter();
+  renderHistoryChart();
+  renderLeaderTable(data.mostBullish, "mostBullishBody", "score", "weightedSentiment");
+  renderLeaderTable(data.mostBearish, "mostBearishBody", "score", "weightedSentiment");
+  renderLeaderTable(data.highestAttention, "highestAttentionBody", "count", "articleCount");
+  renderReturnScatter();
+  renderTable();
+
+ }catch(e){
+  showError("Couldn't load news sentiment data (" + e.message + "). The /api/news-sentiment function may not have run yet.");
+  document.getElementById("tableBody").innerHTML =
+   '<tr><td colspan="7" style="text-align:center; color:var(--muted); padding:30px;">No data available.</td></tr>';
+ }
+}
+
+function renderStats(){
+ const m = RAW.market;
+ document.getElementById("statCompanies").textContent = m.companyCount;
+ document.getElementById("statCompaniesNote").textContent = RAW.loadedCount + " of " + RAW.universeSize + " loaded, " + m.companyCount + " with usable data";
+
+ const sentEl = document.getElementById("statMedianSentiment");
+ sentEl.textContent = m.medianWeightedSentiment === null ? "—" : fmtScore(m.medianWeightedSentiment);
+ sentEl.classList.toggle("cell-neg", m.medianWeightedSentiment !== null && m.medianWeightedSentiment < 0);
+ document.getElementById("statMedianSentimentNote").textContent = "n=" + m.withCoverage + " with >=" + (RAW.minArticlesForSentiment || 5) + " matched articles";
+
+ document.getElementById("statArticles").textContent = fmtCount(m.totalArticlesMatched);
+ document.getElementById("statArticlesNote").textContent = "Across " + m.companyCount + " loaded companies";
+
+ const skewPct = m.bullishSkewPct;
+ const skewEl = document.getElementById("statSkew");
+ if(skewPct === null || skewPct === undefined){
+  skewEl.textContent = "—";
+ }else{
+  skewEl.textContent = fmtPlainPct(skewPct, 0) + (skewPct >= 50 ? " bullish" : " bearish");
+  skewEl.classList.toggle("cell-neg", skewPct < 50);
+ }
+}
+
+function renderSectorChart(){
+ const sorted = [...RAW.sectors].sort((a, b) => (b.avgWeightedSentiment ?? -Infinity) - (a.avgWeightedSentiment ?? -Infinity));
+ const ctx = document.getElementById("sectorChart").getContext("2d");
+ if(sectorChart) sectorChart.destroy();
+ sectorChart = new Chart(ctx, {
+  type: "bar",
+  data: {
+   labels: sorted.map(s => s.sector),
+   datasets: [{
+    label: "Avg. weighted sentiment score",
+    data: sorted.map(s => s.avgWeightedSentiment),
+    backgroundColor: sorted.map(s => (s.avgWeightedSentiment ?? 0) >= 0 ? ndr("green") : ndr("red")),
+    borderRadius: 4,
+   }],
+  },
+  options: {
+   indexAxis: "y",
+   responsive: true,
+   maintainAspectRatio: false,
+   plugins: {
+    legend: { display: false },
+    tooltip: { callbacks: { label: ctx => fmtScore(ctx.parsed.x) + " (n=" + sorted[ctx.dataIndex].companyCount + ")" } },
+   },
+   scales: {
+    x: ndrYScale({ fmt: v => Number(v).toFixed(2) }),
+    y: ndrCategoryScale(),
+   },
+  },
+ });
+}
+
+function renderAttentionScatter(){
+ const pairs = RAW.attentionScatterPairs || [];
+ if(attentionScatter){ attentionScatter.destroy(); attentionScatter = null; }
+ if(pairs.length < 20){
+  document.getElementById("attentionMethodTable").innerHTML =
+   '<div class="method-note">Not enough sufficiently-covered companies this run to plot a coverage-vs-sentiment relationship.</div>';
+  return;
+ }
+
+ const pearson = linearRegression(pairs.map(p => p.x), pairs.map(p => p.y));
+ const spear = spearmanRegression(pairs.map(p => p.x), pairs.map(p => p.y));
+ const xs = pairs.map(p => p.x);
+ const xMin = Math.min(...xs), xMax = Math.max(...xs);
+ const linePoints = [
+  { x: xMin, y: pearson.intercept + pearson.slope * xMin },
+  { x: xMax, y: pearson.intercept + pearson.slope * xMax },
+ ];
+
+ const ctx = document.getElementById("attentionScatter").getContext("2d");
+ attentionScatter = new Chart(ctx, {
+  type: "scatter",
+  data: {
+   datasets: [
+    { label: "Companies", data: pairs, backgroundColor: ndr("navy"), pointRadius: 2.5, pointHoverRadius: 4, showLine: false },
+    { label: "Regression fit", type: "line", data: linePoints, borderColor: ndr("red"), borderWidth: 1.5, borderDash: [4, 3], pointRadius: 0, fill: false },
+   ],
+  },
+  options: {
+   responsive: true,
+   maintainAspectRatio: false,
+   plugins: {
+    legend: { display: false },
+    tooltip: {
+     callbacks: {
+      label: ctx => ctx.dataset.label === "Companies" ? (ctx.raw.symbol + ": " + ctx.raw.x + " articles, sentiment " + fmtScore(ctx.raw.y)) : null,
+     },
+    },
+   },
+   scales: {
+    x: ndrNumericScale({ title: "Matched articles (attention)" }),
+    y: ndrNumericScale({ title: "Weighted sentiment score" }),
+   },
+  },
+ });
+
+ function row(label, stats){
+  const sig = stats.p < 0.05;
+  return "<tr>" +
+   "<td>" + label + "</td>" +
+   "<td>" + stats.n + "</td>" +
+   "<td>" + stats.r.toFixed(2) + "</td>" +
+   "<td>" + (stats.r2 * 100).toFixed(1) + "%</td>" +
+   "<td>" + (stats.slope >= 0 ? "+" : "") + stats.slope.toFixed(4) + "</td>" +
+   "<td>" + stats.t.toFixed(2) + "</td>" +
+   '<td class="' + (sig ? "sig" : "") + '">' + (stats.p < 0.001 ? "<0.001" : stats.p.toFixed(3)) + "</td>" +
+  "</tr>";
+ }
+ document.getElementById("attentionMethodTable").innerHTML =
+  '<table class="method-table">' +
+   "<thead><tr><th>Method</th><th>n</th><th>r</th><th>r&sup2;</th><th>slope</th><th>t</th><th>p</th></tr></thead>" +
+   "<tbody>" + row("Pearson (OLS)", pearson) + row("Spearman (&rho;)", spear) + "</tbody>" +
+  "</table>" +
+  '<div class="method-note">A positive, significant relationship would mean heavier news attention tends to run more bullish; negative would mean heavier coverage skews more bearish (e.g. controversy/bad-news cycles draw more articles); a weak or flat one means coverage volume and coverage tone are effectively independent in the current data.</div>';
+}
+
+function renderHistoryChart(){
+ const rows = RAW.history || [];
+ const ctx = document.getElementById("historyChart").getContext("2d");
+ const wrap = ctx.canvas.parentElement;
+ wrap.querySelectorAll(".history-empty-msg").forEach(el => el.remove());
+ if(historyChart){ historyChart.destroy(); historyChart = null; }
+
+ if(rows.length < 2){
+  wrap.insertAdjacentHTML("beforeend",
+   '<div class="history-empty-msg" style="text-align:center; color:var(--muted); padding-top:140px;">' +
+   (rows.length === 0
+    ? "No history yet — check back after next week's run."
+    : "Only one week of history so far — a real trend needs several weeks of runs before it means anything. Check back after next week's run.") +
+   '</div>');
+  return;
+ }
+
+ historyChart = new Chart(ctx, {
+  type: "line",
+  data: {
+   labels: rows.map(r => r.week),
+   datasets: [{
+    label: "Median weighted sentiment score",
+    data: rows.map(r => r.medianWeightedSentiment),
+    borderColor: ndr("navy"),
+    backgroundColor: "transparent",
+    borderWidth: 2,
+    pointRadius: 1,
+    tension: 0.15,
+   }],
+  },
+  options: {
+   responsive: true,
+   maintainAspectRatio: false,
+   plugins: { legend: { display: false } },
+   scales: {
+    x: ndrXScale(),
+    y: ndrYScale({ fmt: v => Number(v).toFixed(2) }),
+   },
+  },
+ });
+}
+
+function renderReturnScatter(){
+ const pairs = RAW.returnRegressionPairs || [];
+ if(returnScatter){ returnScatter.destroy(); returnScatter = null; }
+ if(pairs.length < 20){
+  document.getElementById("returnMethodTable").innerHTML =
+   '<div class="method-note">' + (RAW.hasPriceData
+    ? "Not enough companies with both a valid weighted sentiment score and price data this run to test."
+    : "Price-performance data isn't available yet (Relative Strength Leaders/Laggards hasn't run this cycle).") + '</div>';
+  return;
+ }
+
+ const pearson = linearRegression(pairs.map(p => p.x), pairs.map(p => p.y));
+ const spear = spearmanRegression(pairs.map(p => p.x), pairs.map(p => p.y));
+
+ const xs = pairs.map(p => p.x);
+ const xMin = Math.min(...xs), xMax = Math.max(...xs);
+ const linePoints = [
+  { x: xMin, y: pearson.intercept + pearson.slope * xMin },
+  { x: xMax, y: pearson.intercept + pearson.slope * xMax },
+ ];
+
+ const ctx = document.getElementById("returnScatter").getContext("2d");
+ returnScatter = new Chart(ctx, {
+  type: "scatter",
+  data: {
+   datasets: [
+    { label: "Companies", data: pairs, backgroundColor: ndr("navy"), pointRadius: 2.5, pointHoverRadius: 4, showLine: false },
+    { label: "Regression fit", type: "line", data: linePoints, borderColor: ndr("red"), borderWidth: 1.5, borderDash: [4, 3], pointRadius: 0, fill: false },
+   ],
+  },
+  options: {
+   responsive: true,
+   maintainAspectRatio: false,
+   plugins: {
+    legend: { display: false },
+    tooltip: {
+     callbacks: {
+      label: ctx => ctx.dataset.label === "Companies" ? (ctx.raw.symbol + ": sentiment " + fmtScore(ctx.raw.x) + ", price " + fmtScore(ctx.raw.y, 1) + "%") : null,
+     },
+    },
+   },
+   scales: {
+    x: ndrNumericScale({ title: "Weighted sentiment score" }),
+    y: ndrNumericScale({ title: "3-month relative price return (%)" }),
+   },
+  },
+ });
+
+ function row(label, stats){
+  const sig = stats.p < 0.05;
+  return "<tr>" +
+   "<td>" + label + "</td>" +
+   "<td>" + stats.n + "</td>" +
+   "<td>" + stats.r.toFixed(2) + "</td>" +
+   "<td>" + (stats.r2 * 100).toFixed(1) + "%</td>" +
+   "<td>" + (stats.slope >= 0 ? "+" : "") + stats.slope.toFixed(3) + "</td>" +
+   "<td>" + stats.t.toFixed(2) + "</td>" +
+   '<td class="' + (sig ? "sig" : "") + '">' + (stats.p < 0.001 ? "<0.001" : stats.p.toFixed(3)) + "</td>" +
+  "</tr>";
+ }
+ document.getElementById("returnMethodTable").innerHTML =
+  '<table class="method-table">' +
+   "<thead><tr><th>Method</th><th>n</th><th>r</th><th>r&sup2;</th><th>slope</th><th>t</th><th>p</th></tr></thead>" +
+   "<tbody>" + row("Pearson (OLS)", pearson) + row("Spearman (&rho;)", spear) + "</tbody>" +
+  "</table>" +
+  '<div class="method-note">A positive, significant relationship would mean stocks with more bullish recent news sentiment have gone on to outperform over the following 3 months — the Tetlock (2007) "media sentiment predicts returns" finding holding up in this snapshot; a weak or flat one means this week\'s sentiment score on its own isn\'t a reliable forward-return signal at this horizon.</div>';
+}
+
+function renderLeaderTable(rows, tbodyId, fmtKind, valueField){
+ const tbody = document.getElementById(tbodyId);
+ if(!rows || !rows.length){
+  tbody.innerHTML = '<tr><td colspan="3" style="text-align:center; color:var(--muted); padding:24px;">No qualifying companies.</td></tr>';
+  return;
+ }
+ const fmt = fmtKind === "count" ? fmtCount : fmtScore;
+ tbody.innerHTML = rows.map(r => `<tr>
+  <td><span class="sector-name">${r.symbol}</span></td>
+  <td><span class="sector-ticker">${r.sector || "—"}</span></td>
+  <td>${fmt(r[valueField])}</td>
+ </tr>`).join("");
+}
+
+function sortBy(key){
+ if(SORT_KEY === key){
+  SORT_DIR = -SORT_DIR;
+ }else{
+  SORT_KEY = key;
+  SORT_DIR = -1;
+ }
+ renderTable();
+}
+
+function renderTable(){
+ const rows = [...RAW.companies].sort((a, b) => {
+  const av = a[SORT_KEY], bv = b[SORT_KEY];
+  if(av === null || av === undefined) return 1;
+  if(bv === null || bv === undefined) return -1;
+  if(typeof av === "string") return av.localeCompare(bv) * SORT_DIR;
+  return (av - bv) * SORT_DIR;
+ });
+
+ const tbody = document.getElementById("tableBody");
+ tbody.innerHTML = rows.map(r => `<tr>
+  <td><span class="sector-name">${r.symbol}</span></td>
+  <td><span class="sector-ticker">${r.sector || "—"}</span></td>
+  <td>${!r.hasCoverage ? '<span class="cell-na" title="Fewer than ' + (RAW.minArticlesForSentiment || 5) + ' matched articles">insufficient coverage</span>' : fmtScore(r.weightedSentiment)}</td>
+  <td>${fmtCount(r.articleCount)}</td>
+  <td>${fmtCount(r.bullishCount)}</td>
+  <td>${fmtCount(r.bearishCount)}</td>
+  <td>${r.dominantLabel || '<span class="cell-na">—</span>'}</td>
+ </tr>`).join("");
+
+ document.querySelectorAll("#stockTable thead th").forEach(th => {
+  const key = th.dataset.key;
+  th.classList.toggle("sorted", key === SORT_KEY);
+  const arrow = th.querySelector(".sort-arrow");
+  if(arrow) arrow.textContent = (key === SORT_KEY && SORT_DIR === 1) ? "▴" : "▾";
+ });
+}
+
+document.querySelectorAll("#stockTable thead th").forEach(th => {
+ const key = th.dataset.key;
+ if(key) th.addEventListener("click", () => sortBy(key));
+});
+
+init();
+</script>
+
+</body>
+</html>
