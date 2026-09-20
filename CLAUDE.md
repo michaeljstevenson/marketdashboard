@@ -85,4 +85,9 @@ visible error other than "only N of M loaded" on the page.
   intersect:true}`, not `"nearest"` — `"nearest"` hit-tests every dataset on every mousemove and
   has hung the browser tab before at scale.
 - Don't add code comments explaining *what* code does — only *why*, for non-obvious constraints.
+- `data-pull-schedule.html` is **generated, never hand-edited**: `node scripts/build-schedule-page.js`
+  rebuilds it from `netlify.toml` (schedules) and the job code (sources, pages), and Netlify runs it on
+  every deploy via `[build] command`. Any change to a schedule or a job's data source must be followed by
+  running the script before committing, so the committed page matches. Per-job notes live in
+  `scripts/schedule-notes.json`.
 - Never commit or push without the user explicitly asking in that turn.

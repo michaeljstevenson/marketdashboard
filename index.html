@@ -319,6 +319,11 @@ footer{
  color:var(--muted);
  font-size:12px;
 }
+footer{position:relative}
+footer a{color:inherit;text-decoration:underline;text-decoration-color:var(--hair);text-underline-offset:3px}
+footer a:hover{text-decoration-color:var(--ink);color:var(--ink)}
+footer .footlink{position:absolute;right:24px;top:50%;transform:translateY(-50%)}
+@media (max-width:560px){footer .footlink{position:static;display:block;transform:none;margin-top:8px}}
 
 @media (max-width:720px){
  .navlinks{ display:none; }
@@ -564,7 +569,7 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 </div>
 </div>
 
-<footer>Independent Research. Not investment Advice.</footer>
+<footer>Independent Research. Not investment Advice.<a class="footlink" href="/data-pull-schedule.html">Data Pull Schedule</a></footer>
 
 <script>
 (async function(){

@@ -1,0 +1,14 @@
+{
+  "margin-leverage": "Two runs finish one cycle: the sweep is too long for one 15-minute run, so each run saves progress and the next resumes.",
+  "earnings-call-sentiment": "Two runs finish one cycle: the sweep is too long for one 15-minute run, so each run saves progress and the next resumes.",
+  "quality-financials": "Makes no API calls: reads the annual reports margin-leverage already saved.",
+  "quality-score": "Second stage of the Quality Score page. Needs quality-financials first.",
+  "sentiment": "The VIX input (INDEX_DATA) is not available on this Alpha Vantage plan, so the implied-volatility factor cannot be filled.",
+  "putcall": "No page of its own: feeds the Sentiment Index through the sentiment job.",
+  "shareholder-yield": "Buyback yield is read from the share-count-trends data, not fetched again.",
+  "dividend-growth": "Only companies with three or more full years of dividends are included.",
+  "post-earnings-drift": "Uses the earnings-surprise data, which is a manual snapshot.",
+  "beeswarm-meta": "Company names and sectors reused by about 20 other jobs.",
+  "quality-lowvol": "Needs margin-leverage and relative-strength to have run first.",
+  "surprise": "Manual snapshot; post-earnings-drift depends on it."
+}
