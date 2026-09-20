@@ -15,32 +15,22 @@
 // slightly overprice future volatility), so its sign and size are
 // interesting in their own right.
 
-const { recordAvCall } = require("./av-call-counter");
+const { fetchDailyHistory } = require("./yahoo-client");
 
-const ALPHA_VANTAGE_URL = "https://www.alphavantage.co/query";
 const REALIZED_VOL_WINDOW = 20; // trading days
 const HISTORY_POINTS = 180; // ~6 months
+// Yahoo returns each index's full history (14,000+ daily rows for ^GSPC); only
+// the recent tail is needed for the window plus HISTORY_POINTS of output.
+const ROWS_NEEDED = 400;
 
 function round(n, digits) {
   const f = 10 ** digits;
   return Math.round(n * f) / f;
 }
 
-async function fetchIndexDaily(apiKey, symbol) {
-  const url = `${ALPHA_VANTAGE_URL}?function=INDEX_DATA&symbol=${symbol}&interval=daily&apikey=${apiKey}`;
-  await recordAvCall();
-  const res = await fetch(url);
-  if (!res.ok) throw new Error(`HTTP ${res.status} for INDEX_DATA ${symbol}`);
-  const payload = await res.json();
-
-  const data = payload.data;
-  if (!data || !data.length) {
-    throw new Error(`Alpha Vantage INDEX_DATA missing data for ${symbol}: ` + (payload.Note || payload.Information || payload.error || JSON.stringify(payload).slice(0, 200)));
-  }
-
-  return data
-    .map((d) => ({ date: d.date, close: parseFloat(d.close) }))
-    .sort((a, b) => (a.date < b.date ? -1 : 1));
+async function fetchIndexDaily(symbol) {
+  const rows = await fetchDailyHistory(symbol, { adjusted: false });
+  return rows.slice(-ROWS_NEEDED);
 }
 
 function computeRealizedVolSeries(closes, window) {
@@ -60,13 +50,8 @@ function computeRealizedVolSeries(closes, window) {
 
 exports.handler = async () => {
   try {
-    const apiKey = process.env.ALPHAVANTAGE_API_KEY;
-    if (!apiKey) throw new Error("ALPHAVANTAGE_API_KEY environment variable is not set");
-
-    // Sequential, not Promise.all: firing both at once trips Alpha
-    // Vantage's burst-rate detector (same issue hit in ticker.js).
-    const spx = await fetchIndexDaily(apiKey, "SPX");
-    const vix = await fetchIndexDaily(apiKey, "VIX");
+    const spx = await fetchIndexDaily("^GSPC");
+    const vix = await fetchIndexDaily("^VIX");
 
     const realizedSeries = computeRealizedVolSeries(spx, REALIZED_VOL_WINDOW);
     const vixByDate = new Map(vix.map((v) => [v.date, v.close]));
