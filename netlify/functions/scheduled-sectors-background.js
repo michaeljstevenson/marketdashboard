@@ -2,9 +2,9 @@
 // in netlify.toml) that computes performance across the 11 SPDR sector ETFs
 // plus SPY as a benchmark, across a range of standard timeframes, and writes
 // the result to Netlify Blobs for sector-performance.js to serve. Also
-// carries a trimmed ~2-year daily close history per ticker (reusing the
-// full history already fetched for the return calculations, no extra API
-// calls) for the sector-analysis.html performance chart.
+// carries each ticker's close history back to inception (daily for the last
+// two years, weekly before that; reusing the full history already fetched for
+// the return calculations, no extra API calls) for the sector-analysis.html performance chart.
 //
 // Data comes from Yahoo Finance (see yahoo-client.js), not Alpha Vantage —
 // a dozen symbols of plain daily history don't need the AV quota. Yahoo's
@@ -30,7 +30,21 @@
 const { getSectorStore, BLOB_KEY } = require("./sector-blob-store");
 const { fetchDailyHistory, sleep } = require("./yahoo-client");
 
-const HISTORY_POINTS = 504; // ~2 trading years, same convention as data.js
+const DAILY_POINTS = 504; // ~2 trading years kept daily; older history is thinned to weekly
+
+// Full inception-to-date daily history for 12 tickers is ~3MB of JSON;
+// weekly closes beyond the last two years keep the "Max" chart range
+// readable at about a third of that size.
+function thinHistory(closes) {
+  const cut = Math.max(0, closes.length - DAILY_POINTS);
+  const older = [];
+  for (let i = 0; i < cut; i++) {
+    const wk = Math.floor(new Date(closes[i].date + "T00:00:00Z").getTime() / (7 * 86400000));
+    const next = i + 1 < cut ? Math.floor(new Date(closes[i + 1].date + "T00:00:00Z").getTime() / (7 * 86400000)) : null;
+    if (wk !== next) older.push(closes[i]);
+  }
+  return older.concat(closes.slice(cut));
+}
 
 // The 11 SPDR sector ETFs, plus SPY as the market-cap-weighted S&P 500
 // benchmark used for relative (excess-return) performance.
@@ -145,7 +159,7 @@ exports.handler = async () => {
     for (const { ticker } of allTickers) {
       try {
         const closes = await fetchDailyHistory(ticker);
-        computed.set(ticker, { returns: computeReturns(closes), history: closes.slice(-HISTORY_POINTS) });
+        computed.set(ticker, { returns: computeReturns(closes), history: thinHistory(closes) });
       } catch (err) {
         console.error(`scheduled-sectors-background: ${ticker} failed: ${err.message}`);
       }
@@ -162,7 +176,7 @@ exports.handler = async () => {
       for (const { ticker } of missing) {
         try {
           const closes = await fetchDailyHistory(ticker);
-          computed.set(ticker, { returns: computeReturns(closes), history: closes.slice(-HISTORY_POINTS) });
+          computed.set(ticker, { returns: computeReturns(closes), history: thinHistory(closes) });
         } catch (err) {
           console.error(`scheduled-sectors-background: ${ticker} retry failed: ${err.message}`);
         }
