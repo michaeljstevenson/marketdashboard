@@ -762,7 +762,7 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <thead>
 <tr>
 <th data-key="name">Sector</th>
-<th data-key="latestClose">Price</th>
+<th data-key="latestClose">Ticker</th>
 <th data-key="d1">1D<span class="sort-arrow">▾</span></th>
 <th data-key="w1">1W<span class="sort-arrow">▾</span></th>
 <th data-key="mtd">MTD<span class="sort-arrow">▾</span></th>
@@ -904,7 +904,21 @@ function render(){
  }
 
  const tbody = document.getElementById("tableBody");
- tbody.innerHTML = rows.map(r => {
+ const bm = RAW.benchmark;
+ const benchCells = COLUMNS.map(key => {
+  const v = MODE === "absolute" ? bm.returns[key] : null;
+  const bg = MODE === "absolute" ? colorForValue(v, columnValues[key]) : "";
+  const text = fmtPct(v);
+  const cls = v === null ? "cell-na" : (v >= 0 ? "cell-pos" : "cell-neg");
+  const style = bg ? ` style="background:${bg}"` : "";
+  return `<td class="${cls}"${style}>${text === null ? "—" : text}</td>`;
+ }).join("");
+ const benchRow = `<tr style="border-bottom:2px solid var(--line, rgba(128,128,128,.35))">
+   <td><span class="sector-name">S&amp;P 500</span></td>
+   <td><span class="sector-ticker">${bm.ticker}</span></td>
+   ${benchCells}
+  </tr>`;
+ tbody.innerHTML = benchRow + rows.map(r => {
   const cells = COLUMNS.map(key => {
    const v = r[key];
    const bg = colorForValue(v, columnValues[key]);
@@ -1008,8 +1022,8 @@ function renderChartRange(rangeKey){
  }
 
  const allSeries = [
-  { ticker: RAW.benchmark.ticker, history: RAW.benchmark.history, dashed: true },
-  ...RAW.sectors.map(s => ({ ticker: s.ticker, history: s.history, dashed: false })),
+  { ticker: RAW.benchmark.ticker, name: "S&P 500", history: RAW.benchmark.history, dashed: true },
+  ...RAW.sectors.map(s => ({ ticker: s.ticker, name: s.name, history: s.history, dashed: false })),
  ];
 
  const datasets = allSeries.map(s => {
@@ -1022,7 +1036,7 @@ function renderChartRange(rangeKey){
   });
   const color = SERIES_COLORS[s.ticker] || "#8b9199";
   return {
-   label: s.ticker,
+   label: s.name || s.ticker,
    data,
    borderColor: color,
    backgroundColor: color,
