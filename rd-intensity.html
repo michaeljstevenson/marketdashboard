@@ -152,7 +152,7 @@ document.addEventListener("DOMContentLoaded", function(){
 </script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>International vs. US Relative Performance — Michael J. Stevenson</title>
+<title>R&amp;D Intensity — Michael J. Stevenson</title>
 
 <style>
 
@@ -175,8 +175,9 @@ document.addEventListener("DOMContentLoaded", function(){
 
   /* NDR-style chart palette. Deliberately the SAME in light and dark —
      these charts keep a constant warm-paper look as a homage to the Ned
-     Davis Research print charts that inspired the treatment. JS reads them
-     via getComputedStyle (per the site convention) rather than hardcoding. */
+     Davis Research print charts that inspired /concentration. JS reads
+     them via getComputedStyle (per the site convention) rather than
+     hardcoding. */
   --ndr-plot:#f5f1e6;
   --ndr-axis:#3c3a33;
   --ndr-axis-soft:#6f6a5c;
@@ -416,9 +417,8 @@ h1{
  height:380px;
 }
 
-.chart-canvas-wrap.short{ height:280px; }
-
-/* The warm-paper plot panel behind each canvas — the NDR homage. */
+/* The warm-paper plot panel behind each canvas — the NDR homage
+   (matches /concentration). */
 .ndr-panel{
  background:var(--ndr-plot);
  border:1px solid var(--ndr-grid);
@@ -426,7 +426,38 @@ h1{
  padding:14px 14px 10px;
 }
 
+/* Two charts / method-tables side by side, same breakpoint as table-grid */
+.chart-grid{
+ display:grid;
+ grid-template-columns:1fr 1fr;
+ gap:16px;
+ margin-bottom:30px;
+}
+
+.chart-grid .chart-box{
+ margin-bottom:0;
+ min-width:0; /* grid items default to min-width:auto (their content's min-content
+                 size), which a wide method table would otherwise force past this
+                 column's track width — same "grid blowout" the site-wide
+                 table{min-width:600px} rule creates if left unchecked here */
+}
+
+@media (max-width:900px){
+ .chart-grid{ grid-template-columns:1fr; }
+}
+
 /* TABLE */
+
+.table-grid{
+ display:grid;
+ grid-template-columns:1fr 1fr;
+ gap:16px;
+ margin-bottom:30px;
+}
+
+@media (max-width:900px){
+ .table-grid{ grid-template-columns:1fr; }
+}
 
 .table-box{
  background:var(--card);
@@ -435,6 +466,8 @@ h1{
  overflow-x:auto;
  margin-bottom:30px;
 }
+
+.table-grid .table-box{ margin-bottom:0; }
 
 .table-box-header{
  padding:18px 20px 4px;
@@ -453,7 +486,7 @@ table{
  width:100%;
  border-collapse:collapse;
  font-size:13px;
- min-width:640px;
+ min-width:600px;
 }
 
 thead th{
@@ -463,13 +496,27 @@ thead th{
  font-size:11px;
  letter-spacing:0.04em;
  font-weight:600;
+ cursor:pointer;
+ user-select:none;
  white-space:nowrap;
  border-bottom:1px solid var(--hair);
 }
 
-thead th:first-child{
+thead th:first-child, thead th:nth-child(2){
  text-align:left;
 }
+
+thead th:hover{ color:var(--ink); }
+
+thead th .sort-arrow{
+ opacity:0.4;
+ margin-left:3px;
+ font-size:10px;
+}
+
+thead th.sorted .sort-arrow{ opacity:1; color:var(--greed); }
+
+thead th:not([data-key]){ cursor:default; }
 
 tbody td{
  padding:11px 12px;
@@ -488,30 +535,42 @@ tbody td:first-child{
  font-family:var(--sans);
 }
 
+tbody td:nth-child(2){
+ text-align:left;
+ color:var(--muted);
+}
+
+.sector-name{ color:var(--ink); }
+.sector-ticker{ color:var(--muted); font-size:11px; }
+
 .cell-pos{ color:var(--ink); }
 .cell-neg{ color:var(--ink); }
 .cell-na{ color:var(--muted); }
 
-.table-footnote{
- padding:2px 20px 16px;
- color:var(--muted);
- font-size:11px;
-}
+.growth-pos{ color:var(--greed); }
+.growth-neg{ color:var(--fear); }
 
 /* SCATTER / METHOD TABLE (mirrors /factor-analysis) */
 
 .scatter-canvas-wrap{
- height:260px;
+ height:300px;
  margin-bottom:12px;
  position:relative;
 }
 
 .method-table{
  width:100%;
+ min-width:0; /* overrides the site-wide table{min-width:600px} rule below — two of these
+                 side by side in .chart-grid would otherwise force the whole page wider
+                 than its container even though a 7-column method table never needs 600px */
  border-collapse:collapse;
  font-family:var(--mono);
  font-size:11px;
  margin-top:8px;
+}
+
+#intensityGrowthMethodTable, #intensityRel3mMethodTable{
+ overflow-x:auto;
 }
 
 .method-table th{
@@ -550,6 +609,26 @@ tbody td:first-child{
  color:var(--muted);
  margin-top:8px;
  font-style:italic;
+}
+
+/* SECTOR LEGEND (scatter / spaghetti charts) */
+
+.sector-legend{
+ display:flex;
+ flex-wrap:wrap;
+ gap:10px 16px;
+ margin-top:14px;
+ font-size:11px;
+ color:var(--muted);
+}
+
+.sector-legend .dot{
+ display:inline-block;
+ width:8px;
+ height:8px;
+ border-radius:50%;
+ margin-right:5px;
+ vertical-align:middle;
 }
 
 /* EXPLAINER */
@@ -686,9 +765,10 @@ tbody td:first-child{
 <a href="/share-count-trends.html">Share Count Trends</a>
 <a href="/sector-correlation.html">Sector Correlation Matrix</a>
 <a href="/sector-rotation.html">Sector Rotation Model</a>
-<a href="/international-vs-us.html" class="active">International vs. US Relative Performance</a>
-<a href="/analyst-estimate-dispersion.html">Analyst Estimate Dispersion</a>
-<a href="/shareholder-yield.html">Shareholder Yield</a>
+<a href="/margin-leverage.html">Margin &amp; Leverage Cycle</a>
+<a href="/roic-wacc.html">ROIC vs. Cost of Capital</a>
+<a href="/cash-conversion-cycle.html">Cash Conversion Cycle</a>
+<a href="/rd-intensity.html" class="active">R&amp;D Intensity</a>
 <a href="/analyst-price-target.html">Analyst Price Target Upside</a>
 <a href="/institutional-ownership.html">Institutional Ownership &amp; 13F Flow</a>
 <a href="/post-earnings-drift.html">Post-Earnings Announcement Drift</a>
@@ -701,9 +781,6 @@ tbody td:first-child{
 <a href="/quality-lowvol-factors.html">Quality &amp; Low-Volatility Factor Screen</a>
 <a href="/quality-score.html">Financial Quality Screener (Piotroski)</a>
 <a href="/country-sector-scorecard.html">Country / Sector Scorecard</a>
-<a href="/roic-wacc.html">ROIC vs. Cost of Capital</a>
-<a href="/cash-conversion-cycle.html">Cash Conversion Cycle</a>
-<a href="/rd-intensity.html">R&amp;D Intensity</a>
 </div>
 </div>
 
@@ -770,144 +847,193 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 
 <div class="header">
 <div>
-<h1>International vs. US Relative Performance</h1>
-<div class="subtitle">Relative strength of developed-markets-ex-US (EFA) and emerging-markets (EEM) stocks against the US (SPY), indexed since EEM's 2003 inception, conditioned on the direction of the US dollar.</div>
+<h1>R&amp;D Intensity</h1>
+<div class="subtitle">How much of revenue S&amp;P 500 companies reinvest in research &amp; development, which sectors actually spend on it, and whether heavier R&amp;D spending shows up in faster revenue growth or better relative price performance.</div>
 </div>
 <div class="updated" id="updated">Loading...</div>
 </div>
 
 <div class="stat-grid">
 <div class="stat-card">
-<div class="stat-label">Developed/US Ratio</div>
-<div class="stat-value" id="statRatio">—</div>
-<div class="stat-note" id="statRatioNote">Indexed to 100 at EEM's inception</div>
+<div class="stat-label">Companies Reporting R&amp;D</div>
+<div class="stat-value" id="statCompanies" style="font-size:20px;">—</div>
+<div class="stat-note" id="statCompaniesNote">Of full S&amp;P 500</div>
 </div>
 <div class="stat-card">
-<div class="stat-label">12-Month Relative Return</div>
-<div class="stat-value" id="statRel12m">—</div>
-<div class="stat-note">EFA vs. SPY, trailing 252 trading days</div>
+<div class="stat-label">Median R&amp;D Intensity</div>
+<div class="stat-value" id="statIntensity">—</div>
+<div class="stat-note">R&amp;D &divide; revenue, trailing twelve months, R&amp;D reporters only</div>
 </div>
 <div class="stat-card">
-<div class="stat-label">Current Dollar Regime</div>
-<div class="stat-value" id="statRegime" style="font-size:20px;">—</div>
-<div class="stat-note" id="statRegimeNote">Avg. monthly spread return, this regime</div>
+<div class="stat-label">Median Revenue Growth</div>
+<div class="stat-value" id="statGrowth">—</div>
+<div class="stat-note">Year-over-year, trailing twelve months, R&amp;D reporters only</div>
 </div>
 <div class="stat-card">
-<div class="stat-label">Correlation w/ EUR/USD &Delta;</div>
-<div class="stat-value" id="statCorr" style="font-size:20px;">—</div>
-<div class="stat-note" id="statCorrNote">Monthly, Pearson r</div>
+<div class="stat-label">Most R&amp;D-Intensive Sector</div>
+<div class="stat-value" id="statTopSector" style="font-size:18px;">—</div>
+<div class="stat-note" id="statTopSectorNote">Median R&amp;D as % of revenue</div>
 </div>
 </div>
 
 <div class="chart-box">
 <div class="chart-box-header">
 <div>
-<h2>Developed &amp; emerging / US ratios, since 2003</h2>
-<div class="chart-subhead">EFA and EEM adjusted-close ÷ SPY adjusted-close, all indexed to 100 at EEM's inception — rising means international is outperforming</div>
+<h2>R&amp;D intensity by sector</h2>
+<div class="chart-subhead">Median R&amp;D spend as a % of trailing-twelve-month revenue, by SPDR sector — sectors with too few R&amp;D-reporting constituents are omitted</div>
 </div>
 </div>
 <div class="ndr-panel">
 <div class="chart-canvas-wrap">
-<canvas id="ratioChart"></canvas>
+<canvas id="sectorChart"></canvas>
 </div>
+</div>
+<div class="method-note">Most Financials, Real Estate, Utilities, and many retailers don't break out a research &amp; development line at all — they're excluded from this page entirely rather than treated as zero R&amp;D spenders. See the methodology below.</div>
+</div>
+
+<div class="chart-box">
+<div class="chart-box-header">
+<div>
+<h2>Distribution of R&amp;D intensity</h2>
+<div class="chart-subhead">Every R&amp;D-reporting S&amp;P 500 constituent, bucketed by R&amp;D as a % of revenue</div>
+</div>
+</div>
+<div class="ndr-panel">
+<div class="chart-canvas-wrap" style="height:300px;">
+<canvas id="intensityHistogram"></canvas>
+</div>
+</div>
+</div>
+
+<div class="chart-grid">
+<div class="chart-box">
+<div class="chart-box-header">
+<div>
+<h2>R&amp;D intensity vs. revenue growth</h2>
+<div class="chart-subhead">Do heavier R&amp;D spenders currently show faster revenue growth, or is there no such association?</div>
+</div>
+</div>
+<div class="ndr-panel">
+<div class="scatter-canvas-wrap">
+<canvas id="intensityGrowthScatter"></canvas>
+</div>
+</div>
+<div id="intensityGrowthMethodTable"></div>
+</div>
+<div class="chart-box">
+<div class="chart-box-header">
+<div>
+<h2>R&amp;D intensity vs. 3-month relative return</h2>
+<div class="chart-subhead">Does the market currently reward heavier R&amp;D spenders with better relative price performance?</div>
+</div>
+</div>
+<div class="ndr-panel">
+<div class="scatter-canvas-wrap">
+<canvas id="intensityRel3mScatter"></canvas>
+</div>
+</div>
+<div id="intensityRel3mMethodTable"></div>
+</div>
+</div>
+
+<div class="table-grid">
+<div class="table-box">
+<div class="table-box-header">
+<h2>Highest R&amp;D intensity</h2>
+<div class="chart-subhead">R&amp;D as a % of trailing-twelve-month revenue</div>
+</div>
+<table id="spendersTable">
+<thead><tr><th>Symbol</th><th>Sector</th><th>R&amp;D Intensity</th><th>Rev. Growth</th></tr></thead>
+<tbody id="spendersBody"><tr><td colspan="4" style="text-align:center; color:var(--muted); padding:24px;">Loading&hellip;</td></tr></tbody>
+</table>
+</div>
+<div class="table-box">
+<div class="table-box-header">
+<h2>Fastest revenue growth</h2>
+<div class="chart-subhead">Among R&amp;D-reporting companies only</div>
+</div>
+<table id="growersTable">
+<thead><tr><th>Symbol</th><th>Sector</th><th>Rev. Growth</th><th>R&amp;D Intensity</th></tr></thead>
+<tbody id="growersBody"><tr><td colspan="4" style="text-align:center; color:var(--muted); padding:24px;">Loading&hellip;</td></tr></tbody>
+</table>
 </div>
 </div>
 
 <div class="table-box">
 <div class="table-box-header">
-<h2>Trailing return ladder</h2>
-<div class="chart-subhead">Total return (dividends reinvested) by region, as of the last close</div>
+<h2>All R&amp;D-reporting companies</h2>
+<div class="chart-subhead">Trailing-twelve-month R&amp;D intensity and year-over-year revenue growth</div>
 </div>
-<table id="ladderTable">
-<thead><tr id="ladderHead"></tr></thead>
-<tbody id="ladderBody">
-<tr><td colspan="8" style="text-align:center; color:var(--muted); padding:24px;">Loading&hellip;</td></tr>
+<table id="stockTable">
+<thead>
+<tr>
+<th data-key="symbol">Symbol</th>
+<th data-key="sector">Sector</th>
+<th data-key="rdIntensity">R&amp;D Intensity<span class="sort-arrow">▾</span></th>
+<th data-key="revenueGrowthYoY">Rev. Growth YoY<span class="sort-arrow">▾</span></th>
+</tr>
+</thead>
+<tbody id="tableBody">
+<tr><td colspan="4" style="text-align:center; color:var(--muted); padding:30px;">Loading R&amp;D intensity data&hellip;</td></tr>
 </tbody>
 </table>
-<div class="table-footnote">1M–1Y are cumulative returns; 3Y/5Y/10Y are annualized. Developed = EFA (MSCI EAFE proxy), Emerging = EEM (MSCI Emerging Markets proxy), US = SPY (S&amp;P 500 proxy).</div>
-</div>
-
-<div class="chart-box">
-<div class="chart-box-header">
-<div>
-<h2>Rolling 12-month relative return</h2>
-<div class="chart-subhead">Developed/US ratio's trailing 252-trading-day return — positive stretches are international-leadership regimes, negative stretches are US-leadership regimes</div>
-</div>
-</div>
-<div class="ndr-panel">
-<div class="chart-canvas-wrap">
-<canvas id="rollingChart"></canvas>
-</div>
-</div>
-</div>
-
-<div class="chart-box">
-<div class="chart-box-header">
-<div>
-<h2>Average monthly spread return by dollar regime</h2>
-<div class="chart-subhead">Months classified by the trailing 3-month change in EUR/USD; bars show the average developed-vs-US monthly return within each regime</div>
-</div>
-</div>
-<div class="ndr-panel">
-<div class="chart-canvas-wrap short">
-<canvas id="regimeChart"></canvas>
-</div>
-</div>
-</div>
-
-<div class="chart-box">
-<div class="chart-box-header">
-<div>
-<h2>Monthly spread return vs. change in EUR/USD</h2>
-<div class="chart-subhead">Each point is one month: x-axis is the month's % change in EUR/USD (a rising value means a weaker dollar), y-axis is that month's developed-vs-US return</div>
-</div>
-</div>
-<div class="ndr-panel">
-<div class="scatter-canvas-wrap">
-<canvas id="corrScatter"></canvas>
-</div>
-</div>
-<div id="corrMethodTable"></div>
 </div>
 
 <div class="explainer">
 <h2>Methodology</h2>
-<p>International and US exposure are proxied by three liquid, dividend-adjusted ETFs rather than the underlying indices themselves: EFA (iShares MSCI EAFE ETF) for developed markets ex-US, EEM (iShares MSCI Emerging Markets ETF) for emerging markets, and SPY (SPDR S&amp;P 500 ETF Trust) for the US. Yahoo Finance's daily adjusted-close series (dividends and splits applied) gives a true total-return comparison for all three, in US-dollar terms — the ETFs already embed whatever currency translation a US-based investor would actually experience, so no separate FX adjustment is applied to the ratio series itself. The ratio series is indexed to 100 at EEM's April 2003 inception — the binding constraint on how far back this page can go, even though EFA and SPY both trade back further (EFA to 2001, SPY to 1993).</p>
-<p>The dollar-regime split classifies each calendar month by the trailing 3-month % change in the EUR/USD exchange rate (Yahoo Finance <code>EURUSD=X</code>, month-end close): a rise of more than 2% is "Dollar Weakening," a fall of more than 2% is "Dollar Strengthening," and anything in between is "Flat." EUR/USD is a single currency pair, not a broad trade-weighted dollar index — it's used here as a simple, freely-available proxy for dollar direction, not a precise measure of it, so treat the regime split as a first-order approximation. The intuition being tested is the textbook one: a weaker dollar should flatter unhedged international returns (translation effect) and, in practice, has often coincided with periods of relative US underperformance for other reasons too — but the regime averages below are a small, noisy sample (a couple dozen months per regime), so read them as suggestive rather than a robust statistical result.</p>
-<p>The scatter panel runs the same two-method check used throughout <a href="/factor-analysis.html">Factor Analysis</a> and <a href="/small-cap-vs-large-cap.html">Small Cap vs. Large Cap Spread</a>: Pearson (OLS) correlation alongside Spearman rank correlation, so a relationship can't be quietly resting on one or two extreme months. Both are shown; a low r&sup2; here isn't a bug — a single currency pair rarely explains much of a monthly equity-return series, and the point of showing the regression is to be honest about how weak (or strong) that single-variable relationship actually is, not to oversell it.</p>
-<p>Refreshes once daily after the US market close (index levels move every trading day); the EUR/USD monthly series is re-pulled in full each run since it's a cheap, low-volume series.</p>
-<div class="source">Source: <a href="https://finance.yahoo.com/" target="_blank" rel="noopener">Yahoo Finance</a> — daily adjusted close (EFA, EEM, SPY), EURUSD=X month-end close</div>
+<p>Universe is the full S&amp;P 500. For every constituent, Alpha Vantage's <code>INCOME_STATEMENT</code> endpoint (quarterly) supplies the trailing eight quarters needed for a trailing-twelve-month (TTM) revenue and R&amp;D spend, plus the prior year's TTM revenue for a smoothed year-over-year growth figure (rather than a single noisy quarter-over-quarter comparison). <b>R&amp;D Intensity</b> = TTM R&amp;D &divide; TTM revenue &times; 100. <b>Revenue Growth (YoY)</b> = (this year's TTM revenue &minus; last year's TTM revenue) &divide; last year's TTM revenue &times; 100.</p>
+<p>A company is included only if it reports a research &amp; development figure in all of the trailing four quarters. That's a real, deliberate scope limitation, not a data-quality problem: most Financials, Real Estate, Utilities, and many retailers and industrials simply don't break out an R&amp;D line at all, because formal R&amp;D isn't how those businesses compete or invest. This page's coverage skews toward Information Technology, Health Care (pharma and biotech in particular), and Communication Services &mdash; sectors where R&amp;D spending is a core, comparable line item &mdash; and that skew is the finding, not an artifact to correct for.</p>
+<p>The two regression tests are single-snapshot cross-sections (no accumulated history needed, unlike a forward-return test): R&amp;D intensity vs. revenue growth asks whether heavier <i>current</i> R&amp;D spenders show faster <i>current</i> revenue growth &mdash; a contemporaneous association, not a claim that today's R&amp;D spend causes or predicts tomorrow's growth, since R&amp;D typically takes years to show up in the income statement. R&amp;D intensity vs. 3-month relative price return (reusing <a href="/relative-strength-leaders.html">Relative Strength Leaders/Laggards</a>' own weekly price data rather than a second price sweep) asks whether the market is currently rewarding heavier spenders with better relative performance. Both use the same Pearson-and-Spearman two-method check as <a href="/factor-analysis.html">Factor Analysis</a>.</p>
+<p>One-time snapshot &mdash; no recurring schedule, matching every other full-universe fundamentals sweep added to this site since mid-September 2026. Re-run manually for a fresh pass; quarterly fundamentals don't move day to day. Sector and company name come from the same weekly metadata sweep that backs <a href="/sector-beeswarm.html">Sector Beeswarm</a>.</p>
+<div class="source">Source: <a href="https://www.alphavantage.co/" target="_blank" rel="noopener">Alpha Vantage — INCOME_STATEMENT</a>, plus this site's own <a href="/relative-strength-leaders.html">Relative Strength Leaders/Laggards</a> data</div>
 </div>
 
 </div>
 
 <script>
-const DATA_URL = "/api/international-us";
+const DATA_URL = "/api/rd-intensity";
+
+const SECTOR_COLORS = {
+ "Information Technology": "#d98a3d",
+ "Financials": "#6f8fac",
+ "Health Care": "#8e7cc3",
+ "Energy": "#c0564f",
+ "Industrials": "#5a9d6f",
+ "Consumer Discretionary": "#e0b04f",
+ "Consumer Staples": "#4fb0c0",
+ "Utilities": "#b56f2a",
+ "Materials": "#9a9a9a",
+ "Real Estate": "#c77dbd",
+ "Communication Services": "#4f7ae0",
+};
 
 let RAW = null;
+let SORT_KEY = "rdIntensity";
+let SORT_DIR = -1;
+
+function fmtPct(v, digits){
+ if(v === null || v === undefined || isNaN(v)) return "—";
+ digits = digits === undefined ? 1 : digits;
+ return v.toFixed(digits) + "%";
+}
+function fmtSignedPct(v, digits){
+ if(v === null || v === undefined || isNaN(v)) return "—";
+ digits = digits === undefined ? 1 : digits;
+ return (v >= 0 ? "+" : "") + v.toFixed(digits) + "%";
+}
 
 function showError(message){
  const banner = document.getElementById("errorBanner");
  banner.textContent = message;
  banner.style.display = "block";
 }
-
 function showWarning(message){
  const banner = document.getElementById("warningBanner");
  banner.textContent = message;
  banner.style.display = "block";
 }
 
-function fmtPct(v, digits){
- if(v === null || v === undefined || isNaN(v)) return "—";
- digits = digits === undefined ? 2 : digits;
- return (v >= 0 ? "+" : "") + v.toFixed(digits) + "%";
-}
-
-// ---- NDR chart styling helpers -----------------------------------------
-// Colours come from the --ndr-* custom properties (constant across themes)
-// so the charts keep their warm-paper look while still following the
-// site's "read chart colours from CSS, don't hardcode" rule.
+// ---- NDR chart styling helpers (matches /concentration, /margin-leverage) ----
 function ndr(name){
  return getComputedStyle(document.documentElement).getPropertyValue("--ndr-" + name).trim();
 }
@@ -915,15 +1041,10 @@ function ndr(name){
 Chart.defaults.font.family = "'Iowan Old Style','Palatino Linotype',Georgia,serif";
 Chart.defaults.color = ndr("axis-soft");
 
-// `opts.title` is a deviation from concentration.html's ndrXScale (which
-// never needed an x-axis title) — this page's scatter panel has a numeric
-// x-axis that needs one, so it's supported here directly.
-function ndrXScale(opts){
- opts = opts || {};
+function ndrXScale(){
  return {
-  ticks: { color: ndr("axis"), maxTicksLimit: 9, maxRotation: 0, autoSkip: true, font: { size: opts.fontSize || 11 } },
+  ticks: { color: ndr("axis"), maxTicksLimit: 9, maxRotation: 0, autoSkip: true, font: { size: 11 } },
   grid: { color: "rgba(0,0,0,0)", borderColor: ndr("axis") },
-  title: opts.title ? { display: true, text: opts.title, color: ndr("axis-soft"), font: { size: 10 } } : { display: false },
  };
 }
 
@@ -933,22 +1054,14 @@ function ndrYScale(opts){
   type: opts.log ? "logarithmic" : "linear",
   position: opts.position || "left",
   grid: { color: ndr("grid"), drawBorder: false },
-  ticks: { color: ndr("axis"), font: { size: opts.fontSize || 11 }, callback: opts.fmt || undefined },
+  ticks: { color: ndr("axis"), font: { size: 11 }, callback: opts.fmt || undefined },
   title: opts.title ? { display: true, text: opts.title, color: ndr("axis-soft"), font: { size: 10 } } : { display: false },
   min: opts.min, max: opts.max,
  };
 }
 
-function ndrLegend(){
- return {
-  display: true, position: "top", align: "start",
-  labels: { boxWidth: 22, boxHeight: 2, color: ndr("axis"), font: { size: 11 } },
- };
-}
-
 // ---- Stats helpers — same methodology as /factor-analysis, duplicated
 // here since every page on this site is self-contained (see CLAUDE.md). ----
-
 function linearRegression(xs, ys){
  const n = xs.length;
  const mx = xs.reduce((a, b) => a + b, 0) / n;
@@ -967,12 +1080,7 @@ function linearRegression(xs, ys){
  const p = 2 * (1 - normalCdf(Math.abs(t)));
  return { n, slope, intercept, r, r2, t, dof, p, sse };
 }
-
-function normalCdf(x){
- return 0.5 * (1 + erf(x / Math.SQRT2));
-}
-
-// Abramowitz & Stegun 7.1.26 approximation — accurate to ~1e-7.
+function normalCdf(x){ return 0.5 * (1 + erf(x / Math.SQRT2)); }
 function erf(x){
  const sign = x < 0 ? -1 : 1;
  x = Math.abs(x);
@@ -981,7 +1089,6 @@ function erf(x){
  const y = 1 - (((((a5 * t + a4) * t) + a3) * t + a2) * t + a1) * t * Math.exp(-x * x);
  return sign * y;
 }
-
 function rankArray(arr){
  const idx = arr.map((v, i) => i).sort((a, b) => arr[a] - arr[b]);
  const ranks = new Array(arr.length);
@@ -995,89 +1102,28 @@ function rankArray(arr){
  }
  return ranks;
 }
+function spearmanRegression(xs, ys){ return linearRegression(rankArray(xs), rankArray(ys)); }
 
-function spearmanRegression(xs, ys){
- return linearRegression(rankArray(xs), rankArray(ys));
+function methodTableHtml(pearson, spear, unitNote){
+ function row(label, stats){
+  const sig = stats.p < 0.05;
+  return "<tr>" +
+   "<td>" + label + "</td>" +
+   "<td>" + stats.n + "</td>" +
+   "<td>" + stats.r.toFixed(2) + "</td>" +
+   "<td>" + (stats.r2 * 100).toFixed(1) + "%</td>" +
+   "<td>" + (stats.slope >= 0 ? "+" : "") + stats.slope.toFixed(3) + "</td>" +
+   "<td>" + stats.t.toFixed(2) + "</td>" +
+   '<td class="' + (sig ? "sig" : "") + '">' + (stats.p < 0.001 ? "<0.001" : stats.p.toFixed(3)) + "</td>" +
+  "</tr>";
+ }
+ return '<table class="method-table">' +
+  "<thead><tr><th>Method</th><th>n</th><th>r</th><th>r&sup2;</th><th>slope</th><th>t</th><th>p</th></tr></thead>" +
+  "<tbody>" + row("Pearson (OLS)", pearson) + row("Spearman (&rho;)", spear) + "</tbody>" +
+ "</table>" + (unitNote ? '<div class="method-note">' + unitNote + "</div>" : "");
 }
 
-function percentileRank(arr, value){
- let below = 0;
- for(const v of arr) if(v <= value) below++;
- return (below / arr.length) * 100;
-}
-
-// ---- Monthly aggregation: dollar regime classification, month-end ratio
-// resampling, and the monthly developed-vs-US / EUR-USD-change pairing
-// used by the regime bar chart and the correlation scatter. ----
-
-function prevMonthKey(ym){
- let [y, m] = ym.split("-").map(Number);
- m -= 1;
- if(m < 1){ m = 12; y -= 1; }
- return y + "-" + String(m).padStart(2, "0");
-}
-
-function monthEndMap(dates, values){
- const map = new Map();
- for(let i = 0; i < dates.length; i++) map.set(dates[i].slice(0, 7), values[i]); // last write per key wins = month-end
- return map;
-}
-
-function buildMonthly(data){
- const ratioByMonth = monthEndMap(data.dates, data.ratioDevelopedUS);
- const eurUsd = data.eurUsdMonthly; // ascending
-
- const eurUsdChangeByMonth = new Map();
- for(let i = 3; i < eurUsd.length; i++){
-  const ym = eurUsd[i].date.slice(0, 7);
-  const pctChange = ((eurUsd[i].value / eurUsd[i - 3].value) - 1) * 100;
-  eurUsdChangeByMonth.set(ym, Math.round(pctChange * 100) / 100);
- }
-
- const monthlyChangeByMonth = new Map();
- for(let i = 1; i < eurUsd.length; i++){
-  const ym = eurUsd[i].date.slice(0, 7);
-  const pctChange = ((eurUsd[i].value / eurUsd[i - 1].value) - 1) * 100;
-  monthlyChangeByMonth.set(ym, Math.round(pctChange * 100) / 100);
- }
-
- const records = [];
- let currentRegime = null;
- const months = [...eurUsdChangeByMonth.keys()].sort();
- for(const ym of months){
-  const change3m = eurUsdChangeByMonth.get(ym);
-  const regime = change3m > 2 ? "Dollar Weakening" : change3m < -2 ? "Dollar Strengthening" : "Flat";
-  currentRegime = regime; // months is ascending, so the loop's last write is the latest month
-  const ratioNow = ratioByMonth.get(ym);
-  const ratioPrev = ratioByMonth.get(prevMonthKey(ym));
-  const relReturn = (ratioNow !== undefined && ratioPrev !== undefined)
-   ? Math.round((ratioNow / ratioPrev - 1) * 10000) / 100
-   : null;
-  const dEurUsd = monthlyChangeByMonth.has(ym) ? monthlyChangeByMonth.get(ym) : null;
-  records.push({ ym, regime, relReturn, dEurUsd });
- }
-
- const regimeGroups = { "Dollar Strengthening": [], Flat: [], "Dollar Weakening": [] };
- for(const r of records){
-  if(r.relReturn === null) continue;
-  regimeGroups[r.regime].push(r.relReturn);
- }
- const regimeStats = {};
- for(const key of Object.keys(regimeGroups)){
-  const vals = regimeGroups[key];
-  const n = vals.length;
-  const mean = n ? vals.reduce((a, b) => a + b, 0) / n : null;
-  regimeStats[key] = { n, mean };
- }
-
- const corrPairs = records
-  .filter(r => r.relReturn !== null && r.dEurUsd !== null)
-  .map(r => ({ x: r.dEurUsd, y: r.relReturn, ym: r.ym }));
-
- return { records, regimeStats, currentRegime, corrPairs };
-}
-
-let ratioChart = null, rollingChart = null, regimeChart = null, corrScatter = null;
+let sectorChart = null, intensityHistogram = null, intensityGrowthScatter = null, intensityRel3mScatter = null;
 
 async function init(){
  try{
@@ -1086,221 +1132,126 @@ async function init(){
   if(!res.ok || data.error) throw new Error(data.error || "failed to load");
 
   RAW = data;
-  document.getElementById("updated").textContent =
-   "As of " + data.asOfDate + " · " + new Date(data.generated_at_utc).toLocaleString();
+  document.getElementById("updated").textContent = "As of " + new Date(data.generated_at_utc).toLocaleString();
 
-  const monthly = buildMonthly(data);
-  renderStats(data, monthly);
-  renderRatioChart(data);
-  renderLadderTable(data);
-  renderRollingChart(data);
-  renderRegimeChart(monthly);
-  renderCorrScatter(monthly);
+  if(data.loadedCount < data.universeSize){
+   showWarning("Only " + data.loadedCount + " of " + data.universeSize + " S&P 500 constituents loaded this run — some data may be temporarily unavailable.");
+  }
+  if(!data.hasRel3M){
+   showWarning("The Relative Strength Leaders/Laggards page's data hasn't populated yet, so the R&D-vs-relative-return test below can't run.");
+  }
+
+  renderStats();
+  renderSectorChart();
+  renderIntensityHistogram();
+  renderIntensityGrowthScatter();
+  renderIntensityRel3mScatter();
+  renderLeaderTable(data.topSpenders, "spendersBody", "spenders");
+  renderLeaderTable(data.topGrowers, "growersBody", "growers");
+  renderTable();
 
  }catch(e){
-  showError("Couldn't load international-vs-US data (" + e.message + "). The /api/international-us function may not have run yet.");
+  showError("Couldn't load R&D intensity data (" + e.message + "). The /api/rd-intensity function may not have run yet.");
+  document.getElementById("tableBody").innerHTML =
+   '<tr><td colspan="4" style="text-align:center; color:var(--muted); padding:30px;">No data available.</td></tr>';
  }
 }
 
-function ordinal(n){
- const rem100 = n % 100;
- if(rem100 >= 11 && rem100 <= 13) return n + "th";
- switch(n % 10){
-  case 1: return n + "st";
-  case 2: return n + "nd";
-  case 3: return n + "rd";
-  default: return n + "th";
+function renderStats(){
+ document.getElementById("statCompanies").textContent = RAW.market.companyCount;
+ document.getElementById("statCompaniesNote").textContent = RAW.loadedCount + " of " + RAW.universeSize + " loaded, " + RAW.market.companyCount + " report R&D";
+ document.getElementById("statIntensity").textContent = fmtPct(RAW.market.medianRdIntensity);
+ document.getElementById("statGrowth").textContent = fmtSignedPct(RAW.market.medianRevenueGrowth);
+
+ const topSector = [...RAW.sectors].sort((a, b) => (b.medianRdIntensity ?? -Infinity) - (a.medianRdIntensity ?? -Infinity))[0];
+ if(topSector){
+  document.getElementById("statTopSector").textContent = topSector.sector;
+  document.getElementById("statTopSectorNote").textContent = fmtPct(topSector.medianRdIntensity) + " median R&D intensity";
  }
 }
 
-function renderStats(data, monthly){
- const ratio = data.ratioDevelopedUS;
- const current = ratio[ratio.length - 1];
- const pct = percentileRank(ratio, current);
- document.getElementById("statRatio").textContent = current.toFixed(1);
- document.getElementById("statRatioNote").textContent =
-  ordinal(Math.round(pct)) + " percentile of full history (since " + data.commonStartDate.slice(0, 4) + ")";
-
- const window252 = 252;
- let rel12m = null;
- if(ratio.length > window252) rel12m = (ratio[ratio.length - 1] / ratio[ratio.length - 1 - window252] - 1) * 100;
- const rel12mEl = document.getElementById("statRel12m");
- rel12mEl.textContent = fmtPct(rel12m);
- rel12mEl.classList.toggle("cell-neg", rel12m !== null && rel12m < 0);
-
- const regime = monthly.currentRegime;
- const stats = regime ? monthly.regimeStats[regime] : null;
- document.getElementById("statRegime").textContent = regime || "—";
- if(stats && stats.n){
-  document.getElementById("statRegimeNote").textContent =
-   "Avg. " + fmtPct(stats.mean) + "/mo in “" + regime + "” regimes (n=" + stats.n + " mo.)";
- }
-
- const corrEl = document.getElementById("statCorr");
- const corrNoteEl = document.getElementById("statCorrNote");
- if(monthly.corrPairs.length >= 8){
-  const reg = linearRegression(monthly.corrPairs.map(p => p.x), monthly.corrPairs.map(p => p.y));
-  corrEl.textContent = (reg.r >= 0 ? "+" : "") + reg.r.toFixed(2);
-  corrEl.classList.toggle("cell-neg", reg.r < 0);
-  let interp = "Weak linear relationship in this sample";
-  if(Math.abs(reg.r) >= 0.15){
-   interp = reg.r < 0
-    ? "International has tended to lag when the dollar weakens"
-    : "International has tended to lead when the dollar weakens";
-  }
-  corrNoteEl.textContent = interp + " (n=" + reg.n + " mo.)";
- }
-}
-
-function renderRatioChart(data){
- const ctx = document.getElementById("ratioChart").getContext("2d");
- if(ratioChart) ratioChart.destroy();
- ratioChart = new Chart(ctx, {
-  type: "line",
-  data: {
-   labels: data.dates,
-   datasets: [
-    { label: "Developed/US ratio", data: data.ratioDevelopedUS, borderColor: ndr("navy"), backgroundColor: ndr("navy"), borderWidth: 1.3, pointRadius: 0, fill: false },
-    { label: "Emerging/US ratio", data: data.ratioEmergingUS, borderColor: ndr("gold"), backgroundColor: ndr("gold"), borderWidth: 1.3, pointRadius: 0, fill: false },
-   ],
-  },
-  options: {
-   responsive: true,
-   maintainAspectRatio: false,
-   interaction: { mode: "index", intersect: false },
-   plugins: {
-    legend: ndrLegend(),
-    tooltip: { callbacks: { label: ctx => ctx.dataset.label + ": " + ctx.parsed.y.toFixed(1) } },
-   },
-   scales: {
-    x: ndrXScale(),
-    y: ndrYScale(),
-   },
-  },
- });
-}
-
-function fmtLadderCell(cell){
- if(!cell) return '<span class="cell-na">—</span>';
- return fmtPct(cell.cumPct);
-}
-
-function renderLadderTable(data){
- const periods = data.ladder.periods;
- const headEl = document.getElementById("ladderHead");
- headEl.innerHTML = "<th>Region</th>" + periods.map((p, i) => "<th>" + p + (i >= 4 ? "*" : "") + "</th>").join("");
-
- const rows = [
-  { label: "Developed (EFA)", key: "developed" },
-  { label: "Emerging (EEM)", key: "emerging" },
-  { label: "US (SPY)", key: "us" },
- ];
- document.getElementById("ladderBody").innerHTML = rows.map(r => {
-  const cells = data.ladder[r.key].map(fmtLadderCell).join("</td><td>");
-  return "<tr><td>" + r.label + "</td><td>" + cells + "</td></tr>";
- }).join("");
-}
-
-function rollingRelReturn(ratio, window){
- const out = new Array(ratio.length).fill(null);
- for(let i = window; i < ratio.length; i++){
-  out[i] = Math.round((ratio[i] / ratio[i - window] - 1) * 10000) / 100;
- }
- return out;
-}
-
-function renderRollingChart(data){
- const rolling = rollingRelReturn(data.ratioDevelopedUS, 252);
- const firstValid = rolling.findIndex(v => v !== null);
- const dates = data.dates.slice(firstValid);
- const values = rolling.slice(firstValid);
-
- const ctx = document.getElementById("rollingChart").getContext("2d");
- if(rollingChart) rollingChart.destroy();
- rollingChart = new Chart(ctx, {
-  type: "line",
-  data: {
-   labels: dates,
-   datasets: [
-    { label: "12-mo. relative return", data: values, borderColor: ndr("navy"), backgroundColor: ndr("navy"), borderWidth: 1.2, pointRadius: 0, fill: false },
-    { label: "Zero", data: dates.map(() => 0), borderColor: ndr("slate"), borderWidth: 1, borderDash: [4, 3], pointRadius: 0, fill: false },
-   ],
-  },
-  options: {
-   responsive: true,
-   maintainAspectRatio: false,
-   interaction: { mode: "index", intersect: false },
-   plugins: {
-    legend: { display: false },
-    tooltip: {
-     callbacks: {
-      label: ctx => ctx.dataset.label === "Zero" ? null : "12-mo. rel. return: " + fmtPct(ctx.parsed.y),
-     },
-    },
-   },
-   scales: {
-    x: ndrXScale(),
-    y: ndrYScale({ fmt: v => (Math.round(v * 100) / 100) + "%" }),
-   },
-  },
- });
-}
-
-function renderRegimeChart(monthly){
- const order = ["Dollar Strengthening", "Flat", "Dollar Weakening"];
- const stats = order.map(k => monthly.regimeStats[k]);
- const colors = stats.map(s => (s.mean === null ? ndr("slate") : s.mean >= 0 ? ndr("green") : ndr("red")));
-
- const ctx = document.getElementById("regimeChart").getContext("2d");
- if(regimeChart) regimeChart.destroy();
- regimeChart = new Chart(ctx, {
+function renderSectorChart(){
+ const sectors = [...RAW.sectors].sort((a, b) => b.medianRdIntensity - a.medianRdIntensity);
+ const ctx = document.getElementById("sectorChart").getContext("2d");
+ if(sectorChart) sectorChart.destroy();
+ sectorChart = new Chart(ctx, {
   type: "bar",
   data: {
-   labels: order,
-   datasets: [{ label: "Avg. monthly spread return", data: stats.map(s => s.mean), backgroundColor: colors, borderRadius: 4 }],
+   labels: sectors.map(s => s.sector),
+   datasets: [{ label: "R&D Intensity", data: sectors.map(s => s.medianRdIntensity), backgroundColor: sectors.map(s => SECTOR_COLORS[s.sector] || ndr("gold")), borderRadius: 3 }],
   },
   options: {
    responsive: true,
    maintainAspectRatio: false,
    plugins: {
     legend: { display: false },
-    tooltip: {
-     callbacks: {
-      label: ctx => {
-       const s = stats[ctx.dataIndex];
-       return ["Avg: " + fmtPct(s.mean), "n=" + s.n + " months"];
-      },
-     },
-    },
+    tooltip: { callbacks: { label: ctx => "R&D intensity: " + fmtPct(ctx.parsed.y) } },
    },
    scales: {
-    x: { ...ndrXScale(), grid: { display: false } },
-    y: ndrYScale({ fmt: v => (Math.round(v * 100) / 100) + "%" }),
+    x: ndrXScale(),
+    y: ndrYScale({ fmt: v => v + "%" }),
    },
   },
  });
 }
 
-function renderCorrScatter(monthly){
- const pairs = monthly.corrPairs;
+function renderIntensityHistogram(){
+ const values = RAW.companies.map(c => c.rdIntensity).filter(v => v !== null && v !== undefined && !isNaN(v));
+ const binWidth = 2; // percentage points
+ const minBin = 0;
+ const maxBin = Math.ceil(Math.max(...values) / binWidth) * binWidth;
+ const bins = [];
+ for(let b = minBin; b < maxBin; b += binWidth) bins.push({ lo: b, hi: b + binWidth, count: 0 });
+ for(const v of values){
+  let idx = Math.floor((v - minBin) / binWidth);
+  if(idx < 0) idx = 0;
+  if(idx >= bins.length) idx = bins.length - 1;
+  bins[idx].count++;
+ }
+
+ const ctx = document.getElementById("intensityHistogram").getContext("2d");
+ if(intensityHistogram) intensityHistogram.destroy();
+ intensityHistogram = new Chart(ctx, {
+  type: "bar",
+  data: {
+   labels: bins.map(b => b.lo + "-" + b.hi + "%"),
+   datasets: [{ data: bins.map(b => b.count), backgroundColor: ndr("gold"), borderRadius: 3, barPercentage: 1.0, categoryPercentage: 0.95 }],
+  },
+  options: {
+   responsive: true,
+   maintainAspectRatio: false,
+   plugins: {
+    legend: { display: false },
+    tooltip: { callbacks: { title: items => { const b = bins[items[0].dataIndex]; return b.lo + "% to " + b.hi + "%"; }, label: ctx => ctx.parsed.y + " companies" } },
+   },
+   scales: {
+    x: { ...ndrXScale(), title: { display: true, text: "R&D intensity (% of revenue)", color: ndr("axis-soft"), font: { size: 10 } } },
+    y: ndrYScale({ title: "Companies" }),
+   },
+  },
+ });
+}
+
+function renderIntensityGrowthScatter(){
+ const pairs = RAW.intensityVsGrowthPairs || [];
+ if(pairs.length < 5){
+  document.getElementById("intensityGrowthMethodTable").innerHTML = '<div class="method-note">Not enough companies to test.</div>';
+  return;
+ }
  const pearson = linearRegression(pairs.map(p => p.x), pairs.map(p => p.y));
  const spear = spearmanRegression(pairs.map(p => p.x), pairs.map(p => p.y));
-
  const xs = pairs.map(p => p.x);
  const xMin = Math.min(...xs), xMax = Math.max(...xs);
- const linePoints = [
-  { x: xMin, y: pearson.intercept + pearson.slope * xMin },
-  { x: xMax, y: pearson.intercept + pearson.slope * xMax },
- ];
+ const linePoints = [{ x: xMin, y: pearson.intercept + pearson.slope * xMin }, { x: xMax, y: pearson.intercept + pearson.slope * xMax }];
 
- const ctx = document.getElementById("corrScatter").getContext("2d");
- if(corrScatter) corrScatter.destroy();
- corrScatter = new Chart(ctx, {
+ const ctx = document.getElementById("intensityGrowthScatter").getContext("2d");
+ if(intensityGrowthScatter) intensityGrowthScatter.destroy();
+ intensityGrowthScatter = new Chart(ctx, {
   type: "scatter",
   data: {
    datasets: [
-    { label: "Months", data: pairs, backgroundColor: ndr("slate"), pointRadius: 3.5, showLine: false },
-    { label: "Regression fit", type: "line", data: linePoints, borderColor: ndr("red"), borderWidth: 1.5, borderDash: [4, 3], pointRadius: 0, fill: false },
+    { label: "Companies", data: pairs, backgroundColor: ndr("gold"), pointRadius: 2.5, showLine: false },
+    { label: "Regression fit", type: "line", data: linePoints, borderColor: ndr("navy"), borderWidth: 1.5, borderDash: [4, 3], pointRadius: 0, fill: false },
    ],
   },
   options: {
@@ -1308,39 +1259,122 @@ function renderCorrScatter(monthly){
    maintainAspectRatio: false,
    plugins: {
     legend: { display: false },
-    tooltip: {
-     callbacks: {
-      label: ctx => ctx.dataset.label === "Months" ? (ctx.raw.ym + ": Δ EUR/USD " + fmtPct(ctx.raw.x) + " → " + fmtPct(ctx.raw.y)) : null,
-     },
-    },
+    tooltip: { callbacks: { label: ctx => ctx.dataset.label === "Companies" ? (ctx.raw.symbol + ": R&D " + fmtPct(ctx.raw.x) + ", growth " + fmtSignedPct(ctx.raw.y)) : null } },
    },
    scales: {
-    x: ndrXScale({ title: "Δ EUR/USD (%, 1mo.)", fontSize: 10 }),
-    y: ndrYScale({ title: "Monthly spread return (%)", fontSize: 10 }),
+    x: ndrYScale({ position: "bottom", fmt: v => v + "%", title: "R&D intensity (%)" }),
+    y: ndrYScale({ fmt: v => v + "%", title: "Revenue growth YoY (%)" }),
    },
   },
  });
 
- function row(label, stats){
-  const sig = stats.p < 0.05;
-  return "<tr>" +
-   "<td>" + label + "</td>" +
-   "<td>" + stats.n + "</td>" +
-   "<td>" + stats.r.toFixed(2) + "</td>" +
-   "<td>" + (stats.r2 * 100).toFixed(1) + "%</td>" +
-   "<td>" + (stats.slope >= 0 ? "+" : "") + stats.slope.toFixed(2) + "</td>" +
-   "<td>" + stats.t.toFixed(2) + "</td>" +
-   '<td class="' + (sig ? "sig" : "") + '">' + (stats.p < 0.001 ? "<0.001" : stats.p.toFixed(3)) + "</td>" +
-  "</tr>";
- }
-
- document.getElementById("corrMethodTable").innerHTML =
-  '<table class="method-table">' +
-   "<thead><tr><th>Method</th><th>n</th><th>r</th><th>r&sup2;</th><th>slope</th><th>t</th><th>p</th></tr></thead>" +
-   "<tbody>" + row("Pearson (OLS)", pearson) + row("Spearman (&rho;)", spear) + "</tbody>" +
-  "</table>" +
-  '<div class="method-note">Slope is in percentage points of monthly developed-vs-US spread return per 1% move in EUR/USD that month.</div>';
+ document.getElementById("intensityGrowthMethodTable").innerHTML = methodTableHtml(pearson, spear,
+  "Slope is revenue-growth pp per 1pp of R&D intensity. n=" + pearson.n + " companies. A contemporaneous association, not a forward-predictive test — R&D spending typically takes years to show up in revenue.");
 }
+
+function renderIntensityRel3mScatter(){
+ const pairs = RAW.intensityVsRel3MPairs || [];
+ if(pairs.length < 5){
+  document.getElementById("intensityRel3mMethodTable").innerHTML = '<div class="method-note">Relative Strength Leaders/Laggards data isn’t available yet, so this test can’t run.</div>';
+  return;
+ }
+ const pearson = linearRegression(pairs.map(p => p.x), pairs.map(p => p.y));
+ const spear = spearmanRegression(pairs.map(p => p.x), pairs.map(p => p.y));
+ const xs = pairs.map(p => p.x);
+ const xMin = Math.min(...xs), xMax = Math.max(...xs);
+ const linePoints = [{ x: xMin, y: pearson.intercept + pearson.slope * xMin }, { x: xMax, y: pearson.intercept + pearson.slope * xMax }];
+
+ const ctx = document.getElementById("intensityRel3mScatter").getContext("2d");
+ if(intensityRel3mScatter) intensityRel3mScatter.destroy();
+ intensityRel3mScatter = new Chart(ctx, {
+  type: "scatter",
+  data: {
+   datasets: [
+    { label: "Companies", data: pairs, backgroundColor: ndr("gold"), pointRadius: 2.5, showLine: false },
+    { label: "Regression fit", type: "line", data: linePoints, borderColor: ndr("navy"), borderWidth: 1.5, borderDash: [4, 3], pointRadius: 0, fill: false },
+   ],
+  },
+  options: {
+   responsive: true,
+   maintainAspectRatio: false,
+   plugins: {
+    legend: { display: false },
+    tooltip: { callbacks: { label: ctx => ctx.dataset.label === "Companies" ? (ctx.raw.symbol + ": R&D " + fmtPct(ctx.raw.x) + ", rel. 3M " + fmtSignedPct(ctx.raw.y)) : null } },
+   },
+   scales: {
+    x: ndrYScale({ position: "bottom", fmt: v => v + "%", title: "R&D intensity (%)" }),
+    y: ndrYScale({ fmt: v => v + "%", title: "3-month return vs. SPY (pp)" }),
+   },
+  },
+ });
+
+ document.getElementById("intensityRel3mMethodTable").innerHTML = methodTableHtml(pearson, spear,
+  "Slope is relative-return pp per 1pp of R&D intensity. n=" + pearson.n + " companies. A single snapshot in time, not a forward-return test.");
+}
+
+function renderLeaderTable(rows, tbodyId, kind){
+ const tbody = document.getElementById(tbodyId);
+ if(!rows || !rows.length){
+  tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; color:var(--muted); padding:24px;">No qualifying companies.</td></tr>';
+  return;
+ }
+ tbody.innerHTML = rows.map(r => {
+  if(kind === "spenders"){
+   return `<tr>
+    <td><span class="sector-name">${r.symbol}</span></td>
+    <td><span class="sector-ticker">${r.sector || "—"}</span></td>
+    <td>${fmtPct(r.rdIntensity)}</td>
+    <td class="${r.revenueGrowthYoY >= 0 ? "growth-pos" : "growth-neg"}">${fmtSignedPct(r.revenueGrowthYoY)}</td>
+   </tr>`;
+  }
+  return `<tr>
+   <td><span class="sector-name">${r.symbol}</span></td>
+   <td><span class="sector-ticker">${r.sector || "—"}</span></td>
+   <td class="${r.revenueGrowthYoY >= 0 ? "growth-pos" : "growth-neg"}">${fmtSignedPct(r.revenueGrowthYoY)}</td>
+   <td>${fmtPct(r.rdIntensity)}</td>
+  </tr>`;
+ }).join("");
+}
+
+function sortBy(key){
+ if(SORT_KEY === key){
+  SORT_DIR = -SORT_DIR;
+ }else{
+  SORT_KEY = key;
+  SORT_DIR = 1;
+ }
+ renderTable();
+}
+
+function renderTable(){
+ const rows = [...RAW.companies].sort((a, b) => {
+  const av = a[SORT_KEY], bv = b[SORT_KEY];
+  if(av === null || av === undefined) return 1;
+  if(bv === null || bv === undefined) return -1;
+  if(typeof av === "string") return av.localeCompare(bv) * SORT_DIR;
+  return (av - bv) * SORT_DIR;
+ });
+
+ const tbody = document.getElementById("tableBody");
+ tbody.innerHTML = rows.map(r => `<tr>
+  <td><span class="sector-name">${r.symbol}</span></td>
+  <td><span class="sector-ticker">${r.sector || "—"}</span></td>
+  <td>${fmtPct(r.rdIntensity)}</td>
+  <td class="${r.revenueGrowthYoY >= 0 ? "growth-pos" : "growth-neg"}">${fmtSignedPct(r.revenueGrowthYoY)}</td>
+ </tr>`).join("");
+
+ document.querySelectorAll("#stockTable thead th").forEach(th => {
+  const key = th.dataset.key;
+  th.classList.toggle("sorted", key === SORT_KEY);
+  const arrow = th.querySelector(".sort-arrow");
+  if(arrow) arrow.textContent = (key === SORT_KEY && SORT_DIR === 1) ? "▴" : "▾";
+ });
+}
+
+document.querySelectorAll("#stockTable thead th").forEach(th => {
+ const key = th.dataset.key;
+ if(key) th.addEventListener("click", () => sortBy(key));
+});
 
 init();
 </script>

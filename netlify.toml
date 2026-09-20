@@ -213,6 +213,11 @@
   status = 200
 
 [[redirects]]
+  from = "/api/rd-intensity"
+  to = "/.netlify/functions/rd-intensity"
+  status = 200
+
+[[redirects]]
   from = "/api/analyst-price-target"
   to = "/.netlify/functions/analyst-price-target"
   status = 200
@@ -642,6 +647,16 @@
   # snapshot (not its checkpoint) for the CCC-vs-ROIC regression — run
   # that job first if a fresh version of that test is wanted, though this
   # job works fine without it (the test just doesn't render).
+
+[functions."scheduled-rd-intensity-background"]
+  # One-time snapshot, no schedule — same convention as scheduled-roic-
+  # wacc-background above. A single-endpoint INCOME_STATEMENT sweep
+  # (~503 calls, no checkpoint needed — same pattern as scheduled-buyback-
+  # effectiveness-background's single-endpoint sweep), unlike scheduled-
+  # roic-wacc-background's and scheduled-cash-conversion-cycle-background's
+  # two-statement sweeps. Optionally reads scheduled-relative-strength-
+  # background's own published snapshot for the R&D-vs-relative-return
+  # test; works fine without it (the test just doesn't render).
 
 [functions."scheduled-analyst-price-target-background"]
   # One-time snapshot (2026-09-16) — no schedule, same reasoning as
