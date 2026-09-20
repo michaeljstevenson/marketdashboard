@@ -1,5 +1,5 @@
 {
-  "ticker": "Quotes for the index proxies and about 150 watchlist stocks, plus WTI oil and the fed funds rate.",
+  "ticker": "Quotes for the S&P 500, NASDAQ Composite, VIX, MSCI World and WTI crude, plus 20 watchlist stocks, and the fed funds rate.",
   "daychange": "Today's percent change for every S&P 500 stock.",
   "breadth": "Daily prices for every S&P 500 stock, to count advances and declines, new highs and lows, and the share above the 200-day average.",
   "drawdown": "Full daily price history for SPY and URTH.",
