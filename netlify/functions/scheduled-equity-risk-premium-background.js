@@ -26,11 +26,17 @@
 // ~504 sequential calls (503 constituents + 1 TREASURY_YIELD), 1050ms
 // apart with a retry pass — same pacing proven at this exact scale by
 // scheduled-beeswarm-meta-background.js's own OVERVIEW sweep.
+//
+// Its overview data comes from the shared sweep in scheduled-overview-collector-background.js
+// (see av-collector.js), which must have run first; this job makes no call for it.
+// The calculations below are unchanged. Any Alpha Vantage call still made here is
+// for data that isn't shared.
 
 const { getErpStore, LATEST_KEY, HISTORY_KEY } = require("./equity-risk-premium-blob-store");
 const { BREADTH_CONSTITUENTS } = require("./breadth-constituents");
 const { SECTOR_ORDER, normalizeSector } = require("./beeswarm-sectors");
 const { recordAvCall } = require("./av-call-counter");
+const { loadCollected } = require("./av-collector-store");
 
 const ALPHA_VANTAGE_URL = "https://www.alphavantage.co/query";
 const USER_AGENT =
@@ -90,15 +96,12 @@ async function fetchRiskFreeRate(apiKey) {
   throw new Error("no usable TREASURY_YIELD data point found");
 }
 
-async function fetchOverview(apiKey, symbol) {
-  await recordAvCall();
-  const res = await fetch(
-    `${ALPHA_VANTAGE_URL}?function=OVERVIEW&symbol=${symbol}&apikey=${apiKey}`,
-    { headers: { "User-Agent": USER_AGENT } }
-  );
-  if (!res.ok) throw new Error(`HTTP ${res.status}`);
-  const p = await res.json();
-  if (p.Note || p.Information || p.error) throw new Error(p.Note || p.Information || JSON.stringify(p.error));
+// Filled at the start of each run from the shared overview sweep (see av-collector.js).
+let COLLECTED = {};
+
+function fetchOverview(symbol) {
+  const p = COLLECTED[symbol];
+  if (!p) return null; // no shared data for this symbol
   if (!p.Symbol) return null; // empty body — no data for this symbol
   return {
     name: p.Name || symbol,
@@ -113,6 +116,7 @@ exports.handler = async () => {
   try {
     const apiKey = process.env.ALPHAVANTAGE_API_KEY;
     if (!apiKey) throw new Error("ALPHAVANTAGE_API_KEY environment variable is not set");
+    COLLECTED = (await loadCollected("overview")).data;
 
     let riskFree = null;
     for (let attempt = 0; attempt < 3 && !riskFree; attempt++) {
@@ -130,7 +134,7 @@ exports.handler = async () => {
 
     async function fetchInto(symbol) {
       try {
-        const ov = await fetchOverview(apiKey, symbol);
+        const ov = fetchOverview(symbol);
         if (ov) results.set(symbol, ov);
         return true;
       } catch (err) {
@@ -150,7 +154,6 @@ exports.handler = async () => {
       for (const symbol of todo) {
         const got = await fetchInto(symbol);
         if (!got) missed.push(symbol);
-        await sleep(1050);
       }
       todo = missed;
     }

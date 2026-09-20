@@ -43,6 +43,11 @@
 // at 1050ms spacing plus a retry pass, plus one FEDERAL_FUNDS_RATE call —
 // the same pacing already proven safe at this exact universe size by
 // scheduled-share-count-background.js's BALANCE_SHEET sweep.
+//
+// Its cashflow data comes from the shared sweep in scheduled-cashflow-collector-background.js
+// (see av-collector.js), which must have run first; this job makes no call for it.
+// The calculations below are unchanged. Any Alpha Vantage call still made here is
+// for data that isn't shared.
 
 const { getBuybackEffectivenessStore, BLOB_KEY } = require("./buyback-effectiveness-blob-store");
 const { getShareCountStore, BLOB_KEY: SHARE_COUNT_KEY } = require("./share-count-blob-store");
@@ -50,6 +55,7 @@ const { getBeeswarmStore, META_KEY } = require("./beeswarm-blob-store");
 const { BREADTH_CONSTITUENTS } = require("./breadth-constituents");
 const { SECTOR_ORDER } = require("./beeswarm-sectors");
 const { recordAvCall } = require("./av-call-counter");
+const { loadCollected } = require("./av-collector-store");
 
 const ALPHA_VANTAGE_URL = "https://www.alphavantage.co/query";
 const USER_AGENT =
@@ -113,17 +119,12 @@ function calendarQuarterKey(dateStr) {
   return `${y}-Q${q}`;
 }
 
-async function fetchQuarterlyCashFlow(apiKey, symbol) {
-  await recordAvCall();
-  const res = await fetch(
-    `${ALPHA_VANTAGE_URL}?function=CASH_FLOW&symbol=${symbol}&apikey=${apiKey}`,
-    { headers: { "User-Agent": USER_AGENT } }
-  );
-  if (!res.ok) throw new Error(`HTTP ${res.status}`);
-  const payload = await res.json();
-  if (payload.Note || payload.Information || payload.error) {
-    throw new Error(payload.Note || payload.Information || JSON.stringify(payload.error));
-  }
+// Filled at the start of each run from the shared cashflow sweep (see av-collector.js).
+let COLLECTED = {};
+
+function fetchQuarterlyCashFlow(symbol) {
+  const payload = COLLECTED[symbol];
+  if (!payload) return []; // no shared data for this symbol
   const rows = payload.quarterlyReports;
   if (!Array.isArray(rows)) throw new Error(`unexpected response shape: ${JSON.stringify(payload).slice(0, 160)}`);
 
@@ -140,6 +141,7 @@ exports.handler = async () => {
   try {
     const apiKey = process.env.ALPHAVANTAGE_API_KEY;
     if (!apiKey) throw new Error("ALPHAVANTAGE_API_KEY environment variable is not set");
+    COLLECTED = (await loadCollected("cashflow")).data;
 
     const [beeswarmMeta, shareCountData] = await Promise.all([
       getBeeswarmStore().get(META_KEY, { type: "json" }),
@@ -193,7 +195,7 @@ exports.handler = async () => {
 
     async function fetchInto(symbol) {
       try {
-        const quarters = await fetchQuarterlyCashFlow(apiKey, symbol);
+        const quarters = fetchQuarterlyCashFlow(symbol);
         if (quarters.length >= 4) results.set(symbol, quarters);
         return true;
       } catch (err) {
@@ -213,7 +215,6 @@ exports.handler = async () => {
       for (const symbol of todo) {
         const got = await fetchInto(symbol);
         if (!got) missed.push(symbol);
-        await sleep(1050);
       }
       todo = missed;
     }

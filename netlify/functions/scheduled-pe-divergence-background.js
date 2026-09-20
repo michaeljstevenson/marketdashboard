@@ -25,15 +25,17 @@
 // market-wide weekly median is appended to a running history each run —
 // same "accumulates real history over successive runs" pattern used by
 // scheduled-revisions-background.js and scheduled-dispersion-background.js.
+//
+// Its overview data comes from the shared sweep in scheduled-overview-collector-background.js
+// (see av-collector.js), which must have run first; this job makes no call for it.
+// The calculations below are unchanged. Any Alpha Vantage call still made here is
+// for data that isn't shared.
 
 const { getPeDivergenceStore, BLOB_KEY } = require("./pe-divergence-blob-store");
 const { BREADTH_CONSTITUENTS } = require("./breadth-constituents");
 const { SECTOR_ORDER, normalizeSector } = require("./beeswarm-sectors");
-const { recordAvCall } = require("./av-call-counter");
+const { loadCollected } = require("./av-collector-store");
 
-const ALPHA_VANTAGE_URL = "https://www.alphavantage.co/query";
-const USER_AGENT =
-  "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0 Safari/537.36";
 
 const MAX_MEANINGFUL_PE = 300; // beyond this, a near-zero-earnings distortion, not a real valuation signal
 const NOTABLE_COUNT = 15;
@@ -68,12 +70,12 @@ function mean(values) {
   return v.length ? v.reduce((a, b) => a + b, 0) / v.length : null;
 }
 
-async function fetchOverview(apiKey, symbol) {
-  await recordAvCall();
-  const res = await fetch(`${ALPHA_VANTAGE_URL}?function=OVERVIEW&symbol=${symbol}&apikey=${apiKey}`, { headers: { "User-Agent": USER_AGENT } });
-  if (!res.ok) throw new Error(`HTTP ${res.status}`);
-  const p = await res.json();
-  if (p.Note || p.Information || p.error) throw new Error(p.Note || p.Information || JSON.stringify(p.error));
+// Filled at the start of each run from the shared overview sweep (see av-collector.js).
+let COLLECTED = {};
+
+function fetchOverview(symbol) {
+  const p = COLLECTED[symbol];
+  if (!p) return null; // no shared data for this symbol
   if (!p.Symbol) return null;
   const trailingPE = parseFloat(p.TrailingPE) || parseFloat(p.PERatio) || null;
   const forwardPE = parseFloat(p.ForwardPE) || null;
@@ -89,13 +91,12 @@ async function fetchOverview(apiKey, symbol) {
 exports.handler = async () => {
   console.log(`scheduled-pe-divergence-background: starting, ${BREADTH_CONSTITUENTS.length} tickers`);
   try {
-    const apiKey = process.env.ALPHAVANTAGE_API_KEY;
-    if (!apiKey) throw new Error("ALPHAVANTAGE_API_KEY environment variable is not set");
+    COLLECTED = (await loadCollected("overview")).data;
 
     const results = new Map();
     async function fetchInto(symbol) {
       try {
-        const entry = await fetchOverview(apiKey, symbol);
+        const entry = fetchOverview(symbol);
         if (entry) results.set(symbol, entry);
         return true;
       } catch (err) {
@@ -115,7 +116,6 @@ exports.handler = async () => {
       for (const symbol of todo) {
         const got = await fetchInto(symbol);
         if (!got) missed.push(symbol);
-        await sleep(1050);
       }
       todo = missed;
     }

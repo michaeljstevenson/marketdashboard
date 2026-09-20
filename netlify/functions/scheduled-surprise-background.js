@@ -34,16 +34,18 @@
 //
 // Pacing mirrors the other full-sweep jobs on this site: ~1.05s between
 // calls, two passes with a 65s cooling-off between them.
+//
+// Its earnings data comes from the shared sweep in scheduled-earnings-collector-background.js
+// (see av-collector.js), which must have run first; this job makes no call for it.
+// The calculations below are unchanged. Any Alpha Vantage call still made here is
+// for data that isn't shared.
 
 const { getSurpriseStore, LATEST_KEY } = require("./surprise-blob-store");
 const { getBeeswarmStore, META_KEY } = require("./beeswarm-blob-store");
 const { BREADTH_CONSTITUENTS } = require("./breadth-constituents");
 const { SECTOR_ORDER } = require("./beeswarm-sectors");
-const { recordAvCall } = require("./av-call-counter");
+const { loadCollected } = require("./av-collector-store");
 
-const ALPHA_VANTAGE_URL = "https://www.alphavantage.co/query";
-const USER_AGENT =
-  "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0 Safari/537.36";
 
 const MAX_QUARTERS_KEPT = 13; // ~3 years, plus one extra for lag-1 pairing at the edge
 const MIN_EST_EPS_ABS = 0.05; // a consensus estimate smaller than a nickel makes surprise% divide-by-near-zero noise
@@ -97,16 +99,12 @@ function quarterKeyFromDate(dateStr) {
   return { key: year * 4 + qIdx, label: `${year} Q${qIdx + 1}` };
 }
 
-async function fetchEarnings(apiKey, symbol) {
-  await recordAvCall();
-  const res = await fetch(`${ALPHA_VANTAGE_URL}?function=EARNINGS&symbol=${symbol}&apikey=${apiKey}`, {
-    headers: { "User-Agent": USER_AGENT },
-  });
-  if (!res.ok) throw new Error(`HTTP ${res.status}`);
-  const payload = await res.json();
-  if (payload.Note || payload.Information || payload.error) {
-    throw new Error(payload.Note || payload.Information || JSON.stringify(payload.error));
-  }
+// Filled at the start of each run from the shared earnings sweep (see av-collector.js).
+let COLLECTED = {};
+
+function fetchEarnings(symbol) {
+  const payload = COLLECTED[symbol];
+  if (!payload) return null; // no shared data for this symbol
   const qs = payload.quarterlyEarnings;
   if (!Array.isArray(qs) || !qs.length) return null;
 
@@ -161,8 +159,7 @@ function twoTailedP(z) {
 exports.handler = async () => {
   console.log(`scheduled-surprise-background: starting, ${BREADTH_CONSTITUENTS.length} tickers`);
   try {
-    const apiKey = process.env.ALPHAVANTAGE_API_KEY;
-    if (!apiKey) throw new Error("ALPHAVANTAGE_API_KEY is not set");
+    COLLECTED = (await loadCollected("earnings")).data;
 
     const beeswarmStore = getBeeswarmStore();
     const meta = (await beeswarmStore.get(META_KEY, { type: "json" })) || { tickers: {} };
@@ -172,7 +169,7 @@ exports.handler = async () => {
 
     async function fetchInto(symbol) {
       try {
-        const rows = await fetchEarnings(apiKey, symbol);
+        const rows = fetchEarnings(symbol);
         if (rows && rows.length) results.set(symbol, rows);
         return true;
       } catch (err) {
@@ -192,7 +189,6 @@ exports.handler = async () => {
       for (const symbol of todo) {
         const got = await fetchInto(symbol);
         if (!got) missed.push(symbol);
-        await sleep(1050);
       }
       todo = missed;
     }

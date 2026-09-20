@@ -26,21 +26,23 @@
 // 11:10, finishes ~11:19) so the two full-index sweeps don't compete for
 // the rate limit. Weekly, not daily: OVERVIEW's DividendYield field and a
 // trailing-12-month share-count change both move slowly.
+//
+// Its overview data comes from the shared sweep in scheduled-overview-collector-background.js
+// (see av-collector.js), which must have run first; this job makes no call for it.
+// The calculations below are unchanged. Any Alpha Vantage call still made here is
+// for data that isn't shared.
 
 const { getShareholderYieldStore, BLOB_KEY } = require("./shareholder-yield-blob-store");
 const { getShareCountStore, BLOB_KEY: SHARE_COUNT_KEY } = require("./share-count-blob-store");
 const { getBeeswarmStore, META_KEY } = require("./beeswarm-blob-store");
 const { BREADTH_CONSTITUENTS } = require("./breadth-constituents");
 const { SECTOR_ORDER } = require("./beeswarm-sectors");
-const { recordAvCall } = require("./av-call-counter");
+const { loadCollected } = require("./av-collector-store");
 
 // Netlify captures no console output for background functions, and a run that
 // dies leaves no trace, so this job writes its own progress and any error to
 // STATUS_KEY (same store as its snapshot, ignored by the page API).
 const STATUS_KEY = "status.json";
-const ALPHA_VANTAGE_URL = "https://www.alphavantage.co/query";
-const USER_AGENT =
-  "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0 Safari/537.36";
 
 function sleep(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
@@ -51,17 +53,12 @@ function num(v) {
   return Number.isFinite(n) ? n : null;
 }
 
-async function fetchDividendYield(apiKey, symbol) {
-  await recordAvCall();
-  const res = await fetch(
-    `${ALPHA_VANTAGE_URL}?function=OVERVIEW&symbol=${symbol}&apikey=${apiKey}`,
-    { headers: { "User-Agent": USER_AGENT } }
-  );
-  if (!res.ok) throw new Error(`HTTP ${res.status}`);
-  const payload = await res.json();
-  if (payload.Note || payload.Information || payload.error) {
-    throw new Error(payload.Note || payload.Information || JSON.stringify(payload.error));
-  }
+// Filled at the start of each run from the shared overview sweep (see av-collector.js).
+let COLLECTED = {};
+
+function fetchDividendYield(symbol) {
+  const payload = COLLECTED[symbol];
+  if (!payload) return null; // no shared data for this symbol
   if (!payload.Symbol) return null; // AV returns {} for a delisted/unrecognized symbol
   const yieldFrac = num(payload.DividendYield);
   return yieldFrac !== null ? yieldFrac * 100 : 0; // no DividendYield field = non-payer, treated as 0%
@@ -91,8 +88,7 @@ exports.handler = async () => {
       try { await statusStore.setJSON(STATUS_KEY, status); } catch (e) { console.error(`status write failed: ${e.message}`); }
     };
     await setStatus({ phase: "starting" });
-    const apiKey = process.env.ALPHAVANTAGE_API_KEY;
-    if (!apiKey) throw new Error("ALPHAVANTAGE_API_KEY is not set");
+    COLLECTED = (await loadCollected("overview")).data;
 
     const [beeswarmMeta, shareCountData] = await Promise.all([
       getBeeswarmStore().get(META_KEY, { type: "json" }),
@@ -113,7 +109,7 @@ exports.handler = async () => {
 
     async function fetchInto(symbol) {
       try {
-        const y = await fetchDividendYield(apiKey, symbol);
+        const y = fetchDividendYield(symbol);
         if (y !== null) dividendYields.set(symbol, y);
         return true;
       } catch (err) {
@@ -139,7 +135,6 @@ exports.handler = async () => {
         if (!got) missed.push(symbol);
         status.processed++;
         if (status.processed % 50 === 0) await setStatus({ phase: pass ? "retrying" : "sweeping" });
-        await sleep(1050);
       }
       todo = missed;
     }

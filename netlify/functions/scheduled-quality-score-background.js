@@ -40,17 +40,19 @@
 // One-time snapshot, no recurring schedule (see this function's own
 // netlify.toml comment) — matches every other full-index sweep added to
 // this site since 2026-09-16.
+//
+// Its cashflow data comes from the shared sweep in scheduled-cashflow-collector-background.js
+// (see av-collector.js), which must have run first; this job makes no call for it.
+// The calculations below are unchanged. Any Alpha Vantage call still made here is
+// for data that isn't shared.
 
 const { getQualityFinancialsStore, BLOB_KEY: FINANCIALS_KEY } = require("./quality-financials-blob-store");
 const { getQualityScoreStore, BLOB_KEY } = require("./quality-score-blob-store");
 const { getRelativeStrengthStore, LATEST_KEY: RS_LATEST_KEY } = require("./relative-strength-blob-store");
 const { BREADTH_CONSTITUENTS } = require("./breadth-constituents");
 const { SECTOR_ORDER } = require("./beeswarm-sectors");
-const { recordAvCall } = require("./av-call-counter");
+const { loadCollected } = require("./av-collector-store");
 
-const ALPHA_VANTAGE_URL = "https://www.alphavantage.co/query";
-const USER_AGENT =
-  "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0 Safari/537.36";
 
 const LEADERBOARD_COUNT = 15;
 const MIN_SECTOR_N = 3; // don't publish a sector median built off fewer than this many companies
@@ -91,17 +93,12 @@ function num(v) {
   return Number.isFinite(n) ? n : null;
 }
 
-async function fetchAnnualCashflow(apiKey, symbol) {
-  await recordAvCall();
-  const res = await fetch(
-    `${ALPHA_VANTAGE_URL}?function=CASH_FLOW&symbol=${symbol}&apikey=${apiKey}`,
-    { headers: { "User-Agent": USER_AGENT } }
-  );
-  if (!res.ok) throw new Error(`HTTP ${res.status}`);
-  const payload = await res.json();
-  if (payload.Note || payload.Information || payload.error) {
-    throw new Error(payload.Note || payload.Information || JSON.stringify(payload.error));
-  }
+// Filled at the start of each run from the shared cashflow sweep (see av-collector.js).
+let COLLECTED = {};
+
+function fetchAnnualCashflow(symbol) {
+  const payload = COLLECTED[symbol];
+  if (!payload) return []; // no shared data for this symbol
   const rows = payload.annualReports;
   if (!Array.isArray(rows)) throw new Error(`unexpected response shape for ${symbol}: ${JSON.stringify(payload).slice(0, 160)}`);
   return rows.slice(0, 2); // [T, T-1]
@@ -179,8 +176,7 @@ function computeFScore(f, cfoT, cfoT1) {
 exports.handler = async () => {
   console.log(`scheduled-quality-score-background: starting, ${BREADTH_CONSTITUENTS.length} tickers`);
   try {
-    const apiKey = process.env.ALPHAVANTAGE_API_KEY;
-    if (!apiKey) throw new Error("ALPHAVANTAGE_API_KEY environment variable is not set");
+    COLLECTED = (await loadCollected("cashflow")).data;
 
     const financialsBlob = await getQualityFinancialsStore().get(FINANCIALS_KEY, { type: "json" });
     if (!financialsBlob || !financialsBlob.tickers || !Object.keys(financialsBlob.tickers).length) {
@@ -207,7 +203,7 @@ exports.handler = async () => {
 
     async function fetchInto(symbol) {
       try {
-        const rows = await fetchAnnualCashflow(apiKey, symbol);
+        const rows = fetchAnnualCashflow(symbol);
         if (rows.length === 2) {
           const cfoT = num(rows[0].operatingCashflow);
           const cfoT1 = num(rows[1].operatingCashflow);
@@ -236,7 +232,6 @@ exports.handler = async () => {
       for (const symbol of todo) {
         const got = await fetchInto(symbol);
         if (!got) missed.push(symbol);
-        await sleep(1050);
       }
       todo = missed;
     }

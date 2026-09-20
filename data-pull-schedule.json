@@ -322,6 +322,17 @@
       ]
     },
     {
+      "name": "overview-collector",
+      "cron": null,
+      "apis": [],
+      "pages": [
+        "analyst-price-target",
+        "equity-risk-premium",
+        "pe-divergence",
+        "shareholder-yield"
+      ]
+    },
+    {
       "name": "buyback-effectiveness",
       "cron": null,
       "apis": [
@@ -329,6 +340,16 @@
       ],
       "pages": [
         "buyback-effectiveness"
+      ]
+    },
+    {
+      "name": "cashflow-collector",
+      "cron": null,
+      "apis": [],
+      "pages": [
+        "buyback-effectiveness",
+        "fcf-yield",
+        "quality-score"
       ]
     },
     {
@@ -362,6 +383,15 @@
       ]
     },
     {
+      "name": "earnings-collector",
+      "cron": null,
+      "apis": [],
+      "pages": [
+        "earnings-growth-divergence",
+        "earnings-surprise"
+      ]
+    },
+    {
       "name": "earnings-growth-divergence",
       "cron": null,
       "apis": [
@@ -390,6 +420,12 @@
       "pages": [
         "equity-risk-premium"
       ]
+    },
+    {
+      "name": "estimates-collector",
+      "cron": null,
+      "apis": [],
+      "pages": []
     },
     {
       "name": "quality-financials",

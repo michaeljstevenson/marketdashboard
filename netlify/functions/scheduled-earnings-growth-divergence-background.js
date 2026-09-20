@@ -23,17 +23,19 @@
 //
 // ~503 sequential EARNINGS calls, 1050ms apart with a retry pass — same
 // pacing proven at this scale by scheduled-beeswarm-meta-background.js.
+//
+// Its earnings data comes from the shared sweep in scheduled-earnings-collector-background.js
+// (see av-collector.js), which must have run first; this job makes no call for it.
+// The calculations below are unchanged. Any Alpha Vantage call still made here is
+// for data that isn't shared.
 
 const { getEarningsGrowthStore, LATEST_KEY } = require("./earnings-growth-divergence-blob-store");
 const { getBeeswarmStore, META_KEY } = require("./beeswarm-blob-store");
 const { getRelativeStrengthStore, LATEST_KEY: RS_LATEST_KEY } = require("./relative-strength-blob-store");
 const { BREADTH_CONSTITUENTS } = require("./breadth-constituents");
 const { SECTOR_ORDER } = require("./beeswarm-sectors");
-const { recordAvCall } = require("./av-call-counter");
+const { loadCollected } = require("./av-collector-store");
 
-const ALPHA_VANTAGE_URL = "https://www.alphavantage.co/query";
-const USER_AGENT =
-  "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0 Safari/537.36";
 
 const LEADERBOARD_COUNT = 15;
 
@@ -59,15 +61,12 @@ function median(values) {
   return v.length % 2 ? v[mid] : (v[mid - 1] + v[mid]) / 2;
 }
 
-async function fetchEarnings(apiKey, symbol) {
-  await recordAvCall();
-  const res = await fetch(
-    `${ALPHA_VANTAGE_URL}?function=EARNINGS&symbol=${symbol}&apikey=${apiKey}`,
-    { headers: { "User-Agent": USER_AGENT } }
-  );
-  if (!res.ok) throw new Error(`HTTP ${res.status}`);
-  const p = await res.json();
-  if (p.Note || p.Information || p.error) throw new Error(p.Note || p.Information || JSON.stringify(p.error));
+// Filled at the start of each run from the shared earnings sweep (see av-collector.js).
+let COLLECTED = {};
+
+function fetchEarnings(symbol) {
+  const p = COLLECTED[symbol];
+  if (!p) return null; // no shared data for this symbol
   const q = Array.isArray(p.quarterlyEarnings) ? p.quarterlyEarnings : [];
   if (q.length < 5) return null; // not enough history for a YoY comparison
 
@@ -89,8 +88,7 @@ async function fetchEarnings(apiKey, symbol) {
 exports.handler = async () => {
   console.log(`scheduled-earnings-growth-divergence-background: starting, ${BREADTH_CONSTITUENTS.length} tickers`);
   try {
-    const apiKey = process.env.ALPHAVANTAGE_API_KEY;
-    if (!apiKey) throw new Error("ALPHAVANTAGE_API_KEY environment variable is not set");
+    COLLECTED = (await loadCollected("earnings")).data;
 
     const beeswarmStore = getBeeswarmStore();
     const meta = (await beeswarmStore.get(META_KEY, { type: "json" })) || { tickers: {} };
@@ -112,7 +110,7 @@ exports.handler = async () => {
 
     async function fetchInto(symbol) {
       try {
-        const e = await fetchEarnings(apiKey, symbol);
+        const e = fetchEarnings(symbol);
         if (e) results.set(symbol, e);
         return true;
       } catch (err) {
@@ -132,7 +130,6 @@ exports.handler = async () => {
       for (const symbol of todo) {
         const got = await fetchInto(symbol);
         if (!got) missed.push(symbol);
-        await sleep(1050);
       }
       todo = missed;
     }

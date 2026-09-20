@@ -166,7 +166,8 @@ function main() {
     const code = src(name);
     let av = [...code.matchAll(/function=([A-Z_]+)/g)].map((m) => m[1])
       .concat([...code.matchAll(/(?:fetchStatement|fetchAnnual)\([^)]*"([A-Z_]+)"/g)].map((m) => m[1]))
-      .concat([...code.matchAll(/"(BALANCE_SHEET|INCOME_STATEMENT|CASH_FLOW|SPLITS)"/g)].map((m) => m[1]));
+      .concat([...code.matchAll(/"(BALANCE_SHEET|INCOME_STATEMENT|CASH_FLOW|SPLITS)"/g)].map((m) => m[1]))
+      .concat([...code.matchAll(/AV_FUNCTION\s*=\s*"([A-Z_]+)"/g)].map((m) => m[1]));
     let yahoo = /yahoo-client|finance\.yahoo\.com/.test(code);
     let hosts = [...code.matchAll(/https?:\/\/([a-zA-Z0-9.-]+)/g)].map((m) => m[1]).filter((h) => !IGNORED_HOSTS.has(h));
     if (depth < 1) {
@@ -192,14 +193,17 @@ function main() {
     if (av.length) sources.push(`Alpha Vantage: ${av.join(", ")}`);
     if (s.yahoo) sources.push("Yahoo Finance");
     for (const label of new Set(s.hosts.map((h) => HOST_LABELS[h] || h))) sources.push(label);
-    const dependsOn = reads.map((m) => m.replace(/-blob-store$/, "")).filter((m) => m !== "beeswarm");
-    return { job, name: stem(job), cron: sched[job] || null, when: describeCron(sched[job]), sources, pages, apis: [...new Set(apis)], writes, reads, dependsOn };
+    const collectedKinds = [...code.matchAll(/loadCollected\("([a-z]+)"\)/g)].map((m) => m[1]);
+    const produces = (code.match(/runCollector\(\{\s*kind:\s*"([a-z]+)"/) || [])[1] || null;
+    for (const k of collectedKinds) sources.push(`Stored data: ${k}-collector`);
+    const dependsOn = reads.map((m) => m.replace(/-blob-store$/, "")).filter((m) => m !== "beeswarm").concat(collectedKinds.map((k) => `${k}-collector`));
+    return { job, name: stem(job), cron: sched[job] || null, when: describeCron(sched[job]), sources, pages, apis: [...new Set(apis)], writes, reads, dependsOn, collectedKinds, produces };
   });
 
   // Jobs with no page of their own feed the page of a job that reads their data
   for (const r of rows) {
     if (r.pages.length) continue;
-    const down = rows.filter((k) => k.job !== r.job && k.reads.some((m) => r.writes.includes(m)));
+    const down = rows.filter((k) => k.job !== r.job && (k.reads.some((m) => r.writes.includes(m)) || (r.produces && k.collectedKinds.includes(r.produces))));
     r.pages = [...new Set(down.flatMap((k) => k.pages))];
     r.via = r.pages.length > 0;
     if (!r.sources.length && r.reads.length) r.sources.push("Stored data: " + r.dependsOn.join(", "));
