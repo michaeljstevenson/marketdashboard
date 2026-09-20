@@ -10,37 +10,30 @@
 // see that file for why it isn't computed here too.
 //
 // Named with the "-background" suffix so Netlify runs it as a Background
-// Function (up to 15 minutes) instead of a standard function (~30s) — a
-// first attempt as a standard function got killed mid-run every time,
-// since ~500 sequential Alpha Vantage calls (each pulling a symbol's full
-// daily history) plus the required inter-call spacing takes several
-// minutes, well over the ~30s a standard function gets (though still
-// comfortably within a Background Function's 15-minute window).
+// Function (up to 15 minutes): it makes ~500 sequential Yahoo Finance
+// history calls, well over the ~30s a standard function gets.
 //
 // Runs once daily after the close. Each run re-fetches full daily history
-// for every constituent (TIME_SERIES_DAILY_ADJUSTED, outputsize=full) and
+// for every constituent from Yahoo Finance (see yahoo-client.js) and
 // recomputes the whole series from scratch, rather than incrementally
-// appending one day — simpler and self-healing (a missed run or a
-// mid-series data correction from Alpha Vantage doesn't leave the blob
-// out of sync), and affordable since it only runs once a day, not per
-// page load.
+// appending one day: simpler and self-healing (a missed run or a
+// mid-series data correction doesn't leave the blob out of sync).
 //
-// Uses the split/dividend-adjusted close, not the raw close — the same
-// fix applied to scheduled-sectors-background.js after discovering
-// TIME_SERIES_DAILY doesn't retroactively adjust historical prices for
-// splits. That's especially critical for all-time-high detection here: an
-// unadjusted pre-split price looks artificially high forever afterward,
-// permanently (and wrongly) blocking a stock from ever registering a new
-// all-time high again.
+// Uses the split/dividend-adjusted close so a stock split can't leave an
+// artificially high pre-split price that blocks a stock from ever
+// registering a new all-time high again. Yahoo's history goes back to a
+// stock's listing (not capped at ~26 years like the previous source).
 
 const { BREADTH_CONSTITUENTS } = require("./breadth-constituents");
 const { getBreadthStore, BLOB_KEY } = require("./breadth-blob-store");
 const { getDayChangeStore, BLOB_KEY: DAYCHANGE_BLOB_KEY } = require("./daychange-blob-store");
-const { recordAvCall } = require("./av-call-counter");
+const { fetchDailyHistory } = require("./yahoo-client");
 
-const ALPHA_VANTAGE_URL = "https://www.alphavantage.co/query";
-const USER_AGENT =
-  "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0 Safari/537.36";
+// Yahoo's history reaches back to 1970, but the earliest years have only a
+// handful of stocks, so their breadth percentages are noise, and a
+// cumulative A/D line starting there would sit at a completely different
+// level. The published series starts where it always has.
+const HISTORY_START = "1999-11-02";
 
 const SMA_WINDOW = 200;
 const HIGH_LOW_WINDOW = 252; // ~52 trading weeks
@@ -49,40 +42,11 @@ function sleep(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-async function fetchJson(url) {
-  await recordAvCall();
-  const res = await fetch(url, { headers: { "User-Agent": USER_AGENT } });
-  if (!res.ok) throw new Error(`HTTP ${res.status} for ${url}`);
-  return res.json();
-}
-
-async function fetchDailyCloses(apiKey, symbol) {
-  const payload = await fetchJson(
-    `${ALPHA_VANTAGE_URL}?function=TIME_SERIES_DAILY_ADJUSTED&symbol=${symbol}&outputsize=full&apikey=${apiKey}`
-  );
-  const series = payload["Time Series (Daily)"];
-  if (!series) {
-    throw new Error(
-      `Alpha Vantage TIME_SERIES_DAILY_ADJUSTED missing data for ${symbol}: ` +
-        (payload.Note || payload.Information || payload.error_message || JSON.stringify(payload).slice(0, 200))
-    );
-  }
-  return Object.entries(series)
-    .map(([date, day]) => ({ date, close: parseFloat(day["5. adjusted close"]) }))
-    .sort((a, b) => (a.date < b.date ? -1 : 1));
-}
-
-// SPY (not the real SPX index), for the ATH-ATL breadth chart's price
-// overlay — not a constituent, so it isn't part of BREADTH_CONSTITUENTS
-// or the atHigh/atLow math above, just a date-aligned close series to
-// plot alongside. Uses TIME_SERIES_DAILY_ADJUSTED/SPY rather than
-// INDEX_DATA/SPX (what data.js uses for the sentiment dashboard's own
-// SPX-based factors) because this account's Alpha Vantage plan doesn't
-// include index-data access — confirmed by a live "not yet entitled to
-// index data access" error from that endpoint. SPY tracks the S&P 500
-// closely enough for a context line on this chart.
-async function fetchSpxDailyCloses(apiKey) {
-  const closes = await fetchDailyCloses(apiKey, "SPY");
+// SPY, for the ATH-ATL breadth chart's price overlay. Not a constituent,
+// so it isn't part of BREADTH_CONSTITUENTS or the atHigh/atLow math, just
+// a date-aligned close series to plot alongside.
+async function fetchSpxDailyCloses() {
+  const closes = await fetchDailyHistory("SPY");
   const byDate = new Map();
   for (const { date, close } of closes) byDate.set(date, close);
   return byDate;
@@ -91,7 +55,7 @@ async function fetchSpxDailyCloses(apiKey) {
 // For a single name's closes, returns a map date -> { up, newHigh, newLow,
 // above200sma, atHigh }. atHigh means today's close is at or above every
 // prior close in the fetched history — i.e. a new all-time high as far
-// back as Alpha Vantage's daily data goes for that symbol (which for most
+// back as Yahoo's daily data goes for that symbol (which for most
 // of these liquid, long-listed names reaches back to the 1990s or the
 // symbol's IPO, whichever is later — see the "all-time" caveat on the
 // ath-index.html page).
@@ -120,7 +84,7 @@ function computeNameFlags(closes) {
     runningMax = Math.max(runningMax, close);
 
     // Mirrors atHigh: today's close at or below every prior close in the
-    // fetched history — same "as far back as Alpha Vantage's daily data
+    // fetched history — same "as far back as the daily data
     // goes" caveat applies (see the ath-index.html "why two data
     // sources" explainer for the ATH side of this).
     const atLow = close <= runningMin;
@@ -249,49 +213,42 @@ function computeRangeSummaries(perNameCloses, constituentTotal) {
 exports.handler = async () => {
   console.log(`scheduled-breadth-background: starting, ${BREADTH_CONSTITUENTS.length} symbols`);
   try {
-    const apiKey = process.env.ALPHAVANTAGE_API_KEY;
-    if (!apiKey) throw new Error("ALPHAVANTAGE_API_KEY environment variable is not set");
-
-    // Sequential with a gap, same reasoning as data.js: Alpha Vantage trips
-    // a burst-rate detector when requests land too close together even
-    // when awaited one at a time. 800ms keeps sustained throughput under
-    // this account's ~71-75 calls/minute entitlement (300ms/~200 calls-min
-    // used to blow past that and silently drop ~140 symbols per run — see
-    // scheduled-sectors-background.js for the same pacing pattern), plus a
-    // retry pass below for whatever still fails despite the pacing.
+    // Sequential with a short gap: Yahoo has no quota but 429s intermittently
+    // (yahoo-client.js retries with backoff), plus a retry pass below for
+    // whatever still fails.
     const perNameFlags = new Map();
     const perNameCloses = new Map();
     const failedSymbols = [];
     for (const symbol of BREADTH_CONSTITUENTS) {
       try {
-        const closes = await fetchDailyCloses(apiKey, symbol);
+        const closes = await fetchDailyHistory(symbol);
         perNameFlags.set(symbol, computeNameFlags(closes));
         perNameCloses.set(symbol, closes);
       } catch (err) {
         console.error(`scheduled-breadth-background: ${symbol} failed: ${err.message}`);
         failedSymbols.push(symbol);
       }
-      await sleep(800);
+      await sleep(300);
     }
 
     if (failedSymbols.length) {
       console.log(`scheduled-breadth-background: retrying ${failedSymbols.length} failed symbol(s)`);
       for (const symbol of failedSymbols) {
         try {
-          const closes = await fetchDailyCloses(apiKey, symbol);
+          const closes = await fetchDailyHistory(symbol);
           perNameFlags.set(symbol, computeNameFlags(closes));
           perNameCloses.set(symbol, closes);
         } catch (err) {
           console.error(`scheduled-breadth-background: ${symbol} failed on retry: ${err.message}`);
         }
-        await sleep(800);
+        await sleep(300);
       }
     }
     console.log(`scheduled-breadth-background: fetched ${perNameFlags.size}/${BREADTH_CONSTITUENTS.length} symbols`);
 
     let spxByDate = new Map();
     try {
-      spxByDate = await fetchSpxDailyCloses(apiKey);
+      spxByDate = await fetchSpxDailyCloses();
     } catch (err) {
       console.error(`scheduled-breadth-background: SPX fetch failed: ${err.message}`);
     }
@@ -303,7 +260,7 @@ exports.handler = async () => {
     for (const flags of perNameFlags.values()) {
       for (const date of flags.keys()) allDates.add(date);
     }
-    const sortedDates = [...allDates].sort();
+    const sortedDates = [...allDates].sort().filter((d) => d >= HISTORY_START);
 
     const dailyRows = sortedDates.map((date) => {
       let advances = 0;

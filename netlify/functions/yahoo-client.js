@@ -138,6 +138,39 @@ async function fetchMonthEndCloses(symbol) {
   return [...byMonth.values()];
 }
 
+const ET_PARTS = new Intl.DateTimeFormat("en-US", {
+  timeZone: "America/New_York", hourCycle: "h23",
+  year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit",
+});
+
+// Intraday bars for many symbols at once (20 per spark call), regular
+// session only. Returns Map(symbol -> { "YYYY-MM-DD": [{ time: "HH:MM", close }] })
+// in New York time, bars ascending; `time` is the bar's start and `close`
+// its last price, so the 15:45 bar closes at 16:00. Symbols Yahoo returns
+// nothing for are absent from the map.
+async function fetchIntradayBatch(symbols, { range = "5d", interval = "15m" } = {}) {
+  const out = new Map();
+  const yahooSymbol = (s) => YAHOO_ALIASES[s] || s;
+  for (let i = 0; i < symbols.length; i += SPARK_BATCH_SIZE) {
+    const batch = symbols.slice(i, i + SPARK_BATCH_SIZE);
+    const payload = await fetchYahooJson(
+      `https://query1.finance.yahoo.com/v8/finance/spark?symbols=${batch.map((s) => encodeURIComponent(yahooSymbol(s))).join(",")}&range=${range}&interval=${interval}`
+    );
+    for (const symbol of batch) {
+      const e = payload[yahooSymbol(symbol)];
+      if (!e || !e.timestamp || !e.close) continue;
+      const byDate = {};
+      e.timestamp.forEach((t, k) => {
+        if (e.close[k] == null) return;
+        const p = Object.fromEntries(ET_PARTS.formatToParts(new Date(t * 1000)).map((x) => [x.type, x.value]));
+        (byDate[`${p.year}-${p.month}-${p.day}`] ||= []).push({ time: `${p.hour}:${p.minute}`, close: e.close[k] });
+      });
+      if (Object.keys(byDate).length) out.set(symbol, byDate);
+    }
+  }
+  return out;
+}
+
 module.exports = {
   fetchDailyHistory,
   fetchDailyBars,
@@ -145,5 +178,6 @@ module.exports = {
   fetchSplitEvents,
   fetchMonthEndCloses,
   fetchQuotes,
+  fetchIntradayBatch,
   sleep,
 };
