@@ -2,15 +2,13 @@
 // netlify.toml) that refreshes the homepage ticker tape's data and writes
 // it to Netlify Blobs for ticker.js to serve.
 //
-// Quotes for the index proxies, URTH and the ~150-stock watchlist (see
-// ticker-constituents.js) come from Yahoo Finance's batched spark endpoint
-// (20 symbols per call, see yahoo-client.js) — about 8 calls per refresh
-// instead of ~156 Alpha Vantage GLOBAL_QUOTE calls, which used to pace one
-// run out to ~2.3 minutes to stay under the AV per-minute cap. Only the
-// Fed Funds rate and WTI still come from Alpha Vantage (Yahoo has no
-// equivalent series), and since both barely move intraday they're
-// refreshed at most every SLOW_ITEM_TTL_MS and otherwise carried over from
-// the previous blob.
+// Every quote comes from Yahoo Finance's batched spark endpoint (20 symbols
+// per call, see yahoo-client.js): the indices (S&P 500, NASDAQ Composite,
+// VIX, MSCI World), WTI crude, and the 20-stock watchlist (see
+// ticker-constituents.js), so one refresh is two calls. Only the Fed Funds
+// rate still comes from Alpha Vantage (Yahoo has no equivalent series), and
+// since it barely moves intraday it is refreshed at most every
+// SLOW_ITEM_TTL_MS and otherwise carried over from the previous blob.
 //
 // Runs every 2 minutes during US market hours on weekdays (see the cron
 // schedule in netlify.toml, and the overlap lock right below).
@@ -27,7 +25,7 @@ const ALPHA_VANTAGE_URL = "https://www.alphavantage.co/query";
 const LOCK_KEY = "lock.json";
 const LOCK_TIMEOUT_MS = 5 * 60 * 1000;
 const SLOW_ITEM_TTL_MS = 30 * 60 * 1000;
-const SLOW_LABELS = ["Fed Funds Rate", "WTI Crude Oil"];
+const SLOW_LABELS = ["Fed Funds Rate"];
 
 function sleep(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
@@ -58,19 +56,6 @@ function round(n, digits) {
   return Math.round(n * f) / f;
 }
 
-async function fetchWti() {
-  const payload = await fetchJson("function=WTI&interval=daily");
-  const data = payload.data;
-  if (!data || data.length < 2) throw new Error("Missing WTI data");
-  const latest = parseFloat(data[0].value);
-  const prev = parseFloat(data[1].value);
-  return {
-    label: "WTI Crude Oil",
-    value: round(latest, 2),
-    changePercent: round(((latest - prev) / prev) * 100, 2),
-  };
-}
-
 async function fetchFedFunds() {
   const payload = await fetchJson("function=FEDERAL_FUNDS_RATE&interval=daily");
   const data = payload.data;
@@ -83,14 +68,15 @@ async function fetchFedFunds() {
   };
 }
 
-// Index tiles use ETF proxies (S&P 500 -> SPY, etc.): Alpha Vantage's
-// INDEX_DATA needs a higher plan tier than this account has, and the
-// proxy labels are what the tape has always shown.
-const INDEX_PROXIES = [
-  { symbol: "SPY", label: "S&P 500 (SPY proxy)" },
-  { symbol: "ONEQ", label: "NASDAQ Composite (ONEQ proxy)" },
-  { symbol: "VIXY", label: "VIX (VIXY proxy)" },
+// Yahoo symbols for the non-stock tiles. CL=F is the front-month WTI
+// futures contract, which is what Yahoo quotes as "WTI crude".
+const INDEXES = [
+  { symbol: "^GSPC", label: "S&P 500" },
+  { symbol: "^IXIC", label: "NASDAQ Composite" },
+  { symbol: "^VIX", label: "VIX" },
 ];
+const MSCI_WORLD = { symbol: "^990100-USD-STRD", label: "MSCI World Index" };
+const WTI = { symbol: "CL=F", label: "WTI Crude Oil" };
 
 function quoteItem(label, q) {
   return {
@@ -122,7 +108,7 @@ exports.handler = async () => {
 
     if (!slowFresh) {
       if (!process.env.ALPHAVANTAGE_API_KEY) throw new Error("ALPHAVANTAGE_API_KEY environment variable is not set");
-      const slow = await Promise.all([fetchFedFunds(), fetchWti()].map((p) => p.catch((err) => ({ __failed: true, message: err.message }))));
+      const slow = await Promise.all([fetchFedFunds()].map((p) => p.catch((err) => ({ __failed: true, message: err.message }))));
       const fetched = slow.filter((r) => !r.__failed);
       warnings.push(...slow.filter((r) => r.__failed).map((r) => r.message));
       // A failed series falls back to its last good value; the timestamp
@@ -132,7 +118,7 @@ exports.handler = async () => {
     }
     const slowByLabel = new Map(slowItems.map((i) => [i.label, i]));
 
-    const symbols = [...INDEX_PROXIES.map((p) => p.symbol), "URTH", ...TICKER_CONSTITUENTS];
+    const symbols = [...INDEXES.map((i) => i.symbol), MSCI_WORLD.symbol, WTI.symbol, ...TICKER_CONSTITUENTS];
     const quotes = await fetchQuotes(symbols);
     const fromQuote = (label, symbol) => {
       const q = quotes.get(symbol);
@@ -143,12 +129,12 @@ exports.handler = async () => {
       return quoteItem(label, q);
     };
 
-    // Same order the tape has always shown: indices, Fed Funds, URTH, WTI, stocks.
+    // Same order the tape has always shown: indices, Fed Funds, MSCI World, WTI, stocks.
     const results = [
-      ...INDEX_PROXIES.map((p) => fromQuote(p.label, p.symbol)),
+      ...INDEXES.map((i) => fromQuote(i.label, i.symbol)),
       slowByLabel.get("Fed Funds Rate") || { __failed: true },
-      fromQuote("MSCI World Index (URTH)", "URTH"),
-      slowByLabel.get("WTI Crude Oil") || { __failed: true },
+      fromQuote(MSCI_WORLD.label, MSCI_WORLD.symbol),
+      fromQuote(WTI.label, WTI.symbol),
       ...TICKER_CONSTITUENTS.map((s) => fromQuote(s, s)),
     ];
     const items = results.filter((r) => !r.__failed);
