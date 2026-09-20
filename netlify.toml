@@ -1,6 +1,8 @@
 [build]
   functions = "netlify/functions"
   publish = "."
+  # Regenerates data-pull-schedule.html from this file and the job code on every deploy.
+  command = "node scripts/build-schedule-page.js"
 
 [[redirects]]
   from = "/api/data"
