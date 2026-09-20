@@ -1,5 +1,5 @@
 // Scheduled Background Function (see [functions."scheduled-equity-risk-premium-background"]
-// in netlify.toml) that sweeps Alpha Vantage's COMPANY_OVERVIEW across the
+// in netlify.toml) that sweeps Alpha Vantage's OVERVIEW across the
 // full S&P 500 (BREADTH_CONSTITUENTS) plus a single TREASURY_YIELD call,
 // and computes a simple "earnings yield minus the risk-free rate" equity
 // risk premium proxy per stock and per sector — the "Equity Risk Premium
@@ -83,7 +83,7 @@ async function fetchRiskFreeRate(apiKey) {
 async function fetchOverview(apiKey, symbol) {
   await recordAvCall();
   const res = await fetch(
-    `${ALPHA_VANTAGE_URL}?function=COMPANY_OVERVIEW&symbol=${symbol}&apikey=${apiKey}`,
+    `${ALPHA_VANTAGE_URL}?function=OVERVIEW&symbol=${symbol}&apikey=${apiKey}`,
     { headers: { "User-Agent": USER_AGENT } }
   );
   if (!res.ok) throw new Error(`HTTP ${res.status}`);

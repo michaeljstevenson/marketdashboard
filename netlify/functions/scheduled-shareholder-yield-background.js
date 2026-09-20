@@ -4,7 +4,7 @@
 // for the shareholder-yield.html page — the backlog's "Buyback Yield vs.
 // Dividend Yield" idea.
 //
-// Dividend yield comes from a dedicated Alpha Vantage COMPANY_OVERVIEW
+// Dividend yield comes from a dedicated Alpha Vantage OVERVIEW
 // sweep (its DividendYield field is already a trailing, per-share-price-
 // normalized yield — no need to separately sum raw DIVIDENDS payments
 // against a price series). Buyback yield is *not* re-fetched: it's read
@@ -54,7 +54,7 @@ function num(v) {
 async function fetchDividendYield(apiKey, symbol) {
   await recordAvCall();
   const res = await fetch(
-    `${ALPHA_VANTAGE_URL}?function=COMPANY_OVERVIEW&symbol=${symbol}&apikey=${apiKey}`,
+    `${ALPHA_VANTAGE_URL}?function=OVERVIEW&symbol=${symbol}&apikey=${apiKey}`,
     { headers: { "User-Agent": USER_AGENT } }
   );
   if (!res.ok) throw new Error(`HTTP ${res.status}`);
