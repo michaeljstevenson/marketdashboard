@@ -603,23 +603,12 @@
   # day to day.
 
 [functions."scheduled-margin-leverage-background"]
-  # One-time snapshot (2026-09-16) — no schedule, same reasoning as
-  # scheduled-surprise-background above. Kept for reference, the original
-  # staggering rationale: Weekly, Saturday 14:35 UTC — originally 11:20
-  # (after this PR's own
-  # scheduled-share-count-background, assumed the last job in the block at
-  # 10:50 UTC), but this job's own sweep pulls two statements per company
-  # (~1006 calls, ~17.6 minutes at 1050ms spacing) rather than the ~503-
-  # call/~9-minute jobs the rest of this file is paced around — at 11:20
-  # that runs until ~11:38, directly overlapping scheduled-shareholder-
-  # yield-background (11:25-~11:34, a separate, concurrently-built PR's
-  # own sweep, unaware of this one — see that function's own schedule
-  # comment) and crowding scheduled-dispersion-background's 11:40 start.
-  # Moved to 14:35 instead: after scheduled-smallcap-liquidity-background
-  # (14:20 UTC, finishes ~14:24), the last job in the Saturday block as of
-  # this fix, leaving headroom for this job's own longer runtime. Weekly,
-  # not daily: fundamentals only change when a company files a new
-  # 10-Q/10-K.
+  # One-time snapshot, no schedule: run manually (Netlify dashboard or a POST
+  # to the function). The two-statement sweep (~1006 calls) is too long for
+  # one 15-minute run, so each run saves a checkpoint and stops at 12 minutes;
+  # run it twice to complete a cycle, and a partial run never replaces a
+  # complete published snapshot. Its checkpoint also holds the annual reports
+  # scheduled-quality-financials-background.js reads, so run this one first.
 
 [functions."scheduled-analyst-price-target-background"]
   # One-time snapshot (2026-09-16) — no schedule, same reasoning as
@@ -740,17 +729,10 @@
   schedule = "40 13 * * 6"
 
 [functions."scheduled-quality-financials-background"]
-  # One-time snapshot — no schedule, same convention as every full-index
-  # sweep added to this site since 2026-09-16 (see scheduled-surprise-
-  # background's own comment above for the original reasoning: these pages
-  # read as "the research as it stood on this date," not continuously-
-  # refreshed). Run manually via the Netlify dashboard's "Run now" whenever
-  # a fresh snapshot is wanted — and run this one before scheduled-quality-
-  # score-background, which depends on the blob it writes. ~1006 sequential
-  # BALANCE_SHEET/INCOME_STATEMENT calls (2 per company) at 750ms spacing,
-  # same shape and pacing as scheduled-margin-leverage-background's own
-  # 2-statement sweep — see this function's own file for why a 3-statement
-  # sweep (this job plus stage 2's CASH_FLOW pull) has to be split in two.
+  # One-time snapshot, no schedule: run manually after scheduled-margin-
+  # leverage-background has finished a cycle. It makes no API calls of its
+  # own, only reads that job's checkpoint, so it finishes in seconds.
+  # scheduled-quality-score-background depends on the blob it writes.
 
 [functions."scheduled-quality-score-background"]
   # One-time snapshot — no schedule, same convention as scheduled-quality-

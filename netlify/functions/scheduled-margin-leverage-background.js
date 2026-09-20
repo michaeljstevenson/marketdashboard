@@ -20,7 +20,7 @@
 // 10-Q/10-K, so a daily re-sweep would refetch ~1000 unchanged numbers 6
 // days out of 7.
 
-const { getMarginLeverageStore, BLOB_KEY } = require("./margin-leverage-blob-store");
+const { getMarginLeverageStore, BLOB_KEY, CHECKPOINT_KEY } = require("./margin-leverage-blob-store");
 const { getBeeswarmStore, META_KEY } = require("./beeswarm-blob-store");
 const { BREADTH_CONSTITUENTS } = require("./breadth-constituents");
 const { SECTOR_ORDER } = require("./beeswarm-sectors");
@@ -40,6 +40,31 @@ const MARGIN_TREND_THRESHOLD = 1.0; // ppt over 4 quarters — smaller moves are
 // Function's ~15-minute ceiling. 750ms keeps the main pass under ~12.6
 // minutes so a short retry pass for whatever fails still fits.
 const CALL_SLEEP_MS = 750;
+
+// The two-call sweep needs ~16 minutes once each call's own latency is
+// counted, which is over the 15-minute ceiling, so a single run can't
+// finish it. Each run stops fetching new tickers at RUN_BUDGET_MS, saves
+// what it has to CHECKPOINT_KEY, and the next run picks up the rest; a run
+// that finishes the whole universe marks the checkpoint complete so the
+// following one starts a fresh cycle instead of reusing stale data.
+const RUN_BUDGET_MS = 12 * 60 * 1000;
+const CHECKPOINT_MAX_AGE_MS = 24 * 60 * 60 * 1000;
+const CHECKPOINT_EVERY = 120;
+
+// Only the fields the merge below (quarterly) and
+// scheduled-quality-financials-background.js (annual) read, so a full
+// checkpoint stays small. Each statement call returns both report sets, so
+// keeping the annual rows here means that job needs no calls of its own.
+const KEEP_FIELDS = {
+  INCOME_STATEMENT: ["fiscalDateEnding", "totalRevenue", "grossProfit", "operatingIncome", "netIncome", "ebitda", "depreciationAndAmortization"],
+  BALANCE_SHEET: ["fiscalDateEnding", "shortLongTermDebtTotal", "shortTermDebt", "currentDebt", "longTermDebt", "longTermDebtNoncurrent", "cashAndCashEquivalentsAtCarryingValue", "cashAndShortTermInvestments"],
+};
+const KEEP_FIELDS_ANNUAL = {
+  INCOME_STATEMENT: ["fiscalDateEnding", "totalRevenue", "grossProfit", "netIncome"],
+  BALANCE_SHEET: ["fiscalDateEnding", "totalAssets", "totalCurrentAssets", "totalCurrentLiabilities", "longTermDebt", "longTermDebtNoncurrent", "commonStockSharesOutstanding"],
+};
+const ANNUAL_YEARS_NEEDED = 2; // fiscal year T and T-1
+const pick = (rows, keys) => rows.map((r) => Object.fromEntries(keys.map((k) => [k, r[k]])));
 
 function sleep(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
@@ -74,7 +99,11 @@ async function fetchStatement(apiKey, fn, symbol) {
   }
   const rows = payload.quarterlyReports;
   if (!Array.isArray(rows)) throw new Error(`${fn} unexpected response shape for ${symbol}: ${JSON.stringify(payload).slice(0, 160)}`);
-  return rows.slice(0, QUARTERS_NEEDED); // most-recent-first, same as BALANCE_SHEET elsewhere in this codebase
+  const annual = Array.isArray(payload.annualReports) ? payload.annualReports : [];
+  return {
+    quarterly: pick(rows.slice(0, QUARTERS_NEEDED), KEEP_FIELDS[fn]), // most-recent-first, same as BALANCE_SHEET elsewhere in this codebase
+    annual: pick(annual.slice(0, ANNUAL_YEARS_NEEDED), KEEP_FIELDS_ANNUAL[fn]),
+  };
 }
 
 // Total debt: Alpha Vantage's BALANCE_SHEET exposes a combined
@@ -222,14 +251,24 @@ exports.handler = async () => {
       return `${y}-${String(m).padStart(2, "0")}`;
     }
 
-    const results = new Map(); // symbol -> { income, balance }
+    const startedAt = Date.now();
+    const outOfTime = () => Date.now() - startedAt > RUN_BUDGET_MS;
+    const store = getMarginLeverageStore();
+    const saved = await store.get(CHECKPOINT_KEY, { type: "json" });
+    const resume = !!(saved && !saved.complete && Date.now() - Date.parse(saved.startedAt) < CHECKPOINT_MAX_AGE_MS);
+    const cycleStartedAt = resume ? saved.startedAt : new Date().toISOString();
+    const results = new Map(resume ? Object.entries(saved.results) : []); // symbol -> { income, balance }
+    if (resume) console.log(`scheduled-margin-leverage-background: resuming checkpoint with ${results.size} ticker(s) already fetched`);
+
+    const saveCheckpoint = (complete) =>
+      store.setJSON(CHECKPOINT_KEY, { startedAt: cycleStartedAt, complete, results: Object.fromEntries(results) });
 
     async function fetchInto(symbol) {
       try {
-        const income = await fetchStatement(apiKey, "INCOME_STATEMENT", symbol);
+        const inc = await fetchStatement(apiKey, "INCOME_STATEMENT", symbol);
         await sleep(CALL_SLEEP_MS);
-        const balance = await fetchStatement(apiKey, "BALANCE_SHEET", symbol);
-        results.set(symbol, { income, balance });
+        const bal = await fetchStatement(apiKey, "BALANCE_SHEET", symbol);
+        results.set(symbol, { income: inc.quarterly, balance: bal.quarterly, annualIncome: inc.annual, annualBalance: bal.annual });
         return true;
       } catch (err) {
         console.error(`scheduled-margin-leverage-background: ${symbol} failed: ${err.message}`);
@@ -238,20 +277,26 @@ exports.handler = async () => {
       }
     }
 
-    let todo = [...BREADTH_CONSTITUENTS];
-    for (let pass = 0; pass < 2 && todo.length; pass++) {
+    let todo = BREADTH_CONSTITUENTS.filter((s) => !results.has(s));
+    let stoppedForTime = false;
+    let sinceCheckpoint = 0;
+    for (let pass = 0; pass < 2 && todo.length && !stoppedForTime; pass++) {
       if (pass > 0) {
         console.log(`scheduled-margin-leverage-background: retry pass for ${todo.length} ticker(s)`);
         await sleep(45000);
       }
       const missed = [];
       for (const symbol of todo) {
+        if (outOfTime()) { stoppedForTime = true; break; }
         const got = await fetchInto(symbol);
         if (!got) missed.push(symbol);
+        if (got && ++sinceCheckpoint >= CHECKPOINT_EVERY) { await saveCheckpoint(false); sinceCheckpoint = 0; }
         await sleep(CALL_SLEEP_MS);
       }
       todo = missed;
     }
+    await saveCheckpoint(!stoppedForTime);
+    if (stoppedForTime) console.log(`scheduled-margin-leverage-background: out of time with ${results.size}/${BREADTH_CONSTITUENTS.length} fetched — run again to finish`);
 
     console.log(`scheduled-margin-leverage-background: fetched ${results.size}/${BREADTH_CONSTITUENTS.length} tickers`);
     if (results.size === 0) throw new Error("Every ticker failed — refusing to write an empty snapshot");
@@ -406,6 +451,7 @@ exports.handler = async () => {
       generated_at_utc: new Date().toISOString(),
       universeSize: BREADTH_CONSTITUENTS.length,
       loadedCount: results.size,
+      partial: stoppedForTime,
       companyCount: companies.length,
       quarters,
       sectors: sectorsSummary,
@@ -417,10 +463,17 @@ exports.handler = async () => {
       companies: companyRows,
     };
 
-    await getMarginLeverageStore().setJSON(BLOB_KEY, payload);
+    if (stoppedForTime) {
+      const published = await store.get(BLOB_KEY, { type: "json" });
+      if (published && !published.partial) {
+        console.log("scheduled-margin-leverage-background: partial run, keeping the last complete published snapshot until the next run finishes the cycle");
+        return { statusCode: 200, body: JSON.stringify({ ok: true, partial: true, fetched: results.size, published: false }) };
+      }
+    }
+    await store.setJSON(BLOB_KEY, payload);
     console.log(`scheduled-margin-leverage-background: wrote ${companies.length} companies across ${sectorsSummary.length} sectors, ${quarters.length} quarters`);
 
-    return { statusCode: 200, body: JSON.stringify({ ok: true, companies: companies.length, sectors: sectorsSummary.length }) };
+    return { statusCode: 200, body: JSON.stringify({ ok: true, partial: stoppedForTime, fetched: results.size, companies: companies.length, sectors: sectorsSummary.length }) };
   } catch (err) {
     console.error(`scheduled-margin-leverage-background: FAILED: ${err.message}`);
     return { statusCode: 502, body: JSON.stringify({ error: err.message }) };

@@ -8,6 +8,9 @@ const { getStore } = require("@netlify/blobs");
 
 const BLOB_STORE = "margin-leverage";
 const BLOB_KEY = "margin-leverage.json";
+// Raw per-ticker statements (quarterly + annual) shared with
+// scheduled-quality-financials-background.js so it makes no calls of its own.
+const CHECKPOINT_KEY = "checkpoint.json";
 
 function getMarginLeverageStore() {
   const { BLOBS_SITE_ID, BLOBS_API_TOKEN } = process.env;
@@ -17,4 +20,4 @@ function getMarginLeverageStore() {
   return getStore(BLOB_STORE);
 }
 
-module.exports = { getMarginLeverageStore, BLOB_STORE, BLOB_KEY };
+module.exports = { getMarginLeverageStore, BLOB_STORE, BLOB_KEY, CHECKPOINT_KEY };
