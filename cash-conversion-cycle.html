@@ -152,7 +152,7 @@ document.addEventListener("DOMContentLoaded", function(){
 </script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Shareholder Yield: Buybacks vs. Dividends — Michael J. Stevenson</title>
+<title>Cash Conversion Cycle — Michael J. Stevenson</title>
 
 <style>
 
@@ -175,8 +175,9 @@ document.addEventListener("DOMContentLoaded", function(){
 
   /* NDR-style chart palette. Deliberately the SAME in light and dark —
      these charts keep a constant warm-paper look as a homage to the Ned
-     Davis Research print charts that inspired the page. JS reads them via
-     getComputedStyle (per the site convention) rather than hardcoding. */
+     Davis Research print charts that inspired /concentration. JS reads
+     them via getComputedStyle (per the site convention) rather than
+     hardcoding. */
   --ndr-plot:#f5f1e6;
   --ndr-axis:#3c3a33;
   --ndr-axis-soft:#6f6a5c;
@@ -412,7 +413,12 @@ h1{
  margin-top:4px;
 }
 
-/* The warm-paper plot panel behind each canvas — the NDR homage. */
+.chart-canvas-wrap{
+ height:380px;
+}
+
+/* The warm-paper plot panel behind each canvas — the NDR homage
+   (matches /concentration). */
 .ndr-panel{
  background:var(--ndr-plot);
  border:1px solid var(--ndr-grid);
@@ -420,13 +426,38 @@ h1{
  padding:14px 14px 10px;
 }
 
-.chart-canvas-wrap{
- height:380px;
+/* Two charts / method-tables side by side, same breakpoint as table-grid */
+.chart-grid{
+ display:grid;
+ grid-template-columns:1fr 1fr;
+ gap:16px;
+ margin-bottom:30px;
 }
 
-.chart-canvas-wrap.short{ height:280px; }
+.chart-grid .chart-box{
+ margin-bottom:0;
+ min-width:0; /* grid items default to min-width:auto (their content's min-content
+                 size), which a wide method table would otherwise force past this
+                 column's track width — same "grid blowout" the site-wide
+                 table{min-width:600px} rule creates if left unchecked here */
+}
+
+@media (max-width:900px){
+ .chart-grid{ grid-template-columns:1fr; }
+}
 
 /* TABLE */
+
+.table-grid{
+ display:grid;
+ grid-template-columns:1fr 1fr;
+ gap:16px;
+ margin-bottom:30px;
+}
+
+@media (max-width:900px){
+ .table-grid{ grid-template-columns:1fr; }
+}
 
 .table-box{
  background:var(--card);
@@ -435,6 +466,8 @@ h1{
  overflow-x:auto;
  margin-bottom:30px;
 }
+
+.table-grid .table-box{ margin-bottom:0; }
 
 .table-box-header{
  padding:18px 20px 4px;
@@ -453,7 +486,7 @@ table{
  width:100%;
  border-collapse:collapse;
  font-size:13px;
- min-width:640px;
+ min-width:600px;
 }
 
 thead th{
@@ -463,13 +496,27 @@ thead th{
  font-size:11px;
  letter-spacing:0.04em;
  font-weight:600;
+ cursor:pointer;
+ user-select:none;
  white-space:nowrap;
  border-bottom:1px solid var(--hair);
 }
 
-thead th:first-child{
+thead th:first-child, thead th:nth-child(2){
  text-align:left;
 }
+
+thead th:hover{ color:var(--ink); }
+
+thead th .sort-arrow{
+ opacity:0.4;
+ margin-left:3px;
+ font-size:10px;
+}
+
+thead th.sorted .sort-arrow{ opacity:1; color:var(--greed); }
+
+thead th:not([data-key]){ cursor:default; }
 
 tbody td{
  padding:11px 12px;
@@ -488,40 +535,42 @@ tbody td:first-child{
  font-family:var(--sans);
 }
 
+tbody td:nth-child(2){
+ text-align:left;
+ color:var(--muted);
+}
+
+.sector-name{ color:var(--ink); }
+.sector-ticker{ color:var(--muted); font-size:11px; }
+
 .cell-pos{ color:var(--ink); }
 .cell-neg{ color:var(--ink); }
 .cell-na{ color:var(--muted); }
 
-.table-footnote{
- padding:2px 20px 16px;
- color:var(--muted);
- font-size:11px;
-}
-
-.table-grid{
- display:grid;
- grid-template-columns:1fr 1fr;
- gap:20px;
-}
-
-@media (max-width:900px){
- .table-grid{ grid-template-columns:1fr; }
-}
+.ccc-pos{ color:var(--fear); }
+.ccc-neg{ color:var(--greed); }
 
 /* SCATTER / METHOD TABLE (mirrors /factor-analysis) */
 
 .scatter-canvas-wrap{
- height:320px;
+ height:300px;
  margin-bottom:12px;
  position:relative;
 }
 
 .method-table{
  width:100%;
+ min-width:0; /* overrides the site-wide table{min-width:600px} rule below — two of these
+                 side by side in .chart-grid would otherwise force the whole page wider
+                 than its container even though a 7-column method table never needs 600px */
  border-collapse:collapse;
  font-family:var(--mono);
  font-size:11px;
  margin-top:8px;
+}
+
+#dsoDpoMethodTable, #cccRoicMethodTable{
+ overflow-x:auto;
 }
 
 .method-table th{
@@ -560,6 +609,26 @@ tbody td:first-child{
  color:var(--muted);
  margin-top:8px;
  font-style:italic;
+}
+
+/* SECTOR LEGEND (scatter / spaghetti charts) */
+
+.sector-legend{
+ display:flex;
+ flex-wrap:wrap;
+ gap:10px 16px;
+ margin-top:14px;
+ font-size:11px;
+ color:var(--muted);
+}
+
+.sector-legend .dot{
+ display:inline-block;
+ width:8px;
+ height:8px;
+ border-radius:50%;
+ margin-right:5px;
+ vertical-align:middle;
 }
 
 /* EXPLAINER */
@@ -696,9 +765,9 @@ tbody td:first-child{
 <a href="/share-count-trends.html">Share Count Trends</a>
 <a href="/sector-correlation.html">Sector Correlation Matrix</a>
 <a href="/sector-rotation.html">Sector Rotation Model</a>
-<a href="/international-vs-us.html">International vs. US Relative Performance</a>
-<a href="/analyst-estimate-dispersion.html">Analyst Estimate Dispersion</a>
-<a href="/shareholder-yield.html" class="active">Shareholder Yield</a>
+<a href="/margin-leverage.html">Margin &amp; Leverage Cycle</a>
+<a href="/roic-wacc.html">ROIC vs. Cost of Capital</a>
+<a href="/cash-conversion-cycle.html" class="active">Cash Conversion Cycle</a>
 <a href="/analyst-price-target.html">Analyst Price Target Upside</a>
 <a href="/institutional-ownership.html">Institutional Ownership &amp; 13F Flow</a>
 <a href="/post-earnings-drift.html">Post-Earnings Announcement Drift</a>
@@ -711,8 +780,6 @@ tbody td:first-child{
 <a href="/quality-lowvol-factors.html">Quality &amp; Low-Volatility Factor Screen</a>
 <a href="/quality-score.html">Financial Quality Screener (Piotroski)</a>
 <a href="/country-sector-scorecard.html">Country / Sector Scorecard</a>
-<a href="/roic-wacc.html">ROIC vs. Cost of Capital</a>
-<a href="/cash-conversion-cycle.html">Cash Conversion Cycle</a>
 </div>
 </div>
 
@@ -779,40 +846,40 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 
 <div class="header">
 <div>
-<h1>Shareholder Yield: Buybacks vs. Dividends</h1>
-<div class="subtitle">Dividend yield and buyback yield combined into one "shareholder yield" number across the S&amp;P 500 — and whether companies that pay more in dividends tend to buy back less, or the two go together.</div>
+<h1>Cash Conversion Cycle</h1>
+<div class="subtitle">How many days of cash the average S&amp;P 500 company has tied up in its own operating cycle — collecting from customers, holding inventory, and paying suppliers — and which sectors and companies run the tightest (or loosest) working-capital operations.</div>
 </div>
 <div class="updated" id="updated">Loading...</div>
 </div>
 
 <div class="stat-grid">
 <div class="stat-card">
-<div class="stat-label">Market Avg. Shareholder Yield</div>
-<div class="stat-value" id="statTotal">—</div>
-<div class="stat-note">Dividend yield + buyback yield</div>
+<div class="stat-label">Companies Loaded</div>
+<div class="stat-value" id="statCompanies" style="font-size:20px;">—</div>
+<div class="stat-note" id="statCompaniesNote">Of full S&amp;P 500</div>
 </div>
 <div class="stat-card">
-<div class="stat-label">Market Avg. Dividend Yield</div>
-<div class="stat-value" id="statDiv">—</div>
-<div class="stat-note">Alpha Vantage trailing dividend yield</div>
+<div class="stat-label">Median Cash Conversion Cycle</div>
+<div class="stat-value" id="statCcc">—</div>
+<div class="stat-note">Days, market-wide</div>
 </div>
 <div class="stat-card">
-<div class="stat-label">Market Avg. Buyback Yield</div>
-<div class="stat-value" id="statBuyback">—</div>
-<div class="stat-note">&minus;(trailing 1Y % change in shares out.)</div>
+<div class="stat-label">Median DSO / DIO / DPO</div>
+<div class="stat-value" id="statComponents" style="font-size:18px;">—</div>
+<div class="stat-note">Days sales / inventory outstanding, days payable outstanding</div>
 </div>
 <div class="stat-card">
-<div class="stat-label">Dividend/Buyback Correlation</div>
-<div class="stat-value" id="statCorr" style="font-size:20px;">—</div>
-<div class="stat-note" id="statCorrNote">Across constituents, Pearson r</div>
+<div class="stat-label">Negative-CCC Companies</div>
+<div class="stat-value" id="statNegPct">—</div>
+<div class="stat-note">Get paid before they pay their own suppliers</div>
 </div>
 </div>
 
 <div class="chart-box">
 <div class="chart-box-header">
 <div>
-<h2>Shareholder yield by sector</h2>
-<div class="chart-subhead">Average dividend yield and buyback yield, stacked, sectors ranked by combined total</div>
+<h2>Working-capital days by sector</h2>
+<div class="chart-subhead">Median days sales outstanding, days inventory outstanding, days payable outstanding, and the net cash conversion cycle, by SPDR sector</div>
 </div>
 </div>
 <div class="ndr-panel">
@@ -820,116 +887,159 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <canvas id="sectorChart"></canvas>
 </div>
 </div>
+<div class="method-note">Financials, Real Estate, and Utilities are excluded from this page entirely — "inventory" and "cost of revenue" aren't meaningful concepts for a bank, a REIT, or a power utility, so those sectors rarely have all three components available. See the methodology below.</div>
 </div>
 
 <div class="chart-box">
 <div class="chart-box-header">
 <div>
-<h2>Dividend yield vs. buyback yield, by stock</h2>
-<div class="chart-subhead">Each point is one S&amp;P 500 constituent. Upper-right: pays a large dividend and buys back aggressively. Lower-left: neither. A negative buyback yield means net dilution over the trailing year.</div>
+<h2>Distribution of the cash conversion cycle</h2>
+<div class="chart-subhead">Every S&amp;P 500 constituent with usable statement history, bucketed by CCC (days)</div>
+</div>
+</div>
+<div class="ndr-panel">
+<div class="chart-canvas-wrap" style="height:300px;">
+<canvas id="cccHistogram"></canvas>
+</div>
+</div>
+</div>
+
+<div class="chart-grid">
+<div class="chart-box">
+<div class="chart-box-header">
+<div>
+<h2>Days sales outstanding vs. days payable outstanding</h2>
+<div class="chart-subhead">Points above the diagonal collect from customers slower than they pay their own suppliers; points below collect faster than they pay</div>
 </div>
 </div>
 <div class="ndr-panel">
 <div class="scatter-canvas-wrap">
-<canvas id="corrScatter"></canvas>
+<canvas id="dsoDpoScatter"></canvas>
 </div>
 </div>
-<div id="corrMethodTable"></div>
+<div id="dsoDpoMethodTable"></div>
 </div>
-
-<div class="table-box">
-<div class="table-box-header">
-<h2>Highest combined shareholder yield</h2>
-<div class="chart-subhead">Dividend yield + buyback yield, highest first</div>
+<div class="chart-box">
+<div class="chart-box-header">
+<div>
+<h2>Cash conversion cycle vs. ROIC</h2>
+<div class="chart-subhead">Does tighter working-capital management actually show up as a higher return on invested capital?</div>
 </div>
-<table>
-<thead><tr><th>Ticker</th><th>Sector</th><th>Dividend Yield</th><th>Buyback Yield</th><th>Total</th></tr></thead>
-<tbody id="topTotalTable">
-<tr><td colspan="5" style="text-align:center; color:var(--muted); padding:24px;">Loading&hellip;</td></tr>
-</tbody>
-</table>
+</div>
+<div class="ndr-panel">
+<div class="scatter-canvas-wrap">
+<canvas id="cccRoicScatter"></canvas>
+</div>
+</div>
+<div id="cccRoicMethodTable"></div>
+</div>
 </div>
 
 <div class="table-grid">
 <div class="table-box">
 <div class="table-box-header">
-<h2>Highest dividend yield</h2>
-<div class="chart-subhead">By dividend yield alone, regardless of buyback activity</div>
+<h2>Fastest (most efficient)</h2>
+<div class="chart-subhead">Lowest — or most negative — cash conversion cycle</div>
 </div>
-<table>
-<thead><tr><th>Ticker</th><th>Sector</th><th>Dividend Yield</th><th>Buyback Yield</th></tr></thead>
-<tbody id="topDivTable">
-<tr><td colspan="4" style="text-align:center; color:var(--muted); padding:24px;">Loading&hellip;</td></tr>
-</tbody>
+<table id="fastestTable">
+<thead><tr><th>Symbol</th><th>Sector</th><th>DSO</th><th>DIO</th><th>DPO</th><th>CCC</th></tr></thead>
+<tbody id="fastestBody"><tr><td colspan="6" style="text-align:center; color:var(--muted); padding:24px;">Loading&hellip;</td></tr></tbody>
 </table>
+</div>
+<div class="table-box">
+<div class="table-box-header">
+<h2>Slowest (most cash tied up)</h2>
+<div class="chart-subhead">Highest cash conversion cycle</div>
+</div>
+<table id="slowestTable">
+<thead><tr><th>Symbol</th><th>Sector</th><th>DSO</th><th>DIO</th><th>DPO</th><th>CCC</th></tr></thead>
+<tbody id="slowestBody"><tr><td colspan="6" style="text-align:center; color:var(--muted); padding:24px;">Loading&hellip;</td></tr></tbody>
+</table>
+</div>
 </div>
 
 <div class="table-box">
 <div class="table-box-header">
-<h2>Highest buyback yield</h2>
-<div class="chart-subhead">By buyback yield alone, regardless of dividend policy</div>
+<h2>All companies with usable statement history</h2>
+<div class="chart-subhead">Trailing-twelve-month working-capital days, full S&amp;P 500 (Financials, Real Estate, and Utilities largely excluded — see methodology)</div>
 </div>
-<table>
-<thead><tr><th>Ticker</th><th>Sector</th><th>Dividend Yield</th><th>Buyback Yield</th></tr></thead>
-<tbody id="topBuybackTable">
-<tr><td colspan="4" style="text-align:center; color:var(--muted); padding:24px;">Loading&hellip;</td></tr>
+<table id="stockTable">
+<thead>
+<tr>
+<th data-key="symbol">Symbol</th>
+<th data-key="sector">Sector</th>
+<th data-key="dso">DSO<span class="sort-arrow">▾</span></th>
+<th data-key="dio">DIO<span class="sort-arrow">▾</span></th>
+<th data-key="dpo">DPO<span class="sort-arrow">▾</span></th>
+<th data-key="ccc">CCC<span class="sort-arrow">▾</span></th>
+</tr>
+</thead>
+<tbody id="tableBody">
+<tr><td colspan="6" style="text-align:center; color:var(--muted); padding:30px;">Loading cash conversion cycle data&hellip;</td></tr>
 </tbody>
 </table>
-</div>
 </div>
 
 <div class="explainer">
 <h2>Methodology</h2>
-<p>Dividend yield is Alpha Vantage's own <code>COMPANY_OVERVIEW</code> <code>DividendYield</code> field — a trailing, price-normalized yield sourced directly rather than re-derived from raw dividend payments and a separate price series. Buyback yield is <em>not</em> re-fetched here: it's the negative of the trailing-12-month % change in shares outstanding already computed by <a href="/share-count-trends.html">Share Count Trends</a> from quarterly <code>BALANCE_SHEET</code> filings — a shrinking share count is a buyback, a growing one is net dilution (from new issuance, option exercises, or stock-based comp outrunning any repurchases), so a negative "buyback yield" below means the company diluted shareholders over the period rather than returning capital via repurchases. Total shareholder yield is simply the two added together — dividends and buybacks are both ways cash gets returned to shareholders, and a company that leans on one over the other doesn't necessarily return less in total.</p>
-<p>The scatter panel tests a common claim: that dividend-payers and buyback-heavy companies are somewhat different populations — mature, stable-cash-flow businesses favor dividends (a commitment investors punish them for cutting), while companies with more variable earnings favor buybacks (fully discretionary, easy to pause). If that's right, dividend yield and buyback yield should show a weak or even negative correlation across the index. Both Pearson (OLS) and Spearman rank correlation are shown, the same two-method check used throughout <a href="/factor-analysis.html">Factor Analysis</a>, so the result isn't quietly resting on one or two extreme stocks either way.</p>
-<p>Sector and company name are joined from the <a href="/sector-beeswarm.html">Sector Beeswarm</a> page's own weekly metadata refresh rather than a second per-ticker lookup. Refreshes weekly (Saturday), after <a href="/share-count-trends.html">Share Count Trends</a>'s own sweep (so this page's buyback numbers are fresh) and after <a href="/analyst-estimate-dispersion.html">Analyst Estimate Dispersion</a>'s sweep (so the two full-index jobs don't compete for Alpha Vantage's rate limit) — a company's dividend policy and buyback pace don't move meaningfully day to day.</p>
-<div class="source">Source: <a href="https://www.alphavantage.co/" target="_blank" rel="noopener">Alpha Vantage</a> — COMPANY_OVERVIEW, BALANCE_SHEET (via Share Count Trends)</div>
+<p>Universe is the full S&amp;P 500. For every constituent, Alpha Vantage's <code>INCOME_STATEMENT</code> and <code>BALANCE_SHEET</code> endpoints (quarterly) supply a trailing-twelve-month (TTM) revenue and cost of revenue, joined against the latest quarter's receivables, inventory, and payables. <b>Days Sales Outstanding (DSO)</b> = receivables &divide; TTM revenue &times; 365. <b>Days Inventory Outstanding (DIO)</b> = inventory &divide; TTM cost of revenue &times; 365. <b>Days Payable Outstanding (DPO)</b> = payables &divide; TTM cost of revenue &times; 365. <b>Cash Conversion Cycle (CCC)</b> = DSO + DIO &minus; DPO &mdash; roughly, how many days pass between paying for inputs and collecting cash from the sale, net of how long the company itself gets to pay its own suppliers. A negative CCC (common for large retailers, restaurants, and subscription software businesses) means the company collects from customers before it has to pay its suppliers &mdash; its operating cycle effectively funds itself, or funds other parts of the business.</p>
+<p>A company is included only if all three components are computable: a clean trailing-four-quarter window with both statements present, positive TTM revenue, and a positive TTM cost of revenue with inventory and payables both reported. This deliberately excludes most Financials, Real Estate, and Utilities names &mdash; "inventory" and "cost of revenue" aren't meaningful line items for a bank, a REIT, or a power utility, so this page's sector coverage skews toward goods- and services-businesses (Consumer Discretionary, Consumer Staples, Industrials, Information Technology, Materials, Health Care, Energy) where the concept actually applies. That's a real scope limitation of the metric itself, not a data-quality problem.</p>
+<p>The two regression tests are single-snapshot cross-sections (no accumulated history needed): DSO vs. DPO asks whether companies that collect slowly from customers also tend to pay their own suppliers slowly (or negotiate/receive different treatment), and CCC vs. ROIC (reusing this site's own <a href="/roic-wacc.html">ROIC vs. Cost of Capital</a> data rather than a second, unrelated profitability calculation) asks whether tighter working-capital management actually shows up as a higher return on invested capital, or whether the two are unrelated in practice. Both use the same Pearson-and-Spearman two-method check as <a href="/factor-analysis.html">Factor Analysis</a>.</p>
+<p>One-time snapshot &mdash; no recurring schedule, matching every other full-universe fundamentals sweep added to this site since mid-September 2026. Re-run manually for a fresh pass; quarterly fundamentals don't move day to day. Sector and company name come from the same weekly metadata sweep that backs <a href="/sector-beeswarm.html">Sector Beeswarm</a>.</p>
+<div class="source">Source: <a href="https://www.alphavantage.co/" target="_blank" rel="noopener">Alpha Vantage — INCOME_STATEMENT, BALANCE_SHEET</a>, plus this site's own <a href="/roic-wacc.html">ROIC vs. Cost of Capital</a> data</div>
 </div>
 
 </div>
 
 <script>
-const DATA_URL = "/api/shareholder-yield";
+const DATA_URL = "/api/cash-conversion-cycle";
+
+const SECTOR_COLORS = {
+ "Information Technology": "#d98a3d",
+ "Financials": "#6f8fac",
+ "Health Care": "#8e7cc3",
+ "Energy": "#c0564f",
+ "Industrials": "#5a9d6f",
+ "Consumer Discretionary": "#e0b04f",
+ "Consumer Staples": "#4fb0c0",
+ "Utilities": "#b56f2a",
+ "Materials": "#9a9a9a",
+ "Real Estate": "#c77dbd",
+ "Communication Services": "#4f7ae0",
+};
 
 let RAW = null;
+let SORT_KEY = "ccc";
+let SORT_DIR = 1;
+
+function fmtDays(v, digits){
+ if(v === null || v === undefined || isNaN(v)) return "—";
+ digits = digits === undefined ? 1 : digits;
+ return (v >= 0 ? "+" : "") + v.toFixed(digits) + "d";
+}
+function fmtPlainDays(v, digits){
+ if(v === null || v === undefined || isNaN(v)) return "—";
+ digits = digits === undefined ? 1 : digits;
+ return v.toFixed(digits) + "d";
+}
+function fmtPct(v, digits){
+ if(v === null || v === undefined || isNaN(v)) return "—";
+ digits = digits === undefined ? 1 : digits;
+ return v.toFixed(digits) + "%";
+}
 
 function showError(message){
  const banner = document.getElementById("errorBanner");
  banner.textContent = message;
  banner.style.display = "block";
 }
-
-function fmtPct(v, digits){
- if(v === null || v === undefined || isNaN(v)) return "—";
- digits = digits === undefined ? 2 : digits;
- return (v >= 0 ? "+" : "") + v.toFixed(digits) + "%";
+function showWarning(message){
+ const banner = document.getElementById("warningBanner");
+ banner.textContent = message;
+ banner.style.display = "block";
 }
 
-function themeInkColor(){
- const v = getComputedStyle(document.documentElement).getPropertyValue("--ink").trim();
- return v || "#eae6da";
-}
-function themeMutedColor(){
- const v = getComputedStyle(document.documentElement).getPropertyValue("--muted").trim();
- return v || "#8b9199";
-}
-function themeHairColor(){
- const v = getComputedStyle(document.documentElement).getPropertyValue("--hair").trim();
- return v || "#2b3138";
-}
-function themeGreedColor(){
- const v = getComputedStyle(document.documentElement).getPropertyValue("--greed").trim();
- return v || "#d98a3d";
-}
-function themeFearColor(){
- const v = getComputedStyle(document.documentElement).getPropertyValue("--fear").trim();
- return v || "#6f8fac";
-}
-
-// ---- NDR chart styling helpers -----------------------------------------
-// Colours come from the --ndr-* custom properties (constant across themes)
-// so the charts keep their warm-paper look while still following the
-// site's "read chart colours from CSS, don't hardcode" rule.
+// ---- NDR chart styling helpers (matches /concentration, /margin-leverage) ----
 function ndr(name){
  return getComputedStyle(document.documentElement).getPropertyValue("--ndr-" + name).trim();
 }
@@ -956,16 +1066,8 @@ function ndrYScale(opts){
  };
 }
 
-function ndrLegend(){
- return {
-  display: true, position: "top", align: "start",
-  labels: { boxWidth: 22, boxHeight: 2, color: ndr("axis"), font: { size: 11 } },
- };
-}
-
 // ---- Stats helpers — same methodology as /factor-analysis, duplicated
 // here since every page on this site is self-contained (see CLAUDE.md). ----
-
 function linearRegression(xs, ys){
  const n = xs.length;
  const mx = xs.reduce((a, b) => a + b, 0) / n;
@@ -984,12 +1086,7 @@ function linearRegression(xs, ys){
  const p = 2 * (1 - normalCdf(Math.abs(t)));
  return { n, slope, intercept, r, r2, t, dof, p, sse };
 }
-
-function normalCdf(x){
- return 0.5 * (1 + erf(x / Math.SQRT2));
-}
-
-// Abramowitz & Stegun 7.1.26 approximation — accurate to ~1e-7.
+function normalCdf(x){ return 0.5 * (1 + erf(x / Math.SQRT2)); }
 function erf(x){
  const sign = x < 0 ? -1 : 1;
  x = Math.abs(x);
@@ -998,7 +1095,6 @@ function erf(x){
  const y = 1 - (((((a5 * t + a4) * t) + a3) * t + a2) * t + a1) * t * Math.exp(-x * x);
  return sign * y;
 }
-
 function rankArray(arr){
  const idx = arr.map((v, i) => i).sort((a, b) => arr[a] - arr[b]);
  const ranks = new Array(arr.length);
@@ -1012,12 +1108,28 @@ function rankArray(arr){
  }
  return ranks;
 }
+function spearmanRegression(xs, ys){ return linearRegression(rankArray(xs), rankArray(ys)); }
 
-function spearmanRegression(xs, ys){
- return linearRegression(rankArray(xs), rankArray(ys));
+function methodTableHtml(pearson, spear, unitNote){
+ function row(label, stats){
+  const sig = stats.p < 0.05;
+  return "<tr>" +
+   "<td>" + label + "</td>" +
+   "<td>" + stats.n + "</td>" +
+   "<td>" + stats.r.toFixed(2) + "</td>" +
+   "<td>" + (stats.r2 * 100).toFixed(1) + "%</td>" +
+   "<td>" + (stats.slope >= 0 ? "+" : "") + stats.slope.toFixed(3) + "</td>" +
+   "<td>" + stats.t.toFixed(2) + "</td>" +
+   '<td class="' + (sig ? "sig" : "") + '">' + (stats.p < 0.001 ? "<0.001" : stats.p.toFixed(3)) + "</td>" +
+  "</tr>";
+ }
+ return '<table class="method-table">' +
+  "<thead><tr><th>Method</th><th>n</th><th>r</th><th>r&sup2;</th><th>slope</th><th>t</th><th>p</th></tr></thead>" +
+  "<tbody>" + row("Pearson (OLS)", pearson) + row("Spearman (&rho;)", spear) + "</tbody>" +
+ "</table>" + (unitNote ? '<div class="method-note">' + unitNote + "</div>" : "");
 }
 
-let sectorChart = null, corrScatter = null;
+let sectorChart = null, cccHistogram = null, dsoDpoScatter = null, cccRoicScatter = null;
 
 async function init(){
  try{
@@ -1026,106 +1138,125 @@ async function init(){
   if(!res.ok || data.error) throw new Error(data.error || "failed to load");
 
   RAW = data;
-  document.getElementById("updated").textContent =
-   "As of " + new Date(data.generated_at_utc).toLocaleDateString() + " · " + data.universe_size + "/" + data.universe_total + " constituents covered";
+  document.getElementById("updated").textContent = "As of " + new Date(data.generated_at_utc).toLocaleString();
 
-  renderStats(data);
-  renderSectorChart(data);
-  renderCorrScatter(data);
-  renderLeaderboard("topTotalTable", data.topTotal, true);
-  renderLeaderboard("topDivTable", data.topDividendOnly, false);
-  renderLeaderboard("topBuybackTable", data.topBuybackOnly, false);
+  if(data.loadedCount < data.universeSize){
+   showWarning("Only " + data.loadedCount + " of " + data.universeSize + " S&P 500 constituents loaded this run — some data may be temporarily unavailable.");
+  }
+  if(!data.hasRoicData){
+   showWarning("The ROIC vs. Cost of Capital page's data hasn't populated yet, so the CCC-vs-ROIC test below can't run.");
+  }
+
+  renderStats();
+  renderSectorChart();
+  renderCccHistogram();
+  renderDsoDpoScatter();
+  renderCccRoicScatter();
+  renderLeaderTable(data.fastest, "fastestBody");
+  renderLeaderTable(data.slowest, "slowestBody");
+  renderTable();
 
  }catch(e){
-  showError("Couldn't load shareholder yield data (" + e.message + "). The /api/shareholder-yield function may not have run yet.");
+  showError("Couldn't load cash conversion cycle data (" + e.message + "). The /api/cash-conversion-cycle function may not have run yet.");
+  document.getElementById("tableBody").innerHTML =
+   '<tr><td colspan="6" style="text-align:center; color:var(--muted); padding:30px;">No data available.</td></tr>';
  }
 }
 
-function renderStats(data){
- document.getElementById("statTotal").textContent = fmtPct(data.market.avgTotalYield);
- document.getElementById("statDiv").textContent = fmtPct(data.market.avgDividendYield);
- const buybackEl = document.getElementById("statBuyback");
- buybackEl.textContent = fmtPct(data.market.avgBuybackYield);
- buybackEl.classList.toggle("cell-neg", data.market.avgBuybackYield !== null && data.market.avgBuybackYield < 0);
-
- const corrEl = document.getElementById("statCorr");
- const corrNoteEl = document.getElementById("statCorrNote");
- const pairs = data.scatter || [];
- if(pairs.length >= 8){
-  const reg = linearRegression(pairs.map(p => p.dividendYield), pairs.map(p => p.buybackYield));
-  corrEl.textContent = (reg.r >= 0 ? "+" : "") + reg.r.toFixed(2);
-  corrEl.classList.toggle("cell-neg", reg.r < 0);
-  let interp = "Little relationship across the index";
-  if(Math.abs(reg.r) >= 0.1){
-   interp = reg.r > 0
-    ? "Dividend payers have also tended to buy back more"
-    : "Dividend payers have tended to buy back less — some substitution";
-  }
-  corrNoteEl.textContent = interp + " (n=" + reg.n + ")";
- }
+function renderStats(){
+ document.getElementById("statCompanies").textContent = RAW.market.companyCount;
+ document.getElementById("statCompaniesNote").textContent = RAW.loadedCount + " of " + RAW.universeSize + " loaded, " + RAW.market.companyCount + " with usable working-capital data";
+ document.getElementById("statCcc").textContent = fmtDays(RAW.market.medianCcc);
+ document.getElementById("statComponents").textContent = fmtPlainDays(RAW.market.medianDso) + " / " + fmtPlainDays(RAW.market.medianDio) + " / " + fmtPlainDays(RAW.market.medianDpo);
+ document.getElementById("statNegPct").textContent = fmtPct(RAW.market.negativeCccPct, 0);
 }
 
-function renderSectorChart(data){
- const sectors = [...data.sectors].sort((a, b) => (b.avgTotalYield || 0) - (a.avgTotalYield || 0));
+function renderSectorChart(){
+ const sectors = RAW.sectors.map(s => s.sector);
  const ctx = document.getElementById("sectorChart").getContext("2d");
  if(sectorChart) sectorChart.destroy();
  sectorChart = new Chart(ctx, {
   type: "bar",
   data: {
-   labels: sectors.map(s => s.sector),
+   labels: sectors,
    datasets: [
-    { label: "Dividend yield", data: sectors.map(s => s.avgDividendYield), backgroundColor: ndr("green"), stack: "yield" },
-    { label: "Buyback yield", data: sectors.map(s => s.avgBuybackYield), backgroundColor: ndr("navy"), stack: "yield" },
+    { label: "DSO", data: RAW.sectors.map(s => s.medianDso), backgroundColor: ndr("navy"), borderRadius: 3 },
+    { label: "DIO", data: RAW.sectors.map(s => s.medianDio), backgroundColor: ndr("slate"), borderRadius: 3 },
+    { label: "DPO", data: RAW.sectors.map(s => s.medianDpo), backgroundColor: ndr("gold"), borderRadius: 3 },
+    { label: "CCC (net)", data: RAW.sectors.map(s => s.medianCcc), backgroundColor: ndr("red"), borderRadius: 3 },
    ],
   },
   options: {
    responsive: true,
    maintainAspectRatio: false,
-   indexAxis: "y",
    plugins: {
-    legend: ndrLegend(),
-    tooltip: { callbacks: { label: ctx => ctx.dataset.label + ": " + fmtPct(ctx.parsed.x) } },
+    legend: { display: true, position: "top", align: "start", labels: { boxWidth: 12, boxHeight: 12, color: ndr("axis"), font: { size: 11 } } },
+    tooltip: { callbacks: { label: ctx => ctx.dataset.label + ": " + fmtPlainDays(ctx.parsed.y) } },
    },
-   // Horizontal bar: x is the value (percentage) axis, y is the category
-   // (sector name) axis — the opposite pairing from ndrXScale/ndrYScale's
-   // usual x=category/y=value roles, so the helpers are swapped here.
    scales: {
-    x: { ...ndrYScale({ fmt: v => v + "%" }), stacked: true },
-    // All sector names should show (unlike a date axis), so this drops
-    // ndrXScale's maxTicksLimit/autoSkip rather than truncating labels.
-    y: { ticks: { color: ndr("axis"), font: { size: 11 } }, grid: { color: "rgba(0,0,0,0)", borderColor: ndr("axis") }, stacked: true },
+    x: ndrXScale(),
+    y: ndrYScale({ fmt: v => v + "d" }),
    },
   },
  });
 }
 
-function renderCorrScatter(data){
- const pairs = data.scatter || [];
- const ctx = document.getElementById("corrScatter").getContext("2d");
- if(corrScatter) corrScatter.destroy();
- if(pairs.length < 8){
-  document.getElementById("corrMethodTable").innerHTML = '<div class="method-note">Not enough constituents loaded yet for a regression.</div>';
-  corrScatter = new Chart(ctx, { type: "scatter", data: { datasets: [] }, options: { responsive: true, maintainAspectRatio: false } });
-  return;
+function renderCccHistogram(){
+ const values = RAW.companies.map(c => c.ccc).filter(v => v !== null && v !== undefined && !isNaN(v));
+ const binWidth = 15; // days
+ const minBin = Math.floor(Math.min(...values) / binWidth) * binWidth;
+ const maxBin = Math.ceil(Math.max(...values) / binWidth) * binWidth;
+ const bins = [];
+ for(let b = minBin; b < maxBin; b += binWidth) bins.push({ lo: b, hi: b + binWidth, count: 0 });
+ for(const v of values){
+  let idx = Math.floor((v - minBin) / binWidth);
+  if(idx < 0) idx = 0;
+  if(idx >= bins.length) idx = bins.length - 1;
+  bins[idx].count++;
  }
 
- const pearson = linearRegression(pairs.map(p => p.dividendYield), pairs.map(p => p.buybackYield));
- const spear = spearmanRegression(pairs.map(p => p.dividendYield), pairs.map(p => p.buybackYield));
+ const ctx = document.getElementById("cccHistogram").getContext("2d");
+ if(cccHistogram) cccHistogram.destroy();
+ cccHistogram = new Chart(ctx, {
+  type: "bar",
+  data: {
+   labels: bins.map(b => (b.lo >= 0 ? "+" : "") + b.lo + "to" + (b.hi >= 0 ? "+" : "") + b.hi),
+   datasets: [{ data: bins.map(b => b.count), backgroundColor: bins.map(b => (b.lo + b.hi) / 2 <= 0 ? ndr("green") : ndr("slate")), borderRadius: 3, barPercentage: 1.0, categoryPercentage: 0.95 }],
+  },
+  options: {
+   responsive: true,
+   maintainAspectRatio: false,
+   plugins: {
+    legend: { display: false },
+    tooltip: { callbacks: { title: items => { const b = bins[items[0].dataIndex]; return (b.lo >= 0 ? "+" : "") + b.lo + "d to " + (b.hi >= 0 ? "+" : "") + b.hi + "d"; }, label: ctx => ctx.parsed.y + " companies" } },
+   },
+   scales: {
+    x: { ...ndrXScale(), title: { display: true, text: "Cash conversion cycle (days)", color: ndr("axis-soft"), font: { size: 10 } } },
+    y: ndrYScale({ title: "Companies" }),
+   },
+  },
+ });
+}
 
- const xs = pairs.map(p => p.dividendYield);
- const xMin = Math.min(...xs), xMax = Math.max(...xs);
- const linePoints = [
-  { x: xMin, y: pearson.intercept + pearson.slope * xMin },
-  { x: xMax, y: pearson.intercept + pearson.slope * xMax },
- ];
+function renderDsoDpoScatter(){
+ const pairs = RAW.dsoVsDpoPairs || [];
+ if(pairs.length < 5){
+  document.getElementById("dsoDpoMethodTable").innerHTML = '<div class="method-note">Not enough companies to test.</div>';
+  return;
+ }
+ const pearson = linearRegression(pairs.map(p => p.x), pairs.map(p => p.y));
+ const spear = spearmanRegression(pairs.map(p => p.x), pairs.map(p => p.y));
+ const xs = pairs.map(p => p.x), ys = pairs.map(p => p.y);
+ const lo = Math.min(Math.min(...xs), Math.min(...ys)), hi = Math.max(Math.max(...xs), Math.max(...ys));
 
- corrScatter = new Chart(ctx, {
+ const ctx = document.getElementById("dsoDpoScatter").getContext("2d");
+ if(dsoDpoScatter) dsoDpoScatter.destroy();
+ dsoDpoScatter = new Chart(ctx, {
   type: "scatter",
   data: {
    datasets: [
-    { label: "Stocks", data: pairs.map(p => ({ x: p.dividendYield, y: p.buybackYield, ticker: p.ticker, sector: p.sector })), backgroundColor: ndr("navy"), pointRadius: 3, showLine: false },
-    { label: "Regression fit", type: "line", data: linePoints, borderColor: ndr("red"), borderWidth: 1.5, borderDash: [4, 3], pointRadius: 0, fill: false },
-    { label: "Zero", data: [{ x: xMin, y: 0 }, { x: xMax, y: 0 }], type: "line", borderColor: ndr("slate"), borderWidth: 1, borderDash: [2, 3], pointRadius: 0, fill: false },
+    { label: "Companies", data: pairs, backgroundColor: ndr("gold"), pointRadius: 2.5, showLine: false },
+    { label: "DSO = DPO", type: "line", data: [{ x: lo, y: lo }, { x: hi, y: hi }], borderColor: ndr("axis-soft"), borderWidth: 1, borderDash: [3, 3], pointRadius: 0, fill: false },
    ],
   },
   options: {
@@ -1133,56 +1264,116 @@ function renderCorrScatter(data){
    maintainAspectRatio: false,
    plugins: {
     legend: { display: false },
-    tooltip: {
-     callbacks: {
-      label: ctx => ctx.dataset.label === "Stocks" ? (ctx.raw.ticker + " (" + ctx.raw.sector + "): div " + fmtPct(ctx.raw.x) + ", buyback " + fmtPct(ctx.raw.y)) : null,
-     },
-    },
+    tooltip: { callbacks: { label: ctx => ctx.dataset.label === "Companies" ? (ctx.raw.symbol + ": DSO " + fmtPlainDays(ctx.raw.x) + ", DPO " + fmtPlainDays(ctx.raw.y)) : null } },
    },
-   // Numeric x-axis (dividend yield %), not a date/category axis, so
-   // ndrXScale's category-oriented tick options (maxTicksLimit,
-   // maxRotation) don't apply here — built inline instead, matching
-   // ndrXScale's colours.
    scales: {
-    x: { title: { display: true, text: "Dividend yield (%)", color: ndr("axis-soft"), font: { size: 10 } }, ticks: { color: ndr("axis"), font: { size: 10 } }, grid: { color: ndr("grid") } },
-    y: ndrYScale({ title: "Buyback yield (%)" }),
+    x: ndrYScale({ position: "bottom", fmt: v => v + "d", title: "Days sales outstanding" }),
+    y: ndrYScale({ fmt: v => v + "d", title: "Days payable outstanding" }),
    },
   },
  });
 
- function row(label, stats){
-  const sig = stats.p < 0.05;
-  return "<tr>" +
-   "<td>" + label + "</td>" +
-   "<td>" + stats.n + "</td>" +
-   "<td>" + stats.r.toFixed(2) + "</td>" +
-   "<td>" + (stats.r2 * 100).toFixed(1) + "%</td>" +
-   "<td>" + (stats.slope >= 0 ? "+" : "") + stats.slope.toFixed(2) + "</td>" +
-   "<td>" + stats.t.toFixed(2) + "</td>" +
-   '<td class="' + (sig ? "sig" : "") + '">' + (stats.p < 0.001 ? "<0.001" : stats.p.toFixed(3)) + "</td>" +
-  "</tr>";
- }
-
- document.getElementById("corrMethodTable").innerHTML =
-  '<table class="method-table">' +
-   "<thead><tr><th>Method</th><th>n</th><th>r</th><th>r&sup2;</th><th>slope</th><th>t</th><th>p</th></tr></thead>" +
-   "<tbody>" + row("Pearson (OLS)", pearson) + row("Spearman (&rho;)", spear) + "</tbody>" +
-  "</table>" +
-  '<div class="method-note">Slope is in percentage points of buyback yield per 1 percentage point of dividend yield.</div>';
+ document.getElementById("dsoDpoMethodTable").innerHTML = methodTableHtml(pearson, spear,
+  "Slope is DPO days per 1 day of DSO. n=" + pearson.n + " companies.");
 }
 
-function renderLeaderboard(elId, rows, withTotal){
- const el = document.getElementById(elId);
- const cols = withTotal ? 5 : 4;
- if(!rows || !rows.length){
-  el.innerHTML = '<tr><td colspan="' + cols + '" style="text-align:center; color:var(--muted); padding:24px;">No data yet</td></tr>';
+function renderCccRoicScatter(){
+ const pairs = RAW.cccVsRoicPairs || [];
+ if(pairs.length < 5){
+  document.getElementById("cccRoicMethodTable").innerHTML = '<div class="method-note">ROIC vs. Cost of Capital data isn’t available yet, so this test can’t run.</div>';
   return;
  }
- el.innerHTML = rows.map(r => {
-  const base = "<tr><td>" + r.ticker + "</td><td>" + r.sector + "</td><td>" + fmtPct(r.dividendYield) + "</td><td>" + fmtPct(r.buybackYield) + "</td>";
-  return withTotal ? base + "<td>" + fmtPct(r.totalShareholderYield) + "</td></tr>" : base + "</tr>";
- }).join("");
+ const pearson = linearRegression(pairs.map(p => p.x), pairs.map(p => p.y));
+ const spear = spearmanRegression(pairs.map(p => p.x), pairs.map(p => p.y));
+ const xs = pairs.map(p => p.x);
+ const xMin = Math.min(...xs), xMax = Math.max(...xs);
+ const linePoints = [{ x: xMin, y: pearson.intercept + pearson.slope * xMin }, { x: xMax, y: pearson.intercept + pearson.slope * xMax }];
+
+ const ctx = document.getElementById("cccRoicScatter").getContext("2d");
+ if(cccRoicScatter) cccRoicScatter.destroy();
+ cccRoicScatter = new Chart(ctx, {
+  type: "scatter",
+  data: {
+   datasets: [
+    { label: "Companies", data: pairs, backgroundColor: ndr("gold"), pointRadius: 2.5, showLine: false },
+    { label: "Regression fit", type: "line", data: linePoints, borderColor: ndr("navy"), borderWidth: 1.5, borderDash: [4, 3], pointRadius: 0, fill: false },
+   ],
+  },
+  options: {
+   responsive: true,
+   maintainAspectRatio: false,
+   plugins: {
+    legend: { display: false },
+    tooltip: { callbacks: { label: ctx => ctx.dataset.label === "Companies" ? (ctx.raw.symbol + ": CCC " + fmtDays(ctx.raw.x) + ", ROIC " + ctx.raw.y.toFixed(1) + "%") : null } },
+   },
+   scales: {
+    x: ndrYScale({ position: "bottom", fmt: v => v + "d", title: "Cash conversion cycle (days)" }),
+    y: ndrYScale({ fmt: v => v + "%", title: "ROIC (%)" }),
+   },
+  },
+ });
+
+ document.getElementById("cccRoicMethodTable").innerHTML = methodTableHtml(pearson, spear,
+  "Slope is ROIC percentage points per 1 day of CCC. n=" + pearson.n + " companies with both figures available. A negative slope would mean tighter working capital (a lower CCC) goes with a higher return on invested capital.");
 }
+
+function renderLeaderTable(rows, tbodyId){
+ const tbody = document.getElementById(tbodyId);
+ if(!rows || !rows.length){
+  tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; color:var(--muted); padding:24px;">No qualifying companies.</td></tr>';
+  return;
+ }
+ tbody.innerHTML = rows.map(r => `<tr>
+  <td><span class="sector-name">${r.symbol}</span></td>
+  <td><span class="sector-ticker">${r.sector || "—"}</span></td>
+  <td>${fmtPlainDays(r.dso)}</td>
+  <td>${fmtPlainDays(r.dio)}</td>
+  <td>${fmtPlainDays(r.dpo)}</td>
+  <td class="${r.ccc < 0 ? "ccc-neg" : "ccc-pos"}">${fmtDays(r.ccc)}</td>
+ </tr>`).join("");
+}
+
+function sortBy(key){
+ if(SORT_KEY === key){
+  SORT_DIR = -SORT_DIR;
+ }else{
+  SORT_KEY = key;
+  SORT_DIR = 1;
+ }
+ renderTable();
+}
+
+function renderTable(){
+ const rows = [...RAW.companies].sort((a, b) => {
+  const av = a[SORT_KEY], bv = b[SORT_KEY];
+  if(av === null || av === undefined) return 1;
+  if(bv === null || bv === undefined) return -1;
+  if(typeof av === "string") return av.localeCompare(bv) * SORT_DIR;
+  return (av - bv) * SORT_DIR;
+ });
+
+ const tbody = document.getElementById("tableBody");
+ tbody.innerHTML = rows.map(r => `<tr>
+  <td><span class="sector-name">${r.symbol}</span></td>
+  <td><span class="sector-ticker">${r.sector || "—"}</span></td>
+  <td>${fmtPlainDays(r.dso)}</td>
+  <td>${fmtPlainDays(r.dio)}</td>
+  <td>${fmtPlainDays(r.dpo)}</td>
+  <td class="${r.ccc < 0 ? "ccc-neg" : "ccc-pos"}">${fmtDays(r.ccc)}</td>
+ </tr>`).join("");
+
+ document.querySelectorAll("#stockTable thead th").forEach(th => {
+  const key = th.dataset.key;
+  th.classList.toggle("sorted", key === SORT_KEY);
+  const arrow = th.querySelector(".sort-arrow");
+  if(arrow) arrow.textContent = (key === SORT_KEY && SORT_DIR === 1) ? "▴" : "▾";
+ });
+}
+
+document.querySelectorAll("#stockTable thead th").forEach(th => {
+ const key = th.dataset.key;
+ if(key) th.addEventListener("click", () => sortBy(key));
+});
 
 init();
 </script>

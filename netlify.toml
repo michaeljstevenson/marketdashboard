@@ -208,6 +208,11 @@
   status = 200
 
 [[redirects]]
+  from = "/api/cash-conversion-cycle"
+  to = "/.netlify/functions/cash-conversion-cycle"
+  status = 200
+
+[[redirects]]
   from = "/api/analyst-price-target"
   to = "/.netlify/functions/analyst-price-target"
   status = 200
@@ -627,6 +632,16 @@
   # this function's own file for why it doesn't just read that job's
   # checkpoint instead of paying for a second sweep of the same two
   # endpoints.
+
+[functions."scheduled-cash-conversion-cycle-background"]
+  # One-time snapshot, no schedule — same convention as scheduled-roic-
+  # wacc-background above. Its own independent ~1006-call INCOME_STATEMENT
+  # + BALANCE_SHEET sweep (none of the existing two-statement checkpoints
+  # on this site carry inventory/receivables/payables/cost-of-revenue).
+  # Optionally reads scheduled-roic-wacc-background's own published
+  # snapshot (not its checkpoint) for the CCC-vs-ROIC regression — run
+  # that job first if a fresh version of that test is wanted, though this
+  # job works fine without it (the test just doesn't render).
 
 [functions."scheduled-analyst-price-target-background"]
   # One-time snapshot (2026-09-16) — no schedule, same reasoning as
