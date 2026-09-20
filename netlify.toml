@@ -203,6 +203,11 @@
   status = 200
 
 [[redirects]]
+  from = "/api/roic-wacc"
+  to = "/.netlify/functions/roic-wacc"
+  status = 200
+
+[[redirects]]
   from = "/api/analyst-price-target"
   to = "/.netlify/functions/analyst-price-target"
   status = 200
@@ -609,6 +614,19 @@
   # run it twice to complete a cycle, and a partial run never replaces a
   # complete published snapshot. Its checkpoint also holds the annual reports
   # scheduled-quality-financials-background.js reads, so run this one first.
+
+[functions."scheduled-roic-wacc-background"]
+  # One-time snapshot, no schedule — matches this file's current convention
+  # for new full-universe Equities jobs (see scheduled-margin-leverage-
+  # background above for the original reasoning: quarterly fundamentals
+  # don't move day to day, and new pages since 2026-09-16 read as "the
+  # research as it stood on this date"). Run manually (Netlify dashboard
+  # "Run now") for a fresh snapshot later; the two-statement sweep
+  # (~1006 calls) needs its own checkpoint/resume across runs, same as
+  # scheduled-margin-leverage-background's own two-statement sweep — see
+  # this function's own file for why it doesn't just read that job's
+  # checkpoint instead of paying for a second sweep of the same two
+  # endpoints.
 
 [functions."scheduled-analyst-price-target-background"]
   # One-time snapshot (2026-09-16) — no schedule, same reasoning as

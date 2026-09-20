@@ -152,7 +152,7 @@ document.addEventListener("DOMContentLoaded", function(){
 </script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Financial Quality Screener — Michael J. Stevenson</title>
+<title>ROIC vs. Cost of Capital — Michael J. Stevenson</title>
 
 <style>
 
@@ -414,7 +414,7 @@ h1{
 }
 
 .chart-canvas-wrap{
- height:340px;
+ height:380px;
 }
 
 /* The warm-paper plot panel behind each canvas — the NDR homage
@@ -424,6 +424,26 @@ h1{
  border:1px solid var(--ndr-grid);
  border-radius:8px;
  padding:14px 14px 10px;
+}
+
+/* Two charts / method-tables side by side, same breakpoint as table-grid */
+.chart-grid{
+ display:grid;
+ grid-template-columns:1fr 1fr;
+ gap:16px;
+ margin-bottom:30px;
+}
+
+.chart-grid .chart-box{
+ margin-bottom:0;
+ min-width:0; /* grid items default to min-width:auto (their content's min-content
+                 size), which a wide method table would otherwise force past this
+                 column's track width — same "grid blowout" the site-wide
+                 table{min-width:600px} rule creates if left unchecked here */
+}
+
+@media (max-width:900px){
+ .chart-grid{ grid-template-columns:1fr; }
 }
 
 /* TABLE */
@@ -523,27 +543,34 @@ tbody td:nth-child(2){
 .sector-name{ color:var(--ink); }
 .sector-ticker{ color:var(--muted); font-size:11px; }
 
+.cell-pos{ color:var(--ink); }
+.cell-neg{ color:var(--ink); }
 .cell-na{ color:var(--muted); }
 
-.score-high{ color:var(--ndr-green); }
-.score-mid{ color:var(--ndr-gold); }
-.score-low{ color:var(--ndr-red); }
+.spread-pos{ color:var(--greed); }
+.spread-neg{ color:var(--fear); }
 
 /* SCATTER / METHOD TABLE (mirrors /factor-analysis) */
 
 .scatter-canvas-wrap{
- height:320px;
+ height:300px;
  margin-bottom:12px;
  position:relative;
 }
 
 .method-table{
  width:100%;
- min-width:0;
+ min-width:0; /* overrides the site-wide table{min-width:600px} rule below — two of these
+                 side by side in .chart-grid would otherwise force the whole page wider
+                 than its container even though a 7-column method table never needs 600px */
  border-collapse:collapse;
  font-family:var(--mono);
  font-size:11px;
  margin-top:8px;
+}
+
+#betaSpreadMethodTable, #rel3mSpreadMethodTable{
+ overflow-x:auto;
 }
 
 .method-table th{
@@ -582,6 +609,26 @@ tbody td:nth-child(2){
  color:var(--muted);
  margin-top:8px;
  font-style:italic;
+}
+
+/* SECTOR LEGEND (scatter / spaghetti charts) */
+
+.sector-legend{
+ display:flex;
+ flex-wrap:wrap;
+ gap:10px 16px;
+ margin-top:14px;
+ font-size:11px;
+ color:var(--muted);
+}
+
+.sector-legend .dot{
+ display:inline-block;
+ width:8px;
+ height:8px;
+ border-radius:50%;
+ margin-right:5px;
+ vertical-align:middle;
 }
 
 /* EXPLAINER */
@@ -719,7 +766,7 @@ tbody td:nth-child(2){
 <a href="/sector-correlation.html">Sector Correlation Matrix</a>
 <a href="/sector-rotation.html">Sector Rotation Model</a>
 <a href="/margin-leverage.html">Margin &amp; Leverage Cycle</a>
-<a href="/quality-score.html" class="active">Financial Quality Screener</a>
+<a href="/roic-wacc.html" class="active">ROIC vs. Cost of Capital</a>
 <a href="/analyst-price-target.html">Analyst Price Target Upside</a>
 <a href="/institutional-ownership.html">Institutional Ownership &amp; 13F Flow</a>
 <a href="/post-earnings-drift.html">Post-Earnings Announcement Drift</a>
@@ -730,8 +777,8 @@ tbody td:nth-child(2){
 <a href="/short-sale-volume.html">Short Sale Volume</a>
 <a href="/news-sentiment.html">News Sentiment Momentum</a>
 <a href="/quality-lowvol-factors.html">Quality &amp; Low-Volatility Factor Screen</a>
+<a href="/quality-score.html">Financial Quality Screener (Piotroski)</a>
 <a href="/country-sector-scorecard.html">Country / Sector Scorecard</a>
-<a href="/roic-wacc.html">ROIC vs. Cost of Capital</a>
 </div>
 </div>
 
@@ -798,54 +845,40 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 
 <div class="header">
 <div>
-<h1>Financial Quality Screener</h1>
-<div class="subtitle">The Piotroski (2000) F-Score, computed fresh across the full S&amp;P 500: nine year-over-year signals across profitability, balance-sheet strength, and operating efficiency, combined into a single 0&ndash;9 quality score per company.</div>
+<h1>ROIC vs. Cost of Capital</h1>
+<div class="subtitle">Is the S&amp;P 500 actually creating economic value? Return on invested capital vs. a CAPM-based weighted average cost of capital, company by company — the spread between the two is a rough "economic profit" screen, not just another profitability ratio.</div>
 </div>
 <div class="updated" id="updated">Loading...</div>
 </div>
 
 <div class="stat-grid">
 <div class="stat-card">
-<div class="stat-label">Companies Scored</div>
+<div class="stat-label">Companies Loaded</div>
 <div class="stat-value" id="statCompanies" style="font-size:20px;">—</div>
 <div class="stat-note" id="statCompaniesNote">Of full S&amp;P 500</div>
 </div>
 <div class="stat-card">
-<div class="stat-label">Median F-Score</div>
-<div class="stat-value" id="statMedianScore">—</div>
-<div class="stat-note">Out of 9, market-wide</div>
+<div class="stat-label">Median ROIC</div>
+<div class="stat-value" id="statRoic">—</div>
+<div class="stat-note">Trailing twelve months, market-wide</div>
 </div>
 <div class="stat-card">
-<div class="stat-label">High Quality (8&ndash;9)</div>
-<div class="stat-value" id="statHighQuality">—</div>
-<div class="stat-note">Share of scored companies</div>
+<div class="stat-label">Median WACC</div>
+<div class="stat-value" id="statWacc">—</div>
+<div class="stat-note" id="statWaccNote">CAPM cost of equity + after-tax cost of debt</div>
 </div>
 <div class="stat-card">
-<div class="stat-label">Low Quality (0&ndash;2)</div>
-<div class="stat-value" id="statLowQuality" style="color:var(--fear);">—</div>
-<div class="stat-note">Financial-distress watch zone</div>
+<div class="stat-label">Value Creators</div>
+<div class="stat-value" id="statCreatorPct">—</div>
+<div class="stat-note">Share of companies with ROIC &gt; WACC</div>
 </div>
 </div>
 
 <div class="chart-box">
 <div class="chart-box-header">
 <div>
-<h2>F-Score distribution</h2>
-<div class="chart-subhead">How many S&amp;P 500 constituents land at each score, 0 (worst) to 9 (best)</div>
-</div>
-</div>
-<div class="ndr-panel">
-<div class="chart-canvas-wrap">
-<canvas id="distributionChart"></canvas>
-</div>
-</div>
-</div>
-
-<div class="chart-box">
-<div class="chart-box-header">
-<div>
-<h2>Median F-Score by sector</h2>
-<div class="chart-subhead">Sectors with at least 3 scored companies</div>
+<h2>ROIC vs. WACC by sector</h2>
+<div class="chart-subhead">Median return on invested capital and median cost of capital across each SPDR sector's S&amp;P 500 constituents — where the orange bar clears the blue bar, the sector is earning more than its capital costs</div>
 </div>
 </div>
 <div class="ndr-panel">
@@ -858,92 +891,109 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <div class="chart-box">
 <div class="chart-box-header">
 <div>
-<h2>Which signals are hardest to pass right now</h2>
-<div class="chart-subhead">Share of scored companies passing each of the 9 signals, market-wide</div>
+<h2>Distribution of the ROIC&minus;WACC spread</h2>
+<div class="chart-subhead">Every S&amp;P 500 constituent with usable statement history, bucketed by spread (percentage points)</div>
 </div>
 </div>
 <div class="ndr-panel">
-<div class="chart-canvas-wrap">
-<canvas id="signalChart"></canvas>
+<div class="chart-canvas-wrap" style="height:300px;">
+<canvas id="spreadHistogram"></canvas>
 </div>
 </div>
 </div>
 
-<div class="chart-box" id="momentumBox">
+<div class="chart-grid">
+<div class="chart-box">
 <div class="chart-box-header">
 <div>
-<h2>Quality vs. recent price performance</h2>
-<div class="chart-subhead">Each point is one company: x-axis is its F-Score, y-axis is trailing 3-month price return relative to SPY (from Relative Strength Leaders/Laggards) — a concurrent snapshot, not a claim that today's F-Score predicts tomorrow's return</div>
+<h2>Spread vs. beta</h2>
+<div class="chart-subhead">Does the market actually pay higher-beta (riskier) companies a wider economic-value spread, or is there no such relationship?</div>
 </div>
 </div>
 <div class="ndr-panel">
 <div class="scatter-canvas-wrap">
-<canvas id="momentumScatter"></canvas>
+<canvas id="betaSpreadScatter"></canvas>
 </div>
 </div>
-<div id="momentumMethodTable"></div>
+<div id="betaSpreadMethodTable"></div>
+</div>
+<div class="chart-box">
+<div class="chart-box-header">
+<div>
+<h2>Spread vs. 3-month relative return</h2>
+<div class="chart-subhead">Does the market currently reward companies that are creating the most economic value with better relative price performance?</div>
+</div>
+</div>
+<div class="ndr-panel">
+<div class="scatter-canvas-wrap">
+<canvas id="rel3mSpreadScatter"></canvas>
+</div>
+</div>
+<div id="rel3mSpreadMethodTable"></div>
+</div>
 </div>
 
 <div class="table-grid">
 <div class="table-box">
 <div class="table-box-header">
-<h2>High-quality leaders</h2>
-<div class="chart-subhead">F-Score of 8 or 9</div>
+<h2>Top value creators</h2>
+<div class="chart-subhead">Widest ROIC&minus;WACC spread</div>
 </div>
-<table id="highTable">
-<thead><tr><th>Symbol</th><th>Sector</th><th>Score</th><th>ROA</th></tr></thead>
-<tbody id="highBody"><tr><td colspan="4" style="text-align:center; color:var(--muted); padding:24px;">Loading&hellip;</td></tr></tbody>
+<table id="creatorsTable">
+<thead><tr><th>Symbol</th><th>Sector</th><th>ROIC</th><th>WACC</th><th>Spread</th></tr></thead>
+<tbody id="creatorsBody"><tr><td colspan="5" style="text-align:center; color:var(--muted); padding:24px;">Loading&hellip;</td></tr></tbody>
 </table>
 </div>
 <div class="table-box">
 <div class="table-box-header">
-<h2>Low-quality watchlist</h2>
-<div class="chart-subhead">F-Score of 3 or below</div>
+<h2>Value destroyers</h2>
+<div class="chart-subhead">Narrowest (most negative) ROIC&minus;WACC spread</div>
 </div>
-<table id="lowTable">
-<thead><tr><th>Symbol</th><th>Sector</th><th>Score</th><th>ROA</th></tr></thead>
-<tbody id="lowBody"><tr><td colspan="4" style="text-align:center; color:var(--muted); padding:24px;">Loading&hellip;</td></tr></tbody>
+<table id="destroyersTable">
+<thead><tr><th>Symbol</th><th>Sector</th><th>ROIC</th><th>WACC</th><th>Spread</th></tr></thead>
+<tbody id="destroyersBody"><tr><td colspan="5" style="text-align:center; color:var(--muted); padding:24px;">Loading&hellip;</td></tr></tbody>
 </table>
 </div>
 </div>
 
 <div class="table-box">
 <div class="table-box-header">
-<h2>All scored companies</h2>
-<div class="chart-subhead">Full S&amp;P 500 constituents with a computable F-Score</div>
+<h2>All companies with usable statement history</h2>
+<div class="chart-subhead">Trailing-twelve-month ROIC, estimated WACC, and the spread between them, full S&amp;P 500</div>
 </div>
 <table id="stockTable">
 <thead>
 <tr>
 <th data-key="symbol">Symbol</th>
 <th data-key="sector">Sector</th>
-<th data-key="score">F-Score<span class="sort-arrow">▾</span></th>
-<th data-key="roa">ROA<span class="sort-arrow">▾</span></th>
-<th data-key="roaChange">ΔROA<span class="sort-arrow">▾</span></th>
-<th data-key="currentRatio">Current Ratio<span class="sort-arrow">▾</span></th>
-<th data-key="leverage">LT Debt/Assets<span class="sort-arrow">▾</span></th>
-<th data-key="grossMargin">Gross Margin<span class="sort-arrow">▾</span></th>
+<th data-key="roic">ROIC<span class="sort-arrow">▾</span></th>
+<th data-key="wacc">WACC<span class="sort-arrow">▾</span></th>
+<th data-key="spread">Spread<span class="sort-arrow">▾</span></th>
+<th data-key="costOfEquity">Cost of Equity<span class="sort-arrow">▾</span></th>
+<th data-key="costOfDebtAfterTax">Cost of Debt (a.t.)<span class="sort-arrow">▾</span></th>
+<th data-key="beta">Beta<span class="sort-arrow">▾</span></th>
 </tr>
 </thead>
 <tbody id="tableBody">
-<tr><td colspan="8" style="text-align:center; color:var(--muted); padding:30px;">Loading quality score data&hellip;</td></tr>
+<tr><td colspan="8" style="text-align:center; color:var(--muted); padding:30px;">Loading ROIC/WACC data&hellip;</td></tr>
 </tbody>
 </table>
 </div>
 
 <div class="explainer">
 <h2>Methodology</h2>
-<p>The F-Score comes from Joseph Piotroski's 2000 paper <i>"Value Investing: The Use of Historical Financial Statement Information to Separate Winners from Losers"</i> — nine binary tests comparing a company's latest fiscal year (T) against the prior one (T-1), summed into a single 0&ndash;9 score. <b>Profitability (4):</b> return on assets positive; operating cash flow positive; ROA improved year-over-year; operating cash flow exceeds net income (a basic accrual-quality/earnings-quality check). <b>Leverage &amp; liquidity (3):</b> long-term debt/total-assets ratio decreased; current ratio (current assets/current liabilities) improved; no new shares issued. <b>Operating efficiency (2):</b> gross margin improved; asset turnover (revenue/total assets) improved. Each test scores 1 or 0; the F-Score is the sum.</p>
-<p>Universe is the full S&amp;P 500. Two years of annual <code>BALANCE_SHEET</code> and <code>INCOME_STATEMENT</code> data supply total assets, current assets/liabilities, long-term debt, shares outstanding, revenue, gross profit, and net income; annual <code>CASH_FLOW</code> supplies operating cash flow. One simplification from Piotroski's original construction: ROA here uses <i>ending</i> total assets for both fiscal years rather than the average of beginning and ending assets, since averaging ROA for year T-1 would require a third year (T-2) of balance-sheet data this two-year pull doesn't include — a common practical simplification when working from a fixed lookback window. A company is scored only if every one of the nine inputs is available for both fiscal years; no partial score is reported for a missing input, since a score out of fewer than 9 wouldn't be comparable to the rest of the universe. In practice this excludes most banks and insurers, whose balance sheets don't carry a conventional current-assets/current-liabilities split — a consequence of applying a screener built for industrial and operating companies, not a hand-picked sector exclusion.</p>
-<p>The quality-vs-momentum scatter is a single-snapshot cross-sectional check, not a forward-return test: it asks whether companies that currently screen as high-quality also happen to show stronger trailing 3-month relative price performance right now (reusing <a href="/relative-strength-leaders.html">Relative Strength Leaders/Laggards</a>' own latest snapshot rather than running a second price sweep). A positive relationship would be consistent with the market currently rewarding quality; it says nothing about whether this quarter's F-Score predicts next quarter's return, which would need return data that postdates this snapshot. Pearson and Spearman are both reported, matching the two-method convention used throughout <a href="/factor-analysis.html">Factor Analysis</a>.</p>
-<p>This is a snapshot, not a continuously-refreshed feed — like several of this site's other full-index screens, it reflects the data as of the run that built it. A fresh sweep needs the two background jobs behind this page (a two-statement balance-sheet/income-statement pull, then a separate cash-flow pull) re-run manually.</p>
-<div class="source">Source: <a href="https://www.alphavantage.co/" target="_blank" rel="noopener">Alpha Vantage — BALANCE_SHEET, INCOME_STATEMENT, CASH_FLOW</a></div>
+<p>Universe is the full S&amp;P 500. For every constituent, Alpha Vantage's <code>INCOME_STATEMENT</code> and <code>BALANCE_SHEET</code> endpoints (quarterly) supply the trailing four quarters needed for a trailing-twelve-month (TTM) NOPAT and a latest-quarter balance-sheet snapshot. <b>NOPAT</b> is TTM EBIT (Alpha Vantage's direct <code>ebit</code> field, falling back to operating income when that's missing) &times; (1 &minus; effective tax rate), where the effective rate is TTM income tax expense &divide; TTM pre-tax income, clamped to 0&ndash;50% and falling back to the 21% US statutory rate whenever a company's own reported rate is negative, zero, or missing (a one-time tax benefit or an NOL carryforward can otherwise produce a nonsensical multi-hundred-percent "effective rate"). <b>Invested capital</b> is latest-quarter total debt (preferring Alpha Vantage's combined <code>shortLongTermDebtTotal</code> field) plus total shareholder equity, minus cash &amp; equivalents. <b>ROIC</b> is TTM NOPAT &divide; invested capital.</p>
+<p><b>Cost of equity</b> uses CAPM: the 10-year Treasury yield (risk-free rate) plus each company's Alpha Vantage-reported beta &times; a market equity-risk-premium assumption &mdash; the same market-wide median earnings-yield-based ERP already computed on <a href="/equity-risk-premium.html">Equity Risk Premium by Sector</a>, reused here rather than introducing a third, unrelated ERP estimate (a company with no beta on file is shown with an assumed beta of 1, flagged in the per-company data). <b>Cost of debt</b> is TTM interest expense &divide; total debt, after-tax at the same effective rate used for NOPAT; a levered company that reports no interest expense across the trailing year falls back to the risk-free rate plus a flat 1.5 percentage-point spread, rather than implying free debt. <b>WACC</b> weights the two by book value of debt and equity (not market value &mdash; a deliberate simplification flagged here rather than pulling in a third data source just to mark equity to market). <b>Spread</b> is ROIC minus WACC.</p>
+<p>Companies with non-positive book shareholder equity are excluded entirely, not shown with a distorted ratio &mdash; this is a real limitation, not an edge case: aggressive, sustained buyback programs (McDonald's, Starbucks, and a number of other well-known names) can drive book equity negative, which breaks both the invested-capital denominator and the debt/equity weighting this page's WACC calculation depends on. A company is also excluded if any of the trailing four quarters' EBIT, or the latest quarter's debt or equity figures, aren't available.</p>
+<p>The two regression tests are single-snapshot cross-sections (no accumulated history needed, unlike a forward-return test): spread vs. beta asks whether the market's own risk-return logic actually shows up in realized economic profitability, and spread vs. 3-month relative price return (reusing <a href="/relative-strength-leaders.html">Relative Strength Leaders/Laggards</a>' own weekly price data rather than a second price sweep) asks whether the market currently rewards value creation with relative price performance. Both use the same Pearson-and-Spearman two-method check as <a href="/factor-analysis.html">Factor Analysis</a>.</p>
+<p>One-time snapshot &mdash; no recurring schedule, matching every other full-universe fundamentals sweep added to this site since mid-September 2026. Re-run manually for a fresh pass; quarterly fundamentals don't move day to day. Sector and company name come from the same weekly metadata sweep that backs <a href="/sector-beeswarm.html">Sector Beeswarm</a>.</p>
+<div class="source">Source: <a href="https://www.alphavantage.co/" target="_blank" rel="noopener">Alpha Vantage — INCOME_STATEMENT, BALANCE_SHEET, TREASURY_YIELD</a>, plus this site's own <a href="/equity-risk-premium.html">Equity Risk Premium by Sector</a> and <a href="/relative-strength-leaders.html">Relative Strength Leaders/Laggards</a> data</div>
 </div>
 
 </div>
 
 <script>
-const DATA_URL = "/api/quality-score";
+const DATA_URL = "/api/roic-wacc";
 
 const SECTOR_COLORS = {
  "Information Technology": "#d98a3d",
@@ -960,33 +1010,22 @@ const SECTOR_COLORS = {
 };
 
 let RAW = null;
-let SORT_KEY = "score";
+let SORT_KEY = "spread";
 let SORT_DIR = -1;
 
-function fmtScore(v){
- if(v === null || v === undefined || isNaN(v)) return "—";
- return v + "/9";
-}
-function fmtPlainPct(v, digits){
+function fmtPct(v, digits){
  if(v === null || v === undefined || isNaN(v)) return "—";
  digits = digits === undefined ? 1 : digits;
  return v.toFixed(digits) + "%";
 }
-function fmtPct(v, digits){
+function fmtPp(v, digits){
  if(v === null || v === undefined || isNaN(v)) return "—";
  digits = digits === undefined ? 1 : digits;
- return (v >= 0 ? "+" : "") + v.toFixed(digits) + "%";
+ return (v >= 0 ? "+" : "") + v.toFixed(digits) + "pp";
 }
-function fmtX(v, digits){
+function fmtBeta(v){
  if(v === null || v === undefined || isNaN(v)) return "—";
- digits = digits === undefined ? 2 : digits;
- return v.toFixed(digits) + "x";
-}
-function scoreClass(score){
- if(score === null || score === undefined) return "cell-na";
- if(score >= 7) return "score-high";
- if(score >= 4) return "score-mid";
- return "score-low";
+ return v.toFixed(2);
 }
 
 function showError(message){
@@ -1011,17 +1050,6 @@ Chart.defaults.color = ndr("axis-soft");
 function ndrXScale(){
  return {
   ticks: { color: ndr("axis"), maxTicksLimit: 9, maxRotation: 0, autoSkip: true, font: { size: 11 } },
-  grid: { color: "rgba(0,0,0,0)", borderColor: ndr("axis") },
- };
-}
-
-// For a horizontal bar chart's category axis (sectors, signal names): every
-// category must get its own label, unlike ndrXScale()'s autoSkip/
-// maxTicksLimit (built for a dense time axis) which silently drops labels
-// and makes them look misaligned with their own bars.
-function ndrCategoryScale(){
- return {
-  ticks: { color: ndr("axis"), autoSkip: false, font: { size: 11 } },
   grid: { color: "rgba(0,0,0,0)", borderColor: ndr("axis") },
  };
 }
@@ -1101,7 +1129,7 @@ function methodTableHtml(pearson, spear, unitNote){
  "</table>" + (unitNote ? '<div class="method-note">' + unitNote + "</div>" : "");
 }
 
-let distributionChart = null, sectorChart = null, signalChart = null, momentumScatter = null;
+let sectorChart = null, spreadHistogram = null, betaSpreadScatter = null, rel3mSpreadScatter = null;
 
 async function init(){
  try{
@@ -1115,18 +1143,21 @@ async function init(){
   if(data.loadedCount < data.universeSize){
    showWarning("Only " + data.loadedCount + " of " + data.universeSize + " S&P 500 constituents loaded this run — some data may be temporarily unavailable.");
   }
+  if(!data.hasBetaData){
+   showWarning("The Equity Risk Premium page's data hasn't populated yet, so every company's beta is assumed to be 1 and the market ERP assumption uses a fallback constant rather than this site's own computed figure.");
+  }
 
   renderStats();
-  renderDistributionChart();
   renderSectorChart();
-  renderSignalChart();
-  renderMomentumScatter();
-  renderLeaderTable(data.highQualityLeaders, "highBody");
-  renderLeaderTable(data.lowQualityWatchlist, "lowBody");
+  renderSpreadHistogram();
+  renderBetaSpreadScatter();
+  renderRel3mSpreadScatter();
+  renderLeaderTable(data.creators, "creatorsBody");
+  renderLeaderTable(data.destroyers, "destroyersBody");
   renderTable();
 
  }catch(e){
-  showError("Couldn't load quality score data (" + e.message + "). The /api/quality-score function may not have run yet.");
+  showError("Couldn't load ROIC/WACC data (" + e.message + "). The /api/roic-wacc function may not have run yet.");
   document.getElementById("tableBody").innerHTML =
    '<tr><td colspan="8" style="text-align:center; color:var(--muted); padding:30px;">No data available.</td></tr>';
  }
@@ -1134,101 +1165,98 @@ async function init(){
 
 function renderStats(){
  document.getElementById("statCompanies").textContent = RAW.market.companyCount;
- document.getElementById("statCompaniesNote").textContent = RAW.loadedCount + " of " + RAW.universeSize + " loaded, " + RAW.market.companyCount + " with a computable score";
- document.getElementById("statMedianScore").textContent = RAW.market.medianScore === null ? "—" : RAW.market.medianScore + "/9";
- document.getElementById("statHighQuality").textContent = fmtPlainPct(RAW.market.highQualityPct);
- document.getElementById("statLowQuality").textContent = fmtPlainPct(RAW.market.lowQualityPct);
+ document.getElementById("statCompaniesNote").textContent = RAW.loadedCount + " of " + RAW.universeSize + " loaded, " + RAW.market.companyCount + " with usable statement history";
+ document.getElementById("statRoic").textContent = fmtPct(RAW.market.medianRoic);
+ document.getElementById("statWacc").textContent = fmtPct(RAW.market.medianWacc);
+ document.getElementById("statWaccNote").textContent = "Risk-free " + fmtPct(RAW.market.riskFreeRate) + " + beta × " + fmtPct(RAW.market.marketErpAssumption) + " market ERP";
+ document.getElementById("statCreatorPct").textContent = fmtPct(RAW.market.valueCreatorPct, 0);
 }
 
-function renderDistributionChart(){
- const dist = RAW.distribution;
- const colors = dist.map(d => d.score >= 7 ? ndr("green") : d.score >= 4 ? ndr("gold") : ndr("red"));
- const ctx = document.getElementById("distributionChart").getContext("2d");
- if(distributionChart) distributionChart.destroy();
- distributionChart = new Chart(ctx, {
+function renderSectorChart(){
+ const sectors = RAW.sectors.map(s => s.sector);
+ const ctx = document.getElementById("sectorChart").getContext("2d");
+ if(sectorChart) sectorChart.destroy();
+ sectorChart = new Chart(ctx, {
   type: "bar",
-  data: { labels: dist.map(d => d.score), datasets: [{ label: "Companies", data: dist.map(d => d.count), backgroundColor: colors, borderRadius: 4 }] },
+  data: {
+   labels: sectors,
+   datasets: [
+    { label: "ROIC", data: RAW.sectors.map(s => s.medianRoic), backgroundColor: ndr("gold"), borderRadius: 3 },
+    { label: "WACC", data: RAW.sectors.map(s => s.medianWacc), backgroundColor: ndr("navy"), borderRadius: 3 },
+   ],
+  },
+  options: {
+   responsive: true,
+   maintainAspectRatio: false,
+   plugins: {
+    legend: { display: true, position: "top", align: "start", labels: { boxWidth: 12, boxHeight: 12, color: ndr("axis"), font: { size: 11 } } },
+    tooltip: { callbacks: { label: ctx => ctx.dataset.label + ": " + fmtPct(ctx.parsed.y) } },
+   },
+   scales: {
+    x: ndrXScale(),
+    y: ndrYScale({ fmt: v => v + "%" }),
+   },
+  },
+ });
+}
+
+function renderSpreadHistogram(){
+ const spreads = RAW.companies.map(c => c.spread).filter(v => v !== null && v !== undefined && !isNaN(v));
+ const binWidth = 2; // percentage points
+ const minBin = Math.floor(Math.min(...spreads) / binWidth) * binWidth;
+ const maxBin = Math.ceil(Math.max(...spreads) / binWidth) * binWidth;
+ const bins = [];
+ for(let b = minBin; b < maxBin; b += binWidth) bins.push({ lo: b, hi: b + binWidth, count: 0 });
+ for(const v of spreads){
+  let idx = Math.floor((v - minBin) / binWidth);
+  if(idx < 0) idx = 0;
+  if(idx >= bins.length) idx = bins.length - 1;
+  bins[idx].count++;
+ }
+
+ const ctx = document.getElementById("spreadHistogram").getContext("2d");
+ if(spreadHistogram) spreadHistogram.destroy();
+ spreadHistogram = new Chart(ctx, {
+  type: "bar",
+  data: {
+   labels: bins.map(b => (b.lo >= 0 ? "+" : "") + b.lo + "to" + (b.hi >= 0 ? "+" : "") + b.hi),
+   datasets: [{ data: bins.map(b => b.count), backgroundColor: bins.map(b => (b.lo + b.hi) / 2 >= 0 ? ndr("green") : ndr("red")), borderRadius: 3, barPercentage: 1.0, categoryPercentage: 0.95 }],
+  },
   options: {
    responsive: true,
    maintainAspectRatio: false,
    plugins: {
     legend: { display: false },
-    tooltip: { callbacks: { label: ctx => ctx.parsed.y + " companies scored " + ctx.label } },
+    tooltip: { callbacks: { title: items => { const b = bins[items[0].dataIndex]; return (b.lo >= 0 ? "+" : "") + b.lo + "pp to " + (b.hi >= 0 ? "+" : "") + b.hi + "pp"; }, label: ctx => ctx.parsed.y + " companies" } },
    },
    scales: {
-    x: { ...ndrXScale(), title: { display: true, text: "F-Score", color: ndr("axis-soft"), font: { size: 10 } } },
+    x: { ...ndrXScale(), title: { display: true, text: "ROIC − WACC (pp)", color: ndr("axis-soft"), font: { size: 10 } } },
     y: ndrYScale({ title: "Companies" }),
    },
   },
  });
 }
 
-function renderSectorChart(){
- const sorted = [...RAW.sectors].sort((a, b) => (b.medianScore ?? -Infinity) - (a.medianScore ?? -Infinity));
- const colors = sorted.map(s => SECTOR_COLORS[s.sector] || "#8b9199");
- const ctx = document.getElementById("sectorChart").getContext("2d");
- if(sectorChart) sectorChart.destroy();
- sectorChart = new Chart(ctx, {
-  type: "bar",
-  data: { labels: sorted.map(s => s.sector), datasets: [{ label: "Median F-Score", data: sorted.map(s => s.medianScore), backgroundColor: colors, borderRadius: 4 }] },
-  options: {
-   indexAxis: "y",
-   responsive: true,
-   maintainAspectRatio: false,
-   plugins: {
-    legend: { display: false },
-    tooltip: { callbacks: { label: ctx => { const s = sorted[ctx.dataIndex]; return ["Median: " + s.medianScore + "/9", "n=" + s.companyCount + " companies", fmtPlainPct(s.highQualityPct) + " score 8-9"]; } } },
-   },
-   scales: {
-    x: ndrYScale({ position: "bottom", min: 0, max: 9 }),
-    y: ndrCategoryScale(),
-   },
-  },
- });
-}
-
-function renderSignalChart(){
- const sorted = [...RAW.signalPassRates].sort((a, b) => a.passRate - b.passRate);
- const ctx = document.getElementById("signalChart").getContext("2d");
- if(signalChart) signalChart.destroy();
- signalChart = new Chart(ctx, {
-  type: "bar",
-  data: { labels: sorted.map(s => s.label), datasets: [{ label: "Pass rate", data: sorted.map(s => s.passRate), backgroundColor: ndr("gold"), borderRadius: 4 }] },
-  options: {
-   indexAxis: "y",
-   responsive: true,
-   maintainAspectRatio: false,
-   plugins: {
-    legend: { display: false },
-    tooltip: { callbacks: { label: ctx => fmtPlainPct(ctx.parsed.x) + " of scored companies pass" } },
-   },
-   scales: {
-    x: ndrYScale({ position: "bottom", min: 0, max: 100, fmt: v => v + "%" }),
-    y: ndrCategoryScale(),
-   },
-  },
- });
-}
-
-function renderMomentumScatter(){
- if(!RAW.hasPriceData || !RAW.qualityVsMomentumPairs || RAW.qualityVsMomentumPairs.length < 5){
-  document.getElementById("momentumBox").style.display = "none";
+function renderBetaSpreadScatter(){
+ const pairs = RAW.betaSpreadPairs || [];
+ if(pairs.length < 5){
+  document.getElementById("betaSpreadMethodTable").innerHTML = '<div class="method-note">Not enough companies with beta data to test.</div>';
   return;
  }
- const pairs = RAW.qualityVsMomentumPairs;
  const pearson = linearRegression(pairs.map(p => p.x), pairs.map(p => p.y));
  const spear = spearmanRegression(pairs.map(p => p.x), pairs.map(p => p.y));
- const xMin = 0, xMax = 9;
+ const xs = pairs.map(p => p.x);
+ const xMin = Math.min(...xs), xMax = Math.max(...xs);
  const linePoints = [{ x: xMin, y: pearson.intercept + pearson.slope * xMin }, { x: xMax, y: pearson.intercept + pearson.slope * xMax }];
 
- const ctx = document.getElementById("momentumScatter").getContext("2d");
- if(momentumScatter) momentumScatter.destroy();
- momentumScatter = new Chart(ctx, {
+ const ctx = document.getElementById("betaSpreadScatter").getContext("2d");
+ if(betaSpreadScatter) betaSpreadScatter.destroy();
+ betaSpreadScatter = new Chart(ctx, {
   type: "scatter",
   data: {
    datasets: [
-    { label: "Companies", data: pairs, backgroundColor: ndr("navy"), pointRadius: 3, showLine: false },
-    { label: "Regression fit", type: "line", data: linePoints, borderColor: ndr("red"), borderWidth: 1.5, borderDash: [4, 3], pointRadius: 0, fill: false },
+    { label: "Companies", data: pairs, backgroundColor: ndr("gold"), pointRadius: 2.5, showLine: false },
+    { label: "Regression fit", type: "line", data: linePoints, borderColor: ndr("navy"), borderWidth: 1.5, borderDash: [4, 3], pointRadius: 0, fill: false },
    ],
   },
   options: {
@@ -1236,30 +1264,71 @@ function renderMomentumScatter(){
    maintainAspectRatio: false,
    plugins: {
     legend: { display: false },
-    tooltip: { callbacks: { label: ctx => ctx.dataset.label === "Companies" ? (ctx.raw.symbol + ": score " + ctx.raw.x + "/9, " + fmtPct(ctx.raw.y) + " rel. 3M return") : null } },
+    tooltip: { callbacks: { label: ctx => ctx.dataset.label === "Companies" ? (ctx.raw.symbol + ": beta " + ctx.raw.x.toFixed(2) + ", spread " + fmtPp(ctx.raw.y)) : null } },
    },
    scales: {
-    x: ndrYScale({ position: "bottom", min: 0, max: 9, title: "F-Score" }),
-    y: ndrYScale({ fmt: v => v + "%", title: "3-month return vs. SPY (%)" }),
+    x: ndrYScale({ position: "bottom", title: "Beta" }),
+    y: ndrYScale({ fmt: v => v + "pp", title: "ROIC − WACC spread (pp)" }),
    },
   },
  });
 
- document.getElementById("momentumMethodTable").innerHTML = methodTableHtml(pearson, spear,
-  "A concurrent association, not a forward-return prediction — see the methodology section below. n=" + pearson.n + " companies with both a computable F-Score and recent relative-return data.");
+ document.getElementById("betaSpreadMethodTable").innerHTML = methodTableHtml(pearson, spear,
+  "Slope is spread (pp) per 1.0 of beta. n=" + pearson.n + " companies with a reported beta.");
+}
+
+function renderRel3mSpreadScatter(){
+ const pairs = RAW.rel3MSpreadPairs || [];
+ if(pairs.length < 5){
+  document.getElementById("rel3mSpreadMethodTable").innerHTML = '<div class="method-note">Relative Strength Leaders/Laggards data isn’t available yet, so this test can’t run.</div>';
+  return;
+ }
+ const pearson = linearRegression(pairs.map(p => p.x), pairs.map(p => p.y));
+ const spear = spearmanRegression(pairs.map(p => p.x), pairs.map(p => p.y));
+ const xs = pairs.map(p => p.x);
+ const xMin = Math.min(...xs), xMax = Math.max(...xs);
+ const linePoints = [{ x: xMin, y: pearson.intercept + pearson.slope * xMin }, { x: xMax, y: pearson.intercept + pearson.slope * xMax }];
+
+ const ctx = document.getElementById("rel3mSpreadScatter").getContext("2d");
+ if(rel3mSpreadScatter) rel3mSpreadScatter.destroy();
+ rel3mSpreadScatter = new Chart(ctx, {
+  type: "scatter",
+  data: {
+   datasets: [
+    { label: "Companies", data: pairs, backgroundColor: ndr("gold"), pointRadius: 2.5, showLine: false },
+    { label: "Regression fit", type: "line", data: linePoints, borderColor: ndr("navy"), borderWidth: 1.5, borderDash: [4, 3], pointRadius: 0, fill: false },
+   ],
+  },
+  options: {
+   responsive: true,
+   maintainAspectRatio: false,
+   plugins: {
+    legend: { display: false },
+    tooltip: { callbacks: { label: ctx => ctx.dataset.label === "Companies" ? (ctx.raw.symbol + ": spread " + fmtPp(ctx.raw.x) + ", rel. 3M " + fmtPp(ctx.raw.y)) : null } },
+   },
+   scales: {
+    x: ndrYScale({ position: "bottom", fmt: v => v + "pp", title: "ROIC − WACC spread (pp)" }),
+    y: ndrYScale({ fmt: v => v + "pp", title: "3-month return vs. SPY (pp)" }),
+   },
+  },
+ });
+
+ document.getElementById("rel3mSpreadMethodTable").innerHTML = methodTableHtml(pearson, spear,
+  "Slope is relative-return pp per 1pp of spread. n=" + pearson.n + " companies. A single snapshot in time, not a forward-return test — a significant result here says the market's current pricing lines up with current economic profitability, not that spread predicts future returns.");
 }
 
 function renderLeaderTable(rows, tbodyId){
  const tbody = document.getElementById(tbodyId);
  if(!rows || !rows.length){
-  tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; color:var(--muted); padding:24px;">No qualifying companies.</td></tr>';
+  tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; color:var(--muted); padding:24px;">No qualifying companies.</td></tr>';
   return;
  }
  tbody.innerHTML = rows.map(r => `<tr>
   <td><span class="sector-name">${r.symbol}</span></td>
   <td><span class="sector-ticker">${r.sector || "—"}</span></td>
-  <td class="${scoreClass(r.score)}">${fmtScore(r.score)}</td>
-  <td>${fmtPct(r.roa)}</td>
+  <td>${fmtPct(r.roic)}</td>
+  <td>${fmtPct(r.wacc)}</td>
+  <td class="${r.spread >= 0 ? "spread-pos" : "spread-neg"}">${fmtPp(r.spread)}</td>
  </tr>`).join("");
 }
 
@@ -1286,12 +1355,12 @@ function renderTable(){
  tbody.innerHTML = rows.map(r => `<tr>
   <td><span class="sector-name">${r.symbol}</span></td>
   <td><span class="sector-ticker">${r.sector || "—"}</span></td>
-  <td class="${scoreClass(r.score)}">${fmtScore(r.score)}</td>
-  <td>${fmtPct(r.roa)}</td>
-  <td>${fmtPct(r.roaChange)}</td>
-  <td>${fmtX(r.currentRatio)}</td>
-  <td>${fmtPlainPct(r.leverage)}</td>
-  <td>${fmtPlainPct(r.grossMargin)}</td>
+  <td>${fmtPct(r.roic)}</td>
+  <td>${fmtPct(r.wacc)}</td>
+  <td class="${r.spread >= 0 ? "spread-pos" : "spread-neg"}">${fmtPp(r.spread)}</td>
+  <td>${fmtPct(r.costOfEquity)}</td>
+  <td>${fmtPct(r.costOfDebtAfterTax)}</td>
+  <td>${fmtBeta(r.beta)}</td>
  </tr>`).join("");
 
  document.querySelectorAll("#stockTable thead th").forEach(th => {
