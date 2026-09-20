@@ -34,6 +34,10 @@ const { BREADTH_CONSTITUENTS } = require("./breadth-constituents");
 const { SECTOR_ORDER } = require("./beeswarm-sectors");
 const { recordAvCall } = require("./av-call-counter");
 
+// Netlify captures no console output for background functions, and a run that
+// dies leaves no trace, so this job writes its own progress and any error to
+// STATUS_KEY (same store as its snapshot, ignored by the page API).
+const STATUS_KEY = "status.json";
 const ALPHA_VANTAGE_URL = "https://www.alphavantage.co/query";
 const USER_AGENT =
   "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0 Safari/537.36";
@@ -77,7 +81,16 @@ function round(v, d = 3) {
 
 exports.handler = async () => {
   console.log(`scheduled-shareholder-yield-background: starting, ${BREADTH_CONSTITUENTS.length} tickers`);
+  const startedAtMs = Date.now();
+  const status = { startedAt: new Date().toISOString(), phase: "starting", processed: 0, total: BREADTH_CONSTITUENTS.length, failedCount: 0, recentErrors: [] };
+  let setStatus = async () => {};
   try {
+    const statusStore = getShareholderYieldStore();
+    setStatus = async (patch) => {
+      Object.assign(status, patch, { updatedAt: new Date().toISOString(), elapsedSec: Math.round((Date.now() - startedAtMs) / 1000) });
+      try { await statusStore.setJSON(STATUS_KEY, status); } catch (e) { console.error(`status write failed: ${e.message}`); }
+    };
+    await setStatus({ phase: "starting" });
     const apiKey = process.env.ALPHAVANTAGE_API_KEY;
     if (!apiKey) throw new Error("ALPHAVANTAGE_API_KEY is not set");
 
@@ -96,6 +109,7 @@ exports.handler = async () => {
     );
 
     const dividendYields = new Map();
+    await setStatus({ phase: "sweeping" });
 
     async function fetchInto(symbol) {
       try {
@@ -104,6 +118,8 @@ exports.handler = async () => {
         return true;
       } catch (err) {
         console.error(`scheduled-shareholder-yield-background: ${symbol} failed: ${err.message}`);
+        status.failedCount++;
+        status.recentErrors = [...status.recentErrors, `${symbol}: ${err.message}`.slice(0, 200)].slice(-10);
         if (/rate limit|per minute/i.test(err.message)) await sleep(20000);
         return false;
       }
@@ -121,6 +137,8 @@ exports.handler = async () => {
       for (const symbol of todo) {
         const got = await fetchInto(symbol);
         if (!got) missed.push(symbol);
+        status.processed++;
+        if (status.processed % 50 === 0) await setStatus({ phase: pass ? "retrying" : "sweeping" });
         await sleep(1050);
       }
       todo = missed;
@@ -128,6 +146,7 @@ exports.handler = async () => {
 
     console.log(`scheduled-shareholder-yield-background: fetched dividend yield for ${dividendYields.size}/${BREADTH_CONSTITUENTS.length} tickers`);
 
+    await setStatus({ phase: "computing", fetched: dividendYields.size });
     const rows = [];
     for (const symbol of BREADTH_CONSTITUENTS) {
       const m = metaTickers[symbol];
@@ -189,11 +208,13 @@ exports.handler = async () => {
     };
 
     await getShareholderYieldStore().setJSON(BLOB_KEY, payload);
+    await setStatus({ phase: "done", rows: rows.length });
     console.log(`scheduled-shareholder-yield-background: wrote ${rows.length} rows across ${sectorAgg.length} sectors`);
 
     return { statusCode: 200, body: JSON.stringify({ ok: true, rows: rows.length, sectors: sectorAgg.length }) };
   } catch (err) {
     console.error(`scheduled-shareholder-yield-background: FAILED: ${err.message}`);
+    await setStatus({ phase: "failed", error: String(err.message).slice(0, 500) });
     return { statusCode: 502, body: JSON.stringify({ error: err.message }) };
   }
 };
