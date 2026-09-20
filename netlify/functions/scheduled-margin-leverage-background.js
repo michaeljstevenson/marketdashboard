@@ -260,18 +260,23 @@ exports.handler = async () => {
     const results = new Map(resume ? Object.entries(saved.results) : []); // symbol -> { income, balance }
     if (resume) console.log(`scheduled-margin-leverage-background: resuming checkpoint with ${results.size} ticker(s) already fetched`);
 
+    // Why each missing ticker failed, kept because Netlify captures no console
+    // output for background functions.
+    const failures = resume ? { ...(saved.failed || {}) } : {};
     const saveCheckpoint = (complete) =>
-      store.setJSON(CHECKPOINT_KEY, { startedAt: cycleStartedAt, complete, results: Object.fromEntries(results) });
+      store.setJSON(CHECKPOINT_KEY, { startedAt: cycleStartedAt, complete, results: Object.fromEntries(results), failed: failures });
 
     async function fetchInto(symbol) {
       try {
         const inc = await fetchStatement(apiKey, "INCOME_STATEMENT", symbol);
         await sleep(CALL_SLEEP_MS);
         const bal = await fetchStatement(apiKey, "BALANCE_SHEET", symbol);
+        delete failures[symbol];
         results.set(symbol, { income: inc.quarterly, balance: bal.quarterly, annualIncome: inc.annual, annualBalance: bal.annual });
         return true;
       } catch (err) {
         console.error(`scheduled-margin-leverage-background: ${symbol} failed: ${err.message}`);
+        failures[symbol] = String(err.message).slice(0, 200);
         if (/rate limit|per minute/i.test(err.message)) await sleep(20000);
         return false;
       }

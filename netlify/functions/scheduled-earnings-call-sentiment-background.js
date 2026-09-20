@@ -69,6 +69,17 @@ const USER_AGENT =
   "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0 Safari/537.36";
 
 const CALL_PACING_MS = 750;
+
+// Two calls per company (~1000 total) can't finish inside the 15-minute
+// background ceiling, so each run stops fetching new tickers at
+// RUN_BUDGET_MS, saves progress to CHECKPOINT_KEY, and the next run resumes;
+// a run that finishes the universe marks the checkpoint complete so the
+// following one starts a fresh cycle. A partial run never replaces a
+// complete published snapshot.
+const RUN_BUDGET_MS = 12 * 60 * 1000;
+const CHECKPOINT_KEY = "checkpoint.json";
+const CHECKPOINT_MAX_AGE_MS = 24 * 60 * 60 * 1000;
+const CHECKPOINT_EVERY = 100;
 const MIN_EST_EPS_ABS = 0.05; // matches scheduled-surprise-background.js — a sub-nickel estimate makes surprise% divide-by-near-zero noise
 const MAX_ABS_SURPRISE_PCT = 200; // matches scheduled-surprise-background.js — clip rare blowup prints rather than let one stock dominate the regression
 const MIN_TURNS_FOR_LEADERBOARD = 3; // a 1-2 turn "average" tone isn't a meaningful signal
@@ -287,9 +298,20 @@ exports.handler = async () => {
     const meta = (await beeswarmStore.get(META_KEY, { type: "json" })) || { tickers: {} };
     const metaTickers = meta.tickers || {};
 
-    const results = [];
-    let noTranscriptCount = 0;
-    let earningsFailedCount = 0;
+    const startedAt = Date.now();
+    const outOfTime = () => Date.now() - startedAt > RUN_BUDGET_MS;
+    const store = getEarningsCallSentimentStore();
+    const saved = await store.get(CHECKPOINT_KEY, { type: "json" });
+    const resume = !!(saved && !saved.complete && Date.now() - Date.parse(saved.startedAt) < CHECKPOINT_MAX_AGE_MS);
+    const cycleStartedAt = resume ? saved.startedAt : new Date().toISOString();
+    const done = new Set(resume ? saved.done : []);
+    const results = resume ? saved.results : [];
+    let noTranscriptCount = resume ? saved.noTranscriptCount : 0;
+    let earningsFailedCount = resume ? saved.earningsFailedCount : 0;
+    const failures = resume ? { ...(saved.failed || {}) } : {};
+    if (resume) console.log(`scheduled-earnings-call-sentiment-background: resuming checkpoint with ${done.size} ticker(s) already resolved`);
+    const saveCheckpoint = (complete) =>
+      store.setJSON(CHECKPOINT_KEY, { startedAt: cycleStartedAt, complete, done: [...done], results, noTranscriptCount, earningsFailedCount, failed: failures });
 
     async function processTicker(symbol) {
       let earnings;
@@ -297,6 +319,7 @@ exports.handler = async () => {
         earnings = await fetchEarnings(apiKey, symbol);
       } catch (err) {
         console.error(`scheduled-earnings-call-sentiment-background: ${symbol} EARNINGS failed: ${err.message}`);
+        failures[symbol] = `EARNINGS: ${err.message}`.slice(0, 200);
         if (/rate limit|per minute/i.test(err.message)) await sleep(20000);
         return false;
       }
@@ -319,6 +342,7 @@ exports.handler = async () => {
         transcript = await fetchTranscript(apiKey, symbol, label);
       } catch (err) {
         console.error(`scheduled-earnings-call-sentiment-background: ${symbol} TRANSCRIPT failed: ${err.message}`);
+        failures[symbol] = `TRANSCRIPT: ${err.message}`.slice(0, 200);
         if (/rate limit|per minute/i.test(err.message)) await sleep(20000);
         return false;
       }
@@ -357,19 +381,30 @@ exports.handler = async () => {
       return true;
     }
 
-    let todo = [...BREADTH_CONSTITUENTS];
-    for (let pass = 0; pass < 2 && todo.length; pass++) {
+    let todo = BREADTH_CONSTITUENTS.filter((s) => !done.has(s));
+    let stoppedForTime = false;
+    let sinceCheckpoint = 0;
+    for (let pass = 0; pass < 2 && todo.length && !stoppedForTime; pass++) {
       if (pass > 0) {
         console.log(`scheduled-earnings-call-sentiment-background: retry pass for ${todo.length} ticker(s)`);
         await sleep(65000);
       }
       const missed = [];
       for (const symbol of todo) {
+        if (outOfTime()) { stoppedForTime = true; break; }
         const ok = await processTicker(symbol);
-        if (!ok) missed.push(symbol);
+        if (ok) {
+          done.add(symbol);
+          delete failures[symbol];
+          if (++sinceCheckpoint >= CHECKPOINT_EVERY) { await saveCheckpoint(false); sinceCheckpoint = 0; }
+        } else {
+          missed.push(symbol);
+        }
       }
       todo = missed;
     }
+    await saveCheckpoint(!stoppedForTime);
+    if (stoppedForTime) console.log(`scheduled-earnings-call-sentiment-background: out of time with ${done.size}/${BREADTH_CONSTITUENTS.length} resolved — run again to finish`);
 
     console.log(
       `scheduled-earnings-call-sentiment-background: ${results.length} usable, ${noTranscriptCount} not yet indexed, ${earningsFailedCount} no earnings history, ${todo.length} unresolved after retry`
@@ -455,9 +490,16 @@ exports.handler = async () => {
       widestGap,
       narrowestGap,
       companies: results,
+      partial: stoppedForTime,
     };
 
-    const store = getEarningsCallSentimentStore();
+    if (stoppedForTime) {
+      const published = await store.get(BLOB_KEY, { type: "json" });
+      if (published && !published.partial) {
+        console.log("scheduled-earnings-call-sentiment-background: partial run, keeping the last complete published snapshot until the next run finishes the cycle");
+        return { statusCode: 200, body: JSON.stringify({ ok: true, partial: true, resolved: done.size, published: false }) };
+      }
+    }
     await store.setJSON(BLOB_KEY, latest);
 
     console.log(`scheduled-earnings-call-sentiment-background: wrote ${results.length} companies`);
