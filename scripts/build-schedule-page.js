@@ -229,7 +229,8 @@ function main() {
   const body = rows.map((r) => `<tr><td>${pageLinks(r.pages, r.via)}</td><td class="m">${esc(r.name)}</td><td>${esc(r.when.text)}</td><td>${r.sources.map(esc).join("<br>") || "—"}</td><td>${cell(r)}</td></tr>`)
     .concat(onRequest.map((o) => `<tr><td>${pageLinks(o.pages, false)}</td><td class="m">${esc(o.name)}</td><td>${esc(o.when)}</td><td>${o.sources.map(esc).join("<br>")}</td><td>${esc(o.notes)}</td></tr>`));
 
-  const built = new Date().toISOString().slice(0, 10);
+  const now = new Date();
+  const updated = `${String(now.getUTCMonth() + 1).padStart(2, "0")}-${String(now.getUTCDate()).padStart(2, "0")}-${now.getUTCFullYear()}`;
   const html = `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -237,22 +238,23 @@ function main() {
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Data Pull Schedule</title>
 <style>
-:root{color-scheme:light dark}
-body{font:14px/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;margin:0;padding:20px;background:#fff;color:#111}
-@media (prefers-color-scheme:dark){body{background:#14181c;color:#eae6da}th{background:#1c2127}th,td{border-color:#2b3138}a{color:#9db8d2}}
+:root{color-scheme:light dark;--bg:#fff;--fg:#111;--head:#f2f2f2;--line:#d8d8d8;--link:#0000ee}
+@media (prefers-color-scheme:dark){:root{--bg:#14181c;--fg:#eae6da;--head:#1c2127;--line:#2b3138;--link:#9db8d2}}
+body{font:14px/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;margin:0;padding:20px;background:var(--bg);color:var(--fg)}
+a{color:var(--link)}
 h1{font-size:22px;margin:0 0 6px}
 p{margin:0 0 16px;max-width:75ch}
 .w{overflow-x:auto}
 table{border-collapse:collapse;min-width:900px;width:100%}
-th,td{text-align:left;vertical-align:top;padding:7px 10px;border:1px solid #d8d8d8}
-th{background:#f2f2f2;position:sticky;top:0}
+th,td{text-align:left;vertical-align:top;padding:7px 10px;border:1px solid var(--line)}
+th{background:var(--head);color:var(--fg);position:sticky;top:0}
 .m{font-family:ui-monospace,Menlo,monospace;font-size:12px}
 small{opacity:.7}
 </style>
 </head>
 <body>
-<h1>Data Pull Schedule</h1>
-<p>Every job that fetches data for this site, what it pulls, and when. Times are UTC; New York is UTC−4 until November 1, then UTC−5. Manual jobs run only when triggered by hand. This page is regenerated from the site's configuration on every deploy (last built ${built}).</p>
+<h1>Data Schedule</h1>
+<p>(New York is UTC−4 until November 1, then UTC−5.) This page is regenerated from the site's configuration on every deploy (last updated ${updated}).</p>
 <div class="w">
 <table>
 <thead><tr><th>Page</th><th>Job</th><th>When</th><th>Pulled from</th><th>Notes</th></tr></thead>
