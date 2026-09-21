@@ -259,6 +259,16 @@
   to = "/.netlify/functions/quality-score"
   status = 200
 
+[[redirects]]
+  from = "/api/ai-capex"
+  to = "/.netlify/functions/ai-capex"
+  status = 200
+
+[[redirects]]
+  from = "/api/options-positioning"
+  to = "/.netlify/functions/options-positioning"
+  status = 200
+
 # The Statistical Engine page was briefly at these paths.
 [[redirects]]
   from = "/streak-scanner"
@@ -744,3 +754,23 @@
   # CASH_FLOW calls at 1050ms spacing plus a retry pass, same pacing as
   # scheduled-share-count-background's BALANCE_SHEET sweep — see this
   # function's own file for the full Piotroski F-Score methodology.
+
+[functions."scheduled-ai-capex-background"]
+  # One-time snapshot — no schedule, same convention as every page added
+  # since 2026-09-16. Run manually via the Netlify dashboard's "Run now"
+  # *after* scheduled-margin-leverage-background has populated its
+  # checkpoint at least once — this job reads that checkpoint directly
+  # (for revenue history) and fails fast if it hasn't. ~503 sequential
+  # CASH_FLOW calls at 1050ms spacing plus a retry pass — see this
+  # function's own file for the full methodology, including the AI cohort
+  # definition and the capex-intensity structural-break test.
+
+[functions."scheduled-options-positioning-background"]
+  # One-time snapshot per run (the market-median history it appends to
+  # accumulates across runs, but each run's own sweep is a fresh full-index
+  # pull, not a resume) — no recurring schedule, same convention as every
+  # page added since 2026-09-16. Run manually via the Netlify dashboard's
+  # "Run now"; benefits from running after scheduled-relative-strength-
+  # background (for the momentum join) but degrades gracefully if that
+  # blob is stale or missing. ~503 sequential HISTORICAL_PUT_CALL_RATIO
+  # calls at 1050ms spacing plus a retry pass.
