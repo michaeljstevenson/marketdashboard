@@ -153,7 +153,7 @@ document.addEventListener("DOMContentLoaded", function(){
 </script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Sector Rotation Model — Michael J. Stevenson</title>
+<title>Sector Rotation Model | Michael J. Stevenson</title>
 
 <style>
 
@@ -805,22 +805,22 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <div class="stat-grid">
 <div class="stat-card">
 <div class="stat-label">Current Leader</div>
-<div class="stat-value" id="statLeader" style="font-size:18px;">—</div>
+<div class="stat-value" id="statLeader" style="font-size:18px;">…</div>
 <div class="stat-note" id="statLeaderNote">3-month relative return vs. SPY</div>
 </div>
 <div class="stat-card">
 <div class="stat-label">Current Laggard</div>
-<div class="stat-value" id="statLaggard" style="font-size:18px;">—</div>
+<div class="stat-value" id="statLaggard" style="font-size:18px;">…</div>
 <div class="stat-note" id="statLaggardNote">3-month relative return vs. SPY</div>
 </div>
 <div class="stat-card">
 <div class="stat-label">Sectors in "Leading" Quadrant</div>
-<div class="stat-value" id="statLeadingCount">—</div>
+<div class="stat-value" id="statLeadingCount">…</div>
 <div class="stat-note">Positive level and positive momentum</div>
 </div>
 <div class="stat-card">
 <div class="stat-label">Month-to-Month Rank Persistence</div>
-<div class="stat-value" id="statPersistence" style="font-size:20px;">—</div>
+<div class="stat-value" id="statPersistence" style="font-size:20px;">…</div>
 <div class="stat-note" id="statPersistenceNote">Spearman &rho;, this month's leaders vs. next month's</div>
 </div>
 </div>
@@ -857,7 +857,7 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <div class="chart-box-header">
 <div>
 <h2>Does this month's sector leadership predict next month's?</h2>
-<div class="chart-subhead">Each point is one sector-month: x-axis is that sector's relative-return rank that month (1 = best), y-axis is its rank the following month — testing whether chasing recent sector leadership actually works</div>
+<div class="chart-subhead">Each point is one sector-month: x-axis is that sector's relative-return rank that month (1 = best), y-axis is its rank the following month. Testing whether chasing recent sector leadership actually works</div>
 </div>
 </div>
 <div class="scatter-canvas-wrap">
@@ -879,10 +879,10 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 
 <div class="explainer">
 <h2>Methodology</h2>
-<p>Reuses the same dataset as <a href="/sector-analysis.html">Sector Performance</a> and this session's Sector Correlation Matrix — the 11 SPDR sector ETFs' daily adjusted-close history against SPY, already fetched by that page's own background job. No new Alpha Vantage calls are made here.</p>
-<p>The rotation graph follows the standard Relative Rotation Graph (RRG) framework: a sector's <i>level</i> (x-axis) is its medium-term relative-strength trend (the 3-month change in its price-relative-to-SPY ratio), and its <i>momentum</i> (y-axis) is the short-term change in that same ratio (1-month). The four quadrants read as: <b>Leading</b> (positive level, positive momentum — outperforming and still accelerating), <b>Weakening</b> (positive level, negative momentum — still outperforming but losing steam), <b>Lagging</b> (negative level, negative momentum — underperforming and still falling behind), <b>Improving</b> (negative level, positive momentum — underperforming but starting to turn). Sectors classically rotate through these quadrants clockwise over a full cycle, though not on any fixed schedule.</p>
-<p>The persistence check ranks the 11 sectors by trailing 1-month relative return at each month-end over the available history, then correlates each sector's rank in one month against its rank the following month (Spearman, since ranks are ordinal by construction) across every sector-month pair. A near-zero or negative result would mean chasing last month's sector winners is no better than random — worth knowing before treating any single month's leaderboard as a signal.</p>
-<div class="source">Source: Yahoo Finance (via the existing /api/sector-performance dataset) — TIME_SERIES_DAILY_ADJUSTED</div>
+<p>Reuses the same dataset as <a href="/sector-analysis.html">Sector Performance</a> and this session's Sector Correlation Matrix. The 11 SPDR sector ETFs' daily adjusted-close history against SPY, already fetched by that page's own background job. No new Alpha Vantage calls are made here.</p>
+<p>The rotation graph follows the standard Relative Rotation Graph (RRG) framework: a sector's <i>level</i> (x-axis) is its medium-term relative-strength trend (the 3-month change in its price-relative-to-SPY ratio), and its <i>momentum</i> (y-axis) is the short-term change in that same ratio (1-month). The four quadrants read as: <b>Leading</b> (positive level, positive momentum: outperforming and still accelerating), <b>Weakening</b> (positive level, negative momentum: still outperforming but losing steam), <b>Lagging</b> (negative level, negative momentum: underperforming and still falling behind), <b>Improving</b> (negative level, positive momentum: underperforming but starting to turn). Sectors classically rotate through these quadrants clockwise over a full cycle, though not on any fixed schedule.</p>
+<p>The persistence check ranks the 11 sectors by trailing 1-month relative return at each month-end over the available history, then correlates each sector's rank in one month against its rank the following month (Spearman, since ranks are ordinal by construction) across every sector-month pair. A near-zero or negative result would mean chasing last month's sector winners is no better than random. Worth knowing before treating any single month's leaderboard as a signal.</p>
+<div class="source">Source: Yahoo Finance (via the existing /api/sector-performance dataset), TIME_SERIES_DAILY_ADJUSTED</div>
 </div>
 
 </div>
@@ -899,7 +899,7 @@ function showError(message){
 }
 
 function fmtPct(v, digits){
- if(v === null || v === undefined || isNaN(v)) return "—";
+ if(v === null || v === undefined || isNaN(v)) return "n/a";
  digits = digits === undefined ? 1 : digits;
  return (v >= 0 ? "+" : "") + v.toFixed(digits) + "%";
 }

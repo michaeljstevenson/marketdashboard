@@ -13,7 +13,7 @@ exports.handler = async () => {
     const payload = await store.get(BLOB_KEY, { type: "json" });
 
     if (!payload) {
-      throw new Error("Share count trends data not yet populated — scheduled-share-count-background hasn't run yet");
+      throw new Error("Share count trends data not yet populated, scheduled-share-count-background hasn't run yet");
     }
 
     return {

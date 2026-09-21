@@ -11,7 +11,7 @@ exports.handler = async () => {
     const payload = await store.get(BLOB_KEY, { type: "json" });
 
     if (!payload) {
-      throw new Error("Country performance not yet populated — scheduled-countries-background hasn't run yet");
+      throw new Error("Country performance not yet populated, scheduled-countries-background hasn't run yet");
     }
 
     return {

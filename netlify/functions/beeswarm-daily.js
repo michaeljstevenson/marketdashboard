@@ -15,7 +15,7 @@ exports.handler = async (event) => {
     const index = await store.get(DAY_INDEX_KEY, { type: "json" });
     const dates = (index && index.dates) || [];
     if (!dates.length) {
-      throw new Error("No beeswarm snapshots archived yet — scheduled-beeswarm-daily-background hasn't run");
+      throw new Error("No beeswarm snapshots archived yet, scheduled-beeswarm-daily-background hasn't run");
     }
 
     const requested = event.queryStringParameters && event.queryStringParameters.date;

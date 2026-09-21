@@ -52,7 +52,7 @@ exports.handler = async () => {
   try {
     const checkpoint = await getMarginLeverageStore().get(CHECKPOINT_KEY, { type: "json" });
     if (!checkpoint || !checkpoint.results) {
-      throw new Error("margin-leverage checkpoint not populated — run scheduled-margin-leverage-background first (it collects the statements this job reads)");
+      throw new Error("margin-leverage checkpoint not populated. Run scheduled-margin-leverage-background first (it collects the statements this job reads)");
     }
     const partial = !checkpoint.complete;
 
@@ -67,7 +67,7 @@ exports.handler = async () => {
     }
 
     console.log(`scheduled-quality-financials-background: read ${results.size}/${BREADTH_CONSTITUENTS.length} tickers from the margin-leverage checkpoint${partial ? " (sweep still mid-cycle)" : ""}`);
-    if (results.size === 0) throw new Error("Checkpoint holds no annual statements — rerun scheduled-margin-leverage-background");
+    if (results.size === 0) throw new Error("Checkpoint holds no annual statements, rerun scheduled-margin-leverage-background");
 
     const tickers = {};
     for (const [symbol, { balance, income }] of results.entries()) {

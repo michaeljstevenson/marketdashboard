@@ -14,7 +14,7 @@ exports.handler = async () => {
     const payload = await store.get(BLOB_KEY, { type: "json" });
 
     if (!payload || !payload.items || !payload.items.length) {
-      throw new Error("Ticker data not yet populated — scheduled-ticker-background hasn't run yet");
+      throw new Error("Ticker data not yet populated, scheduled-ticker-background hasn't run yet");
     }
 
     return {

@@ -100,7 +100,7 @@ exports.handler = async () => {
     ]);
     const metaTickers = (beeswarmMeta && beeswarmMeta.tickers) || {};
     if (!shareCountData || !Array.isArray(shareCountData.companies)) {
-      throw new Error("share-count-trends data not available yet — scheduled-share-count-background must run first");
+      throw new Error("share-count-trends data not available yet, scheduled-share-count-background must run first");
     }
     const buybackByTicker = new Map(
       shareCountData.companies

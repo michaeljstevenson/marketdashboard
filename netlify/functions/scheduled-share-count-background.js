@@ -117,7 +117,7 @@ exports.handler = async () => {
     }
 
     console.log(`scheduled-share-count-background: fetched ${results.size}/${BREADTH_CONSTITUENTS.length} tickers`);
-    if (results.size === 0) throw new Error("Every ticker failed — refusing to write an empty snapshot");
+    if (results.size === 0) throw new Error("Every ticker failed. Refusing to write an empty snapshot");
 
     const companies = [];
     for (const [symbol, quarters] of results.entries()) {

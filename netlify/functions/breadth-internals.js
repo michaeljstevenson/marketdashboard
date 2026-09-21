@@ -12,7 +12,7 @@ exports.handler = async () => {
     const payload = await store.get(BLOB_KEY, { type: "json" });
 
     if (!payload) {
-      throw new Error("Breadth internals not yet populated — scheduled-breadth hasn't run yet");
+      throw new Error("Breadth internals not yet populated, scheduled-breadth hasn't run yet");
     }
 
     return {

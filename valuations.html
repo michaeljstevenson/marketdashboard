@@ -11,7 +11,7 @@
 </script>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1" name="viewport"/>
-<title>Valuations by Industry — Michael J. Stevenson</title>
+<title>Valuations by Industry | Michael J. Stevenson</title>
 <style>
 
 :root{
@@ -545,7 +545,7 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <div class="explainer">
 <p>Each row aggregates every publicly traded US company Damodaran's dataset covers within that industry classification. Current PE uses trailing 12-month diluted EPS including one-time items, trailing PE excludes them, forward PE uses next-12-month analyst EPS estimates. PEG divides the PE ratio by the expected 5-year earnings growth rate. ROE is aggregate net income divided by aggregate book equity for money-making firms in the industry.</p>
 
-<div class="source">Source: <a href="https://pages.stern.nyu.edu/~adamodar/New_Home_Page/data.html" rel="noopener" target="_blank">Aswath Damodaran, NYU Stern — Industry-average valuation multiples (PE, EV/EBITDA, Price/Book)</a></div>
+<div class="source">Source: <a href="https://pages.stern.nyu.edu/~adamodar/New_Home_Page/data.html" rel="noopener" target="_blank">Aswath Damodaran, NYU Stern: Industry-average valuation multiples (PE, EV/EBITDA, Price/Book)</a></div>
 </div>
 </div>
 <script>
@@ -673,7 +673,7 @@ function renderStats(){
  container.innerHTML = items.map(i => `
   <div class="stat-card">
    <div class="stat-label">${i.label}</div>
-   <div class="stat-value">${i.value === null ? "—" : i.value}</div>
+   <div class="stat-value">${i.value === null ? "n/a" : i.value}</div>
   </div>
  `).join("");
 }
@@ -704,30 +704,30 @@ function render(){
  const bodyRows = rows.map(r => `
   <tr>
    <td>${r.industry}</td>
-   <td class="${r.numFirms === null ? 'cell-na' : ''}">${r.numFirms ?? "—"}</td>
-   <td class="${r.currentPE === null ? 'cell-na' : ''}">${fmtNum(r.currentPE,1) ?? "—"}</td>
-   <td class="${r.trailingPE === null ? 'cell-na' : ''}">${fmtNum(r.trailingPE,1) ?? "—"}</td>
-   <td class="${r.forwardPE === null ? 'cell-na' : ''}">${fmtNum(r.forwardPE,1) ?? "—"}</td>
-   <td class="${r.pegRatio === null ? 'cell-na' : ''}">${fmtNum(r.pegRatio,2) ?? "—"}</td>
-   <td class="${r.evEbitda === null ? 'cell-na' : ''}">${fmtNum(r.evEbitda,1) ?? "—"}</td>
-   <td class="${r.pbv === null ? 'cell-na' : ''}">${fmtNum(r.pbv,2) ?? "—"}</td>
-   <td class="${r.roe === null ? 'cell-na' : ''}">${r.roe === null ? "—" : fmtNum(r.roe,1) + "%"}</td>
-   <td class="${r.expGrowth5yr === null ? 'cell-na' : ''}">${r.expGrowth5yr === null ? "—" : fmtNum(r.expGrowth5yr,1) + "%"}</td>
+   <td class="${r.numFirms === null ? 'cell-na' : ''}">${r.numFirms ?? "n/a"}</td>
+   <td class="${r.currentPE === null ? 'cell-na' : ''}">${fmtNum(r.currentPE,1) ?? "n/a"}</td>
+   <td class="${r.trailingPE === null ? 'cell-na' : ''}">${fmtNum(r.trailingPE,1) ?? "n/a"}</td>
+   <td class="${r.forwardPE === null ? 'cell-na' : ''}">${fmtNum(r.forwardPE,1) ?? "n/a"}</td>
+   <td class="${r.pegRatio === null ? 'cell-na' : ''}">${fmtNum(r.pegRatio,2) ?? "n/a"}</td>
+   <td class="${r.evEbitda === null ? 'cell-na' : ''}">${fmtNum(r.evEbitda,1) ?? "n/a"}</td>
+   <td class="${r.pbv === null ? 'cell-na' : ''}">${fmtNum(r.pbv,2) ?? "n/a"}</td>
+   <td class="${r.roe === null ? 'cell-na' : ''}">${r.roe === null ? "n/a" : fmtNum(r.roe,1) + "%"}</td>
+   <td class="${r.expGrowth5yr === null ? 'cell-na' : ''}">${r.expGrowth5yr === null ? "n/a" : fmtNum(r.expGrowth5yr,1) + "%"}</td>
   </tr>
  `).join("");
 
  const totalRow = totalMarket ? `
   <tr class="total-market">
    <td>${totalMarket.industry}</td>
-   <td>${totalMarket.numFirms ?? "—"}</td>
-   <td>${fmtNum(totalMarket.currentPE,1) ?? "—"}</td>
-   <td>${fmtNum(totalMarket.trailingPE,1) ?? "—"}</td>
-   <td>${fmtNum(totalMarket.forwardPE,1) ?? "—"}</td>
-   <td>${fmtNum(totalMarket.pegRatio,2) ?? "—"}</td>
-   <td>${fmtNum(totalMarket.evEbitda,1) ?? "—"}</td>
-   <td>${fmtNum(totalMarket.pbv,2) ?? "—"}</td>
-   <td>${totalMarket.roe === null ? "—" : fmtNum(totalMarket.roe,1) + "%"}</td>
-   <td>${totalMarket.expGrowth5yr === null ? "—" : fmtNum(totalMarket.expGrowth5yr,1) + "%"}</td>
+   <td>${totalMarket.numFirms ?? "n/a"}</td>
+   <td>${fmtNum(totalMarket.currentPE,1) ?? "n/a"}</td>
+   <td>${fmtNum(totalMarket.trailingPE,1) ?? "n/a"}</td>
+   <td>${fmtNum(totalMarket.forwardPE,1) ?? "n/a"}</td>
+   <td>${fmtNum(totalMarket.pegRatio,2) ?? "n/a"}</td>
+   <td>${fmtNum(totalMarket.evEbitda,1) ?? "n/a"}</td>
+   <td>${fmtNum(totalMarket.pbv,2) ?? "n/a"}</td>
+   <td>${totalMarket.roe === null ? "n/a" : fmtNum(totalMarket.roe,1) + "%"}</td>
+   <td>${totalMarket.expGrowth5yr === null ? "n/a" : fmtNum(totalMarket.expGrowth5yr,1) + "%"}</td>
   </tr>
  ` : "";
 

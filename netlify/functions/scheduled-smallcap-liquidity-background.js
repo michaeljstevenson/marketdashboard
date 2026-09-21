@@ -135,13 +135,13 @@ exports.handler = async () => {
 
     const beeswarmStore = getBeeswarmStore();
     const meta = await beeswarmStore.get(META_KEY, { type: "json" });
-    if (!meta || !meta.tickers) throw new Error("beeswarm meta.json not populated — scheduled-beeswarm-meta-background hasn't run yet");
+    if (!meta || !meta.tickers) throw new Error("beeswarm meta.json not populated, scheduled-beeswarm-meta-background hasn't run yet");
 
     const validEntries = Object.entries(meta.tickers)
       .filter(([, m]) => m && Number.isFinite(m.marketCap) && m.marketCap > 0)
       .sort((a, b) => b[1].marketCap - a[1].marketCap); // descending by market cap
 
-    if (validEntries.length < 50) throw new Error(`only ${validEntries.length} constituents have marketCap — meta.json looks incomplete`);
+    if (validEntries.length < 50) throw new Error(`only ${validEntries.length} constituents have marketCap, meta.json looks incomplete`);
 
     const cohortSize = Math.round(validEntries.length / COHORT_FRACTION);
     const megaEntries = validEntries.slice(0, cohortSize);
@@ -191,7 +191,7 @@ exports.handler = async () => {
     const loadedSmall = [...tickerSeries.keys()].filter((s) => cohortOf.get(s) === "small").length;
     const loadedMega = [...tickerSeries.keys()].filter((s) => cohortOf.get(s) === "mega").length;
     if (loadedSmall < minPerCohort || loadedMega < minPerCohort) {
-      throw new Error(`insufficient data — loaded ${loadedSmall} small / ${loadedMega} mega (need ${minPerCohort} each)`);
+      throw new Error(`insufficient data: loaded ${loadedSmall} small / ${loadedMega} mega (need ${minPerCohort} each)`);
     }
 
     // Cohort-level aggregation: equal-weighted average across every ticker

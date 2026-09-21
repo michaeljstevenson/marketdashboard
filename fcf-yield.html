@@ -153,7 +153,7 @@ document.addEventListener("DOMContentLoaded", function(){
 </script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Free Cash Flow Yield &amp; Earnings Quality — Michael J. Stevenson</title>
+<title>Free Cash Flow Yield &amp; Earnings Quality | Michael J. Stevenson</title>
 
 <style>
 
@@ -855,7 +855,7 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <div class="header">
 <div>
 <h1>Free Cash Flow Yield &amp; Earnings Quality</h1>
-<div class="subtitle">A bottom-up, stock-level cash flow yield across the S&amp;P 500 — and whether a company's reported earnings actually show up as cash, or whether capex and accruals are eating the difference.</div>
+<div class="subtitle">A bottom-up, stock-level cash flow yield across the S&amp;P 500, and whether a company's reported earnings actually show up as cash, or whether capex and accruals are eating the difference.</div>
 </div>
 <div class="updated" id="updated">Loading...</div>
 </div>
@@ -863,22 +863,22 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <div class="stat-grid">
 <div class="stat-card">
 <div class="stat-label">Avg. FCF Yield</div>
-<div class="stat-value" id="statFcfYield">—</div>
+<div class="stat-value" id="statFcfYield">…</div>
 <div class="stat-note">(Operating cash flow &minus; capex) &divide; market cap, TTM</div>
 </div>
 <div class="stat-card">
 <div class="stat-label">Avg. Earnings Yield</div>
-<div class="stat-value" id="statEarningsYield">—</div>
+<div class="stat-value" id="statEarningsYield">…</div>
 <div class="stat-note">Net income &divide; market cap, TTM</div>
 </div>
 <div class="stat-card">
 <div class="stat-label">Avg. Capex Intensity</div>
-<div class="stat-value" id="statCapex">—</div>
+<div class="stat-value" id="statCapex">…</div>
 <div class="stat-note">Capex &divide; operating cash flow, TTM</div>
 </div>
 <div class="stat-card">
 <div class="stat-label">Avg. FCF Conversion</div>
-<div class="stat-value" id="statConversion">—</div>
+<div class="stat-value" id="statConversion">…</div>
 <div class="stat-note">Free cash flow &divide; net income, TTM</div>
 </div>
 </div>
@@ -907,7 +907,7 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <div class="chart-box-header">
 <div>
 <h2>FCF yield vs. earnings yield</h2>
-<div class="chart-subhead">Each point is one S&amp;P 500 constituent. On the 45&deg; line, reported earnings and free cash flow agree exactly. Below it, earnings are running ahead of cash — the classic "earnings quality" red flag.</div>
+<div class="chart-subhead">Each point is one S&amp;P 500 constituent. On the 45&deg; line, reported earnings and free cash flow agree exactly. Below it, earnings are running ahead of cash. The classic "earnings quality" red flag.</div>
 </div>
 </div>
 <div class="ndr-panel">
@@ -963,7 +963,7 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <div class="table-box">
 <div class="table-box-header">
 <h2>Biggest positive gap</h2>
-<div class="chart-subhead">FCF yield furthest above earnings yield — cash generation the income statement understates</div>
+<div class="chart-subhead">FCF yield furthest above earnings yield: cash generation the income statement understates</div>
 </div>
 <table>
 <thead><tr><th>Ticker</th><th>Sector</th><th>FCF Yield</th><th>Gap</th></tr></thead>
@@ -976,7 +976,7 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <div class="table-box">
 <div class="table-box-header">
 <h2>Biggest negative gap</h2>
-<div class="chart-subhead">Earnings yield furthest above FCF yield — the earnings-quality watchlist</div>
+<div class="chart-subhead">Earnings yield furthest above FCF yield: the earnings-quality watchlist</div>
 </div>
 <table>
 <thead><tr><th>Ticker</th><th>Sector</th><th>FCF Yield</th><th>Gap</th></tr></thead>
@@ -990,7 +990,7 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <div class="table-box">
 <div class="table-box-header">
 <h2>All companies with cash flow data on file</h2>
-<div class="chart-subhead">Trailing-12-month FCF yield, earnings yield, capex intensity, and FCF conversion — full S&amp;P 500</div>
+<div class="chart-subhead">Trailing-12-month FCF yield, earnings yield, capex intensity, and FCF conversion, full S&amp;P 500</div>
 </div>
 <table id="stockTable">
 <thead>
@@ -1007,16 +1007,16 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <tr><td colspan="6" style="text-align:center; color:var(--muted); padding:30px;">Loading cash flow data&hellip;</td></tr>
 </tbody>
 </table>
-<div class="table-footnote">"Conversion" is blank for companies with a trailing-12-month loss or with earnings yield under 0.1% of market cap — too small a denominator for the ratio to mean anything.</div>
+<div class="table-footnote">"Conversion" is blank for companies with a trailing-12-month loss or with earnings yield under 0.1% of market cap. Too small a denominator for the ratio to mean anything.</div>
 </div>
 
 <div class="explainer">
 <h2>Methodology</h2>
-<p>Free cash flow is <code>operatingCashflow &minus; capitalExpenditures</code>, both read directly off Alpha Vantage's <code>CASH_FLOW</code> quarterly statement — the same endpoint behind <a href="/buyback-effectiveness.html">Buyback Effectiveness</a>, but reading its <code>capitalExpenditures</code> and <code>netIncome</code> fields instead of the buyback-specific ones that page needed a fallback chain for. Trailing-12-month figures require all four of the most recent quarters to have every field populated; a company with a gap in its most recent filing is left out rather than approximated. Earnings yield here is deliberately computed the same way — trailing net income &divide; market cap — rather than reused from <a href="/equity-risk-premium.html">Equity Risk Premium</a>'s own trailing-P/E-based figure, so any gap between the two yields on this page reflects a real cash-vs-accrual difference, not two pages' different conventions colliding.</p>
-<p>This is a different question from the two valuation-adjacent pages already on this site. <a href="/valuations.html">Valuations</a> is industry-level (94 classifications) and multiple-based (P/E, EV/EBITDA, P/B), sourced from Damodaran rather than computed. <a href="/equity-risk-premium.html">Equity Risk Premium</a> is stock-level but still earnings-based (trailing P/E vs. the 10-year Treasury). Neither asks whether the earnings a P/E ratio is built on actually converted into cash — a company can report a healthy net income while investing so heavily (or recognizing revenue so aggressively) that free cash flow tells a very different story. FCF conversion (free cash flow &divide; net income) is the direct read on that: below 100%, cash generation is lagging reported earnings; above 100%, it's running ahead. Capex-intensive sectors (Utilities, Real Estate, Energy) should structurally run lower conversion than asset-light ones (Information Technology, Communication Services) — the sector chart's toggle is there to check that expectation against what the current data actually shows, not to flag every capital-intensive business as a red flag.</p>
-<p>The scatter panel runs both Pearson (OLS) and Spearman rank correlation on FCF yield vs. earnings yield across the index, the same two-method check used throughout <a href="/factor-analysis.html">Factor Analysis</a> — a strong, tight relationship near the 45&deg; line would mean the two yields mostly agree; a weak one, or a cluster of names well below the line, means cash and accrual earnings are telling meaningfully different stories for a chunk of the index.</p>
-<p>Sector and company name are joined from the <a href="/sector-beeswarm.html">Sector Beeswarm</a> page's own weekly metadata refresh, and market cap for both yield calculations comes from that same source. A one-time snapshot as of the date below, not a recurring refresh — cash flow statements only change when a company files a new 10-Q/10-K, matching the convention this site has settled into for its other recent additions (see each page's own methodology note for which ones).</p>
-<div class="source">Source: <a href="https://www.alphavantage.co/" target="_blank" rel="noopener">Alpha Vantage</a> — CASH_FLOW, COMPANY_OVERVIEW (market cap, via Sector Beeswarm)</div>
+<p>Free cash flow is <code>operatingCashflow &minus; capitalExpenditures</code>, both read directly off Alpha Vantage's <code>CASH_FLOW</code> quarterly statement. The same endpoint behind <a href="/buyback-effectiveness.html">Buyback Effectiveness</a>, but reading its <code>capitalExpenditures</code> and <code>netIncome</code> fields instead of the buyback-specific ones that page needed a fallback chain for. Trailing-12-month figures require all four of the most recent quarters to have every field populated; a company with a gap in its most recent filing is left out rather than approximated. Earnings yield here is deliberately computed the same way, trailing net income &divide; market cap, rather than reused from <a href="/equity-risk-premium.html">Equity Risk Premium</a>'s own trailing-P/E-based figure, so any gap between the two yields on this page reflects a real cash-vs-accrual difference, not two pages' different conventions colliding.</p>
+<p>This is a different question from the two valuation-adjacent pages already on this site. <a href="/valuations.html">Valuations</a> is industry-level (94 classifications) and multiple-based (P/E, EV/EBITDA, P/B), sourced from Damodaran rather than computed. <a href="/equity-risk-premium.html">Equity Risk Premium</a> is stock-level but still earnings-based (trailing P/E vs. the 10-year Treasury). Neither asks whether the earnings a P/E ratio is built on actually converted into cash. A company can report a healthy net income while investing so heavily (or recognizing revenue so aggressively) that free cash flow tells a very different story. FCF conversion (free cash flow &divide; net income) is the direct read on that: below 100%, cash generation is lagging reported earnings; above 100%, it's running ahead. Capex-intensive sectors (Utilities, Real Estate, Energy) should structurally run lower conversion than asset-light ones (Information Technology, Communication Services). The sector chart's toggle is there to check that expectation against what the current data actually shows, not to flag every capital-intensive business as a red flag.</p>
+<p>The scatter panel runs both Pearson (OLS) and Spearman rank correlation on FCF yield vs. earnings yield across the index, the same two-method check used throughout <a href="/factor-analysis.html">Factor Analysis</a>. A strong, tight relationship near the 45&deg; line would mean the two yields mostly agree; a weak one, or a cluster of names well below the line, means cash and accrual earnings are telling meaningfully different stories for a chunk of the index.</p>
+<p>Sector and company name are joined from the <a href="/sector-beeswarm.html">Sector Beeswarm</a> page's own weekly metadata refresh, and market cap for both yield calculations comes from that same source. A one-time snapshot as of the date below, not a recurring refresh. Cash flow statements only change when a company files a new 10-Q/10-K, matching the convention this site has settled into for its other recent additions (see each page's own methodology note for which ones).</p>
+<div class="source">Source: <a href="https://www.alphavantage.co/" target="_blank" rel="noopener">Alpha Vantage</a>: CASH_FLOW, COMPANY_OVERVIEW (market cap, via Sector Beeswarm)</div>
 </div>
 
 </div>
@@ -1036,13 +1036,13 @@ function showError(message){
 }
 
 function fmtPct(v, digits){
- if(v === null || v === undefined || isNaN(v)) return "—";
+ if(v === null || v === undefined || isNaN(v)) return "n/a";
  digits = digits === undefined ? 2 : digits;
  return (v >= 0 ? "+" : "") + v.toFixed(digits) + "%";
 }
 
 function fmtPlainPct(v, digits){
- if(v === null || v === undefined || isNaN(v)) return "—";
+ if(v === null || v === undefined || isNaN(v)) return "n/a";
  digits = digits === undefined ? 2 : digits;
  return v.toFixed(digits) + "%";
 }
@@ -1278,7 +1278,7 @@ function renderQualityScatter(data){
  });
 
  document.getElementById("qualityMethodTable").innerHTML = methodTableHtml(pearson, spear,
-  "Slope is percentage points of FCF yield per 1 percentage point of earnings yield — 1.0 on the 45° line would mean cash and reported earnings agree exactly on average.");
+  "Slope is percentage points of FCF yield per 1 percentage point of earnings yield. 1.0 On the 45° line would mean cash and reported earnings agree exactly on average.");
 }
 
 function renderLeaderboard(elId, rows, mode){
@@ -1322,7 +1322,7 @@ function renderTable(){
  tbody.innerHTML = rows.map(r => {
   return `<tr>
    <td><span class="sector-name">${r.symbol}</span></td>
-   <td><span class="sector-ticker">${r.sector || "—"}</span></td>
+   <td><span class="sector-ticker">${r.sector || "n/a"}</span></td>
    <td>${fmtPlainPct(r.fcfYield, 2)}</td>
    <td>${fmtPlainPct(r.earningsYield, 2)}</td>
    <td>${fmtPlainPct(r.capexIntensity)}</td>

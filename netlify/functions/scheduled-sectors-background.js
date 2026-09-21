@@ -187,7 +187,7 @@ exports.handler = async () => {
     console.log(`scheduled-sectors-background: fetched ${computed.size}/${allTickers.length} tickers`);
 
     const benchmark = computed.get(BENCHMARK.ticker);
-    if (!benchmark) throw new Error("Benchmark (SPY) failed to load — cannot compute relative performance");
+    if (!benchmark) throw new Error("Benchmark (SPY) failed to load, cannot compute relative performance");
 
     const roundReturns = (returns) =>
       Object.fromEntries(Object.entries(returns).map(([k, v]) => [k, v === null ? null : Math.round(v * 100) / 100]));

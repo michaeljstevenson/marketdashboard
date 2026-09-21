@@ -159,7 +159,7 @@ exports.handler = async () => {
     const marginLeverageStore = getMarginLeverageStore();
     const marginLeveragePayload = await marginLeverageStore.get(MARGIN_LEVERAGE_KEY, { type: "json" });
     if (!marginLeveragePayload || !Array.isArray(marginLeveragePayload.companies) || !marginLeveragePayload.companies.length) {
-      throw new Error("margin-leverage blob not populated or empty — Quality & Low-Vol Factor Screen requires scheduled-margin-leverage-background to have run first (its per-company operating margin / net-debt-EBITDA output is this page's quality input; there is no other source for it in this job)");
+      throw new Error("margin-leverage blob not populated or empty. Quality & Low-Vol Factor Screen requires scheduled-margin-leverage-background to have run first (its per-company operating margin / net-debt-EBITDA output is this page's quality input; there is no other source for it in this job)");
     }
     const qualityBySymbol = new Map();
     for (const c of marginLeveragePayload.companies) {
@@ -174,7 +174,7 @@ exports.handler = async () => {
         netDebtEbitda: c.netDebtEbitda,
       });
     }
-    if (!qualityBySymbol.size) throw new Error("margin-leverage blob had no company with both operatingMargin and netDebtEbitda populated — nothing to score");
+    if (!qualityBySymbol.size) throw new Error("margin-leverage blob had no company with both operatingMargin and netDebtEbitda populated, nothing to score");
 
     // ---- Price performance: OPTIONAL read, same graceful-fallback pattern
     // as this session's earlier pages ----
@@ -222,7 +222,7 @@ exports.handler = async () => {
     }
 
     console.log(`scheduled-quality-lowvol-background: realized vol computed for ${volResults.size}/${BREADTH_CONSTITUENTS.length} tickers`);
-    if (volResults.size === 0) throw new Error("Every ticker's volatility sweep failed — refusing to write an empty snapshot");
+    if (volResults.size === 0) throw new Error("Every ticker's volatility sweep failed. Refusing to write an empty snapshot");
 
     // ---- Build the scored universe: intersection of quality data and
     // realized-vol data. A company missing either side is excluded
@@ -235,7 +235,7 @@ exports.handler = async () => {
       if (vol === undefined) continue;
       universe.push({ ...q, realizedVol: round(vol, 2) });
     }
-    if (!universe.length) throw new Error("No ticker had both margin-leverage quality data and a computed realized volatility — nothing to score");
+    if (!universe.length) throw new Error("No ticker had both margin-leverage quality data and a computed realized volatility, nothing to score");
 
     // ---- Z-scores and the combined score ----
     const zMargin = zscoreMap(universe, (c) => c.operatingMargin);

@@ -153,7 +153,7 @@ document.addEventListener("DOMContentLoaded", function(){
 </script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Post-Earnings Announcement Drift — Michael J. Stevenson</title>
+<title>Post-Earnings Announcement Drift | Michael J. Stevenson</title>
 
 <style>
 
@@ -902,22 +902,22 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <div class="stat-grid">
 <div class="stat-card">
 <div class="stat-label">In Coverage Window</div>
-<div class="stat-value" id="statCoverage">—</div>
+<div class="stat-value" id="statCoverage">…</div>
 <div class="stat-note" id="statCoverageNote">of 503 S&amp;P 500 companies</div>
 </div>
 <div class="stat-card">
 <div class="stat-label">Avg. +20D Excess, Beats</div>
-<div class="stat-value" id="statBeatExcess">—</div>
+<div class="stat-value" id="statBeatExcess">…</div>
 <div class="stat-note" id="statBeatExcessNote">vs. SPY, 20 trading days out</div>
 </div>
 <div class="stat-card">
 <div class="stat-label">Avg. +20D Excess, Misses</div>
-<div class="stat-value" id="statMissExcess">—</div>
+<div class="stat-value" id="statMissExcess">…</div>
 <div class="stat-note" id="statMissExcessNote">vs. SPY, 20 trading days out</div>
 </div>
 <div class="stat-card">
 <div class="stat-label">Surprise &rarr; Drift Correlation</div>
-<div class="stat-value" id="statCorr" style="font-size:18px;">—</div>
+<div class="stat-value" id="statCorr" style="font-size:18px;">…</div>
 <div class="stat-note" id="statCorrNote">Pearson r, surprise % vs. +20D excess</div>
 </div>
 </div>
@@ -940,7 +940,7 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <div class="chart-box-header">
 <div>
 <h2>Does the size of the surprise predict the size of the drift?</h2>
-<div class="chart-subhead">The real PEAD test: each S&amp;P 500 company's earnings surprise % (known at the report date) regressed against its +20-trading-day forward excess return (realized afterward) — no lookahead, since the x-axis value is fully public before the y-axis window even starts.</div>
+<div class="chart-subhead">The real PEAD test: each S&amp;P 500 company's earnings surprise % (known at the report date) regressed against its +20-trading-day forward excess return (realized afterward). No lookahead, since the x-axis value is fully public before the y-axis window even starts.</div>
 </div>
 </div>
 <div class="ndr-panel">
@@ -955,7 +955,7 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <div class="chart-box-header">
 <div>
 <h2>Beat vs. miss: is the +20-day gap real, or noise?</h2>
-<div class="chart-subhead">Plain group comparison — mean/median +20-day excess return for the beat group vs. the miss group — plus a two-sample (Welch) t-test on the difference between the two group means.</div>
+<div class="chart-subhead">Plain group comparison (mean/median +20-day excess return for the beat group vs. the miss group) plus a two-sample (Welch) t-test on the difference between the two group means.</div>
 </div>
 </div>
 <div id="groupMethodTable"></div>
@@ -965,7 +965,7 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <div class="chart-box-header">
 <div>
 <h2>+20-day excess return by sector</h2>
-<div class="chart-subhead">Median +20-day excess return, beat companies vs. miss companies, sectors with at least <span id="sectorThresholdLabel">5</span> companies in both groups only — see the note below the chart for sectors excluded as too thin to be meaningful.</div>
+<div class="chart-subhead">Median +20-day excess return, beat companies vs. miss companies, sectors with at least <span id="sectorThresholdLabel">5</span> companies in both groups only: see the note below the chart for sectors excluded as too thin to be meaningful.</div>
 </div>
 </div>
 <div class="ndr-panel">
@@ -990,7 +990,7 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <div class="table-box">
 <div class="table-box-header">
 <h2>Biggest negative drift among beats</h2>
-<div class="chart-subhead">Lowest +20-day excess return, beat companies — a "beat that still drifted down"</div>
+<div class="chart-subhead">Lowest +20-day excess return, beat companies. A "beat that still drifted down"</div>
 </div>
 <table id="beatDownTable">
 <thead><tr><th>Company</th><th>Sector</th><th>Surprise</th><th>+20D Excess</th></tr></thead>
@@ -1003,7 +1003,7 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <div class="table-box">
 <div class="table-box-header">
 <h2>Biggest positive drift among misses</h2>
-<div class="chart-subhead">Highest +20-day excess return, miss companies — a "miss that still drifted up"</div>
+<div class="chart-subhead">Highest +20-day excess return, miss companies. A "miss that still drifted up"</div>
 </div>
 <table id="missUpTable">
 <thead><tr><th>Company</th><th>Sector</th><th>Surprise</th><th>+20D Excess</th></tr></thead>
@@ -1048,13 +1048,13 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 
 <div class="explainer">
 <h2>Methodology</h2>
-<p>Post-Earnings Announcement Drift (PEAD) is one of the oldest and most-replicated anomalies in the academic asset-pricing literature, first documented by Ball and Brown in 1968: after a company's reported earnings beat or miss the consensus estimate, its stock tends to keep drifting in that same direction, relative to the market, for weeks afterward — rather than the surprise being instantly and fully absorbed into the price the way a strictly efficient market would require. It's a well-known anomaly precisely because it's surprising: the information in an earnings surprise is fully public the moment it's reported, so a market that priced information correctly and immediately shouldn't leave a predictable trail behind it. This page runs that exact test on the S&amp;P 500's most recently reported quarter, not a claim of investment advice.</p>
-<p>The surprise-percentage input for each company — its most recently reported quarter's <code class="formula">(actual EPS &minus; consensus estimate EPS) / |consensus estimate EPS|</code> — is reused directly from <a href="/earnings-surprise.html">Earnings Surprise History</a>'s own Alpha Vantage <code>EARNINGS</code> sweep, rather than pulled a second time. <strong>That reuse comes with a real staleness caveat worth stating plainly:</strong> the background job behind that page (<code>scheduled-surprise-background.js</code>) had its recurring weekly schedule removed on 2026-09-16, so it is now a one-time snapshot rather than an auto-refreshing feed. As real time passes without someone manually rerunning it from the Netlify dashboard, the reportedDate values in that snapshot age, and fewer of them will still fall inside this page's own rolling ~100-trading-day price window — the "In Coverage Window" figure above is exactly that count, shown plainly rather than silently drifting toward zero with no explanation. This page's own price sweep, by contrast, does keep a real recurring weekly schedule (see the source note below), so the count shrinks only because of the upstream snapshot's age, not because of anything stale on this page's own side.</p>
-<p>The price data is a fresh Yahoo Finance daily adjusted-close sweep (the last ~100 trading days) across the full S&amp;P 500 plus SPY. Compact, not full history, on purpose: a +1/+5/+10/+20-trading-day event window doesn't need years of daily bars, and full history was confirmed disproportionate for this exact use case when <a href="/relative-strength-leaders.html">Relative Strength Leaders/Laggards</a> made the identical tradeoff (a single mega-cap's full history alone runs roughly 580,000 tokens). For each company with a reportedDate inside that window, the anchor trading day is the <strong>first close on or after</strong> the report date — never before, so no pre-announcement price data can leak into what's supposed to be an "after the surprise was public" test. Forward and excess returns (vs. SPY, using the same compounding-consistent <code class="formula">(1+stock)/(1+SPY) &minus; 1</code> construction as <a href="/relative-strength-leaders.html">Relative Strength Leaders/Laggards</a> and <a href="/international-vs-us.html">International vs. US</a>) are computed at each horizon from that anchor; a company whose report date sits too close to the end of the price window to reach a given horizon yet gets a blank for that horizon only, never a fabricated value — the same graceful-drop convention <a href="/spin-off-performance.html">Spin-Off Performance Tracker</a> uses for legs that don't reach a fixed horizon.</p>
-<p>The real statistical test is the regression chart above: each company's surprise % (fully known at the report date) against its own +20-trading-day forward excess return (only realized afterward) — Pearson (linear) and Spearman (rank) correlation are both shown, matching the two-method-check convention <a href="/factor-analysis.html">Factor Analysis</a> and this site's other regression pages use. This construction is methodologically clean and free of lookahead bias: the x-axis value is public before the y-axis window even opens, unlike some "does X predict next week's Y" tests on this site that needed more careful scoping to avoid a mechanically overlapping comparison — see <a href="/relative-strength-leaders.html">Relative Strength Leaders/Laggards</a>'s own methodology note for why that page compares rank against a <em>future</em> return rather than rank against rank. The beat-vs-miss group comparison further down is the plainer, non-continuous version of the same question — mean/median +20-day excess return for each group, plus a two-sample (Welch) t-test on the difference — chosen over a proportion test since the outcome here is a continuous return, not a binary beat/miss rate (which is what <a href="/earnings-surprise.html">Earnings Surprise History</a>'s own two-proportion z-test is built for, on a different question).</p>
-<p>Sector medians are shown only for sectors with at least 5 companies in <em>both</em> the beat and miss groups — this site would rather say plainly that a sector's sample is too thin to be meaningful than ship a noisy bar built off a handful of companies. Company name and sector come from <a href="/sector-beeswarm.html">Sector Beeswarm</a>'s own weekly metadata sweep, the same reuse convention every other full-universe job on this site follows rather than paying for a second OVERVIEW sweep just for labels.</p>
+<p>Post-Earnings Announcement Drift (PEAD) is one of the oldest and most-replicated anomalies in the academic asset-pricing literature, first documented by Ball and Brown in 1968: after a company's reported earnings beat or miss the consensus estimate, its stock tends to keep drifting in that same direction, relative to the market, for weeks afterward, rather than the surprise being instantly and fully absorbed into the price the way a strictly efficient market would require. It's a well-known anomaly precisely because it's surprising: the information in an earnings surprise is fully public the moment it's reported, so a market that priced information correctly and immediately shouldn't leave a predictable trail behind it. This page runs that exact test on the S&amp;P 500's most recently reported quarter, not a claim of investment advice.</p>
+<p>The surprise-percentage input for each company (its most recently reported quarter's <code class="formula">(actual EPS &minus; consensus estimate EPS) / |consensus estimate EPS|</code>) is reused directly from <a href="/earnings-surprise.html">Earnings Surprise History</a>'s own Alpha Vantage <code>EARNINGS</code> sweep, rather than pulled a second time. <strong>That reuse comes with a real staleness caveat worth stating plainly:</strong> the background job behind that page (<code>scheduled-surprise-background.js</code>) had its recurring weekly schedule removed on 2026-09-16, so it is now a one-time snapshot rather than an auto-refreshing feed. As real time passes without someone manually rerunning it from the Netlify dashboard, the reportedDate values in that snapshot age, and fewer of them will still fall inside this page's own rolling ~100-trading-day price window. The "In Coverage Window" figure above is exactly that count, shown plainly rather than silently drifting toward zero with no explanation. This page's own price sweep, by contrast, does keep a real recurring weekly schedule (see the source note below), so the count shrinks only because of the upstream snapshot's age, not because of anything stale on this page's own side.</p>
+<p>The price data is a fresh Yahoo Finance daily adjusted-close sweep (the last ~100 trading days) across the full S&amp;P 500 plus SPY. Compact, not full history, on purpose: a +1/+5/+10/+20-trading-day event window doesn't need years of daily bars, and full history was confirmed disproportionate for this exact use case when <a href="/relative-strength-leaders.html">Relative Strength Leaders/Laggards</a> made the identical tradeoff (a single mega-cap's full history alone runs roughly 580,000 tokens). For each company with a reportedDate inside that window, the anchor trading day is the <strong>first close on or after</strong> the report date: never before, so no pre-announcement price data can leak into what's supposed to be an "after the surprise was public" test. Forward and excess returns (vs. SPY, using the same compounding-consistent <code class="formula">(1+stock)/(1+SPY) &minus; 1</code> construction as <a href="/relative-strength-leaders.html">Relative Strength Leaders/Laggards</a> and <a href="/international-vs-us.html">International vs. US</a>) are computed at each horizon from that anchor; a company whose report date sits too close to the end of the price window to reach a given horizon yet gets a blank for that horizon only, never a fabricated value. The same graceful-drop convention <a href="/spin-off-performance.html">Spin-Off Performance Tracker</a> uses for legs that don't reach a fixed horizon.</p>
+<p>The real statistical test is the regression chart above: each company's surprise % (fully known at the report date) against its own +20-trading-day forward excess return (only realized afterward). Pearson (linear) and Spearman (rank) correlation are both shown, matching the two-method-check convention <a href="/factor-analysis.html">Factor Analysis</a> and this site's other regression pages use. This construction is methodologically clean and free of lookahead bias: the x-axis value is public before the y-axis window even opens, unlike some "does X predict next week's Y" tests on this site that needed more careful scoping to avoid a mechanically overlapping comparison. See <a href="/relative-strength-leaders.html">Relative Strength Leaders/Laggards</a>'s own methodology note for why that page compares rank against a <em>future</em> return rather than rank against rank. The beat-vs-miss group comparison further down is the plainer, non-continuous version of the same question: mean/median +20-day excess return for each group, plus a two-sample (Welch) t-test on the difference. Chosen over a proportion test since the outcome here is a continuous return, not a binary beat/miss rate (which is what <a href="/earnings-surprise.html">Earnings Surprise History</a>'s own two-proportion z-test is built for, on a different question).</p>
+<p>Sector medians are shown only for sectors with at least 5 companies in <em>both</em> the beat and miss groups. This site would rather say plainly that a sector's sample is too thin to be meaningful than ship a noisy bar built off a handful of companies. Company name and sector come from <a href="/sector-beeswarm.html">Sector Beeswarm</a>'s own weekly metadata sweep, the same reuse convention every other full-universe job on this site follows rather than paying for a second OVERVIEW sweep just for labels.</p>
 <p>Refreshes weekly (its own price sweep, independent of the frozen earnings-surprise snapshot it reads its surprise-% input from). No accumulating history: like Spin-Off Performance Tracker, this recomputes the full drift panel fresh from whatever quarter/price window is available each run rather than building up a time series.</p>
-<div class="source">Sources: <a href="https://finance.yahoo.com/" target="_blank" rel="noopener">Yahoo Finance — daily adjusted close</a> (fresh weekly sweep) and Alpha Vantage <code>EARNINGS</code> (reused from <a href="/earnings-surprise.html">Earnings Surprise History</a>'s own snapshot, frozen as of 2026-09-16 — see the staleness note above).</div>
+<div class="source">Sources: <a href="https://finance.yahoo.com/" target="_blank" rel="noopener">Yahoo Finance: daily adjusted close</a> (fresh weekly sweep) and Alpha Vantage <code>EARNINGS</code> (reused from <a href="/earnings-surprise.html">Earnings Surprise History</a>'s own snapshot, frozen as of 2026-09-16. See the staleness note above).</div>
 </div>
 
 </div>
@@ -1208,9 +1208,9 @@ async function init(){
   document.getElementById("updated").textContent = "As of " + new Date(data.generated_at_utc).toLocaleString("en-US", { month: "2-digit", day: "2-digit", year: "numeric", hour: "numeric", minute: "2-digit" });
 
   if(data.universe.inWindow === 0){
-   showWarning("No companies fall inside this run's coverage window yet — the earnings-surprise snapshot this page reads from may need a manual rerun (see the methodology section below). Charts and tables below will be empty until then.");
+   showWarning("No companies fall inside this run's coverage window yet. The earnings-surprise snapshot this page reads from may need a manual rerun (see the methodology section below). Charts and tables below will be empty until then.");
   }else if(data.universe.priceLoaded < data.universe.total){
-   showWarning("Only " + data.universe.priceLoaded + " of " + data.universe.total + " tickers' price data loaded this run — some companies may be missing below.");
+   showWarning("Only " + data.universe.priceLoaded + " of " + data.universe.total + " tickers' price data loaded this run. Some companies may be missing below.");
   }
 
   renderStats();
@@ -1281,12 +1281,12 @@ function renderDriftChart(){
    labels: curve.horizons.map(h => "+" + h + "D"),
    datasets: [
     {
-     type: "line", label: "Beats — avg. cumulative excess return", data: curve.beat.avgExcess,
+     type: "line", label: "Beats: avg. cumulative excess return", data: curve.beat.avgExcess,
      borderColor: ndr("green"), backgroundColor: "transparent", borderWidth: 1.75,
      pointRadius: 3, pointBackgroundColor: ndr("green"), tension: 0,
     },
     {
-     type: "line", label: "Misses — avg. cumulative excess return", data: curve.miss.avgExcess,
+     type: "line", label: "Misses: avg. cumulative excess return", data: curve.miss.avgExcess,
      borderColor: ndr("red"), backgroundColor: "transparent", borderWidth: 1.75,
      pointRadius: 3, pointBackgroundColor: ndr("red"), tension: 0,
     },
@@ -1411,7 +1411,7 @@ function renderSectorChart(){
   noteParts.push("Excluded as too thin (fewer than " + threshold + " companies in the beat or miss group): " + thinRows.map(r => r.sector + " (beats n=" + r.beatN + ", misses n=" + r.missN + ")").join("; ") + ".");
  }
  if(!rows.length){
-  noteParts.unshift("No sector currently has at least " + threshold + " companies in both the beat and miss groups — the chart is empty rather than showing noisy per-sector bars.");
+  noteParts.unshift("No sector currently has at least " + threshold + " companies in both the beat and miss groups. The chart is empty rather than showing noisy per-sector bars.");
  }
  document.getElementById("sectorNote").textContent = noteParts.join(" ");
 
@@ -1458,7 +1458,7 @@ function renderLeaderTable(rows, tbodyId){
  }
  tbody.innerHTML = rows.map(r => `<tr>
   <td><span class="sector-name">${r.name}</span> <span class="sector-ticker">${r.symbol}</span></td>
-  <td><span class="sector-ticker">${r.sector || "—"}</span></td>
+  <td><span class="sector-ticker">${r.sector || "n/a"}</span></td>
   <td>${fmtPct(r.surprisePct)}</td>
   <td>${fmtPct(r.excess20)}</td>
  </tr>`).join("");
@@ -1496,7 +1496,7 @@ function renderCompanyTable(){
  }else{
   tbody.innerHTML = rows.map(r => `<tr>
    <td><span class="sector-name">${r.name}</span> <span class="sector-ticker">${r.symbol}</span></td>
-   <td><span class="sector-ticker">${r.sector || "—"}</span></td>
+   <td><span class="sector-ticker">${r.sector || "n/a"}</span></td>
    <td>${fmtDate(r.reportedDate)} <span class="tag ${r.beat > 0 ? "beat" : r.beat < 0 ? "miss" : ""}">${r.beat > 0 ? "beat" : r.beat < 0 ? "miss" : "meet"}</span></td>
    <td>${fmtPct(r.surprisePct)}</td>
    <td>${fmtPct(r.excess1)}</td>

@@ -404,7 +404,7 @@ exports.handler = async () => {
       todo = missed;
     }
     await saveCheckpoint(!stoppedForTime);
-    if (stoppedForTime) console.log(`scheduled-earnings-call-sentiment-background: out of time with ${done.size}/${BREADTH_CONSTITUENTS.length} resolved — run again to finish`);
+    if (stoppedForTime) console.log(`scheduled-earnings-call-sentiment-background: out of time with ${done.size}/${BREADTH_CONSTITUENTS.length} resolved, run again to finish`);
 
     console.log(
       `scheduled-earnings-call-sentiment-background: ${results.length} usable, ${noTranscriptCount} not yet indexed, ${earningsFailedCount} no earnings history, ${todo.length} unresolved after retry`

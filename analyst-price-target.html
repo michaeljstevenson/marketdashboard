@@ -153,7 +153,7 @@ document.addEventListener("DOMContentLoaded", function(){
 </script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Analyst Price Target Upside — Michael J. Stevenson</title>
+<title>Analyst Price Target Upside | Michael J. Stevenson</title>
 
 <style>
 
@@ -876,7 +876,7 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <div class="header">
 <div>
 <h1>Analyst Price Target Upside</h1>
-<div class="subtitle">Sell-side 12-month price targets and buy/hold/sell consensus across the S&amp;P 500 — how much upside the Street is pricing in, by sector and by stock.</div>
+<div class="subtitle">Sell-side 12-month price targets and buy/hold/sell consensus across the S&amp;P 500, how much upside the Street is pricing in, by sector and by stock.</div>
 </div>
 <div class="updated" id="updated">Loading...</div>
 </div>
@@ -884,22 +884,22 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <div class="stat-grid">
 <div class="stat-card">
 <div class="stat-label">Median Target Upside</div>
-<div class="stat-value" id="statUpside">—</div>
+<div class="stat-value" id="statUpside">…</div>
 <div class="stat-note" id="statUpsideNote">Analyst target price vs. last close</div>
 </div>
 <div class="stat-card">
 <div class="stat-label">Median Buy Ratio</div>
-<div class="stat-value" id="statBuyRatio" style="color:var(--ink);">—</div>
+<div class="stat-value" id="statBuyRatio" style="color:var(--ink);">…</div>
 <div class="stat-note" id="statBuyRatioNote">Strong Buy + Buy, share of covering analysts</div>
 </div>
 <div class="stat-card">
 <div class="stat-label">Most Bullish Sector</div>
-<div class="stat-value" id="statBestSector" style="font-size:20px;">—</div>
+<div class="stat-value" id="statBestSector" style="font-size:20px;">…</div>
 <div class="stat-note" id="statBestSectorNote">Median target upside</div>
 </div>
 <div class="stat-card">
 <div class="stat-label">Most Bearish Sector</div>
-<div class="stat-value" id="statWorstSector" style="font-size:20px;">—</div>
+<div class="stat-value" id="statWorstSector" style="font-size:20px;">…</div>
 <div class="stat-note" id="statWorstSectorNote">Median target upside</div>
 </div>
 </div>
@@ -926,7 +926,7 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <div class="chart-box-header">
 <div>
 <h2>Market median upside over time</h2>
-<div class="chart-subhead">Accumulated one snapshot at a time — this page is a one-time pull as of the date below, so expect a short line until it's re-run</div>
+<div class="chart-subhead">Accumulated one snapshot at a time: this page is a one-time pull as of the date below, so expect a short line until it's re-run</div>
 </div>
 </div>
 <div class="ndr-panel">
@@ -1022,10 +1022,10 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <div class="explainer">
 <h2>Methodology</h2>
 <p>Universe is the full S&amp;P 500. Alpha Vantage's <code>COMPANY_OVERVIEW</code> endpoint carries the sell-side consensus 12-month price target (<code>AnalystTargetPrice</code>) and a five-bucket rating count (Strong Buy / Buy / Hold / Sell / Strong Sell) directly, so no separate estimates pull is needed for this page. <strong>Target Upside</strong> is <code>(target price / last close) − 1</code>, using each stock's last daily close from <a href="/relative-strength-leaders.html">Relative Strength Leaders/Laggards</a>'s own weekly price sweep rather than a second full-universe price pull. <strong>Buy Ratio</strong> is the share of covering analysts rating a stock Strong Buy or Buy; a <strong>Consensus Score</strong> (1&ndash;5, Strong Sell to Strong Buy, analyst-count-weighted) is also computed for the full table but not singled out as its own headline metric since it mostly tracks Buy Ratio.</p>
-<p>This is a different question from this site's other analyst-facing pages. <a href="/earnings-revisions.html">Earnings Revisions</a> and <a href="/analyst-estimate-dispersion.html">Analyst Estimate Dispersion</a> are both about the consensus <em>EPS estimate</em> &mdash; whether it's moving, and how much analysts disagree on it. This page is about the <em>price target</em> and buy/sell <em>recommendation</em> instead &mdash; a separate line item sell-side research reports independently of the earnings numbers behind it, and one with its own well-known biases: price targets are set by the same analysts who cover a stock and often lag price moves rather than lead them, and Buy ratings structurally outnumber Sell ratings across Wall Street research as a whole (investment banks sell more to companies they rate favorably), so neither figure should be read as a neutral forecast.</p>
-<p>The scatter below tests one version of that lag: does the Street assign more upside to stocks that have already sold off, consistent with analysts revising a target more slowly than the market re-prices a stock (mean reversion in the *target*, not necessarily the *stock*), or does upside track recent winners instead? It reuses Relative Strength Leaders/Laggards' trailing 3-month relative-return figures, the same cross-page-reuse pattern as <a href="/institutional-ownership.html">Institutional Ownership Trends</a>'s own price-performance test, and is deliberately framed as a contemporaneous relationship rather than a forward-looking one &mdash; both a linear (Pearson) and rank-based (Spearman) fit are reported since one can mislead when the relationship isn't linear.</p>
-<p>Sector and company name come from each stock's own <code>COMPANY_OVERVIEW</code> response (GICS-normalized the same way <a href="/sector-beeswarm.html">Sector Beeswarm</a>'s own metadata sweep is), not a shared cross-page lookup, since this job already pays for the full sweep. Leaderboards require at least 3 covering analysts, since a one- or two-analyst target can be an outlier with no real consensus behind it. This is a one-time snapshot as of the date above, not a continuously-refreshed feed &mdash; matching this site's current convention for newly-added full-universe Equities pages; it can be re-run manually for a fresh snapshot.</p>
-<div class="source">Source: <a href="https://www.alphavantage.co/" target="_blank" rel="noopener">Alpha Vantage — COMPANY_OVERVIEW</a>. Not investment advice.</div>
+<p>This is a different question from this site's other analyst-facing pages. <a href="/earnings-revisions.html">Earnings Revisions</a> and <a href="/analyst-estimate-dispersion.html">Analyst Estimate Dispersion</a> are both about the consensus <em>EPS estimate</em>, whether it's moving, and how much analysts disagree on it. This page is about the <em>price target</em> and buy/sell <em>recommendation</em> instead. A separate line item sell-side research reports independently of the earnings numbers behind it, and one with its own well-known biases: price targets are set by the same analysts who cover a stock and often lag price moves rather than lead them, and Buy ratings structurally outnumber Sell ratings across Wall Street research as a whole (investment banks sell more to companies they rate favorably), so neither figure should be read as a neutral forecast.</p>
+<p>The scatter below tests one version of that lag: does the Street assign more upside to stocks that have already sold off, consistent with analysts revising a target more slowly than the market re-prices a stock (mean reversion in the *target*, not necessarily the *stock*), or does upside track recent winners instead? It reuses Relative Strength Leaders/Laggards' trailing 3-month relative-return figures, the same cross-page-reuse pattern as <a href="/institutional-ownership.html">Institutional Ownership Trends</a>'s own price-performance test, and is deliberately framed as a contemporaneous relationship rather than a forward-looking one, both a linear (Pearson) and rank-based (Spearman) fit are reported since one can mislead when the relationship isn't linear.</p>
+<p>Sector and company name come from each stock's own <code>COMPANY_OVERVIEW</code> response (GICS-normalized the same way <a href="/sector-beeswarm.html">Sector Beeswarm</a>'s own metadata sweep is), not a shared cross-page lookup, since this job already pays for the full sweep. Leaderboards require at least 3 covering analysts, since a one- or two-analyst target can be an outlier with no real consensus behind it. This is a one-time snapshot as of the date above, not a continuously-refreshed feed. Matching this site's current convention for newly-added full-universe Equities pages; it can be re-run manually for a fresh snapshot.</p>
+<div class="source">Source: <a href="https://www.alphavantage.co/" target="_blank" rel="noopener">Alpha Vantage: COMPANY_OVERVIEW</a>. Not investment advice.</div>
 </div>
 
 </div>
@@ -1039,19 +1039,19 @@ let SORT_DIR = -1;
 let SECTOR_MODE = "upside"; // "upside" | "buyratio"
 
 function fmtPct(v, digits){
- if(v === null || v === undefined || isNaN(v)) return "—";
+ if(v === null || v === undefined || isNaN(v)) return "n/a";
  digits = digits === undefined ? 1 : digits;
  return (v >= 0 ? "+" : "") + v.toFixed(digits) + "%";
 }
 
 function fmtPlainPct(v, digits){
- if(v === null || v === undefined || isNaN(v)) return "—";
+ if(v === null || v === undefined || isNaN(v)) return "n/a";
  digits = digits === undefined ? 1 : digits;
  return v.toFixed(digits) + "%";
 }
 
 function fmtNum(v, digits){
- if(v === null || v === undefined || isNaN(v)) return "—";
+ if(v === null || v === undefined || isNaN(v)) return "n/a";
  digits = digits === undefined ? 0 : digits;
  return v.toLocaleString(undefined, { maximumFractionDigits: digits });
 }
@@ -1166,7 +1166,7 @@ async function init(){
   document.getElementById("updated").textContent = "As of " + new Date(data.generated_at_utc).toLocaleString("en-US", { month: "2-digit", day: "2-digit", year: "numeric", hour: "numeric", minute: "2-digit" });
 
   if(data.loadedCount < data.universeSize * 0.85){
-   showWarning("Only " + data.loadedCount + " of " + data.universeSize + " S&P 500 constituents loaded this run — some sector figures may be based on partial coverage.");
+   showWarning("Only " + data.loadedCount + " of " + data.universeSize + " S&P 500 constituents loaded this run. Some sector figures may be based on partial coverage.");
   }else if(!data.hasPriceData){
    showWarning("Relative Strength Leaders/Laggards data isn't available yet, so target upside couldn't be computed against a current price this run.");
   }
@@ -1373,7 +1373,7 @@ function renderUpsideScatter(){
    "<thead><tr><th>Method</th><th>n</th><th>r</th><th>r&sup2;</th><th>slope</th><th>t</th><th>p</th></tr></thead>" +
    "<tbody>" + row("Pearson (OLS)", pearson) + row("Spearman (&rho;)", spear) + "</tbody>" +
   "</table>" +
-  '<div class="method-note">A negative slope means analysts have assigned more upside to stocks that have already underperformed — consistent with price targets lagging behind price moves rather than leading them. A positive slope would say the opposite: upside tracks recent winners, not laggards.</div>';
+  '<div class="method-note">A negative slope means analysts have assigned more upside to stocks that have already underperformed. Consistent with price targets lagging behind price moves rather than leading them. A positive slope would say the opposite: upside tracks recent winners, not laggards.</div>';
 }
 
 function renderLeaderTable(rows, tbodyId, mode){
@@ -1384,7 +1384,7 @@ function renderLeaderTable(rows, tbodyId, mode){
  }
  tbody.innerHTML = rows.map(r => `<tr>
   <td><span class="sector-name">${r.symbol}</span></td>
-  <td><span class="sector-ticker">${r.sector || "—"}</span></td>
+  <td><span class="sector-ticker">${r.sector || "n/a"}</span></td>
   <td>${mode === "upside" ? fmtPct(r.upsidePct) : fmtPlainPct(r.buyRatio)}</td>
   <td>${mode === "upside" ? fmtPlainPct(r.buyRatio) : fmtNum(r.analystTotal)}</td>
  </tr>`).join("");
@@ -1412,7 +1412,7 @@ function renderTable(){
  const tbody = document.getElementById("tableBody");
  tbody.innerHTML = rows.map(r => `<tr>
    <td><span class="sector-name">${r.symbol}</span></td>
-   <td><span class="sector-ticker">${r.sector || "—"}</span></td>
+   <td><span class="sector-ticker">${r.sector || "n/a"}</span></td>
    <td>${fmtPct(r.upsidePct)}</td>
    <td>${fmtPlainPct(r.buyRatio)}</td>
    <td>${fmtNum(r.consensusScore, 2)}</td>

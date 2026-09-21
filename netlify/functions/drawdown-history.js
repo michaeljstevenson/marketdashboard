@@ -8,7 +8,7 @@ exports.handler = async () => {
   try {
     const payload = await getDrawdownStore().get(BLOB_KEY, { type: "json" });
     if (!payload) {
-      throw new Error("Drawdown history not yet populated — scheduled-drawdown-background hasn't run");
+      throw new Error("Drawdown history not yet populated, scheduled-drawdown-background hasn't run");
     }
     return {
       statusCode: 200,

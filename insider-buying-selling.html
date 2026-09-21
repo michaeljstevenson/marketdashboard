@@ -153,7 +153,7 @@ document.addEventListener("DOMContentLoaded", function(){
 </script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Insider Buying/Selling — Michael J. Stevenson</title>
+<title>Insider Buying/Selling | Michael J. Stevenson</title>
 
 <style>
 
@@ -761,22 +761,22 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <div class="stat-grid">
 <div class="stat-card">
 <div class="stat-label">Net Insider $ Flow</div>
-<div class="stat-value" id="statNetFlow">—</div>
+<div class="stat-value" id="statNetFlow">…</div>
 <div class="stat-note">Buy $ minus sell $, trailing 90 days</div>
 </div>
 <div class="stat-card">
 <div class="stat-label">Buy $ / Sell $</div>
-<div class="stat-value" id="statBuySell" style="font-size:18px;">—</div>
+<div class="stat-value" id="statBuySell" style="font-size:18px;">…</div>
 <div class="stat-note">Total dollar volume, both directions</div>
 </div>
 <div class="stat-card">
 <div class="stat-label">Companies Net Buying</div>
-<div class="stat-value" id="statCompaniesBuying" style="font-size:20px;">—</div>
+<div class="stat-value" id="statCompaniesBuying" style="font-size:20px;">…</div>
 <div class="stat-note" id="statCompaniesNote">Of companies with any activity</div>
 </div>
 <div class="stat-card">
 <div class="stat-label">Cluster-Buy Signals</div>
-<div class="stat-value" id="statClusterBuys">—</div>
+<div class="stat-value" id="statClusterBuys">…</div>
 <div class="stat-note">2+ insiders buying, zero sellers</div>
 </div>
 </div>
@@ -796,7 +796,7 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <div class="table-box">
 <div class="table-box-header">
 <h2>Cluster buying</h2>
-<div class="chart-subhead">Companies with 2+ distinct insiders buying and zero insiders selling in the window — the least ambiguous signal this data can offer</div>
+<div class="chart-subhead">Companies with 2+ distinct insiders buying and zero insiders selling in the window. The least ambiguous signal this data can offer</div>
 </div>
 <table id="clusterTable">
 <thead>
@@ -840,7 +840,7 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <div class="table-box">
 <div class="table-box-header">
 <h2>Largest individual sales</h2>
-<div class="chart-subhead">Shown for completeness — insider selling is common and often reflects diversification, taxes, or a pre-scheduled 10b5-1 plan rather than a bearish view (see methodology)</div>
+<div class="chart-subhead">Shown for completeness: insider selling is common and often reflects diversification, taxes, or a pre-scheduled 10b5-1 plan rather than a bearish view (see methodology)</div>
 </div>
 <table id="sellsTable">
 <thead>
@@ -886,11 +886,11 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 
 <div class="explainer">
 <h2>Methodology</h2>
-<p>Universe is the full S&amp;P 500. For every constituent, Alpha Vantage's <code>INSIDER_TRANSACTIONS</code> endpoint returns each Form 4 line item filed by officers, directors, and 10%+ owners — company, filer, security type, transaction date, shares, price, and whether it was an acquisition or disposal. Only transactions dated within the trailing 90 days as of the last refresh are counted.</p>
-<p>Raw Form 4 data is dominated by routine equity-compensation mechanics, not discretionary trading decisions: RSUs vesting, options being exercised, and the automatic tax-withholding sale that immediately follows a vesting event. None of that reflects an insider choosing to buy or sell. This page keeps only <code>security_type = Common Stock</code> transactions reporting a real, positive share price — RSU vesting and stock awards report a blank or zero price, so this filters most of that noise out. It is an honest partial fix, not a complete one: a pre-scheduled 10b5-1 plan sale (an executive who set up automatic periodic sales months in advance, unrelated to any current view on the stock) still reports a normal share price and passes this filter indistinguishably from a discretionary open-market sale. Treat the sell side of this data with real skepticism for that reason.</p>
-<p>Insider buying doesn't have the same problem — there's no routine, automatic mechanism that makes an executive spend their own cash to buy more stock, which is why academic research on this topic (e.g. Lakonishok &amp; Lee, 2001, <i>Are Insider Trades Informative?</i>) consistently finds insider purchases carry more signal than insider sales. This page reflects that asymmetry directly: cluster buying (2+ distinct insiders buying with zero sellers in the window) is surfaced as the headline signal, and the largest individual purchases get their own table, while the largest sales are shown only for completeness with an explicit caveat rather than framed as bearish.</p>
-<p>Sector and company name come from the same weekly metadata Alpha Vantage sweep that backs <a href="/sector-beeswarm.html">Sector Beeswarm</a>, reused here rather than paying for a second full-index pass just for labels. Refreshes weekly (Saturday mornings) — a single company's insider filings are sparse enough that a trailing-90-day aggregate has little reason to move day to day.</p>
-<div class="source">Source: <a href="https://www.alphavantage.co/" target="_blank" rel="noopener">Alpha Vantage — INSIDER_TRANSACTIONS</a></div>
+<p>Universe is the full S&amp;P 500. For every constituent, Alpha Vantage's <code>INSIDER_TRANSACTIONS</code> endpoint returns each Form 4 line item filed by officers, directors, and 10%+ owners. Company, filer, security type, transaction date, shares, price, and whether it was an acquisition or disposal. Only transactions dated within the trailing 90 days as of the last refresh are counted.</p>
+<p>Raw Form 4 data is dominated by routine equity-compensation mechanics, not discretionary trading decisions: RSUs vesting, options being exercised, and the automatic tax-withholding sale that immediately follows a vesting event. None of that reflects an insider choosing to buy or sell. This page keeps only <code>security_type = Common Stock</code> transactions reporting a real, positive share price. RSU vesting and stock awards report a blank or zero price, so this filters most of that noise out. It is an honest partial fix, not a complete one: a pre-scheduled 10b5-1 plan sale (an executive who set up automatic periodic sales months in advance, unrelated to any current view on the stock) still reports a normal share price and passes this filter indistinguishably from a discretionary open-market sale. Treat the sell side of this data with real skepticism for that reason.</p>
+<p>Insider buying doesn't have the same problem. There's no routine, automatic mechanism that makes an executive spend their own cash to buy more stock, which is why academic research on this topic (e.g. Lakonishok &amp; Lee, 2001, <i>Are Insider Trades Informative?</i>) consistently finds insider purchases carry more signal than insider sales. This page reflects that asymmetry directly: cluster buying (2+ distinct insiders buying with zero sellers in the window) is surfaced as the headline signal, and the largest individual purchases get their own table, while the largest sales are shown only for completeness with an explicit caveat rather than framed as bearish.</p>
+<p>Sector and company name come from the same weekly metadata Alpha Vantage sweep that backs <a href="/sector-beeswarm.html">Sector Beeswarm</a>, reused here rather than paying for a second full-index pass just for labels. Refreshes weekly (Saturday mornings): a single company's insider filings are sparse enough that a trailing-90-day aggregate has little reason to move day to day.</p>
+<div class="source">Source: <a href="https://www.alphavantage.co/" target="_blank" rel="noopener">Alpha Vantage: INSIDER_TRANSACTIONS</a></div>
 </div>
 
 </div>
@@ -940,7 +940,7 @@ async function init(){
    "As of " + usDate(data.asOfDate) + " · " + new Date(data.generated_at_utc).toLocaleString("en-US", { month: "2-digit", day: "2-digit", year: "numeric", hour: "numeric", minute: "2-digit" });
 
   if(data.loadedCount < data.universeSize){
-   showWarning("Only " + data.loadedCount + " of " + data.universeSize + " S&P 500 constituents loaded this run — some data may be temporarily unavailable.");
+   showWarning("Only " + data.loadedCount + " of " + data.universeSize + " S&P 500 constituents loaded this run. Some data may be temporarily unavailable.");
   }
 
   renderStats();
@@ -961,10 +961,10 @@ function renderStats(){
  const m = RAW.market;
 
  const netEl = document.getElementById("statNetFlow");
- netEl.textContent = fmtUsdSigned(m.netValue) || "—";
+ netEl.textContent = fmtUsdSigned(m.netValue) || "n/a";
  netEl.classList.toggle("cell-neg", m.netValue !== null && m.netValue < 0);
 
- document.getElementById("statBuySell").textContent = (fmtUsd(m.buyValue) || "—") + " / " + (fmtUsd(m.sellValue) || "—");
+ document.getElementById("statBuySell").textContent = (fmtUsd(m.buyValue) || "n/a") + " / " + (fmtUsd(m.sellValue) || "n/a");
  document.getElementById("statCompaniesBuying").textContent = m.companiesNetBuying + " / " + m.companiesNetSelling + " selling";
  document.getElementById("statCompaniesNote").textContent = m.companiesWithActivity + " of " + RAW.universeSize + " had any qualifying activity";
  document.getElementById("statClusterBuys").textContent = m.clusterBuyCount;
@@ -1015,9 +1015,9 @@ function renderSectorChart(){
       label: ctx => {
        const s = sorted[ctx.dataIndex];
        return [
-        "Net: " + (fmtUsdSigned(s.netValue) || "—"),
-        "Buy: " + (fmtUsd(s.buyValue) || "—") + " (" + s.buyCount + " txns)",
-        "Sell: " + (fmtUsd(s.sellValue) || "—") + " (" + s.sellCount + " txns)",
+        "Net: " + (fmtUsdSigned(s.netValue) || "n/a"),
+        "Buy: " + (fmtUsd(s.buyValue) || "n/a") + " (" + s.buyCount + " txns)",
+        "Sell: " + (fmtUsd(s.sellValue) || "n/a") + " (" + s.sellCount + " txns)",
         s.stockCount + " companies with activity",
        ];
       },
@@ -1041,10 +1041,10 @@ function renderClusterTable(){
  }
  tbody.innerHTML = clusters.map(s => `<tr>
   <td><span class="sector-name">${s.symbol}</span></td>
-  <td><span class="sector-ticker">${s.sector || "—"}</span></td>
+  <td><span class="sector-ticker">${s.sector || "n/a"}</span></td>
   <td>${s.uniqueBuyers}</td>
   <td>${s.buyCount}</td>
-  <td class="cell-pos">${fmtUsd(s.buyValue) || "—"}</td>
+  <td class="cell-pos">${fmtUsd(s.buyValue) || "n/a"}</td>
  </tr>`).join("");
 }
 
@@ -1058,7 +1058,7 @@ function renderTransactionTable(rows, tbodyId){
   <td><span class="sector-ticker">${usDate(t.date)}</span></td>
   <td><span class="sector-name">${t.symbol}</span></td>
   <td style="font-family:var(--sans); text-align:left;">${t.executive}</td>
-  <td style="font-family:var(--sans); text-align:left; color:var(--muted); font-size:12px;">${t.title || "—"}</td>
+  <td style="font-family:var(--sans); text-align:left; color:var(--muted); font-size:12px;">${t.title || "n/a"}</td>
   <td>${t.shares.toLocaleString()}</td>
   <td>${fmtUsd(t.price)}</td>
   <td>${fmtUsd(t.value)}</td>
@@ -1090,10 +1090,10 @@ function renderTable(){
   const clusterBadge = r.clusterBuy ? ' <span class="badge-cluster">cluster</span>' : "";
   return `<tr>
    <td><span class="sector-name">${r.symbol}</span>${clusterBadge}</td>
-   <td><span class="sector-ticker">${r.sector || "—"}</span></td>
-   <td>${fmtUsd(r.buyValue) || "—"}</td>
-   <td>${fmtUsd(r.sellValue) || "—"}</td>
-   <td class="${netCls}">${fmtUsdSigned(r.netValue) || "—"}</td>
+   <td><span class="sector-ticker">${r.sector || "n/a"}</span></td>
+   <td>${fmtUsd(r.buyValue) || "n/a"}</td>
+   <td>${fmtUsd(r.sellValue) || "n/a"}</td>
+   <td class="${netCls}">${fmtUsdSigned(r.netValue) || "n/a"}</td>
    <td>${r.buyCount}</td>
    <td>${r.sellCount}</td>
    <td>${r.uniqueBuyers}</td>

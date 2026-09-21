@@ -16,7 +16,7 @@ exports.handler = async () => {
     ]);
 
     if (!latest) {
-      throw new Error("Analyst dispersion data not yet populated — scheduled-dispersion-background hasn't run yet");
+      throw new Error("Analyst dispersion data not yet populated, scheduled-dispersion-background hasn't run yet");
     }
 
     return {

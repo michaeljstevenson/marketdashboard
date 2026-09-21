@@ -147,7 +147,7 @@ exports.handler = async () => {
     ]);
     const metaTickers = (beeswarmMeta && beeswarmMeta.tickers) || {};
     if (!shareCountData || !Array.isArray(shareCountData.companies)) {
-      throw new Error("share-count-trends data not available yet — scheduled-share-count-background must run first");
+      throw new Error("share-count-trends data not available yet, scheduled-share-count-background must run first");
     }
     const netBuybackYieldByTicker = new Map(
       shareCountData.companies
@@ -219,7 +219,7 @@ exports.handler = async () => {
     }
 
     console.log(`scheduled-buyback-effectiveness-background: fetched ${results.size}/${BREADTH_CONSTITUENTS.length} tickers`);
-    if (results.size === 0) throw new Error("Every ticker failed — refusing to write an empty snapshot");
+    if (results.size === 0) throw new Error("Every ticker failed. Refusing to write an empty snapshot");
 
     const companies = [];
     const allQuarterKeys = new Set();

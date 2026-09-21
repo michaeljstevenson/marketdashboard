@@ -169,7 +169,7 @@ document.addEventListener("DOMContentLoaded", function(){
 </script>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1" name="viewport"/>
-<title>Yield Curves &amp; the Recession Signal — Michael J. Stevenson</title>
+<title>Yield Curves &amp; the Recession Signal | Michael J. Stevenson</title>
 <style>
 
 :root{
@@ -581,17 +581,17 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <div class="stat-grid">
 <div class="stat-card">
 <div class="stat-label">2s10s Spread</div>
-<div class="stat-value" id="stat2s10s">—</div>
-<div class="stat-note" id="stat2s10sNote">—</div>
+<div class="stat-value" id="stat2s10s">…</div>
+<div class="stat-note" id="stat2s10sNote">…</div>
 </div>
 <div class="stat-card">
 <div class="stat-label">3m/10y Spread</div>
-<div class="stat-value" id="stat3m10y" style="color:var(--fear);">—</div>
+<div class="stat-value" id="stat3m10y" style="color:var(--fear);">…</div>
 <div class="stat-note">The New York Fed's preferred recession-model input</div>
 </div>
 <div class="stat-card">
 <div class="stat-label">10Y Term Premium</div>
-<div class="stat-value" id="statTP" style="color:var(--extreme);">—</div>
+<div class="stat-value" id="statTP" style="color:var(--extreme);">…</div>
 <div class="stat-note">ACM model, NY Fed</div>
 </div>
 <div class="stat-card">
@@ -905,7 +905,7 @@ const recessionShading = {
 
 function renderInversionTable(){
  const rows = INVERSION_EPISODES.map(ep => {
-  let leadTime = "—", result = "—", resultClass = "";
+  let leadTime = "n/a", result = "n/a", resultClass = "";
   if(ep.nextRecession){
    const [sy, sm] = ep.start.split("-").map(Number);
    const [ry, rm] = ep.nextRecession.split("-").map(Number);
@@ -920,7 +920,7 @@ function renderInversionTable(){
   return `<tr>` +
    `<td>${ep.start}${ep.start === ep.end ? "" : " to " + ep.end}</td>` +
    `<td>${duration}</td>` +
-   `<td>${ep.nextRecession ? RECESSIONS.find(r => r.start === ep.nextRecession).label + " (" + ep.nextRecession + ")" : (ep.note || "—")}</td>` +
+   `<td>${ep.nextRecession ? RECESSIONS.find(r => r.start === ep.nextRecession).label + " (" + ep.nextRecession + ")" : (ep.note || "n/a")}</td>` +
    `<td>${leadTime}</td>` +
    `<td class="${resultClass}">${result}</td>` +
   `</tr>`;

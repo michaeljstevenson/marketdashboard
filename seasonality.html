@@ -11,7 +11,7 @@
 </script>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1" name="viewport"/>
-<title>Seasonality — Michael J. Stevenson</title>
+<title>Seasonality | Michael J. Stevenson</title>
 <style>
 
 :root{
@@ -666,23 +666,23 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <div class="stat-grid">
 <div class="stat-card">
 <div class="stat-label">Trading Days</div>
-<div class="stat-value" id="statCount">—</div>
-<div class="stat-note" id="statRangeNote">—</div>
+<div class="stat-value" id="statCount">…</div>
+<div class="stat-note" id="statRangeNote">…</div>
 </div>
 <div class="stat-card">
 <div class="stat-label">% Positive Days</div>
-<div class="stat-value" id="statPctUp">—</div>
+<div class="stat-value" id="statPctUp">…</div>
 <div class="stat-note">Share of sessions that closed higher</div>
 </div>
 <div class="stat-card">
 <div class="stat-label">Best Day of Week</div>
-<div class="stat-value" id="statBestDow" style="font-size:20px;">—</div>
-<div class="stat-note" id="statWorstDow">—</div>
+<div class="stat-value" id="statBestDow" style="font-size:20px;">…</div>
+<div class="stat-note" id="statWorstDow">…</div>
 </div>
 <div class="stat-card">
 <div class="stat-label">Best Month</div>
-<div class="stat-value" id="statBestMonth" style="font-size:20px;">—</div>
-<div class="stat-note" id="statWorstMonth">—</div>
+<div class="stat-value" id="statBestMonth" style="font-size:20px;">…</div>
+<div class="stat-note" id="statWorstMonth">…</div>
 </div>
 </div>
 
@@ -807,13 +807,13 @@ let RANGE_DATA = {};   // pre-computed stats per range key, straight from the AP
 let CURRENT_RANGE = DEFAULT_GLOBAL_RANGE;
 
 function fmtPct(v, digits){
- if(v == null || isNaN(v)) return "—";
+ if(v == null || isNaN(v)) return "n/a";
  const d = digits == null ? 2 : digits;
  return (v >= 0 ? "+" : "") + v.toFixed(d) + "%";
 }
 
 function fmtPositivePct(v){
- return v == null || isNaN(v) ? "—" : v.toFixed(1) + "%";
+ return v == null || isNaN(v) ? "n/a" : v.toFixed(1) + "%";
 }
 
 function renderRangeButtons(){
@@ -836,7 +836,7 @@ function renderRangeButtons(){
 function renderStats(data){
  document.getElementById("statCount").textContent = data.count.toLocaleString();
  document.getElementById("statRangeNote").textContent = usDate(data.startDate) + " to " + usDate(data.endDate);
- document.getElementById("statPctUp").textContent = data.pctPositive != null ? data.pctPositive.toFixed(1) + "%" : "—";
+ document.getElementById("statPctUp").textContent = data.pctPositive != null ? data.pctPositive.toFixed(1) + "%" : "n/a";
 
  const dowEntries = data.dow.filter(d => d.n > 0);
  if(dowEntries.length){
@@ -1063,7 +1063,7 @@ function renderDistribution(tableId){
  }
 
  if(!totalN){
-  container.innerHTML = '<div class="dist-stats">No rows selected — check at least one row in the table to see its distribution.</div>';
+  container.innerHTML = '<div class="dist-stats">No rows selected: check at least one row in the table to see its distribution.</div>';
   return;
  }
 
@@ -1195,7 +1195,7 @@ function renderHeatmap(rows){
   html += "<tr><th>" + row.year + "</th>";
   row.months.forEach(v => {
    html += v == null
-    ? '<td class="na">—</td>'
+    ? '<td class="na">: </td>'
     : '<td style="background:' + heatmapColor(v) + '">' + fmtPct(v, 1) + "</td>";
   });
   html += '<td style="background:' + heatmapColor(row.total) + '; font-weight:600;">' + fmtPct(row.total, 1) + "</td></tr>";

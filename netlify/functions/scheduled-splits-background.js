@@ -135,7 +135,7 @@ exports.handler = async () => {
 
     // ---- Stage 1: SPLITS sweep, full universe ----
     const splitsRaw = await sweepSequential(BREADTH_CONSTITUENTS, fetchSplits, "SPLITS");
-    if (splitsRaw.size === 0) throw new Error("Every ticker failed the SPLITS sweep — refusing to write an empty snapshot");
+    if (splitsRaw.size === 0) throw new Error("Every ticker failed the SPLITS sweep. Refusing to write an empty snapshot");
 
     // All genuine splits within the 15-year frequency window, full universe.
     const allValidSplits = []; // { symbol, date, factor, label, direction }
@@ -145,7 +145,7 @@ exports.handler = async () => {
         if (isNaN(d) || d < freqCutoff || d > now) continue;
         const match = matchSplitRatio(ev.factor);
         if (!match) {
-          console.log(`scheduled-splits-background: ${symbol} ${ev.date} factor ${ev.factor} not a recognized split ratio — skipped (likely a spin-off adjustment)`);
+          console.log(`scheduled-splits-background: ${symbol} ${ev.date} factor ${ev.factor} not a recognized split ratio. Skipped (likely a spin-off adjustment)`);
           continue;
         }
         allValidSplits.push({ symbol, date: ev.date, factor: ev.factor, label: match.label, direction: match.value > 1 ? "forward" : "reverse" });

@@ -11,7 +11,7 @@
 <script src="https://cdn.jsdelivr.net/npm/d3@7"></script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>S&amp;P 500 Sector Beeswarm — Michael J. Stevenson</title>
+<title>S&amp;P 500 Sector Beeswarm | Michael J. Stevenson</title>
 
 <style>
 :root{
@@ -433,15 +433,15 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <div class="header">
 <div>
 <h1>S&amp;P 500 Sector Beeswarm</h1>
-<div class="subtitle" id="subtitle">Every S&amp;P 500 company as a bubble &mdash; positioned by sector and by return, sized by market capitalization. <strong>Daily</strong> replays the most recent sessions company by company; <strong>Annual</strong> steps back through the last 15 calendar years at sector-ETF resolution.</div>
+<div class="subtitle" id="subtitle">Every S&amp;P 500 company as a bubble: positioned by sector and by return, sized by market capitalization. <strong>Daily</strong> replays the most recent sessions company by company; <strong>Annual</strong> steps back through the last 15 calendar years at sector-ETF resolution.</div>
 </div>
 <div class="updated" id="updated">Loading&hellip;</div>
 </div>
 
 <div class="controls">
 <div class="toggle-group">
-<button class="toggle-btn active" id="btnDaily" type="button">Daily &mdash; companies</button>
-<button class="toggle-btn" id="btnAnnual" type="button">Annual &mdash; sector ETFs</button>
+<button class="toggle-btn active" id="btnDaily" type="button">Daily: companies</button>
+<button class="toggle-btn" id="btnAnnual" type="button">Annual: sector ETFs</button>
 </div>
 <div class="legend-note" id="legendNote"></div>
 </div>
@@ -452,15 +452,15 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <button class="playbtn" id="playBtn" type="button" title="Play">&#9654;</button>
 <button class="stepbtn" id="stepFwd" type="button" title="Next">&#8250;</button>
 <input type="range" id="frameRange" min="0" max="0" value="0" step="1">
-<span class="frame-label" id="frameLabel">&mdash;</span>
+<span class="frame-label" id="frameLabel">…</span>
 </div>
 
 <div class="chart-box">
 <div class="plot-head">
 <div class="lead">
 <div class="big">S&amp;P 500</div>
-<div class="sub" id="plotDate">&mdash;</div>
-<div class="spy" id="plotSpy">&mdash;</div>
+<div class="sub" id="plotDate">…</div>
+<div class="spy" id="plotSpy">…</div>
 </div>
 </div>
 <svg id="chart" viewBox="0 0 1120 660" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Sector beeswarm chart"></svg>
@@ -470,13 +470,13 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <h2>Reading this chart</h2>
 <p>
  Each bubble is one company (Daily) or one SPDR Select Sector ETF (Annual). Horizontal position
- is the company&rsquo;s GICS sector; vertical position is its return &mdash; measured from the prior
+ is the company&rsquo;s GICS sector; vertical position is its return: measured from the prior
  close, tracked through the session at 15-minute marks in Daily, or cumulative calendar-year total
  return in Annual. Bubble area is market capitalization (Daily) or the sector&rsquo;s approximate
  weight in the index (Annual). The dashed line marks SPY&rsquo;s return over the same window.
 </p>
 <p class="editorial-note">
- Placeholder copy &mdash; headline, framing, and the methodology write-up below are yours to author.
+ Placeholder copy: headline, framing, and the methodology write-up below are yours to author.
 </p>
 <h2>Method &amp; caveats</h2>
 <p>
@@ -484,16 +484,16 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
  intraday bars (delayed data) and archived going forward. Each mark is that bar&rsquo;s price versus
  the prior session close; bubble size is shares outstanding &times; the closing price (fixed for
  the session), with sector and share counts refreshed weekly. Index membership is the current
- S&amp;P 500 constituent list applied to every archived day &mdash; a company added or removed
+ S&amp;P 500 constituent list applied to every archived day. A company added or removed
  later is not reconstructed point-in-time.
 </p>
 <p>
  <strong>Annual</strong> uses the 11 SPDR Select Sector ETFs (total return, split&nbsp;&amp;
  dividend&nbsp;adjusted) for calendar years over roughly the last 15 years. XLRE (Real Estate)
- begins in 2016 and XLC (Communication Services) in 2019 &mdash; earlier years omit those bubbles.
+ begins in 2016 and XLC (Communication Services) in 2019. Earlier years omit those bubbles.
  Sector weights used for bubble size are approximate year-end figures.
 </p>
-<div class="source">Source: <a href="https://www.alphavantage.co/" target="_blank" rel="noopener">Alpha Vantage</a> &mdash; SPDR Select Sector ETFs, SPY, and S&amp;P 500 constituent quotes. Visualization after Jan at <a href="https://www.chartfleau.com/" target="_blank" rel="noopener">Chartfleau</a>.</div>
+<div class="source">Source: <a href="https://www.alphavantage.co/" target="_blank" rel="noopener">Alpha Vantage</a>: SPDR Select Sector ETFs, SPY, and S&amp;P 500 constituent quotes. Visualization after Jan at <a href="https://www.chartfleau.com/" target="_blank" rel="noopener">Chartfleau</a>.</div>
 </div>
 
 </div>
@@ -1034,14 +1034,14 @@ function initDailyFrames(){
   setDailyDay(dates.includes(dailyDay) ? dailyDay : dates[dates.length - 1]);
   document.getElementById("updated").textContent =
    dates.length + " session" + (dates.length === 1 ? "" : "s") + " archived · latest " + dates[dates.length - 1];
-  if(dates.length === 1) showWarning("The archive has one session so far — it fills in one trading day at a time going forward.");
+  if(dates.length === 1) showWarning("The archive has one session so far. It fills in one trading day at a time going forward.");
   else clearWarning();
  }).catch(err => {
   frames = [];
   currentDay = null;
   setupRange();
   svg.selectAll("*").remove();
-  showError("Daily view unavailable: " + err.message + ". The archive begins once the first post-close snapshot runs — the Annual view works now.");
+  showError("Daily view unavailable: " + err.message + ". The archive begins once the first post-close snapshot runs. The Annual view works now.");
  });
 }
 

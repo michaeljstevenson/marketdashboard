@@ -153,7 +153,7 @@ document.addEventListener("DOMContentLoaded", function(){
 </script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Forward vs. Trailing P/E Divergence — Michael J. Stevenson</title>
+<title>Forward vs. Trailing P/E Divergence | Michael J. Stevenson</title>
 
 <style>
 
@@ -833,7 +833,7 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <div class="header">
 <div>
 <h1>Forward vs. Trailing P/E Divergence</h1>
-<div class="subtitle">The market's own implied year-ahead EPS growth rate, read directly off the gap between forward and trailing P/E — no separate earnings-estimate data needed, since both ratios share the same price.</div>
+<div class="subtitle">The market's own implied year-ahead EPS growth rate, read directly off the gap between forward and trailing P/E. No separate earnings-estimate data needed, since both ratios share the same price.</div>
 </div>
 <div class="updated" id="updated">Loading...</div>
 </div>
@@ -841,22 +841,22 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <div class="stat-grid">
 <div class="stat-card">
 <div class="stat-label">Median implied EPS growth</div>
-<div class="stat-value" id="statMedianGrowth">—</div>
+<div class="stat-value" id="statMedianGrowth">…</div>
 <div class="stat-note" id="statMedianGrowthNote">Full S&amp;P 500, companies with a meaningful P/E</div>
 </div>
 <div class="stat-card">
 <div class="stat-label">Avg. trailing P/E vs. forward P/E</div>
-<div class="stat-value" id="statPePair" style="font-size:20px;">—</div>
+<div class="stat-value" id="statPePair" style="font-size:20px;">…</div>
 <div class="stat-note" id="statPePairNote">Simple average across companies</div>
 </div>
 <div class="stat-card">
 <div class="stat-label">Implied vs. actual growth</div>
-<div class="stat-value" id="statGrowthCorr" style="font-size:20px;">—</div>
-<div class="stat-note" id="statGrowthCorrNote">Pearson r — trailing YoY growth vs. market's implied forward growth</div>
+<div class="stat-value" id="statGrowthCorr" style="font-size:20px;">…</div>
+<div class="stat-note" id="statGrowthCorrNote">Pearson r: trailing YoY growth vs. market's implied forward growth</div>
 </div>
 <div class="stat-card">
 <div class="stat-label">Highest implied growth sector</div>
-<div class="stat-value" id="statTopSector" style="font-size:18px;">—</div>
+<div class="stat-value" id="statTopSector" style="font-size:18px;">…</div>
 <div class="stat-note" id="statTopSectorNote">By median implied EPS growth</div>
 </div>
 </div>
@@ -865,7 +865,7 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <div class="chart-box-header">
 <div>
 <h2>Market-wide implied EPS growth, over time</h2>
-<div class="chart-subhead">Median across the S&amp;P 500, snapshotted weekly — this line starts thin and gets more useful with each week's run</div>
+<div class="chart-subhead">Median across the S&amp;P 500, snapshotted weekly. This line starts thin and gets more useful with each week's run</div>
 </div>
 </div>
 <div class="ndr-panel">
@@ -932,7 +932,7 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <div class="table-box">
 <div class="table-box-header">
 <h2>Implied decline</h2>
-<div class="chart-subhead">Forward P/E above trailing — market expects earnings to shrink</div>
+<div class="chart-subhead">Forward P/E above trailing: market expects earnings to shrink</div>
 </div>
 <table id="declineTable">
 <thead><tr><th>Symbol</th><th>Sector</th><th>Trailing</th><th>Forward</th><th>Implied growth</th></tr></thead>
@@ -944,7 +944,7 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <div class="table-box">
 <div class="table-box-header">
 <h2>All companies with a meaningful P/E</h2>
-<div class="chart-subhead">Full S&amp;P 500 — click a column to sort</div>
+<div class="chart-subhead">Full S&amp;P 500: click a column to sort</div>
 </div>
 <table id="stockTable">
 <thead>
@@ -965,12 +965,12 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 
 <div class="explainer">
 <h2>Methodology</h2>
-<p>Universe is the full S&amp;P 500. For every constituent, Alpha Vantage's <code>OVERVIEW</code> endpoint returns <code>TrailingPE</code> (price over the last twelve months' EPS) and <code>ForwardPE</code> (price over the next twelve months' consensus EPS estimate). Both ratios share the same numerator — today's share price — so their ratio falls straight out to the market's own implied year-ahead EPS growth rate, with no separate earnings-estimate data needed: <code>TrailingPE &divide; ForwardPE - 1 = EPS<sub>forward</sub> &divide; EPS<sub>trailing</sub> - 1</code>. A positive number means the forward P/E is lower than the trailing P/E — the market is pricing in earnings growth; a negative number means the reverse.</p>
-<p>Companies with a trailing or forward P/E outside (0, 300] are excluded from every chart and average here — a company with near-zero trailing or forward earnings produces a P/E that's numerically enormous (or negative) without reflecting any real valuation signal, the same kind of near-zero-denominator distortion this site's other earnings-based pages have run into and filtered out.</p>
-<p>The history chart is a genuine accumulating time series, not a single snapshot: <code>OVERVIEW</code> only reports the current P/E pair, so each weekly run appends that week's market-wide median to a running series rather than replacing it — the same pattern <a href="/earnings-revisions.html">Earnings Revisions</a> uses for its own trend chart. It starts thin the week this page ships and becomes more informative with every subsequent run.</p>
-<p>The implied-vs-actual-growth check compares this page's forward-looking implied growth rate against each company's own trailing <code>QuarterlyEarningsGrowthYOY</code> (also from the same <code>OVERVIEW</code> call, at no extra API cost) using the same Pearson/Spearman regression convention as <a href="/factor-analysis.html">Factor Analysis</a> and this site's other regression checks — a weak or negative relationship would say analysts mostly expect mean reversion (a strong recent quarter doesn't repeat) rather than momentum.</p>
-<p>This page runs its own weekly Alpha Vantage sweep rather than reusing <a href="/sector-beeswarm.html">Sector Beeswarm</a>'s own weekly <code>OVERVIEW</code> pass, even though both hit the same endpoint for the same universe — that job doesn't persist the P/E fields this page needs, and this site's convention is not to modify an already-shipped page's backend to bolt on a second page's requirements. The tradeoff is accepted here the same way <a href="/insider-buying-selling.html">Insider Buying/Selling</a>'s and other pages' standalone sweeps accepted it.</p>
-<div class="source">Source: <a href="https://www.alphavantage.co/" target="_blank" rel="noopener">Alpha Vantage — OVERVIEW</a></div>
+<p>Universe is the full S&amp;P 500. For every constituent, Alpha Vantage's <code>OVERVIEW</code> endpoint returns <code>TrailingPE</code> (price over the last twelve months' EPS) and <code>ForwardPE</code> (price over the next twelve months' consensus EPS estimate). Both ratios share the same numerator, today's share price, so their ratio falls straight out to the market's own implied year-ahead EPS growth rate, with no separate earnings-estimate data needed: <code>TrailingPE &divide; ForwardPE - 1 = EPS<sub>forward</sub> &divide; EPS<sub>trailing</sub> - 1</code>. A positive number means the forward P/E is lower than the trailing P/E. The market is pricing in earnings growth; a negative number means the reverse.</p>
+<p>Companies with a trailing or forward P/E outside (0, 300] are excluded from every chart and average here. A company with near-zero trailing or forward earnings produces a P/E that's numerically enormous (or negative) without reflecting any real valuation signal, the same kind of near-zero-denominator distortion this site's other earnings-based pages have run into and filtered out.</p>
+<p>The history chart is a genuine accumulating time series, not a single snapshot: <code>OVERVIEW</code> only reports the current P/E pair, so each weekly run appends that week's market-wide median to a running series rather than replacing it. The same pattern <a href="/earnings-revisions.html">Earnings Revisions</a> uses for its own trend chart. It starts thin the week this page ships and becomes more informative with every subsequent run.</p>
+<p>The implied-vs-actual-growth check compares this page's forward-looking implied growth rate against each company's own trailing <code>QuarterlyEarningsGrowthYOY</code> (also from the same <code>OVERVIEW</code> call, at no extra API cost) using the same Pearson/Spearman regression convention as <a href="/factor-analysis.html">Factor Analysis</a> and this site's other regression checks. A weak or negative relationship would say analysts mostly expect mean reversion (a strong recent quarter doesn't repeat) rather than momentum.</p>
+<p>This page runs its own weekly Alpha Vantage sweep rather than reusing <a href="/sector-beeswarm.html">Sector Beeswarm</a>'s own weekly <code>OVERVIEW</code> pass, even though both hit the same endpoint for the same universe. That job doesn't persist the P/E fields this page needs, and this site's convention is not to modify an already-shipped page's backend to bolt on a second page's requirements. The tradeoff is accepted here the same way <a href="/insider-buying-selling.html">Insider Buying/Selling</a>'s and other pages' standalone sweeps accepted it.</p>
+<div class="source">Source: <a href="https://www.alphavantage.co/" target="_blank" rel="noopener">Alpha Vantage: OVERVIEW</a></div>
 </div>
 
 </div>
@@ -1023,12 +1023,12 @@ let SORT_KEY = "impliedEpsGrowth";
 let SORT_DIR = -1;
 
 function fmtPct(v, digits){
- if(v === null || v === undefined || isNaN(v)) return "—";
+ if(v === null || v === undefined || isNaN(v)) return "n/a";
  digits = digits === undefined ? 1 : digits;
  return (v >= 0 ? "+" : "") + v.toFixed(digits) + "%";
 }
 function fmtPE(v){
- if(v === null || v === undefined || isNaN(v)) return "—";
+ if(v === null || v === undefined || isNaN(v)) return "n/a";
  return v.toFixed(1) + "x";
 }
 
@@ -1120,7 +1120,7 @@ async function init(){
   document.getElementById("updated").textContent = "As of " + new Date(data.generated_at_utc).toLocaleString("en-US", { month: "2-digit", day: "2-digit", year: "numeric", hour: "numeric", minute: "2-digit" });
 
   if(data.loadedCount < data.universeSize){
-   showWarning("Only " + data.loadedCount + " of " + data.universeSize + " S&P 500 constituents loaded this run — some data may be temporarily unavailable.");
+   showWarning("Only " + data.loadedCount + " of " + data.universeSize + " S&P 500 constituents loaded this run. Some data may be temporarily unavailable.");
   }
 
   renderStats();
@@ -1161,7 +1161,7 @@ function renderStats(){
  }
 
  const sectors = [...RAW.sectors].sort((a, b) => b.medianImpliedEpsGrowth - a.medianImpliedEpsGrowth);
- document.getElementById("statTopSector").textContent = sectors.length ? sectors[0].sector : "—";
+ document.getElementById("statTopSector").textContent = sectors.length ? sectors[0].sector : "n/a";
  document.getElementById("statTopSectorNote").textContent = sectors.length ? fmtPct(sectors[0].medianImpliedEpsGrowth) + ", n=" + sectors[0].companyCount : "";
 }
 
@@ -1171,7 +1171,7 @@ function renderHistoryChart(){
  if(historyChart) historyChart.destroy();
  if(!rows.length){
   ctx.canvas.parentElement.insertAdjacentHTML("beforeend",
-   '<div style="text-align:center; color:var(--muted); padding-top:140px;">No history yet — check back after next week\'s run.</div>');
+   '<div style="text-align:center; color:var(--muted); padding-top:140px;">No history yet: check back after next week\'s run.</div>');
   return;
  }
  historyChart = new Chart(ctx, {
@@ -1341,7 +1341,7 @@ function renderLeaderTable(rows, tbodyId){
  }
  tbody.innerHTML = rows.map(r => `<tr>
   <td><span class="sector-name">${r.symbol}</span></td>
-  <td><span class="sector-ticker">${r.sector || "—"}</span></td>
+  <td><span class="sector-ticker">${r.sector || "n/a"}</span></td>
   <td>${fmtPE(r.trailingPE)}</td>
   <td>${fmtPE(r.forwardPE)}</td>
   <td>${fmtPct(r.impliedEpsGrowth)}</td>
@@ -1370,7 +1370,7 @@ function renderTable(){
  const tbody = document.getElementById("tableBody");
  tbody.innerHTML = rows.map(r => `<tr>
   <td><span class="sector-name">${r.symbol}</span></td>
-  <td><span class="sector-ticker">${r.sector || "—"}</span></td>
+  <td><span class="sector-ticker">${r.sector || "n/a"}</span></td>
   <td>${fmtPE(r.trailingPE)}</td>
   <td>${fmtPE(r.forwardPE)}</td>
   <td>${fmtPct(r.impliedEpsGrowth)}</td>

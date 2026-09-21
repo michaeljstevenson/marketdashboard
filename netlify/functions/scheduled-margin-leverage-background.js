@@ -301,10 +301,10 @@ exports.handler = async () => {
       todo = missed;
     }
     await saveCheckpoint(!stoppedForTime);
-    if (stoppedForTime) console.log(`scheduled-margin-leverage-background: out of time with ${results.size}/${BREADTH_CONSTITUENTS.length} fetched — run again to finish`);
+    if (stoppedForTime) console.log(`scheduled-margin-leverage-background: out of time with ${results.size}/${BREADTH_CONSTITUENTS.length} fetched, run again to finish`);
 
     console.log(`scheduled-margin-leverage-background: fetched ${results.size}/${BREADTH_CONSTITUENTS.length} tickers`);
-    if (results.size === 0) throw new Error("Every ticker failed — refusing to write an empty snapshot");
+    if (results.size === 0) throw new Error("Every ticker failed. Refusing to write an empty snapshot");
 
     const companies = [];
     for (const [symbol, { income, balance }] of results.entries()) {

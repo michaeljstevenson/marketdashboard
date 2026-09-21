@@ -11,7 +11,7 @@ exports.handler = async () => {
     const payload = await store.get(LATEST_KEY, { type: "json" });
 
     if (!payload) {
-      throw new Error("Relative strength data not yet populated — scheduled-relative-strength-background hasn't run yet");
+      throw new Error("Relative strength data not yet populated, scheduled-relative-strength-background hasn't run yet");
     }
 
     return {

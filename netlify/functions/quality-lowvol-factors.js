@@ -13,7 +13,7 @@ exports.handler = async () => {
     const payload = await store.get(BLOB_KEY, { type: "json" });
 
     if (!payload) {
-      throw new Error("Quality & low-vol factor data not yet populated — scheduled-quality-lowvol-background hasn't run yet");
+      throw new Error("Quality & low-vol factor data not yet populated, scheduled-quality-lowvol-background hasn't run yet");
     }
 
     return {

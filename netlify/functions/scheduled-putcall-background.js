@@ -112,7 +112,7 @@ exports.handler = async () => {
 
     console.log(`scheduled-putcall-background: fetched ${values.size}/${tradingDates.length} dates`);
 
-    if (!values.size) throw new Error("Every date failed to load — leaving the existing blob in place");
+    if (!values.size) throw new Error("Every date failed to load. Leaving the existing blob in place");
 
     const points = tradingDates
       .filter((d) => values.has(d))

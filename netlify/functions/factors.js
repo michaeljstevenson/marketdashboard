@@ -11,7 +11,7 @@ exports.handler = async () => {
     const payload = await store.get(BLOB_KEY, { type: "json" });
 
     if (!payload || !payload.rows || !payload.rows.length) {
-      throw new Error("Factor data not yet populated — scheduled-factors-background hasn't run yet");
+      throw new Error("Factor data not yet populated, scheduled-factors-background hasn't run yet");
     }
 
     return {

@@ -170,7 +170,7 @@ document.addEventListener("DOMContentLoaded", function(){
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <link rel="prefetch" href="/sector-history.json">
-<title>Sector Performance — Michael J. Stevenson</title>
+<title>Sector Performance | Michael J. Stevenson</title>
 
 <style>
 
@@ -889,7 +889,7 @@ async function init(){
    "As of " + usDate(data.benchmark.asOfDate) + " · " + new Date(data.generated_at_utc).toLocaleString("en-US", { month: "2-digit", day: "2-digit", year: "numeric", hour: "numeric", minute: "2-digit" });
 
   if(data.sectors.length < 11){
-   showWarning("Only " + data.sectors.length + " of 11 sectors loaded — some data may be temporarily unavailable.");
+   showWarning("Only " + data.sectors.length + " of 11 sectors loaded. Some data may be temporarily unavailable.");
   }
 
   render();
@@ -995,7 +995,7 @@ function render(){
   const text = fmtPct(v);
   const cls = v === null ? "cell-na" : (v >= 0 ? "cell-pos" : "cell-neg");
   const style = bg ? ` style="background:${bg}"` : "";
-  return `<td class="${cls}"${style}>${text === null ? "—" : text}</td>`;
+  return `<td class="${cls}"${style}>${text === null ? "n/a" : text}</td>`;
  }).join("");
  const benchRow = `<tr style="border-bottom:2px solid var(--line, rgba(128,128,128,.35))">
    <td><span class="sector-name">S&amp;P 500</span></td>
@@ -1009,7 +1009,7 @@ function render(){
    const text = fmtPct(v);
    const cls = v === null ? "cell-na" : (v >= 0 ? "cell-pos" : "cell-neg");
    const style = bg ? ` style="background:${bg}"` : "";
-   return `<td class="${cls}"${style}>${text === null ? "—" : text}</td>`;
+   return `<td class="${cls}"${style}>${text === null ? "n/a" : text}</td>`;
   }).join("");
 
   return `<tr>
@@ -1174,7 +1174,7 @@ function renderChartRange(rangeKey){
     legend: { labels: { color: "#8b9199", font: { size: 11 }, boxWidth: 12 } },
     tooltip: {
      callbacks: {
-      label: ctx => ctx.dataset.label + ": " + (ctx.parsed.y === null ? "—" : ctx.parsed.y),
+      label: ctx => ctx.dataset.label + ": " + (ctx.parsed.y === null ? "n/a" : ctx.parsed.y),
      },
     },
    },

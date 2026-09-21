@@ -10,7 +10,7 @@ exports.handler = async () => {
     const payload = await store.get(BLOB_KEY, { type: "json" });
 
     if (!payload || !payload.rows || !payload.rows.length) {
-      throw new Error("TradingView ATH data not yet populated — scheduled-ath-tradingview hasn't run yet");
+      throw new Error("TradingView ATH data not yet populated, scheduled-ath-tradingview hasn't run yet");
     }
 
     return {

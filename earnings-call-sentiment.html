@@ -153,7 +153,7 @@ document.addEventListener("DOMContentLoaded", function(){
 </script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Earnings Call Sentiment — Michael J. Stevenson</title>
+<title>Earnings Call Sentiment | Michael J. Stevenson</title>
 
 <style>
 
@@ -904,7 +904,7 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <div class="header">
 <div>
 <h1>Earnings Call Sentiment</h1>
-<div class="subtitle">Does management's own tone on the earnings call track the number they just reported — and how does it compare to the tone of the analysts questioning them? A one-time snapshot across the full S&amp;P 500's most recently indexed earnings call.</div>
+<div class="subtitle">Does management's own tone on the earnings call track the number they just reported, and how does it compare to the tone of the analysts questioning them? A one-time snapshot across the full S&amp;P 500's most recently indexed earnings call.</div>
 </div>
 <div class="updated" id="updated">Loading...</div>
 </div>
@@ -912,22 +912,22 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <div class="stat-grid">
 <div class="stat-card">
 <div class="stat-label">Companies Loaded</div>
-<div class="stat-value" id="statCompanies" style="font-size:20px;">—</div>
+<div class="stat-value" id="statCompanies" style="font-size:20px;">…</div>
 <div class="stat-note" id="statCompaniesNote">Of full S&amp;P 500</div>
 </div>
 <div class="stat-card">
 <div class="stat-label">Median Management Tone</div>
-<div class="stat-value" id="statManagement">—</div>
+<div class="stat-value" id="statManagement">…</div>
 <div class="stat-note">0 (neutral/factual) to 1 (highly positive)</div>
 </div>
 <div class="stat-card">
 <div class="stat-label">Median Analyst Tone</div>
-<div class="stat-value" id="statAnalyst">—</div>
+<div class="stat-value" id="statAnalyst">…</div>
 <div class="stat-note">Tone of analysts' own questions</div>
 </div>
 <div class="stat-card">
 <div class="stat-label">Median Tone Gap</div>
-<div class="stat-value" id="statGap">—</div>
+<div class="stat-value" id="statGap">…</div>
 <div class="stat-note">Management minus analyst</div>
 </div>
 </div>
@@ -1067,12 +1067,12 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 
 <div class="explainer">
 <h2>Methodology</h2>
-<p>Universe is the full S&amp;P 500. For every constituent, Alpha Vantage's <code>EARNINGS</code> endpoint resolves which fiscal-quarter label its most recently reported quarter corresponds to in Alpha Vantage's own numbering (each company's own fiscal quarter, e.g. Apple's June-2025-ending quarter is "Q3 Fiscal Year 2025" since Apple's fiscal year ends in September — not calendar Q2), derived from the fiscal year-end month (the most common month across that company's own <code>annualEarnings</code> history) and each quarter's own ending month. That label is then used to pull Alpha Vantage's <code>EARNINGS_CALL_TRANSCRIPT</code>, which carries an LLM-derived sentiment score (0 to 1) for every individual speaker turn on the call.</p>
-<p>Each turn is bucketed by speaker title: <b>management</b> is any CEO/CFO/COO/president/chair title, including named-segment variants like "CEO of Walmart U.S."; <b>analyst</b> is any title Alpha Vantage tags as Analyst; the operator and investor-relations host are excluded from both, since neither is the tone comparison this page is testing. A company's management tone (or analyst tone) is the unweighted average sentiment across its own turns in that bucket — a short answer and a long one count equally. The "gap" is management tone minus analyst tone for the same call.</p>
-<p>A real, disclosed limitation: Alpha Vantage's transcript indexing appears to lag the earnings release itself by some unknown number of weeks — confirmed directly while building this page, where a company that had reported about a month earlier had no transcript yet for that quarter while its prior quarter did. This snapshot does not fall back to a prior quarter when the latest one isn't indexed; that company is simply absent from this run rather than shown against a stale quarter, and reappears once a later manual refresh catches an indexed transcript.</p>
-<p>Earnings surprise % uses the same guardrails as <a href="/earnings-revisions.html">Earnings Revisions</a>' methodology neighbor, <a href="/insider-buying-selling.html">Insider Buying/Selling</a>'s sibling page for beat/miss history: a consensus estimate under a nickel is excluded (a percentage surprise off a near-zero base is noise, not signal), and prints beyond &plusmn;200% are clipped out rather than allowed to dominate the regression. Also note that Alpha Vantage's sentiment field never went negative in any transcript inspected while building this page, including calls delivered around a double-digit-percent earnings miss — it reads as a 0 (neutral/factual) to 1 (highly positive) scale, not a signed measure of genuinely negative tone, so a low score means "little positive framing," not "confirmed negative framing." That's a property of Alpha Vantage's own model, reported here rather than smoothed over.</p>
-<p>The two regressions (Pearson and Spearman, matching the two-method check used throughout <a href="/factor-analysis.html">Factor Analysis</a>) run once per company on its single most recent usable quarter — a cross-sectional test, not a time series, since this page is a one-time snapshot rather than an accumulating history. Leaderboards require at least 3 turns in the relevant bucket(s) so a one-line answer doesn't stand in for a company's "average" tone.</p>
-<div class="source">Source: <a href="https://www.alphavantage.co/" target="_blank" rel="noopener">Alpha Vantage — EARNINGS, EARNINGS_CALL_TRANSCRIPT</a></div>
+<p>Universe is the full S&amp;P 500. For every constituent, Alpha Vantage's <code>EARNINGS</code> endpoint resolves which fiscal-quarter label its most recently reported quarter corresponds to in Alpha Vantage's own numbering (each company's own fiscal quarter, e.g. Apple's June-2025-ending quarter is "Q3 Fiscal Year 2025" since Apple's fiscal year ends in September, not calendar Q2), derived from the fiscal year-end month (the most common month across that company's own <code>annualEarnings</code> history) and each quarter's own ending month. That label is then used to pull Alpha Vantage's <code>EARNINGS_CALL_TRANSCRIPT</code>, which carries an LLM-derived sentiment score (0 to 1) for every individual speaker turn on the call.</p>
+<p>Each turn is bucketed by speaker title: <b>management</b> is any CEO/CFO/COO/president/chair title, including named-segment variants like "CEO of Walmart U.S."; <b>analyst</b> is any title Alpha Vantage tags as Analyst; the operator and investor-relations host are excluded from both, since neither is the tone comparison this page is testing. A company's management tone (or analyst tone) is the unweighted average sentiment across its own turns in that bucket. A short answer and a long one count equally. The "gap" is management tone minus analyst tone for the same call.</p>
+<p>A real, disclosed limitation: Alpha Vantage's transcript indexing appears to lag the earnings release itself by some unknown number of weeks. Confirmed directly while building this page, where a company that had reported about a month earlier had no transcript yet for that quarter while its prior quarter did. This snapshot does not fall back to a prior quarter when the latest one isn't indexed; that company is simply absent from this run rather than shown against a stale quarter, and reappears once a later manual refresh catches an indexed transcript.</p>
+<p>Earnings surprise % uses the same guardrails as <a href="/earnings-revisions.html">Earnings Revisions</a>' methodology neighbor, <a href="/insider-buying-selling.html">Insider Buying/Selling</a>'s sibling page for beat/miss history: a consensus estimate under a nickel is excluded (a percentage surprise off a near-zero base is noise, not signal), and prints beyond &plusmn;200% are clipped out rather than allowed to dominate the regression. Also note that Alpha Vantage's sentiment field never went negative in any transcript inspected while building this page, including calls delivered around a double-digit-percent earnings miss. It reads as a 0 (neutral/factual) to 1 (highly positive) scale, not a signed measure of genuinely negative tone, so a low score means "little positive framing," not "confirmed negative framing." That's a property of Alpha Vantage's own model, reported here rather than smoothed over.</p>
+<p>The two regressions (Pearson and Spearman, matching the two-method check used throughout <a href="/factor-analysis.html">Factor Analysis</a>) run once per company on its single most recent usable quarter. A cross-sectional test, not a time series, since this page is a one-time snapshot rather than an accumulating history. Leaderboards require at least 3 turns in the relevant bucket(s) so a one-line answer doesn't stand in for a company's "average" tone.</p>
+<div class="source">Source: <a href="https://www.alphavantage.co/" target="_blank" rel="noopener">Alpha Vantage: EARNINGS, EARNINGS_CALL_TRANSCRIPT</a></div>
 </div>
 
 </div>
@@ -1100,17 +1100,17 @@ let SORT_DIR = -1;
 let SECTOR_METRIC = "management";
 
 function fmtTone(v, digits){
- if(v === null || v === undefined || isNaN(v)) return "—";
+ if(v === null || v === undefined || isNaN(v)) return "n/a";
  digits = digits === undefined ? 2 : digits;
  return v.toFixed(digits);
 }
 function fmtGap(v, digits){
- if(v === null || v === undefined || isNaN(v)) return "—";
+ if(v === null || v === undefined || isNaN(v)) return "n/a";
  digits = digits === undefined ? 2 : digits;
  return (v >= 0 ? "+" : "") + v.toFixed(digits);
 }
 function fmtPct(v, digits){
- if(v === null || v === undefined || isNaN(v)) return "—";
+ if(v === null || v === undefined || isNaN(v)) return "n/a";
  digits = digits === undefined ? 1 : digits;
  return (v >= 0 ? "+" : "") + v.toFixed(digits) + "%";
 }
@@ -1376,7 +1376,7 @@ function renderScatters(){
   "A positive slope would mean management sounds more upbeat specifically on quarters that beat by more.");
  gapSurpriseScatter = draw("gapSurpriseScatter", "gapSurpriseMethodTable", RAW.gapVsSurprise, gapPairs,
   "Tone gap (mgmt − analyst)", fmtGap, gapSurpriseScatter,
-  "A negative slope would mean the gap widens on a miss — management staying relatively more upbeat than the analysts questioning them.");
+  "A negative slope would mean the gap widens on a miss. Management staying relatively more upbeat than the analysts questioning them.");
 }
 
 function renderLeaderTable(rows, tbodyId, kind){
@@ -1387,7 +1387,7 @@ function renderLeaderTable(rows, tbodyId, kind){
  }
  tbody.innerHTML = rows.map(r => `<tr>
   <td><span class="sector-name">${r.symbol}</span></td>
-  <td><span class="sector-ticker">${r.sector || "—"}</span></td>
+  <td><span class="sector-ticker">${r.sector || "n/a"}</span></td>
   <td>${kind === "gap" ? fmtGap(r.sentimentGap) : fmtTone(r.managementSentiment)}</td>
   <td>${fmtPct(r.surprisePct)}</td>
  </tr>`).join("");
@@ -1415,8 +1415,8 @@ function renderTable(){
  const tbody = document.getElementById("tableBody");
  tbody.innerHTML = rows.map(r => `<tr>
   <td><span class="sector-name">${r.symbol}</span></td>
-  <td><span class="sector-ticker">${r.sector || "—"}</span></td>
-  <td>${r.quarterLabel || "—"}</td>
+  <td><span class="sector-ticker">${r.sector || "n/a"}</span></td>
+  <td>${r.quarterLabel || "n/a"}</td>
   <td>${fmtTone(r.managementSentiment)}</td>
   <td>${fmtTone(r.analystSentiment)}</td>
   <td>${fmtGap(r.sentimentGap)}</td>

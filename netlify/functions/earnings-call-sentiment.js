@@ -12,7 +12,7 @@ exports.handler = async () => {
     const payload = await store.get(BLOB_KEY, { type: "json" });
 
     if (!payload) {
-      throw new Error("Earnings call sentiment data not yet populated — scheduled-earnings-call-sentiment-background hasn't run yet");
+      throw new Error("Earnings call sentiment data not yet populated, scheduled-earnings-call-sentiment-background hasn't run yet");
     }
 
     return {

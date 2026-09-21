@@ -11,7 +11,7 @@ exports.handler = async () => {
     const store = getConcentrationStore();
     const payload = await store.get(HISTORY_BLOB_KEY, { type: "json" });
     if (!payload) {
-      throw new Error("Concentration history not yet populated — scheduled-concentration-history-background hasn't run");
+      throw new Error("Concentration history not yet populated, scheduled-concentration-history-background hasn't run");
     }
     return {
       statusCode: 200,

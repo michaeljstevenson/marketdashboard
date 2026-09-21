@@ -124,7 +124,7 @@ exports.handler = async () => {
     }
 
     const spyHist = histBySymbol.get(BENCHMARK);
-    if (!spyHist) throw new Error("SPY failed to load — cannot build annual payload");
+    if (!spyHist) throw new Error("SPY failed to load, cannot build annual payload");
 
     // SPY drives the shared trading-day calendar, from firstYear on.
     const firstDate = `${firstYear}-01-01`;

@@ -153,7 +153,7 @@ document.addEventListener("DOMContentLoaded", function(){
 </script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Earnings Surprise History — Michael J. Stevenson</title>
+<title>Earnings Surprise History | Michael J. Stevenson</title>
 
 <style>
 
@@ -804,7 +804,7 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <div class="header">
 <div>
 <h1>Earnings Surprise History</h1>
-<div class="subtitle">How often S&amp;P 500 companies beat, meet, or miss the Street's EPS estimate — by sector, over time, and whether a beat (or a miss) tends to repeat itself next quarter.</div>
+<div class="subtitle">How often S&amp;P 500 companies beat, meet, or miss the Street's EPS estimate, by sector, over time, and whether a beat (or a miss) tends to repeat itself next quarter.</div>
 </div>
 <div class="updated" id="updated">Loading...</div>
 </div>
@@ -812,22 +812,22 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <div class="stat-grid">
 <div class="stat-card">
 <div class="stat-label">Latest Quarter Beat Rate</div>
-<div class="stat-value" id="statBeatRate">—</div>
+<div class="stat-value" id="statBeatRate">…</div>
 <div class="stat-note" id="statBeatRateNote">Share of reporters beating consensus EPS</div>
 </div>
 <div class="stat-card">
 <div class="stat-label">Avg. Surprise Magnitude</div>
-<div class="stat-value neutral" id="statAvgSurprise">—</div>
+<div class="stat-value neutral" id="statAvgSurprise">…</div>
 <div class="stat-note">Mean surprise %, latest quarter</div>
 </div>
 <div class="stat-card">
 <div class="stat-label">Beat Rate After a Beat</div>
-<div class="stat-value neutral" id="statPersistence">—</div>
+<div class="stat-value neutral" id="statPersistence">…</div>
 <div class="stat-note" id="statPersistenceNote">vs. unconditional beat rate</div>
 </div>
 <div class="stat-card">
 <div class="stat-label">Coverage</div>
-<div class="stat-value neutral" id="statCoverage">—</div>
+<div class="stat-value neutral" id="statCoverage">…</div>
 <div class="stat-note">S&amp;P 500 constituents with usable earnings data</div>
 </div>
 </div>
@@ -888,18 +888,18 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <div class="persist-grid">
 <div class="persist-card">
 <div class="persist-label">Beat rate after a beat</div>
-<div class="persist-value" id="persistAfterBeat">—</div>
+<div class="persist-value" id="persistAfterBeat">…</div>
 </div>
 <div class="persist-card">
 <div class="persist-label">Beat rate after a miss</div>
-<div class="persist-value" id="persistAfterMiss">—</div>
+<div class="persist-value" id="persistAfterMiss">…</div>
 </div>
 <div class="persist-card">
 <div class="persist-label">Unconditional beat rate</div>
-<div class="persist-value" id="persistUnconditional">—</div>
+<div class="persist-value" id="persistUnconditional">…</div>
 </div>
 </div>
-<div class="chart-box-sub" id="persistStats">—</div>
+<div class="chart-box-sub" id="persistStats">…</div>
 </div>
 
 <div class="leaderboard-grid">
@@ -954,12 +954,12 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 
 <div class="explainer">
 <h2>Methodology</h2>
-<p>Each quarter, an S&amp;P 500 company either <strong>beats</strong>, <strong>meets</strong>, or <strong>misses</strong> the consensus analyst estimate for its reported EPS &mdash; and the gap between reported and estimated, as a percentage of the estimate, is the <strong>surprise</strong>. This page pulls Alpha Vantage's full quarterly earnings history for every S&amp;P 500 constituent (the same universe used elsewhere on this site &mdash; see <a href="/sector-beeswarm.html">Sector Beeswarm</a>, whose weekly company metadata this page reuses for sector/name rather than a second lookup) and works out three things: how often companies beat, by how much, and whether beating (or missing) tends to repeat.</p>
+<p>Each quarter, an S&amp;P 500 company either <strong>beats</strong>, <strong>meets</strong>, or <strong>misses</strong> the consensus analyst estimate for its reported EPS, and the gap between reported and estimated, as a percentage of the estimate, is the <strong>surprise</strong>. This page pulls Alpha Vantage's full quarterly earnings history for every S&amp;P 500 constituent (the same universe used elsewhere on this site. See <a href="/sector-beeswarm.html">Sector Beeswarm</a>, whose weekly company metadata this page reuses for sector/name rather than a second lookup) and works out three things: how often companies beat, by how much, and whether beating (or missing) tends to repeat.</p>
 <p>Two filters are applied before a quarter counts toward any of these numbers. A quarter with a consensus estimate smaller than 5&cent; is dropped, since dividing by a number that close to zero turns an ordinary penny of upside into a triple-digit "surprise" that has nothing to do with how the company actually did. Any surprise beyond &plusmn;200% is dropped too, as the same failure mode in a milder disguise. Both exist to keep a handful of near-zero-EPS names from dominating a mean or a leaderboard that's supposed to describe the other 490-odd companies.</p>
-<p>Quarters are <strong>calendarized</strong>: a fiscal period ending any time in a given three-month calendar window (Jan&ndash;Mar, Apr&ndash;Jun, Jul&ndash;Sep, Oct&ndash;Dec) is bucketed together, so a September-fiscal-year-end company like Apple lines up in the same column as a December-fiscal-year-end peer reporting a similar real-world period. It's an approximation, not exact fiscal alignment. The "latest quarter" used for the headline stats, sector breakdown, and biggest-beat/miss tables is the most recent calendarized quarter where at least half the mapped universe has reported &mdash; early in a reporting season, the first few dozen reporters aren't representative enough to call a beat rate.</p>
-<p>The <strong>persistence</strong> test pools every consecutive pair of a company's own filtered quarters across the whole panel (not just the latest quarter) and asks: given this quarter was a beat, was the next one also a beat &mdash; and how does that compare to the same question after a miss, and to the unconditional beat rate? The z-statistic and p-value test whether the after-a-beat and after-a-miss rates differ by more than sampling noise would produce on their own; it's a standard two-proportion z-test, not a claim about causation or a tradeable signal, and it says nothing about the size or timing of any price reaction &mdash; that would require pairing this panel with a price series around each report date, which this page doesn't attempt.</p>
-<p>Recomputed weekly (Saturday), across all ~500 constituents, sequentially and rate-limited. Unlike some of this site's other weekly jobs, there's no need for the page to accumulate its own history over time here &mdash; Alpha Vantage's EARNINGS endpoint returns years of real quarterly history in a single call, so the trend chart is genuine historical data, recomputed fresh each run, not a series built one weekly snapshot at a time.</p>
-<div class="source">Source: <a href="https://www.alphavantage.co/" target="_blank" rel="noopener">Alpha Vantage — EARNINGS</a>. Not investment advice.</div>
+<p>Quarters are <strong>calendarized</strong>: a fiscal period ending any time in a given three-month calendar window (Jan&ndash;Mar, Apr&ndash;Jun, Jul&ndash;Sep, Oct&ndash;Dec) is bucketed together, so a September-fiscal-year-end company like Apple lines up in the same column as a December-fiscal-year-end peer reporting a similar real-world period. It's an approximation, not exact fiscal alignment. The "latest quarter" used for the headline stats, sector breakdown, and biggest-beat/miss tables is the most recent calendarized quarter where at least half the mapped universe has reported. Early in a reporting season, the first few dozen reporters aren't representative enough to call a beat rate.</p>
+<p>The <strong>persistence</strong> test pools every consecutive pair of a company's own filtered quarters across the whole panel (not just the latest quarter) and asks: given this quarter was a beat, was the next one also a beat, and how does that compare to the same question after a miss, and to the unconditional beat rate? The z-statistic and p-value test whether the after-a-beat and after-a-miss rates differ by more than sampling noise would produce on their own; it's a standard two-proportion z-test, not a claim about causation or a tradeable signal, and it says nothing about the size or timing of any price reaction. That would require pairing this panel with a price series around each report date, which this page doesn't attempt.</p>
+<p>Recomputed weekly (Saturday), across all ~500 constituents, sequentially and rate-limited. Unlike some of this site's other weekly jobs, there's no need for the page to accumulate its own history over time here. Alpha Vantage's EARNINGS endpoint returns years of real quarterly history in a single call, so the trend chart is genuine historical data, recomputed fresh each run, not a series built one weekly snapshot at a time.</p>
+<div class="source">Source: <a href="https://www.alphavantage.co/" target="_blank" rel="noopener">Alpha Vantage: EARNINGS</a>. Not investment advice.</div>
 </div>
 
 </div>
@@ -986,12 +986,12 @@ function showWarning(message){
 }
 
 function fmtPct(v, digits){
- if(v === null || v === undefined || isNaN(v)) return "—";
+ if(v === null || v === undefined || isNaN(v)) return "n/a";
  return (v >= 0 ? "+" : "") + v.toFixed(digits === undefined ? 2 : digits) + "%";
 }
 
 function fmtPlainPct(v, digits){
- if(v === null || v === undefined || isNaN(v)) return "—";
+ if(v === null || v === undefined || isNaN(v)) return "n/a";
  return v.toFixed(digits === undefined ? 1 : digits) + "%";
 }
 
@@ -1054,7 +1054,7 @@ async function init(){
   document.getElementById("updated").textContent = "As of " + new Date(data.generated_at_utc).toLocaleString("en-US", { month: "2-digit", day: "2-digit", year: "numeric", hour: "numeric", minute: "2-digit" });
 
   if(data.universe_size < data.universe_total * 0.85){
-   showWarning("Only " + data.universe_size + " of " + data.universe_total + " S&P 500 constituents had usable earnings data this run — some figures may be based on partial coverage.");
+   showWarning("Only " + data.universe_size + " of " + data.universe_total + " S&P 500 constituents had usable earnings data this run. Some figures may be based on partial coverage.");
   }
 
   renderStats();
@@ -1238,8 +1238,8 @@ function surpriseRowHtml(r){
   <td>${r.ticker}</td>
   <td>${r.name}</td>
   <td>${r.sector}</td>
-  <td>${r.reportedEPS === null ? "—" : "$" + r.reportedEPS.toFixed(2)}</td>
-  <td>${r.estimatedEPS === null ? "—" : "$" + r.estimatedEPS.toFixed(2)}</td>
+  <td>${r.reportedEPS === null ? "n/a" : "$" + r.reportedEPS.toFixed(2)}</td>
+  <td>${r.estimatedEPS === null ? "n/a" : "$" + r.estimatedEPS.toFixed(2)}</td>
   <td class="${classForValue(r.surprisePct)}">${fmtPct(r.surprisePct)}</td>
  </tr>`;
 }

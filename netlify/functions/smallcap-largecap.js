@@ -13,7 +13,7 @@ exports.handler = async () => {
     const payload = await store.get(BLOB_KEY, { type: "json" });
 
     if (!payload) {
-      throw new Error("Small-cap/large-cap data not yet populated — scheduled-smallcap-background hasn't run yet");
+      throw new Error("Small-cap/large-cap data not yet populated, scheduled-smallcap-background hasn't run yet");
     }
 
     return {

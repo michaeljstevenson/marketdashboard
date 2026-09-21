@@ -53,7 +53,7 @@ const EVENTS = [
     // Morris Trust, not a pure spinoff — kept in the dataset as a
     // "spin-merger" but footnoted on the page rather than treated as
     // identical to a clean spinoff.
-    note: "Reverse Morris Trust spin-merger with Mylan, not a pure spinoff — included with a footnote." },
+    note: "Reverse Morris Trust spin-merger with Mylan, not a pure spinoff. Included with a footnote." },
   { id: "otis", parent: "UTX", spinco: "OTIS", eventDate: "2020-04-03", sector: "Industrials",
     parentLabel: "United Technologies", spincoLabel: "Otis", hasParentLeg: false,
     // UTC didn't continue on as an independent public company — it merged
@@ -214,7 +214,7 @@ exports.handler = async () => {
 
     console.log(`scheduled-spinoff-background: fetched ${histories.size}/${tickers.size} tickers`);
     const spyHist = histories.get(SPY);
-    if (!spyHist) throw new Error("SPY history failed to load — can't compute any excess return without the benchmark");
+    if (!spyHist) throw new Error("SPY history failed to load. Can't compute any excess return without the benchmark");
 
     // "Now", for every leg's to-date return: the most conservative common
     // date across every ticker that did load, so no leg's to-date window
@@ -311,7 +311,7 @@ exports.handler = async () => {
       }
     }
 
-    if (!legs.length) throw new Error("Every leg failed — refusing to write an empty snapshot");
+    if (!legs.length) throw new Error("Every leg failed. Refusing to write an empty snapshot");
 
     // Event-time-aligned average cumulative excess-return curve: average
     // excessSeries[t] across every leg that still has data at that many

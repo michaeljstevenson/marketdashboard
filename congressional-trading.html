@@ -153,7 +153,7 @@ document.addEventListener("DOMContentLoaded", function(){
 </script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Congressional Trading Activity — Michael J. Stevenson</title>
+<title>Congressional Trading Activity | Michael J. Stevenson</title>
 
 <style>
 
@@ -887,7 +887,7 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <div class="header">
 <div>
 <h1>Congressional Trading Activity</h1>
-<div class="subtitle">STOCK Act disclosures across the full S&amp;P 500, trailing 24 months: who's buying and selling, by party and chamber, how promptly it gets reported — and whether stocks with net congressional buying actually go on to outperform.</div>
+<div class="subtitle">STOCK Act disclosures across the full S&amp;P 500, trailing 24 months: who's buying and selling, by party and chamber, how promptly it gets reported, and whether stocks with net congressional buying actually go on to outperform.</div>
 </div>
 <div class="updated" id="updated">Loading...</div>
 </div>
@@ -895,22 +895,22 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <div class="stat-grid">
 <div class="stat-card">
 <div class="stat-label">Stocks With Activity</div>
-<div class="stat-value" id="statStocks" style="font-size:20px;">—</div>
+<div class="stat-value" id="statStocks" style="font-size:20px;">…</div>
 <div class="stat-note" id="statStocksNote">Of full S&amp;P 500</div>
 </div>
 <div class="stat-card">
 <div class="stat-label">Net $ Flow</div>
-<div class="stat-value" id="statNet">—</div>
+<div class="stat-value" id="statNet">…</div>
 <div class="stat-note">Buy $ minus sell $, trailing 24 months</div>
 </div>
 <div class="stat-card">
 <div class="stat-label">Members Trading</div>
-<div class="stat-value" id="statMembers" style="font-size:20px;">—</div>
+<div class="stat-value" id="statMembers" style="font-size:20px;">…</div>
 <div class="stat-note">Unique disclosed traders</div>
 </div>
 <div class="stat-card">
 <div class="stat-label">Filed Within 45 Days</div>
-<div class="stat-value" id="statLag">—</div>
+<div class="stat-value" id="statLag">…</div>
 <div class="stat-note" id="statLagNote">STOCK Act disclosure deadline</div>
 </div>
 </div>
@@ -1052,11 +1052,11 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 
 <div class="explainer">
 <h2>Methodology</h2>
-<p>Universe is the full S&amp;P 500. For every constituent, Alpha Vantage's <code>CONGRESS_TRADES</code> endpoint returns that ticker's full history of disclosed trades by sitting members of Congress and their families under the STOCK Act — filtered here to <code>BUY</code>/<code>SELL</code> transactions in the trailing 24 months (a 90-day window, like <a href="/insider-buying-selling.html">Insider Buying/Selling</a>'s Form 4 window, would leave most S&amp;P 500 names with zero disclosed trades — congressional activity in any single stock is far sparser). Options, warrants, and bonds reported under the same equity ticker are excluded, since they're a different bet than the underlying stock.</p>
-<p>The STOCK Act discloses trade size as a bracketed range (e.g. $1,001&ndash;$15,000), not an exact dollar amount — every $ figure on this page is the midpoint of that disclosed range, the same convention used by trackers like Capitol Trades and Unusual Whales. Treat every dollar total here as an estimate, not a precise figure.</p>
+<p>Universe is the full S&amp;P 500. For every constituent, Alpha Vantage's <code>CONGRESS_TRADES</code> endpoint returns that ticker's full history of disclosed trades by sitting members of Congress and their families under the STOCK Act. Filtered here to <code>BUY</code>/<code>SELL</code> transactions in the trailing 24 months (a 90-day window, like <a href="/insider-buying-selling.html">Insider Buying/Selling</a>'s Form 4 window, would leave most S&amp;P 500 names with zero disclosed trades. Congressional activity in any single stock is far sparser). Options, warrants, and bonds reported under the same equity ticker are excluded, since they're a different bet than the underlying stock.</p>
+<p>The STOCK Act discloses trade size as a bracketed range (e.g. $1,001&ndash;$15,000), not an exact dollar amount. Every $ figure on this page is the midpoint of that disclosed range, the same convention used by trackers like Capitol Trades and Unusual Whales. Treat every dollar total here as an estimate, not a precise figure.</p>
 <p>The disclosure-lag chart measures days between the trade date and the date the Periodic Transaction Report was actually filed; the STOCK Act requires filing within 45 days of becoming aware of the transaction. A handful of rows with a missing or implausible filed date (filed before the trade, or no filed date at all) are excluded rather than shown as a fabricated or negative lag.</p>
 <p>The regression (Pearson and Spearman, matching the two-method check used throughout <a href="/factor-analysis.html">Factor Analysis</a>) reuses <a href="/relative-strength-leaders.html">Relative Strength Leaders/Laggards</a>' own latest snapshot for each stock's 3-month return relative to SPY, rather than a second price sweep. Read this carefully: trades are disclosed well after the fact (up to 45 days, often longer in practice per the lag chart above), so any relationship here is a question about revealed skill or information, not a tradeable signal an outside investor could have acted on before the disclosure became public.</p>
-<div class="source">Source: <a href="https://www.alphavantage.co/" target="_blank" rel="noopener">Alpha Vantage — CONGRESS_TRADES</a>, cross-referenced with this site's own <a href="/relative-strength-leaders.html">Relative Strength Leaders/Laggards</a> snapshot. Not investment advice.</div>
+<div class="source">Source: <a href="https://www.alphavantage.co/" target="_blank" rel="noopener">Alpha Vantage: CONGRESS_TRADES</a>, cross-referenced with this site's own <a href="/relative-strength-leaders.html">Relative Strength Leaders/Laggards</a> snapshot. Not investment advice.</div>
 </div>
 
 </div>
@@ -1085,7 +1085,7 @@ let GROUP_METRIC = "party";
 let SECTOR_METRIC = "net";
 
 function fmtUsd(v){
- if(v === null || v === undefined || isNaN(v)) return "—";
+ if(v === null || v === undefined || isNaN(v)) return "n/a";
  const sign = v < 0 ? "-" : "";
  const abs = Math.abs(v);
  if(abs >= 1e6) return sign + "$" + (abs / 1e6).toFixed(2) + "M";
@@ -1093,7 +1093,7 @@ function fmtUsd(v){
  return sign + "$" + abs.toFixed(0);
 }
 function fmtPct(v, digits){
- if(v === null || v === undefined || isNaN(v)) return "—";
+ if(v === null || v === undefined || isNaN(v)) return "n/a";
  digits = digits === undefined ? 1 : digits;
  return (v >= 0 ? "+" : "") + v.toFixed(digits) + "%";
 }
@@ -1243,7 +1243,7 @@ function renderStats(){
  document.getElementById("statMembers").textContent = RAW.market.uniquePoliticians;
 
  const lag = RAW.disclosureLag;
- document.getElementById("statLag").textContent = lag && lag.pctWithinDeadline !== null ? lag.pctWithinDeadline.toFixed(0) + "%" : "—";
+ document.getElementById("statLag").textContent = lag && lag.pctWithinDeadline !== null ? lag.pctWithinDeadline.toFixed(0) + "%" : "n/a";
  document.getElementById("statLagNote").textContent = lag && lag.medianDays !== null ? "Median lag: " + lag.medianDays.toFixed(0) + " days (n=" + lag.n + ")" : "STOCK Act disclosure deadline";
 }
 
@@ -1382,7 +1382,7 @@ function renderLeaderTable(rows, tbodyId){
  }
  tbody.innerHTML = rows.map(r => `<tr>
   <td><span class="sector-name">${r.symbol}</span></td>
-  <td><span class="sector-ticker">${r.sector || "—"}</span></td>
+  <td><span class="sector-ticker">${r.sector || "n/a"}</span></td>
   <td>${fmtUsd(r.netValue)}</td>
   <td>${r.uniquePoliticians}</td>
  </tr>`).join("");
@@ -1439,7 +1439,7 @@ function renderTable(){
  const tbody = document.getElementById("tableBody");
  tbody.innerHTML = rows.map(r => `<tr>
   <td><span class="sector-name">${r.symbol}</span></td>
-  <td><span class="sector-ticker">${r.sector || "—"}</span></td>
+  <td><span class="sector-ticker">${r.sector || "n/a"}</span></td>
   <td>${fmtUsd(r.buyValue)}</td>
   <td>${fmtUsd(r.sellValue)}</td>
   <td>${fmtUsd(r.netValue)}</td>

@@ -169,7 +169,7 @@ document.addEventListener("DOMContentLoaded", function(){
 </script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Factor Analysis — Michael J. Stevenson</title>
+<title>Factor Analysis | Michael J. Stevenson</title>
 
 <style>
 
@@ -855,22 +855,22 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <div class="stat-grid">
 <div class="stat-card">
 <div class="stat-label">Market (Mkt&minus;RF)</div>
-<div class="stat-value" id="statMkt">—</div>
+<div class="stat-value" id="statMkt">…</div>
 <div class="stat-note">Latest daily return</div>
 </div>
 <div class="stat-card">
 <div class="stat-label">Size (SMB)</div>
-<div class="stat-value" id="statSmb">—</div>
+<div class="stat-value" id="statSmb">…</div>
 <div class="stat-note">Small minus big</div>
 </div>
 <div class="stat-card">
 <div class="stat-label">Value (HML)</div>
-<div class="stat-value" id="statHml">—</div>
+<div class="stat-value" id="statHml">…</div>
 <div class="stat-note">High minus low book/market</div>
 </div>
 <div class="stat-card">
 <div class="stat-label">Momentum</div>
-<div class="stat-value" id="statMom">—</div>
+<div class="stat-value" id="statMom">…</div>
 <div class="stat-note">Winners minus losers</div>
 </div>
 </div>
@@ -952,7 +952,7 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <div class="scatter-sub">SMB return, month t (x) vs. SMB return, month t+1 (y)</div>
 <div class="scatter-canvas-wrap"><canvas id="scatterSmbM"></canvas></div>
 <div id="tableSmbM"></div>
-<div class="method-note">Pearson alone (p=0.125) misses what Spearman and jackknife catch (p=0.001, p=0.007) &mdash; traced to Feb&rarr;Mar 2000, the dot-com peak (SMB +21.6% then -16.1%), one of the most extreme two-month swings in the series. Removing just that pair lifts Pearson to r=0.078, p=0.007. Purging every pair touching either month (3 pairs) still leaves r=0.061, p=0.036 &mdash; a real signal survives even with the dot-com period fully excluded, not purely a single-event artifact.</div>
+<div class="method-note">Pearson alone (p=0.125) misses what Spearman and jackknife catch (p=0.001, p=0.007). Traced to Feb&rarr;Mar 2000, the dot-com peak (SMB +21.6% then -16.1%), one of the most extreme two-month swings in the series. Removing just that pair lifts Pearson to r=0.078, p=0.007. Purging every pair touching either month (3 pairs) still leaves r=0.061, p=0.036. A real signal survives even with the dot-com period fully excluded, not purely a single-event artifact.</div>
 </div>
 <div class="scatter-box">
 <h3>Value (HML)</h3>
@@ -986,7 +986,7 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 
 <div class="explainer">
 <p>Testing this properly required equal sample sizes on both sides, and a formal test of whether the two regressions are actually different (not just comparing two r-values). I had initially made the mistake of an unequal split at its midpoint (testing pre: 1927-1984, n:58 and post: 1985-2024, n:40) which had resulted in the post data having less statistical power. This error could easily manufacture the appearance of a &ldquo;weaker&rdquo; relationship that's really just a noisier estimate. To balance, &ldquo;pre&rdquo; became 1945-1984, n:40 and &ldquo;post&rdquo; became 1985-2025, n:40. The Chow test would help to reject my null hypothesis: Algorithmic trading did not strengthen (or made no difference to, or weakened) momentum persistence.</p>
-<p>Not one of the three factors showed a statistically significant break. Momentum's (WML) point estimates run in the opposite direction from &ldquo;algo trading strengthened persistence&rdquo; &mdash; both periods show a mild, non-significant negative relationship (a hint of reversal, not persistence), and the Chow test confirms the two periods aren't meaningfully different from each other (p=0.513). Size (SMB) shows a significant relationship pre-1985 (p=0.019) and none post-1985 (p=0.707), which looks suggestive on its own &mdash; but the Chow test says this apparent difference isn't statistically distinguishable from what you'd expect by chance across two 40-observation samples (p=0.330). There's not enough evidence to say factor behavior has structurally changed, in either direction, over this specific (annual) comparison.</p>
+<p>Not one of the three factors showed a statistically significant break. Momentum's (WML) point estimates run in the opposite direction from &ldquo;algo trading strengthened persistence&rdquo;, both periods show a mild, non-significant negative relationship (a hint of reversal, not persistence), and the Chow test confirms the two periods aren't meaningfully different from each other (p=0.513). Size (SMB) shows a significant relationship pre-1985 (p=0.019) and none post-1985 (p=0.707), which looks suggestive on its own, but the Chow test says this apparent difference isn't statistically distinguishable from what you'd expect by chance across two 40-observation samples (p=0.330). There's not enough evidence to say factor behavior has structurally changed, in either direction, over this specific (annual) comparison.</p>
 <p>As a caution, in addition to the previously referenced version, another earlier version of this analysis split the full sample at its midpoint (1976) rather than at 1985, and momentum showed a seemingly strong, significant break (Chow p=0.018). That result didn't survive shifting the window to start in 1945 instead of 1927. It turned out to be driven by the Great Depression and WWII years (1927&ndash;1944) sitting in the early half, an unusually extreme 18-year stretch, not by any real pre/post regime change. A single subsample split can look meaningful and still be driven by the fact that unusual years happen to land on either side of the line. This reinforced exactly why having a pre-specified, economically motivated cutoff is more trustworthy than searching for whichever cutoff produces the most dramatic-looking result.</p>
 </div>
 
@@ -994,7 +994,7 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <h2>About</h2>
 <p>Market (Rm&minus;rf) is the broad U.S. equity market return in excess of the risk-free rate. Size (SMB) is the return of small-cap minus large-cap stocks. Value (HML) is the return of high book-to-market (value) stocks minus low book-to-market (growth) stocks. Momentum (WML) is the return of recent winners (top 30% by prior 12-month return, skipping the most recent month) minus recent losers (bottom 30%).</p>
 <p>The rebalance schedule differs by factor. Size and Value portfolios are reformed once a year, at the end of every June, using market equity measured at that same end-of-June date (for the size sort) and a book-to-market ratio built from book equity as of the fiscal year ending in the prior calendar year, divided by market equity at the end of that prior December (for the value sort). They then hold that same set of stocks unchanged through the following June. The choice of June rather than reforming right after fiscal year-end is because most U.S. companies report on a December fiscal year and have up to 90 days to file their annual report, so their book-value data isn't guaranteed to be public until roughly the end of March. Waiting until June builds in a buffer, so the portfolio only ever uses data that was actually available to investors at the time, not information Fama and French could see only in hindsight. Momentum is reformed every month, ranking stocks by their cumulative return from 12 months ago to 2 months ago (deliberately skipping the most recent month, since 1-month returns are dominated by short-term mean-reversion, the opposite effect from momentum - which would otherwise contaminate the signal). The top 30% by that ranking are held long, the bottom 30% short, and the whole ranking is redone the next month. That difference in rebalance frequency, Size and Value holding the same stocks for a full year vs. Momentum turning over monthly, is directly relevant to the factor momentum analysis above. it's a large part of why Size and Value show measurable month-to-month or year-to-year persistence in their own returns while Momentum does not.</p>
-<p>Each line above shows the growth of $1 invested at the start of the selected range in a portfolio that isolates just that factor — e.g. The size line reflects only the small-vs-large spread, not the market's overall direction. A rising SMB line means small caps are outperforming large caps over that stretch; a falling HML line means growth is beating value. These are long-run academic research series (Fama-French, updated by Kenneth French), not investable products.</p>
+<p>Each line above shows the growth of $1 invested at the start of the selected range in a portfolio that isolates just that factor, e.g. The size line reflects only the small-vs-large spread, not the market's overall direction. A rising SMB line means small caps are outperforming large caps over that stretch; a falling HML line means growth is beating value. These are long-run academic research series (Fama-French, updated by Kenneth French), not investable products.</p>
 <p>Daily data begins 1926-07-01 for market/size/value and 1926-11-03 for momentum. Values are Ken French's published daily percent returns. Tthe underlying data updates roughly monthly, so the page's refresh cadence follows suit.</p>
 <div class="source">Source: <a href="https://mba.tuck.dartmouth.edu/pages/faculty/ken.french/data_library.html" target="_blank" rel="noopener">Ken French Data Library</a>, Tuck School of Business at Dartmouth</div>
 </div>
@@ -1017,7 +1017,7 @@ function showError(message){
 }
 
 function pctText(v){
- if(v === null || v === undefined || isNaN(v)) return "—";
+ if(v === null || v === undefined || isNaN(v)) return "n/a";
  return (v >= 0 ? "+" : "") + v.toFixed(2) + "%";
 }
 

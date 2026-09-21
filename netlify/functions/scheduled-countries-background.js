@@ -66,7 +66,7 @@ exports.handler = async () => {
     }
 
     console.log(`scheduled-countries-background: fetched ${computed.size}/${REGIONS.length} tickers`);
-    if (computed.size === 0) throw new Error("Every ticker failed — not writing an empty blob");
+    if (computed.size === 0) throw new Error("Every ticker failed, not writing an empty blob");
 
     const roundHistory = (history) => history.map((h) => ({ date: h.date, close: Math.round(h.close * 100) / 100 }));
 

@@ -153,7 +153,7 @@ document.addEventListener("DOMContentLoaded", function(){
 </script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Earnings Revisions — Michael J. Stevenson</title>
+<title>Earnings Revisions | Michael J. Stevenson</title>
 
 <style>
 
@@ -769,7 +769,7 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <div class="header">
 <div>
 <h1>Earnings Revisions</h1>
-<div class="subtitle">How Wall Street analysts are revising S&amp;P 500 earnings estimates — how many are moving their numbers, which way, and by how much — broken out by sector.</div>
+<div class="subtitle">How Wall Street analysts are revising S&amp;P 500 earnings estimates, how many are moving their numbers, which way, and by how much, broken out by sector.</div>
 </div>
 <div class="updated" id="updated">Loading...</div>
 </div>
@@ -777,22 +777,22 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <div class="stat-grid">
 <div class="stat-card">
 <div class="stat-label">Market Net Revision Ratio</div>
-<div class="stat-value" id="statNrr">—</div>
+<div class="stat-value" id="statNrr">…</div>
 <div class="stat-note">Trailing 30 days, equal-weighted</div>
 </div>
 <div class="stat-card">
 <div class="stat-label">Market Estimate Drift</div>
-<div class="stat-value" id="statDrift">—</div>
+<div class="stat-value" id="statDrift">…</div>
 <div class="stat-note">30-day change in consensus FY1 EPS</div>
 </div>
 <div class="stat-card">
 <div class="stat-label">Upgrades vs. Downgrades</div>
-<div class="stat-value neutral" id="statUpDown">—</div>
+<div class="stat-value neutral" id="statUpDown">…</div>
 <div class="stat-note">Analyst estimate revisions, trailing 30 days</div>
 </div>
 <div class="stat-card">
 <div class="stat-label">Coverage</div>
-<div class="stat-value neutral" id="statCoverage">—</div>
+<div class="stat-value neutral" id="statCoverage">…</div>
 <div class="stat-note">S&amp;P 500 constituents with usable estimates</div>
 </div>
 </div>
@@ -817,7 +817,7 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <div class="chart-box-header">
 <div>
 <h2>Market Net Revision Ratio over time</h2>
-<div class="chart-box-sub">Weekly snapshots, accumulated since this page began tracking — not backfilled (see methodology below).</div>
+<div class="chart-box-sub">Weekly snapshots, accumulated since this page began tracking, not backfilled (see methodology below).</div>
 </div>
 </div>
 <div class="chart-canvas-wrap short">
@@ -865,11 +865,11 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 
 <div class="explainer">
 <h2>Methodology</h2>
-<p>Two different questions get asked about analyst earnings revisions, and they don't always point the same way: <em>how many</em> analysts are changing their minds, and <em>how much</em> the number is actually moving. The <strong>Net Revision Ratio</strong> answers the first: for each stock's current-fiscal-year (FY1) consensus EPS estimate, it's (upward revisions &minus; downward revisions) &divide; total revisions over the trailing 30 days, a breadth measure that runs from &minus;1 (every revision was down) to +1 (every revision was up). The <strong>Estimate Drift</strong> answers the second: the trailing-30-day percent change in the consensus FY1 EPS estimate itself. A stock (or sector) can have wide breadth with almost no drift &mdash; a dozen analysts each nudging their number a penny in the same direction &mdash; or the reverse: one or two analysts making a large call that moves the average a lot without most of the Street having weighed in yet. Sector and market figures are the equal-weighted mean of each metric across that group's constituents with usable data, not cap-weighted &mdash; a $50B mid-cap's analyst revisions count the same as a Magnificent Seven name's.</p>
-<p>The universe is the S&amp;P 500 (the same constituent list used elsewhere on this site &mdash; see <a href="/sector-beeswarm.html">Sector Beeswarm</a>), with sector classification pulled from that page's own weekly company-metadata refresh rather than a second, redundant lookup. The leaderboards exclude stocks with fewer than 3 covering analysts, since a one- or two-analyst estimate can swing double digits on a single revision with no real breadth behind it.</p>
-<p>The "over time" chart is not a backfilled series &mdash; Alpha Vantage's estimates endpoint returns only the current snapshot's trailing-window figures, not a history of past snapshots, so there was no way to reconstruct what the Net Revision Ratio looked like a year or five years ago. Instead, this page takes its own weekly snapshot and appends it, meaning the trend line will only get more useful over time as more weekly points accumulate; treat an early, short line as exactly that &mdash; a start, not a full cycle.</p>
-<p>Recomputed weekly (Saturday) across all ~500 constituents, sequentially and rate-limited, rather than daily &mdash; trailing-30-day revision counts and 30-day drift don't move enough day to day to justify the extra API load.</p>
-<div class="source">Source: <a href="https://www.alphavantage.co/" target="_blank" rel="noopener">Alpha Vantage — EARNINGS_ESTIMATES</a>. Not investment advice.</div>
+<p>Two different questions get asked about analyst earnings revisions, and they don't always point the same way: <em>how many</em> analysts are changing their minds, and <em>how much</em> the number is actually moving. The <strong>Net Revision Ratio</strong> answers the first: for each stock's current-fiscal-year (FY1) consensus EPS estimate, it's (upward revisions &minus; downward revisions) &divide; total revisions over the trailing 30 days, a breadth measure that runs from &minus;1 (every revision was down) to +1 (every revision was up). The <strong>Estimate Drift</strong> answers the second: the trailing-30-day percent change in the consensus FY1 EPS estimate itself. A stock (or sector) can have wide breadth with almost no drift (a dozen analysts each nudging their number a penny in the same direction) or the reverse: one or two analysts making a large call that moves the average a lot without most of the Street having weighed in yet. Sector and market figures are the equal-weighted mean of each metric across that group's constituents with usable data, not cap-weighted. A $50B mid-cap's analyst revisions count the same as a Magnificent Seven name's.</p>
+<p>The universe is the S&amp;P 500 (the same constituent list used elsewhere on this site. See <a href="/sector-beeswarm.html">Sector Beeswarm</a>), with sector classification pulled from that page's own weekly company-metadata refresh rather than a second, redundant lookup. The leaderboards exclude stocks with fewer than 3 covering analysts, since a one- or two-analyst estimate can swing double digits on a single revision with no real breadth behind it.</p>
+<p>The "over time" chart is not a backfilled series. Alpha Vantage's estimates endpoint returns only the current snapshot's trailing-window figures, not a history of past snapshots, so there was no way to reconstruct what the Net Revision Ratio looked like a year or five years ago. Instead, this page takes its own weekly snapshot and appends it, meaning the trend line will only get more useful over time as more weekly points accumulate; treat an early, short line as exactly that: a start, not a full cycle.</p>
+<p>Recomputed weekly (Saturday) across all ~500 constituents, sequentially and rate-limited, rather than daily. Trailing-30-day revision counts and 30-day drift don't move enough day to day to justify the extra API load.</p>
+<div class="source">Source: <a href="https://www.alphavantage.co/" target="_blank" rel="noopener">Alpha Vantage: EARNINGS_ESTIMATES</a>. Not investment advice.</div>
 </div>
 
 </div>
@@ -910,12 +910,12 @@ function showWarning(message){
 }
 
 function fmtRatio(v){
- if(v === null || v === undefined || isNaN(v)) return "—";
+ if(v === null || v === undefined || isNaN(v)) return "n/a";
  return (v >= 0 ? "+" : "") + v.toFixed(2);
 }
 
 function fmtPct(v, digits){
- if(v === null || v === undefined || isNaN(v)) return "—";
+ if(v === null || v === undefined || isNaN(v)) return "n/a";
  return (v >= 0 ? "+" : "") + v.toFixed(digits === undefined ? 2 : digits) + "%";
 }
 
@@ -944,7 +944,7 @@ async function init(){
   document.getElementById("updated").textContent = "As of " + new Date(data.generated_at_utc).toLocaleString("en-US", { month: "2-digit", day: "2-digit", year: "numeric", hour: "numeric", minute: "2-digit" });
 
   if(data.universe_size < data.universe_total * 0.85){
-   showWarning("Only " + data.universe_size + " of " + data.universe_total + " S&P 500 constituents had usable estimates this run — some sector figures may be based on partial coverage.");
+   showWarning("Only " + data.universe_size + " of " + data.universe_total + " S&P 500 constituents had usable estimates this run. Some sector figures may be based on partial coverage.");
   }
 
   renderStats();
@@ -1122,7 +1122,7 @@ function leaderboardRowHtml(r){
   <td>${r.ticker}</td>
   <td>${r.name}</td>
   <td>${r.sector}</td>
-  <td>${r.epsNow === null ? "—" : "$" + r.epsNow.toFixed(2)}</td>
+  <td>${r.epsNow === null ? "n/a" : "$" + r.epsNow.toFixed(2)}</td>
   <td class="${classForValue(r.drift30)}">${fmtPct(r.drift30)}</td>
   <td>${r.up30}&uarr; / ${r.down30}&darr;</td>
  </tr>`;

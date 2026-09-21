@@ -13,7 +13,7 @@ exports.handler = async () => {
     const payload = await store.get(BLOB_KEY, { type: "json" });
 
     if (!payload) {
-      throw new Error("Sector performance not yet populated — scheduled-sectors-background hasn't run yet");
+      throw new Error("Sector performance not yet populated, scheduled-sectors-background hasn't run yet");
     }
 
     return {

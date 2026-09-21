@@ -153,7 +153,7 @@ document.addEventListener("DOMContentLoaded", function(){
 </script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Short Sale Volume — Michael J. Stevenson</title>
+<title>Short Sale Volume | Michael J. Stevenson</title>
 
 <style>
 
@@ -841,7 +841,7 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <div class="header">
 <div>
 <h1>Short Sale Volume</h1>
-<div class="subtitle">What share of the S&amp;P 500's daily trading volume is flagged as a short sale, sourced from FINRA's free daily Reg SHO files — a real, freely-available proxy for short-selling activity that fills part of the gap left by short interest data now being locked behind FINRA's paid API Console.</div>
+<div class="subtitle">What share of the S&amp;P 500's daily trading volume is flagged as a short sale, sourced from FINRA's free daily Reg SHO files. A real, freely-available proxy for short-selling activity that fills part of the gap left by short interest data now being locked behind FINRA's paid API Console.</div>
 </div>
 <div class="updated" id="updated">Loading...</div>
 </div>
@@ -849,22 +849,22 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <div class="stat-grid">
 <div class="stat-card">
 <div class="stat-label">Market Median SVR</div>
-<div class="stat-value" id="statMedianSvr">—</div>
+<div class="stat-value" id="statMedianSvr">…</div>
 <div class="stat-note" id="statMedianSvrNote">Short volume ÷ total volume</div>
 </div>
 <div class="stat-card">
 <div class="stat-label">Window</div>
-<div class="stat-value" id="statWindow" style="color:var(--ink); font-size:18px;">—</div>
+<div class="stat-value" id="statWindow" style="color:var(--ink); font-size:18px;">…</div>
 <div class="stat-note" id="statWindowNote">Trading days covered</div>
 </div>
 <div class="stat-card">
 <div class="stat-label">Most-Shorted Sector</div>
-<div class="stat-value" id="statBestSector" style="font-size:20px;">—</div>
+<div class="stat-value" id="statBestSector" style="font-size:20px;">…</div>
 <div class="stat-note" id="statBestSectorNote">Median sector SVR</div>
 </div>
 <div class="stat-card">
 <div class="stat-label">Least-Shorted Sector</div>
-<div class="stat-value" id="statWorstSector" style="font-size:20px;">—</div>
+<div class="stat-value" id="statWorstSector" style="font-size:20px;">…</div>
 <div class="stat-note" id="statWorstSectorNote">Median sector SVR</div>
 </div>
 </div>
@@ -887,7 +887,7 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <div class="chart-box-header">
 <div>
 <h2>Market median short sale volume ratio over time</h2>
-<div class="chart-subhead">One point per trading day, computed directly from FINRA's own historical daily files — the full window is populated from the very first run, not an accumulating weekly snapshot</div>
+<div class="chart-subhead">One point per trading day, computed directly from FINRA's own historical daily files. The full window is populated from the very first run, not an accumulating weekly snapshot</div>
 </div>
 </div>
 <div class="ndr-panel">
@@ -901,7 +901,7 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <div class="chart-box-header">
 <div>
 <h2>Does elevated short-selling predict weaker forward returns?</h2>
-<div class="chart-subhead">Each point is one stock: x-axis is its average short-sale-volume ratio over the older half of the window, y-axis is its relative return vs. SPY over the newer half — non-overlapping in time, so this isn't just measuring the same period against itself</div>
+<div class="chart-subhead">Each point is one stock: x-axis is its average short-sale-volume ratio over the older half of the window, y-axis is its relative return vs. SPY over the newer half: non-overlapping in time, so this isn't just measuring the same period against itself</div>
 </div>
 </div>
 <div class="ndr-panel">
@@ -957,11 +957,11 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 
 <div class="explainer">
 <h2>Methodology</h2>
-<p>Universe is the full S&amp;P 500. The underlying data is FINRA's daily Regulation SHO short-sale-volume file (the "CNMS" tape), published free of charge and without any registration or API key at a predictable per-date URL — unlike FINRA's actual <em>short interest</em> data (total shares currently held short, reported twice a month), whose free anonymous endpoint was deprecated in 2021 and now sits behind a paid, registration-gated API Console this site can't use. <strong>Short sale volume and short interest are different, related metrics</strong>: this page measures a <em>flow</em> — the share of a stock's daily trading volume that was executed as a short sale, from real-time order marking rules — not a <em>stock</em> of currently-outstanding short positions. A high short-sale-volume ratio (SVR) doesn't necessarily mean a large short position is being built; some of that volume closes out same-day or is market-maker hedging activity unrelated to a directional short view. It's a genuine, if imperfect and freely-available, proxy for short-selling activity level, not a substitute for the still-unavailable short interest number.</p>
-<p>For each constituent, SVR on a given day is <code>ShortVolume / TotalVolume</code> from that day's FINRA file. The sector chart, leaderboards, and full table use each stock's average SVR over the most recent ~21 trading days (roughly a month). The market-median trend chart plots the market-wide median SVR for every trading day FINRA's files cover this run — because FINRA republishes full daily history (not just a rolling snapshot), this page can reconstruct the whole ~3-month window in a single run, unlike several of this site's other pages that have to accumulate history one weekly snapshot at a time.</p>
-<p>The forward-return test splits the same ~3-month window into two non-overlapping halves — the same overlapping-window trap called out on <a href="/share-count-trends.html">Share Count Trends</a> and <a href="/relative-strength-leaders.html">Relative Strength Leaders/Laggards</a>. Each stock's average SVR over the <em>older</em> half is the predictor; its price return relative to SPY over the <em>newer</em> half (both from Yahoo Finance daily adjusted closes) is the outcome. A negative relationship would match the classic "short sellers are informed" finding in the academic short-selling literature (e.g. Diether, Lee &amp; Werner, 2009) — elevated short-sale activity preceding weaker forward returns; a flat or positive one would say that isn't showing up in this particular window. Both a linear (Pearson) and rank-based (Spearman) fit are reported, matching this site's <a href="/factor-analysis.html">Factor Analysis</a> convention.</p>
-<p>Company name and sector come from <a href="/sector-beeswarm.html">Sector Beeswarm</a>'s weekly metadata sweep. A small number of dual-share-class tickers (e.g. Berkshire Hathaway's B shares) use a dash in this site's own ticker convention but a dot in FINRA's tape data; the backend tries both forms and simply omits a ticker from this page if neither matches, rather than guessing. One-time snapshot for now — see this function's own schedule note in <code>netlify.toml</code> for why it isn't yet on a recurring weekly cron; refresh manually if a newer window is wanted before that changes.</p>
-<div class="source">Source: <a href="https://www.finra.org/finra-data/browse-catalog/short-sale-volume-data" target="_blank" rel="noopener">FINRA Regulation SHO Daily Short Sale Volume Files</a>, <a href="https://finance.yahoo.com/" target="_blank" rel="noopener">Yahoo Finance — daily adjusted close</a></div>
+<p>Universe is the full S&amp;P 500. The underlying data is FINRA's daily Regulation SHO short-sale-volume file (the "CNMS" tape), published free of charge and without any registration or API key at a predictable per-date URL. Unlike FINRA's actual <em>short interest</em> data (total shares currently held short, reported twice a month), whose free anonymous endpoint was deprecated in 2021 and now sits behind a paid, registration-gated API Console this site can't use. <strong>Short sale volume and short interest are different, related metrics</strong>: this page measures a <em>flow</em> (the share of a stock's daily trading volume that was executed as a short sale, from real-time order marking rules) not a <em>stock</em> of currently-outstanding short positions. A high short-sale-volume ratio (SVR) doesn't necessarily mean a large short position is being built; some of that volume closes out same-day or is market-maker hedging activity unrelated to a directional short view. It's a genuine, if imperfect and freely-available, proxy for short-selling activity level, not a substitute for the still-unavailable short interest number.</p>
+<p>For each constituent, SVR on a given day is <code>ShortVolume / TotalVolume</code> from that day's FINRA file. The sector chart, leaderboards, and full table use each stock's average SVR over the most recent ~21 trading days (roughly a month). The market-median trend chart plots the market-wide median SVR for every trading day FINRA's files cover this run, because FINRA republishes full daily history (not just a rolling snapshot), this page can reconstruct the whole ~3-month window in a single run, unlike several of this site's other pages that have to accumulate history one weekly snapshot at a time.</p>
+<p>The forward-return test splits the same ~3-month window into two non-overlapping halves. The same overlapping-window trap called out on <a href="/share-count-trends.html">Share Count Trends</a> and <a href="/relative-strength-leaders.html">Relative Strength Leaders/Laggards</a>. Each stock's average SVR over the <em>older</em> half is the predictor; its price return relative to SPY over the <em>newer</em> half (both from Yahoo Finance daily adjusted closes) is the outcome. A negative relationship would match the classic "short sellers are informed" finding in the academic short-selling literature (e.g. Diether, Lee &amp; Werner, 2009): elevated short-sale activity preceding weaker forward returns; a flat or positive one would say that isn't showing up in this particular window. Both a linear (Pearson) and rank-based (Spearman) fit are reported, matching this site's <a href="/factor-analysis.html">Factor Analysis</a> convention.</p>
+<p>Company name and sector come from <a href="/sector-beeswarm.html">Sector Beeswarm</a>'s weekly metadata sweep. A small number of dual-share-class tickers (e.g. Berkshire Hathaway's B shares) use a dash in this site's own ticker convention but a dot in FINRA's tape data; the backend tries both forms and simply omits a ticker from this page if neither matches, rather than guessing. One-time snapshot for now: see this function's own schedule note in <code>netlify.toml</code> for why it isn't yet on a recurring weekly cron; refresh manually if a newer window is wanted before that changes.</p>
+<div class="source">Source: <a href="https://www.finra.org/finra-data/browse-catalog/short-sale-volume-data" target="_blank" rel="noopener">FINRA Regulation SHO Daily Short Sale Volume Files</a>, <a href="https://finance.yahoo.com/" target="_blank" rel="noopener">Yahoo Finance, daily adjusted close</a></div>
 </div>
 
 </div>
@@ -974,18 +974,18 @@ let SORT_KEY = "avgSvr";
 let SORT_DIR = -1;
 
 function fmtPct(v, digits){
- if(v === null || v === undefined || isNaN(v)) return "—";
+ if(v === null || v === undefined || isNaN(v)) return "n/a";
  digits = digits === undefined ? 2 : digits;
  return (v >= 0 ? "+" : "") + v.toFixed(digits) + "%";
 }
 
 function fmtSvr(v){
- if(v === null || v === undefined || isNaN(v)) return "—";
+ if(v === null || v === undefined || isNaN(v)) return "n/a";
  return (v * 100).toFixed(2) + "%";
 }
 
 function fmtNum(v, digits){
- if(v === null || v === undefined || isNaN(v)) return "—";
+ if(v === null || v === undefined || isNaN(v)) return "n/a";
  digits = digits === undefined ? 2 : digits;
  return v.toFixed(digits);
 }
@@ -1112,7 +1112,7 @@ async function init(){
   document.getElementById("updated").textContent = "As of " + new Date(data.generated_at_utc).toLocaleString("en-US", { month: "2-digit", day: "2-digit", year: "numeric", hour: "numeric", minute: "2-digit" });
 
   if(data.loadedCount < data.universeSize){
-   showWarning("Only " + data.loadedCount + " of " + data.universeSize + " S&P 500 constituents loaded this run — some data may be temporarily unavailable.");
+   showWarning("Only " + data.loadedCount + " of " + data.universeSize + " S&P 500 constituents loaded this run. Some data may be temporarily unavailable.");
   }
 
   renderStats();
@@ -1283,7 +1283,7 @@ function renderRegressionScatter(){
    "<thead><tr><th>Method</th><th>n</th><th>r</th><th>r&sup2;</th><th>slope</th><th>t</th><th>p</th></tr></thead>" +
    "<tbody>" + row("Pearson (OLS)", pearson) + row("Spearman (&rho;)", spear) + "</tbody>" +
   "</table>" +
-  '<div class="method-note">A negative slope means stocks with more short-selling activity in the older half of the window went on to underperform SPY in the newer half — consistent with short sellers being informed traders; a flat or positive slope means that isn\'t showing up here.</div>';
+  '<div class="method-note">A negative slope means stocks with more short-selling activity in the older half of the window went on to underperform SPY in the newer half. Consistent with short sellers being informed traders; a flat or positive slope means that isn\'t showing up here.</div>';
 }
 
 function renderLeaderTable(rows, tbodyId){
@@ -1294,7 +1294,7 @@ function renderLeaderTable(rows, tbodyId){
  }
  tbody.innerHTML = rows.map(r => `<tr>
   <td><span class="sector-name">${r.symbol}</span></td>
-  <td><span class="sector-ticker">${r.sector || "—"}</span></td>
+  <td><span class="sector-ticker">${r.sector || "n/a"}</span></td>
   <td>${fmtSvr(r.avgSvr)}</td>
  </tr>`).join("");
 }
@@ -1321,9 +1321,9 @@ function renderTable(){
  const tbody = document.getElementById("tableBody");
  tbody.innerHTML = rows.map(r => `<tr>
    <td><span class="sector-name">${r.symbol}</span></td>
-   <td><span class="sector-ticker">${r.sector || "—"}</span></td>
+   <td><span class="sector-ticker">${r.sector || "n/a"}</span></td>
    <td>${fmtSvr(r.avgSvr)}</td>
-   <td>${r.rank ?? "—"}</td>
+   <td>${r.rank ?? "n/a"}</td>
   </tr>`).join("");
 
  document.querySelectorAll("#stockTable thead th").forEach(th => {

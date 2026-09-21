@@ -234,7 +234,7 @@ table.fwd tbody td:first-child{font-family:"IBM Plex Mono",monospace; color:var(
   <p class="foot">Live conditions are analysed at their current run length; the number and its
   history update as the streak extends. Dormant conditions (the ones still short of their minimum
   length) show what happened the last times they <em>did</em> reach it. Rarity, for a live streak,
-  is the share of this condition's past qualifying runs that never got this long &mdash; near 0% for
+  is the share of this condition's past qualifying runs that never got this long, near 0% for
   a fresh streak, climbing as it extends. Forward-return columns summarise the analog set: prior
   runs that reached the same length, de-duplicated so one long streak counts once, tracked over the
   next year (samples shrink at the longer horizons as recent analogs run out of runway). Regenerate
@@ -244,7 +244,7 @@ table.fwd tbody td:first-child{font-family:"IBM Plex Mono",monospace; color:var(
   <div id="archiveTab" hidden>
     <section id="archiveSection" class="feed">
       <p class="thin" id="archiveEmpty" hidden>Nothing archived yet. When a notable streak ends it
-        shows on the Scanner tab under &ldquo;recently ended&rdquo; &mdash; archive the ones worth
+        shows on the Scanner tab under &ldquo;recently ended&rdquo;, archive the ones worth
         keeping and they land here.</p>
       <div class="rows" id="archiveRows"></div>
     </section>
@@ -309,7 +309,7 @@ function init(){
   const rec = DATA.conditions.filter(c => c.atRecord);
   el("tiles").innerHTML = [
     ["Live streaks", DATA.live, "of " + DATA.scanned + " tracked", true],
-    ["Rarest live", byRarity[0] ? pct0(byRarity[0].rarity) : "—",
+    ["Rarest live", byRarity[0] ? pct0(byRarity[0].rarity) : "n/a",
        byRarity[0] ? byRarity[0].label + " · " + byRarity[0].currentRun + " " + byRarity[0].unit + "s" : "", false],
     ["At an all-time record", rec.length, rec.length ? rec.map(c => c.label).join(", ") : "none right now", false]
   ].map(t => '<div class="tile"><div class="k">' + t[0] + '</div><div class="v' +
@@ -382,7 +382,7 @@ function bodyHTML(c){
   }
   const lead = c.active ? '' :
     '<div class="leadin">The last ' + (c.analogCount || 0) + ' times ' + c.label + ' did reach ' +
-    c.floor + ' ' + c.unit + 's — how the next year went:</div>';
+    c.floor + ' ' + c.unit + 's, how the next year went:</div>';
 
   return track + lead + fwdTable(c) + swarm(c) + rungHTML(c);
 }
@@ -535,7 +535,7 @@ function rungHTML(c){
       cells + '<td>' + pct0(r.rarity) + '</td><td>' + r.n + '</td></tr>';
   }).join("");
   return '<details class="rungs"' + (c.rungs.length <= 14 ? ' open' : '') + '>' +
-    '<summary>By streak length so far &mdash; median forward return at each rung (' +
+    '<summary>By streak length so far: median forward return at each rung (' +
     c.rungs.length + ' lengths)</summary>' +
     '<div class="rungwrap"><table class="fwd"><thead>' + head + '</thead><tbody>' + body +
     '</tbody></table></div></details>';

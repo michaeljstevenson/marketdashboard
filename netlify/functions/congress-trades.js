@@ -13,7 +13,7 @@ exports.handler = async () => {
     const payload = await store.get(BLOB_KEY, { type: "json" });
 
     if (!payload) {
-      throw new Error("Congressional trading data not yet populated — scheduled-congress-trades-background hasn't run yet");
+      throw new Error("Congressional trading data not yet populated, scheduled-congress-trades-background hasn't run yet");
     }
 
     return {

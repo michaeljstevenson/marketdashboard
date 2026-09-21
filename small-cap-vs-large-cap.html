@@ -153,7 +153,7 @@ document.addEventListener("DOMContentLoaded", function(){
 </script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Small Cap vs. Large Cap Spread — Michael J. Stevenson</title>
+<title>Small Cap vs. Large Cap Spread | Michael J. Stevenson</title>
 
 <style>
 
@@ -792,22 +792,22 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <div class="stat-grid">
 <div class="stat-card">
 <div class="stat-label">Small/Large Ratio</div>
-<div class="stat-value" id="statRatio">—</div>
+<div class="stat-value" id="statRatio">…</div>
 <div class="stat-note" id="statRatioNote">Indexed to 100 at IWM's inception</div>
 </div>
 <div class="stat-card">
 <div class="stat-label">12-Month Relative Return</div>
-<div class="stat-value" id="statRel12m">—</div>
+<div class="stat-value" id="statRel12m">…</div>
 <div class="stat-note">IWM vs. SPY, trailing 252 trading days</div>
 </div>
 <div class="stat-card">
 <div class="stat-label">Current Fed Regime</div>
-<div class="stat-value" id="statRegime" style="font-size:20px;">—</div>
+<div class="stat-value" id="statRegime" style="font-size:20px;">…</div>
 <div class="stat-note" id="statRegimeNote">Avg. monthly spread return, this regime</div>
 </div>
 <div class="stat-card">
 <div class="stat-label">Correlation w/ 10Y Yield &Delta;</div>
-<div class="stat-value" id="statCorr" style="font-size:20px;">—</div>
+<div class="stat-value" id="statCorr" style="font-size:20px;">…</div>
 <div class="stat-note" id="statCorrNote">Monthly, Pearson r</div>
 </div>
 </div>
@@ -816,7 +816,7 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <div class="chart-box-header">
 <div>
 <h2>Small-cap / large-cap ratio, since 2000</h2>
-<div class="chart-subhead">IWM adjusted-close ÷ SPY adjusted-close, both indexed to 100 at IWM's inception — rising means small-caps are outperforming</div>
+<div class="chart-subhead">IWM adjusted-close ÷ SPY adjusted-close, both indexed to 100 at IWM's inception. Rising means small-caps are outperforming</div>
 </div>
 </div>
 <div class="chart-canvas-wrap">
@@ -842,7 +842,7 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <div class="chart-box-header">
 <div>
 <h2>Rolling 12-month relative return</h2>
-<div class="chart-subhead">Small/large ratio's trailing 252-trading-day return — positive stretches are small-cap-leadership regimes, negative stretches are large-cap-leadership regimes</div>
+<div class="chart-subhead">Small/large ratio's trailing 252-trading-day return. Positive stretches are small-cap-leadership regimes, negative stretches are large-cap-leadership regimes</div>
 </div>
 </div>
 <div class="chart-canvas-wrap">
@@ -877,11 +877,11 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 
 <div class="explainer">
 <h2>Methodology</h2>
-<p>Small-cap and large-cap exposure are proxied by two liquid, dividend-adjusted ETFs rather than the underlying indices themselves: IWM (iShares Russell 2000 ETF) for small-caps and SPY (SPDR S&amp;P 500 ETF Trust) for large-caps, with MDY (SPDR S&amp;P MidCap 400 ETF Trust) added as a mid-cap rung for the return ladder below. Alpha Vantage's <code>TIME_SERIES_DAILY_ADJUSTED</code> adjusted-close series (dividends and splits applied) gives a true total-return comparison for all three. The ratio series is indexed to 100 at IWM's May 2000 inception — the binding constraint on how far back this page can go, even though SPY and MDY both trade back to the 1990s.</p>
-<p>The Fed-regime split classifies each calendar month by the trailing 3-month change in the effective federal funds rate (Alpha Vantage <code>FEDERAL_FUNDS_RATE</code>): a rise of more than 0.10 percentage points is "Hiking," a fall of more than 0.10pp is "Cutting," and anything in between is "Holding." The intuition being tested is that small-caps, which on average carry more floating-rate debt and less pricing power than large-caps, should be more sensitive to the direction and speed of rate changes — but note the sample sizes are modest (a few dozen months per regime across just one rate cycle's worth of history since 2000), so treat the regime averages as suggestive, not a robust statistical result.</p>
-<p>The scatter panel runs the same two-method check used throughout <a href="/factor-analysis.html">Factor Analysis</a>: Pearson (OLS) correlation alongside Spearman rank correlation, so a relationship can't be quietly resting on one or two extreme months. Both are shown; a low r&sup2; here isn't a bug — a single macro variable rarely explains much of a monthly return series, and the point of showing the regression is to be honest about how weak (or strong) that single-variable relationship actually is, not to oversell it.</p>
+<p>Small-cap and large-cap exposure are proxied by two liquid, dividend-adjusted ETFs rather than the underlying indices themselves: IWM (iShares Russell 2000 ETF) for small-caps and SPY (SPDR S&amp;P 500 ETF Trust) for large-caps, with MDY (SPDR S&amp;P MidCap 400 ETF Trust) added as a mid-cap rung for the return ladder below. Alpha Vantage's <code>TIME_SERIES_DAILY_ADJUSTED</code> adjusted-close series (dividends and splits applied) gives a true total-return comparison for all three. The ratio series is indexed to 100 at IWM's May 2000 inception. The binding constraint on how far back this page can go, even though SPY and MDY both trade back to the 1990s.</p>
+<p>The Fed-regime split classifies each calendar month by the trailing 3-month change in the effective federal funds rate (Alpha Vantage <code>FEDERAL_FUNDS_RATE</code>): a rise of more than 0.10 percentage points is "Hiking," a fall of more than 0.10pp is "Cutting," and anything in between is "Holding." The intuition being tested is that small-caps, which on average carry more floating-rate debt and less pricing power than large-caps, should be more sensitive to the direction and speed of rate changes, but note the sample sizes are modest (a few dozen months per regime across just one rate cycle's worth of history since 2000), so treat the regime averages as suggestive, not a robust statistical result.</p>
+<p>The scatter panel runs the same two-method check used throughout <a href="/factor-analysis.html">Factor Analysis</a>: Pearson (OLS) correlation alongside Spearman rank correlation, so a relationship can't be quietly resting on one or two extreme months. Both are shown; a low r&sup2; here isn't a bug: a single macro variable rarely explains much of a monthly return series, and the point of showing the regression is to be honest about how weak (or strong) that single-variable relationship actually is, not to oversell it.</p>
 <p>Refreshes once daily after the US market close (index levels move every trading day, unlike the site's sparse-event or weekly-refresh datasets); the Fed funds rate and Treasury yield series are re-pulled in full each run since both are cheap, low-volume monthly series.</p>
-<div class="source">Source: <a href="https://www.alphavantage.co/" target="_blank" rel="noopener">Alpha Vantage</a> — TIME_SERIES_DAILY_ADJUSTED, FEDERAL_FUNDS_RATE, TREASURY_YIELD</div>
+<div class="source">Source: <a href="https://www.alphavantage.co/" target="_blank" rel="noopener">Alpha Vantage</a>: TIME_SERIES_DAILY_ADJUSTED, FEDERAL_FUNDS_RATE, TREASURY_YIELD</div>
 </div>
 
 </div>
@@ -904,7 +904,7 @@ function showWarning(message){
 }
 
 function fmtPct(v, digits){
- if(v === null || v === undefined || isNaN(v)) return "—";
+ if(v === null || v === undefined || isNaN(v)) return "n/a";
  digits = digits === undefined ? 2 : digits;
  return (v >= 0 ? "+" : "") + v.toFixed(digits) + "%";
 }
@@ -1105,7 +1105,7 @@ function renderStats(data, monthly){
 
  const regime = monthly.currentRegime;
  const stats = regime ? monthly.regimeStats[regime] : null;
- document.getElementById("statRegime").textContent = regime || "—";
+ document.getElementById("statRegime").textContent = regime || "n/a";
  if(stats && stats.n){
   document.getElementById("statRegimeNote").textContent =
    "Avg. " + fmtPct(stats.mean) + "/mo in " + regime + " regimes (n=" + stats.n + " mo.)";
@@ -1155,7 +1155,7 @@ function renderRatioChart(data){
 }
 
 function fmtLadderCell(cell){
- if(!cell) return '<span class="cell-na">—</span>';
+ if(!cell) return '<span class="cell-na">: </span>';
  return fmtPct(cell.cumPct);
 }
 

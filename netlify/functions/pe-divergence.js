@@ -13,7 +13,7 @@ exports.handler = async () => {
     const payload = await store.get(BLOB_KEY, { type: "json" });
 
     if (!payload) {
-      throw new Error("P/E divergence data not yet populated — scheduled-pe-divergence-background hasn't run yet");
+      throw new Error("P/E divergence data not yet populated, scheduled-pe-divergence-background hasn't run yet");
     }
 
     return {

@@ -12,7 +12,7 @@ exports.handler = async () => {
     const payload = await store.get(BLOB_KEY, { type: "json" });
 
     if (!payload) {
-      throw new Error("Quality score data not yet populated — scheduled-quality-financials-background and scheduled-quality-score-background haven't run yet");
+      throw new Error("Quality score data not yet populated. Scheduled-quality-financials-background and scheduled-quality-score-background haven't run yet");
     }
 
     return {

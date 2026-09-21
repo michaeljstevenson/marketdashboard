@@ -153,7 +153,7 @@ document.addEventListener("DOMContentLoaded", function(){
 </script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Earnings Growth vs. Price Performance — Michael J. Stevenson</title>
+<title>Earnings Growth vs. Price Performance | Michael J. Stevenson</title>
 
 <style>
 
@@ -835,7 +835,7 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <div class="header">
 <div>
 <h1>Earnings Growth vs. Price Performance</h1>
-<div class="subtitle">Where has the market already priced in a company's earnings growth — and where hasn't it? Trailing year-over-year EPS growth vs. 3-month price performance relative to SPY, across the full S&amp;P 500.</div>
+<div class="subtitle">Where has the market already priced in a company's earnings growth, and where hasn't it? Trailing year-over-year EPS growth vs. 3-month price performance relative to SPY, across the full S&amp;P 500.</div>
 </div>
 <div class="updated" id="updated">Loading...</div>
 </div>
@@ -843,22 +843,22 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <div class="stat-grid">
 <div class="stat-card">
 <div class="stat-label">Median YoY EPS Growth</div>
-<div class="stat-value" id="statMedianEps">—</div>
+<div class="stat-value" id="statMedianEps">…</div>
 <div class="stat-note" id="statMedianEpsNote">Full universe</div>
 </div>
 <div class="stat-card">
 <div class="stat-label">Median 3M Relative Return</div>
-<div class="stat-value" id="statMedianPrice">—</div>
+<div class="stat-value" id="statMedianPrice">…</div>
 <div class="stat-note" id="statMedianPriceNote">vs. SPY, full universe</div>
 </div>
 <div class="stat-card">
 <div class="stat-label">Growth Ahead of Price</div>
-<div class="stat-value" id="statGrowthAhead" style="font-size:20px;">—</div>
+<div class="stat-value" id="statGrowthAhead" style="font-size:20px;">…</div>
 <div class="stat-note" id="statGrowthAheadNote">Strongest earnings growth, weakest relative price</div>
 </div>
 <div class="stat-card">
 <div class="stat-label">Price Ahead of Growth</div>
-<div class="stat-value" id="statPriceAhead" style="font-size:20px;">—</div>
+<div class="stat-value" id="statPriceAhead" style="font-size:20px;">…</div>
 <div class="stat-note" id="statPriceAheadNote">Strongest relative price, weakest earnings growth</div>
 </div>
 </div>
@@ -867,7 +867,7 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <div class="chart-box-header">
 <div>
 <h2>Median YoY EPS growth vs. median 3-month relative return, by sector</h2>
-<div class="chart-subhead">Two bars per sector — do they broadly agree, or diverge?</div>
+<div class="chart-subhead">Two bars per sector: do they broadly agree, or diverge?</div>
 </div>
 </div>
 <div class="ndr-panel">
@@ -896,7 +896,7 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <div class="table-box">
 <div class="table-box-header">
 <h2>Growth Ahead of Price</h2>
-<div class="chart-subhead">Strong earnings growth the market hasn't rewarded (yet) — or has good reason not to</div>
+<div class="chart-subhead">Strong earnings growth the market hasn't rewarded (yet), or has good reason not to</div>
 </div>
 <table id="leaderTable">
 <thead><tr><th>Symbol</th><th>Sector</th><th>EPS YoY</th><th>Price 3M</th></tr></thead>
@@ -938,11 +938,11 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 
 <div class="explainer">
 <h2>Methodology</h2>
-<p>Universe is the full S&amp;P 500. For every constituent, Alpha Vantage's <code>EARNINGS</code> endpoint provides quarterly reported EPS; year-over-year growth compares the latest reported quarter against the same quarter one year prior (4 quarters back), not the prior quarter, to avoid seasonal noise (a retailer's Q4 vs. Q3, for instance). Companies with a loss (zero or negative EPS) in the year-ago quarter are excluded rather than shown with a distorted or infinite growth percentage — a swing from a loss to a profit isn't a "growth rate" in any meaningful sense.</p>
-<p>Price performance is this same night's <a href="/relative-strength-leaders.html">Relative Strength Leaders/Laggards</a> 3-month return relative to SPY, reused directly rather than computed again here — both pages refresh from the same Saturday morning data run, so joining them costs nothing in extra Alpha Vantage calls. A stock without a value on that page (recent IPO, data gap) simply won't have a price figure here either.</p>
-<p>The "divergence score" ranks every stock twice — once by EPS growth (1 = fastest growing), once by 3-month relative price return (1 = best performing) — and takes the difference. A large positive score means price performance ranks far better than earnings growth does (the market is paying up for something other than trailing fundamentals, or pricing in growth not yet reported); a large negative score means the reverse — earnings are growing faster than the stock is moving, which is either an overlooked opportunity or a market correctly discounting something the trailing EPS number doesn't capture (rising costs, a decelerating outlook, a one-off tax benefit inflating the reported figure). This page shows the divergence; it doesn't resolve which explanation applies to any individual name.</p>
-<p>Refreshes weekly (Saturday, after Relative Strength Leaders/Laggards and Equity Risk Premium by Sector that same morning) — a trailing-quarter EPS comparison only changes when a company actually reports, so daily refresh would add nothing. Sector and company name come from the same weekly metadata sweep that backs <a href="/sector-beeswarm.html">Sector Beeswarm</a>.</p>
-<div class="source">Source: <a href="https://www.alphavantage.co/" target="_blank" rel="noopener">Alpha Vantage — EARNINGS</a>, this site's own Relative Strength Leaders/Laggards data</div>
+<p>Universe is the full S&amp;P 500. For every constituent, Alpha Vantage's <code>EARNINGS</code> endpoint provides quarterly reported EPS; year-over-year growth compares the latest reported quarter against the same quarter one year prior (4 quarters back), not the prior quarter, to avoid seasonal noise (a retailer's Q4 vs. Q3, for instance). Companies with a loss (zero or negative EPS) in the year-ago quarter are excluded rather than shown with a distorted or infinite growth percentage. A swing from a loss to a profit isn't a "growth rate" in any meaningful sense.</p>
+<p>Price performance is this same night's <a href="/relative-strength-leaders.html">Relative Strength Leaders/Laggards</a> 3-month return relative to SPY, reused directly rather than computed again here, both pages refresh from the same Saturday morning data run, so joining them costs nothing in extra Alpha Vantage calls. A stock without a value on that page (recent IPO, data gap) simply won't have a price figure here either.</p>
+<p>The "divergence score" ranks every stock twice (once by EPS growth (1 = fastest growing), once by 3-month relative price return (1 = best performing)) and takes the difference. A large positive score means price performance ranks far better than earnings growth does (the market is paying up for something other than trailing fundamentals, or pricing in growth not yet reported); a large negative score means the reverse: earnings are growing faster than the stock is moving, which is either an overlooked opportunity or a market correctly discounting something the trailing EPS number doesn't capture (rising costs, a decelerating outlook, a one-off tax benefit inflating the reported figure). This page shows the divergence; it doesn't resolve which explanation applies to any individual name.</p>
+<p>Refreshes weekly (Saturday, after Relative Strength Leaders/Laggards and Equity Risk Premium by Sector that same morning). A trailing-quarter EPS comparison only changes when a company actually reports, so daily refresh would add nothing. Sector and company name come from the same weekly metadata sweep that backs <a href="/sector-beeswarm.html">Sector Beeswarm</a>.</p>
+<div class="source">Source: <a href="https://www.alphavantage.co/" target="_blank" rel="noopener">Alpha Vantage: EARNINGS</a>, this site's own Relative Strength Leaders/Laggards data</div>
 </div>
 
 </div>
@@ -955,13 +955,13 @@ let SORT_KEY = "divergenceScore";
 let SORT_DIR = -1;
 
 function fmtPct(v, digits){
- if(v === null || v === undefined || isNaN(v)) return "—";
+ if(v === null || v === undefined || isNaN(v)) return "n/a";
  digits = digits === undefined ? 1 : digits;
  return (v >= 0 ? "+" : "") + v.toFixed(digits) + "%";
 }
 
 function fmtNum(v){
- if(v === null || v === undefined || isNaN(v)) return "—";
+ if(v === null || v === undefined || isNaN(v)) return "n/a";
  return (v >= 0 ? "+" : "") + v;
 }
 
@@ -1113,9 +1113,9 @@ async function init(){
   document.getElementById("updated").textContent = "As of " + new Date(data.generated_at_utc).toLocaleString("en-US", { month: "2-digit", day: "2-digit", year: "numeric", hour: "numeric", minute: "2-digit" });
 
   if(data.loadedCount < data.universeSize){
-   showWarning("Only " + data.loadedCount + " of " + data.universeSize + " S&P 500 constituents loaded this run — some data may be temporarily unavailable.");
+   showWarning("Only " + data.loadedCount + " of " + data.universeSize + " S&P 500 constituents loaded this run. Some data may be temporarily unavailable.");
   }else if(!data.hasPriceData){
-   showWarning("Price-performance data isn't available yet (Relative Strength Leaders/Laggards hasn't run this cycle) — showing earnings growth only.");
+   showWarning("Price-performance data isn't available yet (Relative Strength Leaders/Laggards hasn't run this cycle), showing earnings growth only.");
   }
 
   renderStats();
@@ -1262,7 +1262,7 @@ function renderLeaderTable(rows, tbodyId){
  }
  tbody.innerHTML = rows.map(r => `<tr>
   <td><span class="sector-name">${r.symbol}</span></td>
-  <td><span class="sector-ticker">${r.sector || "—"}</span></td>
+  <td><span class="sector-ticker">${r.sector || "n/a"}</span></td>
   <td>${fmtPct(r.epsGrowthYoY)}</td>
   <td>${fmtPct(r.relPrice3M)}</td>
  </tr>`).join("");
@@ -1290,7 +1290,7 @@ function renderTable(){
  const tbody = document.getElementById("tableBody");
  tbody.innerHTML = rows.map(r => `<tr>
    <td><span class="sector-name">${r.symbol}</span></td>
-   <td><span class="sector-ticker">${r.sector || "—"}</span></td>
+   <td><span class="sector-ticker">${r.sector || "n/a"}</span></td>
    <td>${fmtPct(r.epsGrowthYoY)}</td>
    <td>${fmtPct(r.relPrice3M)}</td>
    <td>${fmtNum(r.divergenceScore)}</td>

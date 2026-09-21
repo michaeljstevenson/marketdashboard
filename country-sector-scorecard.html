@@ -475,7 +475,7 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <div class="header">
 <div>
 <h1>Country / Sector Scorecard</h1>
-<div class="subtitle">Regional and US-sector total returns, heat-mapped by month, quarter, and year. Region rows use single-country ETF proxies (not a true country&times;sector matrix — that granularity isn't cleanly available via free ETF data for every region).</div>
+<div class="subtitle">Regional and US-sector total returns, heat-mapped by month, quarter, and year. Region rows use single-country ETF proxies (not a true country&times;sector matrix, since that granularity isn't cleanly available via free ETF data for every region).</div>
 </div>
 <div class="updated" id="updated">Loading...</div>
 </div>
@@ -500,7 +500,7 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 
 <div class="section">
 <h2>US Sectors</h2>
-<div class="note">The 11 SPDR sector ETFs — reuses the same daily data already fetched for /sector-analysis.html, so this table's history window (~2 years) is shorter than the region table's; yearly cadence here shows fewer columns as a result.</div>
+<div class="note">The 11 SPDR sector ETFs: reuses the same daily data already fetched for /sector-analysis.html, so this table's history window (~2 years) is shorter than the region table's; yearly cadence here shows fewer columns as a result.</div>
 <div class="grid-wrap"><table class="scorecard" id="sectorTable"></table></div>
 </div>
 
@@ -587,7 +587,7 @@ var CADENCE_CAP = { month: 10, quarter: 20, year: 40 }; // % magnitude for full 
 
 function heatCell(ret){
  if(ret === null || ret === undefined || isNaN(ret)){
-  return '<td class="cell-empty">&mdash;</td>';
+  return '<td class="cell-empty">: </td>';
  }
  var cap = CADENCE_CAP[STATE.cadence];
  var opacity = Math.min(Math.abs(ret) / cap, 1) * 0.55;
@@ -679,7 +679,7 @@ function init(){
   }
 
   document.getElementById("updated").textContent = updated.join(" · ");
-  if(errors.length) showError("Some data failed to load — " + errors.join("; "));
+  if(errors.length) showError("Some data failed to load, " + errors.join("; "));
   render();
  });
 }

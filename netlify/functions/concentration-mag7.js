@@ -9,7 +9,7 @@ exports.handler = async () => {
     const store = getConcentrationStore();
     const payload = await store.get(BLOB_KEY, { type: "json" });
     if (!payload) {
-      throw new Error("Concentration series not yet populated — scheduled-concentration-background hasn't run");
+      throw new Error("Concentration series not yet populated, scheduled-concentration-background hasn't run");
     }
     return {
       statusCode: 200,

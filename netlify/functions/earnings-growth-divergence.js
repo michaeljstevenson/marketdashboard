@@ -12,7 +12,7 @@ exports.handler = async () => {
     const payload = await store.get(LATEST_KEY, { type: "json" });
 
     if (!payload) {
-      throw new Error("Earnings growth divergence data not yet populated — scheduled-earnings-growth-divergence-background hasn't run yet");
+      throw new Error("Earnings growth divergence data not yet populated, scheduled-earnings-growth-divergence-background hasn't run yet");
     }
 
     return {

@@ -13,7 +13,7 @@ exports.handler = async () => {
     const store = getSentimentStore();
     const data = await store.get(BLOB_KEY, { type: "json" });
     if (!data) {
-      throw new Error("Sentiment blob not yet populated — scheduled-sentiment-background hasn't run yet");
+      throw new Error("Sentiment blob not yet populated, scheduled-sentiment-background hasn't run yet");
     }
 
     return {

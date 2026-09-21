@@ -50,7 +50,7 @@ const FINRA_URL = (yyyymmdd) => `https://cdn.finra.org/equity/regsho/daily/CNMSs
 const USER_AGENT =
   "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0 Safari/537.36";
 
-const WINDOW_TRADING_DAYS = 63; // ~3 months — matches this site's other 63-day lookbacks
+const WINDOW_TRADING_DAYS = 63; // ~3 months: matches this site's other 63-day lookbacks
 const MAX_LOOKBACK_CALENDAR_DAYS = 130; // generous cushion for weekends + holidays
 const MIN_TRADING_DAYS = 40; // below this, the window is too thin to trust
 const RECENT_SNAPSHOT_DAYS = 21; // ~1 month, for the "current" leaderboards/table
@@ -134,7 +134,7 @@ async function collectFinraWindow(wantedFinraSymbols) {
   const perSymbolByDate = new Map();
   const dates = [];
   const cursor = new Date();
-  cursor.setUTCDate(cursor.getUTCDate() - 1); // start at yesterday — today's file may not be posted yet
+  cursor.setUTCDate(cursor.getUTCDate() - 1); // start at yesterday: today's file may not be posted yet
 
   let attempts = 0;
   while (dates.length < WINDOW_TRADING_DAYS && attempts < MAX_LOOKBACK_CALENDAR_DAYS) {
@@ -203,7 +203,7 @@ exports.handler = async () => {
 
     const beeswarmStore = getBeeswarmStore();
     const meta = await beeswarmStore.get(META_KEY, { type: "json" });
-    if (!meta || !meta.tickers) throw new Error("beeswarm meta.json not populated — scheduled-beeswarm-meta-background hasn't run yet");
+    if (!meta || !meta.tickers) throw new Error("beeswarm meta.json not populated, scheduled-beeswarm-meta-background hasn't run yet");
 
     const symbols = Object.keys(meta.tickers).filter((s) => meta.tickers[s] && meta.tickers[s].sector);
     const finraLookup = new Map(); // finraSymbol -> ourSymbol
@@ -214,7 +214,7 @@ exports.handler = async () => {
     const { dates, perSymbolByDate } = await collectFinraWindow(wantedFinraSymbols);
     console.log(`scheduled-short-sale-volume-background: collected ${dates.length} valid trading days`);
     if (dates.length < MIN_TRADING_DAYS) {
-      throw new Error(`only ${dates.length} valid FINRA trading days found (need ${MIN_TRADING_DAYS}) — FINRA file layout or URL may have changed`);
+      throw new Error(`only ${dates.length} valid FINRA trading days found (need ${MIN_TRADING_DAYS}). FINRA file layout or URL may have changed`);
     }
 
     // Per-ticker SVR series aligned to `dates` (null where a symbol didn't
@@ -373,7 +373,7 @@ exports.handler = async () => {
 
     await getShortSaleVolumeStore().setJSON(LATEST_KEY, latest);
     console.log(
-      `scheduled-short-sale-volume-background: done — ${dates.length} trading days, ${svrByOurSymbol.size} tickers with SVR, ` +
+      `scheduled-short-sale-volume-background: done: ${dates.length} trading days, ${svrByOurSymbol.size} tickers with SVR, ` +
       `${regressionPairs.length} regression pairs, pearson=${pearsonR}, spearman=${spearmanR}`
     );
 

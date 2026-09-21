@@ -12,7 +12,7 @@ exports.handler = async () => {
     const payload = await store.get(LATEST_KEY, { type: "json" });
 
     if (!payload) {
-      throw new Error("IPO pipeline data not yet populated — scheduled-ipo-pipeline-background hasn't run yet");
+      throw new Error("IPO pipeline data not yet populated, scheduled-ipo-pipeline-background hasn't run yet");
     }
 
     return {

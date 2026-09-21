@@ -14,7 +14,7 @@ exports.handler = async () => {
     const payload = await store.get(LATEST_KEY, { type: "json" });
 
     if (!payload) {
-      throw new Error("Small-cap liquidity data not yet populated — scheduled-smallcap-liquidity-background hasn't run yet");
+      throw new Error("Small-cap liquidity data not yet populated, scheduled-smallcap-liquidity-background hasn't run yet");
     }
 
     return {

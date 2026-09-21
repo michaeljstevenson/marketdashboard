@@ -221,7 +221,7 @@ exports.handler = async () => {
 
       const m = metaTickers[symbol];
       const sector = (m && m.sector) || null;
-      if (!sector) { missingSurpriseMatch++; continue; } // no sector metadata — can't place it in any sector aggregate
+      if (!sector) { missingSurpriseMatch++; continue; } // no sector metadata: can't place it in any sector aggregate
 
       const ret = {};
       const excess = {};

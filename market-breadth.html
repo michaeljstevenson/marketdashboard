@@ -170,7 +170,7 @@ document.addEventListener("DOMContentLoaded", function(){
 </script>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1" name="viewport"/>
-<title>Market Breadth — Michael J. Stevenson</title>
+<title>Market Breadth | Michael J. Stevenson</title>
 <style>
 
 :root{
@@ -706,22 +706,22 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <div class="stat-grid">
 <div class="stat-card">
 <div class="stat-label">Advances / Declines</div>
-<div class="stat-value" id="statAdvDecl">—</div>
+<div class="stat-value" id="statAdvDecl">…</div>
 <div class="stat-note" id="statAdvDeclNote">Most recent session</div>
 </div>
 <div class="stat-card">
 <div class="stat-label">% Above 200-Day SMA</div>
-<div class="stat-value" id="statPctSma">—</div>
+<div class="stat-value" id="statPctSma">…</div>
 <div class="stat-note">Share of constituents in a long-term uptrend</div>
 </div>
 <div class="stat-card">
 <div class="stat-label">New Highs − New Lows</div>
-<div class="stat-value" id="statNetHL">—</div>
+<div class="stat-value" id="statNetHL">…</div>
 <div class="stat-note" id="statNetHLNote">52-week basis</div>
 </div>
 <div class="stat-card">
 <div class="stat-label">A-D Line</div>
-<div class="stat-value" id="statAdLine" style="font-size:20px;">—</div>
+<div class="stat-value" id="statAdLine" style="font-size:20px;">…</div>
 <div class="stat-note">Cumulative, since data start</div>
 </div>
 </div>
@@ -729,15 +729,15 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <div class="chart-box-header">
 <div>
 <h2>Day's change distribution</h2>
-<div class="chart-subhead" id="dayChangeAsOf">—</div>
+<div class="chart-subhead" id="dayChangeAsOf">…</div>
 </div>
 <div class="range-controls" id="dayChangeRangeControls"></div>
 </div>
 <div class="daychange-stats">
-<div class="daychange-stat"><span class="daychange-stat-label">Median</span><span class="daychange-stat-value" id="dcMedian">—</span></div>
-<div class="daychange-stat"><span class="daychange-stat-label">Mean</span><span class="daychange-stat-value" id="dcMean">—</span></div>
-<div class="daychange-stat"><span class="daychange-stat-label">Up</span><span class="daychange-stat-value beat" id="dcUp">—</span></div>
-<div class="daychange-stat"><span class="daychange-stat-label">Down</span><span class="daychange-stat-value miss" id="dcDown">—</span></div>
+<div class="daychange-stat"><span class="daychange-stat-label">Median</span><span class="daychange-stat-value" id="dcMedian">…</span></div>
+<div class="daychange-stat"><span class="daychange-stat-label">Mean</span><span class="daychange-stat-value" id="dcMean">…</span></div>
+<div class="daychange-stat"><span class="daychange-stat-label">Up</span><span class="daychange-stat-value beat" id="dcUp">…</span></div>
+<div class="daychange-stat"><span class="daychange-stat-label">Down</span><span class="daychange-stat-value miss" id="dcDown">…</span></div>
 </div>
 <div class="chart-canvas-wrap" style="height:260px;">
 <canvas id="dayChangeChart"></canvas>
@@ -978,7 +978,7 @@ function renderSmaChart(rangeKey){
    interaction: { mode: "index", intersect: false },
    plugins: {
     legend: { display: false },
-    tooltip: { callbacks: { label: ctx => "% above 200-day SMA: " + (ctx.parsed.y === null ? "—" : ctx.parsed.y + "%") } },
+    tooltip: { callbacks: { label: ctx => "% above 200-day SMA: " + (ctx.parsed.y === null ? "n/a" : ctx.parsed.y + "%") } },
    },
    scales: {
     x: { ticks: { color: "#8b9199", maxTicksLimit: 8 }, grid: { color: "#2b3138" } },
@@ -1038,7 +1038,7 @@ async function init(){
   const latest = ROWS[ROWS.length - 1];
   document.getElementById("statAdvDecl").textContent = latest.advances + " / " + latest.declines;
   document.getElementById("statAdvDeclNote").textContent = "As of " + usDate(latest.date);
-  document.getElementById("statPctSma").textContent = latest.pctAbove200sma === null ? "—" : latest.pctAbove200sma + "%";
+  document.getElementById("statPctSma").textContent = latest.pctAbove200sma === null ? "n/a" : latest.pctAbove200sma + "%";
   const netHL = (latest.newHighs || 0) - (latest.newLows || 0);
   document.getElementById("statNetHL").textContent = (netHL >= 0 ? "+" : "") + netHL;
   document.getElementById("statNetHLNote").textContent = latest.newHighs + " highs, " + latest.newLows + " lows";

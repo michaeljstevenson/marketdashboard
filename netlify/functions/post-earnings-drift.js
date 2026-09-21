@@ -11,7 +11,7 @@ exports.handler = async () => {
     const payload = await store.get(LATEST_KEY, { type: "json" });
 
     if (!payload) {
-      throw new Error("Post-earnings drift data not yet populated — scheduled-post-earnings-drift-background hasn't run yet");
+      throw new Error("Post-earnings drift data not yet populated, scheduled-post-earnings-drift-background hasn't run yet");
     }
 
     return {

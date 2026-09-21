@@ -153,7 +153,7 @@ document.addEventListener("DOMContentLoaded", function(){
 </script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Dividend Growth Screener — Michael J. Stevenson</title>
+<title>Dividend Growth Screener | Michael J. Stevenson</title>
 
 <style>
 
@@ -804,7 +804,7 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <div class="header">
 <div>
 <h1>Dividend Growth Screener</h1>
-<div class="subtitle">Which S&amp;P 500 dividend payers keep raising their payout, for how long, and how fast — by sector, market-wide over time, and screened into growers, long streaks, and outright cutters.</div>
+<div class="subtitle">Which S&amp;P 500 dividend payers keep raising their payout, for how long, and how fast, by sector, market-wide over time, and screened into growers, long streaks, and outright cutters.</div>
 </div>
 <div class="updated" id="updated">Loading...</div>
 </div>
@@ -812,22 +812,22 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <div class="stat-grid">
 <div class="stat-card">
 <div class="stat-label">Median 5Y Dividend CAGR</div>
-<div class="stat-value" id="statMedianCagr">—</div>
+<div class="stat-value" id="statMedianCagr">…</div>
 <div class="stat-note">Among payers with 5+ years of history</div>
 </div>
 <div class="stat-card">
 <div class="stat-label">5+ Year Growth Streak</div>
-<div class="stat-value neutral" id="statLongGrowers">—</div>
+<div class="stat-value neutral" id="statLongGrowers">…</div>
 <div class="stat-note">Payers with 5 or more consecutive annual increases</div>
 </div>
 <div class="stat-card">
 <div class="stat-label">Longest Active Streak</div>
-<div class="stat-value neutral" id="statLongestStreak">—</div>
+<div class="stat-value neutral" id="statLongestStreak">…</div>
 <div class="stat-note" id="statLongestStreakNote">Consecutive years of increases</div>
 </div>
 <div class="stat-card">
 <div class="stat-label">Coverage</div>
-<div class="stat-value neutral" id="statCoverage">—</div>
+<div class="stat-value neutral" id="statCoverage">…</div>
 <div class="stat-note">S&amp;P 500 constituents with usable dividend history</div>
 </div>
 </div>
@@ -868,7 +868,7 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <div class="chart-box-header">
 <div>
 <h2>Latest year-over-year growth distribution</h2>
-<div class="chart-box-sub">All payers with a usable figure. The left tail (dividend cuts) is normally thin — a fatter one than usual is itself a signal about the group being screened.</div>
+<div class="chart-box-sub">All payers with a usable figure. The left tail (dividend cuts) is normally thin. A fatter one than usual is itself a signal about the group being screened.</div>
 </div>
 </div>
 <div class="ndr-panel">
@@ -919,12 +919,12 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 
 <div class="explainer">
 <h2>Methodology</h2>
-<p>This page pulls Yahoo Finance's full historical ex-dividend record for every S&amp;P 500 constituent (the same universe used elsewhere on this site &mdash; see <a href="/sector-beeswarm.html">Sector Beeswarm</a>, whose weekly company metadata this page reuses for sector/name rather than a second lookup) and sums every payment into a <strong>calendar-year total</strong> per company. Summing by calendar year rather than comparing payment-to-payment is what makes this frequency-agnostic: it works the same whether a company pays quarterly, semi-annually, or has changed its payment schedule over time. Companies with fewer than 3 full calendar years of dividend history, or that don't pay a dividend at all, are excluded entirely &mdash; this page only screens payers.</p>
-<p>From each company's year-by-year total comes three numbers. The <strong>streak</strong> counts consecutive calendar years, walking backward from the most recent, where the total was strictly higher than the year before &mdash; the same construction behind the "Dividend Aristocrat" idea, though this page makes no claim about the 25-year threshold that label formally requires. The <strong>5-year CAGR</strong> is the compound annual growth rate of the annual total over the most recent 5 full years (fewer if a company has less history than that, so long as at least 3 years exist). The <strong>latest YoY growth</strong> is simply this most recent full year's total versus the year before it. A gap year (a payment suspended and later resumed) breaks a streak rather than being bridged over.</p>
-<p>The current, still-in-progress calendar year is excluded from every calculation &mdash; a partial year would understate growth or manufacture a false "cut" purely from timing. One real caveat this page doesn't correct for: a one-time special dividend lands in whatever calendar year it was paid and can make that year's growth rate (and, if it's large enough, a multi-year CAGR) look larger than the company's ordinary, recurring payout actually grew &mdash; treat an unusually large single-year figure with that in mind.</p>
-<p>Sector figures are the equal-weighted mean (or, for the "5+ year growers" count, a simple headcount) across that sector's qualifying payers, not cap-weighted. The market-wide trend line takes the <em>median</em> (not mean) year-over-year growth rate each calendar year among payers with data in both that year and the one before, and only plots a year once at least 30 payers have data for it &mdash; median rather than mean specifically to keep one outlier special-dividend year from swinging the whole market line.</p>
-<p>Recomputed weekly (Saturday), across all ~500 constituents, sequentially and rate-limited. As with <a href="/earnings-surprise.html">Earnings Surprise History</a>, there's no need to accumulate a page-local history here &mdash; Yahoo Finance's dividend history returns a company's entire payment history in one call, so every chart here is recomputed fresh from real historical data each run.</p>
-<div class="source">Source: <a href="https://finance.yahoo.com/" target="_blank" rel="noopener">Yahoo Finance — dividend history</a>. Not investment advice.</div>
+<p>This page pulls Yahoo Finance's full historical ex-dividend record for every S&amp;P 500 constituent (the same universe used elsewhere on this site. See <a href="/sector-beeswarm.html">Sector Beeswarm</a>, whose weekly company metadata this page reuses for sector/name rather than a second lookup) and sums every payment into a <strong>calendar-year total</strong> per company. Summing by calendar year rather than comparing payment-to-payment is what makes this frequency-agnostic: it works the same whether a company pays quarterly, semi-annually, or has changed its payment schedule over time. Companies with fewer than 3 full calendar years of dividend history, or that don't pay a dividend at all, are excluded entirely. This page only screens payers.</p>
+<p>From each company's year-by-year total comes three numbers. The <strong>streak</strong> counts consecutive calendar years, walking backward from the most recent, where the total was strictly higher than the year before. The same construction behind the "Dividend Aristocrat" idea, though this page makes no claim about the 25-year threshold that label formally requires. The <strong>5-year CAGR</strong> is the compound annual growth rate of the annual total over the most recent 5 full years (fewer if a company has less history than that, so long as at least 3 years exist). The <strong>latest YoY growth</strong> is simply this most recent full year's total versus the year before it. A gap year (a payment suspended and later resumed) breaks a streak rather than being bridged over.</p>
+<p>The current, still-in-progress calendar year is excluded from every calculation. A partial year would understate growth or manufacture a false "cut" purely from timing. One real caveat this page doesn't correct for: a one-time special dividend lands in whatever calendar year it was paid and can make that year's growth rate (and, if it's large enough, a multi-year CAGR) look larger than the company's ordinary, recurring payout actually grew. Treat an unusually large single-year figure with that in mind.</p>
+<p>Sector figures are the equal-weighted mean (or, for the "5+ year growers" count, a simple headcount) across that sector's qualifying payers, not cap-weighted. The market-wide trend line takes the <em>median</em> (not mean) year-over-year growth rate each calendar year among payers with data in both that year and the one before, and only plots a year once at least 30 payers have data for it. Median rather than mean specifically to keep one outlier special-dividend year from swinging the whole market line.</p>
+<p>Recomputed weekly (Saturday), across all ~500 constituents, sequentially and rate-limited. As with <a href="/earnings-surprise.html">Earnings Surprise History</a>, there's no need to accumulate a page-local history here. Yahoo Finance's dividend history returns a company's entire payment history in one call, so every chart here is recomputed fresh from real historical data each run.</p>
+<div class="source">Source: <a href="https://finance.yahoo.com/" target="_blank" rel="noopener">Yahoo Finance: dividend history</a>. Not investment advice.</div>
 </div>
 
 </div>
@@ -951,12 +951,12 @@ function showWarning(message){
 }
 
 function fmtPct(v, digits){
- if(v === null || v === undefined || isNaN(v)) return "—";
+ if(v === null || v === undefined || isNaN(v)) return "n/a";
  return (v >= 0 ? "+" : "") + v.toFixed(digits === undefined ? 2 : digits) + "%";
 }
 
 function fmtYears(v){
- if(v === null || v === undefined || isNaN(v)) return "—";
+ if(v === null || v === undefined || isNaN(v)) return "n/a";
  return v + (v === 1 ? " yr" : " yrs");
 }
 
@@ -1019,7 +1019,7 @@ async function init(){
   document.getElementById("updated").textContent = "As of " + new Date(data.generated_at_utc).toLocaleString("en-US", { month: "2-digit", day: "2-digit", year: "numeric", hour: "numeric", minute: "2-digit" });
 
   if(data.universe_size < data.universe_total * 0.4){
-   showWarning("Only " + data.universe_size + " of " + data.universe_total + " S&P 500 constituents had usable dividend history this run — many constituents don't pay a dividend at all, so this is expected to be well under the full universe.");
+   showWarning("Only " + data.universe_size + " of " + data.universe_total + " S&P 500 constituents had usable dividend history this run. Many constituents don't pay a dividend at all, so this is expected to be well under the full universe.");
   }
 
   renderStats();
@@ -1040,7 +1040,7 @@ function renderStats(){
  document.getElementById("statLongGrowers").textContent = m.longGrowerCount;
  if(m.longestStreak){
   document.getElementById("statLongestStreak").textContent = fmtYears(m.longestStreak.streak);
-  document.getElementById("statLongestStreakNote").textContent = m.longestStreak.ticker + " — " + m.longestStreak.name;
+  document.getElementById("statLongestStreakNote").textContent = m.longestStreak.ticker + ", " + m.longestStreak.name;
  }
  document.getElementById("statCoverage").textContent = RAW.universe_size + " / " + RAW.universe_total;
 }

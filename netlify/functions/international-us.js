@@ -12,7 +12,7 @@ exports.handler = async () => {
     const payload = await store.get(BLOB_KEY, { type: "json" });
 
     if (!payload) {
-      throw new Error("International-vs-US data not yet populated — scheduled-international-background hasn't run yet");
+      throw new Error("International-vs-US data not yet populated, scheduled-international-background hasn't run yet");
     }
 
     return {

@@ -12,7 +12,7 @@ exports.handler = async () => {
     const payload = await store.get(BLOB_KEY, { type: "json" });
 
     if (!payload) {
-      throw new Error("Day's-change data not yet populated — scheduled-daychange-background hasn't run yet");
+      throw new Error("Day's-change data not yet populated, scheduled-daychange-background hasn't run yet");
     }
 
     return {

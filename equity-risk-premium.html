@@ -153,7 +153,7 @@ document.addEventListener("DOMContentLoaded", function(){
 </script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Equity Risk Premium by Sector — Michael J. Stevenson</title>
+<title>Equity Risk Premium by Sector | Michael J. Stevenson</title>
 
 <style>
 
@@ -835,7 +835,7 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <div class="header">
 <div>
 <h1>Equity Risk Premium by Sector</h1>
-<div class="subtitle">A simple, locally-computed earnings-yield-minus-Treasury-yield premium across the full S&amp;P 500 and its 11 GICS sectors — a different, cruder lens than the Damodaran DCF model behind Implied Equity Risk Premium.</div>
+<div class="subtitle">A simple, locally-computed earnings-yield-minus-Treasury-yield premium across the full S&amp;P 500 and its 11 GICS sectors. A different, cruder lens than the Damodaran DCF model behind Implied Equity Risk Premium.</div>
 </div>
 <div class="updated" id="updated">Loading...</div>
 </div>
@@ -843,22 +843,22 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <div class="stat-grid">
 <div class="stat-card">
 <div class="stat-label">Market Median ERP</div>
-<div class="stat-value" id="statMedianErp">—</div>
+<div class="stat-value" id="statMedianErp">…</div>
 <div class="stat-note" id="statMedianErpNote">Earnings yield − 10Y Treasury</div>
 </div>
 <div class="stat-card">
 <div class="stat-label">10-Year Treasury Yield</div>
-<div class="stat-value" id="statRiskFree" style="color:var(--ink);">—</div>
+<div class="stat-value" id="statRiskFree" style="color:var(--ink);">…</div>
 <div class="stat-note" id="statRiskFreeNote">Risk-free rate used below</div>
 </div>
 <div class="stat-card">
 <div class="stat-label">Highest-ERP Sector</div>
-<div class="stat-value" id="statBestSector" style="font-size:20px;">—</div>
+<div class="stat-value" id="statBestSector" style="font-size:20px;">…</div>
 <div class="stat-note" id="statBestSectorNote">Median sector ERP</div>
 </div>
 <div class="stat-card">
 <div class="stat-label">Lowest-ERP Sector</div>
-<div class="stat-value" id="statWorstSector" style="font-size:20px;">—</div>
+<div class="stat-value" id="statWorstSector" style="font-size:20px;">…</div>
 <div class="stat-note" id="statWorstSectorNote">Median sector ERP</div>
 </div>
 </div>
@@ -881,7 +881,7 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <div class="chart-box-header">
 <div>
 <h2>Market median ERP over time</h2>
-<div class="chart-subhead">Accumulated one weekly snapshot at a time — will be short until this page has run for a while</div>
+<div class="chart-subhead">Accumulated one weekly snapshot at a time: will be short until this page has run for a while</div>
 </div>
 </div>
 <div class="ndr-panel">
@@ -895,7 +895,7 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <div class="chart-box-header">
 <div>
 <h2>Does the market actually price risk into the premium?</h2>
-<div class="chart-subhead">Each point is one stock: x-axis is its Alpha Vantage-reported beta, y-axis is its equity risk premium — a rational risk/return tradeoff would put higher-beta stocks at a higher ERP (positive slope)</div>
+<div class="chart-subhead">Each point is one stock: x-axis is its Alpha Vantage-reported beta, y-axis is its equity risk premium. A rational risk/return tradeoff would put higher-beta stocks at a higher ERP (positive slope)</div>
 </div>
 </div>
 <div class="ndr-panel">
@@ -953,11 +953,11 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 
 <div class="explainer">
 <h2>Methodology</h2>
-<p>Universe is the full S&amp;P 500. For every constituent, Alpha Vantage's <code>COMPANY_OVERVIEW</code> endpoint provides trailing P/E and beta; a single <code>TREASURY_YIELD</code> call (10-year, monthly) provides the risk-free rate. Earnings yield is <code>1 / trailing P/E</code>, expressed as a percentage; equity risk premium here is simply <code>earnings yield − 10-year Treasury yield</code>. Companies with a zero or negative trailing P/E (i.e. trailing losses) are excluded rather than clamped to zero or some floor value — a negative P/E doesn't imply a negative or zero earnings yield, it means the ratio isn't meaningful at all.</p>
-<p>This is deliberately a much simpler, cruder construction than <a href="/implied-erp.html">Implied Equity Risk Premium</a>, which sources Aswath Damodaran's FCFE/DCF-based model — a forward-looking cash-flow estimate, not a backward-looking accounting ratio. What's used here is the classic "Fed model" comparison (trailing earnings yield vs. the long bond), chosen because it's computable cross-sectionally, per sector and per stock, from data Alpha Vantage already provides — Damodaran's model is a single market-wide number, not a per-sector or per-stock one. The Fed model has well-known blind spots worth being upfront about: it ignores earnings growth expectations entirely (a fast grower and a stagnant company with the same trailing P/E get the same "premium" here), and it's sensitive to the inflation regime in ways the *equity* risk premium conceptually shouldn't be, since Treasury yields move with inflation expectations but reported trailing earnings don't adjust the same way.</p>
-<p>The beta-vs-ERP scatter tests a real question with this simpler measure: if the market prices risk rationally, riskier (higher-beta) stocks should trade at a higher earnings yield to compensate — a positive relationship here. A flat or negative one (which happens in practice — high-beta growth names often carry rich P/Es precisely because of their growth profile, not despite their risk) would say something genuinely informative about the current market, not just be a data artifact; both a linear (Pearson) and rank-based (Spearman) fit are reported since one can mislead when the relationship isn't linear.</p>
-<p>Refreshes weekly (Saturday, after that morning's other data jobs) — a trailing-P/E-derived earnings yield only moves when a company reports new earnings or its price moves meaningfully, so daily refresh would mostly reflect noise. Sector and company name come from each stock's own <code>COMPANY_OVERVIEW</code> response (GICS-normalized the same way <a href="/sector-beeswarm.html">Sector Beeswarm</a>'s own metadata sweep is), not a shared cross-page lookup, since this job already pays for the full sweep.</p>
-<div class="source">Source: <a href="https://www.alphavantage.co/" target="_blank" rel="noopener">Alpha Vantage — COMPANY_OVERVIEW, TREASURY_YIELD</a></div>
+<p>Universe is the full S&amp;P 500. For every constituent, Alpha Vantage's <code>COMPANY_OVERVIEW</code> endpoint provides trailing P/E and beta; a single <code>TREASURY_YIELD</code> call (10-year, monthly) provides the risk-free rate. Earnings yield is <code>1 / trailing P/E</code>, expressed as a percentage; equity risk premium here is simply <code>earnings yield − 10-year Treasury yield</code>. Companies with a zero or negative trailing P/E (i.e. trailing losses) are excluded rather than clamped to zero or some floor value. A negative P/E doesn't imply a negative or zero earnings yield, it means the ratio isn't meaningful at all.</p>
+<p>This is deliberately a much simpler, cruder construction than <a href="/implied-erp.html">Implied Equity Risk Premium</a>, which sources Aswath Damodaran's FCFE/DCF-based model. A forward-looking cash-flow estimate, not a backward-looking accounting ratio. What's used here is the classic "Fed model" comparison (trailing earnings yield vs. the long bond), chosen because it's computable cross-sectionally, per sector and per stock, from data Alpha Vantage already provides. Damodaran's model is a single market-wide number, not a per-sector or per-stock one. The Fed model has well-known blind spots worth being upfront about: it ignores earnings growth expectations entirely (a fast grower and a stagnant company with the same trailing P/E get the same "premium" here), and it's sensitive to the inflation regime in ways the *equity* risk premium conceptually shouldn't be, since Treasury yields move with inflation expectations but reported trailing earnings don't adjust the same way.</p>
+<p>The beta-vs-ERP scatter tests a real question with this simpler measure: if the market prices risk rationally, riskier (higher-beta) stocks should trade at a higher earnings yield to compensate, a positive relationship here. A flat or negative one (which happens in practice. High-beta growth names often carry rich P/Es precisely because of their growth profile, not despite their risk) would say something genuinely informative about the current market, not just be a data artifact; both a linear (Pearson) and rank-based (Spearman) fit are reported since one can mislead when the relationship isn't linear.</p>
+<p>Refreshes weekly (Saturday, after that morning's other data jobs). A trailing-P/E-derived earnings yield only moves when a company reports new earnings or its price moves meaningfully, so daily refresh would mostly reflect noise. Sector and company name come from each stock's own <code>COMPANY_OVERVIEW</code> response (GICS-normalized the same way <a href="/sector-beeswarm.html">Sector Beeswarm</a>'s own metadata sweep is), not a shared cross-page lookup, since this job already pays for the full sweep.</p>
+<div class="source">Source: <a href="https://www.alphavantage.co/" target="_blank" rel="noopener">Alpha Vantage: COMPANY_OVERVIEW, TREASURY_YIELD</a></div>
 </div>
 
 </div>
@@ -970,13 +970,13 @@ let SORT_KEY = "erp";
 let SORT_DIR = -1;
 
 function fmtPct(v, digits){
- if(v === null || v === undefined || isNaN(v)) return "—";
+ if(v === null || v === undefined || isNaN(v)) return "n/a";
  digits = digits === undefined ? 2 : digits;
  return (v >= 0 ? "+" : "") + v.toFixed(digits) + "%";
 }
 
 function fmtNum(v, digits){
- if(v === null || v === undefined || isNaN(v)) return "—";
+ if(v === null || v === undefined || isNaN(v)) return "n/a";
  digits = digits === undefined ? 2 : digits;
  return v.toFixed(digits);
 }
@@ -1130,7 +1130,7 @@ async function init(){
   document.getElementById("updated").textContent = "As of " + new Date(data.generated_at_utc).toLocaleString("en-US", { month: "2-digit", day: "2-digit", year: "numeric", hour: "numeric", minute: "2-digit" });
 
   if(data.loadedCount < data.universeSize){
-   showWarning("Only " + data.loadedCount + " of " + data.universeSize + " S&P 500 constituents loaded this run — some data may be temporarily unavailable.");
+   showWarning("Only " + data.loadedCount + " of " + data.universeSize + " S&P 500 constituents loaded this run. Some data may be temporarily unavailable.");
   }
 
   renderStats();
@@ -1155,8 +1155,8 @@ function renderStats(){
  medEl.classList.toggle("cell-neg", m.medianErp !== null && m.medianErp < 0);
  document.getElementById("statMedianErpNote").textContent = "n=" + m.companyCount + " companies";
 
- document.getElementById("statRiskFree").textContent = m.riskFreeRate === null ? "—" : m.riskFreeRate.toFixed(2) + "%";
- document.getElementById("statRiskFreeNote").textContent = "10Y Treasury, " + (m.riskFreeAsOf || "—");
+ document.getElementById("statRiskFree").textContent = m.riskFreeRate === null ? "n/a" : m.riskFreeRate.toFixed(2) + "%";
+ document.getElementById("statRiskFreeNote").textContent = "10Y Treasury, " + (m.riskFreeAsOf || "n/a");
 
  const sortedSectors = [...RAW.sectors].sort((a, b) => (b.medianErp ?? -Infinity) - (a.medianErp ?? -Infinity));
  if(sortedSectors.length){
@@ -1306,7 +1306,7 @@ function renderBetaScatter(){
    "<thead><tr><th>Method</th><th>n</th><th>r</th><th>r&sup2;</th><th>slope</th><th>t</th><th>p</th></tr></thead>" +
    "<tbody>" + row("Pearson (OLS)", pearson) + row("Spearman (&rho;)", spear) + "</tbody>" +
   "</table>" +
-  '<div class="method-note">A positive slope means higher-beta stocks carry a higher equity risk premium — i.e. the market is pricing risk the way a rational risk/return tradeoff predicts; a flat or negative slope means it isn\'t, at least not through this lens.</div>';
+  '<div class="method-note">A positive slope means higher-beta stocks carry a higher equity risk premium, i.e. the market is pricing risk the way a rational risk/return tradeoff predicts; a flat or negative slope means it isn\'t, at least not through this lens.</div>';
 }
 
 function renderLeaderTable(rows, tbodyId){
@@ -1317,7 +1317,7 @@ function renderLeaderTable(rows, tbodyId){
  }
  tbody.innerHTML = rows.map(r => `<tr>
   <td><span class="sector-name">${r.symbol}</span></td>
-  <td><span class="sector-ticker">${r.sector || "—"}</span></td>
+  <td><span class="sector-ticker">${r.sector || "n/a"}</span></td>
   <td>${fmtNum(r.peRatio)}</td>
   <td>${fmtPct(r.erp)}</td>
  </tr>`).join("");
@@ -1345,7 +1345,7 @@ function renderTable(){
  const tbody = document.getElementById("tableBody");
  tbody.innerHTML = rows.map(r => `<tr>
    <td><span class="sector-name">${r.symbol}</span></td>
-   <td><span class="sector-ticker">${r.sector || "—"}</span></td>
+   <td><span class="sector-ticker">${r.sector || "n/a"}</span></td>
    <td>${fmtNum(r.peRatio)}</td>
    <td>${fmtPct(r.earningsYield)}</td>
    <td>${fmtNum(r.beta)}</td>

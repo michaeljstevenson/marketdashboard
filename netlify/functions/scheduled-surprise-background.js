@@ -51,7 +51,7 @@ const MAX_ABS_SURPRISE_PCT = 200; // clip the (rare) blow-up prints past this ra
 const MIN_QUARTER_COVERAGE_LATEST = 0.5; // share of the mapped universe that must have reported for a quarter to count as "latest"
 const MIN_QUARTER_COVERAGE_TREND = 30; // absolute floor (companies) for a quarter to appear on the trend line at all
 const TREND_QUARTERS = 12;
-const MIN_STREAK_LEN = 3; // leaderboard floor — a 1- or 2-quarter "streak" isn't informative
+const MIN_STREAK_LEN = 3; // leaderboard floor: a 1- or 2-quarter "streak" isn't informative
 const DIST_BINS = [-Infinity, -20, -10, -5, 0, 5, 10, 20, Infinity];
 
 function sleep(ms) {

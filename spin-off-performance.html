@@ -153,7 +153,7 @@ document.addEventListener("DOMContentLoaded", function(){
 </script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Spin-Off Performance Tracker — Michael J. Stevenson</title>
+<title>Spin-Off Performance Tracker | Michael J. Stevenson</title>
 
 <style>
 
@@ -872,22 +872,22 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <div class="stat-grid">
 <div class="stat-card">
 <div class="stat-label">Events Tracked</div>
-<div class="stat-value" id="statEventCount">—</div>
+<div class="stat-value" id="statEventCount">…</div>
 <div class="stat-note" id="statEventCountNote">Spinoffs since 2015</div>
 </div>
 <div class="stat-card">
 <div class="stat-label">Avg. Spinco Excess Return (1Y)</div>
-<div class="stat-value" id="statSpincoExcess">—</div>
+<div class="stat-value" id="statSpincoExcess">…</div>
 <div class="stat-note" id="statSpincoExcessNote">vs. SPY over the same window</div>
 </div>
 <div class="stat-card">
 <div class="stat-label">Avg. Parent Excess Return (1Y)</div>
-<div class="stat-value" id="statParentExcess">—</div>
+<div class="stat-value" id="statParentExcess">…</div>
 <div class="stat-note" id="statParentExcessNote">vs. SPY over the same window</div>
 </div>
 <div class="stat-card">
 <div class="stat-label">Spinco Effect Significant?</div>
-<div class="stat-value" id="statSignificance" style="font-size:18px;">—</div>
+<div class="stat-value" id="statSignificance" style="font-size:18px;">…</div>
 <div class="stat-note" id="statSignificanceNote">t-test / sign test at the 1-year mark</div>
 </div>
 </div>
@@ -896,7 +896,7 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <div class="chart-box-header">
 <div>
 <h2>Average cumulative excess return, indexed to the spinoff date</h2>
-<div class="chart-subhead">Every spinco and parent leg aligned to trading day 0 = its own separation date, then averaged at each elapsed trading day. Sample size (N, right axis) shrinks at longer horizons as younger events run out of history — read the right tail with that in mind.</div>
+<div class="chart-subhead">Every spinco and parent leg aligned to trading day 0 = its own separation date, then averaged at each elapsed trading day. Sample size (N, right axis) shrinks at longer horizons as younger events run out of history. Read the right tail with that in mind.</div>
 </div>
 </div>
 <div class="ndr-panel">
@@ -956,11 +956,11 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <div class="chart-box-header">
 <div>
 <h2>Is the spin-off effect statistically real, or noise?</h2>
-<div class="chart-subhead">One-sample t-test and an exact two-sided sign test on excess return at the 1-year mark, run separately for spinco legs and parent legs — same two-method-check spirit as /factor-analysis and /small-cap-vs-large-cap</div>
+<div class="chart-subhead">One-sample t-test and an exact two-sided sign test on excess return at the 1-year mark, run separately for spinco legs and parent legs. Same two-method-check spirit as /factor-analysis and /small-cap-vs-large-cap</div>
 </div>
 </div>
 <div id="statsMethodTable"></div>
-<div class="method-note">N here is legs, not companies — a handful of parent tickers (DD, DHR, GE) anchor more than one event on this list, at different dates, so they contribute one observation per event, not per ticker.</div>
+<div class="method-note">N here is legs, not companies: a handful of parent tickers (DD, DHR, GE) anchor more than one event on this list, at different dates, so they contribute one observation per event, not per ticker.</div>
 </div>
 
 <div class="chart-box">
@@ -1019,13 +1019,13 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 
 <div class="explainer">
 <h2>Methodology</h2>
-<p>The "spin-off effect" is one of the more durable findings in corporate-finance literature: after a company separates a division into its own independent public stock, both the new spinco and the remaining parent have historically tended to outperform the market for a stretch afterward — one common explanation is forced, valuation-insensitive selling by index funds that hold the parent but have no mandate to hold an unfamiliar new small-cap, which can temporarily depress the spinco's price for reasons that have nothing to do with its fundamentals.</p>
-<p>The event list below — which company spun off which division, and on what date — is hand-compiled from public record, the same "curated metadata, real market data" split this site already uses for <a href="/expectations-vs-reality.html">Expectations vs. Reality</a>. Every return number, though, comes from a live Alpha Vantage <code>TIME_SERIES_DAILY_ADJUSTED</code> pull (adjusted close, so dividends are accounted for) — nothing about the price data itself is estimated or fabricated. The anchor date for every event is the spinco's first day of regular trading; both legs, spinco and parent, are measured against SPY over the identical calendar window so the excess-return numbers are directly comparable.</p>
-<p>19 events are tracked, going back to eBay's 2015 spinoff of PayPal. Two of them — United Technologies' simultaneous 2020 spinoffs of Otis and Carrier — have no parent leg at all: UTC didn't continue as an independent company, it merged into Raytheon the same day, so there's nothing to measure a "remaining parent" against. A few others carry a footnote rather than a clean spinoff label: Viatris (Pfizer's Upjohn unit combined with Mylan via a Reverse Morris Trust, not a pure spinoff), Kenvue (anchored to the exchange-offer completion date, not the earlier IPO carve-out), Kellanova/WK Kellogg (the parent ticker K kept trading under a new name rather than the spinco inheriting it), and the 2015 HP split (both HPQ and HPE are technically new companies; HPQ, which kept the legacy ticker, is treated here as the parent-continuation leg). Any ticker whose price history doesn't reach back to its event's anchor date is dropped from that one leg rather than blocking the whole page or being replaced with a guess.</p>
-<p>The headline chart aligns every leg to trading day 0 = its own separation date, then averages the cumulative excess return across every leg at each elapsed trading day — this is the standard event-time construction for asking "does an effect show up around an event," applied here to spinoffs the way this site's other pages apply it to earnings, rebalances, or Fed decisions. The sample size shrinks as the horizon lengthens, since younger events (GE Vernova, Solventum) haven't lived long enough to contribute to the 3-year mark yet — the chart reports N alongside the average rather than hiding that shrinkage.</p>
+<p>The "spin-off effect" is one of the more durable findings in corporate-finance literature: after a company separates a division into its own independent public stock, both the new spinco and the remaining parent have historically tended to outperform the market for a stretch afterward. One common explanation is forced, valuation-insensitive selling by index funds that hold the parent but have no mandate to hold an unfamiliar new small-cap, which can temporarily depress the spinco's price for reasons that have nothing to do with its fundamentals.</p>
+<p>The event list below (which company spun off which division, and on what date) is hand-compiled from public record, the same "curated metadata, real market data" split this site already uses for <a href="/expectations-vs-reality.html">Expectations vs. Reality</a>. Every return number, though, comes from a live Alpha Vantage <code>TIME_SERIES_DAILY_ADJUSTED</code> pull (adjusted close, so dividends are accounted for). Nothing about the price data itself is estimated or fabricated. The anchor date for every event is the spinco's first day of regular trading; both legs, spinco and parent, are measured against SPY over the identical calendar window so the excess-return numbers are directly comparable.</p>
+<p>19 events are tracked, going back to eBay's 2015 spinoff of PayPal. Two of them (United Technologies' simultaneous 2020 spinoffs of Otis and Carrier) have no parent leg at all: UTC didn't continue as an independent company, it merged into Raytheon the same day, so there's nothing to measure a "remaining parent" against. A few others carry a footnote rather than a clean spinoff label: Viatris (Pfizer's Upjohn unit combined with Mylan via a Reverse Morris Trust, not a pure spinoff), Kenvue (anchored to the exchange-offer completion date, not the earlier IPO carve-out), Kellanova/WK Kellogg (the parent ticker K kept trading under a new name rather than the spinco inheriting it), and the 2015 HP split (both HPQ and HPE are technically new companies; HPQ, which kept the legacy ticker, is treated here as the parent-continuation leg). Any ticker whose price history doesn't reach back to its event's anchor date is dropped from that one leg rather than blocking the whole page or being replaced with a guess.</p>
+<p>The headline chart aligns every leg to trading day 0 = its own separation date, then averages the cumulative excess return across every leg at each elapsed trading day. This is the standard event-time construction for asking "does an effect show up around an event," applied here to spinoffs the way this site's other pages apply it to earnings, rebalances, or Fed decisions. The sample size shrinks as the horizon lengthens, since younger events (GE Vernova, Solventum) haven't lived long enough to contribute to the 3-year mark yet. The chart reports N alongside the average rather than hiding that shrinkage.</p>
 <p>The significance check is a plain one-sample t-test (is the mean excess return across legs different from zero?) plus an exact two-sided sign test (of the legs with a nonzero excess return, are "up" and "down" roughly 50/50, or lopsided?) at the 1-year mark, run once for spinco legs and once for parent legs. Be honest about what this is and isn't: with roughly 15-19 independent events, this is nowhere near the sample size academic studies of the spin-off effect use, and several events share an underlying corporate family (three Danaher spinoffs, two General Electric spinoffs, two DowDuPont spinoffs) rather than being fully independent draws. Treat the result as illustrative, not as a rigorous test of the effect's existence.</p>
-<p>Refreshes weekly. A fixed list of 19 historical events doesn't need daily re-pulling — the only thing that moves week to week is one more week of price history for the "to-date" return column.</p>
-<div class="source">Source: <a href="https://www.alphavantage.co/" target="_blank" rel="noopener">Alpha Vantage — TIME_SERIES_DAILY_ADJUSTED</a>. Event dates and tickers hand-compiled from public record (company press releases and SEC filings around each separation).</div>
+<p>Refreshes weekly. A fixed list of 19 historical events doesn't need daily re-pulling. The only thing that moves week to week is one more week of price history for the "to-date" return column.</p>
+<div class="source">Source: <a href="https://www.alphavantage.co/" target="_blank" rel="noopener">Alpha Vantage: TIME_SERIES_DAILY_ADJUSTED</a>. Event dates and tickers hand-compiled from public record (company press releases and SEC filings around each separation).</div>
 </div>
 
 </div>
@@ -1206,7 +1206,7 @@ async function init(){
   document.getElementById("updated").textContent = "As of " + new Date(data.generated_at_utc).toLocaleString("en-US", { month: "2-digit", day: "2-digit", year: "numeric", hour: "numeric", minute: "2-digit" });
 
   if(data.loadedTickerCount < data.universeTickerCount){
-   showWarning("Only " + data.loadedTickerCount + " of " + data.universeTickerCount + " tickers loaded this run — some legs may be missing below.");
+   showWarning("Only " + data.loadedTickerCount + " of " + data.universeTickerCount + " tickers loaded this run. Some legs may be missing below.");
   }
 
   renderStats();
@@ -1325,7 +1325,7 @@ function renderLeaderTable(rows, tbodyId){
  }
  tbody.innerHTML = rows.map(r => `<tr>
   <td><span class="sector-name">${r.label}</span> <span class="sector-ticker">${r.ticker}</span></td>
-  <td><span class="sector-ticker">${r.sector || "—"}</span></td>
+  <td><span class="sector-ticker">${r.sector || "n/a"}</span></td>
   <td>${usDate(r.eventDate)}</td>
   <td>${fmtPct(r.excessToDate)}</td>
  </tr>`).join("");
@@ -1491,7 +1491,7 @@ function renderLegsTable(){
  tbody.innerHTML = rows.map(r => `<tr>
   <td><span class="sector-name">${r.label}</span> <span class="sector-ticker">${r.ticker}</span></td>
   <td><span class="tag ${r.role}">${r.role}</span></td>
-  <td><span class="sector-ticker">${r.sector || "—"}</span></td>
+  <td><span class="sector-ticker">${r.sector || "n/a"}</span></td>
   <td>${usDate(r.eventDate)}</td>
   <td>${fmtPct(r.excess6M)}</td>
   <td>${fmtPct(r.excess1Y)}</td>

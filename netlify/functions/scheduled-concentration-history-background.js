@@ -285,7 +285,7 @@ exports.handler = async () => {
         "Quarter-end top-10 = the 10 largest members at that date, by market cap (companiesmarketcap.com), " +
         "over total S&P 500 market cap (finhacker.cz annual anchors, SPY-interpolated to quarter-ends). " +
         "Chart H uses Alpha Vantage adjusted monthly closes for total returns. 1996 is an 11-month partial year " +
-        "(Jan-Dec) — companiesmarketcap.com's per-company history starts January 1996 for every name, so there's " +
+        "(Jan-Dec): companiesmarketcap.com's per-company history starts January 1996 for every name, so there's " +
         "no Dec-1995 market cap to weight a full calendar year from, and 1995 itself can't be built this way.",
       quarterly,
       annual,

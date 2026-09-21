@@ -45,7 +45,7 @@ exports.handler = async (event) => {
     const store = getOddstatsStore();
     const board = await store.get(BLOB_KEY, { type: "json" });
     if (!board) {
-      throw new Error("Board not populated yet — scheduled-oddstats-background hasn't run.");
+      throw new Error("Board not populated yet: scheduled-oddstats-background hasn't run.");
     }
     return { statusCode: 200, headers: CORS, body: JSON.stringify(board) };
   } catch (err) {

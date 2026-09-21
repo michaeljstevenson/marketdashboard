@@ -11,7 +11,7 @@ exports.handler = async () => {
     const payload = await store.get(LATEST_KEY, { type: "json" });
 
     if (!payload) {
-      throw new Error("Equity risk premium data not yet populated — scheduled-equity-risk-premium-background hasn't run yet");
+      throw new Error("Equity risk premium data not yet populated, scheduled-equity-risk-premium-background hasn't run yet");
     }
 
     return {

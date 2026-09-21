@@ -170,7 +170,7 @@ document.addEventListener("DOMContentLoaded", function(){
 </script>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1" name="viewport"/>
-<title>Concentration — Michael J. Stevenson</title>
+<title>Concentration | Michael J. Stevenson</title>
 <style>
 
 :root{
@@ -700,9 +700,9 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <h2>The Magnificent Seven vs. the S&amp;P 493</h2>
 <div class="chart-daterange" id="rangeC"></div>
 </div>
-<div class="chart-subhead">Cap-weighted basket of AAPL, MSFT, GOOGL, AMZN, NVDA, META and TSLA — rebalanced to market-cap weights each quarter — against the S&amp;P 500 and the S&amp;P 493 (the index with those seven names' contribution stripped out), all total return, indexed to 100 at year-end 2014.</div>
+<div class="chart-subhead">Cap-weighted basket of AAPL, MSFT, GOOGL, AMZN, NVDA, META and TSLA, rebalanced to market-cap weights each quarter, against the S&amp;P 500 and the S&amp;P 493 (the index with those seven names' contribution stripped out), all total return, indexed to 100 at year-end 2014.</div>
 <div class="ndr-panel">
-<div class="chart-canvas-wrap"><canvas id="chartC"></canvas><div class="chart-pending" id="pendingC">Data pipeline in progress — quarterly cap weights from SEC filings, populating next.</div></div>
+<div class="chart-canvas-wrap"><canvas id="chartC"></canvas><div class="chart-pending" id="pendingC">Data pipeline in progress: quarterly cap weights from SEC filings, populating next.</div></div>
 </div>
 <div class="mini-stats" id="statsC"></div>
 <div class="chart-error" id="errC" hidden></div>
@@ -717,7 +717,7 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 </div>
 <div class="chart-subhead">The cap-weighted Magnificent Seven basket divided by the S&amp;P 500 total-return index. A rising line is the seven outperforming; the shaded lower panel is the drawdown of that ratio from its own running high.</div>
 <div class="ndr-panel">
-<div class="chart-canvas-wrap"><canvas id="chartF"></canvas><div class="chart-pending" id="pendingF">Derived from the chart&nbsp;C basket — populating next.</div></div>
+<div class="chart-canvas-wrap"><canvas id="chartF"></canvas><div class="chart-pending" id="pendingF">Derived from the chart&nbsp;C basket: populating next.</div></div>
 <div class="chart-canvas-wrap short"><canvas id="chartFdd"></canvas></div>
 </div>
 <div class="mini-stats" id="statsF"></div>
@@ -731,9 +731,9 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <h2>Share of S&amp;P 500 market capitalization: the largest 10</h2>
 <div class="chart-daterange" id="rangeG"></div>
 </div>
-<div class="chart-subhead">The 10 largest S&amp;P 500 companies at each quarter-end — whoever they were at the time — as a percentage of the index's total market capitalization, back to 2000.</div>
+<div class="chart-subhead">The 10 largest S&amp;P 500 companies at each quarter-end, whoever they were at the time, as a percentage of the index's total market capitalization, back to 2000.</div>
 <div class="ndr-panel">
-<div class="chart-canvas-wrap"><canvas id="chartG"></canvas><div class="chart-pending" id="pendingG">Data pipeline in progress — quarterly top-10 constituents and index market cap, populating next.</div></div>
+<div class="chart-canvas-wrap"><canvas id="chartG"></canvas><div class="chart-pending" id="pendingG">Data pipeline in progress: quarterly top-10 constituents and index market cap, populating next.</div></div>
 </div>
 <div class="mini-stats" id="statsG"></div>
 <div class="chart-error" id="errG" hidden></div>
@@ -748,11 +748,11 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 </div>
 <div class="chart-subhead">Each calendar year's S&amp;P 500 total return split into the share contributed by that year's 10 largest companies (by start-of-year weight) and the share from the other ~490.</div>
 <div class="ndr-panel">
-<div class="chart-canvas-wrap"><canvas id="chartH"></canvas><div class="chart-pending" id="pendingH">Data pipeline in progress — populating next.</div></div>
+<div class="chart-canvas-wrap"><canvas id="chartH"></canvas><div class="chart-pending" id="pendingH">Data pipeline in progress: populating next.</div></div>
 </div>
 <div class="mini-stats" id="statsH"></div>
 <div class="chart-error" id="errH" hidden></div>
-<div class="chart-source">Source: start-of-year weights from the market-cap data above; constituent and index annual total returns from Alpha Vantage (split/dividend-adjusted). *1996 is an 11-month (Jan–Dec) partial year — companiesmarketcap.com's per-company history starts January 1996 for every name, so there's no December-1995 market cap to weight a full year from, and 1995 itself can't be built this way.</div>
+<div class="chart-source">Source: start-of-year weights from the market-cap data above; constituent and index annual total returns from Alpha Vantage (split/dividend-adjusted). *1996 is an 11-month (Jan–Dec) partial year. Companiesmarketcap.com's per-company history starts January 1996 for every name, so there's no December-1995 market cap to weight a full year from, and 1995 itself can't be built this way.</div>
 </div>
 
 </div>
@@ -1161,7 +1161,7 @@ async function renderHistory(){
         const r = a[items[0].dataIndex];
         if(!r) return "";
         const lines = [`S&P 500 total return: ${r.sp500_tr > 0 ? "+" : ""}${r.sp500_tr}%`];
-        if(r.partial) lines.push("11-month partial year (Jan–Dec) — see source note");
+        if(r.partial) lines.push("11-month partial year (Jan–Dec), see source note");
         return lines;
        },
       } },

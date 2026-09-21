@@ -153,7 +153,7 @@ document.addEventListener("DOMContentLoaded", function(){
 </script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Share Count Trends — Michael J. Stevenson</title>
+<title>Share Count Trends | Michael J. Stevenson</title>
 
 <style>
 
@@ -811,7 +811,7 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <div class="header">
 <div>
 <h1>Share Count Trends</h1>
-<div class="subtitle">Buybacks vs. dilution across the full S&amp;P 500, read directly off quarterly shares-outstanding history — no separate buyback-dollar data needed, since share count is the net of every buyback, issuance, and option exercise combined.</div>
+<div class="subtitle">Buybacks vs. dilution across the full S&amp;P 500, read directly off quarterly shares-outstanding history. No separate buyback-dollar data needed, since share count is the net of every buyback, issuance, and option exercise combined.</div>
 </div>
 <div class="updated" id="updated">Loading...</div>
 </div>
@@ -819,22 +819,22 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <div class="stat-grid">
 <div class="stat-card">
 <div class="stat-label">Avg. 1-Year Share Count Change</div>
-<div class="stat-value" id="statAvgChange">—</div>
+<div class="stat-value" id="statAvgChange">…</div>
 <div class="stat-note" id="statAvgChangeNote">Simple average across companies</div>
 </div>
 <div class="stat-card">
 <div class="stat-label">Buybacks vs. Dilution</div>
-<div class="stat-value" id="statBuybackDilution" style="font-size:20px;">—</div>
+<div class="stat-value" id="statBuybackDilution" style="font-size:20px;">…</div>
 <div class="stat-note" id="statBuybackDilutionNote">Of companies classified</div>
 </div>
 <div class="stat-card">
 <div class="stat-label">Year-over-Year Persistence</div>
-<div class="stat-value" id="statPersistence" style="font-size:20px;">—</div>
+<div class="stat-value" id="statPersistence" style="font-size:20px;">…</div>
 <div class="stat-note" id="statPersistenceNote">Pearson r, last year's change vs. this year's</div>
 </div>
 <div class="stat-card">
 <div class="stat-label">Active Buyback Streaks</div>
-<div class="stat-value" id="statStreaks">—</div>
+<div class="stat-value" id="statStreaks">…</div>
 <div class="stat-note" id="statStreaksNote">Companies with 2+ consecutive years shrinking share count</div>
 </div>
 </div>
@@ -855,7 +855,7 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <div class="chart-box-header">
 <div>
 <h2>Does last year's buyback/dilution rate predict this year's?</h2>
-<div class="chart-subhead">Each point is one company: x-axis is the prior non-overlapping year's share-count change, y-axis is the most recent year's — same "non-overlapping annual" construction as the momentum test on /factor-analysis</div>
+<div class="chart-subhead">Each point is one company: x-axis is the prior non-overlapping year's share-count change, y-axis is the most recent year's. Same "non-overlapping annual" construction as the momentum test on /factor-analysis</div>
 </div>
 </div>
 <div class="scatter-canvas-wrap">
@@ -912,11 +912,11 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 
 <div class="explainer">
 <h2>Methodology</h2>
-<p>Universe is the full S&amp;P 500. For every constituent, Alpha Vantage's <code>BALANCE_SHEET</code> endpoint returns <code>commonStockSharesOutstanding</code> for each of the last ~21 quarterly filings. Share count at 1/3/5-year lookbacks is read directly off the quarter 4/12/20 filings back, rather than derived from any separate buyback-announcement or dollar-value data — this deliberately captures the <i>net</i> effect of buybacks, new share issuance, and employee stock-based-compensation dilution all at once, which is what actually matters to a existing shareholder's ownership stake. A company can announce a large buyback program and still show rising share count if stock-based comp issuance outruns it; this page would correctly show that as net dilution.</p>
-<p>A company is classified "buyback" if its share count fell &gt;0.5% over the trailing year, "dilution" if it rose &gt;0.5%, and "flat" in between — the threshold exists because quarter-to-quarter share counts move slightly from routine option exercises and rounding even with no real capital-allocation story either way.</p>
-<p>The year-over-year persistence check takes each company's most recent two non-overlapping annual share-count changes and runs the same Pearson/Spearman regression check used throughout <a href="/factor-analysis.html">Factor Analysis</a> — a positive, significant relationship would mean a company's buyback (or dilution) pace tends to continue year to year rather than reset randomly; see that page's own methodology notes for why non-overlapping periods matter for a test like this (overlapping windows share underlying data points and mechanically inflate any apparent persistence).</p>
-<p>Refreshes weekly (Saturday mornings) — a share count only changes when a company actually files a new 10-Q/10-K. Sector and company name come from the same weekly metadata sweep that backs <a href="/sector-beeswarm.html">Sector Beeswarm</a>, reused here rather than paying for a second full-index pass just for labels.</p>
-<div class="source">Source: <a href="https://www.alphavantage.co/" target="_blank" rel="noopener">Alpha Vantage — BALANCE_SHEET</a></div>
+<p>Universe is the full S&amp;P 500. For every constituent, Alpha Vantage's <code>BALANCE_SHEET</code> endpoint returns <code>commonStockSharesOutstanding</code> for each of the last ~21 quarterly filings. Share count at 1/3/5-year lookbacks is read directly off the quarter 4/12/20 filings back, rather than derived from any separate buyback-announcement or dollar-value data. This deliberately captures the <i>net</i> effect of buybacks, new share issuance, and employee stock-based-compensation dilution all at once, which is what actually matters to a existing shareholder's ownership stake. A company can announce a large buyback program and still show rising share count if stock-based comp issuance outruns it; this page would correctly show that as net dilution.</p>
+<p>A company is classified "buyback" if its share count fell &gt;0.5% over the trailing year, "dilution" if it rose &gt;0.5%, and "flat" in between. The threshold exists because quarter-to-quarter share counts move slightly from routine option exercises and rounding even with no real capital-allocation story either way.</p>
+<p>The year-over-year persistence check takes each company's most recent two non-overlapping annual share-count changes and runs the same Pearson/Spearman regression check used throughout <a href="/factor-analysis.html">Factor Analysis</a>. A positive, significant relationship would mean a company's buyback (or dilution) pace tends to continue year to year rather than reset randomly; see that page's own methodology notes for why non-overlapping periods matter for a test like this (overlapping windows share underlying data points and mechanically inflate any apparent persistence).</p>
+<p>Refreshes weekly (Saturday mornings): a share count only changes when a company actually files a new 10-Q/10-K. Sector and company name come from the same weekly metadata sweep that backs <a href="/sector-beeswarm.html">Sector Beeswarm</a>, reused here rather than paying for a second full-index pass just for labels.</p>
+<div class="source">Source: <a href="https://www.alphavantage.co/" target="_blank" rel="noopener">Alpha Vantage: BALANCE_SHEET</a></div>
 </div>
 
 </div>
@@ -929,7 +929,7 @@ let SORT_KEY = "change1Y";
 let SORT_DIR = 1;
 
 function fmtPct(v, digits){
- if(v === null || v === undefined || isNaN(v)) return "—";
+ if(v === null || v === undefined || isNaN(v)) return "n/a";
  digits = digits === undefined ? 1 : digits;
  return (v >= 0 ? "+" : "") + v.toFixed(digits) + "%";
 }
@@ -1022,7 +1022,7 @@ async function init(){
   document.getElementById("updated").textContent = "As of " + new Date(data.generated_at_utc).toLocaleString("en-US", { month: "2-digit", day: "2-digit", year: "numeric", hour: "numeric", minute: "2-digit" });
 
   if(data.loadedCount < data.universeSize){
-   showWarning("Only " + data.loadedCount + " of " + data.universeSize + " S&P 500 constituents loaded this run — some data may be temporarily unavailable.");
+   showWarning("Only " + data.loadedCount + " of " + data.universeSize + " S&P 500 constituents loaded this run. Some data may be temporarily unavailable.");
   }
 
   renderStats();
@@ -1170,7 +1170,7 @@ function renderLeaderTable(rows, tbodyId){
  }
  tbody.innerHTML = rows.map(r => `<tr>
   <td><span class="sector-name">${r.symbol}</span></td>
-  <td><span class="sector-ticker">${r.sector || "—"}</span></td>
+  <td><span class="sector-ticker">${r.sector || "n/a"}</span></td>
   <td>${fmtPct(r.change1Y)}</td>
   <td>${fmtPct(r.change3Y)}</td>
  </tr>`).join("");
@@ -1201,11 +1201,11 @@ function renderTable(){
   const streakCls = r.currentStreak > 0 ? "cell-pos" : r.currentStreak < 0 ? "cell-neg" : "cell-na";
   return `<tr>
    <td><span class="sector-name">${r.symbol}</span></td>
-   <td><span class="sector-ticker">${r.sector || "—"}</span></td>
+   <td><span class="sector-ticker">${r.sector || "n/a"}</span></td>
    <td>${fmtPct(r.change1Y)}</td>
    <td>${fmtPct(r.change3Y)}</td>
    <td>${fmtPct(r.change5Y)}</td>
-   <td>${r.classification || "—"}</td>
+   <td>${r.classification || "n/a"}</td>
    <td class="${streakCls}">${streakText}</td>
   </tr>`;
  }).join("");

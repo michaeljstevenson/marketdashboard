@@ -153,7 +153,7 @@ document.addEventListener("DOMContentLoaded", function(){
 </script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Shareholder Yield: Buybacks vs. Dividends — Michael J. Stevenson</title>
+<title>Shareholder Yield: Buybacks vs. Dividends | Michael J. Stevenson</title>
 
 <style>
 
@@ -816,7 +816,7 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <div class="header">
 <div>
 <h1>Shareholder Yield: Buybacks vs. Dividends</h1>
-<div class="subtitle">Dividend yield and buyback yield combined into one "shareholder yield" number across the S&amp;P 500 — and whether companies that pay more in dividends tend to buy back less, or the two go together.</div>
+<div class="subtitle">Dividend yield and buyback yield combined into one "shareholder yield" number across the S&amp;P 500, and whether companies that pay more in dividends tend to buy back less, or the two go together.</div>
 </div>
 <div class="updated" id="updated">Loading...</div>
 </div>
@@ -824,22 +824,22 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <div class="stat-grid">
 <div class="stat-card">
 <div class="stat-label">Market Avg. Shareholder Yield</div>
-<div class="stat-value" id="statTotal">—</div>
+<div class="stat-value" id="statTotal">…</div>
 <div class="stat-note">Dividend yield + buyback yield</div>
 </div>
 <div class="stat-card">
 <div class="stat-label">Market Avg. Dividend Yield</div>
-<div class="stat-value" id="statDiv">—</div>
+<div class="stat-value" id="statDiv">…</div>
 <div class="stat-note">Alpha Vantage trailing dividend yield</div>
 </div>
 <div class="stat-card">
 <div class="stat-label">Market Avg. Buyback Yield</div>
-<div class="stat-value" id="statBuyback">—</div>
+<div class="stat-value" id="statBuyback">…</div>
 <div class="stat-note">&minus;(trailing 1Y % change in shares out.)</div>
 </div>
 <div class="stat-card">
 <div class="stat-label">Dividend/Buyback Correlation</div>
-<div class="stat-value" id="statCorr" style="font-size:20px;">—</div>
+<div class="stat-value" id="statCorr" style="font-size:20px;">…</div>
 <div class="stat-note" id="statCorrNote">Across constituents, Pearson r</div>
 </div>
 </div>
@@ -916,10 +916,10 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 
 <div class="explainer">
 <h2>Methodology</h2>
-<p>Dividend yield is Alpha Vantage's own <code>COMPANY_OVERVIEW</code> <code>DividendYield</code> field — a trailing, price-normalized yield sourced directly rather than re-derived from raw dividend payments and a separate price series. Buyback yield is <em>not</em> re-fetched here: it's the negative of the trailing-12-month % change in shares outstanding already computed by <a href="/share-count-trends.html">Share Count Trends</a> from quarterly <code>BALANCE_SHEET</code> filings — a shrinking share count is a buyback, a growing one is net dilution (from new issuance, option exercises, or stock-based comp outrunning any repurchases), so a negative "buyback yield" below means the company diluted shareholders over the period rather than returning capital via repurchases. Total shareholder yield is simply the two added together — dividends and buybacks are both ways cash gets returned to shareholders, and a company that leans on one over the other doesn't necessarily return less in total.</p>
-<p>The scatter panel tests a common claim: that dividend-payers and buyback-heavy companies are somewhat different populations — mature, stable-cash-flow businesses favor dividends (a commitment investors punish them for cutting), while companies with more variable earnings favor buybacks (fully discretionary, easy to pause). If that's right, dividend yield and buyback yield should show a weak or even negative correlation across the index. Both Pearson (OLS) and Spearman rank correlation are shown, the same two-method check used throughout <a href="/factor-analysis.html">Factor Analysis</a>, so the result isn't quietly resting on one or two extreme stocks either way.</p>
-<p>Sector and company name are joined from the <a href="/sector-beeswarm.html">Sector Beeswarm</a> page's own weekly metadata refresh rather than a second per-ticker lookup. Refreshes weekly (Saturday), after <a href="/share-count-trends.html">Share Count Trends</a>'s own sweep (so this page's buyback numbers are fresh) and after <a href="/analyst-estimate-dispersion.html">Analyst Estimate Dispersion</a>'s sweep (so the two full-index jobs don't compete for Alpha Vantage's rate limit) — a company's dividend policy and buyback pace don't move meaningfully day to day.</p>
-<div class="source">Source: <a href="https://www.alphavantage.co/" target="_blank" rel="noopener">Alpha Vantage</a> — COMPANY_OVERVIEW, BALANCE_SHEET (via Share Count Trends)</div>
+<p>Dividend yield is Alpha Vantage's own <code>COMPANY_OVERVIEW</code> <code>DividendYield</code> field. A trailing, price-normalized yield sourced directly rather than re-derived from raw dividend payments and a separate price series. Buyback yield is <em>not</em> re-fetched here: it's the negative of the trailing-12-month % change in shares outstanding already computed by <a href="/share-count-trends.html">Share Count Trends</a> from quarterly <code>BALANCE_SHEET</code> filings. A shrinking share count is a buyback, a growing one is net dilution (from new issuance, option exercises, or stock-based comp outrunning any repurchases), so a negative "buyback yield" below means the company diluted shareholders over the period rather than returning capital via repurchases. Total shareholder yield is simply the two added together. Dividends and buybacks are both ways cash gets returned to shareholders, and a company that leans on one over the other doesn't necessarily return less in total.</p>
+<p>The scatter panel tests a common claim: that dividend-payers and buyback-heavy companies are somewhat different populations. Mature, stable-cash-flow businesses favor dividends (a commitment investors punish them for cutting), while companies with more variable earnings favor buybacks (fully discretionary, easy to pause). If that's right, dividend yield and buyback yield should show a weak or even negative correlation across the index. Both Pearson (OLS) and Spearman rank correlation are shown, the same two-method check used throughout <a href="/factor-analysis.html">Factor Analysis</a>, so the result isn't quietly resting on one or two extreme stocks either way.</p>
+<p>Sector and company name are joined from the <a href="/sector-beeswarm.html">Sector Beeswarm</a> page's own weekly metadata refresh rather than a second per-ticker lookup. Refreshes weekly (Saturday), after <a href="/share-count-trends.html">Share Count Trends</a>'s own sweep (so this page's buyback numbers are fresh) and after <a href="/analyst-estimate-dispersion.html">Analyst Estimate Dispersion</a>'s sweep (so the two full-index jobs don't compete for Alpha Vantage's rate limit). A company's dividend policy and buyback pace don't move meaningfully day to day.</p>
+<div class="source">Source: <a href="https://www.alphavantage.co/" target="_blank" rel="noopener">Alpha Vantage</a>: COMPANY_OVERVIEW, BALANCE_SHEET (via Share Count Trends)</div>
 </div>
 
 </div>
@@ -936,7 +936,7 @@ function showError(message){
 }
 
 function fmtPct(v, digits){
- if(v === null || v === undefined || isNaN(v)) return "—";
+ if(v === null || v === undefined || isNaN(v)) return "n/a";
  digits = digits === undefined ? 2 : digits;
  return (v >= 0 ? "+" : "") + v.toFixed(digits) + "%";
 }
@@ -1095,7 +1095,7 @@ function renderStats(data){
   if(Math.abs(reg.r) >= 0.1){
    interp = reg.r > 0
     ? "Dividend payers have also tended to buy back more"
-    : "Dividend payers have tended to buy back less — some substitution";
+    : "Dividend payers have tended to buy back less, some substitution";
   }
   corrNoteEl.textContent = interp + " (n=" + reg.n + ")";
  }

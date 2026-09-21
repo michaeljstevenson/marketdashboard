@@ -11,7 +11,7 @@ exports.handler = async () => {
     const payload = await store.get(LATEST_KEY, { type: "json" });
 
     if (!payload) {
-      throw new Error("Short sale volume data not yet populated — scheduled-short-sale-volume-background hasn't run yet");
+      throw new Error("Short sale volume data not yet populated, scheduled-short-sale-volume-background hasn't run yet");
     }
 
     return {

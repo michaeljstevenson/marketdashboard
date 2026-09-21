@@ -115,7 +115,7 @@ async function fetchPutCallFromBlob() {
   const store = getPutCallStore();
   const payload = await store.get(PUTCALL_BLOB_KEY, { type: "json" });
   if (!payload || !payload.points || !payload.points.length) {
-    throw new Error("Put/call blob not yet populated — scheduled-putcall-background hasn't run yet");
+    throw new Error("Put/call blob not yet populated, scheduled-putcall-background hasn't run yet");
   }
   return payload.points.map((p) => ({ x: Date.parse(p.date), y: p.value }));
 }
@@ -126,10 +126,10 @@ const PUTCALL_SPEC = {
   unit: "ratio",
   weight: 0,
   invert: true,
-  source: { name: "Alpha Vantage — SPY Options Put/Call Ratio", url: "https://www.alphavantage.co/" },
+  source: { name: "Alpha Vantage: SPY Options Put/Call Ratio", url: "https://www.alphavantage.co/" },
   description: "A rising put/call ratio relative to trend indicates bearish positioning.",
   details:
-    "This factor tracks the full-options-chain ratio of put contracts (bets that SPY will fall) to call contracts (bets that it will rise). When investors are nervous, they buy more puts to hedge or speculate on declines, pushing the ratio up; when they're confident, call buying dominates and the ratio falls.\n\nAlpha Vantage only exposes this ratio one trading day at a time (no bulk historical endpoint), so this factor is fetched and scored once daily by a background job rather than live, against a shorter 30-day trailing average than the 50-day window used elsewhere — and is a supplementary indicator: with only about 90 trading days of history it can't be standardized or backtested like the scored factors, so it is displayed alongside the composite but is not part of it.",
+    "This factor tracks the full-options-chain ratio of put contracts (bets that SPY will fall) to call contracts (bets that it will rise). When investors are nervous, they buy more puts to hedge or speculate on declines, pushing the ratio up; when they're confident, call buying dominates and the ratio falls.\n\nAlpha Vantage only exposes this ratio one trading day at a time (no bulk historical endpoint), so this factor is fetched and scored once daily by a background job rather than live, against a shorter 30-day trailing average than the 50-day window used elsewhere, and is a supplementary indicator: with only about 90 trading days of history it can't be standardized or backtested like the scored factors, so it is displayed alongside the composite but is not part of it.",
 };
 
 function buildPutCallComponent(points) {
@@ -178,10 +178,10 @@ const NEWSSENTIMENT_SPEC = {
   unit: "avg. article sentiment",
   weight: 0,
   invert: false,
-  source: { name: "Alpha Vantage — News & Sentiment (SPY)", url: "https://www.alphavantage.co/" },
+  source: { name: "Alpha Vantage: News & Sentiment (SPY)", url: "https://www.alphavantage.co/" },
   description: "Financial news coverage skewing more positive than its recent trend reflects rising investor optimism.",
   details:
-    "This factor aggregates Alpha Vantage's News & Sentiment feed for SPY-tagged financial news articles, averaging each day's per-article sentiment score (roughly -1 very bearish to +1 very bullish) — an automated read on how the financial press is framing the market.\n\nThe score compares each day's average article sentiment to its own trailing 10-day average, ranked against the ~60 days of coverage this factor has usable history for. Because the News & Sentiment API returns a bounded recent feed rather than a bulk decades-long history, this is a supplementary indicator: displayed alongside the composite but not part of it.",
+    "This factor aggregates Alpha Vantage's News & Sentiment feed for SPY-tagged financial news articles, averaging each day's per-article sentiment score (roughly -1 very bearish to +1 very bullish). An automated read on how the financial press is framing the market.\n\nThe score compares each day's average article sentiment to its own trailing 10-day average, ranked against the ~60 days of coverage this factor has usable history for. Because the News & Sentiment API returns a bounded recent feed rather than a bulk decades-long history, this is a supplementary indicator: displayed alongside the composite but not part of it.",
 };
 
 function buildNewsSentimentPoints(feed) {
@@ -255,7 +255,7 @@ function buildNewsSentimentComponent(feed) {
 async function fetchBreadthRows() {
   const payload = await getBreadthStore().get(BREADTH_BLOB_KEY, { type: "json" });
   if (!payload || !payload.rows || !payload.rows.length) {
-    throw new Error("Breadth internals blob not yet populated — scheduled-breadth hasn't run yet");
+    throw new Error("Breadth internals blob not yet populated, scheduled-breadth hasn't run yet");
   }
   return { rows: payload.rows, constituentCount: payload.constituentCount };
 }
@@ -285,7 +285,7 @@ exports.handler = async () => {
       bars[sym] = await safe(`Yahoo ${sym}`, () => fetchDailyBars(sym));
       await yahooSleep(300);
     }
-    if (!bars["^GSPC"]) throw new Error("S&P 500 history unavailable — cannot build the trading calendar: " + warnings.join("; "));
+    if (!bars["^GSPC"]) throw new Error("S&P 500 history unavailable. Cannot build the trading calendar: " + warnings.join("; "));
 
     const breadth = await safe("Market Breadth", fetchBreadthRows);
 

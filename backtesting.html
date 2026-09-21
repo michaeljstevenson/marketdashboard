@@ -153,7 +153,7 @@ document.addEventListener("DOMContentLoaded", function(){
 </script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Strategy Backtesting — Michael J. Stevenson</title>
+<title>Strategy Backtesting | Michael J. Stevenson</title>
 
 <style>
 
@@ -877,7 +877,7 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <div class="header">
 <div>
 <h1>Strategy Backtesting</h1>
-<div class="subtitle">Historical, rule-based strategy testing on real daily prices — moving-average crossovers, RSI mean-reversion, and multi-asset rebalanced allocations — compared against a buy-and-hold benchmark.</div>
+<div class="subtitle">Historical, rule-based strategy testing on real daily prices. Moving-average crossovers, RSI mean-reversion, and multi-asset rebalanced allocations. Compared against a buy-and-hold benchmark.</div>
 </div>
 </div>
 
@@ -1009,7 +1009,7 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 </div>
 
 <div class="explainer">
-<div class="source">Source: <a href="https://www.alphavantage.co/" target="_blank" rel="noopener">Alpha Vantage — Daily Adjusted Time Series</a></div>
+<div class="source">Source: <a href="https://www.alphavantage.co/" target="_blank" rel="noopener">Alpha Vantage: Daily Adjusted Time Series</a></div>
 </div>
 
 </div>
@@ -1031,17 +1031,17 @@ const STRATEGIES = {
 };
 
 const PRESETS = [
- { name: "Golden Cross — SPY", params: {
+ { name: "Golden Cross: SPY", params: {
   capital: 100000, start: "2010-01-01", end: "", benchmark: "SPY", commissionBps: 5, taxPct: 0,
   positionSizePct: 100, rebalance: "none",
   holdings: [{ symbol: "SPY", weight: 100, strategy: "macross", params: { fastPeriod: 50, slowPeriod: 200 }, allowShort: false, stopLossPct: "", takeProfitPct: "" }],
  }},
- { name: "RSI Mean Reversion — QQQ", params: {
+ { name: "RSI Mean Reversion: QQQ", params: {
   capital: 100000, start: "2015-01-01", end: "", benchmark: "QQQ", commissionBps: 5, taxPct: 0,
   positionSizePct: 100, rebalance: "none",
   holdings: [{ symbol: "QQQ", weight: 100, strategy: "rsi", params: { period: 14, oversold: 30, overbought: 70 }, allowShort: false, stopLossPct: "", takeProfitPct: "" }],
  }},
- { name: "60/40 Rebalanced — SPY/TLT", params: {
+ { name: "60/40 Rebalanced: SPY/TLT", params: {
   capital: 100000, start: "2010-01-01", end: "", benchmark: "SPY", commissionBps: 5, taxPct: 0,
   positionSizePct: 100, rebalance: "quarterly",
   holdings: [
@@ -1162,7 +1162,7 @@ async function fetchBars(symbol){
  });
 
  priceCache.set(symbol, bars);
- try { sessionStorage.setItem(cacheKey, JSON.stringify(bars)); } catch(e){ /* storage full — non-fatal */ }
+ try { sessionStorage.setItem(cacheKey, JSON.stringify(bars)); } catch(e){ /* storage full: non-fatal */ }
  return bars;
 }
 
@@ -1520,7 +1520,7 @@ function renderResults(cfg, result){
   <div class="stat-card"><div class="stat-label">CAGR</div><div class="stat-value ${stratMetrics.cagr >= 0 ? "good" : "bad"}">${fmtPct(stratMetrics.cagr)}</div><div class="stat-vs">Benchmark: ${fmtPct(benchMetrics.cagr)}</div></div>
   <div class="stat-card"><div class="stat-label">Sharpe Ratio</div><div class="stat-value ${stratMetrics.sharpe >= 0 ? "good" : "bad"}">${stratMetrics.sharpe.toFixed(2)}</div><div class="stat-vs">Benchmark: ${benchMetrics.sharpe.toFixed(2)}</div></div>
   <div class="stat-card"><div class="stat-label">Max Drawdown</div><div class="stat-value bad">${fmtPct(-stratMetrics.maxDD)}</div><div class="stat-vs">Benchmark: ${fmtPct(-benchMetrics.maxDD)}</div></div>
-  <div class="stat-card"><div class="stat-label">Win Rate</div><div class="stat-value">${winRate === null ? "—" : fmtPct(winRate, 0)}</div><div class="stat-vs">${closedTrades.length} trade${closedTrades.length === 1 ? "" : "s"}</div></div>
+  <div class="stat-card"><div class="stat-label">Win Rate</div><div class="stat-value">${winRate === null ? "n/a" : fmtPct(winRate, 0)}</div><div class="stat-vs">${closedTrades.length} trade${closedTrades.length === 1 ? "" : "s"}</div></div>
   <div class="stat-card"><div class="stat-label">Ending Value</div><div class="stat-value">${fmtMoney(equity[equity.length - 1])}</div><div class="stat-vs">Benchmark: ${fmtMoney(benchEquity[benchEquity.length - 1])}</div></div>
  `;
 
@@ -1669,7 +1669,7 @@ async function refreshSavedConfigsList(){
   const data = await res.json();
   select.innerHTML = '<option value="">Load saved config…</option>' +
    (data.configs || []).map(c => `<option value="${c.name}">${c.name}</option>`).join("");
- } catch(e){ /* non-fatal — save/load is a convenience feature */ }
+ } catch(e){ /* non-fatal: save/load is a convenience feature */ }
 }
 
 async function saveCurrentConfig(){

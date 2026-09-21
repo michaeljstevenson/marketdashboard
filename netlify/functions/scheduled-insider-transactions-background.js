@@ -186,7 +186,7 @@ exports.handler = async () => {
     }
 
     console.log(`scheduled-insider-transactions-background: fetched ${summaries.size}/${BREADTH_CONSTITUENTS.length} tickers`);
-    if (summaries.size === 0) throw new Error("Every ticker failed — refusing to write an empty snapshot");
+    if (summaries.size === 0) throw new Error("Every ticker failed. Refusing to write an empty snapshot");
 
     const allStocks = [...summaries.values()];
     const active = allStocks.filter((s) => s.buyCount > 0 || s.sellCount > 0);

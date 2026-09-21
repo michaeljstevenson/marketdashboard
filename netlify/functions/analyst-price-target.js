@@ -15,7 +15,7 @@ exports.handler = async () => {
     ]);
 
     if (!latest) {
-      throw new Error("Analyst price target data not yet populated — scheduled-analyst-price-target-background hasn't run yet");
+      throw new Error("Analyst price target data not yet populated, scheduled-analyst-price-target-background hasn't run yet");
     }
 
     return {

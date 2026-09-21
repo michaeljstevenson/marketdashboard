@@ -12,7 +12,7 @@ exports.handler = async () => {
     const payload = await store.get(BLOB_KEY, { type: "json" });
 
     if (!payload) {
-      throw new Error("Insider transactions data not yet populated — scheduled-insider-transactions-background hasn't run yet");
+      throw new Error("Insider transactions data not yet populated, scheduled-insider-transactions-background hasn't run yet");
     }
 
     return {

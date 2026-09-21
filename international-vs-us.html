@@ -153,7 +153,7 @@ document.addEventListener("DOMContentLoaded", function(){
 </script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>International vs. US Relative Performance — Michael J. Stevenson</title>
+<title>International vs. US Relative Performance | Michael J. Stevenson</title>
 
 <style>
 
@@ -814,22 +814,22 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <div class="stat-grid">
 <div class="stat-card">
 <div class="stat-label">Developed/US Ratio</div>
-<div class="stat-value" id="statRatio">—</div>
+<div class="stat-value" id="statRatio">…</div>
 <div class="stat-note" id="statRatioNote">Indexed to 100 at EEM's inception</div>
 </div>
 <div class="stat-card">
 <div class="stat-label">12-Month Relative Return</div>
-<div class="stat-value" id="statRel12m">—</div>
+<div class="stat-value" id="statRel12m">…</div>
 <div class="stat-note">EFA vs. SPY, trailing 252 trading days</div>
 </div>
 <div class="stat-card">
 <div class="stat-label">Current Dollar Regime</div>
-<div class="stat-value" id="statRegime" style="font-size:20px;">—</div>
+<div class="stat-value" id="statRegime" style="font-size:20px;">…</div>
 <div class="stat-note" id="statRegimeNote">Avg. monthly spread return, this regime</div>
 </div>
 <div class="stat-card">
 <div class="stat-label">Correlation w/ EUR/USD &Delta;</div>
-<div class="stat-value" id="statCorr" style="font-size:20px;">—</div>
+<div class="stat-value" id="statCorr" style="font-size:20px;">…</div>
 <div class="stat-note" id="statCorrNote">Monthly, Pearson r</div>
 </div>
 </div>
@@ -838,7 +838,7 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <div class="chart-box-header">
 <div>
 <h2>Developed &amp; emerging / US ratios, since 2003</h2>
-<div class="chart-subhead">EFA and EEM adjusted-close ÷ SPY adjusted-close, all indexed to 100 at EEM's inception — rising means international is outperforming</div>
+<div class="chart-subhead">EFA and EEM adjusted-close ÷ SPY adjusted-close, all indexed to 100 at EEM's inception. Rising means international is outperforming</div>
 </div>
 </div>
 <div class="ndr-panel">
@@ -866,7 +866,7 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <div class="chart-box-header">
 <div>
 <h2>Rolling 12-month relative return</h2>
-<div class="chart-subhead">Developed/US ratio's trailing 252-trading-day return — positive stretches are international-leadership regimes, negative stretches are US-leadership regimes</div>
+<div class="chart-subhead">Developed/US ratio's trailing 252-trading-day return. Positive stretches are international-leadership regimes, negative stretches are US-leadership regimes</div>
 </div>
 </div>
 <div class="ndr-panel">
@@ -907,11 +907,11 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 
 <div class="explainer">
 <h2>Methodology</h2>
-<p>International and US exposure are proxied by three liquid, dividend-adjusted ETFs rather than the underlying indices themselves: EFA (iShares MSCI EAFE ETF) for developed markets ex-US, EEM (iShares MSCI Emerging Markets ETF) for emerging markets, and SPY (SPDR S&amp;P 500 ETF Trust) for the US. Yahoo Finance's daily adjusted-close series (dividends and splits applied) gives a true total-return comparison for all three, in US-dollar terms — the ETFs already embed whatever currency translation a US-based investor would actually experience, so no separate FX adjustment is applied to the ratio series itself. The ratio series is indexed to 100 at EEM's April 2003 inception — the binding constraint on how far back this page can go, even though EFA and SPY both trade back further (EFA to 2001, SPY to 1993).</p>
-<p>The dollar-regime split classifies each calendar month by the trailing 3-month % change in the EUR/USD exchange rate (Yahoo Finance <code>EURUSD=X</code>, month-end close): a rise of more than 2% is "Dollar Weakening," a fall of more than 2% is "Dollar Strengthening," and anything in between is "Flat." EUR/USD is a single currency pair, not a broad trade-weighted dollar index — it's used here as a simple, freely-available proxy for dollar direction, not a precise measure of it, so treat the regime split as a first-order approximation. The intuition being tested is the textbook one: a weaker dollar should flatter unhedged international returns (translation effect) and, in practice, has often coincided with periods of relative US underperformance for other reasons too — but the regime averages below are a small, noisy sample (a couple dozen months per regime), so read them as suggestive rather than a robust statistical result.</p>
-<p>The scatter panel runs the same two-method check used throughout <a href="/factor-analysis.html">Factor Analysis</a> and <a href="/small-cap-vs-large-cap.html">Small Cap vs. Large Cap Spread</a>: Pearson (OLS) correlation alongside Spearman rank correlation, so a relationship can't be quietly resting on one or two extreme months. Both are shown; a low r&sup2; here isn't a bug — a single currency pair rarely explains much of a monthly equity-return series, and the point of showing the regression is to be honest about how weak (or strong) that single-variable relationship actually is, not to oversell it.</p>
+<p>International and US exposure are proxied by three liquid, dividend-adjusted ETFs rather than the underlying indices themselves: EFA (iShares MSCI EAFE ETF) for developed markets ex-US, EEM (iShares MSCI Emerging Markets ETF) for emerging markets, and SPY (SPDR S&amp;P 500 ETF Trust) for the US. Yahoo Finance's daily adjusted-close series (dividends and splits applied) gives a true total-return comparison for all three, in US-dollar terms. The ETFs already embed whatever currency translation a US-based investor would actually experience, so no separate FX adjustment is applied to the ratio series itself. The ratio series is indexed to 100 at EEM's April 2003 inception. The binding constraint on how far back this page can go, even though EFA and SPY both trade back further (EFA to 2001, SPY to 1993).</p>
+<p>The dollar-regime split classifies each calendar month by the trailing 3-month % change in the EUR/USD exchange rate (Yahoo Finance <code>EURUSD=X</code>, month-end close): a rise of more than 2% is "Dollar Weakening," a fall of more than 2% is "Dollar Strengthening," and anything in between is "Flat." EUR/USD is a single currency pair, not a broad trade-weighted dollar index. It's used here as a simple, freely-available proxy for dollar direction, not a precise measure of it, so treat the regime split as a first-order approximation. The intuition being tested is the textbook one: a weaker dollar should flatter unhedged international returns (translation effect) and, in practice, has often coincided with periods of relative US underperformance for other reasons too, but the regime averages below are a small, noisy sample (a couple dozen months per regime), so read them as suggestive rather than a robust statistical result.</p>
+<p>The scatter panel runs the same two-method check used throughout <a href="/factor-analysis.html">Factor Analysis</a> and <a href="/small-cap-vs-large-cap.html">Small Cap vs. Large Cap Spread</a>: Pearson (OLS) correlation alongside Spearman rank correlation, so a relationship can't be quietly resting on one or two extreme months. Both are shown; a low r&sup2; here isn't a bug: a single currency pair rarely explains much of a monthly equity-return series, and the point of showing the regression is to be honest about how weak (or strong) that single-variable relationship actually is, not to oversell it.</p>
 <p>Refreshes once daily after the US market close (index levels move every trading day); the EUR/USD monthly series is re-pulled in full each run since it's a cheap, low-volume series.</p>
-<div class="source">Source: <a href="https://finance.yahoo.com/" target="_blank" rel="noopener">Yahoo Finance</a> — daily adjusted close (EFA, EEM, SPY), EURUSD=X month-end close</div>
+<div class="source">Source: <a href="https://finance.yahoo.com/" target="_blank" rel="noopener">Yahoo Finance</a>: daily adjusted close (EFA, EEM, SPY), EURUSD=X month-end close</div>
 </div>
 
 </div>
@@ -934,7 +934,7 @@ function showWarning(message){
 }
 
 function fmtPct(v, digits){
- if(v === null || v === undefined || isNaN(v)) return "—";
+ if(v === null || v === undefined || isNaN(v)) return "n/a";
  digits = digits === undefined ? 2 : digits;
  return (v >= 0 ? "+" : "") + v.toFixed(digits) + "%";
 }
@@ -1165,7 +1165,7 @@ function renderStats(data, monthly){
 
  const regime = monthly.currentRegime;
  const stats = regime ? monthly.regimeStats[regime] : null;
- document.getElementById("statRegime").textContent = regime || "—";
+ document.getElementById("statRegime").textContent = regime || "n/a";
  if(stats && stats.n){
   document.getElementById("statRegimeNote").textContent =
    "Avg. " + fmtPct(stats.mean) + "/mo in “" + regime + "” regimes (n=" + stats.n + " mo.)";
@@ -1216,7 +1216,7 @@ function renderRatioChart(data){
 }
 
 function fmtLadderCell(cell){
- if(!cell) return '<span class="cell-na">—</span>';
+ if(!cell) return '<span class="cell-na">: </span>';
  return fmtPct(cell.cumPct);
 }
 

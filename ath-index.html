@@ -170,7 +170,7 @@ document.addEventListener("DOMContentLoaded", function(){
 </script>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1" name="viewport"/>
-<title>All-Time Highs and Lows — Michael J. Stevenson</title>
+<title>All-Time Highs and Lows | Michael J. Stevenson</title>
 <style>
 
 :root{
@@ -780,12 +780,12 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <div class="dd-grid">
 <div class="chart-box dd-box">
 <h2>S&amp;P 500 (SPY) % off of all-time highs</h2>
-<div class="dd-stats"><span class="dd-now" id="ddNow-SPY">—</span><span class="dd-meta" id="ddMeta-SPY"></span></div>
+<div class="dd-stats"><span class="dd-now" id="ddNow-SPY">…</span><span class="dd-meta" id="ddMeta-SPY"></span></div>
 <div class="chart-canvas-wrap"><canvas id="ddChart-SPY"></canvas></div>
 </div>
 <div class="chart-box dd-box">
 <h2>MSCI World Index (URTH) % off of all-time highs</h2>
-<div class="dd-stats"><span class="dd-now" id="ddNow-URTH">—</span><span class="dd-meta" id="ddMeta-URTH"></span></div>
+<div class="dd-stats"><span class="dd-now" id="ddNow-URTH">…</span><span class="dd-meta" id="ddMeta-URTH"></span></div>
 <div class="chart-canvas-wrap"><canvas id="ddChart-URTH"></canvas></div>
 </div>
 </div>
@@ -799,17 +799,17 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <div class="stat-grid">
 <div class="stat-card">
 <div class="stat-label">At All-Time Highs</div>
-<div class="stat-value" id="statCount">—</div>
+<div class="stat-value" id="statCount">…</div>
 <div class="stat-note" id="statCountNote">of sample</div>
 </div>
 <div class="stat-card">
 <div class="stat-label">% of Sample</div>
-<div class="stat-value" id="statPct">—</div>
+<div class="stat-value" id="statPct">…</div>
 <div class="stat-note">Higher means broader strength across the sample, not just headline-index-level names</div>
 </div>
 <div class="stat-card">
 <div class="stat-label">As Of</div>
-<div class="stat-value" id="statDate" style="font-size:20px;">—</div>
+<div class="stat-value" id="statDate" style="font-size:20px;">…</div>
 <div class="stat-note">Most recent trading day</div>
 </div>
 </div>
@@ -840,17 +840,17 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <div class="stat-grid">
 <div class="stat-card">
 <div class="stat-label">At All-Time Lows</div>
-<div class="stat-value" id="atlStatCount" style="color:var(--fear);">—</div>
+<div class="stat-value" id="atlStatCount" style="color:var(--fear);">…</div>
 <div class="stat-note" id="atlStatCountNote">of sample</div>
 </div>
 <div class="stat-card">
 <div class="stat-label">% of Sample</div>
-<div class="stat-value" id="atlStatPct" style="color:var(--fear);">—</div>
+<div class="stat-value" id="atlStatPct" style="color:var(--fear);">…</div>
 <div class="stat-note">Higher means broader weakness across the sample, not just a handful of laggards</div>
 </div>
 <div class="stat-card">
 <div class="stat-label">As Of</div>
-<div class="stat-value" id="atlStatDate" style="font-size:20px;">—</div>
+<div class="stat-value" id="atlStatDate" style="font-size:20px;">…</div>
 <div class="stat-note">Most recent trading day</div>
 </div>
 </div>
@@ -862,7 +862,7 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 </div>
 <div class="explainer">
 <h2>How this is computed</h2>
-<p>Mirrors the all-time-high methodology on the other tab: a name counts as being at an all-time low when its intraday low reaches its recorded all-time low for the day, sourced from TradingView's screener (<code>Low.All</code> field). There's no Alpha Vantage-based fallback or long-run chart here, since the flawed Alpha Vantage history that motivated the ATH fix never had a comparable all-time-low computation to begin with — this tab is TradingView-only.</p>
+<p>Mirrors the all-time-high methodology on the other tab: a name counts as being at an all-time low when its intraday low reaches its recorded all-time low for the day, sourced from TradingView's screener (<code>Low.All</code> field). There's no Alpha Vantage-based fallback or long-run chart here, since the flawed Alpha Vantage history that motivated the ATH fix never had a comparable all-time-low computation to begin with, so this tab is TradingView-only.</p>
 <div class="source">Source: <a href="https://www.tradingview.com/screener/" rel="noopener" target="_blank">TradingView Screener</a></div>
 </div>
 </div>
@@ -878,7 +878,7 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 </div>
 <div class="explainer">
 <h2>Reading this chart</h2>
-<p>The bars show the count of S&amp;P 500 constituents at a fresh all-time high minus the count at a fresh all-time low, each trading day — a classic breadth measure. Positive and rising means strength is broadening; negative means more names are breaking down than breaking out, which can show up before the index itself rolls over. The line overlays the S&amp;P 500 level itself for context.</p>
+<p>The bars show the count of S&amp;P 500 constituents at a fresh all-time high minus the count at a fresh all-time low, each trading day, a classic breadth measure. Positive and rising means strength is broadening; negative means more names are breaking down than breaking out, which can show up before the index itself rolls over. The line overlays the S&amp;P 500 level itself for context.</p>
 <p>The historical bars come from the same Alpha Vantage daily history that backs the All-Time Highs tab's long-run chart, so they carry the same caveat: that history is capped at roughly 26 years per symbol, understating the true all-time high or low for long-listed names and skewing older counts on both sides. Today's bar is overridden with the accurate TradingView-based count once it's populated for the day.</p>
 <div class="source">Sources: <a href="https://www.alphavantage.co/" rel="noopener" target="_blank">Alpha Vantage</a> (historical bars &amp; S&amp;P 500 level) · <a href="https://www.tradingview.com/screener/" rel="noopener" target="_blank">TradingView Screener</a> (today's bar)</div>
 </div>
@@ -938,7 +938,7 @@ async function init(){
   if(latest){
    document.getElementById("statCount").textContent = latest.count;
    document.getElementById("statCountNote").textContent = "of " + latest.total + " constituents";
-   document.getElementById("statPct").textContent = (latest.pct === null ? "—" : latest.pct + "%");
+   document.getElementById("statPct").textContent = (latest.pct === null ? "n/a" : latest.pct + "%");
    document.getElementById("statDate").textContent = usDate(latest.date);
 
    const tickerGrid = document.getElementById("tickerGrid");
@@ -949,7 +949,7 @@ async function init(){
    const atlTickers = latest.atlTickers || [];
    document.getElementById("atlStatCount").textContent = latest.atlCount ?? 0;
    document.getElementById("atlStatCountNote").textContent = "of " + latest.total + " constituents";
-   document.getElementById("atlStatPct").textContent = (latest.atlPct == null ? "—" : latest.atlPct + "%");
+   document.getElementById("atlStatPct").textContent = (latest.atlPct == null ? "n/a" : latest.atlPct + "%");
    document.getElementById("atlStatDate").textContent = usDate(latest.date);
    const atlTickerGrid = document.getElementById("atlTickerGrid");
    atlTickerGrid.innerHTML = atlTickers.length
@@ -959,17 +959,17 @@ async function init(){
    updatedText = "Current data from TradingView, generated " + new Date(tvResult.value.data.generated_at_utc).toLocaleString("en-US", { month: "2-digit", day: "2-digit", year: "numeric", hour: "numeric", minute: "2-digit" });
   }
  }else if(breadthResult.status === "fulfilled" && breadthResult.value.ok && breadthResult.value.data.athSummary){
-  showWarning("Showing an Alpha-Vantage-based estimate for today's count — the more accurate TradingView-based figure hasn't populated yet. See \"Why two data sources\" below.");
+  showWarning("Showing an Alpha-Vantage-based estimate for today's count. The more accurate TradingView-based figure hasn't populated yet. See \"Why two data sources\" below.");
   const summary = breadthResult.value.data.athSummary;
   document.getElementById("statCount").textContent = summary.count;
   document.getElementById("statCountNote").textContent = "of " + summary.total + " in sample (estimate)";
-  document.getElementById("statPct").textContent = (summary.pct === null ? "—" : summary.pct + "%");
+  document.getElementById("statPct").textContent = (summary.pct === null ? "n/a" : summary.pct + "%");
   document.getElementById("statDate").textContent = usDate(summary.asOfDate);
   const tickerGrid = document.getElementById("tickerGrid");
   tickerGrid.innerHTML = summary.tickers.length
    ? summary.tickers.map(t => `<span class="ticker-chip">${t}</span>`).join("")
    : '<span class="ticker-empty">No names in the sample are at an all-time high today.</span>';
-  document.getElementById("atlTickerGrid").innerHTML = '<span class="ticker-empty">All-time-low data isn\'t available yet — it\'s only sourced from TradingView.</span>';
+  document.getElementById("atlTickerGrid").innerHTML = '<span class="ticker-empty">All-time-low data isn\'t available yet: it\'s only sourced from TradingView.</span>';
  }else{
   showError("Couldn't load all-time-high data. Neither /api/ath-tradingview nor /api/breadth-internals returned usable data.");
  }
@@ -1184,7 +1184,7 @@ function renderChartRange(rangeKey){
     legend: { display: false },
     tooltip: {
      callbacks: {
-      label: ctx => "% at ATH: " + (ctx.parsed.y === null ? "—" : ctx.parsed.y + "%"),
+      label: ctx => "% at ATH: " + (ctx.parsed.y === null ? "n/a" : ctx.parsed.y + "%"),
      },
     },
    },

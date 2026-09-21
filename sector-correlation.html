@@ -153,7 +153,7 @@ document.addEventListener("DOMContentLoaded", function(){
 </script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Sector Correlation Matrix — Michael J. Stevenson</title>
+<title>Sector Correlation Matrix | Michael J. Stevenson</title>
 
 <style>
 
@@ -813,7 +813,7 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <div class="header">
 <div>
 <h1>Sector Correlation Matrix</h1>
-<div class="subtitle">How closely the 11 SPDR sector ETFs move together, trailing ~2 years of daily returns — the full pairwise matrix, how the average correlation drifts over time, and its relationship to market volatility.</div>
+<div class="subtitle">How closely the 11 SPDR sector ETFs move together, trailing ~2 years of daily returns. The full pairwise matrix, how the average correlation drifts over time, and its relationship to market volatility.</div>
 </div>
 <div class="updated" id="updated">Loading...</div>
 </div>
@@ -821,22 +821,22 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <div class="stat-grid">
 <div class="stat-card">
 <div class="stat-label">Current Avg. Pairwise Correlation</div>
-<div class="stat-value" id="statAvgCorr">—</div>
+<div class="stat-value" id="statAvgCorr">…</div>
 <div class="stat-note" id="statAvgCorrNote">Trailing 63 trading days</div>
 </div>
 <div class="stat-card">
 <div class="stat-label">Most Correlated Pair</div>
-<div class="stat-value" id="statMaxPair" style="font-size:18px;">—</div>
+<div class="stat-value" id="statMaxPair" style="font-size:18px;">…</div>
 <div class="stat-note" id="statMaxPairNote">Full ~2-year period</div>
 </div>
 <div class="stat-card">
 <div class="stat-label">Most Diversifying Pair</div>
-<div class="stat-value" id="statMinPair" style="font-size:18px;">—</div>
+<div class="stat-value" id="statMinPair" style="font-size:18px;">…</div>
 <div class="stat-note" id="statMinPairNote">Lowest pairwise correlation</div>
 </div>
 <div class="stat-card">
 <div class="stat-label">Correlation vs. Volatility</div>
-<div class="stat-value" id="statCorrVol" style="font-size:20px;">—</div>
+<div class="stat-value" id="statCorrVol" style="font-size:20px;">…</div>
 <div class="stat-note" id="statCorrVolNote">r, avg. correlation vs. SPY realized vol</div>
 </div>
 </div>
@@ -857,7 +857,7 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <div class="chart-box-header">
 <div>
 <h2>Average pairwise correlation over time</h2>
-<div class="chart-subhead">Rolling 63-trading-day average across all 55 sector pairs — rises when sectors move together (broad risk-on/risk-off), falls when sector-specific stories dominate</div>
+<div class="chart-subhead">Rolling 63-trading-day average across all 55 sector pairs. Rises when sectors move together (broad risk-on/risk-off), falls when sector-specific stories dominate</div>
 </div>
 </div>
 <div class="chart-canvas-wrap">
@@ -869,7 +869,7 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <div class="chart-box-header">
 <div>
 <h2>Average correlation vs. SPY realized volatility</h2>
-<div class="chart-subhead">Each point is one trading day: x-axis is that day's trailing-63-day annualized SPY realized volatility, y-axis is that day's trailing-63-day average pairwise sector correlation — testing the "correlations go to 1 in a crisis" claim directly</div>
+<div class="chart-subhead">Each point is one trading day: x-axis is that day's trailing-63-day annualized SPY realized volatility, y-axis is that day's trailing-63-day average pairwise sector correlation. Testing the "correlations go to 1 in a crisis" claim directly</div>
 </div>
 </div>
 <div class="scatter-canvas-wrap">
@@ -881,7 +881,7 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <div class="table-box">
 <div class="table-box-header">
 <h2>Correlation to the market</h2>
-<div class="chart-subhead">Each sector's correlation to SPY, full ~2-year period — lower means more diversifying against a broad market position</div>
+<div class="chart-subhead">Each sector's correlation to SPY, full ~2-year period. Lower means more diversifying against a broad market position</div>
 </div>
 <table class="datatable" id="marketCorrTable">
 <thead><tr><th>Sector</th><th>Corr. to SPY</th></tr></thead>
@@ -891,10 +891,10 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 
 <div class="explainer">
 <h2>Methodology</h2>
-<p>Reuses the same daily adjusted-close history already fetched for <a href="/sector-analysis.html">Sector Performance</a> (the 11 SPDR sector ETFs plus SPY, ~2 years of daily bars) rather than pulling any new Alpha Vantage data — this page is pure client-side analysis of an existing dataset. Daily % returns are computed from those closes, and every pairwise Pearson correlation is computed directly from the aligned daily return series (no smoothing or resampling).</p>
-<p>The rolling correlation series takes a 63-trading-day (~one calendar quarter) trailing window, recomputes the average of all 55 sector-pair correlations at each day, and slides that window forward one day at a time. The scatter panel pairs that same rolling series against a rolling 63-day annualized realized volatility of SPY (standard deviation of daily returns &times; &radic;252), then runs the same Pearson/Spearman regression check used throughout <a href="/factor-analysis.html">Factor Analysis</a> — note that adjacent days in a rolling-window series share almost all of their underlying data, so this regression's n overstates how many truly independent observations exist. Treat the r/p values as a rough gauge of direction and strength, not as a rigorous hypothesis test the way the non-overlapping-annual checks on other pages are.</p>
-<p>The heatmap intentionally excludes SPY itself (an average of the sectors, not a peer of them) — the market-relationship table below the heatmap covers each sector's own correlation to SPY separately.</p>
-<div class="source">Source: Yahoo Finance (via the existing /api/sector-performance dataset) — TIME_SERIES_DAILY_ADJUSTED</div>
+<p>Reuses the same daily adjusted-close history already fetched for <a href="/sector-analysis.html">Sector Performance</a> (the 11 SPDR sector ETFs plus SPY, ~2 years of daily bars) rather than pulling any new Alpha Vantage data. This page is pure client-side analysis of an existing dataset. Daily % returns are computed from those closes, and every pairwise Pearson correlation is computed directly from the aligned daily return series (no smoothing or resampling).</p>
+<p>The rolling correlation series takes a 63-trading-day (~one calendar quarter) trailing window, recomputes the average of all 55 sector-pair correlations at each day, and slides that window forward one day at a time. The scatter panel pairs that same rolling series against a rolling 63-day annualized realized volatility of SPY (standard deviation of daily returns &times; &radic;252), then runs the same Pearson/Spearman regression check used throughout <a href="/factor-analysis.html">Factor Analysis</a>. Note that adjacent days in a rolling-window series share almost all of their underlying data, so this regression's n overstates how many truly independent observations exist. Treat the r/p values as a rough gauge of direction and strength, not as a rigorous hypothesis test the way the non-overlapping-annual checks on other pages are.</p>
+<p>The heatmap intentionally excludes SPY itself (an average of the sectors, not a peer of them). The market-relationship table below the heatmap covers each sector's own correlation to SPY separately.</p>
+<div class="source">Source: Yahoo Finance (via the existing /api/sector-performance dataset), TIME_SERIES_DAILY_ADJUSTED</div>
 </div>
 
 </div>
@@ -1216,7 +1216,7 @@ function renderCorrVolScatter(xs, ys, dates){
    "<thead><tr><th>Method</th><th>n</th><th>r</th><th>r&sup2;</th><th>slope</th><th>t</th><th>p</th></tr></thead>" +
    "<tbody>" + row("Pearson (OLS)", pearsonReg) + row("Spearman (&rho;)", spear) + "</tbody>" +
   "</table>" +
-  '<div class="method-note">n counts overlapping rolling-window days, not independent observations — see the methodology note below.</div>';
+  '<div class="method-note">n counts overlapping rolling-window days, not independent observations. See the methodology note below.</div>';
 }
 
 init();

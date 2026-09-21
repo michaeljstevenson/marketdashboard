@@ -16,7 +16,7 @@ exports.handler = async () => {
     ]);
 
     if (!latest) {
-      throw new Error("Earnings revisions not yet populated — scheduled-revisions-background hasn't run yet");
+      throw new Error("Earnings revisions not yet populated, scheduled-revisions-background hasn't run yet");
     }
 
     return {

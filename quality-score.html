@@ -153,7 +153,7 @@ document.addEventListener("DOMContentLoaded", function(){
 </script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Financial Quality Screener — Michael J. Stevenson</title>
+<title>Financial Quality Screener | Michael J. Stevenson</title>
 
 <style>
 
@@ -846,22 +846,22 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <div class="stat-grid">
 <div class="stat-card">
 <div class="stat-label">Companies Scored</div>
-<div class="stat-value" id="statCompanies" style="font-size:20px;">—</div>
+<div class="stat-value" id="statCompanies" style="font-size:20px;">…</div>
 <div class="stat-note" id="statCompaniesNote">Of full S&amp;P 500</div>
 </div>
 <div class="stat-card">
 <div class="stat-label">Median F-Score</div>
-<div class="stat-value" id="statMedianScore">—</div>
+<div class="stat-value" id="statMedianScore">…</div>
 <div class="stat-note">Out of 9, market-wide</div>
 </div>
 <div class="stat-card">
 <div class="stat-label">High Quality (8&ndash;9)</div>
-<div class="stat-value" id="statHighQuality">—</div>
+<div class="stat-value" id="statHighQuality">…</div>
 <div class="stat-note">Share of scored companies</div>
 </div>
 <div class="stat-card">
 <div class="stat-label">Low Quality (0&ndash;2)</div>
-<div class="stat-value" id="statLowQuality" style="color:var(--fear);">—</div>
+<div class="stat-value" id="statLowQuality" style="color:var(--fear);">…</div>
 <div class="stat-note">Financial-distress watch zone</div>
 </div>
 </div>
@@ -912,7 +912,7 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <div class="chart-box-header">
 <div>
 <h2>Quality vs. recent price performance</h2>
-<div class="chart-subhead">Each point is one company: x-axis is its F-Score, y-axis is trailing 3-month price return relative to SPY (from Relative Strength Leaders/Laggards) — a concurrent snapshot, not a claim that today's F-Score predicts tomorrow's return</div>
+<div class="chart-subhead">Each point is one company: x-axis is its F-Score, y-axis is trailing 3-month price return relative to SPY (from Relative Strength Leaders/Laggards). A concurrent snapshot, not a claim that today's F-Score predicts tomorrow's return</div>
 </div>
 </div>
 <div class="ndr-panel">
@@ -972,11 +972,11 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 
 <div class="explainer">
 <h2>Methodology</h2>
-<p>The F-Score comes from Joseph Piotroski's 2000 paper <i>"Value Investing: The Use of Historical Financial Statement Information to Separate Winners from Losers"</i> — nine binary tests comparing a company's latest fiscal year (T) against the prior one (T-1), summed into a single 0&ndash;9 score. <b>Profitability (4):</b> return on assets positive; operating cash flow positive; ROA improved year-over-year; operating cash flow exceeds net income (a basic accrual-quality/earnings-quality check). <b>Leverage &amp; liquidity (3):</b> long-term debt/total-assets ratio decreased; current ratio (current assets/current liabilities) improved; no new shares issued. <b>Operating efficiency (2):</b> gross margin improved; asset turnover (revenue/total assets) improved. Each test scores 1 or 0; the F-Score is the sum.</p>
-<p>Universe is the full S&amp;P 500. Two years of annual <code>BALANCE_SHEET</code> and <code>INCOME_STATEMENT</code> data supply total assets, current assets/liabilities, long-term debt, shares outstanding, revenue, gross profit, and net income; annual <code>CASH_FLOW</code> supplies operating cash flow. One simplification from Piotroski's original construction: ROA here uses <i>ending</i> total assets for both fiscal years rather than the average of beginning and ending assets, since averaging ROA for year T-1 would require a third year (T-2) of balance-sheet data this two-year pull doesn't include — a common practical simplification when working from a fixed lookback window. A company is scored only if every one of the nine inputs is available for both fiscal years; no partial score is reported for a missing input, since a score out of fewer than 9 wouldn't be comparable to the rest of the universe. In practice this excludes most banks and insurers, whose balance sheets don't carry a conventional current-assets/current-liabilities split — a consequence of applying a screener built for industrial and operating companies, not a hand-picked sector exclusion.</p>
+<p>The F-Score comes from Joseph Piotroski's 2000 paper <i>"Value Investing: The Use of Historical Financial Statement Information to Separate Winners from Losers"</i>. Nine binary tests comparing a company's latest fiscal year (T) against the prior one (T-1), summed into a single 0&ndash;9 score. <b>Profitability (4):</b> return on assets positive; operating cash flow positive; ROA improved year-over-year; operating cash flow exceeds net income (a basic accrual-quality/earnings-quality check). <b>Leverage &amp; liquidity (3):</b> long-term debt/total-assets ratio decreased; current ratio (current assets/current liabilities) improved; no new shares issued. <b>Operating efficiency (2):</b> gross margin improved; asset turnover (revenue/total assets) improved. Each test scores 1 or 0; the F-Score is the sum.</p>
+<p>Universe is the full S&amp;P 500. Two years of annual <code>BALANCE_SHEET</code> and <code>INCOME_STATEMENT</code> data supply total assets, current assets/liabilities, long-term debt, shares outstanding, revenue, gross profit, and net income; annual <code>CASH_FLOW</code> supplies operating cash flow. One simplification from Piotroski's original construction: ROA here uses <i>ending</i> total assets for both fiscal years rather than the average of beginning and ending assets, since averaging ROA for year T-1 would require a third year (T-2) of balance-sheet data this two-year pull doesn't include. A common practical simplification when working from a fixed lookback window. A company is scored only if every one of the nine inputs is available for both fiscal years; no partial score is reported for a missing input, since a score out of fewer than 9 wouldn't be comparable to the rest of the universe. In practice this excludes most banks and insurers, whose balance sheets don't carry a conventional current-assets/current-liabilities split. A consequence of applying a screener built for industrial and operating companies, not a hand-picked sector exclusion.</p>
 <p>The quality-vs-momentum scatter is a single-snapshot cross-sectional check, not a forward-return test: it asks whether companies that currently screen as high-quality also happen to show stronger trailing 3-month relative price performance right now (reusing <a href="/relative-strength-leaders.html">Relative Strength Leaders/Laggards</a>' own latest snapshot rather than running a second price sweep). A positive relationship would be consistent with the market currently rewarding quality; it says nothing about whether this quarter's F-Score predicts next quarter's return, which would need return data that postdates this snapshot. Pearson and Spearman are both reported, matching the two-method convention used throughout <a href="/factor-analysis.html">Factor Analysis</a>.</p>
-<p>This is a snapshot, not a continuously-refreshed feed — like several of this site's other full-index screens, it reflects the data as of the run that built it. A fresh sweep needs the two background jobs behind this page (a two-statement balance-sheet/income-statement pull, then a separate cash-flow pull) re-run manually.</p>
-<div class="source">Source: <a href="https://www.alphavantage.co/" target="_blank" rel="noopener">Alpha Vantage — BALANCE_SHEET, INCOME_STATEMENT, CASH_FLOW</a></div>
+<p>This is a snapshot, not a continuously-refreshed feed, like several of this site's other full-index screens, it reflects the data as of the run that built it. A fresh sweep needs the two background jobs behind this page (a two-statement balance-sheet/income-statement pull, then a separate cash-flow pull) re-run manually.</p>
+<div class="source">Source: <a href="https://www.alphavantage.co/" target="_blank" rel="noopener">Alpha Vantage: BALANCE_SHEET, INCOME_STATEMENT, CASH_FLOW</a></div>
 </div>
 
 </div>
@@ -1003,21 +1003,21 @@ let SORT_KEY = "score";
 let SORT_DIR = -1;
 
 function fmtScore(v){
- if(v === null || v === undefined || isNaN(v)) return "—";
+ if(v === null || v === undefined || isNaN(v)) return "n/a";
  return v + "/9";
 }
 function fmtPlainPct(v, digits){
- if(v === null || v === undefined || isNaN(v)) return "—";
+ if(v === null || v === undefined || isNaN(v)) return "n/a";
  digits = digits === undefined ? 1 : digits;
  return v.toFixed(digits) + "%";
 }
 function fmtPct(v, digits){
- if(v === null || v === undefined || isNaN(v)) return "—";
+ if(v === null || v === undefined || isNaN(v)) return "n/a";
  digits = digits === undefined ? 1 : digits;
  return (v >= 0 ? "+" : "") + v.toFixed(digits) + "%";
 }
 function fmtX(v, digits){
- if(v === null || v === undefined || isNaN(v)) return "—";
+ if(v === null || v === undefined || isNaN(v)) return "n/a";
  digits = digits === undefined ? 2 : digits;
  return v.toFixed(digits) + "x";
 }
@@ -1152,7 +1152,7 @@ async function init(){
   document.getElementById("updated").textContent = "As of " + new Date(data.generated_at_utc).toLocaleString("en-US", { month: "2-digit", day: "2-digit", year: "numeric", hour: "numeric", minute: "2-digit" });
 
   if(data.loadedCount < data.universeSize){
-   showWarning("Only " + data.loadedCount + " of " + data.universeSize + " S&P 500 constituents loaded this run — some data may be temporarily unavailable.");
+   showWarning("Only " + data.loadedCount + " of " + data.universeSize + " S&P 500 constituents loaded this run. Some data may be temporarily unavailable.");
   }
 
   renderStats();
@@ -1174,7 +1174,7 @@ async function init(){
 function renderStats(){
  document.getElementById("statCompanies").textContent = RAW.market.companyCount;
  document.getElementById("statCompaniesNote").textContent = RAW.loadedCount + " of " + RAW.universeSize + " loaded, " + RAW.market.companyCount + " with a computable score";
- document.getElementById("statMedianScore").textContent = RAW.market.medianScore === null ? "—" : RAW.market.medianScore + "/9";
+ document.getElementById("statMedianScore").textContent = RAW.market.medianScore === null ? "n/a" : RAW.market.medianScore + "/9";
  document.getElementById("statHighQuality").textContent = fmtPlainPct(RAW.market.highQualityPct);
  document.getElementById("statLowQuality").textContent = fmtPlainPct(RAW.market.lowQualityPct);
 }
@@ -1285,7 +1285,7 @@ function renderMomentumScatter(){
  });
 
  document.getElementById("momentumMethodTable").innerHTML = methodTableHtml(pearson, spear,
-  "A concurrent association, not a forward-return prediction — see the methodology section below. n=" + pearson.n + " companies with both a computable F-Score and recent relative-return data.");
+  "A concurrent association, not a forward-return prediction. See the methodology section below. n=" + pearson.n + " companies with both a computable F-Score and recent relative-return data.");
 }
 
 function renderLeaderTable(rows, tbodyId){
@@ -1296,7 +1296,7 @@ function renderLeaderTable(rows, tbodyId){
  }
  tbody.innerHTML = rows.map(r => `<tr>
   <td><span class="sector-name">${r.symbol}</span></td>
-  <td><span class="sector-ticker">${r.sector || "—"}</span></td>
+  <td><span class="sector-ticker">${r.sector || "n/a"}</span></td>
   <td class="${scoreClass(r.score)}">${fmtScore(r.score)}</td>
   <td>${fmtPct(r.roa)}</td>
  </tr>`).join("");
@@ -1324,7 +1324,7 @@ function renderTable(){
  const tbody = document.getElementById("tableBody");
  tbody.innerHTML = rows.map(r => `<tr>
   <td><span class="sector-name">${r.symbol}</span></td>
-  <td><span class="sector-ticker">${r.sector || "—"}</span></td>
+  <td><span class="sector-ticker">${r.sector || "n/a"}</span></td>
   <td class="${scoreClass(r.score)}">${fmtScore(r.score)}</td>
   <td>${fmtPct(r.roa)}</td>
   <td>${fmtPct(r.roaChange)}</td>

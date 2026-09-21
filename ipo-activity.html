@@ -170,7 +170,7 @@ document.addEventListener("DOMContentLoaded", function(){
 </script>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1" name="viewport"/>
-<title>IPO Activity &amp; Bull Cycle Strength — Michael J. Stevenson</title>
+<title>IPO Activity &amp; Bull Cycle Strength | Michael J. Stevenson</title>
 <style>
 
 :root{
@@ -758,22 +758,22 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <div class="stat-grid">
 <div class="stat-card">
 <div class="stat-label">IPOs (2025)</div>
-<div class="stat-value" id="statCount">—</div>
-<div class="stat-note" id="statCountNote">—</div>
+<div class="stat-value" id="statCount">…</div>
+<div class="stat-note" id="statCountNote">…</div>
 </div>
 <div class="stat-card">
 <div class="stat-label">Avg. First-Day Pop</div>
-<div class="stat-value" id="statPop" style="color:var(--extreme);">—</div>
+<div class="stat-value" id="statPop" style="color:var(--extreme);">…</div>
 <div class="stat-note">Offer price to first close, equal-weighted</div>
 </div>
 <div class="stat-card">
 <div class="stat-label">Gross Proceeds</div>
-<div class="stat-value" id="statProceeds" style="color:var(--fear);">—</div>
+<div class="stat-value" id="statProceeds" style="color:var(--fear);">…</div>
 <div class="stat-note">Not inflation-adjusted</div>
 </div>
 <div class="stat-card">
 <div class="stat-label">S&amp;P 500 Return (2025)</div>
-<div class="stat-value" id="statSP">—</div>
+<div class="stat-value" id="statSP">…</div>
 <div class="stat-note">Price return, same calendar year</div>
 </div>
 </div>
@@ -829,9 +829,9 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 </div>
 <div class="explainer">
 <p>The chart shows three series pulled directly from Jay Ritter's continuously updated IPO database, a standard academic and industry source for U.S. IPO statistics going back to 1960. The headline series includes bank/thrift conversions and excludes ADRs, SPACs, unit offers, closed-end funds, REITs, and very small or best-efforts deals, which helps to use a conservative definition for year-over-year consistency instead of the broadest possible count. *S&amp;P 500 returns are price return only (no dividends)*</p>
-<p>The two scatter plots test the "IPO froth as a contrarian indicator" hypothesis directly: does this year's IPO activity (count, or average pop) predict <em>next</em> year's S&amp;P 500 return? A negative, statistically significant slope would support the classic narrative that heavy IPO issuance marks late-cycle excess. As the methodology tables show, the sign is usually right but the significance is marginal — consistent with IPO volume being a real but noisy and non-mechanical signal, unlike the implied ERP series on this site's <a href="/implied-erp.html">Implied Equity Risk Premium</a> page, which by construction can't avoid some contemporaneous correlation with market pricing.</p>
+<p>The two scatter plots test the "IPO froth as a contrarian indicator" hypothesis directly: does this year's IPO activity (count, or average pop) predict <em>next</em> year's S&amp;P 500 return? A negative, statistically significant slope would support the classic narrative that heavy IPO issuance marks late-cycle excess. As the methodology tables show, the sign is usually right but the significance is marginal. Consistent with IPO volume being a real but noisy and non-mechanical signal, unlike the implied ERP series on this site's <a href="/implied-erp.html">Implied Equity Risk Premium</a> page, which by construction can't avoid some contemporaneous correlation with market pricing.</p>
 <p>Limitations: a 31-year annual sample is small, and two outlier years (1999–2000, 2021) drive much of the relationship. The jackknife row in each methodology table shows by exactly how much. Less focused on is that IPO count is as much a supply-side measure as it is a demand-side measure. Companies choose whether to go public based on the same market conditions that are being tested as the predictor.</p>
-<div class="source">Source: <a href="https://site.warrington.ufl.edu/ritter/ipo-data/" rel="noopener" target="_blank">Jay R. Ritter, University of Florida — IPO Data</a>. S&amp;P 500 levels from Aswath Damodaran, NYU Stern (used elsewhere on this site for the Implied ERP series).</div>
+<div class="source">Source: <a href="https://site.warrington.ufl.edu/ritter/ipo-data/" rel="noopener" target="_blank">Jay R. Ritter, University of Florida: IPO Data</a>. S&amp;P 500 levels from Aswath Damodaran, NYU Stern (used elsewhere on this site for the Implied ERP series).</div>
 </div>
 </div>
 <script>
@@ -1121,7 +1121,7 @@ function init(){
      callbacks: {
       label: ctx => ctx.dataset.label === "Number of IPOs"
        ? ctx.dataset.label + ": " + ctx.parsed.y
-       : ctx.dataset.label + ": " + (ctx.parsed.y === null ? "—" : ctx.parsed.y + "%"),
+       : ctx.dataset.label + ": " + (ctx.parsed.y === null ? "n/a" : ctx.parsed.y + "%"),
      },
     },
    },

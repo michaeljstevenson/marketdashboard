@@ -12,7 +12,7 @@ exports.handler = async () => {
     const latest = await store.get(LATEST_KEY, { type: "json" });
 
     if (!latest) {
-      throw new Error("Earnings surprise data not yet populated — scheduled-surprise-background hasn't run yet");
+      throw new Error("Earnings surprise data not yet populated, scheduled-surprise-background hasn't run yet");
     }
 
     return {

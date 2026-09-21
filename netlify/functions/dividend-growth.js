@@ -12,7 +12,7 @@ exports.handler = async () => {
     const latest = await store.get(LATEST_KEY, { type: "json" });
 
     if (!latest) {
-      throw new Error("Dividend growth data not yet populated — scheduled-dividend-growth-background hasn't run yet");
+      throw new Error("Dividend growth data not yet populated, scheduled-dividend-growth-background hasn't run yet");
     }
 
     return {

@@ -153,7 +153,7 @@ document.addEventListener("DOMContentLoaded", function(){
 </script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Stock Split Tracker — Michael J. Stevenson</title>
+<title>Stock Split Tracker | Michael J. Stevenson</title>
 
 <style>
 
@@ -843,7 +843,7 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <div class="header">
 <div>
 <h1>Stock Split Tracker</h1>
-<div class="subtitle">Split activity across the full S&amp;P 500 — is the stock split coming back after two quiet decades? — plus an event study of relative price performance vs. SPY in the trading days around each recent split.</div>
+<div class="subtitle">Split activity across the full S&amp;P 500 (is the stock split coming back after two quiet decades?) plus an event study of relative price performance vs. SPY in the trading days around each recent split.</div>
 </div>
 <div class="updated" id="updated">Loading...</div>
 </div>
@@ -851,22 +851,22 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <div class="stat-grid">
 <div class="stat-card">
 <div class="stat-label">Splits, trailing 5 years</div>
-<div class="stat-value" id="statRecentCount">—</div>
+<div class="stat-value" id="statRecentCount">…</div>
 <div class="stat-note" id="statRecentCountNote">Forward / reverse, full S&amp;P 500</div>
 </div>
 <div class="stat-card">
 <div class="stat-label">Avg. relative return, 120 trading days post-split</div>
-<div class="stat-value" id="statAvgForward">—</div>
+<div class="stat-value" id="statAvgForward">…</div>
 <div class="stat-note" id="statAvgForwardNote">Forward splits only, vs. SPY</div>
 </div>
 <div class="stat-card">
 <div class="stat-label">Bigger split, bigger move?</div>
-<div class="stat-value" id="statSizeEffect" style="font-size:20px;">—</div>
+<div class="stat-value" id="statSizeEffect" style="font-size:20px;">…</div>
 <div class="stat-note" id="statSizeEffectNote">Pearson r, split ratio (log2) vs. 120-day relative return</div>
 </div>
 <div class="stat-card">
 <div class="stat-label">Most active sector</div>
-<div class="stat-value" id="statTopSector" style="font-size:18px;">—</div>
+<div class="stat-value" id="statTopSector" style="font-size:18px;">…</div>
 <div class="stat-note" id="statTopSectorNote">By split count, trailing 5 years</div>
 </div>
 </div>
@@ -875,7 +875,7 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <div class="chart-box-header">
 <div>
 <h2>Stock splits per year, full S&amp;P 500</h2>
-<div class="chart-subhead">15-year history — forward (regular) splits vs. reverse splits, current constituents only</div>
+<div class="chart-subhead">15-year history: forward (regular) splits vs. reverse splits, current constituents only</div>
 </div>
 </div>
 <div class="ndr-panel">
@@ -889,7 +889,7 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <div class="chart-box-header">
 <div>
 <h2>Relative return vs. SPY around the split date</h2>
-<div class="chart-subhead">Average path across all qualifying forward splits in the trailing 5 years, indexed to 0% on the last trading day before the split's effective date. Sample size (n) shrinks toward the edges — see methodology.</div>
+<div class="chart-subhead">Average path across all qualifying forward splits in the trailing 5 years, indexed to 0% on the last trading day before the split's effective date. Sample size (n) shrinks toward the edges: see methodology.</div>
 </div>
 </div>
 <div class="ndr-panel">
@@ -903,7 +903,7 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <div class="chart-box-header">
 <div>
 <h2>Sector split activity, trailing 5 years</h2>
-<div class="chart-subhead">Number of split events by sector — forward vs. reverse</div>
+<div class="chart-subhead">Number of split events by sector: forward vs. reverse</div>
 </div>
 </div>
 <div class="ndr-panel">
@@ -917,7 +917,7 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <div class="chart-box-header">
 <div>
 <h2>Does a bigger split ratio mean a bigger post-split move?</h2>
-<div class="chart-subhead">Each point is one qualifying forward split: x-axis is log2(split ratio) — 1.0 = a 2-for-1, 2.0 = a 4-for-1, 3.3 = a 10-for-1 — y-axis is its 120-trading-day relative return vs. SPY</div>
+<div class="chart-subhead">Each point is one qualifying forward split: x-axis is log2(split ratio): 1.0 = a 2-for-1, 2.0 = a 4-for-1, 3.3 = a 10-for-1. Y-axis is its 120-trading-day relative return vs. SPY</div>
 </div>
 </div>
 <div class="ndr-panel">
@@ -942,7 +942,7 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <div class="table-box">
 <div class="table-box-header">
 <h2>All splits, trailing 5 years</h2>
-<div class="chart-subhead">Full S&amp;P 500 — click a column to sort</div>
+<div class="chart-subhead">Full S&amp;P 500: click a column to sort</div>
 </div>
 <table id="stockTable">
 <thead>
@@ -963,12 +963,12 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 
 <div class="explainer">
 <h2>Methodology</h2>
-<p>Universe is the full S&amp;P 500. For every constituent, Yahoo Finance's split events return its entire historical split record; events from the last 15 years feed the frequency chart above, at zero extra cost since it's one call per ticker regardless of history depth. Only events within the last 5 years get a full price-history pull (daily adjusted closes, full history) for the event study and tables below — a heavier per-ticker payload than the split events, and older splits aren't what a reader wants a price chart built around anyway.</p>
-<p><b>A real data-quality issue surfaced while building this page</b>: Alpha Vantage's <code>SPLITS</code> endpoint mixes in non-split corporate-action adjustment factors. GE, for example, shows "splits" of 1.2530 (2024-04-02) and 1.2810 (2023-01-04) — these are the GE Vernova and GE HealthCare spin-off share-adjustment ratios, not stock splits GE ever announced (its real splits are the clean 3-for-1 in 2000 and 1-for-8 reverse split in 2021, both correctly kept). Every event is checked against an allowlist of the ratios real splits actually use (2-for-1, 3-for-1, 3-for-2, 10-for-1, 1-for-8, etc.) within a tight 0.15% tolerance; anything that doesn't match — a spin-off adjustment, most likely — is dropped rather than miscounted as a split.</p>
-<p>The event study normalizes each qualifying <i>forward</i> split's own adjusted-close price series to 0% on the last trading day before its effective date, does the same for SPY over the identical calendar dates, and plots the average difference (stock return minus SPY return) at each trading-day offset from 20 days before to 120 days after. This is a simple relative-return comparison, not a CAPM-style beta-adjusted abnormal return — a stock's normal volatility and market sensitivity aren't backed out, so the same caveat that applies to every other relative-return chart on this site applies here too. Reverse splits are tracked and shown in the tables (rare among current S&amp;P 500 names — most companies that need one no longer qualify for the index) but excluded from the averaged path and the split-size regression, since a reverse split's usual context — a low-priced, often distressed stock avoiding delisting — is a different signal entirely from a forward split's "the stock did well enough that management wants a lower nominal price."</p>
-<p>The split-size regression and the post-split return's one-sample significance both use the same Pearson/Spearman-style linear-regression machinery as <a href="/factor-analysis.html">Factor Analysis</a> and this site's other regression checks, including its normal-approximation p-value rather than a small-sample t-distribution — consistent with, not more rigorous than, the rest of the site's methodology.</p>
+<p>Universe is the full S&amp;P 500. For every constituent, Yahoo Finance's split events return its entire historical split record; events from the last 15 years feed the frequency chart above, at zero extra cost since it's one call per ticker regardless of history depth. Only events within the last 5 years get a full price-history pull (daily adjusted closes, full history) for the event study and tables below. A heavier per-ticker payload than the split events, and older splits aren't what a reader wants a price chart built around anyway.</p>
+<p><b>A real data-quality issue surfaced while building this page</b>: Alpha Vantage's <code>SPLITS</code> endpoint mixes in non-split corporate-action adjustment factors. GE, for example, shows "splits" of 1.2530 (2024-04-02) and 1.2810 (2023-01-04). These are the GE Vernova and GE HealthCare spin-off share-adjustment ratios, not stock splits GE ever announced (its real splits are the clean 3-for-1 in 2000 and 1-for-8 reverse split in 2021, both correctly kept). Every event is checked against an allowlist of the ratios real splits actually use (2-for-1, 3-for-1, 3-for-2, 10-for-1, 1-for-8, etc.) within a tight 0.15% tolerance; anything that doesn't match (a spin-off adjustment, most likely) is dropped rather than miscounted as a split.</p>
+<p>The event study normalizes each qualifying <i>forward</i> split's own adjusted-close price series to 0% on the last trading day before its effective date, does the same for SPY over the identical calendar dates, and plots the average difference (stock return minus SPY return) at each trading-day offset from 20 days before to 120 days after. This is a simple relative-return comparison, not a CAPM-style beta-adjusted abnormal return. A stock's normal volatility and market sensitivity aren't backed out, so the same caveat that applies to every other relative-return chart on this site applies here too. Reverse splits are tracked and shown in the tables (rare among current S&amp;P 500 names. Most companies that need one no longer qualify for the index) but excluded from the averaged path and the split-size regression, since a reverse split's usual context (a low-priced, often distressed stock avoiding delisting) is a different signal entirely from a forward split's "the stock did well enough that management wants a lower nominal price."</p>
+<p>The split-size regression and the post-split return's one-sample significance both use the same Pearson/Spearman-style linear-regression machinery as <a href="/factor-analysis.html">Factor Analysis</a> and this site's other regression checks, including its normal-approximation p-value rather than a small-sample t-distribution. Consistent with, not more rigorous than, the rest of the site's methodology.</p>
 <p>Refreshes weekly (Saturday mornings). Sector and company name come from the same weekly metadata sweep that backs <a href="/sector-beeswarm.html">Sector Beeswarm</a>, reused here rather than paying for a second full-index pass just for labels.</p>
-<div class="source">Source: <a href="https://finance.yahoo.com/" target="_blank" rel="noopener">Yahoo Finance — split events, daily adjusted close</a></div>
+<div class="source">Source: <a href="https://finance.yahoo.com/" target="_blank" rel="noopener">Yahoo Finance: split events, daily adjusted close</a></div>
 </div>
 
 </div>
@@ -981,7 +981,7 @@ let SORT_KEY = "date";
 let SORT_DIR = -1;
 
 function fmtPct(v, digits){
- if(v === null || v === undefined || isNaN(v)) return "—";
+ if(v === null || v === undefined || isNaN(v)) return "n/a";
  digits = digits === undefined ? 1 : digits;
  return (v >= 0 ? "+" : "") + v.toFixed(digits) + "%";
 }
@@ -1120,7 +1120,7 @@ async function init(){
   document.getElementById("updated").textContent = "As of " + new Date(data.generated_at_utc).toLocaleString("en-US", { month: "2-digit", day: "2-digit", year: "numeric", hour: "numeric", minute: "2-digit" });
 
   if(data.splitsLoadedCount < data.universeSize){
-   showWarning("Only " + data.splitsLoadedCount + " of " + data.universeSize + " S&P 500 constituents loaded this run — some split history may be temporarily unavailable.");
+   showWarning("Only " + data.splitsLoadedCount + " of " + data.universeSize + " S&P 500 constituents loaded this run. Some split history may be temporarily unavailable.");
   }
 
   renderStats();
@@ -1170,7 +1170,7 @@ function renderStats(){
  }
 
  const sectors = [...RAW.sectors].sort((a, b) => (b.forwardCount + b.reverseCount) - (a.forwardCount + a.reverseCount));
- document.getElementById("statTopSector").textContent = sectors.length ? sectors[0].sector : "—";
+ document.getElementById("statTopSector").textContent = sectors.length ? sectors[0].sector : "n/a";
  document.getElementById("statTopSectorNote").textContent = sectors.length ? (sectors[0].forwardCount + sectors[0].reverseCount) + " split(s), " + sectors[0].companyCount + " compan" + (sectors[0].companyCount === 1 ? "y" : "ies") : "";
 }
 
@@ -1368,7 +1368,7 @@ function renderLeaderTable(){
  }
  tbody.innerHTML = rows.map(r => `<tr>
   <td><span class="sector-name">${r.symbol}</span></td>
-  <td><span class="sector-ticker">${r.sector || "—"}</span></td>
+  <td><span class="sector-ticker">${r.sector || "n/a"}</span></td>
   <td>${usDate(r.date)}</td>
   <td>${r.label} ${directionTag(r.direction)}</td>
   <td>${fmtPct(r.returnSinceSplit)}</td>
@@ -1397,7 +1397,7 @@ function renderTable(){
  const tbody = document.getElementById("tableBody");
  tbody.innerHTML = rows.map(r => `<tr>
   <td><span class="sector-name">${r.symbol}</span></td>
-  <td><span class="sector-ticker">${r.sector || "—"}</span></td>
+  <td><span class="sector-ticker">${r.sector || "n/a"}</span></td>
   <td>${usDate(r.date)}</td>
   <td>${r.label}</td>
   <td>${directionTag(r.direction)}</td>

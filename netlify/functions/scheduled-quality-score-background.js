@@ -184,7 +184,7 @@ exports.handler = async () => {
 
     const financialsBlob = await getQualityFinancialsStore().get(FINANCIALS_KEY, { type: "json" });
     if (!financialsBlob || !financialsBlob.tickers || !Object.keys(financialsBlob.tickers).length) {
-      throw new Error("quality-financials blob not populated — run scheduled-quality-financials-background first");
+      throw new Error("quality-financials blob not populated, run scheduled-quality-financials-background first");
     }
     const financials = financialsBlob.tickers;
 
@@ -242,7 +242,7 @@ exports.handler = async () => {
     }
 
     console.log(`scheduled-quality-score-background: fetched cash flow for ${results.size}/${candidates.length} candidates`);
-    if (results.size === 0) throw new Error("Every CASH_FLOW fetch failed — refusing to write an empty snapshot");
+    if (results.size === 0) throw new Error("Every CASH_FLOW fetch failed. Refusing to write an empty snapshot");
 
     const companies = [];
     for (const [symbol, { cfoT, cfoT1 }] of results.entries()) {

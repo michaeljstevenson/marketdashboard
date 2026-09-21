@@ -31,7 +31,7 @@ exports.handler = async () => {
     const store = getBeeswarmStore();
     const meta = (await store.get(META_KEY, { type: "json" })) || { tickers: {} };
     if (!Object.keys(meta.tickers).length) {
-      throw new Error("meta.json is empty — scheduled-beeswarm-meta-background must run first");
+      throw new Error("meta.json is empty: scheduled-beeswarm-meta-background must run first");
     }
 
     const symbols = [...BREADTH_CONSTITUENTS, "SPY"];
@@ -40,7 +40,7 @@ exports.handler = async () => {
     if (failures) console.error(`scheduled-beeswarm-daily-background: ${failures} symbol(s) returned no intraday bars`);
 
     const spyByDate = bars.get("SPY");
-    if (!spyByDate) throw new Error("SPY intraday failed — cannot anchor the session");
+    if (!spyByDate) throw new Error("SPY intraday failed, cannot anchor the session");
 
     // SPY defines the session: its most recent date, and the trading day before it.
     const spyDates = Object.keys(spyByDate).sort();
@@ -93,7 +93,7 @@ exports.handler = async () => {
         r, // return at each mark in `times`
       });
     }
-    if (stocks.length < 300) throw new Error(`Only ${stocks.length} stocks resolved — refusing to write a thin snapshot`);
+    if (stocks.length < 300) throw new Error(`Only ${stocks.length} stocks resolved. Refusing to write a thin snapshot`);
 
     const payload = {
       date,
@@ -113,7 +113,7 @@ exports.handler = async () => {
     await store.setJSON(DAY_INDEX_KEY, { generated_at_utc: new Date().toISOString(), dates: trimmed });
 
     console.log(
-      `scheduled-beeswarm-daily-background: wrote ${date} — ${stocks.length} stocks x ${times.length} marks (${sectorless} sectorless), index has ${trimmed.length}`
+      `scheduled-beeswarm-daily-background: wrote ${date}: ${stocks.length} stocks x ${times.length} marks (${sectorless} sectorless), index has ${trimmed.length}`
     );
     return { statusCode: 200, body: JSON.stringify({ ok: true, date, stocks: stocks.length, marks: times.length }) };
   } catch (err) {
