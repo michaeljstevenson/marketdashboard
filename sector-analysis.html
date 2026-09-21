@@ -10,6 +10,7 @@
 </script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom@2"></script>
+<script src="date-format.js"></script>
 <script>
 // FRED-style zoom: drag horizontally on any chart to zoom into that range,
 // double-click to reset. Applied via Chart.defaults so every chart on the
@@ -168,6 +169,7 @@ document.addEventListener("DOMContentLoaded", function(){
 </script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="prefetch" href="/sector-history.json">
 <title>Sector Performance — Michael J. Stevenson</title>
 
 <style>
@@ -410,6 +412,8 @@ h1{
 
 .range-controls{
  display:flex;
+ flex-wrap:wrap;
+ align-items:center;
  gap:6px;
 }
 
@@ -422,6 +426,31 @@ h1{
  padding:4px 10px;
  border-radius:6px;
  cursor:pointer;
+}
+
+.range-custom{
+ display:flex;
+ align-items:center;
+ gap:6px;
+ margin-left:6px;
+ color:var(--muted);
+ font-size:12px;
+}
+
+.range-custom input{
+ background:#171b20;
+ border:1px solid var(--hair);
+ color:var(--muted);
+ font-size:12px;
+ font-family:var(--sans);
+ padding:3px 6px;
+ border-radius:6px;
+ color-scheme:dark;
+}
+
+[data-theme="light"] .range-custom input{
+ background:#fff;
+ color-scheme:light;
 }
 
 .range-btn:hover{
@@ -831,7 +860,7 @@ async function init(){
 
   RAW = data;
   document.getElementById("updated").textContent =
-   "As of " + data.benchmark.asOfDate + " · " + new Date(data.generated_at_utc).toLocaleString();
+   "As of " + usDate(data.benchmark.asOfDate) + " · " + new Date(data.generated_at_utc).toLocaleString("en-US", { month: "2-digit", day: "2-digit", year: "numeric", hour: "numeric", minute: "2-digit" });
 
   if(data.sectors.length < 11){
    showWarning("Only " + data.sectors.length + " of 11 sectors loaded — some data may be temporarily unavailable.");
@@ -840,12 +869,41 @@ async function init(){
   render();
   renderRangeButtons();
   renderChartRange(DEFAULT_RANGE);
+  loadFullHistory();
 
  }catch(e){
   showError("Couldn't load sector data (" + e.message + "). The /api/sector-performance function may be unreachable.");
   document.getElementById("tableBody").innerHTML =
    '<tr><td colspan="11" style="text-align:center; color:var(--muted); padding:30px;">No data available.</td></tr>';
  }
+}
+
+// The live payload only carries ~2 years of daily closes so the table paints
+// fast; the older history is a static file (built by
+// scripts/build-sector-history.js) fetched right after first paint and
+// extended by any newer closes from the live window for the long ranges and exact custom
+// start dates.
+let CURRENT_RANGE = "1Y";
+async function loadFullHistory(){
+ try{
+  const res = await fetch("/sector-history.json");
+  const h = await res.json();
+  if(!res.ok || !h.series) return;
+  const merged = (ticker, live) => {
+   const col = h.series[ticker];
+   if(!col) return live;
+   const out = [];
+   for(let i = 0; i < col.length; i++) if(col[i] !== null) out.push({ date: h.dates[i], close: col[i] });
+   return out.concat((live || []).filter(p => p.date > h.through));
+  };
+  RAW.benchmark.history = merged(RAW.benchmark.ticker, RAW.benchmark.history);
+  RAW.sectors.forEach(s => { s.history = merged(s.ticker, s.history); });
+  const first = h.dates[0];
+  document.querySelectorAll(".range-custom input").forEach(inp => { inp.min = first; });
+  if(document.getElementById("rangeStart").value === (document.getElementById("rangeStart").dataset.auto || "")) document.getElementById("rangeStart").value = first;
+ document.getElementById("rangeStart").dataset.auto = first;
+  renderChartRange(CURRENT_RANGE);
+ }catch(e){ /* the trimmed 2-year history from the main payload keeps working */ }
 }
 
 function setMode(mode){
@@ -975,6 +1033,9 @@ const CHART_RANGES = [
  { key: "6M", days: 182 },
  { key: "YTD", ytd: true },
  { key: "1Y", days: 365 },
+ { key: "3Y", days: 1096 },
+ { key: "5Y", days: 1826 },
+ { key: "10Y", days: 3652 },
  { key: "Max", days: null },
 ];
 const DEFAULT_RANGE = "1Y";
@@ -995,6 +1056,22 @@ function renderRangeButtons(){
   });
   container.appendChild(btn);
  });
+
+ const custom = document.createElement("span");
+ custom.className = "range-custom";
+ custom.innerHTML = '<input type="date" id="rangeStart" aria-label="Start date"><span>to</span><input type="date" id="rangeEnd" aria-label="End date">';
+ container.appendChild(custom);
+ const dates = (RAW.benchmark.history || []).map(h => h.date);
+ const first = dates[0], last = dates[dates.length - 1];
+ custom.querySelectorAll("input").forEach(inp => {
+  inp.min = first; inp.max = last;
+  inp.addEventListener("change", () => {
+   container.querySelectorAll(".range-btn").forEach(b => b.classList.remove("active"));
+   renderChartRange("Custom");
+  });
+ });
+ document.getElementById("rangeStart").value = first;
+ document.getElementById("rangeEnd").value = last;
 }
 
 // Every series is rebased to 100 at the first date within the selected
@@ -1003,22 +1080,33 @@ function renderRangeButtons(){
 // regardless of each ETF's absolute price level.
 function renderChartRange(rangeKey){
  if(!RAW) return;
- const range = CHART_RANGES.find(r => r.key === rangeKey);
+ CURRENT_RANGE = rangeKey;
+ const range = rangeKey === "Custom" ? { custom: true } : CHART_RANGES.find(r => r.key === rangeKey);
 
  const benchmarkHistory = RAW.benchmark.history || [];
  if(!benchmarkHistory.length) return;
 
  let dates = benchmarkHistory.map(h => h.date);
- if(range.ytd){
-  const lastDate = new Date(dates[dates.length - 1] + "T00:00:00Z");
-  const cutoff = Date.UTC(lastDate.getUTCFullYear(), 0, 1);
-  const startIdx = dates.findIndex(d => new Date(d + "T00:00:00Z").getTime() >= cutoff);
-  dates = startIdx === -1 ? dates : dates.slice(startIdx);
+ const lastDate = new Date(dates[dates.length - 1] + "T00:00:00Z");
+ let start = null, end = null;
+ if(range.custom){
+  start = document.getElementById("rangeStart").value || null;
+  end = document.getElementById("rangeEnd").value || null;
+ }else if(range.ytd){
+  start = lastDate.getUTCFullYear() + "-01-01";
  }else if(range.days){
-  const lastDate = new Date(dates[dates.length - 1] + "T00:00:00Z");
-  const cutoff = lastDate.getTime() - range.days * 24 * 60 * 60 * 1000;
-  const startIdx = dates.findIndex(d => new Date(d + "T00:00:00Z").getTime() >= cutoff);
-  dates = startIdx === -1 ? dates : dates.slice(startIdx);
+  start = new Date(lastDate.getTime() - range.days * 86400000).toISOString().slice(0, 10);
+ }
+ dates = dates.filter(d => (!start || d >= start) && (!end || d <= end));
+ if(dates.length < 2) return;
+
+ const spanDays = (new Date(dates[dates.length - 1]) - new Date(dates[0])) / 86400000;
+ if(spanDays > 730){
+  // The stored history is weekly before the last two years and daily after,
+  // and the x-axis is category-spaced, so unthinned it would squeeze the
+  // recent daily stretch into a fraction of the width.
+  const wk = d => Math.floor(new Date(d + "T00:00:00Z").getTime() / (7 * 86400000));
+  dates = dates.filter((d, i) => i === 0 || i === dates.length - 1 || wk(d) !== wk(dates[i + 1]));
  }
 
  const allSeries = [

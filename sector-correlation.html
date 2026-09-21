@@ -10,6 +10,7 @@
 </script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom@2"></script>
+<script src="date-format.js"></script>
 <script>
 // FRED-style zoom: drag horizontally on any chart to zoom into that range,
 // double-click to reset. Applied via Chart.defaults so every chart on the
@@ -975,7 +976,7 @@ async function init(){
 
   RAW = data;
   document.getElementById("updated").textContent =
-   "As of " + data.benchmark.asOfDate + " · " + new Date(data.generated_at_utc).toLocaleString();
+   "As of " + usDate(data.benchmark.asOfDate) + " · " + new Date(data.generated_at_utc).toLocaleString("en-US", { month: "2-digit", day: "2-digit", year: "numeric", hour: "numeric", minute: "2-digit" });
 
   // Align every series to the common set of dates (SPY's calendar, which
   // this dataset already builds every sector's history around).
@@ -1159,7 +1160,7 @@ function renderCorrVolScatter(xs, ys, dates){
     legend: { display: false },
     tooltip: {
      callbacks: {
-      label: ctx => ctx.dataset.label === "Trading days" ? (ctx.raw.date + ": vol " + ctx.raw.x.toFixed(1) + "%, corr " + ctx.raw.y.toFixed(2)) : null,
+      label: ctx => ctx.dataset.label === "Trading days" ? (usDate(ctx.raw.date) + ": vol " + ctx.raw.x.toFixed(1) + "%, corr " + ctx.raw.y.toFixed(2)) : null,
      },
     },
    },

@@ -11,6 +11,7 @@
 </script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom@2"></script>
+<script src="date-format.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3"></script>
 <script>
 // UMD build exposes itself on window rather than auto-registering.
@@ -863,9 +864,9 @@ async function renderChartD(){
   const ratio = rows.map(r => (r.rsp / rsp0) / (r.spy / spy0));
 
   document.getElementById("rangeD").textContent =
-   "Daily data " + rows[0].date + " to " + rows[rows.length - 1].date;
+   "Daily data " + usDate(rows[0].date) + " to " + usDate(rows[rows.length - 1].date);
   document.getElementById("updated").textContent =
-   "Updated " + (data.generated_at_utc ? data.generated_at_utc.slice(0, 10) : rows[rows.length - 1].date);
+   "Updated " + usDate(data.generated_at_utc ? data.generated_at_utc : rows[rows.length - 1].date);
 
   // ---- analysis: peak/trough/percentile of the ratio -------------
   let peakIdx = 0, troughIdx = 0;
@@ -954,7 +955,7 @@ async function renderMag7(){
   document.getElementById("pendingC").hidden = true;
   document.getElementById("pendingF").hidden = true;
 
-  const rangeTxt = "Monthly data " + rows[0].date.slice(0, 7) + " to " + rows[rows.length - 1].date.slice(0, 7);
+  const rangeTxt = "Monthly data " + usDate(rows[0].date.slice(0, 7)) + " to " + usDate(rows[rows.length - 1].date.slice(0, 7));
   document.getElementById("rangeC").textContent = rangeTxt;
   document.getElementById("rangeF").textContent = rangeTxt;
 
@@ -1050,7 +1051,7 @@ async function renderHistory(){
 
   // ---- Chart G: top-10 (and top-3) share of index market cap ----
   document.getElementById("pendingG").hidden = true;
-  document.getElementById("rangeG").textContent = "Quarterly data " + q[0].date + " to " + q[q.length - 1].date;
+  document.getElementById("rangeG").textContent = "Quarterly data " + usDate(q[0].date) + " to " + usDate(q[q.length - 1].date);
   const qLabels = q.map(r => r.date);
   const top10Series = q.map(r => r.top10_share);
 
@@ -1060,10 +1061,10 @@ async function renderHistory(){
   const trough = q.reduce((m, r) => (r.top10_share < m.top10_share ? r : m), q[0]);
   const today = q[q.length - 1];
   renderMiniStats("statsG", [
-   { label: "TODAY", value: today.top10_share.toFixed(0) + "%", note: today.date },
-   { label: "DOT-COM ERA PEAK", value: dotcomPeak.top10_share.toFixed(0) + "%", note: dotcomPeak.date },
+   { label: "TODAY", value: today.top10_share.toFixed(0) + "%", note: usDate(today.date) },
+   { label: "DOT-COM ERA PEAK", value: dotcomPeak.top10_share.toFixed(0) + "%", note: usDate(dotcomPeak.date) },
    { label: "VS. DOT-COM PEAK", value: (today.top10_share / dotcomPeak.top10_share).toFixed(1) + "x", cls: "up" },
-   { label: trough.date.slice(0, 4) + " TROUGH", value: trough.top10_share.toFixed(0) + "%", note: trough.date },
+   { label: trough.date.slice(0, 4) + " TROUGH", value: trough.top10_share.toFixed(0) + "%", note: usDate(trough.date) },
   ]);
 
   new Chart(document.getElementById("chartG"), {

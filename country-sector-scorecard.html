@@ -323,6 +323,7 @@ table.scorecard tbody tr:hover td.rowlabel{ background:var(--card-hover); }
 .error-banner.show{ display:block; }
 
 </style>
+<script src="date-format.js"></script>
 </head>
 <body>
 
@@ -636,14 +637,14 @@ function init(){
 
   if(countryResult.status === "fulfilled"){
    STATE.regions = countryResult.value.regions;
-   updated.push("Countries as of " + (countryResult.value.generated_at_utc || "?").slice(0, 10));
+   updated.push("Countries as of " + usDate(countryResult.value.generated_at_utc || "?"));
   } else {
    errors.push("Regions/Style: " + countryResult.reason.message);
   }
 
   if(sectorResult.status === "fulfilled"){
    STATE.sectors = sectorResult.value.sectors;
-   updated.push("Sectors as of " + (sectorResult.value.generated_at_utc || "?").slice(0, 10));
+   updated.push("Sectors as of " + usDate(sectorResult.value.generated_at_utc || "?"));
   } else {
    errors.push("Sectors: " + sectorResult.reason.message);
   }

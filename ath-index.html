@@ -11,6 +11,7 @@
 </script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom@2"></script>
+<script src="date-format.js"></script>
 <script>
 // FRED-style zoom: drag horizontally on any chart to zoom into that range,
 // double-click to reset. Applied via Chart.defaults so every chart on the
@@ -907,7 +908,7 @@ async function init(){
    document.getElementById("statCount").textContent = latest.count;
    document.getElementById("statCountNote").textContent = "of " + latest.total + " constituents";
    document.getElementById("statPct").textContent = (latest.pct === null ? "—" : latest.pct + "%");
-   document.getElementById("statDate").textContent = latest.date;
+   document.getElementById("statDate").textContent = usDate(latest.date);
 
    const tickerGrid = document.getElementById("tickerGrid");
    tickerGrid.innerHTML = latest.tickers.length
@@ -918,13 +919,13 @@ async function init(){
    document.getElementById("atlStatCount").textContent = latest.atlCount ?? 0;
    document.getElementById("atlStatCountNote").textContent = "of " + latest.total + " constituents";
    document.getElementById("atlStatPct").textContent = (latest.atlPct == null ? "—" : latest.atlPct + "%");
-   document.getElementById("atlStatDate").textContent = latest.date;
+   document.getElementById("atlStatDate").textContent = usDate(latest.date);
    const atlTickerGrid = document.getElementById("atlTickerGrid");
    atlTickerGrid.innerHTML = atlTickers.length
     ? atlTickers.map(t => `<span class="ticker-chip" style="background:rgba(111,143,172,0.14);border-color:rgba(111,143,172,0.35);color:var(--fear);">${t}</span>`).join("")
     : '<span class="ticker-empty">No S&P 500 constituents are at an all-time low today.</span>';
 
-   updatedText = "Current data from TradingView, generated " + new Date(tvResult.value.data.generated_at_utc).toLocaleString();
+   updatedText = "Current data from TradingView, generated " + new Date(tvResult.value.data.generated_at_utc).toLocaleString("en-US", { month: "2-digit", day: "2-digit", year: "numeric", hour: "numeric", minute: "2-digit" });
   }
  }else if(breadthResult.status === "fulfilled" && breadthResult.value.ok && breadthResult.value.data.athSummary){
   showWarning("Showing an Alpha-Vantage-based estimate for today's count — the more accurate TradingView-based figure hasn't populated yet. See \"Why two data sources\" below.");
@@ -932,7 +933,7 @@ async function init(){
   document.getElementById("statCount").textContent = summary.count;
   document.getElementById("statCountNote").textContent = "of " + summary.total + " in sample (estimate)";
   document.getElementById("statPct").textContent = (summary.pct === null ? "—" : summary.pct + "%");
-  document.getElementById("statDate").textContent = summary.asOfDate;
+  document.getElementById("statDate").textContent = usDate(summary.asOfDate);
   const tickerGrid = document.getElementById("tickerGrid");
   tickerGrid.innerHTML = summary.tickers.length
    ? summary.tickers.map(t => `<span class="ticker-chip">${t}</span>`).join("")
@@ -1200,8 +1201,8 @@ function renderDrawdownChart(sym){
  now.classList.toggle("dd-off", last.dd <= -0.05);
  const worst = rows.reduce((m, r) => r.dd < m.dd ? r : m, rows[0]);
  document.getElementById("ddMeta-" + sym).textContent =
-  (last.dd > -0.05 ? "At an all-time high" : "Below peak") + " as of " + last.date +
-  " · deepest in range: " + worst.dd.toFixed(1) + "% (" + worst.date + ")";
+  (last.dd > -0.05 ? "At an all-time high" : "Below peak") + " as of " + usDate(last.date) +
+  " · deepest in range: " + worst.dd.toFixed(1) + "% (" + usDate(worst.date) + ")";
 
  const ink = themeInkColor();
  const ctx = document.getElementById("ddChart-" + sym).getContext("2d");

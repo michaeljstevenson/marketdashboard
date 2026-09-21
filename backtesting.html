@@ -10,6 +10,7 @@
 </script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom@2"></script>
+<script src="date-format.js"></script>
 <script>
 // FRED-style zoom: drag horizontally on any chart to zoom into that range,
 // double-click to reset. Applied via Chart.defaults so every chart on the
@@ -1543,9 +1544,9 @@ function renderResults(cfg, result){
   <tr>
    <td>${t.symbol}</td>
    <td>${t.side}</td>
-   <td>${t.entryDate}</td>
+   <td>${usDate(t.entryDate)}</td>
    <td>${t.entryPrice.toFixed(2)}</td>
-   <td>${t.exitDate}</td>
+   <td>${usDate(t.exitDate)}</td>
    <td>${t.exitPrice.toFixed(2)}</td>
    <td class="${t.pnl >= 0 ? "good" : "bad"}">${fmtMoney(t.pnl)}</td>
    <td class="${t.pnl >= 0 ? "good" : "bad"}">${fmtPct(t.pnlPct)}</td>
@@ -1729,7 +1730,7 @@ function renderHistory(){
  list.innerHTML = history.map((h, i) => `
   <div class="history-item" data-idx="${i}">
    <span>${h.summary}</span>
-   <span class="hi-meta">CAGR ${fmtPct(h.cagr)} · Sharpe ${h.sharpe.toFixed(2)} · ${new Date(h.timestamp).toLocaleString()}</span>
+   <span class="hi-meta">CAGR ${fmtPct(h.cagr)} · Sharpe ${h.sharpe.toFixed(2)} · ${new Date(h.timestamp).toLocaleString("en-US", { month: "2-digit", day: "2-digit", year: "numeric", hour: "numeric", minute: "2-digit" })}</span>
   </div>
  `).join("");
  list.querySelectorAll(".history-item").forEach(el => {

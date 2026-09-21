@@ -270,9 +270,8 @@ const GROUPS = {
 };
 const pctS = n => (n >= 0 ? "+" : "") + (n * 100).toFixed(1) + "%";
 const pct0 = n => Math.round(n * 100) + "%";
-const MONTHS = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
-const ym = s => s ? MONTHS[+s.slice(5,7) - 1] + " " + s.slice(0,4) : "";
-const ymd = s => s ? MONTHS[+s.slice(5,7) - 1] + " " + (+s.slice(8,10)) + ", " + s.slice(0,4) : "";
+const ym = s => s ? s.slice(5,7) + "/" + s.slice(0,4) : "";
+const ymd = s => s ? s.slice(5,7) + "/" + s.slice(8,10) + "/" + s.slice(0,4) : "";
 const store = (k,val) => {
   try{
     if(val === undefined) return localStorage.getItem("ss_" + k);
@@ -301,8 +300,8 @@ function init(){
   HZ = DATA.horizons;
   HZLABEL = DATA.horizonLabels || HZ.map(h => h + "d");
 
-  const gen = DATA.generatedAt ? " · refreshed " + DATA.generatedAt.slice(0, 10) : "";
-  el("asof").textContent = "Scan as of " + DATA.asOf + "  ·  " + DATA.live +
+  const gen = DATA.generatedAt ? " · refreshed " + ymd(DATA.generatedAt) : "";
+  el("asof").textContent = "Scan as of " + ymd(DATA.asOf) + "  ·  " + DATA.live +
     " live streaks  ·  " + DATA.scanned + " conditions tracked  ·  " +
     DATA.sectorCount + " sector ETFs" + gen;
 

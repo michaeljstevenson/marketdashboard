@@ -516,6 +516,7 @@ table.heatmap td.na{ color:var(--muted); opacity:0.35; }
  color:#a83a30;
 }
 </style>
+<script src="date-format.js"></script>
 </head>
 <body>
 <nav class="sitenav">
@@ -803,7 +804,7 @@ function renderRangeButtons(){
 
 function renderStats(data){
  document.getElementById("statCount").textContent = data.count.toLocaleString();
- document.getElementById("statRangeNote").textContent = data.startDate + " to " + data.endDate;
+ document.getElementById("statRangeNote").textContent = usDate(data.startDate) + " to " + usDate(data.endDate);
  document.getElementById("statPctUp").textContent = data.pctPositive != null ? data.pctPositive.toFixed(1) + "%" : "—";
 
  const dowEntries = data.dow.filter(d => d.n > 0);
@@ -1210,7 +1211,7 @@ async function loadData(){
   }
   RANGE_DATA = payload.ranges;
   HIST_EDGES = payload.histogramEdges || {};
-  document.getElementById("updated").textContent = payload.asOf ? "Data through " + payload.asOf : "No data";
+  document.getElementById("updated").textContent = payload.asOf ? "Data through " + usDate(payload.asOf) : "No data";
   renderRangeButtons();
   renderAll();
  }catch(err){

@@ -10,6 +10,7 @@
 </script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom@2"></script>
+<script src="date-format.js"></script>
 <script>
 // FRED-style zoom: drag horizontally on any chart to zoom into that range,
 // double-click to reset. Applied via Chart.defaults so every chart on the
@@ -1163,7 +1164,7 @@ async function init(){
   if(!res.ok || data.error) throw new Error(data.error || "failed to load");
 
   RAW = data;
-  document.getElementById("updated").textContent = "As of " + new Date(data.generated_at_utc).toLocaleString();
+  document.getElementById("updated").textContent = "As of " + new Date(data.generated_at_utc).toLocaleString("en-US", { month: "2-digit", day: "2-digit", year: "numeric", hour: "numeric", minute: "2-digit" });
 
   if(data.loadedTickerCount < data.universeTickerCount){
    showWarning("Only " + data.loadedTickerCount + " of " + data.universeTickerCount + " tickers loaded this run — some legs may be missing below.");
@@ -1286,7 +1287,7 @@ function renderLeaderTable(rows, tbodyId){
  tbody.innerHTML = rows.map(r => `<tr>
   <td><span class="sector-name">${r.label}</span> <span class="sector-ticker">${r.ticker}</span></td>
   <td><span class="sector-ticker">${r.sector || "—"}</span></td>
-  <td>${r.eventDate}</td>
+  <td>${usDate(r.eventDate)}</td>
   <td>${fmtPct(r.excessToDate)}</td>
  </tr>`).join("");
 }
@@ -1452,7 +1453,7 @@ function renderLegsTable(){
   <td><span class="sector-name">${r.label}</span> <span class="sector-ticker">${r.ticker}</span></td>
   <td><span class="tag ${r.role}">${r.role}</span></td>
   <td><span class="sector-ticker">${r.sector || "—"}</span></td>
-  <td>${r.eventDate}</td>
+  <td>${usDate(r.eventDate)}</td>
   <td>${fmtPct(r.excess6M)}</td>
   <td>${fmtPct(r.excess1Y)}</td>
   <td>${fmtPct(r.excess3Y)}</td>

@@ -10,6 +10,7 @@
 </script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom@2"></script>
+<script src="date-format.js"></script>
 <script>
 // FRED-style zoom: drag horizontally on any chart to zoom into that range,
 // double-click to reset. Applied via Chart.defaults so every chart on the
@@ -1078,7 +1079,7 @@ async function init(){
   if(!res.ok || data.error) throw new Error(data.error || "failed to load");
 
   RAW = data;
-  document.getElementById("updated").textContent = "As of " + new Date(data.generated_at_utc).toLocaleString();
+  document.getElementById("updated").textContent = "As of " + new Date(data.generated_at_utc).toLocaleString("en-US", { month: "2-digit", day: "2-digit", year: "numeric", hour: "numeric", minute: "2-digit" });
 
   if(data.splitsLoadedCount < data.universeSize){
    showWarning("Only " + data.splitsLoadedCount + " of " + data.universeSize + " S&P 500 constituents loaded this run — some split history may be temporarily unavailable.");
@@ -1330,7 +1331,7 @@ function renderLeaderTable(){
  tbody.innerHTML = rows.map(r => `<tr>
   <td><span class="sector-name">${r.symbol}</span></td>
   <td><span class="sector-ticker">${r.sector || "—"}</span></td>
-  <td>${r.date}</td>
+  <td>${usDate(r.date)}</td>
   <td>${r.label} ${directionTag(r.direction)}</td>
   <td>${fmtPct(r.returnSinceSplit)}</td>
  </tr>`).join("");
@@ -1359,7 +1360,7 @@ function renderTable(){
  tbody.innerHTML = rows.map(r => `<tr>
   <td><span class="sector-name">${r.symbol}</span></td>
   <td><span class="sector-ticker">${r.sector || "—"}</span></td>
-  <td>${r.date}</td>
+  <td>${usDate(r.date)}</td>
   <td>${r.label}</td>
   <td>${directionTag(r.direction)}</td>
   <td>${fmtPct(r.returnSinceSplit)}</td>

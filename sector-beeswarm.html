@@ -296,6 +296,7 @@ h1{ font-family:var(--serif); font-size:28px; font-weight:400; margin:0; }
  .scrubber .frame-label{ text-align:left; min-width:0; }
 }
 </style>
+<script src="date-format.js"></script>
 </head>
 <body>
 
@@ -546,7 +547,7 @@ function ink(){ return getComputedStyle(document.documentElement).getPropertyVal
 
 function niceDate(iso){
  const d = new Date(iso + "T00:00:00Z");
- return d.toLocaleDateString("en-US", { weekday: "short", day: "2-digit", month: "short", year: "numeric", timeZone: "UTC" });
+ return d.toLocaleDateString("en-US", { weekday: "short", timeZone: "UTC" }) + ", " + usDate(iso);
 }
 
 /* ----- scales / layout ------------------------------------------------- */
@@ -594,7 +595,7 @@ function annualYearBlock(i){
  return ys[ys.length - 1];
 }
 function shortMD(iso){
- return new Date(iso + "T00:00:00Z").toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone: "UTC" });
+ return usDate(iso).slice(0, 5);
 }
 // two-word sector names wrap onto a second line so the label fits a bubble
 function wrapSector(name){
@@ -963,7 +964,7 @@ function initAnnualFrames(){
  });
  const last = annualData.years[annualData.years.length - 1].year;
  setAnnualYear(annualData.years.some(y => y.year === annualYear) ? annualYear : last);
- const gen = (annualData.generated_at_utc || "").slice(0, 10);
+ const gen = usDate(annualData.generated_at_utc || "");
  document.getElementById("updated").textContent =
   annualData.years.length + " years · " + annualData.dates.length.toLocaleString() + " trading days · updated " + gen;
 }

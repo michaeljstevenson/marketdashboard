@@ -10,6 +10,7 @@
 </script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom@2"></script>
+<script src="date-format.js"></script>
 <script>
 // FRED-style zoom: drag horizontally on any chart to zoom into that range,
 // double-click to reset. Applied via Chart.defaults so every chart on the
@@ -1012,7 +1013,7 @@ async function init(){
   if(!res.ok || data.error) throw new Error(data.error || "failed to load");
 
   RAW = data;
-  document.getElementById("updated").textContent = "As of " + new Date(data.generatedAt).toLocaleString();
+  document.getElementById("updated").textContent = "As of " + new Date(data.generatedAt).toLocaleString("en-US", { month: "2-digit", day: "2-digit", year: "numeric", hour: "numeric", minute: "2-digit" });
 
   renderStats();
   renderCalendarTable();
@@ -1038,7 +1039,7 @@ function renderStats(){
  const tbd = calendar.filter(r => !r.priced);
 
  document.getElementById("statTotal").textContent = String(calendar.length);
- document.getElementById("statTotalNote").textContent = "As of " + (RAW.asOfDate || "—");
+ document.getElementById("statTotalNote").textContent = "As of " + (RAW.asOfDate ? usDate(RAW.asOfDate) : "—");
  document.getElementById("statOperating").textContent = String(operating.length);
  document.getElementById("statFundTrust").textContent = String(fundTrust.length);
  document.getElementById("statPriced").textContent = priced.length + " / " + tbd.length;
@@ -1082,7 +1083,7 @@ function renderCalendarTable(){
  document.getElementById("calendarBody").innerHTML = rows.map(r => `<tr>
   <td>${r.symbol}</td>
   <td>${r.name}</td>
-  <td>${r.ipoDate}</td>
+  <td>${usDate(r.ipoDate)}</td>
   <td>${priceRangeText(r)}</td>
   <td>${r.exchange || "—"}</td>
   <td><span class="tag ${r.classification === "operating" ? "tag-operating" : "tag-fund"}">${r.classification === "operating" ? "Operating" : "Fund/Trust"}</span></td>
@@ -1208,7 +1209,7 @@ function renderRosterTable(){
   return `<tr>
    <td>${r.symbol}</td>
    <td>${r.name}</td>
-   <td>${r.ipoDate}</td>
+   <td>${usDate(r.ipoDate)}</td>
    <td class="${d1.cls}">${d1.text}</td>
    <td class="${d5.cls}">${d5.text}</td>
    <td class="${d10.cls}">${d10.text}</td>

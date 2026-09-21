@@ -10,6 +10,7 @@
 </script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom@2"></script>
+<script src="date-format.js"></script>
 <script>
 // FRED-style zoom: drag horizontally on any chart to zoom into that range,
 // double-click to reset. Applied via Chart.defaults so every chart on the
@@ -1033,7 +1034,7 @@ function fmtPct(v, digits){
 }
 function fmtDate(s){
  if(!s) return "n/a";
- return s;
+ return usDate(s);
 }
 
 function showError(message){
@@ -1165,7 +1166,7 @@ async function init(){
   if(!res.ok || data.error) throw new Error(data.error || "failed to load");
 
   RAW = data;
-  document.getElementById("updated").textContent = "As of " + new Date(data.generated_at_utc).toLocaleString();
+  document.getElementById("updated").textContent = "As of " + new Date(data.generated_at_utc).toLocaleString("en-US", { month: "2-digit", day: "2-digit", year: "numeric", hour: "numeric", minute: "2-digit" });
 
   if(data.universe.inWindow === 0){
    showWarning("No companies fall inside this run's coverage window yet — the earnings-surprise snapshot this page reads from may need a manual rerun (see the methodology section below). Charts and tables below will be empty until then.");
