@@ -1,0 +1,33 @@
+# Rebuilds sector-history.json (full daily closes for SPY + the 11 sector
+# ETFs, served statically to sector-analysis.html) after each market close and
+# commits it if it changed; the push to main triggers the normal Netlify deploy.
+name: Refresh sector history
+
+on:
+  schedule:
+    - cron: "30 22 * * 1-5" # 22:30 UTC, after the 21:35 UTC sectors job
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: node scripts/build-sector-history.js
+      - name: Commit if changed
+        run: |
+          if git diff --quiet -- sector-history.json; then
+            echo "no change"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add sector-history.json
+          git commit -m "Refresh sector-history.json"
+          git push

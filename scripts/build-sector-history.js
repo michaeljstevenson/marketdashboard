@@ -1,9 +1,10 @@
 #!/usr/bin/env node
 // Writes sector-history.json: full inception-to-date daily closes for SPY and
 // the 11 sector ETFs, column-oriented (one shared date axis, one array per
-// ticker), served as a static file for the sector-analysis.html chart. The
-// page overlays the live ~2-year window from /api/sector-performance on top,
-// so this only needs re-running to extend the older history (e.g. yearly).
+// ticker), served as a static file for the sector-analysis.html chart. Run
+// daily by .github/workflows/sector-history.yml, which commits the result;
+// the page also appends any closes newer than `through` from the live
+// /api/sector-performance payload, so it stays current between runs.
 //
 //   node scripts/build-sector-history.js
 
