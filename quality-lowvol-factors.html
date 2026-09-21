@@ -153,7 +153,7 @@ document.addEventListener("DOMContentLoaded", function(){
 </script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Quality &amp; Low-Volatility Factor Screen — Michael J. Stevenson</title>
+<title>Quality &amp; Low-Volatility Factor Screen | Michael J. Stevenson</title>
 
 <style>
 
@@ -889,7 +889,7 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <div class="header">
 <div>
 <h1>Quality &amp; Low-Volatility Factor Screen</h1>
-<div class="subtitle">A simple, honest quality-plus-low-volatility composite across the S&amp;P 500 — reusing <a href="/margin-leverage.html">Margin &amp; Leverage Cycle</a>'s own computed operating margin and net-debt/EBITDA for the quality half, and a new trailing-3-month realized-volatility sweep for the low-vol half — tested against subsequent relative price performance. Fills the Quality/Low-Vol gap <a href="/factor-analysis.html">Factor Analysis</a>'s own methodology notes as not covered by its Ken French Market/Size/Value/Momentum series.</div>
+<div class="subtitle">A quality plus low-volatility composite across the S&amp;P 500. Quality uses operating margin and net-debt/EBITDA from <a href="/margin-leverage.html">Margin &amp; Leverage Cycle</a>. Low-vol uses trailing 3-month realized volatility. Tested against subsequent relative price performance. Covers the quality and low-vol factors that <a href="/factor-analysis.html">Factor Analysis</a> notes are missing from the Ken French series.</div>
 </div>
 <div class="updated" id="updated">Loading...</div>
 </div>
@@ -897,22 +897,22 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <div class="stat-grid">
 <div class="stat-card">
 <div class="stat-label">Companies Scored</div>
-<div class="stat-value" id="statCompanies" style="font-size:20px;">—</div>
-<div class="stat-note" id="statCompaniesNote">Of full S&amp;P 500, both quality and low-vol inputs available</div>
+<div class="stat-value" id="statCompanies" style="font-size:20px;">…</div>
+<div class="stat-note" id="statCompaniesNote">S&amp;P 500 companies with both inputs</div>
 </div>
 <div class="stat-card">
 <div class="stat-label">Median Realized Vol (63d, ann.)</div>
-<div class="stat-value" id="statVol">—</div>
+<div class="stat-value" id="statVol">…</div>
 <div class="stat-note">Trailing 3-month annualized realized volatility</div>
 </div>
 <div class="stat-card">
 <div class="stat-label">Median Operating Margin</div>
-<div class="stat-value" id="statMargin">—</div>
+<div class="stat-value" id="statMargin">…</div>
 <div class="stat-note">Latest quarter, from Margin &amp; Leverage Cycle</div>
 </div>
 <div class="stat-card">
 <div class="stat-label">Q1 vs. Q5 Fwd. 3M Return Spread</div>
-<div class="stat-value" id="statSpread">—</div>
+<div class="stat-value" id="statSpread">…</div>
 <div class="stat-note" id="statSpreadNote">Highest vs. lowest combined-score quintile</div>
 </div>
 </div>
@@ -921,7 +921,7 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <div class="chart-box-header">
 <div>
 <h2>Does the top quintile beat the bottom quintile?</h2>
-<div class="chart-subhead">Average subsequent 3-month price return relative to SPY, by combined quality+low-vol score quintile — Q1 is the highest-scoring (highest quality, lowest vol) fifth of the S&amp;P 500, Q5 the lowest. The classic factor-investing test: does screening on this composite actually separate subsequent winners from laggards?</div>
+<div class="chart-subhead">Average subsequent 3-month return relative to SPY, by combined score quintile. Q1 is the highest-scoring fifth of the S&amp;P 500 (highest quality, lowest vol), Q5 the lowest.</div>
 </div>
 </div>
 <div class="ndr-panel">
@@ -950,7 +950,7 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <div class="chart-box-header">
 <div>
 <h2>Quality vs. low-vol: independent, or correlated?</h2>
-<div class="chart-subhead">Each point is one company's two component z-scores. If quality and low-vol were the same underlying thing, this would be a tight diagonal line — whatever the real cross-section shows is reported below, not assumed</div>
+<div class="chart-subhead">Each point is one company's quality and low-vol z-scores. If the two measured the same thing, the points would form a tight diagonal.</div>
 </div>
 </div>
 <div class="ndr-panel">
@@ -966,7 +966,7 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <div class="chart-box-header">
 <div>
 <h2>Does the composite predict subsequent relative price performance?</h2>
-<div class="chart-subhead">Continuous check alongside the quintile bar chart above: each point is one company, x-axis is the combined quality+low-vol z-score, y-axis is 3-month price return relative to SPY</div>
+<div class="chart-subhead">Each point is one company. X is the combined z-score, Y is the 3-month return relative to SPY.</div>
 </div>
 </div>
 <div class="ndr-panel">
@@ -1004,7 +1004,7 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <div class="table-box">
 <div class="table-box-header">
 <h2>High quality, high volatility</h2>
-<div class="chart-subhead">Strong quality composite, but volatile enough that the low-vol score pulls the other way — the two factors visibly disagreeing on this name</div>
+<div class="chart-subhead">Strong quality, but volatile enough that the low-vol score pulls the other way.</div>
 </div>
 <table id="divergentHighQVolTable">
 <thead><tr><th>Symbol</th><th>Sector</th><th>Quality Z</th><th>Low-Vol Z</th></tr></thead>
@@ -1014,7 +1014,7 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <div class="table-box">
 <div class="table-box-header">
 <h2>Low quality, low volatility</h2>
-<div class="chart-subhead">Weak quality composite, but unusually calm price action — steady, not necessarily strong</div>
+<div class="chart-subhead">Weak quality, but unusually calm price action.</div>
 </div>
 <table id="divergentLowQVolTable">
 <thead><tr><th>Symbol</th><th>Sector</th><th>Quality Z</th><th>Low-Vol Z</th></tr></thead>
@@ -1026,7 +1026,7 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <div class="table-box">
 <div class="table-box-header">
 <h2>Full S&amp;P 500</h2>
-<div class="chart-subhead">Every constituent with both a quality input (from Margin &amp; Leverage Cycle) and a computed realized volatility this run</div>
+<div class="chart-subhead">Every S&amp;P 500 company with both a quality input (from Margin &amp; Leverage Cycle) and a realized volatility reading.</div>
 </div>
 <table id="stockTable">
 <thead>
@@ -1050,15 +1050,15 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 
 <div class="explainer">
 <h2>Methodology</h2>
-<p>Universe is the full S&amp;P 500, restricted to constituents with both a quality input and a computed realized volatility this run. This page runs no new fundamentals sweep of its own — it reuses <a href="/margin-leverage.html">Margin &amp; Leverage Cycle</a>'s own already-computed per-company latest-quarter operating margin and net-debt/EBITDA (from that page's <code>INCOME_STATEMENT</code>/<code>BALANCE_SHEET</code> sweep) for the quality half, a real cross-page dependency rather than a coincidence. The one genuinely new sweep this page requires is realized volatility: Yahoo Finance daily adjusted closes (the last ~100 trading days), across the same ~503-ticker universe — the same source, window and pacing <a href="/relative-strength-leaders.html">Relative Strength Leaders/Laggards</a> already made and documented for this exact universe, since a 63-trading-day lookback fits comfortably inside compact's ~100-bar window.</p>
-<p><b>Quality composite:</b> the cross-sectional z-score of operating margin, MINUS the cross-sectional z-score of net-debt/EBITDA — higher margin is better, higher leverage is worse, so leverage subtracts rather than adds. A quick sanity check: a company with an above-average operating margin and below-average (or negative, i.e. net-cash) leverage scores positively on both inputs and lands with a solidly positive quality z-score; a thin-margin, heavily-levered company scores negatively on both and lands with a solidly negative one. This is a deliberately simple 2-input proxy, not a full multi-factor "quality" model like MSCI's or AQR's QMJ (which typically also weigh earnings stability, payout policy, and growth) — said plainly here rather than implied to be more than it is, the same honesty convention <a href="/equity-risk-premium.html">Equity Risk Premium by Sector</a> uses to distinguish its own crude Fed-model proxy from Damodaran's real ERP model on <a href="/implied-erp.html">Implied Equity Risk Premium</a>.</p>
-<p><b>Low-volatility score:</b> trailing 63-trading-day (~3 month) realized volatility — the standard deviation of daily log returns, annualized (&times;&radic;252) — cross-sectionally z-scored and then NEGATED, so a higher low-vol score always means lower realized volatility, the same "higher is better" direction as the quality score above.</p>
-<p><b>Combined score</b> is a simple, unweighted average of the two z-scores — the simplest defensible combination, not a weighting scheme this page can't justify. Companies are quintiled on this combined score across the scored universe: Q1 is the highest-scoring (highest quality, lowest vol) fifth, Q5 the lowest.</p>
-<p>This page is deliberately distinct from <a href="/volatility.html">Implied vs. Realized Volatility</a>, confirmed by reading that page's own backend before building this one: that page tracks a single market/index-level time series (VIX vs. S&amp;P 500 20-day realized volatility, a regime read on the market as a whole). This page computes a per-stock, cross-sectional low-volatility FACTOR score across roughly 500 individual constituents at a 63-day lookback, feeding into a quintile/regression factor-investing test — a different question, different lookback, different unit of analysis, and no shared backend or data.</p>
-<p>The core test — does the composite predict subsequent relative price performance — is run two ways, matching this site's usual two-method convention: a quintile-bucketed average forward 3-month relative return (the classic "does the top quintile beat the bottom quintile" chart), and a continuous Pearson-plus-Spearman regression of the combined score against the same 3-month relative return. Both reuse this same cycle's <a href="/relative-strength-leaders.html">Relative Strength Leaders/Laggards</a> data for the price side (<code>relPrice3M</code>), the same cross-page pattern <a href="/buyback-effectiveness.html">Buyback Dollar-Value Tracker</a>, <a href="/institutional-ownership.html">Institutional Ownership &amp; Flow Tracker</a>, <a href="/news-sentiment.html">News Sentiment Momentum</a> and <a href="/congressional-trading.html">Congressional Trading Tracker</a> use, rather than running a second full-universe price sweep. If that data hasn't refreshed yet this cycle, this page still shows every other chart and table — the sector breakdown, the quality-vs-low-vol scatter, both leaderboards, the full company table — just without the two return tests, and a banner above says so.</p>
-<p>The "high quality, high volatility" / "low quality, low volatility" callout tables surface names where the two component z-scores pull in opposite directions by a real margin (both beyond &plusmn;0.5 standard deviations, in opposing directions) — shown only when the real data actually produces a meaningfully differentiated cut, not forced if it doesn't.</p>
-<p>Company name and sector come from the same weekly metadata sweep behind <a href="/sector-beeswarm.html">Sector Beeswarm</a>, reused (via Margin &amp; Leverage Cycle's own output) rather than a third full-index metadata pass. A company missing either its quality input or a computed realized volatility (recent IPO, data gap, insufficient statement history) is excluded entirely from every chart, leaderboard and the composite score — never fabricated or half-scored. As of September 2026 this and most other full-sweep pages on this site refresh as one-time snapshots (run manually from the Netlify dashboard) rather than on a recurring schedule, to control Alpha Vantage call volume.</p>
-<div class="source">Source: this site's own <a href="/margin-leverage.html">Margin &amp; Leverage Cycle</a> and <a href="/relative-strength-leaders.html">Relative Strength Leaders/Laggards</a> output, plus a new <a href="https://finance.yahoo.com/" target="_blank" rel="noopener">Yahoo Finance daily adjusted-close</a> sweep for realized volatility</div>
+<p><b>Universe.</b> S&amp;P 500 companies with both a quality input and a realized volatility reading. Companies missing either (recent IPOs, data gaps) are excluded.</p>
+<p><b>Quality.</b> The z-score of operating margin minus the z-score of net-debt/EBITDA, both across the universe. Higher margin is better and higher leverage is worse. A company with a strong margin and low (or negative) leverage scores high, and a thin-margin, heavily indebted one scores low. This is a simple 2-input proxy, not a full quality model like MSCI's or AQR's QMJ, which also weigh earnings stability, payout policy and growth. Inputs are the latest-quarter figures from <a href="/margin-leverage.html">Margin &amp; Leverage Cycle</a>.</p>
+<p><b>Low volatility.</b> Trailing 63-trading-day (~3 month) realized volatility: the standard deviation of daily log returns, annualized (&times;&radic;252). It is z-scored across the universe and negated, so a higher score means lower volatility, the same "higher is better" direction as quality. Prices are Yahoo Finance daily adjusted closes for the last ~100 trading days.</p>
+<p><b>Combined score.</b> The simple average of the two z-scores. Companies are ranked into quintiles on it: Q1 is the highest-scoring fifth, Q5 the lowest.</p>
+<p><b>Versus <a href="/volatility.html">Implied vs. Realized Volatility</a>.</b> That page tracks one market-level series (VIX vs. S&amp;P 500 realized volatility). This page scores about 500 individual stocks at a 63-day lookback.</p>
+<p><b>Tests.</b> Two checks on whether the score predicts performance: average forward 3-month return relative to SPY by quintile, and a Pearson and Spearman regression of the score against the same return. Returns come from <a href="/relative-strength-leaders.html">Relative Strength Leaders/Laggards</a>. If that hasn't refreshed, everything else still shows and a banner says the two return tests are unavailable.</p>
+<p><b>Callout tables.</b> They list companies where the two z-scores point opposite ways, both beyond &plusmn;0.5 standard deviations. They appear only when the data produces such a group.</p>
+<p><b>Names and sectors</b> come from the weekly data behind <a href="/sector-beeswarm.html">Sector Beeswarm</a>.</p>
+<div class="source">Source: <a href="/margin-leverage.html">Margin &amp; Leverage Cycle</a> and <a href="/relative-strength-leaders.html">Relative Strength Leaders/Laggards</a> output, plus <a href="https://finance.yahoo.com/" target="_blank" rel="noopener">Yahoo Finance daily adjusted closes</a>.</div>
 </div>
 
 </div>
@@ -1071,27 +1071,27 @@ let SORT_KEY = "combinedZ";
 let SORT_DIR = -1;
 
 function fmtPct(v, digits){
- if(v === null || v === undefined || isNaN(v)) return "—";
+ if(v === null || v === undefined || isNaN(v)) return "n/a";
  digits = digits === undefined ? 1 : digits;
  return v.toFixed(digits) + "%";
 }
 function fmtPctSigned(v, digits){
- if(v === null || v === undefined || isNaN(v)) return "—";
+ if(v === null || v === undefined || isNaN(v)) return "n/a";
  digits = digits === undefined ? 1 : digits;
  return (v >= 0 ? "+" : "") + v.toFixed(digits) + "%";
 }
 function fmtScore(v, digits){
- if(v === null || v === undefined || isNaN(v)) return "—";
+ if(v === null || v === undefined || isNaN(v)) return "n/a";
  digits = digits === undefined ? 2 : digits;
  return (v >= 0 ? "+" : "") + v.toFixed(digits);
 }
 function fmtRatio(v, digits){
- if(v === null || v === undefined || isNaN(v)) return "—";
+ if(v === null || v === undefined || isNaN(v)) return "n/a";
  digits = digits === undefined ? 2 : digits;
  return v.toFixed(digits) + "x";
 }
 function fmtCount(v){
- if(v === null || v === undefined || isNaN(v)) return "—";
+ if(v === null || v === undefined || isNaN(v)) return "n/a";
  return Math.round(v).toLocaleString();
 }
 
@@ -1218,9 +1218,9 @@ async function init(){
   document.getElementById("updated").textContent = "As of " + new Date(data.generated_at_utc).toLocaleString("en-US", { month: "2-digit", day: "2-digit", year: "numeric", hour: "numeric", minute: "2-digit" });
 
   if(data.volLoadedCount < data.universeSize){
-   showWarning("Realized volatility only computed for " + data.volLoadedCount + " of " + data.universeSize + " S&P 500 constituents this run — some data may be temporarily unavailable.");
+   showWarning("Realized volatility only computed for " + data.volLoadedCount + " of " + data.universeSize + " S&P 500 constituents this run. Some data may be temporarily unavailable.");
   }else if(!data.hasPriceData){
-   showWarning("Price-performance data isn't available yet (Relative Strength Leaders/Laggards hasn't run this cycle) — showing the quality/low-vol scores, sector breakdown, and leaderboards, but the two forward-return tests below are unavailable.");
+   showWarning("Price data isn't available yet (Relative Strength Leaders/Laggards hasn't refreshed). The two forward-return tests below are unavailable.");
   }
 
   renderStats();
@@ -1234,7 +1234,7 @@ async function init(){
   renderTable();
 
  }catch(e){
-  showError("Couldn't load quality & low-vol factor data (" + e.message + "). The /api/quality-lowvol-factors function may not have run yet.");
+  showError("Couldn't load quality & low-vol factor data (" + e.message + "). It may not have refreshed yet.");
   document.getElementById("tableBody").innerHTML =
    '<tr><td colspan="9" style="text-align:center; color:var(--muted); padding:30px;">No data available.</td></tr>';
  }
@@ -1256,7 +1256,7 @@ function renderStats(){
   spreadEl.classList.toggle("cell-neg", spread < 0);
   document.getElementById("statSpreadNote").textContent = "Q1 " + fmtPctSigned(q1.avgForwardRelReturn3M) + " vs. Q5 " + fmtPctSigned(q5.avgForwardRelReturn3M);
  }else{
-  spreadEl.textContent = "—";
+  spreadEl.textContent = "n/a";
   document.getElementById("statSpreadNote").textContent = "Price-performance data not yet available";
  }
 }
@@ -1268,7 +1268,7 @@ function renderQuintileChart(){
 
  if(!RAW.hasPriceData || qs.every(q => q.avgForwardRelReturn3M === null)){
   document.getElementById("quintileChart").closest(".ndr-panel").innerHTML =
-   '<div class="method-note-box">Price-performance data isn\'t available yet (Relative Strength Leaders/Laggards hasn\'t run this cycle) — the quintile forward-return test will appear once that data refreshes.</div>';
+   '<div class="method-note-box">Price data isn\'t available yet. This test will appear once Relative Strength Leaders/Laggards refreshes.</div>';
   document.getElementById("quintileNote").textContent = "";
   return;
  }
@@ -1299,7 +1299,7 @@ function renderQuintileChart(){
  });
 
  document.getElementById("quintileNote").textContent =
-  "Each quintile groups roughly 1/5 of the scored universe by combined score. A downward-sloping bar chart from Q1 to Q5 would support the quality+low-vol factor thesis in this snapshot; a flat or noisy one would not — this window's real result either way, not forced.";
+  "Each quintile is about 1/5 of the scored companies. Bars sloping down from Q1 to Q5 would support the quality + low-vol thesis. Flat or noisy bars would not.";
 }
 
 function renderSectorChart(){
@@ -1368,7 +1368,7 @@ function renderQualityVolScatter(){
     legend: { display: false },
     tooltip: {
      callbacks: {
-      label: ctx => ctx.dataset.label === "Companies" ? (ctx.raw.symbol + " (" + (ctx.raw.sector || "—") + "): quality " + fmtScore(ctx.raw.x) + ", low-vol " + fmtScore(ctx.raw.y)) : null,
+      label: ctx => ctx.dataset.label === "Companies" ? (ctx.raw.symbol + " (" + (ctx.raw.sector || "n/a") + "): quality " + fmtScore(ctx.raw.x) + ", low-vol " + fmtScore(ctx.raw.y)) : null,
      },
     },
    },
@@ -1381,10 +1381,10 @@ function renderQualityVolScatter(){
 
  const relStrength = Math.abs(pearson.r) < 0.15 ? "essentially independent dimensions in this snapshot"
   : Math.abs(pearson.r) < 0.35 ? "weakly related in this snapshot"
-  : pearson.r > 0 ? "meaningfully positively correlated in this snapshot — higher-quality names also tended to be calmer"
-  : "meaningfully negatively correlated in this snapshot — higher-quality names tended to be more volatile, not less";
+  : pearson.r > 0 ? "meaningfully positively correlated in this snapshot. Higher-quality names also tended to be calmer"
+  : "meaningfully negatively correlated in this snapshot. Higher-quality names tended to be more volatile, not less";
  document.getElementById("qualityVolMethodTable").innerHTML = methodTableHtml(pearson, spear,
-  "Quality and low-vol are " + relStrength + " (Pearson r=" + pearson.r.toFixed(2) + "). Reported as observed, not assumed — a low or high correlation is equally valid evidence about whether these are really two distinct factors.");
+  "Quality and low-vol are " + relStrength + " (Pearson r=" + pearson.r.toFixed(2) + ").");
 }
 
 function renderReturnScatter(){
@@ -1394,7 +1394,7 @@ function renderReturnScatter(){
   document.getElementById("returnMethodTable").innerHTML =
    '<div class="method-note">' + (RAW.hasPriceData
     ? "Not enough companies with both a combined score and price data this run to test."
-    : "Price-performance data isn't available yet (Relative Strength Leaders/Laggards hasn't run this cycle).") + '</div>';
+    : "Price data isn't available yet (Relative Strength Leaders/Laggards hasn't refreshed).") + '</div>';
   return;
  }
 
@@ -1436,7 +1436,7 @@ function renderReturnScatter(){
  });
 
  document.getElementById("returnMethodTable").innerHTML = methodTableHtml(pearson, spear,
-  "A positive, significant relationship would mean higher-scoring (higher quality, lower vol) companies went on to outperform over the following 3 months — the classic quality/low-vol factor thesis holding up in this snapshot; a weak or flat one means the composite on its own isn't a reliable forward-return signal at this horizon in this snapshot.");
+  "A positive, significant relationship means higher-scoring companies (higher quality, lower vol) went on to outperform over the next 3 months. A weak or flat one means the composite isn't a reliable signal at this horizon.");
 }
 
 function renderLeaderTable(rows, tbodyId){
@@ -1447,7 +1447,7 @@ function renderLeaderTable(rows, tbodyId){
  }
  tbody.innerHTML = rows.map(r => `<tr>
   <td><span class="sector-name">${r.symbol}</span></td>
-  <td><span class="sector-ticker">${r.sector || "—"}</span></td>
+  <td><span class="sector-ticker">${r.sector || "n/a"}</span></td>
   <td>${fmtScore(r.combinedZ)}</td>
  </tr>`).join("");
 }
@@ -1455,7 +1455,7 @@ function renderLeaderTable(rows, tbodyId){
 function renderDivergentTables(){
  const div = RAW.divergent || { highQualityHighVol: [], lowQualityLowVol: [] };
  const hasAny = (div.highQualityHighVol && div.highQualityHighVol.length) || (div.lowQualityLowVol && div.lowQualityLowVol.length);
- if(!hasAny) return; // left hidden — this run's data didn't produce a meaningfully differentiated cut
+ if(!hasAny) return; // left hidden: this run's data didn't produce a meaningfully differentiated cut
 
  document.getElementById("divergentGrid").style.display = "";
 
@@ -1463,7 +1463,7 @@ function renderDivergentTables(){
   if(!list || !list.length) return '<tr><td colspan="4" style="text-align:center; color:var(--muted); padding:24px;">None this run.</td></tr>';
   return list.map(r => `<tr>
    <td><span class="sector-name">${r.symbol}</span></td>
-   <td><span class="sector-ticker">${r.sector || "—"}</span></td>
+   <td><span class="sector-ticker">${r.sector || "n/a"}</span></td>
    <td>${fmtScore(r.qualityZ)}</td>
    <td>${fmtScore(r.lowVolZ)}</td>
   </tr>`).join("");
@@ -1494,14 +1494,14 @@ function renderTable(){
  const tbody = document.getElementById("tableBody");
  tbody.innerHTML = rows.map(r => `<tr>
   <td><span class="sector-name">${r.symbol}</span></td>
-  <td><span class="sector-ticker">${r.sector || "—"}</span></td>
+  <td><span class="sector-ticker">${r.sector || "n/a"}</span></td>
   <td>${fmtPct(r.operatingMargin)}</td>
   <td>${fmtRatio(r.netDebtEbitda)}</td>
   <td>${fmtPct(r.realizedVol)}</td>
   <td>${fmtScore(r.qualityZ)}</td>
   <td>${fmtScore(r.lowVolZ)}</td>
   <td>${fmtScore(r.combinedZ)}</td>
-  <td>${r.quintile !== null && r.quintile !== undefined ? "Q" + r.quintile : "—"}</td>
+  <td>${r.quintile !== null && r.quintile !== undefined ? "Q" + r.quintile : "n/a"}</td>
  </tr>`).join("");
 
  document.querySelectorAll("#stockTable thead th").forEach(th => {
