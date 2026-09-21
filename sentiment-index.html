@@ -1111,6 +1111,8 @@ h1{
 
 .insight{ margin-top:28px; background:var(--card); border:1px solid var(--hair); border-radius:10px; padding:18px 20px; }
 .insight h3{ margin:0 0 4px; font-family:var(--serif); font-weight:400; font-size:18px; }
+.insight h3.insight-lead{ font-family:var(--sans); font-size:12px; font-weight:400; color:var(--muted); margin:0 0 14px; }
+.insight .insight-sub:empty{ display:none; }
 .insight .insight-sub{ color:var(--muted); font-size:12px; margin-bottom:14px; }
 
 .drv-row{ display:grid; grid-template-columns:minmax(120px,190px) 1fr 92px; gap:12px; align-items:center; padding:5px 0; cursor:pointer; }
@@ -1386,7 +1388,7 @@ Waiting for data...
 </div>
 
 <div class="insight">
-<h3>Each component&rsquo;s score against the neutral midpoint of 50, sorted by its weighted contribution to the composite. Click a row for detail.</h3>
+<h3 class="insight-lead">Each component&rsquo;s score against the neutral midpoint of 50, sorted by its weighted contribution to the composite. Click a row for detail.</h3>
 <div class="insight-sub"></div>
 <div id="drivers"></div>
 </div>
