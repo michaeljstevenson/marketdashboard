@@ -7,8 +7,8 @@
 //      natural units, a spread, or a trailing return), so a rising trend in
 //      the underlying series (VIX regime, cumulative A/D line, ETF price)
 //      can't masquerade as sentiment.
-//   2. Standardize with a rolling z-score against the trailing 5 years
-//      (minimum 1 year of history). Only data up to and including each date
+//   2. Standardize with a rolling z-score against the trailing year
+//      (252 trading days). Only data up to and including each date
 //      is used, so every historical score is what the index would have read
 //      live — no look-ahead — and the window adapts to volatility regimes.
 //   3. Map z (winsorized at ±3) to 0–100 with the normal CDF; fear-positive
@@ -27,7 +27,7 @@
 // the last history point.
 
 const Z_MIN_OBS = 252;
-const Z_MAX_WINDOW = 1260;
+const Z_MAX_WINDOW = 252;
 const Z_CLAMP = 3;
 const MIN_COVERAGE = 0.5;
 const HISTORY_START = "1990-01-01"; // CBOE VIX and SKEW begin 1990-01-02
@@ -161,7 +161,7 @@ const FACTORS = [
     signalLabel: "ln(VIX)",
     description: "Elevated option-implied volatility relative to its own recent regime signals fear.",
     details:
-      "The CBOE Volatility Index measures the 30-day volatility that S&P 500 option prices imply. The signal is the natural log of the VIX close, standardized against its trailing five-year distribution, so the score reflects how unusual today's implied volatility is for the current regime rather than its raw level. Higher implied volatility scores lower (fear).",
+      "The CBOE Volatility Index measures the 30-day volatility that S&P 500 option prices imply. The signal is the natural log of the VIX close, standardized against its trailing one-year distribution, so the score reflects how unusual today's implied volatility is for the current regime rather than its raw level. Higher implied volatility scores lower (fear).",
     source: { name: "Yahoo Finance — CBOE VIX (^VIX)", url: "https://finance.yahoo.com/quote/%5EVIX" },
   },
   {
@@ -173,7 +173,7 @@ const FACTORS = [
     signalLabel: "ln(VIX / VIX3M)",
     description: "Front-month volatility above 3-month volatility (backwardation) signals acute stress.",
     details:
-      "Compares 30-day implied volatility (VIX) with 3-month implied volatility (VIX3M). In calm markets the curve slopes upward (ratio below 1). When near-term fear outruns longer-dated fear the curve inverts (ratio above 1), a hallmark of stress episodes. The signal is ln(VIX / VIX3M), standardized against its trailing five years. A higher ratio scores lower (fear).",
+      "Compares 30-day implied volatility (VIX) with 3-month implied volatility (VIX3M). In calm markets the curve slopes upward (ratio below 1). When near-term fear outruns longer-dated fear the curve inverts (ratio above 1), a hallmark of stress episodes. The signal is ln(VIX / VIX3M), standardized against its trailing year. A higher ratio scores lower (fear).",
     source: { name: "Yahoo Finance — CBOE 3-Month Volatility (^VIX3M)", url: "https://finance.yahoo.com/quote/%5EVIX3M" },
   },
   {
@@ -185,7 +185,7 @@ const FACTORS = [
     signalLabel: "21-day realized volatility of S&P 500 returns",
     description: "Wider realized price swings than recent norms signal fear.",
     details:
-      "The annualized standard deviation of the S&P 500's last 21 daily log returns — how much the market has actually moved, as opposed to what options imply. Standardized against its trailing five years; higher realized volatility scores lower (fear).",
+      "The annualized standard deviation of the S&P 500's last 21 daily log returns — how much the market has actually moved, as opposed to what options imply. Standardized against its trailing year; higher realized volatility scores lower (fear).",
     source: { name: "Yahoo Finance — S&P 500 (^GSPC)", url: "https://finance.yahoo.com/quote/%5EGSPC" },
   },
   {
@@ -197,7 +197,7 @@ const FACTORS = [
     signalLabel: "ln(CBOE SKEW)",
     description: "Elevated demand for out-of-the-money puts (a steeper option skew) signals heightened tail-risk hedging.",
     details:
-      "The CBOE SKEW Index measures the perceived tail risk of S&P 500 returns from the relative pricing of out-of-the-money options: it rises when investors pay up for downside protection. It is the options-market positioning read in this index. The signal is ln(SKEW), standardized against its trailing five years; a higher reading (more hedging demand) scores lower.",
+      "The CBOE SKEW Index measures the perceived tail risk of S&P 500 returns from the relative pricing of out-of-the-money options: it rises when investors pay up for downside protection. It is the options-market positioning read in this index. The signal is ln(SKEW), standardized against its trailing year; a higher reading (more hedging demand) scores lower.",
     source: { name: "Yahoo Finance — CBOE SKEW (^SKEW)", url: "https://finance.yahoo.com/quote/%5ESKEW" },
   },
   {
@@ -209,7 +209,7 @@ const FACTORS = [
     signalLabel: "S&P 500 ÷ 125-day moving average − 1",
     description: "The S&P 500 trading above its 125-day average signals optimism.",
     details:
-      "The percentage distance of the S&P 500 from its own 125-day simple moving average, a standard intermediate-term trend measure. Standardized against its trailing five years. Because it is derived from price itself it is a confirming rather than leading signal.",
+      "The percentage distance of the S&P 500 from its own 125-day simple moving average, a standard intermediate-term trend measure. Standardized against its trailing year. Because it is derived from price itself it is a confirming rather than leading signal.",
     source: { name: "Yahoo Finance — S&P 500 (^GSPC)", url: "https://finance.yahoo.com/quote/%5EGSPC" },
   },
   {
@@ -221,7 +221,7 @@ const FACTORS = [
     signalLabel: "S&P 500 ÷ trailing 252-day high − 1",
     description: "The S&P 500 trading close to its 52-week high signals strength; a deeper drawdown signals weakness.",
     details:
-      "The percentage distance of the S&P 500 below its trailing 252-day high (zero at a new high). It complements the moving-average momentum measure by capturing how far the market has fallen from its recent peak. Standardized against its trailing five years.",
+      "The percentage distance of the S&P 500 below its trailing 252-day high (zero at a new high). It complements the moving-average momentum measure by capturing how far the market has fallen from its recent peak. Standardized against its trailing year.",
     source: { name: "Yahoo Finance — S&P 500 (^GSPC)", url: "https://finance.yahoo.com/quote/%5EGSPC" },
   },
   {
@@ -233,7 +233,7 @@ const FACTORS = [
     signalLabel: "10-day average of (advances − declines) ÷ (advances + declines)",
     description: "A larger share of S&P 500 constituents advancing than declining signals broad participation.",
     details:
-      "The 10-day average of each day's net advancing share across S&P 500 constituents, (advances − declines) ÷ (advances + declines). This replaces the cumulative advance/decline line, which trends without bound, with a stationary measure of participation. Standardized against its trailing five years.",
+      "The 10-day average of each day's net advancing share across S&P 500 constituents, (advances − declines) ÷ (advances + declines). This replaces the cumulative advance/decline line, which trends without bound, with a stationary measure of participation. Standardized against its trailing year.",
     source: { name: "Yahoo Finance — S&P 500 constituents (breadth job)", url: "/market-breadth.html" },
   },
   {
@@ -245,7 +245,7 @@ const FACTORS = [
     signalLabel: "10-day average of (new 52-week highs − new 52-week lows) ÷ constituents",
     description: "More constituents at 52-week highs than lows signals healthy participation.",
     details:
-      "The 10-day average of net new 52-week highs (highs minus lows) as a percentage of S&P 500 constituents. Standardized against its trailing five years.",
+      "The 10-day average of net new 52-week highs (highs minus lows) as a percentage of S&P 500 constituents. Standardized against its trailing year.",
     source: { name: "Yahoo Finance — S&P 500 constituents (breadth job)", url: "/market-breadth.html" },
   },
   {
@@ -257,7 +257,7 @@ const FACTORS = [
     signalLabel: "% of S&P 500 constituents above their own 200-day SMA",
     description: "A larger share of stocks above their 200-day average signals a broad uptrend.",
     details:
-      "The percentage of S&P 500 constituents trading above their own 200-day simple moving average. Standardized against its trailing five years.",
+      "The percentage of S&P 500 constituents trading above their own 200-day simple moving average. Standardized against its trailing year.",
     source: { name: "Yahoo Finance — S&P 500 constituents (breadth job)", url: "/market-breadth.html" },
   },
   {
@@ -269,7 +269,7 @@ const FACTORS = [
     signalLabel: "ln(HYG ÷ LQD) minus its own 50-day average",
     description: "High-yield bonds outperforming investment-grade signals rising risk appetite.",
     details:
-      "The total-return ratio of HYG (high-yield corporate bonds) to LQD (investment-grade corporate bonds), measured as its deviation from its own 50-day average. Credit investors tend to reprice risk before equity investors, Standardized against its trailing five years. Before HYG launched in 2007 the series is extended with Vanguard's High-Yield Corporate and Long-Term Investment-Grade funds (VWEHX ÷ VWESX, 1980 onward), spliced at the overlap so the level is continuous.",
+      "The total-return ratio of HYG (high-yield corporate bonds) to LQD (investment-grade corporate bonds), measured as its deviation from its own 50-day average. Credit investors tend to reprice risk before equity investors, Standardized against its trailing year. Before HYG launched in 2007 the series is extended with Vanguard's High-Yield Corporate and Long-Term Investment-Grade funds (VWEHX ÷ VWESX, 1980 onward), spliced at the overlap so the level is continuous.",
     source: { name: "Yahoo Finance — HYG, LQD", url: "https://finance.yahoo.com/quote/HYG" },
   },
   {
@@ -281,7 +281,7 @@ const FACTORS = [
     signalLabel: "20-day return of the S&P 500 minus 20-day total return of long Treasuries (log)",
     description: "Stocks outperforming long Treasuries over 20 days signals risk-on positioning.",
     details:
-      "The difference between the S&P 500's trailing 20-day return and the total return of long-term Treasuries (Vanguard Long-Term Treasury fund, VUSTX; 1986 onward). When investors flee to safety, long Treasuries outperform stocks. Standardized against its trailing five years.",
+      "The difference between the S&P 500's trailing 20-day return and the total return of long-term Treasuries (Vanguard Long-Term Treasury fund, VUSTX; 1986 onward). When investors flee to safety, long Treasuries outperform stocks. Standardized against its trailing year.",
     source: { name: "Yahoo Finance — S&P 500, VUSTX", url: "https://finance.yahoo.com/quote/VUSTX" },
   },
   {
@@ -293,7 +293,7 @@ const FACTORS = [
     signalLabel: "63-day change in ln(Russell 2000 ÷ S&P 500)",
     description: "Small-caps outperforming large-caps over a quarter signals risk appetite.",
     details:
-      "The trailing 63-trading-day change in the ratio of the Russell 2000 index to the S&P 500 (index data from 1987). Smaller, more leveraged companies lead when confidence is rising and lag when it turns. Standardized against its trailing five years.",
+      "The trailing 63-trading-day change in the ratio of the Russell 2000 index to the S&P 500 (index data from 1987). Smaller, more leveraged companies lead when confidence is rising and lag when it turns. Standardized against its trailing year.",
     source: { name: "Yahoo Finance — Russell 2000 (^RUT), S&P 500", url: "https://finance.yahoo.com/quote/%5ERUT" },
   },
   {
@@ -305,7 +305,7 @@ const FACTORS = [
     signalLabel: "63-day change in ln(RSP ÷ S&P 500)",
     description: "The equal-weight S&P 500 keeping pace with the cap-weighted index signals broad participation.",
     details:
-      "The trailing 63-trading-day change in the ratio of RSP (equal-weight S&P 500) to the cap-weighted S&P 500. When the equal-weight index leads, gains are spread across the roster; when it lags, a few mega-caps are carrying the market. Standardized against its trailing five years. RSP launched in 2003.",
+      "The trailing 63-trading-day change in the ratio of RSP (equal-weight S&P 500) to the cap-weighted S&P 500. When the equal-weight index leads, gains are spread across the roster; when it lags, a few mega-caps are carrying the market. Standardized against its trailing year. RSP launched in 2003.",
     source: { name: "Yahoo Finance — RSP, S&P 500", url: "https://finance.yahoo.com/quote/RSP" },
   },
 ];

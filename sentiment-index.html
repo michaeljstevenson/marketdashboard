@@ -1402,7 +1402,7 @@ Waiting for data...
 
 <div class="insight">
 <h3>Factor detail</h3>
-<div class="insight-sub">Every scored factor: current reading, how far that sits from its own five-year norm (z-score), the resulting 0&ndash;100 score, and its weighted contribution to the composite. Click a row for full calculation.</div>
+<div class="insight-sub">Every scored factor: current reading, how far that sits from its own one-year norm (z-score), the resulting 0&ndash;100 score, and its weighted contribution to the composite. Click a row for full calculation.</div>
 <div class="ftable-wrap"><table class="ftable" id="factorTable"></table></div>
 </div>
 
@@ -2766,7 +2766,7 @@ function renderMethodology(data){
  document.getElementById("methodBody").innerHTML = `
   <h4>Construction</h4>
   <ul>
-   <li>Each factor is reduced to a stationary signal, then standardized as a rolling z-score against its trailing ${Math.round(m.zWindowDays / 252)} years (minimum ${Math.round(m.zMinObservations / 252)} year of data). Only data up to each date is used, so historical readings are what the index would have shown live.</li>
+   <li>Each factor is reduced to a stationary signal, then standardized as a rolling z-score against its trailing ${Math.round(m.zWindowDays / 252) === 1 ? "year" : Math.round(m.zWindowDays / 252) + " years"} (${m.zWindowDays} trading days). Only data up to each date is used, so historical readings are what the index would have shown live.</li>
    <li>z-scores are capped at &plusmn;${m.zClamp} and mapped to 0&ndash;100 with the normal CDF. Fear-positive signals (volatility measures, tail-risk hedging demand) are inverted so 100 always means greed.</li>
    <li>Weighting is equal at two levels: factors within a pillar are averaged, then pillars are averaged. Grouping stops highly correlated factors (for example the breadth measures) from crowding out the rest of the index, and equal weights avoid coefficients fitted to past returns.</li>
    <li>A date is published only when the available factors carry at least ${Math.round(m.minCoverage * 100)}% of full weight; each point records its coverage. Factors that launched later (for example HYG in 2007) enter when their history allows, and remaining weights are re-normalized within their pillars.</li>
@@ -2779,7 +2779,7 @@ function renderMethodology(data){
   <ul><li>Equity put/call and news sentiment have only weeks of usable history, so they are displayed but not scored into the composite.</li></ul>
   <h4>Limitations</h4>
   <ul>
-   <li>Scores describe positioning relative to the recent five-year regime; they are not return forecasts.</li>
+   <li>Scores describe positioning relative to the trailing one-year norm; they are not return forecasts.</li>
    <li>The SKEW index tends to be highest in calm, rising markets (investors buy protection at highs), so it often moves against the other factors; it is scored as hedging demand (higher = more fear) and carries a small weight.</li>
    <li>Price-derived factors (momentum, proximity to highs, relative strength) partly reflect the market moves sentiment is meant to help explain.</li>
    <li>Breadth uses current S&amp;P 500 constituents, so early history carries survivorship bias.</li>
