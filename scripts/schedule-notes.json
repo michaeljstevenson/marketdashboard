@@ -8,7 +8,7 @@
   "countries": "Daily prices for country and region ETFs, plus a value and growth pair.",
   "seasonality": "Full daily history of the S&P 500 index.",
   "putcall": "Put/call ratio history and daily prices. No page of its own: feeds the Sentiment Index through the sentiment job.",
-  "sentiment": "Prices for SPY, VIX, HYG, LQD, IWM and RSP, the put/call ratio, and news sentiment scores. The VIX input (INDEX_DATA) is not available on this Alpha Vantage plan, so the implied-volatility factor cannot be filled.",
+  "sentiment": "Daily prices from Yahoo Finance for the S&P 500, VIX, VIX3M, SKEW, Russell 2000, long Treasuries, high-yield and investment-grade bonds and RSP (history back to 1990), plus the breadth job's results, scored into the composite; the put/call ratio and news sentiment scores are published alongside it but not scored.",
   "oddstats": "Daily history for the S&P 500, SPY, the 11 sector ETFs and 25 mega-caps, to scan for streaks.",
   "smallcap": "Daily prices for IWM (small caps), MDY (mid caps) and SPY (large caps).",
   "beeswarm-daily": "15-minute price moves through the trading day for every S&P 500 stock.",

@@ -19,7 +19,7 @@ Chart.defaults.plugins.zoom = {
  zoom: {
   wheel: { enabled: false },
   pinch: { enabled: false },
-  drag: { enabled: true, backgroundColor: "rgba(217,138,61,0.15)", borderColor: "rgba(217,138,61,0.4)", borderWidth: 1 },
+  drag: { enabled: true, backgroundColor: "rgba(139,145,153,0.15)", borderColor: "rgba(139,145,153,0.45)", borderWidth: 1 },
   mode: "x",
  },
  pan: { enabled: true, mode: "x", modifierKey: "shift" },
@@ -180,10 +180,11 @@ document.addEventListener("DOMContentLoaded", function(){
   --muted:#8b9199;
   --hair:#2b3138;
 
-  --fear:#6f8fac;
+  --xfear:#a02a30;
+  --fear:#cf6a63;
   --neutral:#7c828a;
-  --greed:#d98a3d;
-  --extreme:#b56f2a;
+  --greed:#6fae83;
+  --extreme:#26804a;
 
   --serif:'Iowan Old Style','Palatino Linotype',Georgia,serif;
   --mono:'SF Mono','JetBrains Mono',ui-monospace,Menlo,monospace;
@@ -197,10 +198,11 @@ document.addEventListener("DOMContentLoaded", function(){
   --ink:#1c1f24;
   --muted:#6b6f76;
   --hair:#e1dbcd;
-  --fear:#4f6f8c;
+  --xfear:#8c1f26;
+  --fear:#c0564f;
   --neutral:#6c7178;
-  --greed:#b9701f;
-  --extreme:#96591c;
+  --greed:#4f9a68;
+  --extreme:#1c6b3c;
 }
 
 
@@ -1079,6 +1081,57 @@ h1{
  border-color:#f0b8b0;
  color:#a83a30;
 }
+
+/* HISTORY CONTEXT: chips, driver bars, calendar strip */
+.card-supp{ opacity:.72; border-style:dashed; }
+.stat-strip{ display:flex; flex-wrap:wrap; gap:8px 22px; margin-top:16px; font-size:12px; color:var(--muted); }
+.stat-strip b{ color:var(--ink); font-weight:600; font-variant-numeric:tabular-nums; }
+.ftable-wrap{ overflow-x:auto; }
+.ftable{ width:100%; border-collapse:collapse; font-size:12.5px; font-variant-numeric:tabular-nums; }
+.ftable th{ text-align:right; color:var(--muted); font-weight:500; font-size:11px; text-transform:uppercase; letter-spacing:.05em; padding:6px 10px; border-bottom:1px solid var(--hair); white-space:nowrap; }
+.ftable th:first-child, .ftable td:first-child{ text-align:left; }
+.ftable td{ text-align:right; padding:8px 10px; border-bottom:1px solid var(--hair); white-space:nowrap; }
+.ftable tr.frow{ cursor:pointer; }
+.ftable tr.frow:hover td{ background:var(--card-hover); }
+.ftable tr.fsupp td{ color:var(--muted); font-style:italic; }
+.ftable .fgroup{ color:var(--muted); font-size:11px; }
+.ftable tfoot td{ font-weight:600; border-bottom:none; }
+.method summary{ cursor:pointer; font-family:var(--serif); font-size:18px; }
+.method-body{ color:var(--muted); font-size:13px; line-height:1.6; margin-top:12px; }
+.method-body h4{ color:var(--ink); font-size:13px; margin:16px 0 4px; font-weight:600; }
+.method-body ul{ margin:4px 0 0 18px; padding:0; }
+.disclosure{ margin-top:22px; font-size:11px; color:var(--muted); line-height:1.5; }
+.hist-chips{ display:flex; gap:10px; flex-wrap:wrap; margin-top:25px; }
+.hist-chip{ flex:1 1 130px; background:var(--card); border:1px solid var(--hair); border-radius:10px; padding:10px 14px; }
+.hist-chip .hc-label{ font-size:11px; color:var(--muted); text-transform:uppercase; letter-spacing:.06em; }
+.hist-chip .hc-val{ font-family:var(--serif); font-size:26px; line-height:1.2; }
+.hist-chip .hc-zone{ font-size:12px; }
+.hist-chip .hc-delta{ font-size:11px; color:var(--muted); margin-top:2px; }
+.history-controls{ margin-top:12px !important; }
+
+.insight{ margin-top:28px; background:var(--card); border:1px solid var(--hair); border-radius:10px; padding:18px 20px; }
+.insight h3{ margin:0 0 4px; font-family:var(--serif); font-weight:400; font-size:18px; }
+.insight .insight-sub{ color:var(--muted); font-size:12px; margin-bottom:14px; }
+
+.drv-row{ display:grid; grid-template-columns:minmax(120px,190px) 1fr 92px; gap:12px; align-items:center; padding:5px 0; cursor:pointer; }
+.drv-row:hover .drv-name{ color:var(--ink); }
+.drv-name{ font-size:13px; color:var(--muted); }
+.drv-track{ position:relative; height:16px; }
+.drv-track::before{ content:""; position:absolute; left:50%; top:-3px; bottom:-3px; width:1px; background:var(--hair); }
+.drv-bar{ position:absolute; top:2px; height:12px; border-radius:2px; }
+.drv-meta{ font-size:12px; color:var(--muted); text-align:right; font-variant-numeric:tabular-nums; }
+.drv-axis{ display:grid; grid-template-columns:minmax(120px,190px) 1fr 92px; gap:12px; font-size:11px; color:var(--muted); margin-top:4px; }
+.drv-axis div:nth-child(2){ display:grid; grid-template-columns:1fr auto 1fr; }
+.drv-axis div:nth-child(2) span:nth-child(2){ text-align:center; }
+.drv-axis div:nth-child(2) span:nth-child(3){ text-align:right; }
+
+.cal{ display:grid; grid-template-columns:34px repeat(53, 1fr); gap:2px; }
+.cal-y{ font-size:10px; color:var(--muted); display:flex; align-items:center; }
+.cal-c{ aspect-ratio:1 / 1; border-radius:2px; min-width:0; }
+.cal-legend{ display:flex; gap:14px; flex-wrap:wrap; margin-top:10px; font-size:11px; color:var(--muted); }
+.cal-legend span i{ display:inline-block; width:10px; height:10px; border-radius:2px; margin-right:5px; vertical-align:-1px; }
+.cal-wrap{ overflow-x:auto; }
+.cal-wrap .cal{ min-width:640px; }
 </style>
 </head>
 <body>
@@ -1259,7 +1312,7 @@ Loading...
 <div class="score-box" id="scoreBox">
 
 <svg class="gauge" viewBox="0 0 220 128" xmlns="http://www.w3.org/2000/svg">
-<path class="gauge-band" d="M 20 108 A 90 90 0 0 1 37.19 55.10" stroke="var(--fear)"/>
+<path class="gauge-band" d="M 20 108 A 90 90 0 0 1 37.19 55.10" stroke="var(--xfear)"/>
 <path class="gauge-band" d="M 37.19 55.10 A 90 90 0 0 1 82.19 22.42" stroke="var(--fear)"/>
 <path class="gauge-band" d="M 82.19 22.42 A 90 90 0 0 1 137.81 22.42" stroke="var(--neutral)"/>
 <path class="gauge-band" d="M 137.81 22.42 A 90 90 0 0 1 182.81 55.10" stroke="var(--greed)"/>
@@ -1310,6 +1363,8 @@ Waiting for data...
 
 </div>
 
+<div class="stat-strip" id="statStrip"></div>
+
 
 </div>
 
@@ -1320,6 +1375,8 @@ Waiting for data...
 <div class="grid" id="components"></div>
 
 
+<div class="hist-chips" id="histChips"></div>
+
 <div class="history-controls" id="historyRangeControls"></div>
 
 <div class="chart">
@@ -1327,6 +1384,32 @@ Waiting for data...
 <canvas id="historyChart"></canvas>
 
 </div>
+
+<div class="insight">
+<h3>What&rsquo;s driving the score</h3>
+<div class="insight-sub">Each component&rsquo;s score against the neutral midpoint of 50, sorted by its weighted contribution to the composite. Click a row for detail.</div>
+<div id="drivers"></div>
+</div>
+
+<div class="insight">
+<h3>Sentiment by week</h3>
+<div class="insight-sub">Each cell is one week&rsquo;s average reading, colored by zone, from 1990. Hover for the date, value and factor coverage. Fewer factors are available before 2001; see Methodology.</div>
+<div class="cal-wrap"><div class="cal" id="calStrip"></div></div>
+<div class="cal-legend" id="calLegend"></div>
+</div>
+
+<div class="insight">
+<h3>Factor detail</h3>
+<div class="insight-sub">Every scored factor: its current reading, how far that sits from its own five-year norm (z-score), the resulting 0&ndash;100 score, and its weighted contribution to the composite. Click a row for the full calculation.</div>
+<div class="ftable-wrap"><table class="ftable" id="factorTable"></table></div>
+</div>
+
+<details class="insight method" id="methodBox">
+<summary>Methodology</summary>
+<div class="method-body" id="methodBody"></div>
+</details>
+
+<div class="disclosure">Independent research for informational purposes only; not investment advice. Index levels are model outputs, not forecasts. Data: Yahoo Finance (prices, CBOE volatility indices), S&amp;P 500 constituent breadth computed from Yahoo Finance history, Alpha Vantage (news sentiment, options put/call). Scores are computed once per trading day after the close.</div>
 
 
 
@@ -1420,6 +1503,7 @@ async function loadSP500LongHistory(){
 
 }
 
+function fmtW(w){ return (Math.round(w * 10) / 10) + "%"; }
 function inkColor(){ return getComputedStyle(document.documentElement).getPropertyValue("--ink").trim() || "#eae6da"; }
 function mutedColor(){ return getComputedStyle(document.documentElement).getPropertyValue("--muted").trim() || "#8b9199"; }
 function gridColor(){ return getComputedStyle(document.documentElement).getPropertyValue("--hair").trim() || "#2b3138"; }
@@ -1448,6 +1532,8 @@ async function loadData(){
   renderDashboard(data);
 
   renderHistoryRange(CURRENT_HISTORY_RANGE);
+
+  renderInsights(data);
 
  }catch(err){
 
@@ -1484,7 +1570,7 @@ if(score < 20)
 
 return {
 label:"Extreme Fear",
-color:"var(--fear)"
+color:"var(--xfear)"
 };
 
 
@@ -1678,7 +1764,7 @@ getRegime(item.score);
 container.innerHTML += `
 
 
-<div class="card" data-id="${item.id}">
+<div class="card${item.supplementary ? " card-supp" : ""}" data-id="${item.id}">
 
 
 <div class="card-header">
@@ -1693,7 +1779,7 @@ ${item.name}
 
 <div>
 
-${item.score}/100
+${Math.round(item.score)}/100
 
 </div>
 
@@ -1740,10 +1826,11 @@ background:${regime.color};
 
 <span>
 
-Weight:
-${item.weight}%
+${item.supplementary ? "Supplementary &middot; not in composite" : "Weight: " + fmtW(item.effectiveWeight !== undefined ? item.effectiveWeight : item.weight)}
 
 </span>
+
+<span>${item.z !== undefined ? "z " + (item.z >= 0 ? "+" : "") + item.z.toFixed(2) : ""}</span>
 
 
 </div>
@@ -1831,9 +1918,7 @@ function openModal(id){
 
  const history = item.history || [];
 
- if(item.id === "momentum"){
-
-  renderMomentumModal();
+ if(false){
 
  }else{
 
@@ -1862,6 +1947,18 @@ function renderCalcBox(item){
 
   return;
 
+ }
+
+ if(calc.version){
+  box.innerHTML = `<div class="calc-title">Calculation (methodology v${calc.version}):</div>
+<div class="calc-row"><span class="calc-row-label">Signal</span><span class="calc-row-value">${calc.signalLabel}</span></div>
+<div class="calc-row"><span class="calc-row-label">Current signal value</span><span class="calc-row-value">${calc.signal}</span></div>
+<div class="calc-row"><span class="calc-row-label">Trailing mean / std dev (${calc.window} days)</span><span class="calc-row-value">${calc.mean} / ${calc.sd}</span></div>
+<div class="calc-row"><span class="calc-row-label">z-score</span><span class="calc-row-value">${calc.z}</span></div>
+<div class="calc-row"><span class="calc-row-label">Direction</span><span class="calc-row-value">${calc.invert ? "higher = more fear (inverted)" : "higher = more greed"}</span></div>
+<div class="calc-formula">score = 100 &times; &Phi;(z) ${calc.invert ? "inverted" : ""} = ${item.score}/100</div>`;
+  box.classList.add("visible");
+  return;
  }
 
  const direction = calc.invert ? "above" : "below";
@@ -2111,7 +2208,7 @@ function renderCompositeCalcBox(){
 
  const box = document.getElementById("calcBox");
 
- const items = Object.values(COMPONENTS_BY_ID);
+ const items = Object.values(COMPONENTS_BY_ID).filter(i => !i.supplementary);
 
  if(!items.length){
 
@@ -2123,11 +2220,11 @@ function renderCompositeCalcBox(){
 
  }
 
- const totalWeight = items.reduce((sum,i)=>sum+i.weight,0);
+ const totalWeight = items.reduce((sum,i)=>sum+i.weight,0); // eslint-disable-line
 
  const rows = items.map(i => `
 
-<div class="calc-row"><span class="calc-row-label">${i.name} (weight ${i.weight}%)</span><span class="calc-row-value">${i.score}/100</span></div>
+<div class="calc-row"><span class="calc-row-label">${i.name} (weight ${fmtW(i.effectiveWeight !== undefined ? i.effectiveWeight : i.weight)})</span><span class="calc-row-value">${i.score}/100</span></div>
 
 `).join("");
 
@@ -2332,7 +2429,90 @@ function renderHistoryRange(rangeKey){
 }
 
 
+function hexRgb(c){
+ c = String(c).trim();
+ if(c[0] === "#"){
+  if(c.length === 4) c = "#" + c[1] + c[1] + c[2] + c[2] + c[3] + c[3];
+  return [parseInt(c.slice(1, 3), 16), parseInt(c.slice(3, 5), 16), parseInt(c.slice(5, 7), 16)];
+ }
+ const m = c.match(/\d+/g) || [128, 128, 128];
+ return [+m[0], +m[1], +m[2]];
+}
+function cssVar(name){ return getComputedStyle(document.documentElement).getPropertyValue(name).trim(); }
+function withAlpha(c, a){ const [r, g, b] = hexRgb(c); return "rgba(" + r + "," + g + "," + b + "," + a + ")"; }
+
+const ZONES = [
+ { lo: 0, hi: 20, label: "Extreme Fear", v: "--xfear", a: 1 },
+ { lo: 20, hi: 40, label: "Fear", v: "--fear", a: 0.85 },
+ { lo: 40, hi: 60, label: "Neutral", v: "--neutral", a: 0.3 },
+ { lo: 60, hi: 80, label: "Optimism", v: "--greed", a: 0.85 },
+ { lo: 80, hi: 100, label: "Extreme Optimism", v: "--extreme", a: 1 },
+];
+function zoneOf(score){ return ZONES.find(z => score < z.hi) || ZONES[ZONES.length - 1]; }
+function zoneColor(score, alpha){ const z = zoneOf(score); return withAlpha(cssVar(z.v), alpha === undefined ? z.a : alpha); }
+
+const ZONE_BANDS_PLUGIN = {
+ id: "zoneBands",
+ beforeDatasetsDraw(chart){
+  const y = chart.scales.sentiment;
+  if(!y) return;
+  const { ctx, chartArea } = chart;
+  ctx.save();
+  ZONES.forEach(z => {
+   const top = y.getPixelForValue(z.hi), bottom = y.getPixelForValue(z.lo);
+   ctx.fillStyle = withAlpha(cssVar(z.v), 0.12 * z.a);
+   ctx.fillRect(chartArea.left, top, chartArea.right - chartArea.left, bottom - top);
+  });
+  ctx.restore();
+ },
+};
+
+const MARKER_OFFSETS = [
+ { label: "Today", days: 0 },
+ { label: "1 week ago", days: 7 },
+ { label: "1 month ago", days: 30 },
+ { label: "1 year ago", days: 365 },
+];
+
+function indexOnOrBefore(rows, iso){
+ let lo = 0, hi = rows.length - 1, ans = -1;
+ while(lo <= hi){
+  const mid = (lo + hi) >> 1;
+  if(rows[mid].date <= iso){ ans = mid; lo = mid + 1; } else hi = mid - 1;
+ }
+ return ans;
+}
+
+function markerPoints(rows){
+ if(!rows.length) return [];
+ const last = new Date(rows[rows.length - 1].date + "T00:00:00Z");
+ return MARKER_OFFSETS.map(m => {
+  const d = new Date(last.getTime() - m.days * 86400000).toISOString().slice(0, 10);
+  const i = indexOnOrBefore(rows, d);
+  return i < 0 ? null : { ...m, index: i, date: rows[i].date, value: rows[i].optimism };
+ }).filter(Boolean);
+}
+
+function renderHistoryChips(){
+ const el = document.getElementById("histChips");
+ const pts = markerPoints(LATEST_HISTORY);
+ if(!pts.length){ el.innerHTML = ""; return; }
+ const today = pts[0];
+ el.innerHTML = pts.map(pt => {
+  const z = zoneOf(pt.value);
+  const delta = pt.days === 0 ? usDate(pt.date) : (today.value - pt.value === 0 ? "unchanged since" : (today.value > pt.value ? "up " : "down ") + Math.abs(Math.round(today.value) - Math.round(pt.value)) + " since");
+  return `<div class="hist-chip"><div class="hc-label">${pt.label}</div><div class="hc-val">${Math.round(pt.value)}</div><div class="hc-zone" style="color:${zoneColor(pt.value, 1)}">${z.label}</div><div class="hc-delta">${pt.days === 0 ? delta : delta + " " + usDate(pt.date)}</div></div>`;
+ }).join("");
+}
+
 function renderHistoryChart(historyData){
+
+ renderHistoryChips();
+ const markers = {};
+ markerPoints(LATEST_HISTORY).forEach(m => {
+  const i = historyData.findIndex(r => r.date === m.date);
+  if(i >= 0) markers[i] = m.days === 0 ? { r: 6, fill: inkColor() } : { r: 4, fill: mutedColor() };
+ });
 
 
  if(historyChart){ historyChart.destroy(); historyChart = null; }
@@ -2346,6 +2526,8 @@ document
 
 
 historyChart = new Chart(ctx, {
+
+plugins:[ZONE_BANDS_PLUGIN],
 
 
 type:"line",
@@ -2376,7 +2558,15 @@ backgroundColor: LINE_COLOR,
 
 borderWidth:2,
 
-pointRadius:0,
+pointRadius: ctx => markers[ctx.dataIndex] ? markers[ctx.dataIndex].r : 0,
+
+pointHoverRadius: 4,
+
+pointBackgroundColor: ctx => markers[ctx.dataIndex] ? markers[ctx.dataIndex].fill : "transparent",
+
+pointBorderColor: cssVar("--card"),
+
+pointBorderWidth: 2,
 
 yAxisID:"sentiment"
 
@@ -2508,6 +2698,142 @@ document.getElementById("refreshBtn").addEventListener("click", async () => {
 
 });
 
+
+function renderInsights(data){
+ // Older cached payloads (pre-v2.1) carry no per-factor contribution.
+ const scoredNow = (data.components || []).filter(c => !c.supplementary);
+ const totalW = scoredNow.reduce((t, c) => t + (c.weight || 0), 0) || 1;
+ scoredNow.forEach(c => { if(c.contribution === undefined) c.contribution = (c.score - 50) * c.weight / totalW; });
+ renderDrivers(data.components || []);
+ renderCalendar();
+ renderStatStrip(data);
+ renderFactorTable(data.components || []);
+ renderMethodology(data);
+}
+
+function renderStatStrip(data){
+ const el = document.getElementById("statStrip");
+ const h = LATEST_HISTORY;
+ if(!h.length){ el.innerHTML = ""; return; }
+ const cur = h[h.length - 1].optimism;
+ const below = h.filter(p => p.optimism <= cur).length;
+ const pct = Math.round(100 * below / h.length);
+ const last30 = h.slice(-30);
+ const avg30 = last30.reduce((a, p) => a + p.optimism, 0) / last30.length;
+ const yr = h.slice(-252);
+ const hi = Math.max(...yr.map(p => p.optimism)), lo = Math.min(...yr.map(p => p.optimism));
+ const cov = data.coverage !== undefined ? Math.round(data.coverage * 100) : null;
+ const items = [
+  ["As of", usDate(data.asOfDate || h[h.length - 1].date)],
+  ["Percentile since " + h[0].date.slice(0, 4), pct + (([11, 12, 13].includes(pct % 100)) ? "th" : ({ 1: "st", 2: "nd", 3: "rd" }[pct % 10] || "th"))],
+  ["30-day avg", avg30.toFixed(0)],
+  ["52-week range", Math.round(lo) + " \u2013 " + Math.round(hi)],
+ ];
+ if(cov !== null) items.push(["Factor coverage", cov + "%"]);
+ el.innerHTML = items.map(([k, v]) => `<span>${k} <b>${v}</b></span>`).join("");
+}
+
+function renderFactorTable(components){
+ const scored = components.filter(c => !c.supplementary).sort((a, b) => Math.abs(b.contribution) - Math.abs(a.contribution));
+ const supp = components.filter(c => c.supplementary);
+ const fmtZ = z => z === undefined ? "\u2014" : (z >= 0 ? "+" : "") + z.toFixed(2);
+ const row = (c, isSupp) => `<tr class="frow${isSupp ? " fsupp" : ""}" data-id="${c.id}">
+  <td>${c.name}${c.group ? ` <span class="fgroup">${c.group}</span>` : ""}</td>
+  <td>${isSupp ? "\u2014" : fmtW(c.effectiveWeight !== undefined ? c.effectiveWeight : c.weight)}</td>
+  <td>${c.value} <span class="fgroup">${c.unit}</span></td>
+  <td>${fmtZ(c.z)}</td>
+  <td style="color:${zoneColor(c.score, 1)}">${Math.round(c.score)}</td>
+  <td>${isSupp ? "not scored" : (c.contribution >= 0 ? "+" : "\u2212") + Math.abs(c.contribution).toFixed(2)}</td>
+ </tr>`;
+ const total = scored.reduce((a, c) => a + c.contribution, 0);
+ document.getElementById("factorTable").innerHTML =
+  `<thead><tr><th>Factor</th><th>Weight</th><th>Reading</th><th>z-score</th><th>Score</th><th>Contribution (pts vs 50)</th></tr></thead>
+   <tbody>${scored.map(c => row(c, false)).join("")}${supp.map(c => row(c, true)).join("")}</tbody>
+   <tfoot><tr><td>Composite</td><td>100%</td><td></td><td></td><td>${LATEST_COMPOSITE}</td><td>${total >= 0 ? "+" : "\u2212"}${Math.abs(total).toFixed(2)}</td></tr></tfoot>`;
+ document.querySelectorAll("#factorTable .frow").forEach(r => r.addEventListener("click", () => openModal(r.dataset.id)));
+}
+
+function renderMethodology(data){
+ const m = data.methodology;
+ if(!m){ document.getElementById("methodBody").textContent = ""; return; }
+ const factors = (data.components || []).filter(c => !c.supplementary);
+ const pillars = (m.pillars || []).map(p => {
+  const fs = factors.filter(c => c.pillar === p.id);
+  return `<li><b>${p.name}</b> (${fmtW(p.weight)}): ${fs.map(c => `${c.name} (${c.calc && c.calc.signalLabel ? c.calc.signalLabel : ""})`).join("; ")}</li>`;
+ }).join("");
+ document.getElementById("methodBody").innerHTML = `
+  <h4>Construction (v${m.version})</h4>
+  <ul>
+   <li>Each factor is reduced to a stationary signal, then standardized as a rolling z-score against its trailing ${Math.round(m.zWindowDays / 252)} years (minimum ${Math.round(m.zMinObservations / 252)} year of data). Only data up to each date is used, so historical readings are what the index would have shown live.</li>
+   <li>z-scores are capped at &plusmn;${m.zClamp} and mapped to 0&ndash;100 with the normal CDF. Fear-positive signals (volatility measures, tail-risk hedging demand) are inverted so 100 always means greed.</li>
+   <li>Weighting is equal at two levels: factors within a pillar are averaged, then pillars are averaged. Grouping stops highly correlated factors (for example the breadth measures) from crowding out the rest of the index, and equal weights avoid coefficients fitted to past returns.</li>
+   <li>A date is published only when the available factors carry at least ${Math.round(m.minCoverage * 100)}% of full weight; each point records its coverage. Factors that launched later (for example HYG in 2007) enter when their history allows, and remaining weights are re-normalized within their pillars.</li>
+   <li>Zones: 0&ndash;20 Extreme Fear, 20&ndash;40 Fear, 40&ndash;60 Neutral, 60&ndash;80 Optimism, 80&ndash;100 Extreme Optimism.</li>
+   <li>The live reading and the history chart are one series: today&rsquo;s composite is the last history point.</li>
+  </ul>
+  <h4>Pillars and factors</h4>
+  <ul>${pillars}</ul>
+  <h4>Supplementary indicators</h4>
+  <ul><li>Equity put/call and news sentiment have only weeks of usable history, so they are displayed but not scored into the composite.</li></ul>
+  <h4>Limitations</h4>
+  <ul>
+   <li>Scores describe positioning relative to the recent five-year regime; they are not return forecasts.</li>
+   <li>The SKEW index tends to be highest in calm, rising markets (investors buy protection at highs), so it often moves against the other factors; it is scored as hedging demand (higher = more fear) and carries a small weight.</li>
+   <li>Price-derived factors (momentum, proximity to highs, relative strength) partly reflect the market moves sentiment is meant to help explain.</li>
+   <li>Breadth uses current S&amp;P 500 constituents, so early history carries survivorship bias.</li>
+   <li>History runs from 1990, when the CBOE VIX and SKEW begin. Not every factor exists that far back: the term-structure factor starts in 2006, breadth in 2000 and equal-weight participation in 2003, so early readings rest on fewer pillars (coverage is recorded per point and shown on hover). Where ETFs are newer than the period, index or fund proxies are used: the Russell 2000 index for small caps, the Vanguard Long-Term Treasury fund for Treasuries, and Vanguard high-yield and investment-grade funds for credit before 2007.</li>
+  </ul>`;
+}
+
+function renderDrivers(allComponents){
+ const components = allComponents.filter(c => !c.supplementary);
+ const el = document.getElementById("drivers");
+ const rows = components.map(c => ({ ...c, contrib: c.contribution }))
+  .sort((a, b) => b.contrib - a.contrib);
+ el.innerHTML = rows.map(c => {
+  const dev = (c.score - 50) / 50;
+  const w = Math.abs(dev) * 50;
+  const pos = dev >= 0 ? "left:50%;" : "right:50%;";
+  const sign = c.contrib >= 0 ? "+" : "\u2212";
+  return `<div class="drv-row" data-id="${c.id}" title="${c.name}: score ${Math.round(c.score)} \u00b7 weight ${fmtW(c.effectiveWeight)}">
+   <div class="drv-name">${c.name}</div>
+   <div class="drv-track"><div class="drv-bar" style="${pos}width:${w}%;background:${zoneColor(c.score, 1)}"></div></div>
+   <div class="drv-meta">${Math.round(c.score)} \u00b7 ${sign}${Math.abs(c.contrib).toFixed(1)} pts</div>
+  </div>`;
+ }).join("") + `<div class="drv-axis"><div></div><div><span>0 (fear)</span><span>50</span><span>100 (optimism)</span></div><div></div></div>`;
+ el.querySelectorAll(".drv-row").forEach(r => r.addEventListener("click", () => openModal(r.dataset.id)));
+}
+
+function renderCalendar(){
+ const strip = document.getElementById("calStrip");
+ const rows = LATEST_HISTORY;
+ if(!rows.length){ strip.innerHTML = ""; return; }
+ const weeks = new Map();
+ rows.forEach(r => {
+  const d = new Date(r.date + "T00:00:00Z");
+  const y = d.getUTCFullYear();
+  const doy = Math.floor((d - Date.UTC(y, 0, 1)) / 86400000);
+  const wk = Math.min(52, Math.floor(doy / 7));
+  const key = y + ":" + wk;
+  const cur = weeks.get(key) || { y, wk, sum: 0, n: 0, cov: 0, first: r.date };
+  cur.sum += r.optimism; cur.n++; cur.cov += (r.coverage === undefined ? 1 : r.coverage);
+  weeks.set(key, cur);
+ });
+ const years = [...new Set([...weeks.values()].map(w => w.y))].sort();
+ let html = "";
+ years.forEach(y => {
+  html += `<div class="cal-y">${y}</div>`;
+  for(let wk = 0; wk < 53; wk++){
+   const w = weeks.get(y + ":" + wk);
+   if(!w){ html += `<div class="cal-c"></div>`; continue; }
+   const avg = w.sum / w.n;
+   const z = zoneOf(avg);
+   html += `<div class="cal-c" style="background:${zoneColor(avg)}" title="Week of ${usDate(w.first)}: ${avg.toFixed(0)} (${z.label}) \u00b7 ${Math.round(100 * w.cov / w.n)}% coverage"></div>`;
+  }
+ });
+ strip.innerHTML = html;
+ document.getElementById("calLegend").innerHTML = ZONES.map(z => `<span><i style="background:${withAlpha(cssVar(z.v), z.a)}"></i>${z.label} (${z.lo}\u2013${z.hi})</span>`).join("");
+}
 
 renderHistoryRangeButtons();
 loadData();
