@@ -1,7 +1,7 @@
 // Scheduled function (see [functions."scheduled-sentiment-background"] in
 // netlify.toml) that computes the U.S. Market Sentiment Index once daily and
 // writes the result to Netlify Blobs for data.js to serve. The scoring
-// method (methodology v2) lives in sentiment-engine.js; this file fetches the
+// method lives in sentiment-engine.js; this file fetches the
 // inputs and writes the blob.
 //
 // Inputs: Yahoo Finance daily bars for the S&P 500 (^GSPC), ^VIX, ^VIX3M, ^SKEW,

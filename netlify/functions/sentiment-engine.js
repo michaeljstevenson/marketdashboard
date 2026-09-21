@@ -1,4 +1,4 @@
-// Scoring engine for the U.S. Market Sentiment Index (methodology v2.1).
+// Scoring engine for the U.S. Market Sentiment Index.
 // Pure functions, no I/O: scheduled-sentiment-background.js fetches the raw
 // series and calls buildIndex(); scripts can call it directly to validate.
 //
@@ -31,8 +31,6 @@ const Z_MAX_WINDOW = 1260;
 const Z_CLAMP = 3;
 const MIN_COVERAGE = 0.5;
 const HISTORY_START = "1990-01-01"; // CBOE VIX and SKEW begin 1990-01-02
-const METHODOLOGY_VERSION = "2.1";
-
 const PILLARS = [
   { id: "vol", name: "Volatility & Options" },
   { id: "trend", name: "Trend & Strength" },
@@ -474,7 +472,6 @@ function buildIndex(inputs, { historyPoints = 10000, componentHistoryPoints = 12
         details: a.f.details,
         history: hist,
         calc: {
-          version: METHODOLOGY_VERSION,
           signalLabel: a.f.signalLabel,
           invert: a.f.invert,
           signal: round(a.s.signal[last], 4),
@@ -507,7 +504,6 @@ function buildIndex(inputs, { historyPoints = 10000, componentHistoryPoints = 12
     missing,
     ...(debug ? { debug: { dates, composite, scores: Object.fromEntries(active.map((a) => [a.f.id, a.scores])) } } : {}),
     methodology: {
-      version: METHODOLOGY_VERSION,
       zWindowDays: Z_MAX_WINDOW,
       zMinObservations: Z_MIN_OBS,
       zClamp: Z_CLAMP,
@@ -517,4 +513,4 @@ function buildIndex(inputs, { historyPoints = 10000, componentHistoryPoints = 12
   };
 }
 
-module.exports = { buildIndex, FACTORS, PILLARS, rollingZ, scoreFromZ, normCdf, METHODOLOGY_VERSION, MIN_COVERAGE };
+module.exports = { buildIndex, FACTORS, PILLARS, rollingZ, scoreFromZ, normCdf, MIN_COVERAGE };

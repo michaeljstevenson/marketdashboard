@@ -1949,8 +1949,8 @@ function renderCalcBox(item){
 
  }
 
- if(calc.version){
-  box.innerHTML = `<div class="calc-title">Calculation (methodology v${calc.version}):</div>
+ if(calc.signalLabel){
+  box.innerHTML = `<div class="calc-title">Calculation:</div>
 <div class="calc-row"><span class="calc-row-label">Signal</span><span class="calc-row-value">${calc.signalLabel}</span></div>
 <div class="calc-row"><span class="calc-row-label">Current signal value</span><span class="calc-row-value">${calc.signal}</span></div>
 <div class="calc-row"><span class="calc-row-label">Trailing mean / std dev (${calc.window} days)</span><span class="calc-row-value">${calc.mean} / ${calc.sd}</span></div>
@@ -2700,7 +2700,7 @@ document.getElementById("refreshBtn").addEventListener("click", async () => {
 
 
 function renderInsights(data){
- // Older cached payloads (pre-v2.1) carry no per-factor contribution.
+ // Older cached payloads carry no per-factor contribution.
  const scoredNow = (data.components || []).filter(c => !c.supplementary);
  const totalW = scoredNow.reduce((t, c) => t + (c.weight || 0), 0) || 1;
  scoredNow.forEach(c => { if(c.contribution === undefined) c.contribution = (c.score - 50) * c.weight / totalW; });
@@ -2762,7 +2762,7 @@ function renderMethodology(data){
   return `<li><b>${p.name}</b> (${fmtW(p.weight)}): ${fs.map(c => `${c.name} (${c.calc && c.calc.signalLabel ? c.calc.signalLabel : ""})`).join("; ")}</li>`;
  }).join("");
  document.getElementById("methodBody").innerHTML = `
-  <h4>Construction (v${m.version})</h4>
+  <h4>Construction</h4>
   <ul>
    <li>Each factor is reduced to a stationary signal, then standardized as a rolling z-score against its trailing ${Math.round(m.zWindowDays / 252)} years (minimum ${Math.round(m.zMinObservations / 252)} year of data). Only data up to each date is used, so historical readings are what the index would have shown live.</li>
    <li>z-scores are capped at &plusmn;${m.zClamp} and mapped to 0&ndash;100 with the normal CDF. Fear-positive signals (volatility measures, tail-risk hedging demand) are inverted so 100 always means greed.</li>
