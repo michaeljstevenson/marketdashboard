@@ -1525,7 +1525,7 @@ async function loadData(){
 
   const data = await res.json();
 
-  LATEST_COMPOSITE = data.composite;
+  LATEST_COMPOSITE = data.compositeExact !== undefined ? data.compositeExact : data.composite;
 
   LATEST_HISTORY = data.history || [];
 
@@ -1670,7 +1670,7 @@ function renderDashboard(data){
 
 
 
-const composite = data.composite;
+const composite = data.compositeExact !== undefined ? data.compositeExact : data.composite;
 
 
 
@@ -1685,7 +1685,7 @@ updateGaugeNeedle(composite);
 
 document.getElementById("score")
 .textContent =
-composite;
+composite.toFixed(1);
 
 
 
@@ -2179,7 +2179,7 @@ function openCompositeModal(){
 
  document.getElementById("modalValue").textContent = regime.label;
 
- document.getElementById("modalScore").textContent = LATEST_COMPOSITE + "/100";
+ document.getElementById("modalScore").textContent = LATEST_COMPOSITE.toFixed(1) + "/100";
 
  document.getElementById("modalScore").style.color = regime.color;
 
@@ -2234,7 +2234,7 @@ function renderCompositeCalcBox(){
 
 ${rows}
 
-<div class="calc-formula">weighted average of the ${items.length} scores above = ${LATEST_COMPOSITE}/100</div>
+<div class="calc-formula">weighted average of the ${items.length} scores above = ${LATEST_COMPOSITE.toFixed(1)}/100</div>
 
 `;
 
@@ -2500,8 +2500,8 @@ function renderHistoryChips(){
  const today = pts[0];
  el.innerHTML = pts.map(pt => {
   const z = zoneOf(pt.value);
-  const delta = pt.days === 0 ? usDate(pt.date) : (today.value - pt.value === 0 ? "unchanged since" : (today.value > pt.value ? "up " : "down ") + Math.abs(Math.round(today.value) - Math.round(pt.value)) + " since");
-  return `<div class="hist-chip"><div class="hc-label">${pt.label}</div><div class="hc-val">${Math.round(pt.value)}</div><div class="hc-zone" style="color:${zoneColor(pt.value, 1)}">${z.label}</div><div class="hc-delta">${pt.days === 0 ? delta : delta + " " + usDate(pt.date)}</div></div>`;
+  const delta = pt.days === 0 ? usDate(pt.date) : (today.value - pt.value === 0 ? "unchanged since" : (today.value > pt.value ? "up " : "down ") + Math.abs(today.value - pt.value).toFixed(1) + " since");
+  return `<div class="hist-chip"><div class="hc-label">${pt.label}</div><div class="hc-val">${pt.value.toFixed(1)}</div><div class="hc-zone" style="color:${zoneColor(pt.value, 1)}">${z.label}</div><div class="hc-delta">${pt.days === 0 ? delta : delta + " " + usDate(pt.date)}</div></div>`;
  }).join("");
 }
 
@@ -2749,7 +2749,7 @@ function renderFactorTable(components){
  document.getElementById("factorTable").innerHTML =
   `<thead><tr><th>Factor</th><th>Weight</th><th>Reading</th><th>z-score</th><th>Score</th><th>Contribution (pts vs 50)</th></tr></thead>
    <tbody>${scored.map(c => row(c, false)).join("")}${supp.map(c => row(c, true)).join("")}</tbody>
-   <tfoot><tr><td>Composite</td><td>100%</td><td></td><td></td><td>${LATEST_COMPOSITE}</td><td>${total >= 0 ? "+" : "\u2212"}${Math.abs(total).toFixed(2)}</td></tr></tfoot>`;
+   <tfoot><tr><td>Composite</td><td>100%</td><td></td><td></td><td>${LATEST_COMPOSITE.toFixed(1)}</td><td>${total >= 0 ? "+" : "\u2212"}${Math.abs(total).toFixed(2)}</td></tr></tfoot>`;
  document.querySelectorAll("#factorTable .frow").forEach(r => r.addEventListener("click", () => openModal(r.dataset.id)));
 }
 
