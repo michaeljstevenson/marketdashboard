@@ -843,7 +843,7 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <div class="header">
 <div>
 <h1>Small-Cap Liquidity &amp; Volume Trends</h1>
-<div class="subtitle">Trading depth and transaction-cost proxies for the smallest vs. largest members of the S&amp;P 500, and whether that gap widens when small-caps underperform.</div>
+<div class="subtitle">Trading depth and transaction-cost proxies for the smallest vs. largest members of the S&amp;P 500, and whether the gap widens when small-caps underperform.</div>
 </div>
 <div class="updated" id="updated">Loading...</div>
 </div>
@@ -875,7 +875,7 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <div class="chart-box-header">
 <div>
 <h2>Average daily dollar volume, ~2-year trend</h2>
-<div class="chart-subhead">Equal-weighted average across each cohort (~100 tickers), 21-trading-day rolling average, log scale</div>
+<div class="chart-subhead">Equal-weighted average across each cohort (~100 tickers), 21-trading-day rolling average, log scale.</div>
 </div>
 </div>
 <div class="ndr-panel">
@@ -889,7 +889,7 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <div class="chart-box-header">
 <div>
 <h2>Small/Mega Amihud illiquidity ratio: the "liquidity gap"</h2>
-<div class="chart-subhead">Small-cap cohort's rolling Amihud ratio ÷ mega-cap cohort's. Rising means small-caps are getting relatively less liquid</div>
+<div class="chart-subhead">Small-cap cohort's rolling Amihud ratio ÷ mega-cap cohort's. Rising means small-caps are getting relatively less liquid.</div>
 </div>
 </div>
 <div class="ndr-panel">
@@ -903,7 +903,7 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <div class="chart-box-header">
 <div>
 <h2>Corwin-Schultz bid-ask spread estimate, ~2-year trend</h2>
-<div class="chart-subhead">Equal-weighted average across each cohort, 21-trading-day rolling average of the Corwin &amp; Schultz (2012) high-low spread estimator</div>
+<div class="chart-subhead">Equal-weighted average across each cohort, 21-trading-day rolling average of the Corwin &amp; Schultz (2012) high-low spread estimator.</div>
 </div>
 </div>
 <div class="ndr-panel">
@@ -917,7 +917,7 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <div class="chart-box-header">
 <div>
 <h2>Liquidity gap vs. small-cap relative performance</h2>
-<div class="chart-subhead">Each point is one month: x-axis is that month's small-cap-vs-large-cap relative return (from <a href="/small-cap-vs-large-cap.html">Small Cap vs. Large Cap Spread</a>), y-axis is that month's change in the Small/Mega Amihud ratio</div>
+<div class="chart-subhead">Each point is one month. X is that month's small-cap vs. large-cap relative return (from <a href="/small-cap-vs-large-cap.html">Small Cap vs. Large Cap Spread</a>), Y is that month's change in the Small/Mega Amihud ratio.</div>
 </div>
 </div>
 <div class="warning-banner" id="regressionFallback"></div>
@@ -934,7 +934,7 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <div class="table-box">
 <div class="table-box-header">
 <h2>Full constituent table</h2>
-<div class="chart-subhead">Latest 21-day-rolling values, both cohorts combined. Click a column to sort</div>
+<div class="chart-subhead">Latest 21-day rolling values, both cohorts combined. Click a column to sort.</div>
 </div>
 <table id="tickerTable">
 <thead>
@@ -953,17 +953,17 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <tr><td colspan="8" style="text-align:center; color:var(--muted); padding:24px;">Loading&hellip;</td></tr>
 </tbody>
 </table>
-<div class="table-footnote">All figures are 21-trading-day rolling averages as of the latest run, not single-day snapshots. Amihud ratio is illiquidity (price impact) per $1M of dollar volume traded, higher means less liquid. C-S Spread is the Corwin-Schultz estimated bid-ask spread, shown as a percentage of price.</div>
+<div class="table-footnote">All figures are 21-trading-day rolling averages as of the latest run. Amihud ratio is illiquidity (price impact) per $1M of dollar volume traded, so higher means less liquid. C-S Spread is the Corwin-Schultz estimated bid-ask spread, as a percentage of price.</div>
 </div>
 
 <div class="explainer">
 <h2>Methodology</h2>
-<p><strong>The cohorts are a proxy, not a true small-cap index.</strong> "Small-Cap" here means the bottom quintile (~100 names) of the S&amp;P 500 itself ranked by market capitalization, and "Mega-Cap" the top quintile (~100 names) of the same index, not the Russell 2000, S&amp;P SmallCap 600, or any dedicated small-cap benchmark. There's no free, full small-cap-index constituent list available to this site, so this page reuses the S&amp;P 500's own weekly constituent metadata (name, sector, shares outstanding, market cap, from the Sector Beeswarm page's <code>meta.json</code>) and simply looks at the smallest and largest members within that one index. The smallest S&amp;P 500 constituent is still a multi-billion-dollar company (meaningfully larger and more liquid than a typical true small-cap) so read every "small-cap" figure on this page as "smallest within the S&amp;P 500," not "small-cap universe." This is the same kind of imperfect-but-transparent proxy the site uses elsewhere (e.g. a single FX pair standing in for a broader international/US comparison). The limitation is real, and is called out here rather than hidden.</p>
-<p><strong>Liquidity metrics.</strong> <em>Dollar volume</em> is adjusted close × share volume. The <em>Amihud (2002) illiquidity ratio</em> (from Amihud, "Illiquidity and Stock Returns: Cross-Section and Time-Series Effects," <em>Journal of Financial Markets</em>) is |daily return| ÷ dollar volume (scaled so it reads as price impact per $1M traded): a stock that moves a lot on comparatively little dollar volume gets a high score, meaning trading it moves the price more. The <em>Corwin-Schultz (2012) spread estimator</em>, from Corwin &amp; Schultz, "A Simple Way to Estimate Bid-Ask Spreads from Daily High and Low Prices," <em>Journal of Finance</em>, which infers the bid-ask spread from two consecutive days' high/low ranges, without needing intraday quote data. Its formula can produce a negative "spread" in low-volatility stretches (a known property of the estimator, not a bug); this page clamps those to zero, since a negative spread isn't economically meaningful.</p>
-<p><strong>21-day rolling window.</strong> All three metrics are shown as 21-trading-day (roughly one calendar month) rolling averages, both in the charts and the table, rather than raw single-day values. Daily dollar volume and the Amihud ratio in particular are extremely noisy day to day (a single large block trade can swing them by an order of magnitude), and a rolling average is the standard way this literature smooths that out while still tracking real regime shifts. Cohort-level series are the equal-weighted average of each ticker's rolling value across the ~100 names in that cohort, for each of the trailing ~2 years (~504 trading days) of history. Recomputed from scratch on every weekly run, not accumulated week to week.</p>
-<p><strong>The regression.</strong> The chart above tests whether liquidity actually deteriorates in the months small-caps underperform, rather than assuming it from the raw trend. Each point is one calendar month: the x-axis is that month's small-cap-vs-large-cap relative return, taken from the same monthly-bucketing logic used on the <a href="/small-cap-vs-large-cap.html">Small Cap vs. Large Cap Spread</a> page (month-end value of the IWM/SPY ratio vs. the prior month-end); the y-axis is that same month's change in this page's own Small/Mega Amihud ratio (this month's month-end value minus last month's). A <strong>negative</strong> correlation is the "liquidity deteriorates when small-caps underperform" story: months where small-caps lagged large-caps (a negative x-value) tend to pair with a widening liquidity gap (a positive y-value, and vice versa). A <strong>positive</strong> correlation would say the opposite: the liquidity gap tends to narrow, not widen, in small-cap-underperformance months. As on <a href="/factor-analysis.html">Factor Analysis</a> and <a href="/small-cap-vs-large-cap.html">Small Cap vs. Large Cap Spread</a>, both Pearson (OLS) and Spearman rank correlation are reported side by side, so the result isn't quietly resting on a couple of extreme months; treat a low r&sup2; as an honest read of how much one variable explains, not a bug.</p>
-<p>Refreshes weekly (Saturday), after this page's own cohort membership (the beeswarm <code>meta.json</code>) refreshes. See <code>scheduled-smallcap-liquidity-background.js</code> for the full fetch/aggregation pipeline. Not daily: this page's ~200-ticker full-history sweep is heavy enough, and cohort membership itself changes slowly enough, that a weekly cadence matches the other full-index sweeps on this site.</p>
-<div class="source">Source: <a href="https://finance.yahoo.com/" target="_blank" rel="noopener">Yahoo Finance</a>: daily OHLCV; cohort metadata from this site's own weekly S&amp;P 500 constituent sweep</div>
+<p><strong>The cohorts are a proxy, not a small-cap index.</strong> "Small-Cap" here is the bottom quintile (~100 names) of the S&amp;P 500 by market cap, and "Mega-Cap" is the top quintile (~100 names) of the same index. Neither is the Russell 2000, S&amp;P SmallCap 600 or any dedicated small-cap benchmark. There is no free small-cap constituent list, so the cohorts use the S&amp;P 500's own weekly metadata (name, sector, shares outstanding, market cap, from Sector Beeswarm's <code>meta.json</code>). Even the smallest S&amp;P 500 company is worth billions and is more liquid than a typical small-cap, so read "small-cap" on this page as "smallest within the S&amp;P 500."</p>
+<p><strong>Liquidity metrics.</strong> <em>Dollar volume</em> is adjusted close × share volume. The <em>Amihud (2002) illiquidity ratio</em> (Amihud, "Illiquidity and Stock Returns: Cross-Section and Time-Series Effects," <em>Journal of Financial Markets</em>) is |daily return| ÷ dollar volume, scaled to price impact per $1M traded. A stock that moves a lot on little dollar volume scores high. The <em>Corwin-Schultz (2012) spread estimator</em> (Corwin &amp; Schultz, "A Simple Way to Estimate Bid-Ask Spreads from Daily High and Low Prices," <em>Journal of Finance</em>) infers the bid-ask spread from two consecutive days' high/low ranges, with no intraday quotes needed. The formula can produce a negative spread in low-volatility stretches, which is a known property of the estimator. This page sets those to zero.</p>
+<p><strong>21-day rolling window.</strong> All three metrics are 21-trading-day (about one calendar month) rolling averages in the charts and the table. Daily dollar volume and the Amihud ratio are very noisy day to day (one block trade can move them by an order of magnitude), and a rolling average is the standard way to smooth that. Cohort series are the equal-weighted average of each ticker's rolling value across the ~100 names in the cohort, over the trailing ~2 years (~504 trading days). Each weekly run recomputes everything from scratch.</p>
+<p><strong>The regression.</strong> The chart tests whether liquidity gets worse in months when small-caps underperform. Each point is one calendar month. X is that month's small-cap vs. large-cap relative return, from the same month-end IWM/SPY ratio logic as <a href="/small-cap-vs-large-cap.html">Small Cap vs. Large Cap Spread</a>. Y is that month's change in the Small/Mega Amihud ratio (this month-end minus last month-end). A <strong>negative</strong> correlation means liquidity deteriorates when small-caps underperform: months of small-cap weakness (negative X) pair with a widening liquidity gap (positive Y). A <strong>positive</strong> correlation means the opposite. As on <a href="/factor-analysis.html">Factor Analysis</a> and <a href="/small-cap-vs-large-cap.html">Small Cap vs. Large Cap Spread</a>, Pearson (OLS) and Spearman rank correlation are shown side by side, so a couple of extreme months can't carry the result. A low r&sup2; just means one variable explains little of the other.</p>
+<p>Refreshes weekly (Saturday), after the cohort membership (Sector Beeswarm's <code>meta.json</code>) refreshes. It runs weekly, not daily, because the ~200-ticker history pull is heavy and cohort membership changes slowly.</p>
+<div class="source">Source: <a href="https://finance.yahoo.com/" target="_blank" rel="noopener">Yahoo Finance</a> daily OHLCV. Cohort metadata from the weekly S&amp;P 500 constituent data behind Sector Beeswarm.</div>
 </div>
 
 </div>
@@ -1382,8 +1382,8 @@ function renderRegression(pairs){
  let interp = "No meaningful linear relationship in this sample.";
  if(Math.abs(pearson.r) >= 0.15){
   interp = pearson.r < 0
-   ? "Consistent with the \"liquidity deteriorates when small-caps underperform\" story: months of small-cap weakness have tended to pair with a widening Small/Mega liquidity gap."
-   : "The opposite of the \"liquidity deteriorates when small-caps underperform\" story: months of small-cap weakness have tended to pair with a narrowing, not widening, liquidity gap.";
+   ? "Consistent with liquidity deteriorating when small-caps underperform: months of small-cap weakness have tended to pair with a widening Small/Mega liquidity gap."
+   : "The opposite of liquidity deteriorating when small-caps underperform: months of small-cap weakness have tended to pair with a narrowing liquidity gap.";
  }
 
  document.getElementById("regressionMethodTable").innerHTML =

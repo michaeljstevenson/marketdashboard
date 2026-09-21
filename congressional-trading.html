@@ -887,7 +887,7 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <div class="header">
 <div>
 <h1>Congressional Trading Activity</h1>
-<div class="subtitle">STOCK Act disclosures across the full S&amp;P 500, trailing 24 months: who's buying and selling, by party and chamber, how promptly it gets reported, and whether stocks with net congressional buying actually go on to outperform.</div>
+<div class="subtitle">STOCK Act disclosures across the S&amp;P 500 for the trailing 24 months: who's buying and selling, by party and chamber, how promptly trades are reported, and whether stocks with net congressional buying go on to outperform.</div>
 </div>
 <div class="updated" id="updated">Loading...</div>
 </div>
@@ -919,7 +919,7 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <div class="chart-box-header">
 <div>
 <h2>Net flow by party &amp; chamber</h2>
-<div class="chart-subhead">Buy $ minus sell $ across all disclosed S&amp;P 500 trades, trailing 24 months</div>
+<div class="chart-subhead">Buy $ minus sell $ across all disclosed S&amp;P 500 trades, trailing 24 months.</div>
 </div>
 <div class="metric-toggle" id="groupMetricToggle">
 <button type="button" data-metric="party" class="active">By Party</button>
@@ -956,7 +956,7 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <div class="chart-box-header">
 <div>
 <h2>Disclosure lag</h2>
-<div class="chart-subhead">Days between the trade and the Periodic Transaction Report being filed</div>
+<div class="chart-subhead">Days between the trade and the Periodic Transaction Report being filed.</div>
 </div>
 </div>
 <div class="ndr-panel">
@@ -970,7 +970,7 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <div class="chart-box-header">
 <div>
 <h2>Net buying vs. subsequent relative performance</h2>
-<div class="chart-subhead">Each point is one S&amp;P 500 stock: x is net disclosed congressional $ flow, y is its 3-month return relative to SPY</div>
+<div class="chart-subhead">Each point is one S&amp;P 500 stock. X is net disclosed congressional $ flow, Y is its 3-month return relative to SPY.</div>
 </div>
 </div>
 <div class="ndr-panel">
@@ -1052,11 +1052,11 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 
 <div class="explainer">
 <h2>Methodology</h2>
-<p>Universe is the full S&amp;P 500. For every constituent, Alpha Vantage's <code>CONGRESS_TRADES</code> endpoint returns that ticker's full history of disclosed trades by sitting members of Congress and their families under the STOCK Act. Filtered here to <code>BUY</code>/<code>SELL</code> transactions in the trailing 24 months (a 90-day window, like <a href="/insider-buying-selling.html">Insider Buying/Selling</a>'s Form 4 window, would leave most S&amp;P 500 names with zero disclosed trades. Congressional activity in any single stock is far sparser). Options, warrants, and bonds reported under the same equity ticker are excluded, since they're a different bet than the underlying stock.</p>
-<p>The STOCK Act discloses trade size as a bracketed range (e.g. $1,001&ndash;$15,000), not an exact dollar amount. Every $ figure on this page is the midpoint of that disclosed range, the same convention used by trackers like Capitol Trades and Unusual Whales. Treat every dollar total here as an estimate, not a precise figure.</p>
-<p>The disclosure-lag chart measures days between the trade date and the date the Periodic Transaction Report was actually filed; the STOCK Act requires filing within 45 days of becoming aware of the transaction. A handful of rows with a missing or implausible filed date (filed before the trade, or no filed date at all) are excluded rather than shown as a fabricated or negative lag.</p>
-<p>The regression (Pearson and Spearman, matching the two-method check used throughout <a href="/factor-analysis.html">Factor Analysis</a>) reuses <a href="/relative-strength-leaders.html">Relative Strength Leaders/Laggards</a>' own latest snapshot for each stock's 3-month return relative to SPY, rather than a second price sweep. Read this carefully: trades are disclosed well after the fact (up to 45 days, often longer in practice per the lag chart above), so any relationship here is a question about revealed skill or information, not a tradeable signal an outside investor could have acted on before the disclosure became public.</p>
-<div class="source">Source: <a href="https://www.alphavantage.co/" target="_blank" rel="noopener">Alpha Vantage: CONGRESS_TRADES</a>, cross-referenced with this site's own <a href="/relative-strength-leaders.html">Relative Strength Leaders/Laggards</a> snapshot. Not investment advice.</div>
+<p><strong>Data.</strong> The universe is the S&amp;P 500. For each company, Alpha Vantage's <code>CONGRESS_TRADES</code> endpoint returns its full history of trades disclosed by sitting members of Congress and their families under the STOCK Act. This page keeps <code>BUY</code>/<code>SELL</code> transactions from the trailing 24 months. A 90-day window, like <a href="/insider-buying-selling.html">Insider Buying/Selling</a>'s Form 4 window, would leave most S&amp;P 500 names with no trades, since congressional activity in any one stock is sparse. Options, warrants and bonds reported under the same ticker are excluded.</p>
+<p>The STOCK Act discloses trade size as a range (e.g. $1,001&ndash;$15,000), not an exact amount. Every $ figure on this page is the midpoint of that range, the same convention as Capitol Trades and Unusual Whales. Treat every dollar total as an estimate.</p>
+<p><strong>Disclosure lag.</strong> The chart measures days between the trade date and the date the Periodic Transaction Report was filed. The STOCK Act requires filing within 45 days of becoming aware of the transaction. Rows with a missing or implausible filed date (filed before the trade, or no date at all) are excluded.</p>
+<p><strong>Regression.</strong> It uses Pearson and Spearman (as on <a href="/factor-analysis.html">Factor Analysis</a>) and takes each stock's 3-month return relative to SPY from <a href="/relative-strength-leaders.html">Relative Strength Leaders/Laggards</a>. Trades are disclosed well after the fact (up to 45 days, often longer per the lag chart above). Any relationship here is about revealed skill or information, not a signal an outside investor could have traded on before the disclosure.</p>
+<div class="source">Source: <a href="https://www.alphavantage.co/" target="_blank" rel="noopener">Alpha Vantage: CONGRESS_TRADES</a> and <a href="/relative-strength-leaders.html">Relative Strength Leaders/Laggards</a> data. Not investment advice.</div>
 </div>
 
 </div>
@@ -1211,7 +1211,7 @@ async function init(){
   document.getElementById("updated").textContent = "As of " + new Date(data.generated_at_utc).toLocaleString("en-US", { month: "2-digit", day: "2-digit", year: "numeric", hour: "numeric", minute: "2-digit" });
 
   if(!data.hasPriceData){
-   showWarning("Relative Strength Leaders/Laggards hasn't populated its own snapshot yet, so the net-buying-vs-performance test below isn't available this run.");
+   showWarning("Relative Strength Leaders/Laggards hasn't refreshed yet, so the net-buying-vs-performance test below isn't available.");
   }
 
   renderStats();
@@ -1336,7 +1336,7 @@ function renderScatter(){
  const pts = RAW.stocks.filter(s => s.rel3M !== null && s.netValue !== null).map(s => ({ x: s.netValue, y: s.rel3M, symbol: s.symbol }));
 
  if(!test || pts.length < 10){
-  document.getElementById("netVsPerformanceMethodTable").innerHTML = '<div class="method-note">Not enough stocks with both disclosed activity and price data available this run to test.</div>';
+  document.getElementById("netVsPerformanceMethodTable").innerHTML = '<div class="method-note">Not enough stocks with both disclosed activity and price data to test.</div>';
   if(netVsPerformanceScatter) netVsPerformanceScatter.destroy();
   return;
  }

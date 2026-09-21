@@ -906,7 +906,7 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <div class="header">
 <div>
 <h1>Margin &amp; Leverage Cycle</h1>
-<div class="subtitle">How S&amp;P 500 profit margins and balance-sheet leverage have actually moved through the recent Fed hiking/cutting cycle. Sector trends, a company-level margin-vs-leverage scatter, and a direct test of whether hiking regimes coincide with margin compression or rising leverage.</div>
+<div class="subtitle">How S&amp;P 500 profit margins and balance-sheet leverage have moved through the recent Fed hiking and cutting cycle: sector trends, a company-level margin-vs-leverage scatter, and a test of whether hiking regimes coincide with margin compression or rising leverage.</div>
 </div>
 <div class="updated" id="updated">Loading...</div>
 </div>
@@ -958,7 +958,7 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <div class="chart-box-header">
 <div>
 <h2>Sector leverage over time</h2>
-<div class="chart-subhead">Median net debt / trailing-twelve-month EBITDA by sector. Higher means more balance-sheet leverage relative to cash earnings</div>
+<div class="chart-subhead">Median net debt / trailing-twelve-month EBITDA by sector. Higher means more balance-sheet leverage relative to cash earnings.</div>
 </div>
 </div>
 <div class="ndr-panel">
@@ -1032,7 +1032,7 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <div class="chart-box-header">
 <div>
 <h2>Margin vs. leverage, most recent quarter</h2>
-<div class="chart-subhead">Every company with both figures available: is thinner margin associated with more leverage right now, or not?</div>
+<div class="chart-subhead">Every company with both figures available. Is thinner margin associated with more leverage right now?</div>
 </div>
 </div>
 <div class="ndr-panel">
@@ -1115,11 +1115,11 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 
 <div class="explainer">
 <h2>Methodology</h2>
-<p>Universe is the full S&amp;P 500. For every constituent, Alpha Vantage's <code>INCOME_STATEMENT</code> and <code>BALANCE_SHEET</code> endpoints (quarterly) are pulled and joined on fiscal quarter-end date. Gross/operating/net margin are gross profit, operating income, and net income each divided by total revenue for that quarter. Leverage is net debt (total debt, preferring Alpha Vantage's combined <code>shortLongTermDebtTotal</code> field, minus cash &amp; equivalents) divided by trailing-twelve-month EBITDA. EBITDA uses Alpha Vantage's direct <code>ebitda</code> field where populated, falling back to operating income plus depreciation &amp; amortization (both on the same income statement) when it isn't. A handful of fields come back as the literal string <code>"None"</code> rather than being omitted on some tickers. Those are treated as missing, and a company-quarter is dropped from a given metric rather than silently coerced to zero.</p>
-<p>Sector series are the median across each SPDR sector's constituents for that calendar quarter (a fiscal quarter-end date is bucketed into whichever calendar quarter its month falls in. A company with a non-calendar fiscal year, e.g. a January quarter-end, can land one quarter off from its own internal numbering, which doesn't affect a sector median but is worth knowing if a single ticker's quarter label looks unexpected). A sector-quarter median is only published once at least 3 companies report that quarter.</p>
-<p>The regime comparison classifies each calendar quarter as Hiking/Holding/Cutting using the identical trailing-3-month effective-Fed-funds-rate-change thresholds (&gt;0.1pp hiking, &lt;-0.1pp cutting, otherwise holding) already used on <a href="/small-cap-vs-large-cap.html">Small Cap vs. Large Cap Spread</a>. Rather than testing each company's quarterly change separately (~500 pseudo-replicated points per quarter, which would mechanically inflate significance), the test is run on one point per calendar quarter. The cross-company <i>median</i> change in operating margin, and separately in net-debt/EBITDA, regressed against that quarter's Fed-funds change (Pearson and Spearman, matching the two-method check used throughout <a href="/factor-analysis.html">Factor Analysis</a>). With only a few dozen quarters of history and margins/leverage that move slowly and stickily quarter to quarter, this is a small-sample test. A weak or insignificant result here is a legitimate finding, not a sign the test failed, and is reported as such rather than dressed up.</p>
-<p>Leaderboards and the per-company table compare each company to its <i>own</i> sector's latest median rather than the raw cross-sector figure, since margin and leverage norms vary hugely by industry (software vs. retail, utilities vs. banks): a company can show the widest margin on the page and still be unremarkable next to its sector peers, or vice versa.</p>
-<p>Refreshes weekly (Saturday mornings): fundamentals only change when a company files a new 10-Q/10-K. Sector and company name come from the same weekly metadata sweep that backs <a href="/sector-beeswarm.html">Sector Beeswarm</a>, reused here rather than paying for a third full-index pass just for labels.</p>
+<p><strong>Data.</strong> The universe is the S&amp;P 500. For each company, Alpha Vantage's quarterly <code>INCOME_STATEMENT</code> and <code>BALANCE_SHEET</code> data are joined on fiscal quarter-end date. Gross, operating and net margin are gross profit, operating income and net income divided by total revenue for the quarter. Leverage is net debt (total debt, using Alpha Vantage's combined <code>shortLongTermDebtTotal</code> field where available, minus cash &amp; equivalents) divided by trailing-twelve-month EBITDA. EBITDA uses Alpha Vantage's <code>ebitda</code> field where populated, otherwise operating income plus depreciation &amp; amortization. Some tickers return the string <code>"None"</code> for a field. Those values are treated as missing, and the company-quarter is dropped from that metric.</p>
+<p><strong>Sector series.</strong> Each is the median across a SPDR sector's constituents for a calendar quarter. A fiscal quarter-end is placed in the calendar quarter its month falls in, so a company with a non-calendar fiscal year (a January quarter-end, for example) can land one quarter off its own numbering. That doesn't affect a sector median. A sector-quarter median is published only once at least 3 companies report.</p>
+<p><strong>Regime test.</strong> Each calendar quarter is classified as Hiking, Holding or Cutting using the same thresholds as <a href="/small-cap-vs-large-cap.html">Small Cap vs. Large Cap Spread</a>: a trailing-3-month change in the effective Fed funds rate above 0.1pp is hiking, below -0.1pp is cutting, otherwise holding. The test uses one point per calendar quarter, not each company's quarterly change (~500 overlapping points per quarter would overstate significance). That point is the cross-company <i>median</i> change in operating margin, and separately in net-debt/EBITDA, regressed against that quarter's Fed funds change (Pearson and Spearman, as on <a href="/factor-analysis.html">Factor Analysis</a>). With a few dozen quarters, and margins and leverage that move slowly, this is a small-sample test. A weak or insignificant result is still a result.</p>
+<p>Leaderboards and the per-company table compare each company to its <i>own</i> sector's latest median, since margin and leverage norms vary a lot by industry (software vs. retail, utilities vs. banks). A company can show the widest margin on the page and still look ordinary next to its sector peers.</p>
+<p>Refreshes weekly (Saturday morning), since fundamentals only change when a company files a new 10-Q or 10-K. Sector and company name come from <a href="/sector-beeswarm.html">Sector Beeswarm</a>.</p>
 <div class="source">Source: <a href="https://www.alphavantage.co/" target="_blank" rel="noopener">Alpha Vantage: INCOME_STATEMENT, BALANCE_SHEET, FEDERAL_FUNDS_RATE</a></div>
 </div>
 
@@ -1318,7 +1318,7 @@ async function init(){
   document.getElementById("updated").textContent = "As of " + new Date(data.generated_at_utc).toLocaleString("en-US", { month: "2-digit", day: "2-digit", year: "numeric", hour: "numeric", minute: "2-digit" });
 
   if(data.loadedCount < data.universeSize){
-   showWarning("Only " + data.loadedCount + " of " + data.universeSize + " S&P 500 constituents loaded this run. Some data may be temporarily unavailable.");
+   showWarning("Only " + data.loadedCount + " of " + data.universeSize + " S&P 500 constituents loaded. Some data may be missing.");
   }
 
   renderStats();
@@ -1561,7 +1561,7 @@ function renderRateScatters(){
   });
 
   document.getElementById(methodTableId).innerHTML = methodTableHtml(pearson, spear,
-   "Slope is per 1pp move in the trailing-3-month Fed funds change that quarter. n=" + pearson.n + " calendar quarters: small-sample, and margins/leverage move slowly, so treat a modest r here as expected, not as evidence the test is broken.");
+   "Slope is per 1pp move in the trailing-3-month Fed funds change that quarter. n=" + pearson.n + " calendar quarters. That's a small sample, and margins and leverage move slowly, so a modest r is expected here.");
   return chart;
  }
 

@@ -833,7 +833,7 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <div class="header">
 <div>
 <h1>Forward vs. Trailing P/E Divergence</h1>
-<div class="subtitle">The market's own implied year-ahead EPS growth rate, read directly off the gap between forward and trailing P/E. No separate earnings-estimate data needed, since both ratios share the same price.</div>
+<div class="subtitle">The market's implied year-ahead EPS growth rate, read from the gap between forward and trailing P/E. No separate earnings-estimate data is needed, since both ratios use the same price.</div>
 </div>
 <div class="updated" id="updated">Loading...</div>
 </div>
@@ -865,7 +865,7 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <div class="chart-box-header">
 <div>
 <h2>Market-wide implied EPS growth, over time</h2>
-<div class="chart-subhead">Median across the S&amp;P 500, snapshotted weekly. This line starts thin and gets more useful with each week's run</div>
+<div class="chart-subhead">Median across the S&amp;P 500, saved weekly. The line gets more useful with each week's run.</div>
 </div>
 </div>
 <div class="ndr-panel">
@@ -879,7 +879,7 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <div class="chart-box-header">
 <div>
 <h2>Median implied EPS growth by sector</h2>
-<div class="chart-subhead">Positive = forward P/E below trailing P/E (market expects earnings to grow); negative = the reverse</div>
+<div class="chart-subhead">Positive means forward P/E is below trailing P/E (the market expects earnings to grow). Negative means the reverse.</div>
 </div>
 </div>
 <div class="ndr-panel">
@@ -893,7 +893,7 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <div class="chart-box-header">
 <div>
 <h2>Distribution of implied EPS growth</h2>
-<div class="chart-subhead">All S&amp;P 500 companies with a meaningful trailing and forward P/E</div>
+<div class="chart-subhead">All S&amp;P 500 companies with a usable trailing and forward P/E.</div>
 </div>
 </div>
 <div class="ndr-panel">
@@ -907,7 +907,7 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <div class="chart-box-header">
 <div>
 <h2>Does last quarter's actual growth predict the market's implied forward growth?</h2>
-<div class="chart-subhead">Each point is one company: x-axis is trailing quarterly EPS growth YoY, y-axis is the P/E-implied forward growth rate</div>
+<div class="chart-subhead">Each point is one company. X is trailing quarterly EPS growth YoY, Y is the P/E-implied forward growth rate.</div>
 </div>
 </div>
 <div class="ndr-panel">
@@ -965,11 +965,11 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 
 <div class="explainer">
 <h2>Methodology</h2>
-<p>Universe is the full S&amp;P 500. For every constituent, Alpha Vantage's <code>OVERVIEW</code> endpoint returns <code>TrailingPE</code> (price over the last twelve months' EPS) and <code>ForwardPE</code> (price over the next twelve months' consensus EPS estimate). Both ratios share the same numerator, today's share price, so their ratio falls straight out to the market's own implied year-ahead EPS growth rate, with no separate earnings-estimate data needed: <code>TrailingPE &divide; ForwardPE - 1 = EPS<sub>forward</sub> &divide; EPS<sub>trailing</sub> - 1</code>. A positive number means the forward P/E is lower than the trailing P/E. The market is pricing in earnings growth; a negative number means the reverse.</p>
-<p>Companies with a trailing or forward P/E outside (0, 300] are excluded from every chart and average here. A company with near-zero trailing or forward earnings produces a P/E that's numerically enormous (or negative) without reflecting any real valuation signal, the same kind of near-zero-denominator distortion this site's other earnings-based pages have run into and filtered out.</p>
-<p>The history chart is a genuine accumulating time series, not a single snapshot: <code>OVERVIEW</code> only reports the current P/E pair, so each weekly run appends that week's market-wide median to a running series rather than replacing it. The same pattern <a href="/earnings-revisions.html">Earnings Revisions</a> uses for its own trend chart. It starts thin the week this page ships and becomes more informative with every subsequent run.</p>
-<p>The implied-vs-actual-growth check compares this page's forward-looking implied growth rate against each company's own trailing <code>QuarterlyEarningsGrowthYOY</code> (also from the same <code>OVERVIEW</code> call, at no extra API cost) using the same Pearson/Spearman regression convention as <a href="/factor-analysis.html">Factor Analysis</a> and this site's other regression checks. A weak or negative relationship would say analysts mostly expect mean reversion (a strong recent quarter doesn't repeat) rather than momentum.</p>
-<p>This page runs its own weekly Alpha Vantage sweep rather than reusing <a href="/sector-beeswarm.html">Sector Beeswarm</a>'s own weekly <code>OVERVIEW</code> pass, even though both hit the same endpoint for the same universe. That job doesn't persist the P/E fields this page needs, and this site's convention is not to modify an already-shipped page's backend to bolt on a second page's requirements. The tradeoff is accepted here the same way <a href="/insider-buying-selling.html">Insider Buying/Selling</a>'s and other pages' standalone sweeps accepted it.</p>
+<p><strong>Data.</strong> The universe is the S&amp;P 500. For each company, Alpha Vantage's <code>OVERVIEW</code> endpoint returns <code>TrailingPE</code> (price over the last twelve months' EPS) and <code>ForwardPE</code> (price over the next twelve months' consensus EPS). Both use today's share price, so their ratio gives the market's implied year-ahead EPS growth: <code>TrailingPE &divide; ForwardPE - 1 = EPS<sub>forward</sub> &divide; EPS<sub>trailing</sub> - 1</code>. A positive number means the forward P/E is lower than the trailing P/E, so the market is pricing in earnings growth. A negative number means the reverse.</p>
+<p>Companies with a trailing or forward P/E outside (0, 300] are excluded from every chart and average. A company with near-zero earnings produces a huge (or negative) P/E that says nothing about valuation.</p>
+<p><strong>History.</strong> <code>OVERVIEW</code> only reports the current P/E pair, so each weekly run adds that week's market-wide median to a running series. <a href="/earnings-revisions.html">Earnings Revisions</a> works the same way. The series is short at first and gets more informative with each run.</p>
+<p><strong>Implied vs. actual growth.</strong> This compares the implied forward growth rate with each company's trailing <code>QuarterlyEarningsGrowthYOY</code> (from the same <code>OVERVIEW</code> call), using the Pearson and Spearman regression from <a href="/factor-analysis.html">Factor Analysis</a>. A weak or negative relationship would mean analysts mostly expect mean reversion (a strong recent quarter doesn't repeat) instead of momentum.</p>
+<p>This page runs its own weekly Alpha Vantage pull instead of using <a href="/sector-beeswarm.html">Sector Beeswarm</a>'s <code>OVERVIEW</code> data, because that job doesn't store the P/E fields this page needs. <a href="/insider-buying-selling.html">Insider Buying/Selling</a> and a few other pages do the same.</p>
 <div class="source">Source: <a href="https://www.alphavantage.co/" target="_blank" rel="noopener">Alpha Vantage: OVERVIEW</a></div>
 </div>
 
@@ -1120,7 +1120,7 @@ async function init(){
   document.getElementById("updated").textContent = "As of " + new Date(data.generated_at_utc).toLocaleString("en-US", { month: "2-digit", day: "2-digit", year: "numeric", hour: "numeric", minute: "2-digit" });
 
   if(data.loadedCount < data.universeSize){
-   showWarning("Only " + data.loadedCount + " of " + data.universeSize + " S&P 500 constituents loaded this run. Some data may be temporarily unavailable.");
+   showWarning("Only " + data.loadedCount + " of " + data.universeSize + " S&P 500 constituents loaded. Some data may be missing.");
   }
 
   renderStats();
@@ -1271,7 +1271,7 @@ function renderGrowthScatter(){
  const box = document.getElementById("growthScatter").parentElement;
  if(pairs.length < 10){
   document.getElementById("growthMethodTable").innerHTML =
-   '<div class="method-note">Not enough companies with both a trailing growth figure and a meaningful P/E pair this run (n=' + pairs.length + ', need at least 10) to run this regression.</div>';
+   '<div class="method-note">Not enough companies with both a trailing growth figure and a usable P/E pair (n=' + pairs.length + ', need at least 10) to run this regression.</div>';
   return;
  }
 

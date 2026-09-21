@@ -804,7 +804,7 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <div class="header">
 <div>
 <h1>Earnings Surprise History</h1>
-<div class="subtitle">How often S&amp;P 500 companies beat, meet, or miss the Street's EPS estimate, by sector, over time, and whether a beat (or a miss) tends to repeat itself next quarter.</div>
+<div class="subtitle">How often S&amp;P 500 companies beat, meet or miss the Street's EPS estimate, by sector and over time, and whether a beat (or a miss) tends to repeat next quarter.</div>
 </div>
 <div class="updated" id="updated">Loading...</div>
 </div>
@@ -836,7 +836,7 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <div class="chart-box-header">
 <div>
 <h2>Beat rate over time</h2>
-<div class="chart-box-sub">Share of the mapped universe beating consensus EPS each calendarized reporting quarter, market-wide.</div>
+<div class="chart-box-sub">Share of the mapped universe beating consensus EPS in each calendarized reporting quarter, market-wide.</div>
 </div>
 </div>
 <div class="ndr-panel">
@@ -868,7 +868,7 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <div class="chart-box-header">
 <div>
 <h2>Surprise magnitude distribution</h2>
-<div class="chart-box-sub">Latest quarter, all reporters with usable estimates. A longer right tail than left is the well-documented tendency for upside surprises to run larger than downside ones.</div>
+<div class="chart-box-sub">Latest quarter, all reporters with usable estimates. A longer right tail than left reflects the well-documented tendency for upside surprises to run larger than downside ones.</div>
 </div>
 </div>
 <div class="ndr-panel">
@@ -882,7 +882,7 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <div class="chart-box-header">
 <div>
 <h2>Does a beat predict another beat?</h2>
-<div class="chart-box-sub">Pooled across the panel: how often the next quarter is also a beat, conditioned on whether this quarter was a beat or a miss.</div>
+<div class="chart-box-sub">Pooled across the panel: how often the next quarter is also a beat, depending on whether this quarter was a beat or a miss.</div>
 </div>
 </div>
 <div class="persist-grid">
@@ -954,11 +954,11 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 
 <div class="explainer">
 <h2>Methodology</h2>
-<p>Each quarter, an S&amp;P 500 company either <strong>beats</strong>, <strong>meets</strong>, or <strong>misses</strong> the consensus analyst estimate for its reported EPS, and the gap between reported and estimated, as a percentage of the estimate, is the <strong>surprise</strong>. This page pulls Alpha Vantage's full quarterly earnings history for every S&amp;P 500 constituent (the same universe used elsewhere on this site. See <a href="/sector-beeswarm.html">Sector Beeswarm</a>, whose weekly company metadata this page reuses for sector/name rather than a second lookup) and works out three things: how often companies beat, by how much, and whether beating (or missing) tends to repeat.</p>
-<p>Two filters are applied before a quarter counts toward any of these numbers. A quarter with a consensus estimate smaller than 5&cent; is dropped, since dividing by a number that close to zero turns an ordinary penny of upside into a triple-digit "surprise" that has nothing to do with how the company actually did. Any surprise beyond &plusmn;200% is dropped too, as the same failure mode in a milder disguise. Both exist to keep a handful of near-zero-EPS names from dominating a mean or a leaderboard that's supposed to describe the other 490-odd companies.</p>
-<p>Quarters are <strong>calendarized</strong>: a fiscal period ending any time in a given three-month calendar window (Jan&ndash;Mar, Apr&ndash;Jun, Jul&ndash;Sep, Oct&ndash;Dec) is bucketed together, so a September-fiscal-year-end company like Apple lines up in the same column as a December-fiscal-year-end peer reporting a similar real-world period. It's an approximation, not exact fiscal alignment. The "latest quarter" used for the headline stats, sector breakdown, and biggest-beat/miss tables is the most recent calendarized quarter where at least half the mapped universe has reported. Early in a reporting season, the first few dozen reporters aren't representative enough to call a beat rate.</p>
-<p>The <strong>persistence</strong> test pools every consecutive pair of a company's own filtered quarters across the whole panel (not just the latest quarter) and asks: given this quarter was a beat, was the next one also a beat, and how does that compare to the same question after a miss, and to the unconditional beat rate? The z-statistic and p-value test whether the after-a-beat and after-a-miss rates differ by more than sampling noise would produce on their own; it's a standard two-proportion z-test, not a claim about causation or a tradeable signal, and it says nothing about the size or timing of any price reaction. That would require pairing this panel with a price series around each report date, which this page doesn't attempt.</p>
-<p>Recomputed weekly (Saturday), across all ~500 constituents, sequentially and rate-limited. Unlike some of this site's other weekly jobs, there's no need for the page to accumulate its own history over time here. Alpha Vantage's EARNINGS endpoint returns years of real quarterly history in a single call, so the trend chart is genuine historical data, recomputed fresh each run, not a series built one weekly snapshot at a time.</p>
+<p>Each quarter, an S&amp;P 500 company either <strong>beats</strong>, <strong>meets</strong> or <strong>misses</strong> the consensus analyst EPS estimate. The gap between reported and estimated EPS, as a percentage of the estimate, is the <strong>surprise</strong>. This page pulls Alpha Vantage's quarterly earnings history for every S&amp;P 500 company (sector and name come from <a href="/sector-beeswarm.html">Sector Beeswarm</a>) and works out three things: how often companies beat, by how much, and whether beating (or missing) tends to repeat.</p>
+<p><strong>Filters.</strong> Two filters apply before a quarter counts. A quarter with a consensus estimate under 5&cent; is dropped, because dividing by a number that close to zero turns a penny of upside into a triple-digit "surprise." Any surprise beyond &plusmn;200% is also dropped, for the same reason. This keeps a few near-zero-EPS names from dominating a mean or leaderboard meant to describe the other 490-odd companies.</p>
+<p><strong>Calendarized quarters.</strong> A fiscal period ending in a given three-month calendar window (Jan&ndash;Mar, Apr&ndash;Jun, Jul&ndash;Sep, Oct&ndash;Dec) is grouped together, so a September-year-end company like Apple lines up with a December-year-end peer reporting a similar period. It's an approximation. The "latest quarter" for the headline stats, sector breakdown and biggest-beat/miss tables is the most recent calendarized quarter where at least half the mapped universe has reported, because early in a reporting season the first few dozen reporters aren't representative.</p>
+<p><strong>Persistence.</strong> The test pools every consecutive pair of a company's own filtered quarters across the whole panel and asks: given this quarter was a beat, was the next one also a beat? How does that compare with the same question after a miss, and with the overall beat rate? The z-statistic and p-value test whether the after-a-beat and after-a-miss rates differ by more than sampling noise. It's a standard two-proportion z-test, not a claim about causation or a trading signal, and it says nothing about price reaction. That would need a price series around each report date, which this page doesn't include.</p>
+<p>Recomputed weekly (Saturday) across all ~500 constituents. There's no page history to accumulate, because Alpha Vantage's EARNINGS endpoint returns years of quarterly history in one call. The trend chart is historical data recomputed each run.</p>
 <div class="source">Source: <a href="https://www.alphavantage.co/" target="_blank" rel="noopener">Alpha Vantage: EARNINGS</a>. Not investment advice.</div>
 </div>
 
@@ -1054,7 +1054,7 @@ async function init(){
   document.getElementById("updated").textContent = "As of " + new Date(data.generated_at_utc).toLocaleString("en-US", { month: "2-digit", day: "2-digit", year: "numeric", hour: "numeric", minute: "2-digit" });
 
   if(data.universe_size < data.universe_total * 0.85){
-   showWarning("Only " + data.universe_size + " of " + data.universe_total + " S&P 500 constituents had usable earnings data this run. Some figures may be based on partial coverage.");
+   showWarning("Only " + data.universe_size + " of " + data.universe_total + " S&P 500 constituents had usable earnings data. Some figures may be based on partial coverage.");
   }
 
   renderStats();

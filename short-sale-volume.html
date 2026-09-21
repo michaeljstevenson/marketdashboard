@@ -841,7 +841,7 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <div class="header">
 <div>
 <h1>Short Sale Volume</h1>
-<div class="subtitle">What share of the S&amp;P 500's daily trading volume is flagged as a short sale, sourced from FINRA's free daily Reg SHO files. A real, freely-available proxy for short-selling activity that fills part of the gap left by short interest data now being locked behind FINRA's paid API Console.</div>
+<div class="subtitle">What share of the S&amp;P 500's daily trading volume is flagged as a short sale, from FINRA's free daily Reg SHO files. It is a free proxy for short-selling activity, since short interest data is now behind FINRA's paid API Console.</div>
 </div>
 <div class="updated" id="updated">Loading...</div>
 </div>
@@ -873,7 +873,7 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <div class="chart-box-header">
 <div>
 <h2>Median short sale volume ratio by sector</h2>
-<div class="chart-subhead">Median of each stock's trailing ~1-month average (short volume ÷ total volume), by GICS sector</div>
+<div class="chart-subhead">Median of each stock's trailing ~1-month average (short volume ÷ total volume), by GICS sector.</div>
 </div>
 </div>
 <div class="ndr-panel">
@@ -887,7 +887,7 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <div class="chart-box-header">
 <div>
 <h2>Market median short sale volume ratio over time</h2>
-<div class="chart-subhead">One point per trading day, computed directly from FINRA's own historical daily files. The full window is populated from the very first run, not an accumulating weekly snapshot</div>
+<div class="chart-subhead">One point per trading day, computed directly from FINRA's daily files. The full window is filled from the first run.</div>
 </div>
 </div>
 <div class="ndr-panel">
@@ -901,7 +901,7 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <div class="chart-box-header">
 <div>
 <h2>Does elevated short-selling predict weaker forward returns?</h2>
-<div class="chart-subhead">Each point is one stock: x-axis is its average short-sale-volume ratio over the older half of the window, y-axis is its relative return vs. SPY over the newer half: non-overlapping in time, so this isn't just measuring the same period against itself</div>
+<div class="chart-subhead">Each point is one stock. X is its average short-sale-volume ratio over the older half of the window, Y is its relative return vs. SPY over the newer half. The two periods don't overlap.</div>
 </div>
 </div>
 <div class="ndr-panel">
@@ -957,11 +957,11 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 
 <div class="explainer">
 <h2>Methodology</h2>
-<p>Universe is the full S&amp;P 500. The underlying data is FINRA's daily Regulation SHO short-sale-volume file (the "CNMS" tape), published free of charge and without any registration or API key at a predictable per-date URL. Unlike FINRA's actual <em>short interest</em> data (total shares currently held short, reported twice a month), whose free anonymous endpoint was deprecated in 2021 and now sits behind a paid, registration-gated API Console this site can't use. <strong>Short sale volume and short interest are different, related metrics</strong>: this page measures a <em>flow</em> (the share of a stock's daily trading volume that was executed as a short sale, from real-time order marking rules) not a <em>stock</em> of currently-outstanding short positions. A high short-sale-volume ratio (SVR) doesn't necessarily mean a large short position is being built; some of that volume closes out same-day or is market-maker hedging activity unrelated to a directional short view. It's a genuine, if imperfect and freely-available, proxy for short-selling activity level, not a substitute for the still-unavailable short interest number.</p>
-<p>For each constituent, SVR on a given day is <code>ShortVolume / TotalVolume</code> from that day's FINRA file. The sector chart, leaderboards, and full table use each stock's average SVR over the most recent ~21 trading days (roughly a month). The market-median trend chart plots the market-wide median SVR for every trading day FINRA's files cover this run, because FINRA republishes full daily history (not just a rolling snapshot), this page can reconstruct the whole ~3-month window in a single run, unlike several of this site's other pages that have to accumulate history one weekly snapshot at a time.</p>
-<p>The forward-return test splits the same ~3-month window into two non-overlapping halves. The same overlapping-window trap called out on <a href="/share-count-trends.html">Share Count Trends</a> and <a href="/relative-strength-leaders.html">Relative Strength Leaders/Laggards</a>. Each stock's average SVR over the <em>older</em> half is the predictor; its price return relative to SPY over the <em>newer</em> half (both from Yahoo Finance daily adjusted closes) is the outcome. A negative relationship would match the classic "short sellers are informed" finding in the academic short-selling literature (e.g. Diether, Lee &amp; Werner, 2009): elevated short-sale activity preceding weaker forward returns; a flat or positive one would say that isn't showing up in this particular window. Both a linear (Pearson) and rank-based (Spearman) fit are reported, matching this site's <a href="/factor-analysis.html">Factor Analysis</a> convention.</p>
-<p>Company name and sector come from <a href="/sector-beeswarm.html">Sector Beeswarm</a>'s weekly metadata sweep. A small number of dual-share-class tickers (e.g. Berkshire Hathaway's B shares) use a dash in this site's own ticker convention but a dot in FINRA's tape data; the backend tries both forms and simply omits a ticker from this page if neither matches, rather than guessing. One-time snapshot for now: see this function's own schedule note in <code>netlify.toml</code> for why it isn't yet on a recurring weekly cron; refresh manually if a newer window is wanted before that changes.</p>
-<div class="source">Source: <a href="https://www.finra.org/finra-data/browse-catalog/short-sale-volume-data" target="_blank" rel="noopener">FINRA Regulation SHO Daily Short Sale Volume Files</a>, <a href="https://finance.yahoo.com/" target="_blank" rel="noopener">Yahoo Finance, daily adjusted close</a></div>
+<p><strong>Data.</strong> The universe is the S&amp;P 500. The data is FINRA's daily Regulation SHO short-sale-volume file (the "CNMS" tape), published free at a per-date URL with no registration. FINRA's <em>short interest</em> data (total shares held short, reported twice a month) is behind a paid, registration-gated API Console, so it isn't used. <strong>Short sale volume and short interest are different metrics.</strong> This page measures a <em>flow</em>: the share of a stock's daily volume executed as a short sale. It doesn't measure a <em>stock</em> of outstanding short positions. A high short-sale-volume ratio (SVR) doesn't necessarily mean a large short position is building, since some of that volume closes out the same day or is market-maker hedging. It's an imperfect proxy for short-selling activity, not a substitute for short interest.</p>
+<p><strong>Calculation.</strong> For each company, SVR on a given day is <code>ShortVolume / TotalVolume</code> from that day's FINRA file. The sector chart, leaderboards and full table use each stock's average SVR over the most recent ~21 trading days. The market-median trend chart plots the market-wide median SVR for every trading day in FINRA's files. FINRA republishes full daily history, so the whole ~3-month window is built in a single run.</p>
+<p><strong>Forward-return test.</strong> It splits the ~3-month window into two non-overlapping halves, the same overlapping-window issue covered on <a href="/share-count-trends.html">Share Count Trends</a> and <a href="/relative-strength-leaders.html">Relative Strength Leaders/Laggards</a>. Each stock's average SVR over the <em>older</em> half is the predictor, and its return relative to SPY over the <em>newer</em> half (Yahoo Finance daily adjusted closes) is the outcome. A negative relationship would match the finding that short sellers are informed (e.g. Diether, Lee &amp; Werner, 2009): more short-sale activity before weaker returns. A flat or positive one would mean it isn't showing up in this window. Pearson (linear) and Spearman (rank) fits are both shown, as on <a href="/factor-analysis.html">Factor Analysis</a>.</p>
+<p>Company name and sector come from <a href="/sector-beeswarm.html">Sector Beeswarm</a>. Dual-share-class tickers (e.g. Berkshire Hathaway's B shares) use a dash in the site's ticker convention and a dot in FINRA's data. Both forms are tried, and a ticker is left out if neither matches. This is a one-time snapshot for now. Refresh manually for a newer window.</p>
+<div class="source">Source: <a href="https://www.finra.org/finra-data/browse-catalog/short-sale-volume-data" target="_blank" rel="noopener">FINRA Regulation SHO Daily Short Sale Volume Files</a> and <a href="https://finance.yahoo.com/" target="_blank" rel="noopener">Yahoo Finance daily adjusted close</a>.</div>
 </div>
 
 </div>
@@ -1112,7 +1112,7 @@ async function init(){
   document.getElementById("updated").textContent = "As of " + new Date(data.generated_at_utc).toLocaleString("en-US", { month: "2-digit", day: "2-digit", year: "numeric", hour: "numeric", minute: "2-digit" });
 
   if(data.loadedCount < data.universeSize){
-   showWarning("Only " + data.loadedCount + " of " + data.universeSize + " S&P 500 constituents loaded this run. Some data may be temporarily unavailable.");
+   showWarning("Only " + data.loadedCount + " of " + data.universeSize + " S&P 500 constituents loaded. Some data may be missing.");
   }
 
   renderStats();
@@ -1224,7 +1224,7 @@ function renderRegressionScatter(){
  if(pairs.length < 20){
   if(regressionScatter){ regressionScatter.destroy(); regressionScatter = null; }
   document.getElementById("regressionMethodTable").innerHTML =
-   '<div class="method-note">Not enough stocks with both a valid short-sale-volume ratio and price history this run to test.</div>';
+   '<div class="method-note">Not enough stocks with both a valid short-sale-volume ratio and price history to test.</div>';
   return;
  }
 
@@ -1283,7 +1283,7 @@ function renderRegressionScatter(){
    "<thead><tr><th>Method</th><th>n</th><th>r</th><th>r&sup2;</th><th>slope</th><th>t</th><th>p</th></tr></thead>" +
    "<tbody>" + row("Pearson (OLS)", pearson) + row("Spearman (&rho;)", spear) + "</tbody>" +
   "</table>" +
-  '<div class="method-note">A negative slope means stocks with more short-selling activity in the older half of the window went on to underperform SPY in the newer half. Consistent with short sellers being informed traders; a flat or positive slope means that isn\'t showing up here.</div>';
+  '<div class="method-note">A negative slope means stocks with more short-selling in the older half of the window went on to underperform SPY in the newer half, which is consistent with short sellers being informed. A flat or positive slope means that isn\'t showing up here.</div>';
 }
 
 function renderLeaderTable(rows, tbodyId){

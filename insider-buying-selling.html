@@ -753,7 +753,7 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <div class="header">
 <div>
 <h1>Insider Buying/Selling</h1>
-<div class="subtitle">Officers, directors, and 10%+ owners file a Form 4 within two business days of trading their own company's stock. Aggregated open-market-style activity, trailing 90 days, across the full S&amp;P 500.</div>
+<div class="subtitle">Officers, directors and 10%+ owners file a Form 4 within two business days of trading their own company's stock. Open-market-style activity over the trailing 90 days, across the S&amp;P 500.</div>
 </div>
 <div class="updated" id="updated">Loading...</div>
 </div>
@@ -785,7 +785,7 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <div class="chart-box-header">
 <div>
 <h2>Net insider $ flow by sector, trailing 90 days</h2>
-<div class="chart-subhead">Buy $ minus sell $ across Common Stock transactions, pooled across each sector's constituents</div>
+<div class="chart-subhead">Buy $ minus sell $ across Common Stock transactions, pooled across each sector's constituents.</div>
 </div>
 </div>
 <div class="chart-canvas-wrap">
@@ -796,7 +796,7 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <div class="table-box">
 <div class="table-box-header">
 <h2>Cluster buying</h2>
-<div class="chart-subhead">Companies with 2+ distinct insiders buying and zero insiders selling in the window. The least ambiguous signal this data can offer</div>
+<div class="chart-subhead">Companies with 2+ distinct insiders buying and no insiders selling in the window. The clearest signal in this data.</div>
 </div>
 <table id="clusterTable">
 <thead>
@@ -840,7 +840,7 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <div class="table-box">
 <div class="table-box-header">
 <h2>Largest individual sales</h2>
-<div class="chart-subhead">Shown for completeness: insider selling is common and often reflects diversification, taxes, or a pre-scheduled 10b5-1 plan rather than a bearish view (see methodology)</div>
+<div class="chart-subhead">Shown for completeness. Insider selling is common and often reflects diversification, taxes or a pre-scheduled 10b5-1 plan, not a bearish view (see methodology).</div>
 </div>
 <table id="sellsTable">
 <thead>
@@ -863,7 +863,7 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <div class="table-box">
 <div class="table-box-header">
 <h2>All companies with activity</h2>
-<div class="chart-subhead">Every S&amp;P 500 name with at least one qualifying transaction in the trailing 90 days</div>
+<div class="chart-subhead">Every S&amp;P 500 name with at least one qualifying transaction in the trailing 90 days.</div>
 </div>
 <table id="stockTable">
 <thead>
@@ -886,10 +886,10 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 
 <div class="explainer">
 <h2>Methodology</h2>
-<p>Universe is the full S&amp;P 500. For every constituent, Alpha Vantage's <code>INSIDER_TRANSACTIONS</code> endpoint returns each Form 4 line item filed by officers, directors, and 10%+ owners. Company, filer, security type, transaction date, shares, price, and whether it was an acquisition or disposal. Only transactions dated within the trailing 90 days as of the last refresh are counted.</p>
-<p>Raw Form 4 data is dominated by routine equity-compensation mechanics, not discretionary trading decisions: RSUs vesting, options being exercised, and the automatic tax-withholding sale that immediately follows a vesting event. None of that reflects an insider choosing to buy or sell. This page keeps only <code>security_type = Common Stock</code> transactions reporting a real, positive share price. RSU vesting and stock awards report a blank or zero price, so this filters most of that noise out. It is an honest partial fix, not a complete one: a pre-scheduled 10b5-1 plan sale (an executive who set up automatic periodic sales months in advance, unrelated to any current view on the stock) still reports a normal share price and passes this filter indistinguishably from a discretionary open-market sale. Treat the sell side of this data with real skepticism for that reason.</p>
-<p>Insider buying doesn't have the same problem. There's no routine, automatic mechanism that makes an executive spend their own cash to buy more stock, which is why academic research on this topic (e.g. Lakonishok &amp; Lee, 2001, <i>Are Insider Trades Informative?</i>) consistently finds insider purchases carry more signal than insider sales. This page reflects that asymmetry directly: cluster buying (2+ distinct insiders buying with zero sellers in the window) is surfaced as the headline signal, and the largest individual purchases get their own table, while the largest sales are shown only for completeness with an explicit caveat rather than framed as bearish.</p>
-<p>Sector and company name come from the same weekly metadata Alpha Vantage sweep that backs <a href="/sector-beeswarm.html">Sector Beeswarm</a>, reused here rather than paying for a second full-index pass just for labels. Refreshes weekly (Saturday mornings): a single company's insider filings are sparse enough that a trailing-90-day aggregate has little reason to move day to day.</p>
+<p><strong>Data.</strong> The universe is the S&amp;P 500. For each company, Alpha Vantage's <code>INSIDER_TRANSACTIONS</code> endpoint returns each Form 4 line item filed by officers, directors and 10%+ owners: company, filer, security type, transaction date, shares, price, and whether it was an acquisition or disposal. Only transactions in the trailing 90 days as of the last refresh are counted.</p>
+<p><strong>What's filtered.</strong> Raw Form 4 data is mostly routine equity-compensation activity: RSUs vesting, options being exercised, and the automatic tax-withholding sale after a vest. None of that is a decision to buy or sell. This page keeps only <code>security_type = Common Stock</code> transactions with a positive share price. RSU vesting and stock awards report a blank or zero price, so that removes most of the noise. It is a partial fix. A pre-scheduled 10b5-1 plan sale (automatic periodic sales set up months earlier) reports a normal price and looks the same as a discretionary sale. Be skeptical of the sell side of this data for that reason.</p>
+<p><strong>Buys vs. sells.</strong> Insider buying doesn't have that problem, because nothing automatic makes an executive spend their own cash on more stock. Research such as Lakonishok &amp; Lee (2001), <i>Are Insider Trades Informative?</i>, finds insider purchases carry more signal than sales. The page reflects that. Cluster buying (2+ distinct insiders buying, no sellers) is the headline signal, the largest individual purchases get their own table, and the largest sales appear only for completeness, with a caveat.</p>
+<p>Sector and company name come from <a href="/sector-beeswarm.html">Sector Beeswarm</a>. Refreshes weekly (Saturday morning). One company's insider filings are sparse enough that a trailing-90-day total rarely changes day to day.</p>
 <div class="source">Source: <a href="https://www.alphavantage.co/" target="_blank" rel="noopener">Alpha Vantage: INSIDER_TRANSACTIONS</a></div>
 </div>
 
@@ -940,7 +940,7 @@ async function init(){
    "As of " + usDate(data.asOfDate) + " · " + new Date(data.generated_at_utc).toLocaleString("en-US", { month: "2-digit", day: "2-digit", year: "numeric", hour: "numeric", minute: "2-digit" });
 
   if(data.loadedCount < data.universeSize){
-   showWarning("Only " + data.loadedCount + " of " + data.universeSize + " S&P 500 constituents loaded this run. Some data may be temporarily unavailable.");
+   showWarning("Only " + data.loadedCount + " of " + data.universeSize + " S&P 500 constituents loaded. Some data may be missing.");
   }
 
   renderStats();

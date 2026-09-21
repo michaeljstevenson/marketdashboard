@@ -769,7 +769,7 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <div class="header">
 <div>
 <h1>Earnings Revisions</h1>
-<div class="subtitle">How Wall Street analysts are revising S&amp;P 500 earnings estimates, how many are moving their numbers, which way, and by how much, broken out by sector.</div>
+<div class="subtitle">How Wall Street analysts are revising S&amp;P 500 earnings estimates, how many are moving their numbers, which way and by how much, broken out by sector.</div>
 </div>
 <div class="updated" id="updated">Loading...</div>
 </div>
@@ -817,7 +817,7 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <div class="chart-box-header">
 <div>
 <h2>Market Net Revision Ratio over time</h2>
-<div class="chart-box-sub">Weekly snapshots, accumulated since this page began tracking, not backfilled (see methodology below).</div>
+<div class="chart-box-sub">Weekly snapshots since this page began tracking (not backfilled, see methodology below).</div>
 </div>
 </div>
 <div class="chart-canvas-wrap short">
@@ -829,7 +829,7 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <div class="chart-box-header">
 <div>
 <h2>Breadth vs. magnitude, by stock</h2>
-<div class="chart-box-sub">Each point is one S&amp;P 500 constituent. Upper-right: broadly and sharply upgraded. Lower-left: broadly and sharply downgraded.</div>
+<div class="chart-box-sub">Each point is one S&amp;P 500 company. Upper right: broadly and sharply upgraded. Lower left: broadly and sharply downgraded.</div>
 </div>
 </div>
 <div class="chart-canvas-wrap tall">
@@ -865,10 +865,10 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 
 <div class="explainer">
 <h2>Methodology</h2>
-<p>Two different questions get asked about analyst earnings revisions, and they don't always point the same way: <em>how many</em> analysts are changing their minds, and <em>how much</em> the number is actually moving. The <strong>Net Revision Ratio</strong> answers the first: for each stock's current-fiscal-year (FY1) consensus EPS estimate, it's (upward revisions &minus; downward revisions) &divide; total revisions over the trailing 30 days, a breadth measure that runs from &minus;1 (every revision was down) to +1 (every revision was up). The <strong>Estimate Drift</strong> answers the second: the trailing-30-day percent change in the consensus FY1 EPS estimate itself. A stock (or sector) can have wide breadth with almost no drift (a dozen analysts each nudging their number a penny in the same direction) or the reverse: one or two analysts making a large call that moves the average a lot without most of the Street having weighed in yet. Sector and market figures are the equal-weighted mean of each metric across that group's constituents with usable data, not cap-weighted. A $50B mid-cap's analyst revisions count the same as a Magnificent Seven name's.</p>
-<p>The universe is the S&amp;P 500 (the same constituent list used elsewhere on this site. See <a href="/sector-beeswarm.html">Sector Beeswarm</a>), with sector classification pulled from that page's own weekly company-metadata refresh rather than a second, redundant lookup. The leaderboards exclude stocks with fewer than 3 covering analysts, since a one- or two-analyst estimate can swing double digits on a single revision with no real breadth behind it.</p>
-<p>The "over time" chart is not a backfilled series. Alpha Vantage's estimates endpoint returns only the current snapshot's trailing-window figures, not a history of past snapshots, so there was no way to reconstruct what the Net Revision Ratio looked like a year or five years ago. Instead, this page takes its own weekly snapshot and appends it, meaning the trend line will only get more useful over time as more weekly points accumulate; treat an early, short line as exactly that: a start, not a full cycle.</p>
-<p>Recomputed weekly (Saturday) across all ~500 constituents, sequentially and rate-limited, rather than daily. Trailing-30-day revision counts and 30-day drift don't move enough day to day to justify the extra API load.</p>
+<p><strong>Two measures.</strong> Two questions get asked about analyst revisions, and they don't always agree: <em>how many</em> analysts are changing their minds, and <em>how much</em> the number is moving. The <strong>Net Revision Ratio</strong> answers the first. For each stock's current-fiscal-year (FY1) consensus EPS estimate, it's (upward revisions &minus; downward revisions) &divide; total revisions over the trailing 30 days, a breadth measure running from &minus;1 (every revision was down) to +1 (every revision was up). The <strong>Estimate Drift</strong> answers the second: the trailing-30-day percent change in the consensus FY1 EPS estimate. A stock or sector can have wide breadth with almost no drift (a dozen analysts each nudging their number a penny the same way), or the reverse: one or two analysts making a large call that moves the average without most of the Street weighing in. Sector and market figures are the equal-weighted mean across each group's constituents, not cap-weighted, so a $50B mid-cap's revisions count the same as a Magnificent Seven name's.</p>
+<p>The universe is the S&amp;P 500, with sector classification from <a href="/sector-beeswarm.html">Sector Beeswarm</a>. Leaderboards exclude stocks with fewer than 3 covering analysts, since a one- or two-analyst estimate can swing double digits on a single revision with no breadth behind it.</p>
+<p><strong>Over time.</strong> The chart isn't backfilled. Alpha Vantage's estimates endpoint returns only the current trailing-window figures, not past snapshots, so there's no way to reconstruct the Net Revision Ratio from a year or five years ago. This page takes its own weekly snapshot and adds it to the line, which gets more useful as points accumulate. An early, short line is a start, not a full cycle.</p>
+<p>Recomputed weekly (Saturday) across all ~500 constituents, not daily. Trailing-30-day revision counts and drift don't move enough day to day to justify more frequent runs.</p>
 <div class="source">Source: <a href="https://www.alphavantage.co/" target="_blank" rel="noopener">Alpha Vantage: EARNINGS_ESTIMATES</a>. Not investment advice.</div>
 </div>
 
@@ -944,7 +944,7 @@ async function init(){
   document.getElementById("updated").textContent = "As of " + new Date(data.generated_at_utc).toLocaleString("en-US", { month: "2-digit", day: "2-digit", year: "numeric", hour: "numeric", minute: "2-digit" });
 
   if(data.universe_size < data.universe_total * 0.85){
-   showWarning("Only " + data.universe_size + " of " + data.universe_total + " S&P 500 constituents had usable estimates this run. Some sector figures may be based on partial coverage.");
+   showWarning("Only " + data.universe_size + " of " + data.universe_total + " S&P 500 constituents had usable estimates. Some sector figures may be based on partial coverage.");
   }
 
   renderStats();

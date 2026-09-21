@@ -804,7 +804,7 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <div class="header">
 <div>
 <h1>Dividend Growth Screener</h1>
-<div class="subtitle">Which S&amp;P 500 dividend payers keep raising their payout, for how long, and how fast, by sector, market-wide over time, and screened into growers, long streaks, and outright cutters.</div>
+<div class="subtitle">Which S&amp;P 500 dividend payers keep raising their payout, for how long and how fast: by sector, market-wide over time, and screened into growers, long streaks and outright cutters.</div>
 </div>
 <div class="updated" id="updated">Loading...</div>
 </div>
@@ -868,7 +868,7 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <div class="chart-box-header">
 <div>
 <h2>Latest year-over-year growth distribution</h2>
-<div class="chart-box-sub">All payers with a usable figure. The left tail (dividend cuts) is normally thin. A fatter one than usual is itself a signal about the group being screened.</div>
+<div class="chart-box-sub">All payers with a usable figure. The left tail (dividend cuts) is normally thin. A fatter one than usual is a signal about the group being screened.</div>
 </div>
 </div>
 <div class="ndr-panel">
@@ -919,11 +919,11 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 
 <div class="explainer">
 <h2>Methodology</h2>
-<p>This page pulls Yahoo Finance's full historical ex-dividend record for every S&amp;P 500 constituent (the same universe used elsewhere on this site. See <a href="/sector-beeswarm.html">Sector Beeswarm</a>, whose weekly company metadata this page reuses for sector/name rather than a second lookup) and sums every payment into a <strong>calendar-year total</strong> per company. Summing by calendar year rather than comparing payment-to-payment is what makes this frequency-agnostic: it works the same whether a company pays quarterly, semi-annually, or has changed its payment schedule over time. Companies with fewer than 3 full calendar years of dividend history, or that don't pay a dividend at all, are excluded entirely. This page only screens payers.</p>
-<p>From each company's year-by-year total comes three numbers. The <strong>streak</strong> counts consecutive calendar years, walking backward from the most recent, where the total was strictly higher than the year before. The same construction behind the "Dividend Aristocrat" idea, though this page makes no claim about the 25-year threshold that label formally requires. The <strong>5-year CAGR</strong> is the compound annual growth rate of the annual total over the most recent 5 full years (fewer if a company has less history than that, so long as at least 3 years exist). The <strong>latest YoY growth</strong> is simply this most recent full year's total versus the year before it. A gap year (a payment suspended and later resumed) breaks a streak rather than being bridged over.</p>
-<p>The current, still-in-progress calendar year is excluded from every calculation. A partial year would understate growth or manufacture a false "cut" purely from timing. One real caveat this page doesn't correct for: a one-time special dividend lands in whatever calendar year it was paid and can make that year's growth rate (and, if it's large enough, a multi-year CAGR) look larger than the company's ordinary, recurring payout actually grew. Treat an unusually large single-year figure with that in mind.</p>
-<p>Sector figures are the equal-weighted mean (or, for the "5+ year growers" count, a simple headcount) across that sector's qualifying payers, not cap-weighted. The market-wide trend line takes the <em>median</em> (not mean) year-over-year growth rate each calendar year among payers with data in both that year and the one before, and only plots a year once at least 30 payers have data for it. Median rather than mean specifically to keep one outlier special-dividend year from swinging the whole market line.</p>
-<p>Recomputed weekly (Saturday), across all ~500 constituents, sequentially and rate-limited. As with <a href="/earnings-surprise.html">Earnings Surprise History</a>, there's no need to accumulate a page-local history here. Yahoo Finance's dividend history returns a company's entire payment history in one call, so every chart here is recomputed fresh from real historical data each run.</p>
+<p><strong>Data.</strong> Yahoo Finance's full ex-dividend history for every S&amp;P 500 company (sector and name come from <a href="/sector-beeswarm.html">Sector Beeswarm</a>), summed into a <strong>calendar-year total</strong> per company. Summing by calendar year works the same whether a company pays quarterly, semi-annually or has changed its schedule. Companies with fewer than 3 full calendar years of dividend history, or no dividend, are excluded. This page only screens payers.</p>
+<p><strong>Metrics.</strong> Three numbers come from each company's yearly totals. The <strong>streak</strong> counts consecutive calendar years, going back from the most recent, where the total was higher than the year before. It's the same idea as the "Dividend Aristocrat" label, though this page doesn't apply that label's 25-year threshold. The <strong>5-year CAGR</strong> is the compound annual growth rate of the annual total over the most recent 5 full years (fewer if the company has less history, as long as it has at least 3). The <strong>latest YoY growth</strong> is the most recent full year's total vs. the year before. A gap year (a suspended and later resumed payment) breaks a streak.</p>
+<p>The current calendar year is excluded from every calculation, since a partial year would understate growth or show a false "cut." One caveat this page doesn't correct for: a one-time special dividend lands in the year it was paid and can make that year's growth rate (and a multi-year CAGR, if large enough) look higher than the ordinary payout actually grew. Treat an unusually large single-year figure with that in mind.</p>
+<p>Sector figures are the equal-weighted mean across that sector's qualifying payers (a simple headcount for the "5+ year growers" count), not cap-weighted. The market-wide trend line takes the <em>median</em> year-over-year growth rate each calendar year among payers with data in both that year and the one before, and plots a year only once at least 30 payers have data for it. The median keeps one special-dividend year from swinging the line.</p>
+<p>Recomputed weekly (Saturday) across all ~500 constituents. Yahoo Finance returns a company's whole dividend history in one call, so every chart is recomputed from full history each run, with no page history to accumulate (same as <a href="/earnings-surprise.html">Earnings Surprise History</a>).</p>
 <div class="source">Source: <a href="https://finance.yahoo.com/" target="_blank" rel="noopener">Yahoo Finance: dividend history</a>. Not investment advice.</div>
 </div>
 
@@ -1019,7 +1019,7 @@ async function init(){
   document.getElementById("updated").textContent = "As of " + new Date(data.generated_at_utc).toLocaleString("en-US", { month: "2-digit", day: "2-digit", year: "numeric", hour: "numeric", minute: "2-digit" });
 
   if(data.universe_size < data.universe_total * 0.4){
-   showWarning("Only " + data.universe_size + " of " + data.universe_total + " S&P 500 constituents had usable dividend history this run. Many constituents don't pay a dividend at all, so this is expected to be well under the full universe.");
+   showWarning("Only " + data.universe_size + " of " + data.universe_total + " S&P 500 constituents had usable dividend history. Many don't pay a dividend, so this is expected to be well under the full universe.");
   }
 
   renderStats();

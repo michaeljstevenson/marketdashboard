@@ -928,7 +928,7 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <div class="header">
 <div>
 <h1>Institutional Ownership &amp; 13F Flow Tracker</h1>
-<div class="subtitle">Who owns the S&amp;P 500, and which way institutions are moving: sector ownership and flow, an accumulating market-median flow trend, a distribution of buying/selling intensity, leaderboards, and a direct test of whether institutional flow chases recent winners or recent laggards.</div>
+<div class="subtitle">Who owns the S&amp;P 500 and which way institutions are moving: sector ownership and flow, a market-median flow trend, the distribution of buying and selling, leaderboards, and a test of whether institutional flow chases recent winners or laggards.</div>
 </div>
 <div class="updated" id="updated">Loading...</div>
 </div>
@@ -960,7 +960,7 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <div class="chart-box-header">
 <div>
 <h2>Sector ownership and flow</h2>
-<div class="chart-subhead">Median across each SPDR sector's S&amp;P 500 constituents, latest snapshot</div>
+<div class="chart-subhead">Median across each SPDR sector's S&amp;P 500 constituents, latest snapshot.</div>
 </div>
 <div class="metric-toggle" id="sectorMetricToggle">
 <button type="button" data-metric="ownership" class="active">Ownership %</button>
@@ -978,7 +978,7 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <div class="chart-box-header">
 <div>
 <h2>Market-median net share flow over time</h2>
-<div class="chart-subhead">Accumulates one point per weekly run: <code>INSTITUTIONAL_HOLDINGS</code> is a current-state snapshot, not a time series, so this trend builds up over successive runs</div>
+<div class="chart-subhead">One point per weekly run. <code>INSTITUTIONAL_HOLDINGS</code> is a current-state snapshot, not a time series, so the trend builds over successive runs.</div>
 </div>
 </div>
 <div class="ndr-panel">
@@ -992,7 +992,7 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <div class="chart-box-header">
 <div>
 <h2>Distribution of net share flow</h2>
-<div class="chart-subhead">Every S&amp;P 500 constituent with a computable net share flow this run</div>
+<div class="chart-subhead">Every S&amp;P 500 company with a computable net share flow this run.</div>
 </div>
 </div>
 <div class="ndr-panel">
@@ -1052,7 +1052,7 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <div class="chart-box-header">
 <div>
 <h2>Net share flow vs. trailing 3-month relative return</h2>
-<div class="chart-subhead">Each point is one company this snapshot: do institutions pile into recent winners (momentum-chasing) or recent laggards (contrarian)?</div>
+<div class="chart-subhead">Each point is one company in this snapshot. Do institutions pile into recent winners (momentum-chasing) or recent laggards (contrarian)?</div>
 </div>
 </div>
 <div class="ndr-panel">
@@ -1089,12 +1089,12 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 
 <div class="explainer">
 <h2>Methodology</h2>
-<p>Universe is the full S&amp;P 500. For every constituent, Alpha Vantage's <code>INSTITUTIONAL_HOLDINGS</code> endpoint is pulled and only its top-level aggregate fields are kept. Total institutional holders and shares, the counts and share totals of holders who increased, decreased, or left unchanged their position, and total institutional ownership as a % of shares outstanding. The endpoint also returns a full per-holder <code>holdings</code> list (thousands of individual rows for a mega-cap name) that this page never stores or processes. It's irrelevant to the sector- and market-level questions this page asks, and would bloat the data store for no benefit.</p>
-<p>Two flow metrics are shown side by side because they answer different questions. <b>Holder breadth</b> is <code class="formula">holders increased / (holders increased + holders decreased) × 100</code>. A headcount question: of the institutions that changed their position at all (unchanged holders are excluded from this ratio), what fraction were adding rather than trimming? Above 50% means more institutions added than trimmed. <b>Net share flow</b> is <code class="formula">(shares increased − shares decreased) / total institutional shares × 100</code>. A magnitude question, normalized to the size of the institutional share base, so a handful of large funds moving a lot of stock shows up even if most smaller holders didn't move at all. A stock can show positive breadth (most holders adding) and negative net flow (the holders who sold, sold a lot more) at the same time. That divergence is itself informative, which is why both are reported rather than collapsed into one number.</p>
-<p>The flow-vs-momentum test is deliberately a single-snapshot, contemporaneous cross-sectional regression. Net share flow this run against each stock's own trailing 3-month return relative to SPY, read directly from <a href="/relative-strength-leaders.html">Relative Strength Leaders/Laggards</a>' own weekly output rather than a second price sweep (both Pearson and Spearman, matching the two-method check used throughout <a href="/factor-analysis.html">Factor Analysis</a>). It is <i>not</i> a forward-looking persistence test across snapshots: 13F positioning is too slow-moving week to week for that to be meaningful yet, the same reasoning behind the single-snapshot cross-sectional tests on <a href="/margin-leverage.html">Margin &amp; Leverage Cycle</a> and <a href="/equity-risk-premium.html">Equity Risk Premium by Sector</a>. If Relative Strength Leaders/Laggards hasn't produced a snapshot yet in this run's cycle, this section shows a warning and the rest of the page still renders off ownership/flow data alone.</p>
-<p><b>Real limitations, stated plainly.</b> 13F filings are quarterly and can lag by up to 45 days after quarter-end, so this is a slow-moving, backward-looking picture, not a live feed of what institutions are doing this week. Coverage is US institutional long-only managers with at least $100M in AUM who are required to file a 13F. It does not capture short positions, options or derivatives exposure, non-institutional/retail flow, or non-US institutional holders. A rising ownership % can also reflect share buybacks shrinking the denominator rather than net institutional buying, and a single quarter's 13F reshuffling among a handful of large index funds can swing net share flow for a stock with a small institutional base. Leaderboards require at least 5 institutional holders on file specifically to reduce that noise.</p>
-<p>Sector medians are only published when at least 3 companies in that sector have a usable value. Refreshes weekly (Saturday mornings, after <a href="/share-count-trends.html">Share Count Trends</a>' own sweep). Real recurring schedule, since the whole point of this page is a flow <i>trend</i> that builds week over week, not a single dated snapshot. Sector and company name come from the same weekly metadata sweep that backs <a href="/sector-beeswarm.html">Sector Beeswarm</a>, reused here rather than paying for a second full-index pass just for labels.</p>
-<div class="source">Source: <a href="https://www.alphavantage.co/" target="_blank" rel="noopener">Alpha Vantage: INSTITUTIONAL_HOLDINGS</a>, cross-referenced with this site's own <a href="/relative-strength-leaders.html">Relative Strength Leaders/Laggards</a> output.</div>
+<p><strong>Data.</strong> The universe is the S&amp;P 500. For each company, Alpha Vantage's <code>INSTITUTIONAL_HOLDINGS</code> endpoint is pulled and only the top-level totals are kept: total institutional holders and shares, the counts and share totals of holders who increased, decreased or left their position unchanged, and total institutional ownership as a % of shares outstanding. The endpoint also returns a per-holder <code>holdings</code> list (thousands of rows for a mega-cap). This page doesn't use it.</p>
+<p><strong>Flow metrics.</strong> Two are shown because they answer different questions. <b>Holder breadth</b> is <code class="formula">holders increased / (holders increased + holders decreased) × 100</code>. It's a headcount: of the institutions that changed their position (unchanged holders are excluded), what share were adding? Above 50% means more added than trimmed. <b>Net share flow</b> is <code class="formula">(shares increased − shares decreased) / total institutional shares × 100</code>. It's a magnitude, scaled to the institutional share base, so a few large funds moving a lot of stock show up even if most holders didn't move. A stock can have positive breadth (most holders adding) and negative net flow (the sellers sold much more) at the same time. That divergence is informative, so both are shown.</p>
+<p><strong>Flow vs. momentum test.</strong> A single-snapshot cross-sectional regression: net share flow this run against each stock's trailing 3-month return relative to SPY, from <a href="/relative-strength-leaders.html">Relative Strength Leaders/Laggards</a> (Pearson and Spearman, as on <a href="/factor-analysis.html">Factor Analysis</a>). It is <i>not</i> a forward-looking test across snapshots, because 13F positioning moves too slowly week to week for that. The same reasoning applies on <a href="/margin-leverage.html">Margin &amp; Leverage Cycle</a> and <a href="/equity-risk-premium.html">Equity Risk Premium by Sector</a>. If Relative Strength Leaders/Laggards hasn't refreshed, this section shows a warning and the rest of the page still works.</p>
+<p><b>Limitations.</b> 13F filings are quarterly and can lag quarter-end by up to 45 days, so this is a slow, backward-looking picture, not a live feed. Coverage is US institutional long-only managers with at least $100M in AUM who must file a 13F. It doesn't capture short positions, options or derivatives exposure, retail flow, or non-US institutions. A rising ownership % can also come from buybacks shrinking the share count rather than net institutional buying, and one quarter of 13F reshuffling among a few large index funds can swing net share flow for a stock with a small institutional base. Leaderboards require at least 5 institutional holders on file to reduce that noise.</p>
+<p>Sector medians are published only when at least 3 companies in the sector have a usable value. Refreshes weekly (Saturday morning, after <a href="/share-count-trends.html">Share Count Trends</a>), because the page is built around a flow <i>trend</i> that accumulates week over week. Sector and company name come from <a href="/sector-beeswarm.html">Sector Beeswarm</a>.</p>
+<div class="source">Source: <a href="https://www.alphavantage.co/" target="_blank" rel="noopener">Alpha Vantage: INSTITUTIONAL_HOLDINGS</a>, with <a href="/relative-strength-leaders.html">Relative Strength Leaders/Laggards</a> data.</div>
 </div>
 
 </div>
@@ -1255,9 +1255,9 @@ async function init(){
   document.getElementById("updated").textContent = "As of " + new Date(data.generated_at_utc).toLocaleString("en-US", { month: "2-digit", day: "2-digit", year: "numeric", hour: "numeric", minute: "2-digit" });
 
   if(data.loadedCount < data.universeSize){
-   showWarning("Only " + data.loadedCount + " of " + data.universeSize + " S&P 500 constituents loaded this run. Some data may be temporarily unavailable.");
+   showWarning("Only " + data.loadedCount + " of " + data.universeSize + " S&P 500 constituents loaded. Some data may be missing.");
   }else if(!data.hasPriceData){
-   showWarning("Price-performance data isn't available yet (Relative Strength Leaders/Laggards hasn't run this cycle). The flow-vs-momentum test below can't run yet, but ownership/flow data below is unaffected.");
+   showWarning("Price data isn't available yet (Relative Strength Leaders/Laggards hasn't refreshed). The flow-vs-momentum test below can't run yet, but the ownership and flow data is unaffected.");
   }
 
   renderStats();
@@ -1342,7 +1342,7 @@ function renderHistoryChart(){
  if(historyChart) historyChart.destroy();
  if(!rows.length){
   ctx.canvas.parentElement.insertAdjacentHTML("beforeend",
-   '<div style="text-align:center; color:var(--muted); padding-top:140px;">Not enough history yet: check back after next week\'s run.</div>');
+   '<div style="text-align:center; color:var(--muted); padding-top:140px;">Not enough history yet. Check back after next week\'s run.</div>');
   return;
  }
  historyChart = new Chart(ctx, {
@@ -1431,12 +1431,12 @@ function renderFlowMomentumScatter(){
  const pairs = RAW.scatterPairs || [];
 
  if(!RAW.hasPriceData){
-  methodEl.innerHTML = '<div class="method-note">Relative Strength Leaders/Laggards hasn\'t produced a snapshot yet this cycle. This test needs its trailing 3-month relative-return figures and can\'t run until it has.</div>';
+  methodEl.innerHTML = '<div class="method-note">Relative Strength Leaders/Laggards hasn\'t refreshed yet. This test needs its trailing 3-month relative-return figures.</div>';
   if(flowMomentumScatter) flowMomentumScatter.destroy();
   return;
  }
  if(pairs.length < 10){
-  methodEl.innerHTML = '<div class="method-note">Not enough companies with both a net share flow figure and a relative-return figure this run (n=' + pairs.length + ', need at least 10) to run this regression.</div>';
+  methodEl.innerHTML = '<div class="method-note">Not enough companies with both a net share flow figure and a relative-return figure (n=' + pairs.length + ', need at least 10) to run this regression.</div>';
   if(flowMomentumScatter) flowMomentumScatter.destroy();
   return;
  }
@@ -1476,7 +1476,7 @@ function renderFlowMomentumScatter(){
  });
 
  methodEl.innerHTML = methodTableHtml(pearson, spear,
-  "Positive would mean institutions favor recent winners (momentum-chasing); negative would mean recent laggards (contrarian). n=" + pearson.n + " companies, single contemporaneous snapshot, not a forward-looking test, see methodology below.");
+  "Positive means institutions favor recent winners (momentum-chasing). Negative means recent laggards (contrarian). n=" + pearson.n + " companies, single snapshot, not a forward-looking test. See methodology below.");
 }
 
 function trendArrow(dir){

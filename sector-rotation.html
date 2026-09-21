@@ -797,7 +797,7 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <div class="header">
 <div>
 <h1>Sector Rotation Model</h1>
-<div class="subtitle">A Relative Rotation Graph-style view of the 11 SPDR sector ETFs: which sectors are leading, weakening, lagging, or improving right now, and whether recent sector leadership actually tends to persist.</div>
+<div class="subtitle">A Relative Rotation Graph-style view of the 11 SPDR sector ETFs: which sectors are leading, weakening, lagging or improving right now, and whether recent sector leadership tends to persist.</div>
 </div>
 <div class="updated" id="updated">Loading...</div>
 </div>
@@ -829,7 +829,7 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <div class="chart-box-header">
 <div>
 <h2>Relative rotation graph</h2>
-<div class="chart-subhead">x-axis: 3-month change in relative strength (level). y-axis: 1-month change in relative strength (momentum). Each point is one sector, as of the latest close.</div>
+<div class="chart-subhead">X: 3-month change in relative strength (level). Y: 1-month change in relative strength (momentum). Each point is one sector, as of the latest close.</div>
 </div>
 </div>
 <div class="chart-canvas-wrap">
@@ -857,7 +857,7 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <div class="chart-box-header">
 <div>
 <h2>Does this month's sector leadership predict next month's?</h2>
-<div class="chart-subhead">Each point is one sector-month: x-axis is that sector's relative-return rank that month (1 = best), y-axis is its rank the following month. Testing whether chasing recent sector leadership actually works</div>
+<div class="chart-subhead">Each point is one sector-month. X is that sector's relative-return rank that month (1 = best), Y is its rank the following month. Does chasing recent sector leadership work?</div>
 </div>
 </div>
 <div class="scatter-canvas-wrap">
@@ -879,9 +879,9 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 
 <div class="explainer">
 <h2>Methodology</h2>
-<p>Reuses the same dataset as <a href="/sector-analysis.html">Sector Performance</a> and this session's Sector Correlation Matrix. The 11 SPDR sector ETFs' daily adjusted-close history against SPY, already fetched by that page's own background job. No new Alpha Vantage calls are made here.</p>
-<p>The rotation graph follows the standard Relative Rotation Graph (RRG) framework: a sector's <i>level</i> (x-axis) is its medium-term relative-strength trend (the 3-month change in its price-relative-to-SPY ratio), and its <i>momentum</i> (y-axis) is the short-term change in that same ratio (1-month). The four quadrants read as: <b>Leading</b> (positive level, positive momentum: outperforming and still accelerating), <b>Weakening</b> (positive level, negative momentum: still outperforming but losing steam), <b>Lagging</b> (negative level, negative momentum: underperforming and still falling behind), <b>Improving</b> (negative level, positive momentum: underperforming but starting to turn). Sectors classically rotate through these quadrants clockwise over a full cycle, though not on any fixed schedule.</p>
-<p>The persistence check ranks the 11 sectors by trailing 1-month relative return at each month-end over the available history, then correlates each sector's rank in one month against its rank the following month (Spearman, since ranks are ordinal by construction) across every sector-month pair. A near-zero or negative result would mean chasing last month's sector winners is no better than random. Worth knowing before treating any single month's leaderboard as a signal.</p>
+<p>Uses the same data as <a href="/sector-analysis.html">Sector Performance</a> and Sector Correlation Matrix: daily adjusted-close history for the 11 SPDR sector ETFs against SPY.</p>
+<p><strong>Rotation graph.</strong> It follows the standard Relative Rotation Graph (RRG) setup. A sector's <i>level</i> (x-axis) is its medium-term relative-strength trend, the 3-month change in its price-relative-to-SPY ratio. Its <i>momentum</i> (y-axis) is the 1-month change in that ratio. The four quadrants are <b>Leading</b> (positive level, positive momentum: outperforming and accelerating), <b>Weakening</b> (positive level, negative momentum: still outperforming but slowing), <b>Lagging</b> (negative level, negative momentum: underperforming and falling further behind) and <b>Improving</b> (negative level, positive momentum: underperforming but turning). Sectors tend to rotate through the quadrants clockwise over a full cycle, though not on a fixed schedule.</p>
+<p><strong>Persistence.</strong> The 11 sectors are ranked by trailing 1-month relative return at each month-end. Each sector's rank in one month is then correlated with its rank the next month (Spearman, since ranks are ordinal) across every sector-month pair. A near-zero or negative result would mean chasing last month's winners is no better than random, which matters before treating any one month's leaderboard as a signal.</p>
 <div class="source">Source: Yahoo Finance (via the existing /api/sector-performance dataset), TIME_SERIES_DAILY_ADJUSTED</div>
 </div>
 
@@ -1249,7 +1249,7 @@ function renderPersistenceScatter(pairs){
    "<thead><tr><th>Method</th><th>n</th><th>r</th><th>r&sup2;</th><th>slope</th><th>t</th><th>p</th></tr></thead>" +
    "<tbody>" + row("Pearson (OLS)", pearsonReg) + row("Spearman (&rho;)", spear) + "</tbody>" +
   "</table>" +
-  '<div class="method-note">Ranks are 1 (best relative return that month) through 11 (worst); a positive slope near +1 would mean this month\'s rank order simply repeats next month.</div>';
+  '<div class="method-note">Ranks run from 1 (best relative return that month) to 11 (worst). A positive slope near +1 would mean this month\'s rank order repeats next month.</div>';
 }
 
 init();

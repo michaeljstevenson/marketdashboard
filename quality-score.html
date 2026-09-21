@@ -838,7 +838,7 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <div class="header">
 <div>
 <h1>Financial Quality Screener</h1>
-<div class="subtitle">The Piotroski (2000) F-Score, computed fresh across the full S&amp;P 500: nine year-over-year signals across profitability, balance-sheet strength, and operating efficiency, combined into a single 0&ndash;9 quality score per company.</div>
+<div class="subtitle">The Piotroski (2000) F-Score, computed across the S&amp;P 500: nine year-over-year signals covering profitability, balance-sheet strength and operating efficiency, combined into one 0&ndash;9 quality score per company.</div>
 </div>
 <div class="updated" id="updated">Loading...</div>
 </div>
@@ -870,7 +870,7 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <div class="chart-box-header">
 <div>
 <h2>F-Score distribution</h2>
-<div class="chart-subhead">How many S&amp;P 500 constituents land at each score, 0 (worst) to 9 (best)</div>
+<div class="chart-subhead">How many S&amp;P 500 companies land at each score, from 0 (worst) to 9 (best).</div>
 </div>
 </div>
 <div class="ndr-panel">
@@ -898,7 +898,7 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <div class="chart-box-header">
 <div>
 <h2>Which signals are hardest to pass right now</h2>
-<div class="chart-subhead">Share of scored companies passing each of the 9 signals, market-wide</div>
+<div class="chart-subhead">Share of scored companies passing each of the 9 signals, market-wide.</div>
 </div>
 </div>
 <div class="ndr-panel">
@@ -912,7 +912,7 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <div class="chart-box-header">
 <div>
 <h2>Quality vs. recent price performance</h2>
-<div class="chart-subhead">Each point is one company: x-axis is its F-Score, y-axis is trailing 3-month price return relative to SPY (from Relative Strength Leaders/Laggards). A concurrent snapshot, not a claim that today's F-Score predicts tomorrow's return</div>
+<div class="chart-subhead">Each point is one company. X is its F-Score, Y is trailing 3-month price return relative to SPY (from Relative Strength Leaders/Laggards). This is a same-period snapshot, not a claim that today's F-Score predicts tomorrow's return.</div>
 </div>
 </div>
 <div class="ndr-panel">
@@ -972,10 +972,10 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 
 <div class="explainer">
 <h2>Methodology</h2>
-<p>The F-Score comes from Joseph Piotroski's 2000 paper <i>"Value Investing: The Use of Historical Financial Statement Information to Separate Winners from Losers"</i>. Nine binary tests comparing a company's latest fiscal year (T) against the prior one (T-1), summed into a single 0&ndash;9 score. <b>Profitability (4):</b> return on assets positive; operating cash flow positive; ROA improved year-over-year; operating cash flow exceeds net income (a basic accrual-quality/earnings-quality check). <b>Leverage &amp; liquidity (3):</b> long-term debt/total-assets ratio decreased; current ratio (current assets/current liabilities) improved; no new shares issued. <b>Operating efficiency (2):</b> gross margin improved; asset turnover (revenue/total assets) improved. Each test scores 1 or 0; the F-Score is the sum.</p>
-<p>Universe is the full S&amp;P 500. Two years of annual <code>BALANCE_SHEET</code> and <code>INCOME_STATEMENT</code> data supply total assets, current assets/liabilities, long-term debt, shares outstanding, revenue, gross profit, and net income; annual <code>CASH_FLOW</code> supplies operating cash flow. One simplification from Piotroski's original construction: ROA here uses <i>ending</i> total assets for both fiscal years rather than the average of beginning and ending assets, since averaging ROA for year T-1 would require a third year (T-2) of balance-sheet data this two-year pull doesn't include. A common practical simplification when working from a fixed lookback window. A company is scored only if every one of the nine inputs is available for both fiscal years; no partial score is reported for a missing input, since a score out of fewer than 9 wouldn't be comparable to the rest of the universe. In practice this excludes most banks and insurers, whose balance sheets don't carry a conventional current-assets/current-liabilities split. A consequence of applying a screener built for industrial and operating companies, not a hand-picked sector exclusion.</p>
-<p>The quality-vs-momentum scatter is a single-snapshot cross-sectional check, not a forward-return test: it asks whether companies that currently screen as high-quality also happen to show stronger trailing 3-month relative price performance right now (reusing <a href="/relative-strength-leaders.html">Relative Strength Leaders/Laggards</a>' own latest snapshot rather than running a second price sweep). A positive relationship would be consistent with the market currently rewarding quality; it says nothing about whether this quarter's F-Score predicts next quarter's return, which would need return data that postdates this snapshot. Pearson and Spearman are both reported, matching the two-method convention used throughout <a href="/factor-analysis.html">Factor Analysis</a>.</p>
-<p>This is a snapshot, not a continuously-refreshed feed, like several of this site's other full-index screens, it reflects the data as of the run that built it. A fresh sweep needs the two background jobs behind this page (a two-statement balance-sheet/income-statement pull, then a separate cash-flow pull) re-run manually.</p>
+<p><strong>The F-Score.</strong> It comes from Joseph Piotroski's 2000 paper <i>"Value Investing: The Use of Historical Financial Statement Information to Separate Winners from Losers"</i>. It is nine yes/no tests comparing a company's latest fiscal year (T) with the prior one (T-1), summed into a 0&ndash;9 score. <b>Profitability (4):</b> return on assets positive; operating cash flow positive; ROA improved year over year; operating cash flow exceeds net income (an earnings-quality check). <b>Leverage &amp; liquidity (3):</b> long-term debt/total assets decreased; current ratio improved; no new shares issued. <b>Operating efficiency (2):</b> gross margin improved; asset turnover (revenue/total assets) improved. Each test scores 1 or 0.</p>
+<p><strong>Data.</strong> The universe is the S&amp;P 500. Two years of annual <code>BALANCE_SHEET</code> and <code>INCOME_STATEMENT</code> data supply total assets, current assets and liabilities, long-term debt, shares outstanding, revenue, gross profit and net income. Annual <code>CASH_FLOW</code> supplies operating cash flow. One simplification from Piotroski's original: ROA uses <i>ending</i> total assets for both years, not the average of beginning and ending assets, because averaging for year T-1 would need a third year of balance-sheet data. A company is scored only if all nine inputs are available for both years, since a score out of fewer than 9 wouldn't be comparable. That excludes most banks and insurers, whose balance sheets don't have a conventional current-assets/current-liabilities split. It comes from applying a screen built for industrial and operating companies, not a sector exclusion.</p>
+<p><strong>Quality vs. momentum.</strong> The scatter is a single-snapshot cross-sectional check, not a forward-return test. It asks whether companies that screen as high quality also show stronger trailing 3-month relative price performance right now (using <a href="/relative-strength-leaders.html">Relative Strength Leaders/Laggards</a>). A positive relationship would fit the market currently rewarding quality. It says nothing about whether this quarter's F-Score predicts next quarter's return, which would need later return data. Pearson and Spearman are both shown, as on <a href="/factor-analysis.html">Factor Analysis</a>.</p>
+<p>This is a snapshot, not a continuously refreshed feed. It reflects the data as of the run that built it, and a fresh run needs the two underlying data jobs (a balance-sheet/income-statement pull, then a cash-flow pull) rerun manually.</p>
 <div class="source">Source: <a href="https://www.alphavantage.co/" target="_blank" rel="noopener">Alpha Vantage: BALANCE_SHEET, INCOME_STATEMENT, CASH_FLOW</a></div>
 </div>
 
@@ -1152,7 +1152,7 @@ async function init(){
   document.getElementById("updated").textContent = "As of " + new Date(data.generated_at_utc).toLocaleString("en-US", { month: "2-digit", day: "2-digit", year: "numeric", hour: "numeric", minute: "2-digit" });
 
   if(data.loadedCount < data.universeSize){
-   showWarning("Only " + data.loadedCount + " of " + data.universeSize + " S&P 500 constituents loaded this run. Some data may be temporarily unavailable.");
+   showWarning("Only " + data.loadedCount + " of " + data.universeSize + " S&P 500 constituents loaded. Some data may be missing.");
   }
 
   renderStats();
@@ -1285,7 +1285,7 @@ function renderMomentumScatter(){
  });
 
  document.getElementById("momentumMethodTable").innerHTML = methodTableHtml(pearson, spear,
-  "A concurrent association, not a forward-return prediction. See the methodology section below. n=" + pearson.n + " companies with both a computable F-Score and recent relative-return data.");
+  "A same-period association, not a forward-return prediction. See the methodology below. n=" + pearson.n + " companies with both a computable F-Score and recent relative-return data.");
 }
 
 function renderLeaderTable(rows, tbodyId){

@@ -857,7 +857,7 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <div class="header">
 <div>
 <h1>Buyback Effectiveness: Spend vs. Share Count Impact</h1>
-<div class="subtitle">How much cash S&amp;P 500 companies actually spend buying back stock, and how much of that spend shows up as a real reduction in shares outstanding versus gets offset by stock-based-comp dilution.</div>
+<div class="subtitle">How much cash S&amp;P 500 companies spend buying back stock, and how much of that spend shows up as fewer shares outstanding instead of being offset by stock-based-comp dilution.</div>
 </div>
 <div class="updated" id="updated">Loading...</div>
 </div>
@@ -889,7 +889,7 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <div class="chart-box-header">
 <div>
 <h2>Buyback intensity by sector</h2>
-<div class="chart-subhead">Trailing-12-month buyback spend as a share of trailing-12-month operating cash flow, averaged across each sector's constituents</div>
+<div class="chart-subhead">Trailing-12-month buyback spend as a share of trailing-12-month operating cash flow, averaged across each sector's constituents.</div>
 </div>
 </div>
 <div class="ndr-panel">
@@ -904,7 +904,7 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <div class="chart-box-header">
 <div>
 <h2>Buyback intensity by Fed regime</h2>
-<div class="chart-subhead">Cross-company median (buyback spend &divide; operating cash flow) for each calendar quarter, grouped by that quarter's trailing-3-month Fed-funds regime</div>
+<div class="chart-subhead">Cross-company median (buyback spend &divide; operating cash flow) for each calendar quarter, grouped by that quarter's trailing-3-month Fed funds regime.</div>
 </div>
 </div>
 <div class="ndr-panel">
@@ -917,7 +917,7 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <div class="chart-box-header">
 <div>
 <h2>Buyback intensity vs. change in Fed funds rate</h2>
-<div class="chart-subhead">Each point is one calendar quarter: x is the trailing 3-month change in the effective Fed funds rate, y is that quarter's median buyback intensity</div>
+<div class="chart-subhead">Each point is one calendar quarter. X is the trailing 3-month change in the effective Fed funds rate, Y is that quarter's median buyback intensity.</div>
 </div>
 </div>
 <div class="ndr-panel">
@@ -933,7 +933,7 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <div class="chart-box-header">
 <div>
 <h2>Dollar buyback yield vs. net share-count reduction</h2>
-<div class="chart-subhead">Each point is one S&amp;P 500 constituent. On the 45&deg; line, every dollar spent on buybacks shows up fully as a smaller float. Below it, some of that spend is being offset by new share issuance (stock-based comp, option exercises).</div>
+<div class="chart-subhead">Each point is one S&amp;P 500 company. On the 45&deg; line, every dollar spent on buybacks shrinks the float by the same amount. Below it, some of the spend is offset by new share issuance (stock-based comp, option exercises).</div>
 </div>
 </div>
 <div class="ndr-panel">
@@ -974,7 +974,7 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <div class="table-box">
 <div class="table-box-header">
 <h2>Most dilution-offset</h2>
-<div class="chart-subhead">Biggest gap between $ spent and float actually shrinking (min. 0.1% dollar yield)</div>
+<div class="chart-subhead">Biggest gap between $ spent and float actually shrinking (min. 0.1% dollar yield).</div>
 </div>
 <table>
 <thead><tr><th>Ticker</th><th>Sector</th><th>$ Yield</th><th>Offset</th></tr></thead>
@@ -988,7 +988,7 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <div class="table-box">
 <div class="table-box-header">
 <h2>All companies with buyback data on file</h2>
-<div class="chart-subhead">Trailing-12-month spend, intensity, dollar yield, net share-count change, and dilution offset, full S&amp;P 500</div>
+<div class="chart-subhead">Trailing-12-month spend, intensity, dollar yield, net share-count change and dilution offset for the full S&amp;P 500.</div>
 </div>
 <table id="stockTable">
 <thead>
@@ -1006,15 +1006,15 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <tr><td colspan="7" style="text-align:center; color:var(--muted); padding:30px;">Loading buyback data&hellip;</td></tr>
 </tbody>
 </table>
-<div class="table-footnote">"Net Yield" is Share Count Trends' own trailing-12-month figure (negative of the % change in shares outstanding). "Offset" is blank where the dollar yield is under 0.1% of market cap. Too small a denominator for the ratio to mean anything.</div>
+<div class="table-footnote">"Net Yield" is the trailing-12-month figure from Share Count Trends (the negative of the % change in shares outstanding). "Offset" is blank where the dollar yield is under 0.1% of market cap, because the ratio isn't meaningful on a denominator that small.</div>
 </div>
 
 <div class="explainer">
 <h2>Methodology</h2>
-<p>Buyback spend is Alpha Vantage's <code>CASH_FLOW</code> statement, read a specific way. Every mega-cap checked while building this page reports "None" for the obviously-named <code>paymentsForRepurchaseOfCommonStock</code> field, but a populated <code>proceedsFromRepurchaseOfEquity</code>. Negative when cash actually went out the door for repurchases that quarter, positive when net proceeds from share issuance (an ATM equity program, common at REITs) exceeded any repurchases. This page takes the negative-value quarters as buyback spend and treats a net-issuer quarter as $0 spent on buybacks, not a negative one. A handful of tickers instead report through the named field directly, used as a fallback. Trailing-12-month figures require all four of the most recent quarters to have a reported value; a company with a genuine gap in its most recent filing is left out of the TTM figures rather than approximated.</p>
-<p>This is deliberately a different question from the two buyback pages already on this site. <a href="/share-count-trends.html">Share Count Trends</a> reads the net effect of buybacks, issuance, and stock-based comp straight off the share count itself. Real, but silent on how much cash actually moved. <a href="/shareholder-yield.html">Shareholder Yield</a>'s buyback yield is derived from that same share-count change, never from actual spend. This page adds the piece neither has: real dollar buyback spend from the cash flow statement, and (by comparing the dollar buyback yield (spend &divide; market cap) against Share Count Trends' own net share-count change for the same company) how much of that spend actually shows up as a smaller float versus gets eaten by new-share issuance. A company spending heavily but showing little float reduction is diluting itself roughly as fast as it's buying back stock.</p>
-<p>The Fed-funds regime comparison uses the identical trailing-3-month-change classification as <a href="/small-cap-vs-large-cap.html">Small Cap vs. Large Cap Spread</a> and <a href="/margin-leverage.html">Margin &amp; Leverage Cycle</a>, joined against a cross-company <em>median</em> quarterly buyback intensity (not a raw ~500-company panel, which would pseudo-replicate the same macro quarter and mechanically inflate any correlation). Testing the common claim that buybacks are the first thing companies pull back on when the cost of capital rises. Both the regime bar chart and the continuous regression against the trailing-3-month Fed funds change are shown, the same two-view check used throughout this site. The dilution-offset scatter runs both Pearson (OLS) and Spearman rank correlation, the same two-method check used throughout <a href="/factor-analysis.html">Factor Analysis</a>.</p>
-<p>Sector and company name are joined from the <a href="/sector-beeswarm.html">Sector Beeswarm</a> page's own weekly metadata refresh, and market cap for the dollar-yield calculation comes from that same source, rather than a second per-ticker lookup. A one-time snapshot as of the date below, not a recurring refresh. Buyback pace and cash-flow statements don't move meaningfully day to day, and this page is meant to read as "the research as it stood on this date" like several of this site's other recent additions (see each page's own methodology note for which ones).</p>
+<p><strong>Buyback spend.</strong> It comes from Alpha Vantage's <code>CASH_FLOW</code> statement. Every mega-cap checked reports "None" for <code>paymentsForRepurchaseOfCommonStock</code> but has a populated <code>proceedsFromRepurchaseOfEquity</code>. That value is negative when cash went out for repurchases that quarter and positive when net proceeds from share issuance (an ATM equity program, common at REITs) exceeded repurchases. This page counts negative-value quarters as buyback spend and a net-issuer quarter as $0 spent. A few tickers report through the named field instead, which is used as a fallback. Trailing-12-month figures need all four recent quarters reported. A company with a gap in its latest filing is left out of the TTM figures.</p>
+<p><strong>How this differs from other buyback pages.</strong> <a href="/share-count-trends.html">Share Count Trends</a> reads the net effect of buybacks, issuance and stock-based comp from the share count, but says nothing about how much cash moved. <a href="/shareholder-yield.html">Shareholder Yield</a> derives its buyback yield from the same share-count change, not from actual spend. This page adds dollar buyback spend from the cash flow statement. Comparing the dollar buyback yield (spend &divide; market cap) with Share Count Trends' net share-count change for the same company shows how much of the spend shrinks the float and how much is absorbed by new shares. A company that spends heavily but shows little float reduction is diluting itself about as fast as it buys back stock.</p>
+<p><strong>Tests.</strong> The Fed funds regime comparison uses the same trailing-3-month-change classification as <a href="/small-cap-vs-large-cap.html">Small Cap vs. Large Cap Spread</a> and <a href="/margin-leverage.html">Margin &amp; Leverage Cycle</a>, against a cross-company <em>median</em> quarterly buyback intensity. A ~500-company panel would count the same macro quarter hundreds of times and overstate any correlation. It tests the common claim that buybacks are the first thing companies cut when the cost of capital rises, with a regime bar chart and a regression against the trailing-3-month Fed funds change. The dilution-offset scatter uses Pearson (OLS) and Spearman rank correlation, as on <a href="/factor-analysis.html">Factor Analysis</a>.</p>
+<p>Sector and company name, and the market cap used for the dollar yield, come from <a href="/sector-beeswarm.html">Sector Beeswarm</a>. This page is a one-time snapshot as of the date below, not a recurring refresh, since buyback pace and cash flow statements don't move much day to day.</p>
 <div class="source">Source: <a href="https://www.alphavantage.co/" target="_blank" rel="noopener">Alpha Vantage</a>: CASH_FLOW, FEDERAL_FUNDS_RATE, COMPANY_OVERVIEW (market cap, via Sector Beeswarm), BALANCE_SHEET (net share-count change, via Share Count Trends)</div>
 </div>
 
@@ -1316,7 +1316,7 @@ function renderRateScatter(data){
  });
 
  document.getElementById("rateMethodTable").innerHTML = methodTableHtml(pearson, spear,
-  "Slope is percentage points of buyback intensity per 1pp move in the trailing-3-month Fed funds change. n=" + pearson.n + " calendar quarters: small-sample, and this is a slow-moving corporate-behavior series, so treat a modest r here as expected, not as evidence the test is broken.");
+  "Slope is percentage points of buyback intensity per 1pp move in the trailing-3-month Fed funds change. n=" + pearson.n + " calendar quarters. That's a small sample of a slow-moving series, so a modest r is expected here.");
 }
 
 function renderOffsetScatter(data){

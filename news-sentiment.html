@@ -920,7 +920,7 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <div class="header">
 <div>
 <h1>News Sentiment Momentum</h1>
-<div class="subtitle">Per-stock, per-sector financial-news sentiment across the S&amp;P 500, from the last ~50 news articles Alpha Vantage has matched to each company, not a market-wide gauge (see <a href="/sentiment-index.html">Sentiment Index</a> for that). Does heavier news coverage skew more positive or negative, and does the sentiment in a stock's recent headlines actually predict where its price goes next?</div>
+<div class="subtitle">Financial news sentiment by stock and sector across the S&amp;P 500, from the last ~50 news articles Alpha Vantage has matched to each company. This is not a market-wide gauge (see <a href="/sentiment-index.html">Sentiment Index</a> for that). Does heavier news coverage skew more positive or negative, and does the sentiment in a stock's recent headlines predict where its price goes next?</div>
 </div>
 <div class="updated" id="updated">Loading...</div>
 </div>
@@ -952,7 +952,7 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <div class="chart-box-header">
 <div>
 <h2>Sentiment by sector</h2>
-<div class="chart-subhead">Average relevance-weighted sentiment score across each sector's constituents (sufficiently-covered names only), which corners of the market the recent news has been kindest and harshest to</div>
+<div class="chart-subhead">Average relevance-weighted sentiment score across each sector's constituents (sufficiently covered names only). Shows where the recent news has been kindest and harshest.</div>
 </div>
 </div>
 <div class="ndr-panel">
@@ -966,7 +966,7 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <div class="chart-box-header">
 <div>
 <h2>Does heavier news coverage skew more positive or negative?</h2>
-<div class="chart-subhead">Each point is one company: x-axis is matched-article count (attention), y-axis is relevance-weighted sentiment score. A genuinely open question: this page doesn't presuppose an answer</div>
+<div class="chart-subhead">Each point is one company. X is matched-article count (attention), Y is relevance-weighted sentiment score.</div>
 </div>
 </div>
 <div class="ndr-panel">
@@ -981,7 +981,7 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <div class="chart-box-header">
 <div>
 <h2>Market-wide sentiment trend, over time</h2>
-<div class="chart-subhead" id="historyChartSub">Median relevance-weighted sentiment score, snapshotted weekly. This line starts thin and gets more useful with each week's run</div>
+<div class="chart-subhead" id="historyChartSub">Median relevance-weighted sentiment score, saved weekly. The line gets more useful with each week's run.</div>
 </div>
 </div>
 <div class="ndr-panel">
@@ -995,7 +995,7 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <div class="table-box">
 <div class="table-box-header">
 <h2>Most bullish</h2>
-<div class="chart-subhead">Highest relevance-weighted sentiment score. Min. <span id="minArticlesNoteA">5</span> matched articles, to keep this off thinly-covered names</div>
+<div class="chart-subhead">Highest relevance-weighted sentiment score. Minimum <span id="minArticlesNoteA">5</span> matched articles, to keep thinly covered names out.</div>
 </div>
 <table id="mostBullishTable">
 <thead><tr><th>Symbol</th><th>Sector</th><th>Sentiment</th></tr></thead>
@@ -1005,7 +1005,7 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <div class="table-box">
 <div class="table-box-header">
 <h2>Most bearish</h2>
-<div class="chart-subhead">Lowest relevance-weighted sentiment score. Same coverage floor as the leaderboard above</div>
+<div class="chart-subhead">Lowest relevance-weighted sentiment score. Same coverage minimum as the leaderboard above.</div>
 </div>
 <table id="mostBearishTable">
 <thead><tr><th>Symbol</th><th>Sector</th><th>Sentiment</th></tr></thead>
@@ -1017,7 +1017,7 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <div class="table-box">
 <div class="table-box-header">
 <h2>Highest news attention</h2>
-<div class="chart-subhead">Most matched articles in the last ~50-article window per company, where the news has been paying the most attention, independent of tone</div>
+<div class="chart-subhead">Most matched articles in the last ~50-article window per company: where the news is paying the most attention, regardless of tone.</div>
 </div>
 <table id="highestAttentionTable">
 <thead><tr><th>Symbol</th><th>Sector</th><th>Articles</th></tr></thead>
@@ -1029,7 +1029,7 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <div class="chart-box-header">
 <div>
 <h2>Does news sentiment predict subsequent relative price performance?</h2>
-<div class="chart-subhead">The literal Tetlock (2007) "does media sentiment predict returns" question. Each point is one company: x-axis is relevance-weighted sentiment score, y-axis is 3-month price return relative to SPY</div>
+<div class="chart-subhead">The Tetlock (2007) question: does media sentiment predict returns? Each point is one company. X is relevance-weighted sentiment score, Y is 3-month price return relative to SPY.</div>
 </div>
 </div>
 <div class="ndr-panel">
@@ -1043,7 +1043,7 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <div class="table-box">
 <div class="table-box-header">
 <h2>Full S&amp;P 500</h2>
-<div class="chart-subhead">Weighted sentiment score, matched article count, bullish/bearish article counts, and the dominant sentiment label per constituent</div>
+<div class="chart-subhead">Weighted sentiment score, matched article count, bullish/bearish article counts and dominant sentiment label for each S&amp;P 500 company.</div>
 </div>
 <table id="stockTable">
 <thead>
@@ -1065,13 +1065,13 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 
 <div class="explainer">
 <h2>Methodology</h2>
-<p>This page is deliberately distinct from <a href="/sentiment-index.html">Sentiment Index</a>. That page is a single market-wide macro-sentiment gauge (put/call ratios, breadth, and related positioning indicators). It produces one number for the whole market and lives under the site's Behavioral/Positioning section. This page screens individual companies and sectors by what's actually being written about them in recent financial news, under Equities. A different question and a different data source, and this page's own backend never touches that one's blob store or function.</p>
-<p>Universe is the full S&amp;P 500. For every constituent, Alpha Vantage's <code>NEWS_SENTIMENT</code> endpoint is queried with <code>tickers=&lt;symbol&gt;&amp;limit=50</code>, returning up to the 50 most recent news articles Alpha Vantage has matched to that company. For each article, the <code>ticker_sentiment</code> entry matching the queried symbol is located directly, not assumed to be the first entry in the array, since an article can mention several companies in any order, and defensively, an article can occasionally come back without a matching entry for the queried symbol at all, in which case that article is skipped for this company. Weighted sentiment score is the relevance-weighted average of each matched article's <code>ticker_sentiment_score</code>: <code>ticker_sentiment_score</code> multiplied by <code>relevance_score</code>, summed across matched articles, divided by the sum of <code>relevance_score</code>. Both fields arrive as strings and are parsed with <code>parseFloat</code>; an article is skipped from the sum if either fails to parse. Article count is simply how many articles matched. This page's attention/coverage signal, a distinct question from the sentiment score itself. Bullish/bearish article counts (and the neutral/somewhat-bullish/somewhat-bearish counts alongside them) are a straight tally of each matched article's own <code>ticker_sentiment_label</code>, Alpha Vantage's five-bucket scale. A secondary, outlier-robust view next to the continuous weighted average. Everything else about each article (topics, other companies' sentiment scores) is discarded immediately after these values are pulled out and never stored past that point, the same storage discipline <a href="/institutional-ownership.html">Institutional Ownership &amp; Flow Tracker</a> applies to its own much larger per-holder <code>holdings</code> array.</p>
-<p>A company with fewer than <span id="minArticlesNoteB">5</span> matched articles is tagged "insufficient coverage" in the full table below and excluded from the sector chart, both scatter charts, the regression, and all three leaderboards, with only a handful of real articles, the relevance-weighted average is dominated by whichever one or two happened to run that week, not a meaningful read on how the market is actually talking about that company. Five was chosen as a low-but-real floor: enough to blunt a single outlier article, while still leaving most of the S&amp;P 500 eligible in most weeks, since each company's own query already filters down to articles that mention it. The floor never removes a company from the full table itself.</p>
-<p><code>NEWS_SENTIMENT</code> is a snapshot endpoint: the latest ~50 articles as of the run, no historical time-series call of its own. The same category as <code>OVERVIEW</code> behind <a href="/pe-divergence.html">Forward vs. Trailing P/E Divergence</a> or <code>INSTITUTIONAL_HOLDINGS</code> behind Institutional Ownership &amp; Flow Tracker. The market-wide weekly median weighted-sentiment score is appended to a running history each run rather than fabricated as a synthetic time series. That trend line starts thin the week this page ships and only becomes meaningful after several weeks of real runs accumulate, and the chart says so honestly rather than implying a one- or two-point line means anything.</p>
-<p>The forward-return regression reuses this same cycle's <a href="/relative-strength-leaders.html">Relative Strength Leaders/Laggards</a> 3-month price return relative to SPY, the same cross-page pattern <a href="/buyback-effectiveness.html">Buyback Dollar-Value Tracker</a> and Institutional Ownership &amp; Flow Tracker use, rather than running a second full-universe price sweep. If that data hasn't refreshed yet this cycle, this page still shows every other chart and table (sentiment by sector, the attention-vs-sentiment scatter, the trend, all three leaderboards, the full company table) just without the regression, and a banner above says so.</p>
-<p>Sector and company name come from the same weekly metadata sweep that backs <a href="/sector-beeswarm.html">Sector Beeswarm</a>, reused here rather than paying for a second full-index pass just for labels. <code>NEWS_SENTIMENT</code> responses run notably larger than most other Alpha Vantage endpoints used on this site (up to 50 articles per call, each carrying nested <code>topics</code> and <code>ticker_sentiment</code> arrays) but the sweep runs at the same ~1050ms between-call pacing proven at this scale by Buyback Dollar-Value Tracker and Institutional Ownership &amp; Flow Tracker, plus a retry pass for anything that fails. As of September 2026 this and most other full-sweep pages on this site refresh as one-time snapshots (run manually from the Netlify dashboard) rather than on a recurring schedule, to control Alpha Vantage call volume. See this page's own scheduled background function for the current status.</p>
-<div class="source">Source: <a href="https://www.alphavantage.co/" target="_blank" rel="noopener">Alpha Vantage: NEWS_SENTIMENT</a>, this site's own Relative Strength Leaders/Laggards data</div>
+<p>This page is separate from <a href="/sentiment-index.html">Sentiment Index</a>. That page is one market-wide gauge built from positioning, volatility, breadth and credit indicators. This page scores individual companies and sectors by what recent financial news says about them. Different question, different data.</p>
+<p><strong>Sentiment score.</strong> The universe is the S&amp;P 500. For each company, Alpha Vantage's <code>NEWS_SENTIMENT</code> endpoint is queried with <code>tickers=&lt;symbol&gt;&amp;limit=50</code>, which returns up to the 50 most recent matched articles. For each article, the <code>ticker_sentiment</code> entry for that company is located directly (an article can mention several companies in any order). Articles with no matching entry are skipped. The weighted sentiment score is the relevance-weighted average of <code>ticker_sentiment_score</code>: each score multiplied by <code>relevance_score</code>, summed, then divided by the sum of <code>relevance_score</code>. Articles where either field fails to parse are skipped.<br><br><strong>Article count and labels.</strong> Article count is how many articles matched. It measures attention, which is a separate question from tone. Bullish/bearish counts (plus neutral, somewhat-bullish and somewhat-bearish) are a tally of each article's own <code>ticker_sentiment_label</code>, Alpha Vantage's five-bucket scale, and give a second view next to the weighted average. Everything else about each article is discarded once these values are extracted.</p>
+<p>A company with fewer than <span id="minArticlesNoteB">5</span> matched articles is tagged "insufficient coverage" in the full table and excluded from the sector chart, both scatter charts, the regression and all three leaderboards. With only a handful of articles, the weighted average is dominated by whichever one or two ran that week. Five is a low floor that blunts a single outlier while still leaving most of the S&amp;P 500 eligible in most weeks. Every company still appears in the full table.</p>
+<p><code>NEWS_SENTIMENT</code> returns only a snapshot: the latest ~50 articles as of each run, with no historical series. Each run's market-wide median weighted-sentiment score is added to a running history, so the trend line is short at first and only becomes meaningful after several weeks of runs.</p>
+<p><strong>Forward-return test.</strong> The regression uses the 3-month price return relative to SPY from <a href="/relative-strength-leaders.html">Relative Strength Leaders/Laggards</a>. If that hasn't refreshed, everything else still shows and a banner says the regression is unavailable.</p>
+<p>Sector and company name come from <a href="/sector-beeswarm.html">Sector Beeswarm</a>. Data is refreshed manually.</p>
+<div class="source">Source: <a href="https://www.alphavantage.co/" target="_blank" rel="noopener">Alpha Vantage: NEWS_SENTIMENT</a> and <a href="/relative-strength-leaders.html">Relative Strength Leaders/Laggards</a> data.</div>
 </div>
 
 </div>
@@ -1229,9 +1229,9 @@ async function init(){
   document.getElementById("minArticlesNoteB").textContent = minArticles;
 
   if(data.loadedCount < data.universeSize){
-   showWarning("Only " + data.loadedCount + " of " + data.universeSize + " S&P 500 constituents loaded this run. Some data may be temporarily unavailable.");
+   showWarning("Only " + data.loadedCount + " of " + data.universeSize + " S&P 500 constituents loaded. Some data may be missing.");
   }else if(!data.hasPriceData){
-   showWarning("Price-performance data isn't available yet (Relative Strength Leaders/Laggards hasn't run this cycle). Showing sentiment/attention data only. The forward-return test below is unavailable.");
+   showWarning("Price data isn't available yet (Relative Strength Leaders/Laggards hasn't refreshed). Showing sentiment and attention data only. The forward-return test below is unavailable.");
   }
 
   renderStats();
@@ -1310,7 +1310,7 @@ function renderAttentionScatter(){
  if(attentionScatter){ attentionScatter.destroy(); attentionScatter = null; }
  if(pairs.length < 20){
   document.getElementById("attentionMethodTable").innerHTML =
-   '<div class="method-note">Not enough sufficiently-covered companies this run to plot a coverage-vs-sentiment relationship.</div>';
+   '<div class="method-note">Not enough sufficiently covered companies to plot coverage against sentiment.</div>';
   return;
  }
 
@@ -1367,7 +1367,7 @@ function renderAttentionScatter(){
    "<thead><tr><th>Method</th><th>n</th><th>r</th><th>r&sup2;</th><th>slope</th><th>t</th><th>p</th></tr></thead>" +
    "<tbody>" + row("Pearson (OLS)", pearson) + row("Spearman (&rho;)", spear) + "</tbody>" +
   "</table>" +
-  '<div class="method-note">A positive, significant relationship would mean heavier news attention tends to run more bullish; negative would mean heavier coverage skews more bearish (e.g. controversy/bad-news cycles draw more articles); a weak or flat one means coverage volume and coverage tone are effectively independent in the current data.</div>';
+  '<div class="method-note">A positive, significant relationship means heavier news coverage runs more bullish. A negative one means heavier coverage skews bearish (for example, controversy or bad-news cycles drawing more articles). A weak or flat one means coverage volume and tone are independent in the current data.</div>';
 }
 
 function renderHistoryChart(){
@@ -1382,7 +1382,7 @@ function renderHistoryChart(){
    '<div class="history-empty-msg" style="text-align:center; color:var(--muted); padding-top:140px;">' +
    (rows.length === 0
     ? "No history yet: check back after next week's run."
-    : "Only one week of history so far: a real trend needs several weeks of runs before it means anything. Check back after next week's run.") +
+    : "Only one week of history so far. A trend needs several weeks of runs. Check back after next week's run.") +
    '</div>');
   return;
  }
@@ -1419,8 +1419,8 @@ function renderReturnScatter(){
  if(pairs.length < 20){
   document.getElementById("returnMethodTable").innerHTML =
    '<div class="method-note">' + (RAW.hasPriceData
-    ? "Not enough companies with both a valid weighted sentiment score and price data this run to test."
-    : "Price-performance data isn't available yet (Relative Strength Leaders/Laggards hasn't run this cycle).") + '</div>';
+    ? "Not enough companies with both a weighted sentiment score and price data to test."
+    : "Price data isn't available yet (Relative Strength Leaders/Laggards hasn't refreshed).") + '</div>';
   return;
  }
 
@@ -1478,7 +1478,7 @@ function renderReturnScatter(){
    "<thead><tr><th>Method</th><th>n</th><th>r</th><th>r&sup2;</th><th>slope</th><th>t</th><th>p</th></tr></thead>" +
    "<tbody>" + row("Pearson (OLS)", pearson) + row("Spearman (&rho;)", spear) + "</tbody>" +
   "</table>" +
-  '<div class="method-note">A positive, significant relationship would mean stocks with more bullish recent news sentiment have gone on to outperform over the following 3 months. The Tetlock (2007) "media sentiment predicts returns" finding holding up in this snapshot; a weak or flat one means this week\'s sentiment score on its own isn\'t a reliable forward-return signal at this horizon.</div>';
+  '<div class="method-note">A positive, significant relationship means stocks with more bullish recent news went on to outperform over the next 3 months, consistent with Tetlock (2007). A weak or flat one means the sentiment score isn\'t a reliable signal at this horizon.</div>';
 }
 
 function renderLeaderTable(rows, tbodyId, fmtKind, valueField){

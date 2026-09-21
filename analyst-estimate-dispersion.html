@@ -816,7 +816,7 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <div class="header">
 <div>
 <h1>Analyst Estimate Dispersion</h1>
-<div class="subtitle">How much analysts disagree with each other about a stock's current-fiscal-year EPS. A widely-split consensus and a tightly-clustered one can look identical in the average, but mean very different things.</div>
+<div class="subtitle">How much analysts disagree about a stock's current-fiscal-year EPS. A widely split consensus and a tight one can have the same average but mean very different things.</div>
 </div>
 <div class="updated" id="updated">Loading...</div>
 </div>
@@ -848,7 +848,7 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <div class="chart-box-header">
 <div>
 <h2>Median dispersion by sector</h2>
-<div class="chart-subhead">Sectors ranked by how widely analysts' FY1 EPS estimates are spread, highest disagreement first</div>
+<div class="chart-subhead">Sectors ranked by how widely analysts' FY1 EPS estimates are spread, highest disagreement first.</div>
 </div>
 </div>
 <div class="ndr-panel">
@@ -862,7 +862,7 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <div class="chart-box-header">
 <div>
 <h2>Distribution across the S&amp;P 500</h2>
-<div class="chart-subhead">Every constituent with a usable FY1 estimate, binned by relative dispersion</div>
+<div class="chart-subhead">Every company with a usable FY1 estimate, binned by relative dispersion.</div>
 </div>
 </div>
 <div class="ndr-panel">
@@ -876,7 +876,7 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <div class="chart-box-header">
 <div>
 <h2>Market median dispersion over time</h2>
-<div class="chart-subhead">Weekly snapshots, accumulated since this page began tracking, not backfilled</div>
+<div class="chart-subhead">Weekly snapshots since this page began tracking (not backfilled).</div>
 </div>
 </div>
 <div class="ndr-panel">
@@ -890,7 +890,7 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <div class="chart-box-header">
 <div>
 <h2>Dispersion vs. revision churn, by stock</h2>
-<div class="chart-subhead">Each point is one S&amp;P 500 constituent (min. 5 covering analysts): x-axis is FY1 EPS dispersion, y-axis is the count of analysts who revised their estimate (either direction) in the trailing 30 days</div>
+<div class="chart-subhead">Each point is one S&amp;P 500 company (min. 5 covering analysts). X is FY1 EPS dispersion, Y is the number of analysts who revised their estimate (either direction) in the trailing 30 days.</div>
 </div>
 </div>
 <div class="ndr-panel">
@@ -931,10 +931,10 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 
 <div class="explainer">
 <h2>Methodology</h2>
-<p>For every S&amp;P 500 constituent, Alpha Vantage's <code>EARNINGS_ESTIMATES</code> endpoint returns not just the consensus (average) EPS estimate for the current fiscal year, but the high and low estimates too, along with how many analysts contribute. Dispersion here is a relative range: (High &minus; Low) &divide; |Average| &times; 100: a simple, scale-free way to compare disagreement across stocks with very different EPS levels. It's not a standard deviation (Alpha Vantage doesn't expose the full per-analyst distribution, only the high/low/average/count), so treat it as a reasonable proxy for spread, not a precise one. Leaderboards and the scatter panel require at least 5 covering analysts. With fewer, a wide high/low spread is usually just one outlier estimate, not real disagreement.</p>
-<p>This is a different question from what <a href="/earnings-revisions.html">Earnings Revisions</a> tracks on this site. That page asks whether the <em>consensus itself</em> is moving, and how fast (Net Revision Ratio and Estimate Drift). This page asks how much analysts <em>disagree with each other</em> at a single point in time. A stock can have a tightly-clustered consensus that's moving fast, or a widely-split one that's stable. The scatter panel is a first attempt at connecting the two: whether stocks with more analyst disagreement also see more analysts actually changing their estimate (in either direction) over the trailing 30 days, i.e. whether disagreement coincides with more back-and-forth, not just a wider gap that sits still.</p>
-<p>The scatter panel runs the same two-method check used throughout <a href="/factor-analysis.html">Factor Analysis</a>: Pearson (OLS) correlation alongside Spearman rank correlation, so a relationship can't be quietly resting on one or two extreme stocks. Sector and company name are joined from the <a href="/sector-beeswarm.html">Sector Beeswarm</a> page's own weekly metadata refresh rather than a second per-ticker lookup.</p>
-<p>Refreshes weekly (Saturday), after the site's other full-index sweeps. A current-fiscal-year estimate's high/low spread doesn't meaningfully change day to day, and a 503-ticker sweep is the kind of job this site reserves for weekly cadence. The history chart above starts accumulating from this page's first run and is not backfilled, since Alpha Vantage's revision-count fields are trailing windows, not a queryable history.</p>
+<p><strong>Dispersion.</strong> For each S&amp;P 500 company, Alpha Vantage's <code>EARNINGS_ESTIMATES</code> endpoint returns the consensus (average) EPS estimate for the current fiscal year, plus the high and low estimates and the number of analysts. Dispersion here is a relative range, (High &minus; Low) &divide; |Average| &times; 100, which lets stocks with very different EPS levels be compared. It isn't a standard deviation (only the high, low, average and count are available), so treat it as a proxy for spread. Leaderboards and the scatter panel require at least 5 covering analysts. With fewer, a wide high/low spread is usually just one outlier estimate.</p>
+<p><strong>Versus Earnings Revisions.</strong> <a href="/earnings-revisions.html">Earnings Revisions</a> asks whether the <em>consensus itself</em> is moving, and how fast (Net Revision Ratio and Estimate Drift). This page asks how much analysts <em>disagree with each other</em> at one point in time. A stock can have a tight consensus that's moving fast, or a widely split one that's stable. The scatter panel connects the two: do stocks with more disagreement also see more analysts changing their estimate over the trailing 30 days?</p>
+<p>The scatter panel shows Pearson (OLS) and Spearman rank correlation, as on <a href="/factor-analysis.html">Factor Analysis</a>, so one or two extreme stocks can't carry the result. Sector and company name come from <a href="/sector-beeswarm.html">Sector Beeswarm</a>.</p>
+<p>Refreshes weekly (Saturday). A current-fiscal-year estimate's high/low spread doesn't change much day to day. The history chart starts from this page's first run and isn't backfilled, because Alpha Vantage's revision counts are trailing windows, not a queryable history.</p>
 <div class="source">Source: <a href="https://www.alphavantage.co/" target="_blank" rel="noopener">Alpha Vantage</a>: EARNINGS_ESTIMATES</div>
 </div>
 
@@ -1192,7 +1192,7 @@ function renderHistoryChart(data){
  const ctx = document.getElementById("historyChart").getContext("2d");
  if(historyChart) historyChart.destroy();
  if(points.length < 2){
-  showWarning("Only " + points.length + " weekly snapshot" + (points.length === 1 ? "" : "s") + " recorded so far: the history chart will fill in over the coming weeks.");
+  showWarning("Only " + points.length + " weekly snapshot" + (points.length === 1 ? "" : "s") + " recorded so far. The history chart will fill in over the coming weeks.");
  }
  historyChart = new Chart(ctx, {
   type: "line",

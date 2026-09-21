@@ -811,7 +811,7 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <div class="header">
 <div>
 <h1>Share Count Trends</h1>
-<div class="subtitle">Buybacks vs. dilution across the full S&amp;P 500, read directly off quarterly shares-outstanding history. No separate buyback-dollar data needed, since share count is the net of every buyback, issuance, and option exercise combined.</div>
+<div class="subtitle">Buybacks vs. dilution across the S&amp;P 500, read from quarterly shares-outstanding history. Share count already reflects every buyback, issuance and option exercise, so no separate buyback-dollar data is needed.</div>
 </div>
 <div class="updated" id="updated">Loading...</div>
 </div>
@@ -843,7 +843,7 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <div class="chart-box-header">
 <div>
 <h2>Average 1-year share count change by sector</h2>
-<div class="chart-subhead">Negative = net buybacks (fewer shares outstanding); positive = net dilution</div>
+<div class="chart-subhead">Negative means net buybacks (fewer shares outstanding). Positive means net dilution.</div>
 </div>
 </div>
 <div class="chart-canvas-wrap">
@@ -855,7 +855,7 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <div class="chart-box-header">
 <div>
 <h2>Does last year's buyback/dilution rate predict this year's?</h2>
-<div class="chart-subhead">Each point is one company: x-axis is the prior non-overlapping year's share-count change, y-axis is the most recent year's. Same "non-overlapping annual" construction as the momentum test on /factor-analysis</div>
+<div class="chart-subhead">Each point is one company. X is the prior non-overlapping year's share-count change, Y is the most recent year's. Same non-overlapping annual setup as the momentum test on Factor Analysis.</div>
 </div>
 </div>
 <div class="scatter-canvas-wrap">
@@ -912,10 +912,10 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 
 <div class="explainer">
 <h2>Methodology</h2>
-<p>Universe is the full S&amp;P 500. For every constituent, Alpha Vantage's <code>BALANCE_SHEET</code> endpoint returns <code>commonStockSharesOutstanding</code> for each of the last ~21 quarterly filings. Share count at 1/3/5-year lookbacks is read directly off the quarter 4/12/20 filings back, rather than derived from any separate buyback-announcement or dollar-value data. This deliberately captures the <i>net</i> effect of buybacks, new share issuance, and employee stock-based-compensation dilution all at once, which is what actually matters to a existing shareholder's ownership stake. A company can announce a large buyback program and still show rising share count if stock-based comp issuance outruns it; this page would correctly show that as net dilution.</p>
-<p>A company is classified "buyback" if its share count fell &gt;0.5% over the trailing year, "dilution" if it rose &gt;0.5%, and "flat" in between. The threshold exists because quarter-to-quarter share counts move slightly from routine option exercises and rounding even with no real capital-allocation story either way.</p>
-<p>The year-over-year persistence check takes each company's most recent two non-overlapping annual share-count changes and runs the same Pearson/Spearman regression check used throughout <a href="/factor-analysis.html">Factor Analysis</a>. A positive, significant relationship would mean a company's buyback (or dilution) pace tends to continue year to year rather than reset randomly; see that page's own methodology notes for why non-overlapping periods matter for a test like this (overlapping windows share underlying data points and mechanically inflate any apparent persistence).</p>
-<p>Refreshes weekly (Saturday mornings): a share count only changes when a company actually files a new 10-Q/10-K. Sector and company name come from the same weekly metadata sweep that backs <a href="/sector-beeswarm.html">Sector Beeswarm</a>, reused here rather than paying for a second full-index pass just for labels.</p>
+<p><strong>Data.</strong> The universe is the S&amp;P 500. For each company, Alpha Vantage's <code>BALANCE_SHEET</code> endpoint returns <code>commonStockSharesOutstanding</code> for each of the last ~21 quarterly filings. Share count at 1/3/5-year lookbacks is read from the filings 4/12/20 quarters back. This captures the <i>net</i> effect of buybacks, new issuance and stock-based-compensation dilution together, which is what matters to an existing shareholder's ownership stake. A company can announce a large buyback and still show a rising share count if stock-based comp outruns it. This page shows that as net dilution.</p>
+<p>A company is classified "buyback" if its share count fell &gt;0.5% over the trailing year, "dilution" if it rose &gt;0.5%, and "flat" in between. The threshold is there because share counts move slightly from routine option exercises and rounding even with no capital-allocation story.</p>
+<p><strong>Persistence.</strong> The year-over-year check takes each company's two most recent non-overlapping annual share-count changes and runs the Pearson/Spearman regression from <a href="/factor-analysis.html">Factor Analysis</a>. A positive, significant relationship means a company's buyback (or dilution) pace tends to continue from year to year. Non-overlapping periods matter because overlapping windows share data points and inflate apparent persistence (see Factor Analysis).</p>
+<p>Refreshes weekly (Saturday morning), since a share count only changes when a company files a new 10-Q or 10-K. Sector and company name come from <a href="/sector-beeswarm.html">Sector Beeswarm</a>.</p>
 <div class="source">Source: <a href="https://www.alphavantage.co/" target="_blank" rel="noopener">Alpha Vantage: BALANCE_SHEET</a></div>
 </div>
 
@@ -1022,7 +1022,7 @@ async function init(){
   document.getElementById("updated").textContent = "As of " + new Date(data.generated_at_utc).toLocaleString("en-US", { month: "2-digit", day: "2-digit", year: "numeric", hour: "numeric", minute: "2-digit" });
 
   if(data.loadedCount < data.universeSize){
-   showWarning("Only " + data.loadedCount + " of " + data.universeSize + " S&P 500 constituents loaded this run. Some data may be temporarily unavailable.");
+   showWarning("Only " + data.loadedCount + " of " + data.universeSize + " S&P 500 constituents loaded. Some data may be missing.");
   }
 
   renderStats();

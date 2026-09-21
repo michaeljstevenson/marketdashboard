@@ -849,7 +849,7 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <div class="header">
 <div>
 <h1>IPO Pipeline &amp; Aftermarket Tracker</h1>
-<div class="subtitle">The forward-looking IPO filing calendar (who's set to list in the next ~3 months, priced or not, real operating company or another fund/trust wrapper) plus each listed name's own aftermarket performance vs. SPY, tracked forward from the day it actually starts trading.</div>
+<div class="subtitle">The forward-looking IPO filing calendar for the next ~3 months (priced or not, operating companies and fund or trust wrappers), plus each listed name's aftermarket performance vs. SPY, tracked from its first day of trading.</div>
 </div>
 <div class="updated" id="updated">Loading...</div>
 </div>
@@ -901,7 +901,7 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <div class="chart-box-header">
 <div>
 <h2>Pipeline size over time</h2>
-<div class="chart-box-sub">Weekly count of "operating" filings in the ~3-month forward window, accumulated since this page began tracking.</div>
+<div class="chart-box-sub">Weekly count of "operating" filings in the ~3-month forward window, since this page began tracking.</div>
 </div>
 </div>
 <div id="trendColdStart" class="cold-start-banner" style="display:none;"></div>
@@ -915,7 +915,7 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <div class="table-box">
 <div class="table-box-header">
 <h2>Aftermarket tracking</h2>
-<div class="sub">Roster of tracked IPOs that have actually started trading, cumulative open-to-close return vs. SPY over the identical window, at each horizon reached so far.</div>
+<div class="sub">Tracked IPOs that have started trading: cumulative open-to-close return vs. SPY over the same window, at each horizon reached so far.</div>
 </div>
 <div id="rosterEmpty" class="empty-state" style="display:none;"></div>
 <table id="rosterTable" style="display:none;">
@@ -937,18 +937,18 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 
 <div class="explainer">
 <h2>For scale: recent full-year IPO counts</h2>
-<p>Alpha Vantage's calendar only shows what's already scheduled with a set date. It isn't a forecast of the full year ahead, just a floor on the near-term pipeline (see "Floor, not forecast" below). For context on what a normal year's pace of IPO activity actually looks like, here are the trailing five full calendar years from Jay Ritter's dataset (the same source behind <a href="/ipo-activity.html">IPO Activity</a>):</p>
+<p>Alpha Vantage's calendar only shows IPOs that already have a set date. It isn't a forecast of the full year ahead, just a floor on the near-term pipeline (see "Floor, not forecast" below). For context on a normal year's pace, here are the trailing five full calendar years from Jay Ritter's dataset (the same source as <a href="/ipo-activity.html">IPO Activity</a>):</p>
 <div class="context-grid" id="contextGrid"></div>
 <div class="source">Source: Jay Ritter (University of Florida), "Initial Public Offerings: Updated Statistics": headline conservative-definition series, offer amount &ge;$5M, excludes ADRs/closed-end funds/REITs/SPACs/unit offers/best-efforts/small penny stocks/banks &amp; S&amp;Ls.</div>
 </div>
 
 <div class="explainer">
 <h2>Methodology</h2>
-<p><strong>What this tracks.</strong> Alpha Vantage's <code>IPO_CALENDAR</code> endpoint returns the current IPO filing calendar (symbol, company name, scheduled IPO date, price range (if set), currency, and exchange) for roughly the next three months. It's a genuinely thin dataset at any given moment; a single-digit number of new rows on a given pull is normal, not a bug. This page pulls it weekly (Saturday), classifies every row, and folds it into two views: the <em>current calendar</em> (what's scheduled to list soon) and an <em>accumulating aftermarket roster</em> (what has actually listed since this page went live, and how it's traded since).</p>
-<p><strong>Operating company vs. fund/trust.</strong> A meaningful share of what shows up in a raw IPO calendar isn't an operating business going public at all. It's a new closed-end fund, unit investment trust, or SPAC-style acquisition vehicle. Each row is tagged by a case-insensitive substring match against the company name for the patterns: <code>trust</code>, <code>fund</code>, <code>etf</code>, <code>closed-end</code>, <code>depositor</code>, <code>index fund</code>, <code>acquisition corp(oration)</code>, <code>acquisition co(mpany)</code>, and <code>spac</code>. This list is deliberately not exhaustive (it mirrors the same real-world data-quality cleanup this site's <code>SPLITS</code>-endpoint background job already needed for a different Alpha Vantage calendar-style feed) and only the "operating" rows feed the aftermarket-tracking roster below; funds/trusts still show in the raw calendar table for transparency but aren't tracked further.</p>
-<p><strong>Why no historical backfill.</strong> A natural first instinct for an "IPO aftermarket performance" page is to join a list of past IPOs against their price history going back years. That was investigated and ruled out: Jay Ritter's dataset (the historical annual source behind <a href="/ipo-activity.html">IPO Activity</a>) is aggregate year-level statistics only, average first-day return, count, proceeds, with no individual-ticker list to join against price data. <code>IPO_CALENDAR</code> itself is forward-looking only, showing roughly the next three months and nothing further back, so it can't retroactively fill that gap either. Rather than fabricate or approximate a backfill, this page instead builds an honest, forward-accumulating track record: every operating-company IPO this page has ever seen on a calendar pull gets added to a roster, and once its IPO date actually passes, its own price history is tracked going forward. The roster (and the pipeline-size trend chart above) will only get more useful as more weeks accumulate. An early, short history is exactly that, a start, not a full cycle.</p>
-<p><strong>Day-1/5/10/20 returns vs. SPY.</strong> For each roster entry, the "anchor day" is the first trading day at or after its IPO date. The anchor price is that day's <em>open</em> (there's no reliable pre-listing "offer price" trade data in daily bars, so the first print's open stands in for it). Day-N return is the cumulative move from the anchor day's open to the close N trading days later (Day 1 = the anchor day's own close). SPY's return is computed the same way, over the exact same calendar window (anchor-day open to the close on the same target date) and the relative return shown is simply stock return minus SPY return at that horizon. A horizon is left blank until enough trading days have actually elapsed; once Day 20 is filled in, that entry is marked complete and isn't re-fetched. If a name's IPO date passes and Alpha Vantage returns no price series for it at all for three straight weekly runs (or 45 calendar days go by with never a print), it's marked abandoned rather than tracked forever. Some filed IPOs get pulled or delayed indefinitely.</p>
-<p><strong>Floor, not forecast.</strong> The five-year Ritter counts above are shown purely as background context for what a "normal" year's IPO pace looks like. They are <em>not</em> compared or annualized against the current ~3-month forward calendar, and that comparison would be misleading if drawn: <code>IPO_CALENDAR</code> only shows filings that already have a scheduled date, so the true forward pipeline at any moment is always larger than what currently has a set date on the calendar. Treat the current-calendar counts above as a floor on near-term activity, never as an implied full-year run rate.</p>
+<p><strong>What this tracks.</strong> Alpha Vantage's <code>IPO_CALENDAR</code> endpoint returns the current IPO filing calendar (symbol, company name, scheduled IPO date, price range if set, currency and exchange) for roughly the next three months. It's a thin dataset. A single-digit number of new rows on a given pull is normal. This page pulls it weekly (Saturday), classifies every row, and builds two views: the <em>current calendar</em> (what's scheduled to list soon) and an <em>aftermarket roster</em> (what has listed since this page went live, and how it has traded).</p>
+<p><strong>Operating company vs. fund/trust.</strong> A meaningful share of a raw IPO calendar isn't an operating business at all. It's a new closed-end fund, unit investment trust or SPAC-style acquisition vehicle. Each row is tagged by a case-insensitive match on the company name for: <code>trust</code>, <code>fund</code>, <code>etf</code>, <code>closed-end</code>, <code>depositor</code>, <code>index fund</code>, <code>acquisition corp(oration)</code>, <code>acquisition co(mpany)</code> and <code>spac</code>. The list isn't exhaustive. Only "operating" rows feed the aftermarket roster. Funds and trusts still show in the raw calendar table but aren't tracked further.</p>
+<p><strong>Why no historical backfill.</strong> The obvious approach would be to join a list of past IPOs to their price history. That doesn't work here. Jay Ritter's dataset (the source behind <a href="/ipo-activity.html">IPO Activity</a>) has only year-level statistics (average first-day return, count, proceeds), with no list of individual tickers. <code>IPO_CALENDAR</code> is forward-looking only, so it can't fill the gap either. Instead, every operating-company IPO this page sees on a calendar pull is added to a roster, and once its IPO date passes, its price history is tracked going forward. The roster and the pipeline trend chart get more useful with each week. A short history is a start, not a full cycle.</p>
+<p><strong>Day-1/5/10/20 returns vs. SPY.</strong> For each roster entry, the "anchor day" is the first trading day at or after its IPO date. The anchor price is that day's <em>open</em>, since daily bars have no reliable offer-price data. Day-N return is the cumulative move from the anchor day's open to the close N trading days later (Day 1 is the anchor day's own close). SPY's return is computed over the same window, and the relative return is stock return minus SPY return. A horizon stays blank until enough trading days have passed. Once Day 20 is filled in, the entry is marked complete. If no price series appears for three straight weekly runs (or 45 calendar days pass with no trade), the entry is marked abandoned. Some filed IPOs get pulled or delayed indefinitely.</p>
+<p><strong>Floor, not forecast.</strong> The five-year Ritter counts are background on what a normal year looks like. They are <em>not</em> compared to the ~3-month forward calendar, because <code>IPO_CALENDAR</code> only shows filings that already have a date, so the true pipeline is always larger. Treat the current-calendar counts as a floor on near-term activity, not a full-year run rate.</p>
 <div class="source">Source: <a href="https://www.alphavantage.co/" target="_blank" rel="noopener">Alpha Vantage: IPO_CALENDAR, TIME_SERIES_DAILY_ADJUSTED</a>. Not investment advice.</div>
 </div>
 
@@ -1083,7 +1083,7 @@ function renderStats(){
  document.getElementById("statPriced").textContent = priced.length + " / " + tbd.length;
 
  if(!calendar.length){
-  showWarning("IPO_CALENDAR returned zero rows on the most recent pull. A genuinely empty near-term calendar is a real, occasional state for this endpoint, not an error.");
+  showWarning("IPO_CALENDAR returned zero rows on the most recent pull. An empty near-term calendar happens occasionally and isn't an error.");
  }
 }
 
@@ -1146,7 +1146,7 @@ function renderTrendChart(){
 
  if(points.length < 4){
   coldStart.style.display = "block";
-  coldStart.textContent = "This page just started tracking the pipeline (" + points.length + " weekly snapshot" + (points.length === 1 ? "" : "s") + " so far): check back in a few weeks for a real trend. The chart below will fill in as more weekly pulls accumulate.";
+  coldStart.textContent = "This page just started tracking the pipeline (" + points.length + " weekly snapshot" + (points.length === 1 ? "" : "s") + " so far). Check back in a few weeks for a trend. The chart fills in as more weekly pulls accumulate.";
  }else{
   coldStart.style.display = "none";
  }
@@ -1203,7 +1203,7 @@ function renderRosterTable(){
 
  if(!roster.length){
   emptyEl.style.display = "block";
-  emptyEl.textContent = "No completed aftermarket tracking yet. This builds up as tracked IPOs actually list and trade. Check the current filing calendar above for what's scheduled to list soon.";
+  emptyEl.textContent = "No completed aftermarket tracking yet. This builds up as tracked IPOs list and trade. See the filing calendar above for what's scheduled to list soon.";
   tableEl.style.display = "none";
   return;
  }

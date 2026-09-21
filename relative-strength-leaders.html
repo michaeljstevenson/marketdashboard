@@ -844,7 +844,7 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <div class="header">
 <div>
 <h1>Relative Strength Leaders/Laggards</h1>
-<div class="subtitle">1-month and 3-month price momentum relative to SPY across the full S&amp;P 500. Who's outperforming, who's lagging, and whether this week's leaders tend to stay leaders.</div>
+<div class="subtitle">1-month and 3-month price momentum relative to SPY across the S&amp;P 500: who's outperforming, who's lagging, and whether this week's leaders tend to stay leaders.</div>
 </div>
 <div class="updated" id="updated">Loading...</div>
 </div>
@@ -876,7 +876,7 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <div class="chart-box-header">
 <div>
 <h2>Average 3-month relative return by sector</h2>
-<div class="chart-subhead">Excess return vs. SPY over the trailing 63 trading days, averaged across each sector's constituents</div>
+<div class="chart-subhead">Excess return vs. SPY over the trailing 63 trading days, averaged across each sector's constituents.</div>
 </div>
 </div>
 <div class="ndr-panel">
@@ -890,7 +890,7 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <div class="chart-box-header">
 <div>
 <h2>Do this week's relative-strength leaders keep leading?</h2>
-<div class="chart-subhead">Each point is one stock in one week: x-axis is that week's 3-month relative-return rank (1 = strongest), y-axis is its realized relative return over the following week. A forward window that shares no trading days with the rank that predicts it, unlike comparing consecutive weeks' own 3-month ranks directly (see methodology)</div>
+<div class="chart-subhead">Each point is one stock in one week. X is that week's 3-month relative-return rank (1 = strongest), Y is its realized relative return over the following week. The forward window shares no trading days with the rank that predicts it (see methodology).</div>
 </div>
 </div>
 <div class="ndr-panel">
@@ -927,7 +927,7 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <div class="table-box">
 <div class="table-box-header">
 <h2>Full S&amp;P 500</h2>
-<div class="chart-subhead">Price, trailing return, and return relative to SPY at 1-month and 3-month lookbacks</div>
+<div class="chart-subhead">Price, trailing return and return relative to SPY at 1-month and 3-month lookbacks.</div>
 </div>
 <table id="stockTable">
 <thead>
@@ -950,10 +950,10 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 
 <div class="explainer">
 <h2>Methodology</h2>
-<p>Universe is the full S&amp;P 500. For every constituent plus SPY, Yahoo Finance's daily adjusted closes (the trailing ~100 trading days) provides split/dividend-adjusted daily closes. Trailing return is measured from the close 21 trading days ago (1-month) and 63 trading days ago (3-month) to the latest close. Relative, or "excess": return is computed as <code>(1 + stock return) / (1 + SPY return) − 1</code> rather than a simple subtraction, so it compounds consistently at larger magnitudes; the same construction used on <a href="/small-cap-vs-large-cap.html">Small Cap vs. Large Cap Spread</a> and the International vs. US page.</p>
-<p>A stock is tagged "Leader" if its 3-month relative return ranks in the top fifth of the universe that week, "Laggard" if it ranks in the bottom fifth, and "Neutral" otherwise. This deliberately uses a 3-month, not 1-month, lookback for ranking. 1-Month figures are shown for context but are noisier and more prone to single-event whipsaws (an earnings beat, a guidance cut).</p>
-<p>The persistence chart above tests whether this week's relative-strength ranking says anything about what happens next, but comparing one week's 3-month rank against <i>next</i> week's 3-month rank would be a trap: two 63-trading-day windows one week apart share 58 of those days, so their ranks would correlate almost mechanically regardless of any real momentum effect (the same overlapping-window pitfall called out in <a href="/share-count-trends.html">Share Count Trends</a>' own methodology). Instead, each point pairs a stock's rank as of one weekly snapshot against its realized relative return over the following snapshot interval, a forward window built from entirely new trading days, sharing nothing with the rank that predicts it. Pooled across every stock and every consecutive pair of snapshots retained (up to 20 weekly snapshots, roughly five months), a positive, statistically significant Pearson/Spearman relationship would mean today's leaders tend to keep outperforming going forward; a null or negative one would say the opposite. That relative strength mean-reverts, or says nothing about the future at this horizon. As with every regression on this site, both a linear (Pearson) and rank-based (Spearman) fit are reported since one can be misleading when the relationship is nonlinear or driven by outliers.</p>
-<p>Refreshes weekly (Saturday, after the rest of that morning's data jobs). A 21/63-trading-day momentum read barely moves day to day, and the persistence test needs its weekly snapshots spaced apart to mean anything. Sector and company name come from the same weekly metadata sweep that backs <a href="/sector-beeswarm.html">Sector Beeswarm</a>, reused here rather than paying for a second full-index pass just for labels. Because the persistence test is built from accumulated weekly snapshots rather than a single run's data, it will show "not enough history yet" for the first week or two after this page goes live and fill in from there.</p>
+<p><strong>Returns.</strong> The universe is the S&amp;P 500 plus SPY. Yahoo Finance daily adjusted closes for the trailing ~100 trading days provide split- and dividend-adjusted closes. Trailing return runs from the close 21 trading days ago (1-month) or 63 trading days ago (3-month) to the latest close. Relative (excess) return is <code>(1 + stock return) / (1 + SPY return) − 1</code>, not a simple subtraction, so it compounds properly at larger magnitudes. <a href="/small-cap-vs-large-cap.html">Small Cap vs. Large Cap Spread</a> and International vs. US use the same construction.</p>
+<p>A stock is tagged "Leader" if its 3-month relative return is in the top fifth of the universe that week, "Laggard" if it's in the bottom fifth, and "Neutral" otherwise. Ranking uses the 3-month lookback, not 1-month. The 1-month figures are shown for context but are noisier and more prone to single-event whipsaws (an earnings beat, a guidance cut).</p>
+<p><strong>Persistence.</strong> The chart above tests whether this week's relative-strength rank says anything about what happens next. Comparing one week's 3-month rank with <i>next</i> week's 3-month rank would be misleading. Two 63-trading-day windows one week apart share 58 of those days, so their ranks would correlate almost mechanically, regardless of any momentum effect (the same overlapping-window problem noted on <a href="/share-count-trends.html">Share Count Trends</a>). Instead, each point pairs a stock's rank at one weekly snapshot with its realized relative return over the following snapshot interval, a forward window built from entirely new trading days. The data is pooled across every stock and every consecutive pair of snapshots (up to 20 weekly snapshots, roughly five months). A positive, significant Pearson/Spearman relationship would mean today's leaders tend to keep outperforming. A null or negative one would mean the opposite: that relative strength mean-reverts, or says nothing about the future at this horizon. Both a linear (Pearson) and a rank-based (Spearman) fit are shown, since one can mislead when the relationship is nonlinear or driven by outliers.</p>
+<p>Refreshes weekly (Saturday, after that morning's other data jobs). A 21/63-trading-day momentum reading barely moves day to day, and the persistence test needs weekly snapshots spaced apart. Sector and company name come from <a href="/sector-beeswarm.html">Sector Beeswarm</a>. The persistence test is built from accumulated weekly snapshots, so it shows "not enough history yet" for the first week or two.</p>
 <div class="source">Source: <a href="https://finance.yahoo.com/" target="_blank" rel="noopener">Yahoo Finance: daily adjusted close</a></div>
 </div>
 
@@ -1105,7 +1105,7 @@ async function init(){
   document.getElementById("updated").textContent = "As of " + new Date(data.generated_at_utc).toLocaleString("en-US", { month: "2-digit", day: "2-digit", year: "numeric", hour: "numeric", minute: "2-digit" });
 
   if(data.loadedCount < data.universeSize){
-   showWarning("Only " + data.loadedCount + " of " + data.universeSize + " S&P 500 constituents loaded this run. Some data may be temporarily unavailable.");
+   showWarning("Only " + data.loadedCount + " of " + data.universeSize + " S&P 500 constituents loaded. Some data may be missing.");
   }
 
   renderStats();
@@ -1190,7 +1190,7 @@ function renderPersistence(){
  if(!pairs || pairs.length < 30){
   if(persistenceScatter){ persistenceScatter.destroy(); persistenceScatter = null; }
   document.getElementById("persistenceMethodTable").innerHTML =
-   '<div class="method-note">Not enough weekly history accumulated yet (' + RAW.weeksAccumulated + ' snapshot' + (RAW.weeksAccumulated === 1 ? "" : "s") + ' so far): check back in a few weeks as this page\'s weekly snapshots build up.</div>';
+   '<div class="method-note">Not enough weekly history accumulated yet (' + RAW.weeksAccumulated + ' snapshot' + (RAW.weeksAccumulated === 1 ? "" : "s") + ' so far). Check back in a few weeks as weekly snapshots build up.</div>';
   return;
  }
 
@@ -1250,7 +1250,7 @@ function renderPersistence(){
    "<thead><tr><th>Method</th><th>n</th><th>r</th><th>r&sup2;</th><th>slope</th><th>t</th><th>p</th></tr></thead>" +
    "<tbody>" + row("Pearson (OLS)", pearson) + row("Spearman (&rho;)", spear) + "</tbody>" +
   "</table>" +
-  '<div class="method-note">Pooled across ' + RAW.weeksAccumulated + ' weekly snapshot' + (RAW.weeksAccumulated === 1 ? "" : "s") + '. A negative slope means better-ranked (rank closer to 1) stocks earned higher forward relative returns, i.e. leadership persisted; a positive slope means it reversed.</div>';
+  '<div class="method-note">Pooled across ' + RAW.weeksAccumulated + ' weekly snapshot' + (RAW.weeksAccumulated === 1 ? "" : "s") + '. A negative slope means better-ranked stocks (rank closer to 1) earned higher forward relative returns, so leadership persisted. A positive slope means it reversed.</div>';
 }
 
 function renderLeaderTable(rows, tbodyId){

@@ -771,7 +771,7 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <div class="header">
 <div>
 <h1>All-Time Highs and Lows</h1>
-<div class="subtitle">Share of the S&amp;P 500 currently trading at an all-time high or all-time low (split- and dividend-adjusted), and the running history of that breadth over time.</div>
+<div class="subtitle">Share of the S&amp;P 500 currently trading at an all-time high or all-time low (split- and dividend-adjusted), and the running history of that breadth.</div>
 </div>
 <div class="updated" id="updated">Loading...</div>
 </div>
@@ -805,7 +805,7 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <div class="stat-card">
 <div class="stat-label">% of Sample</div>
 <div class="stat-value" id="statPct">…</div>
-<div class="stat-note">Higher means broader strength across the sample, not just headline-index-level names</div>
+<div class="stat-note">Higher means broader strength across the sample, not just headline-index names.</div>
 </div>
 <div class="stat-card">
 <div class="stat-label">As Of</div>
@@ -832,7 +832,7 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <h2></h2>
 
 
-<p>A name counts as being at an all-time high when its intraday high reaches its recorded all-time high for the day. A reading near zero doesn't necessarily mean a bear market; it can simply mean the market has pulled back from a recent peak across the board, which is normal even in an upward trending market.</p>
+<p>A name counts as being at an all-time high when its intraday high reaches its recorded all-time high for the day. A reading near zero doesn't necessarily mean a bear market. It can mean the market has pulled back from a recent peak across the board, which is normal even in an uptrend.</p>
 <div class="source">Sources: <a href="https://www.tradingview.com/screener/" rel="noopener" target="_blank">TradingView Screener</a> (current count &amp; list) · <a href="https://www.alphavantage.co/" rel="noopener" target="_blank">Alpha Vantage</a> (long-run chart)</div>
 </div>
 </div>
@@ -846,7 +846,7 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <div class="stat-card">
 <div class="stat-label">% of Sample</div>
 <div class="stat-value" id="atlStatPct" style="color:var(--fear);">…</div>
-<div class="stat-note">Higher means broader weakness across the sample, not just a handful of laggards</div>
+<div class="stat-note">Higher means broader weakness across the sample, not just a handful of laggards.</div>
 </div>
 <div class="stat-card">
 <div class="stat-label">As Of</div>
@@ -862,7 +862,7 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 </div>
 <div class="explainer">
 <h2>How this is computed</h2>
-<p>Mirrors the all-time-high methodology on the other tab: a name counts as being at an all-time low when its intraday low reaches its recorded all-time low for the day, sourced from TradingView's screener (<code>Low.All</code> field). There's no Alpha Vantage-based fallback or long-run chart here, since the flawed Alpha Vantage history that motivated the ATH fix never had a comparable all-time-low computation to begin with, so this tab is TradingView-only.</p>
+<p>Same method as the all-time-high tab: a name counts as being at an all-time low when its intraday low reaches its recorded all-time low for the day, from TradingView's screener (<code>Low.All</code> field). There is no Alpha Vantage fallback or long-run chart here, because the flawed Alpha Vantage history behind the all-time-high fix never had a comparable all-time-low calculation, so this tab is TradingView-only.</p>
 <div class="source">Source: <a href="https://www.tradingview.com/screener/" rel="noopener" target="_blank">TradingView Screener</a></div>
 </div>
 </div>
@@ -878,8 +878,8 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 </div>
 <div class="explainer">
 <h2>Reading this chart</h2>
-<p>The bars show the count of S&amp;P 500 constituents at a fresh all-time high minus the count at a fresh all-time low, each trading day, a classic breadth measure. Positive and rising means strength is broadening; negative means more names are breaking down than breaking out, which can show up before the index itself rolls over. The line overlays the S&amp;P 500 level itself for context.</p>
-<p>The historical bars come from the same Alpha Vantage daily history that backs the All-Time Highs tab's long-run chart, so they carry the same caveat: that history is capped at roughly 26 years per symbol, understating the true all-time high or low for long-listed names and skewing older counts on both sides. Today's bar is overridden with the accurate TradingView-based count once it's populated for the day.</p>
+<p>The bars show the count of S&amp;P 500 companies at a fresh all-time high minus the count at a fresh all-time low, each trading day, a classic breadth measure. Positive and rising means strength is broadening. Negative means more names are breaking down than breaking out, which can show up before the index rolls over. The line is the S&amp;P 500 level for context.</p>
+<p>The historical bars use the same Alpha Vantage daily history as the All-Time Highs tab's long-run chart, so they carry the same limit: history is capped at roughly 26 years per symbol, which understates the true all-time high or low for long-listed names and skews older counts on both sides. Today's bar uses the accurate TradingView count once it's available for the day.</p>
 <div class="source">Sources: <a href="https://www.alphavantage.co/" rel="noopener" target="_blank">Alpha Vantage</a> (historical bars &amp; S&amp;P 500 level) · <a href="https://www.tradingview.com/screener/" rel="noopener" target="_blank">TradingView Screener</a> (today's bar)</div>
 </div>
 </div>
@@ -959,7 +959,7 @@ async function init(){
    updatedText = "Current data from TradingView, generated " + new Date(tvResult.value.data.generated_at_utc).toLocaleString("en-US", { month: "2-digit", day: "2-digit", year: "numeric", hour: "numeric", minute: "2-digit" });
   }
  }else if(breadthResult.status === "fulfilled" && breadthResult.value.ok && breadthResult.value.data.athSummary){
-  showWarning("Showing an Alpha-Vantage-based estimate for today's count. The more accurate TradingView-based figure hasn't populated yet. See \"Why two data sources\" below.");
+  showWarning("Showing an Alpha Vantage estimate for today's count. The more accurate TradingView figure isn't available yet. See \"Why two data sources\" below.");
   const summary = breadthResult.value.data.athSummary;
   document.getElementById("statCount").textContent = summary.count;
   document.getElementById("statCountNote").textContent = "of " + summary.total + " in sample (estimate)";
@@ -971,7 +971,7 @@ async function init(){
    : '<span class="ticker-empty">No names in the sample are at an all-time high today.</span>';
   document.getElementById("atlTickerGrid").innerHTML = '<span class="ticker-empty">All-time-low data isn\'t available yet: it\'s only sourced from TradingView.</span>';
  }else{
-  showError("Couldn't load all-time-high data. Neither /api/ath-tradingview nor /api/breadth-internals returned usable data.");
+  showError("Couldn't load all-time-high data.");
  }
 
  document.getElementById("updated").textContent = updatedText;

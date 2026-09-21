@@ -784,7 +784,7 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <div class="header">
 <div>
 <h1>Small Cap vs. Large Cap Spread</h1>
-<div class="subtitle">Relative strength of small-cap (IWM) and mid-cap (MDY) stocks against large-caps (SPY), indexed since IWM's 2000 inception, conditioned on the Fed rate cycle and 10-year Treasury yield moves.</div>
+<div class="subtitle">Relative strength of small-cap (IWM) and mid-cap (MDY) stocks against large-caps (SPY), indexed since IWM's 2000 inception, split by the Fed rate cycle and 10-year Treasury yield moves.</div>
 </div>
 <div class="updated" id="updated">Loading...</div>
 </div>
@@ -816,7 +816,7 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <div class="chart-box-header">
 <div>
 <h2>Small-cap / large-cap ratio, since 2000</h2>
-<div class="chart-subhead">IWM adjusted-close ÷ SPY adjusted-close, both indexed to 100 at IWM's inception. Rising means small-caps are outperforming</div>
+<div class="chart-subhead">IWM adjusted close ÷ SPY adjusted close, both indexed to 100 at IWM's inception. Rising means small-caps are outperforming.</div>
 </div>
 </div>
 <div class="chart-canvas-wrap">
@@ -827,7 +827,7 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <div class="table-box">
 <div class="table-box-header">
 <h2>Trailing return ladder</h2>
-<div class="chart-subhead">Total return (dividends reinvested) by cap size, as of the last close</div>
+<div class="chart-subhead">Total return (dividends reinvested) by cap size, as of the last close.</div>
 </div>
 <table id="ladderTable">
 <thead><tr id="ladderHead"></tr></thead>
@@ -842,7 +842,7 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <div class="chart-box-header">
 <div>
 <h2>Rolling 12-month relative return</h2>
-<div class="chart-subhead">Small/large ratio's trailing 252-trading-day return. Positive stretches are small-cap-leadership regimes, negative stretches are large-cap-leadership regimes</div>
+<div class="chart-subhead">Small/large ratio's trailing 252-trading-day return. Positive stretches are small-cap-leadership regimes, negative stretches are large-cap-leadership regimes.</div>
 </div>
 </div>
 <div class="chart-canvas-wrap">
@@ -854,7 +854,7 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <div class="chart-box-header">
 <div>
 <h2>Average monthly spread return by Fed rate regime</h2>
-<div class="chart-subhead">Months classified by the trailing 3-month change in the effective Fed funds rate; bars show the average small-vs-large monthly return within each regime</div>
+<div class="chart-subhead">Months classified by the trailing 3-month change in the effective Fed funds rate. Bars show the average small-vs-large monthly return within each regime.</div>
 </div>
 </div>
 <div class="chart-canvas-wrap short">
@@ -866,7 +866,7 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <div class="chart-box-header">
 <div>
 <h2>Monthly spread return vs. change in the 10-year Treasury yield</h2>
-<div class="chart-subhead">Each point is one month: x-axis is the month's change in the 10-year yield (percentage points), y-axis is that month's small-vs-large return</div>
+<div class="chart-subhead">Each point is one month. X is the month's change in the 10-year yield (percentage points), Y is that month's small-vs-large return.</div>
 </div>
 </div>
 <div class="scatter-canvas-wrap">
@@ -877,10 +877,10 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 
 <div class="explainer">
 <h2>Methodology</h2>
-<p>Small-cap and large-cap exposure are proxied by two liquid, dividend-adjusted ETFs rather than the underlying indices themselves: IWM (iShares Russell 2000 ETF) for small-caps and SPY (SPDR S&amp;P 500 ETF Trust) for large-caps, with MDY (SPDR S&amp;P MidCap 400 ETF Trust) added as a mid-cap rung for the return ladder below. Alpha Vantage's <code>TIME_SERIES_DAILY_ADJUSTED</code> adjusted-close series (dividends and splits applied) gives a true total-return comparison for all three. The ratio series is indexed to 100 at IWM's May 2000 inception. The binding constraint on how far back this page can go, even though SPY and MDY both trade back to the 1990s.</p>
-<p>The Fed-regime split classifies each calendar month by the trailing 3-month change in the effective federal funds rate (Alpha Vantage <code>FEDERAL_FUNDS_RATE</code>): a rise of more than 0.10 percentage points is "Hiking," a fall of more than 0.10pp is "Cutting," and anything in between is "Holding." The intuition being tested is that small-caps, which on average carry more floating-rate debt and less pricing power than large-caps, should be more sensitive to the direction and speed of rate changes, but note the sample sizes are modest (a few dozen months per regime across just one rate cycle's worth of history since 2000), so treat the regime averages as suggestive, not a robust statistical result.</p>
-<p>The scatter panel runs the same two-method check used throughout <a href="/factor-analysis.html">Factor Analysis</a>: Pearson (OLS) correlation alongside Spearman rank correlation, so a relationship can't be quietly resting on one or two extreme months. Both are shown; a low r&sup2; here isn't a bug: a single macro variable rarely explains much of a monthly return series, and the point of showing the regression is to be honest about how weak (or strong) that single-variable relationship actually is, not to oversell it.</p>
-<p>Refreshes once daily after the US market close (index levels move every trading day, unlike the site's sparse-event or weekly-refresh datasets); the Fed funds rate and Treasury yield series are re-pulled in full each run since both are cheap, low-volume monthly series.</p>
+<p><strong>Data.</strong> Small-cap and large-cap exposure are proxied by two liquid ETFs instead of the underlying indices: IWM (iShares Russell 2000 ETF) for small-caps and SPY (SPDR S&amp;P 500 ETF Trust) for large-caps, with MDY (SPDR S&amp;P MidCap 400 ETF Trust) added as a mid-cap rung in the return table below. Alpha Vantage's <code>TIME_SERIES_DAILY_ADJUSTED</code> series (dividends and splits applied) gives a total-return comparison for all three. The ratio series is indexed to 100 at IWM's May 2000 inception, which sets how far back the page can go (SPY and MDY trade back to the 1990s).</p>
+<p><strong>Fed regimes.</strong> Each calendar month is classified by the trailing 3-month change in the effective federal funds rate (Alpha Vantage <code>FEDERAL_FUNDS_RATE</code>). A rise of more than 0.10 percentage points is "Hiking," a fall of more than 0.10pp is "Cutting," and anything in between is "Holding." The idea being tested is that small-caps, which on average carry more floating-rate debt and less pricing power than large-caps, should be more sensitive to the direction and speed of rate changes. The sample is modest (a few dozen months per regime, covering only one rate cycle's worth of history since 2000), so treat the regime averages as suggestive, not conclusive.</p>
+<p><strong>Correlation.</strong> The scatter shows Pearson (OLS) and Spearman rank correlation, as on <a href="/factor-analysis.html">Factor Analysis</a>, so one or two extreme months can't carry the result. A low r&sup2; is expected. One macro variable rarely explains much of a monthly return series, and the regression is there to show how weak or strong that relationship is.</p>
+<p>Refreshes once daily after the US market close, since index levels move every trading day. The Fed funds rate and Treasury yield series are pulled in full each run.</p>
 <div class="source">Source: <a href="https://www.alphavantage.co/" target="_blank" rel="noopener">Alpha Vantage</a>: TIME_SERIES_DAILY_ADJUSTED, FEDERAL_FUNDS_RATE, TREASURY_YIELD</div>
 </div>
 
@@ -1313,7 +1313,7 @@ function renderCorrScatter(monthly){
    "<thead><tr><th>Method</th><th>n</th><th>r</th><th>r&sup2;</th><th>slope</th><th>t</th><th>p</th></tr></thead>" +
    "<tbody>" + row("Pearson (OLS)", pearson) + row("Spearman (&rho;)", spear) + "</tbody>" +
   "</table>" +
-  '<div class="method-note">Slope is in percentage points of monthly spread return per 1pp move in the 10-year yield that month.</div>';
+  '<div class="method-note">Slope is percentage points of monthly spread return per 1pp move in the 10-year yield that month.</div>';
 }
 
 init();
