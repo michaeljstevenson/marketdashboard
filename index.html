@@ -265,6 +265,7 @@ h1{
  display:grid;
  grid-template-columns:repeat(auto-fit, minmax(260px, 1fr));
  gap:18px;
+ align-items:start;
 }
 
 .category-card{
@@ -274,13 +275,34 @@ h1{
  padding:22px 24px;
 }
 
+.category-card summary{
+ display:flex;
+ align-items:center;
+ justify-content:space-between;
+ cursor:pointer;
+ list-style:none;
+}
+
+.category-card summary::-webkit-details-marker{ display:none; }
+
+.category-card summary::after{
+ content:"▸";
+ color:var(--muted);
+ font-size:14px;
+ transition:transform .15s;
+}
+
+.category-card[open] summary::after{ transform:rotate(90deg); }
+
 .category-card h4{
  font-family:var(--serif);
  font-weight:400;
  font-size:16px;
- margin:0 0 14px;
+ margin:0;
  color:var(--ink);
 }
+
+.category-card[open] summary{ margin-bottom:14px; }
 
 .category-card ul{
  list-style:none;
@@ -363,75 +385,101 @@ footer .footlink{position:absolute;right:24px;top:50%;transform:translateY(-50%)
 <a class="brand" href="/">Michael J. Stevenson, CAIA<span style="font-size:0.6em; vertical-align:super;">&reg;</span></a>
 <div class="navlinks">
 <div class="navdrop">
-<span class="navlabel">Behavioral/Positioning ▾</span>
-<div class="dropdown">
-<a href="/ipo-activity.html">IPO Activity</a>
-</div>
-</div>
-
-<div class="navdrop">
-<span class="navlabel">Equities ▾</span>
-<div class="dropdown">
-<a href="/sector-analysis.html">Sector Performance</a>
-<a href="/sector-beeswarm.html">Sector Beeswarm</a>
-<a href="/ath-index.html">All-Time Highs and Lows</a>
-<a href="/valuations.html">Valuations</a>
-<a href="/factor-analysis.html">Factor Analysis</a>
-<a href="/market-breadth.html">Market Breadth</a>
-<a href="/seasonality.html">Seasonality</a>
-<a href="/concentration.html">Concentration</a>
-<a href="/earnings-revisions.html">Earnings Revisions</a>
-<a href="/earnings-surprise.html">Earnings Surprise History</a>
-<a href="/insider-buying-selling.html">Insider Buying/Selling</a>
-<a href="/small-cap-vs-large-cap.html">Small Cap vs. Large Cap Spread</a>
-<a href="/share-count-trends.html">Share Count Trends</a>
-<a href="/sector-correlation.html">Sector Correlation Matrix</a>
-<a href="/sector-rotation.html">Sector Rotation Model</a>
-<a href="/dividend-growth-screener.html">Dividend Growth Screener</a>
-<a href="/international-vs-us.html">International vs. US Relative Performance</a>
-<a href="/analyst-estimate-dispersion.html">Analyst Estimate Dispersion</a>
-<a href="/shareholder-yield.html">Shareholder Yield</a>
-<a href="/stock-split-tracker.html">Stock Split Tracker</a>
-<a href="/pe-divergence.html">Forward vs. Trailing P/E Divergence</a>
-<a href="/relative-strength-leaders.html">Relative Strength Leaders/Laggards</a>
-<a href="/equity-risk-premium.html">Equity Risk Premium by Sector</a>
-<a href="/earnings-growth-divergence.html">Earnings Growth vs. Price Performance</a>
-<a href="/small-cap-liquidity.html">Small-Cap Liquidity</a>
-<a href="/ipo-pipeline.html">IPO Pipeline</a>
-<a href="/spin-off-performance.html">Spin-Off Performance Tracker</a>
-<a href="/margin-leverage.html">Margin &amp; Leverage Cycle</a>
-<a href="/analyst-price-target.html">Analyst Price Target Upside</a>
-<a href="/institutional-ownership.html">Institutional Ownership &amp; 13F Flow</a>
-<a href="/post-earnings-drift.html">Post-Earnings Announcement Drift</a>
-<a href="/congressional-trading.html">Congressional Trading Activity</a>
-<a href="/earnings-call-sentiment.html">Earnings Call Sentiment</a>
-<a href="/buyback-effectiveness.html">Buyback Effectiveness</a>
-<a href="/fcf-yield.html">Free Cash Flow Yield</a>
-<a href="/short-sale-volume.html">Short Sale Volume</a>
-<a href="/news-sentiment.html">News Sentiment Momentum</a>
-<a href="/quality-lowvol-factors.html">Quality &amp; Low-Volatility Factor Screen</a>
-<a href="/quality-score.html">Financial Quality Screener (Piotroski)</a>
-<a href="/country-sector-scorecard.html">Country / Sector Scorecard</a>
-</div>
-</div>
-
-<div class="navdrop">
-<span class="navlabel">Markets/Macro ▾</span>
+<span class="navlabel">Sentiment ▾</span>
 <div class="dropdown">
 <a href="/sentiment-index.html">Sentiment Index</a>
 <a href="/volatility.html">Implied vs. Realized Volatility</a>
-<a href="/implied-erp.html">Implied Equity Risk Premium</a>
-<a href="/yield-curves.html">Yield Curves</a>
-<a href="/expectations-vs-reality.html">Expectations vs. Reality</a>
+<a href="/market-breadth.html">Market Breadth</a>
+<a href="/ath-index.html">All-Time Highs and Lows</a>
+<a href="/margin-leverage.html">Margin &amp; Leverage Cycle</a>
+<a href="/short-sale-volume.html">Short Sale Volume</a>
+<a href="/news-sentiment.html">News Sentiment Momentum</a>
+<a href="/seasonality.html">Seasonality</a>
 </div>
 </div>
 
+<div class="navdrop">
+<span class="navlabel">Valuation ▾</span>
+<div class="dropdown">
+<a href="/valuations.html">Valuations</a>
+<a href="/implied-erp.html">Implied Equity Risk Premium</a>
+<a href="/equity-risk-premium.html">Equity Risk Premium by Sector</a>
+<a href="/pe-divergence.html">Forward vs. Trailing P/E Divergence</a>
+<a href="/expectations-vs-reality.html">Expectations vs. Reality</a>
+<a href="/analyst-price-target.html">Analyst Price Target Upside</a>
+<a href="/analyst-estimate-dispersion.html">Analyst Estimate Dispersion</a>
+<a href="/earnings-growth-divergence.html">Earnings Growth vs. Price Performance</a>
+</div>
+</div>
+
+<div class="navdrop">
+<span class="navlabel">Earnings ▾</span>
+<div class="dropdown">
+<a href="/earnings-revisions.html">Earnings Revisions</a>
+<a href="/earnings-surprise.html">Earnings Surprise History</a>
+<a href="/post-earnings-drift.html">Post-Earnings Announcement Drift</a>
+<a href="/earnings-call-sentiment.html">Earnings Call Sentiment</a>
+<a href="/fcf-yield.html">Free Cash Flow Yield</a>
+<a href="/quality-score.html">Financial Quality Screener (Piotroski)</a>
+</div>
+</div>
+
+<div class="navdrop">
+<span class="navlabel">Sectors &amp; Style ▾</span>
+<div class="dropdown">
+<a href="/sector-analysis.html">Sector Performance</a>
+<a href="/sector-beeswarm.html">Sector Beeswarm</a>
+<a href="/sector-correlation.html">Sector Correlation Matrix</a>
+<a href="/sector-rotation.html">Sector Rotation Model</a>
+<a href="/factor-analysis.html">Factor Analysis</a>
+<a href="/quality-lowvol-factors.html">Quality &amp; Low-Volatility Factor Screen</a>
+<a href="/small-cap-vs-large-cap.html">Small Cap vs. Large Cap Spread</a>
+<a href="/international-vs-us.html">International vs. US Relative Performance</a>
+<a href="/country-sector-scorecard.html">Country / Sector Scorecard</a>
+<a href="/relative-strength-leaders.html">Relative Strength Leaders/Laggards</a>
+<a href="/concentration.html">Concentration</a>
+</div>
+</div>
+
+<div class="navdrop">
+<span class="navlabel">Capital Returns ▾</span>
+<div class="dropdown">
+<a href="/dividend-growth-screener.html">Dividend Growth Screener</a>
+<a href="/shareholder-yield.html">Shareholder Yield</a>
+<a href="/buyback-effectiveness.html">Buyback Effectiveness</a>
+<a href="/share-count-trends.html">Share Count Trends</a>
+<a href="/stock-split-tracker.html">Stock Split Tracker</a>
+<a href="/spin-off-performance.html">Spin-Off Performance Tracker</a>
+<a href="/ipo-activity.html">IPO Activity</a>
+<a href="/ipo-pipeline.html">IPO Pipeline</a>
+</div>
+</div>
+
+<div class="navdrop">
+<span class="navlabel">Ownership &amp; Flows ▾</span>
+<div class="dropdown">
+<a href="/insider-buying-selling.html">Insider Buying/Selling</a>
+<a href="/institutional-ownership.html">Institutional Ownership &amp; 13F Flow</a>
+<a href="/congressional-trading.html">Congressional Trading Activity</a>
+<a href="/small-cap-liquidity.html">Small-Cap Liquidity</a>
+</div>
+</div>
+
+<div class="navdrop">
+<span class="navlabel">Rates &amp; Macro ▾</span>
+<div class="dropdown">
+<a href="/yield-curves.html">Yield Curves</a>
+</div>
+</div>
+
+<div class="navdrop">
+<span class="navlabel">Tools ▾</span>
+<div class="dropdown">
 <a href="/portfolio-simulator.html">Portfolio Simulator</a>
 <a href="/backtesting.html">Backtesting</a>
 <a href="/statistical-engine">Statistical Engine</a>
-
-
-
+</div>
+</div>
 
 </div>
 <button class="theme-toggle" id="themeToggle" type="button" aria-label="Toggle light/dark mode" title="Toggle light/dark mode">&#9789;</button>
@@ -484,87 +532,115 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <div class="section-title">Research Areas</div>
 <div class="category-grid">
 
-<div class="category-card">
-<h4>Markets/Macro</h4>
+<details class="category-card">
+<summary><h4>Sentiment &amp; Market Conditions</h4></summary>
 <ul>
 <li><a href="/sentiment-index.html">Sentiment Index</a></li>
 <li><a href="/volatility.html">Implied vs. Realized Volatility</a></li>
+<li><a href="/market-breadth.html">Market Breadth</a></li>
+<li><a href="/ath-index.html">All-Time Highs and Lows</a></li>
+<li><a href="/margin-leverage.html">Margin &amp; Leverage Cycle</a></li>
+<li><a href="/short-sale-volume.html">Short Sale Volume</a></li>
+<li><a href="/news-sentiment.html">News Sentiment Momentum</a></li>
+<li><a href="/seasonality.html">Seasonality</a></li>
+</ul>
+</details>
+
+<details class="category-card">
+<summary><h4>Valuation &amp; Expectations</h4></summary>
+<ul>
+<li><a href="/valuations.html">Valuations</a></li>
 <li><a href="/implied-erp.html">Implied Equity Risk Premium</a></li>
-<li><a href="/ipo-activity.html">IPO Activity</a></li>
-<li><a href="/yield-curves.html">Yield Curves</a></li>
+<li><a href="/equity-risk-premium.html">Equity Risk Premium by Sector</a></li>
+<li><a href="/pe-divergence.html">Forward vs. Trailing P/E Divergence</a></li>
 <li><a href="/expectations-vs-reality.html">Expectations vs. Reality</a></li>
+<li><a href="/analyst-price-target.html">Analyst Price Target Upside</a></li>
+<li><a href="/analyst-estimate-dispersion.html">Analyst Estimate Dispersion</a></li>
+<li><a href="/earnings-growth-divergence.html">Earnings Growth vs. Price Performance</a></li>
+</ul>
+</details>
+
+<details class="category-card">
+<summary><h4>Earnings &amp; Fundamentals</h4></summary>
+<ul>
+<li><a href="/earnings-revisions.html">Earnings Revisions</a></li>
+<li><a href="/earnings-surprise.html">Earnings Surprise History</a></li>
+<li><a href="/post-earnings-drift.html">Post-Earnings Announcement Drift</a></li>
+<li><a href="/earnings-call-sentiment.html">Earnings Call Sentiment</a></li>
+<li><a href="/fcf-yield.html">Free Cash Flow Yield</a></li>
+<li><a href="/quality-score.html">Financial Quality Screener (Piotroski)</a></li>
+<li><a href="/coming-soon.html?title=AI%20Capex%20Tracker">AI Capex Tracker<span class="soon">soon</span></a></li>
+</ul>
+</details>
+
+<details class="category-card">
+<summary><h4>Sectors, Factors &amp; Style</h4></summary>
+<ul>
+<li><a href="/sector-analysis.html">Sector Performance</a></li>
+<li><a href="/sector-beeswarm.html">Sector Beeswarm</a></li>
+<li><a href="/sector-correlation.html">Sector Correlation Matrix</a></li>
+<li><a href="/sector-rotation.html">Sector Rotation Model</a></li>
+<li><a href="/factor-analysis.html">Factor Analysis</a></li>
+<li><a href="/quality-lowvol-factors.html">Quality &amp; Low-Volatility Factor Screen</a></li>
+<li><a href="/small-cap-vs-large-cap.html">Small Cap vs. Large Cap Spread</a></li>
+<li><a href="/international-vs-us.html">International vs. US Relative Performance</a></li>
+<li><a href="/country-sector-scorecard.html">Country / Sector Scorecard</a></li>
+<li><a href="/relative-strength-leaders.html">Relative Strength Leaders/Laggards</a></li>
+<li><a href="/concentration.html">Concentration</a></li>
+</ul>
+</details>
+
+<details class="category-card">
+<summary><h4>Capital Returns &amp; Corporate Actions</h4></summary>
+<ul>
+<li><a href="/dividend-growth-screener.html">Dividend Growth Screener</a></li>
+<li><a href="/shareholder-yield.html">Shareholder Yield</a></li>
+<li><a href="/buyback-effectiveness.html">Buyback Effectiveness</a></li>
+<li><a href="/share-count-trends.html">Share Count Trends</a></li>
+<li><a href="/stock-split-tracker.html">Stock Split Tracker</a></li>
+<li><a href="/spin-off-performance.html">Spin-Off Performance Tracker</a></li>
+<li><a href="/ipo-activity.html">IPO Activity</a></li>
+<li><a href="/ipo-pipeline.html">IPO Pipeline</a></li>
+</ul>
+</details>
+
+<details class="category-card">
+<summary><h4>Ownership &amp; Flows</h4></summary>
+<ul>
+<li><a href="/insider-buying-selling.html">Insider Buying/Selling</a></li>
+<li><a href="/institutional-ownership.html">Institutional Ownership &amp; 13F Flow</a></li>
+<li><a href="/congressional-trading.html">Congressional Trading Activity</a></li>
+<li><a href="/small-cap-liquidity.html">Small-Cap Liquidity</a></li>
+<li><a href="/coming-soon.html?title=Options%20Positioning">Options Positioning<span class="soon">soon</span></a></li>
+<li><a href="/coming-soon.html?title=Retail%20vs.%20Institutional%20Flow">Retail vs. Institutional Flow<span class="soon">soon</span></a></li>
+</ul>
+</details>
+
+<details class="category-card">
+<summary><h4>Rates &amp; Macro</h4></summary>
+<ul>
+<li><a href="/yield-curves.html">Yield Curves</a></li>
 <li><a href="/coming-soon.html?title=Credit%20Spreads">Credit Spreads<span class="soon">soon</span></a></li>
 <li><a href="/coming-soon.html?title=Global%20Liquidity">Global Liquidity<span class="soon">soon</span></a></li>
 <li><a href="/coming-soon.html?title=Recession%20Probability%20Model">Recession Probability Model<span class="soon">soon</span></a></li>
 <li><a href="/coming-soon.html?title=Inflation">Inflation<span class="soon">soon</span></a></li>
-</ul>
-</div>
-
-<div class="category-card">
-<h4>Equities</h4>
-<ul>
-<li><a href="/sector-analysis.html">Sector Performance</a></li>
-<li><a href="/ath-index.html">All-Time Highs and Lows</a></li>
-<li><a href="/valuations.html">Valuations</a></li>
-<li><a href="/factor-analysis.html">Factor Analysis</a></li>
-<li><a href="/earnings-revisions.html">Earnings Revisions</a></li>
-<li><a href="/earnings-surprise.html">Earnings Surprise History</a></li>
-<li><a href="/market-breadth.html">Market Breadth</a></li>
-<li><a href="/seasonality.html">Seasonality</a></li>
-<li><a href="/concentration.html">Concentration</a></li>
-<li><a href="/insider-buying-selling.html">Insider Buying/Selling</a></li>
-<li><a href="/small-cap-vs-large-cap.html">Small Cap vs. Large Cap Spread</a></li>
-<li><a href="/share-count-trends.html">Share Count Trends</a></li>
-<li><a href="/sector-correlation.html">Sector Correlation Matrix</a></li>
-<li><a href="/sector-rotation.html">Sector Rotation Model</a></li>
-<li><a href="/dividend-growth-screener.html">Dividend Growth Screener</a></li>
-<li><a href="/international-vs-us.html">International vs. US Relative Performance</a></li>
-<li><a href="/analyst-estimate-dispersion.html">Analyst Estimate Dispersion</a></li>
-<li><a href="/shareholder-yield.html">Shareholder Yield</a></li>
-<li><a href="/stock-split-tracker.html">Stock Split Tracker</a></li>
-<li><a href="/pe-divergence.html">Forward vs. Trailing P/E Divergence</a></li>
-<li><a href="/relative-strength-leaders.html">Relative Strength Leaders/Laggards</a></li>
-<li><a href="/equity-risk-premium.html">Equity Risk Premium by Sector</a></li>
-<li><a href="/earnings-growth-divergence.html">Earnings Growth vs. Price Performance</a></li>
-<li><a href="/small-cap-liquidity.html">Small-Cap Liquidity</a></li>
-<li><a href="/ipo-pipeline.html">IPO Pipeline</a></li>
-<li><a href="/margin-leverage.html">Margin &amp; Leverage Cycle</a></li>
-</ul>
-</div>
-
-<div class="category-card">
-<h4>Rates/Credit</h4>
-<ul>
 <li><a href="/coming-soon.html?title=Monetary%20Policy">Monetary Policy<span class="soon">soon</span></a></li>
 <li><a href="/coming-soon.html?title=Real%20Yields%20Dashboard">Real Yields Dashboard<span class="soon">soon</span></a></li>
-</ul>
-</div>
-
-<div class="category-card">
-<h4>Alternative/Cross-Asset</h4>
-<ul>
 <li><a href="/coming-soon.html?title=Cross-Asset%20Risk">Cross-Asset Risk<span class="soon">soon</span></a></li>
 <li><a href="/coming-soon.html?title=Commodity%20Cycle">Commodity Cycle<span class="soon">soon</span></a></li>
 <li><a href="/coming-soon.html?title=Currency%20Strength">Currency Strength<span class="soon">soon</span></a></li>
-</ul>
-</div>
-
-<div class="category-card">
-<h4>Behavioral/Positioning</h4>
-<ul>
-<li><a href="/coming-soon.html?title=Options%20Positioning">Options Positioning<span class="soon">soon</span></a></li>
-<li><a href="/coming-soon.html?title=Retail%20vs.%20Institutional%20Flow">Retail vs. Institutional Flow<span class="soon">soon</span></a></li>
-
-</ul>
-</div>
-
-<div class="category-card">
-<h4>Thematic</h4>
-<ul>
-<li><a href="/coming-soon.html?title=AI%20Capex%20Tracker">AI Capex Tracker<span class="soon">soon</span></a></li>
 <li><a href="/coming-soon.html?title=Housing%20Market%20Monitor">Housing Market Monitor<span class="soon">soon</span></a></li>
 </ul>
-</div>
+</details>
+
+<details class="category-card">
+<summary><h4>Tools</h4></summary>
+<ul>
+<li><a href="/portfolio-simulator.html">Portfolio Simulator</a></li>
+<li><a href="/backtesting.html">Backtesting</a></li>
+<li><a href="/statistical-engine">Statistical Engine</a></li>
+</ul>
+</details>
 
 </div>
 </div>
