@@ -10,7 +10,6 @@
 </script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom@2"></script>
-<script src="date-format.js"></script>
 <script>
 // FRED-style zoom: drag horizontally on any chart to zoom into that range,
 // double-click to reset. Applied via Chart.defaults so every chart on the
@@ -153,7 +152,7 @@ document.addEventListener("DOMContentLoaded", function(){
 </script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Post-Earnings Announcement Drift | Michael J. Stevenson</title>
+<title>ROIC vs. Cost of Capital — Michael J. Stevenson</title>
 
 <style>
 
@@ -427,7 +426,7 @@ h1{
  padding:14px 14px 10px;
 }
 
-/* Two charts / method-tables side by side */
+/* Two charts / method-tables side by side, same breakpoint as table-grid */
 .chart-grid{
  display:grid;
  grid-template-columns:1fr 1fr;
@@ -435,10 +434,12 @@ h1{
  margin-bottom:30px;
 }
 
-.chart-grid > .chart-box{
+.chart-grid .chart-box{
  margin-bottom:0;
- min-width:0; /* grid items default to min-width:auto, which a wide method
-                 table would otherwise force past this column's track width */
+ min-width:0; /* grid items default to min-width:auto (their content's min-content
+                 size), which a wide method table would otherwise force past this
+                 column's track width — same "grid blowout" the site-wide
+                 table{min-width:600px} rule creates if left unchecked here */
 }
 
 @media (max-width:900px){
@@ -546,36 +547,30 @@ tbody td:nth-child(2){
 .cell-neg{ color:var(--ink); }
 .cell-na{ color:var(--muted); }
 
-.tag{
- display:inline-block;
- font-family:var(--sans);
- font-size:10px;
- letter-spacing:0.03em;
- padding:2px 7px;
- border-radius:20px;
- border:1px solid var(--hair);
- color:var(--muted);
-}
-.tag.beat{ color:var(--greed); border-color:var(--greed); }
-.tag.miss{ color:var(--fear); border-color:var(--fear); }
+.spread-pos{ color:var(--greed); }
+.spread-neg{ color:var(--fear); }
 
-/* SCATTER / METHOD TABLE (mirrors /factor-analysis, /spin-off-performance) */
+/* SCATTER / METHOD TABLE (mirrors /factor-analysis) */
 
 .scatter-canvas-wrap{
- height:320px;
+ height:300px;
  margin-bottom:12px;
  position:relative;
 }
 
 .method-table{
  width:100%;
- min-width:0; /* overrides the site-wide table{min-width:600px} rule below —
-                 two of these side by side in .chart-grid would otherwise
-                 force the whole page wider than its container */
+ min-width:0; /* overrides the site-wide table{min-width:600px} rule below — two of these
+                 side by side in .chart-grid would otherwise force the whole page wider
+                 than its container even though a 7-column method table never needs 600px */
  border-collapse:collapse;
  font-family:var(--mono);
  font-size:11px;
  margin-top:8px;
+}
+
+#betaSpreadMethodTable, #rel3mSpreadMethodTable{
+ overflow-x:auto;
 }
 
 .method-table th{
@@ -616,11 +611,25 @@ tbody td:nth-child(2){
  font-style:italic;
 }
 
-/* Method tables sit directly in a .chart-box rather than a .table-box, so
-   they need their own overflow-x:auto — otherwise the site-wide
-   table{min-width:600px} rule forces the whole page wider than a phone
-   viewport (same fix /spin-off-performance and /margin-leverage needed). */
-#regressionMethodTable, #groupMethodTable{ overflow-x:auto; }
+/* SECTOR LEGEND (scatter / spaghetti charts) */
+
+.sector-legend{
+ display:flex;
+ flex-wrap:wrap;
+ gap:10px 16px;
+ margin-top:14px;
+ font-size:11px;
+ color:var(--muted);
+}
+
+.sector-legend .dot{
+ display:inline-block;
+ width:8px;
+ height:8px;
+ border-radius:50%;
+ margin-right:5px;
+ vertical-align:middle;
+}
 
 /* EXPLAINER */
 
@@ -655,26 +664,7 @@ tbody td:nth-child(2){
  white-space:nowrap;
 }
 
-/* Unlike the short field/endpoint-name identifiers the rule above is meant
-   for, this page's formulas are full expressions with spaces — kept as
-   nowrap they'd be wide enough to force horizontal overflow on a phone
-   viewport (the exact bug institutional-ownership.html's own build found
-   and fixed for the same kind of code span; guarded proactively here). */
-.explainer code.formula{
- white-space:normal;
-}
-
-.explainer ul{
- color:var(--muted);
- font-size:13px;
- line-height:1.7;
- margin:0 0 14px;
- padding-left:20px;
-}
-
-.explainer li{ margin-bottom:6px; }
-
-.explainer p:last-child, .explainer ul:last-child{ margin-bottom:0; }
+.explainer p:last-child{ margin-bottom:0; }
 
 .explainer .source{
  margin-top:16px;
@@ -784,7 +774,7 @@ tbody td:nth-child(2){
 <div class="dropdown">
 <a href="/earnings-revisions.html">Earnings Revisions</a>
 <a href="/earnings-surprise.html">Earnings Surprise History</a>
-<a href="/post-earnings-drift.html" class="active">Post-Earnings Announcement Drift</a>
+<a href="/post-earnings-drift.html">Post-Earnings Announcement Drift</a>
 <a href="/earnings-call-sentiment.html">Earnings Call Sentiment</a>
 <a href="/fcf-yield.html">Free Cash Flow Yield</a>
 <a href="/quality-score.html">Financial Quality Screener (Piotroski)</a>
@@ -840,7 +830,7 @@ tbody td:nth-child(2){
 <div class="navdrop">
 <span class="navlabel">Rates &amp; Macro ▾</span>
 <div class="dropdown">
-<a href="/yield-curves.html">Yield Curves</a>
+<a href="/yield-curves.html" class="active">Yield Curves</a>
 </div>
 </div>
 
@@ -854,7 +844,7 @@ tbody td:nth-child(2){
 </div>
 
 </div>
-<button class="theme-toggle" id="themeToggle" type="button" aria-label="Toggle light/dark mode" title="Toggle light/dark mode">&#9789;</button>
+<button aria-label="Toggle light/dark mode" class="theme-toggle" id="themeToggle" title="Toggle light/dark mode" type="button">☽</button>
 </nav>
 <script>
 // Class-driven (not pure :hover) nav dropdowns: pure CSS :hover drops the
@@ -898,79 +888,40 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 
 <div class="header">
 <div>
-<h1>Post-Earnings Announcement Drift</h1>
-<div class="subtitle">Does a stock keep drifting in the direction of its earnings surprise for weeks afterward, as the academic literature says it should? This tests it across the S&amp;P 500's most recently reported quarter: cumulative excess return vs. SPY at +1/+5/+10/+20 trading days from each company's report date, split by beat vs. miss and regressed against surprise size.</div>
+<h1>ROIC vs. Cost of Capital</h1>
+<div class="subtitle">Is the S&amp;P 500 actually creating economic value? Return on invested capital vs. a CAPM-based weighted average cost of capital, company by company — the spread between the two is a rough "economic profit" screen, not just another profitability ratio.</div>
 </div>
 <div class="updated" id="updated">Loading...</div>
 </div>
 
 <div class="stat-grid">
 <div class="stat-card">
-<div class="stat-label">In Coverage Window</div>
-<div class="stat-value" id="statCoverage">…</div>
-<div class="stat-note" id="statCoverageNote">of 503 S&amp;P 500 companies</div>
+<div class="stat-label">Companies Loaded</div>
+<div class="stat-value" id="statCompanies" style="font-size:20px;">—</div>
+<div class="stat-note" id="statCompaniesNote">Of full S&amp;P 500</div>
 </div>
 <div class="stat-card">
-<div class="stat-label">Avg. +20D Excess, Beats</div>
-<div class="stat-value" id="statBeatExcess">…</div>
-<div class="stat-note" id="statBeatExcessNote">vs. SPY, 20 trading days out</div>
+<div class="stat-label">Median ROIC</div>
+<div class="stat-value" id="statRoic">—</div>
+<div class="stat-note">Trailing twelve months, market-wide</div>
 </div>
 <div class="stat-card">
-<div class="stat-label">Avg. +20D Excess, Misses</div>
-<div class="stat-value" id="statMissExcess">…</div>
-<div class="stat-note" id="statMissExcessNote">vs. SPY, 20 trading days out</div>
+<div class="stat-label">Median WACC</div>
+<div class="stat-value" id="statWacc">—</div>
+<div class="stat-note" id="statWaccNote">CAPM cost of equity + after-tax cost of debt</div>
 </div>
 <div class="stat-card">
-<div class="stat-label">Surprise &rarr; Drift Correlation</div>
-<div class="stat-value" id="statCorr" style="font-size:18px;">…</div>
-<div class="stat-note" id="statCorrNote">Pearson r, surprise % vs. +20D excess</div>
+<div class="stat-label">Value Creators</div>
+<div class="stat-value" id="statCreatorPct">—</div>
+<div class="stat-note">Share of companies with ROIC &gt; WACC</div>
 </div>
 </div>
 
 <div class="chart-box">
 <div class="chart-box-header">
 <div>
-<h2>Average cumulative excess return by horizon, beat vs. miss</h2>
-<div class="chart-subhead">Every company is aligned to trading day 0, the first close on or after its reported earnings date, then averaged at +1/+5/+10/+20 trading days out. N (per point, in the tooltip) shrinks at longer horizons for companies that reported near the end of the price window.</div>
-</div>
-</div>
-<div class="ndr-panel">
-<div class="chart-canvas-wrap">
-<canvas id="driftChart"></canvas>
-</div>
-</div>
-</div>
-
-<div class="chart-box">
-<div class="chart-box-header">
-<div>
-<h2>Does the size of the surprise predict the size of the drift?</h2>
-<div class="chart-subhead">Each S&amp;P 500 company's earnings surprise % (known at the report date) against its +20-trading-day forward excess return (realized afterward). There is no lookahead: the surprise is public before the return window starts.</div>
-</div>
-</div>
-<div class="ndr-panel">
-<div class="scatter-canvas-wrap">
-<canvas id="regressionChart"></canvas>
-</div>
-</div>
-<div id="regressionMethodTable"></div>
-</div>
-
-<div class="chart-box">
-<div class="chart-box-header">
-<div>
-<h2>Beat vs. miss: is the +20-day gap real, or noise?</h2>
-<div class="chart-subhead">Mean and median +20-day excess return for the beat group vs. the miss group, plus a two-sample (Welch) t-test on the difference between the two means.</div>
-</div>
-</div>
-<div id="groupMethodTable"></div>
-</div>
-
-<div class="chart-box">
-<div class="chart-box-header">
-<div>
-<h2>+20-day excess return by sector</h2>
-<div class="chart-subhead">Median +20-day excess return, beat vs. miss companies, for sectors with at least <span id="sectorThresholdLabel">5</span> companies in both groups. Sectors with fewer are left out (see the note below the chart).</div>
+<h2>ROIC vs. WACC by sector</h2>
+<div class="chart-subhead">Median return on invested capital and median cost of capital across each SPDR sector's S&amp;P 500 constituents — where the orange bar clears the blue bar, the sector is earning more than its capital costs</div>
 </div>
 </div>
 <div class="ndr-panel">
@@ -978,107 +929,146 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <canvas id="sectorChart"></canvas>
 </div>
 </div>
-<div class="method-note" id="sectorNote"></div>
+</div>
+
+<div class="chart-box">
+<div class="chart-box-header">
+<div>
+<h2>Distribution of the ROIC&minus;WACC spread</h2>
+<div class="chart-subhead">Every S&amp;P 500 constituent with usable statement history, bucketed by spread (percentage points)</div>
+</div>
+</div>
+<div class="ndr-panel">
+<div class="chart-canvas-wrap" style="height:300px;">
+<canvas id="spreadHistogram"></canvas>
+</div>
+</div>
+</div>
+
+<div class="chart-grid">
+<div class="chart-box">
+<div class="chart-box-header">
+<div>
+<h2>Spread vs. beta</h2>
+<div class="chart-subhead">Does the market actually pay higher-beta (riskier) companies a wider economic-value spread, or is there no such relationship?</div>
+</div>
+</div>
+<div class="ndr-panel">
+<div class="scatter-canvas-wrap">
+<canvas id="betaSpreadScatter"></canvas>
+</div>
+</div>
+<div id="betaSpreadMethodTable"></div>
+</div>
+<div class="chart-box">
+<div class="chart-box-header">
+<div>
+<h2>Spread vs. 3-month relative return</h2>
+<div class="chart-subhead">Does the market currently reward companies that are creating the most economic value with better relative price performance?</div>
+</div>
+</div>
+<div class="ndr-panel">
+<div class="scatter-canvas-wrap">
+<canvas id="rel3mSpreadScatter"></canvas>
+</div>
+</div>
+<div id="rel3mSpreadMethodTable"></div>
+</div>
 </div>
 
 <div class="table-grid">
 <div class="table-box">
 <div class="table-box-header">
-<h2>Biggest positive drift among beats</h2>
-<div class="chart-subhead">Highest +20-day excess return, beat companies</div>
+<h2>Top value creators</h2>
+<div class="chart-subhead">Widest ROIC&minus;WACC spread</div>
 </div>
-<table id="beatUpTable">
-<thead><tr><th>Company</th><th>Sector</th><th>Surprise</th><th>+20D Excess</th></tr></thead>
-<tbody id="beatUpBody"><tr><td colspan="4" style="text-align:center; color:var(--muted); padding:24px;">Loading&hellip;</td></tr></tbody>
+<table id="creatorsTable">
+<thead><tr><th>Symbol</th><th>Sector</th><th>ROIC</th><th>WACC</th><th>Spread</th></tr></thead>
+<tbody id="creatorsBody"><tr><td colspan="5" style="text-align:center; color:var(--muted); padding:24px;">Loading&hellip;</td></tr></tbody>
 </table>
 </div>
 <div class="table-box">
 <div class="table-box-header">
-<h2>Biggest negative drift among beats</h2>
-<div class="chart-subhead">Lowest +20-day excess return, beat companies. A "beat that still drifted down"</div>
+<h2>Value destroyers</h2>
+<div class="chart-subhead">Narrowest (most negative) ROIC&minus;WACC spread</div>
 </div>
-<table id="beatDownTable">
-<thead><tr><th>Company</th><th>Sector</th><th>Surprise</th><th>+20D Excess</th></tr></thead>
-<tbody id="beatDownBody"><tr><td colspan="4" style="text-align:center; color:var(--muted); padding:24px;">Loading&hellip;</td></tr></tbody>
-</table>
-</div>
-</div>
-
-<div class="table-grid">
-<div class="table-box">
-<div class="table-box-header">
-<h2>Biggest positive drift among misses</h2>
-<div class="chart-subhead">Highest +20-day excess return, miss companies. A "miss that still drifted up"</div>
-</div>
-<table id="missUpTable">
-<thead><tr><th>Company</th><th>Sector</th><th>Surprise</th><th>+20D Excess</th></tr></thead>
-<tbody id="missUpBody"><tr><td colspan="4" style="text-align:center; color:var(--muted); padding:24px;">Loading&hellip;</td></tr></tbody>
-</table>
-</div>
-<div class="table-box">
-<div class="table-box-header">
-<h2>Biggest negative drift among misses</h2>
-<div class="chart-subhead">Lowest +20-day excess return, miss companies</div>
-</div>
-<table id="missDownTable">
-<thead><tr><th>Company</th><th>Sector</th><th>Surprise</th><th>+20D Excess</th></tr></thead>
-<tbody id="missDownBody"><tr><td colspan="4" style="text-align:center; color:var(--muted); padding:24px;">Loading&hellip;</td></tr></tbody>
+<table id="destroyersTable">
+<thead><tr><th>Symbol</th><th>Sector</th><th>ROIC</th><th>WACC</th><th>Spread</th></tr></thead>
+<tbody id="destroyersBody"><tr><td colspan="5" style="text-align:center; color:var(--muted); padding:24px;">Loading&hellip;</td></tr></tbody>
 </table>
 </div>
 </div>
 
 <div class="table-box">
 <div class="table-box-header">
-<h2>Every company in the coverage window</h2>
-<div class="chart-subhead">Every S&amp;P 500 company whose most recent earnings date falls inside the price window</div>
+<h2>All companies with usable statement history</h2>
+<div class="chart-subhead">Trailing-twelve-month ROIC, estimated WACC, and the spread between them, full S&amp;P 500</div>
 </div>
-<table id="companyTable">
+<table id="stockTable">
 <thead>
 <tr>
-<th data-key="name">Company</th>
+<th data-key="symbol">Symbol</th>
 <th data-key="sector">Sector</th>
-<th data-key="reportedDate">Reported</th>
-<th data-key="surprisePct">Surprise</th>
-<th data-key="excess1">+1D Excess</th>
-<th data-key="excess5">+5D Excess</th>
-<th data-key="excess10">+10D Excess</th>
-<th data-key="excess20">+20D Excess</th>
+<th data-key="roic">ROIC<span class="sort-arrow">▾</span></th>
+<th data-key="wacc">WACC<span class="sort-arrow">▾</span></th>
+<th data-key="spread">Spread<span class="sort-arrow">▾</span></th>
+<th data-key="costOfEquity">Cost of Equity<span class="sort-arrow">▾</span></th>
+<th data-key="costOfDebtAfterTax">Cost of Debt (a.t.)<span class="sort-arrow">▾</span></th>
+<th data-key="beta">Beta<span class="sort-arrow">▾</span></th>
 </tr>
 </thead>
-<tbody id="companyBody">
-<tr><td colspan="8" style="text-align:center; color:var(--muted); padding:30px;">Loading drift data&hellip;</td></tr>
+<tbody id="tableBody">
+<tr><td colspan="8" style="text-align:center; color:var(--muted); padding:30px;">Loading ROIC/WACC data&hellip;</td></tr>
 </tbody>
 </table>
 </div>
 
 <div class="explainer">
 <h2>Methodology</h2>
-<p>Post-Earnings Announcement Drift (PEAD) is one of the oldest anomalies in asset pricing, first documented by Ball and Brown in 1968. After a company beats or misses the consensus estimate, its stock tends to keep moving in that direction, relative to the market, for weeks afterward. That is surprising because the surprise is public the moment it's reported, so an efficient market would price it in right away. This page runs that test on the S&amp;P 500's most recently reported quarter. It is not investment advice.</p>
-<p><strong>Surprise %.</strong> Each company's most recently reported quarter, <code class="formula">(actual EPS &minus; consensus estimate EPS) / |consensus estimate EPS|</code>, comes from <a href="/earnings-surprise.html">Earnings Surprise History</a>. That page is now a one-time snapshot (last refreshed 09/16/2026) and no longer updates weekly. As it ages, fewer report dates fall inside this page's ~100-trading-day price window. The "In Coverage Window" figure above is that count. This page's own price data still refreshes weekly.</p>
-<p><strong>Prices.</strong> Yahoo Finance daily adjusted closes for the last ~100 trading days, for the S&amp;P 500 plus SPY. That's enough for a +1/+5/+10/+20-day window, and it's the same setup as <a href="/relative-strength-leaders.html">Relative Strength Leaders/Laggards</a>. For each company with a report date inside the window, the anchor day is the <strong>first close on or after</strong> the report date, never before, so no pre-announcement price leaks into the test. Excess returns vs. SPY use <code class="formula">(1+stock)/(1+SPY) &minus; 1</code>, as on <a href="/relative-strength-leaders.html">Relative Strength Leaders/Laggards</a> and <a href="/international-vs-us.html">International vs. US</a>. A company that reported too recently to reach a horizon is left blank for that horizon only.</p>
-<p><strong>Tests.</strong> The regression chart is the main test: each company's surprise % against its +20-trading-day excess return. Pearson (linear) and Spearman (rank) correlations are both shown, as on <a href="/factor-analysis.html">Factor Analysis</a>. Because the surprise is public before the return window opens, there is no lookahead bias. The beat-vs-miss comparison below it is a simpler version of the same question: mean and median +20-day excess return for each group, plus a Welch t-test on the difference. This uses a t-test instead of a proportion test because the outcome is a continuous return. <a href="/earnings-surprise.html">Earnings Surprise History</a> uses a two-proportion z-test for its beat/miss rates.</p>
-<p>Sector medians are shown only for sectors with at least 5 companies in <em>both</em> the beat and miss groups. Smaller samples are too noisy to be meaningful. Company names and sectors come from <a href="/sector-beeswarm.html">Sector Beeswarm</a>.</p>
-<p>Prices refresh weekly. Each run recomputes the drift panel from the latest quarter and price window, so there is no accumulating history (same as Spin-Off Performance Tracker).</p>
-<div class="source">Sources: <a href="https://finance.yahoo.com/" target="_blank" rel="noopener">Yahoo Finance: daily adjusted close</a> and Alpha Vantage <code>EARNINGS</code> (from <a href="/earnings-surprise.html">Earnings Surprise History</a>, snapshot as of 09/16/2026).</div>
+<p>Universe is the full S&amp;P 500. For every constituent, Alpha Vantage's <code>INCOME_STATEMENT</code> and <code>BALANCE_SHEET</code> endpoints (quarterly) supply the trailing four quarters needed for a trailing-twelve-month (TTM) NOPAT and a latest-quarter balance-sheet snapshot. <b>NOPAT</b> is TTM EBIT (Alpha Vantage's direct <code>ebit</code> field, falling back to operating income when that's missing) &times; (1 &minus; effective tax rate), where the effective rate is TTM income tax expense &divide; TTM pre-tax income, clamped to 0&ndash;50% and falling back to the 21% US statutory rate whenever a company's own reported rate is negative, zero, or missing (a one-time tax benefit or an NOL carryforward can otherwise produce a nonsensical multi-hundred-percent "effective rate"). <b>Invested capital</b> is latest-quarter total debt (preferring Alpha Vantage's combined <code>shortLongTermDebtTotal</code> field) plus total shareholder equity, minus cash &amp; equivalents. <b>ROIC</b> is TTM NOPAT &divide; invested capital.</p>
+<p><b>Cost of equity</b> uses CAPM: the 10-year Treasury yield (risk-free rate) plus each company's Alpha Vantage-reported beta &times; a market equity-risk-premium assumption &mdash; the same market-wide median earnings-yield-based ERP already computed on <a href="/equity-risk-premium.html">Equity Risk Premium by Sector</a>, reused here rather than introducing a third, unrelated ERP estimate (a company with no beta on file is shown with an assumed beta of 1, flagged in the per-company data). <b>Cost of debt</b> is TTM interest expense &divide; total debt, after-tax at the same effective rate used for NOPAT; a levered company that reports no interest expense across the trailing year falls back to the risk-free rate plus a flat 1.5 percentage-point spread, rather than implying free debt. <b>WACC</b> weights the two by book value of debt and equity (not market value &mdash; a deliberate simplification flagged here rather than pulling in a third data source just to mark equity to market). <b>Spread</b> is ROIC minus WACC.</p>
+<p>Companies with non-positive book shareholder equity are excluded entirely, not shown with a distorted ratio &mdash; this is a real limitation, not an edge case: aggressive, sustained buyback programs (McDonald's, Starbucks, and a number of other well-known names) can drive book equity negative, which breaks both the invested-capital denominator and the debt/equity weighting this page's WACC calculation depends on. A company is also excluded if any of the trailing four quarters' EBIT, or the latest quarter's debt or equity figures, aren't available.</p>
+<p>The two regression tests are single-snapshot cross-sections (no accumulated history needed, unlike a forward-return test): spread vs. beta asks whether the market's own risk-return logic actually shows up in realized economic profitability, and spread vs. 3-month relative price return (reusing <a href="/relative-strength-leaders.html">Relative Strength Leaders/Laggards</a>' own weekly price data rather than a second price sweep) asks whether the market currently rewards value creation with relative price performance. Both use the same Pearson-and-Spearman two-method check as <a href="/factor-analysis.html">Factor Analysis</a>.</p>
+<p>One-time snapshot &mdash; no recurring schedule, matching every other full-universe fundamentals sweep added to this site since mid-September 2026. Re-run manually for a fresh pass; quarterly fundamentals don't move day to day. Sector and company name come from the same weekly metadata sweep that backs <a href="/sector-beeswarm.html">Sector Beeswarm</a>.</p>
+<div class="source">Source: <a href="https://www.alphavantage.co/" target="_blank" rel="noopener">Alpha Vantage — INCOME_STATEMENT, BALANCE_SHEET, TREASURY_YIELD</a>, plus this site's own <a href="/equity-risk-premium.html">Equity Risk Premium by Sector</a> and <a href="/relative-strength-leaders.html">Relative Strength Leaders/Laggards</a> data</div>
 </div>
 
 </div>
 
 <script>
-const DATA_URL = "/api/post-earnings-drift";
+const DATA_URL = "/api/roic-wacc";
+
+const SECTOR_COLORS = {
+ "Information Technology": "#d98a3d",
+ "Financials": "#6f8fac",
+ "Health Care": "#8e7cc3",
+ "Energy": "#c0564f",
+ "Industrials": "#5a9d6f",
+ "Consumer Discretionary": "#e0b04f",
+ "Consumer Staples": "#4fb0c0",
+ "Utilities": "#b56f2a",
+ "Materials": "#9a9a9a",
+ "Real Estate": "#c77dbd",
+ "Communication Services": "#4f7ae0",
+};
 
 let RAW = null;
-let SORT_KEY = "excess20";
+let SORT_KEY = "spread";
 let SORT_DIR = -1;
 
 function fmtPct(v, digits){
- if(v === null || v === undefined || isNaN(v)) return "n/a";
- digits = digits === undefined ? 2 : digits;
- return (v >= 0 ? "+" : "") + v.toFixed(digits) + "%";
+ if(v === null || v === undefined || isNaN(v)) return "—";
+ digits = digits === undefined ? 1 : digits;
+ return v.toFixed(digits) + "%";
 }
-function fmtDate(s){
- if(!s) return "n/a";
- return usDate(s);
+function fmtPp(v, digits){
+ if(v === null || v === undefined || isNaN(v)) return "—";
+ digits = digits === undefined ? 1 : digits;
+ return (v >= 0 ? "+" : "") + v.toFixed(digits) + "pp";
+}
+function fmtBeta(v){
+ if(v === null || v === undefined || isNaN(v)) return "—";
+ return v.toFixed(2);
 }
 
 function showError(message){
@@ -1092,7 +1082,7 @@ function showWarning(message){
  banner.style.display = "block";
 }
 
-// ---- NDR chart styling helpers (matches /concentration, /spin-off-performance) ----
+// ---- NDR chart styling helpers (matches /concentration, /margin-leverage) ----
 function ndr(name){
  return getComputedStyle(document.documentElement).getPropertyValue("--ndr-" + name).trim();
 }
@@ -1119,15 +1109,8 @@ function ndrYScale(opts){
  };
 }
 
-function ndrLegend(){
- return {
-  display: true, position: "top", align: "start",
-  labels: { boxWidth: 22, boxHeight: 2, color: ndr("axis"), font: { size: 11 } },
- };
-}
-
-// ---- Stats helpers — duplicated per this site's "every page is
-// self-contained" convention (see /spin-off-performance.html). ----
+// ---- Stats helpers — same methodology as /factor-analysis, duplicated
+// here since every page on this site is self-contained (see CLAUDE.md). ----
 function linearRegression(xs, ys){
  const n = xs.length;
  const mx = xs.reduce((a, b) => a + b, 0) / n;
@@ -1170,38 +1153,26 @@ function rankArray(arr){
 }
 function spearmanRegression(xs, ys){ return linearRegression(rankArray(xs), rankArray(ys)); }
 
-function mean(values){
- const v = values.filter(x => x !== null && x !== undefined && !isNaN(x));
- return v.length ? v.reduce((a, b) => a + b, 0) / v.length : null;
-}
-function median(values){
- const v = values.filter(x => x !== null && x !== undefined && !isNaN(x)).sort((a, b) => a - b);
- if(!v.length) return null;
- const mid = Math.floor(v.length / 2);
- return v.length % 2 ? v[mid] : (v[mid - 1] + v[mid]) / 2;
-}
-
-// Welch's two-sample t-test (unequal variances assumed, the safer default
-// when the two groups — beats and misses — have no reason to share a
-// variance). Uses this site's usual normal-approximation p-value
-// convention (see /spin-off-performance.html's oneSampleTTest) rather than
-// a full Welch-Satterthwaite t-distribution table.
-function welchTTest(a, b){
- const av = a.filter(x => x !== null && x !== undefined && !isNaN(x));
- const bv = b.filter(x => x !== null && x !== undefined && !isNaN(x));
- const na = av.length, nb = bv.length;
- if(na < 2 || nb < 2) return null;
- const ma = mean(av), mb = mean(bv);
- const va = av.reduce((s, x) => s + (x - ma) ** 2, 0) / (na - 1);
- const vb = bv.reduce((s, x) => s + (x - mb) ** 2, 0) / (nb - 1);
- const se = Math.sqrt(va / na + vb / nb);
- const t = se > 0 ? (ma - mb) / se : 0;
- const dof = (va / na + vb / nb) ** 2 / (((va / na) ** 2) / (na - 1) + ((vb / nb) ** 2) / (nb - 1));
- const p = 2 * (1 - normalCdf(Math.abs(t)));
- return { na, nb, ma, mb, va, vb, se, t, dof, p };
+function methodTableHtml(pearson, spear, unitNote){
+ function row(label, stats){
+  const sig = stats.p < 0.05;
+  return "<tr>" +
+   "<td>" + label + "</td>" +
+   "<td>" + stats.n + "</td>" +
+   "<td>" + stats.r.toFixed(2) + "</td>" +
+   "<td>" + (stats.r2 * 100).toFixed(1) + "%</td>" +
+   "<td>" + (stats.slope >= 0 ? "+" : "") + stats.slope.toFixed(3) + "</td>" +
+   "<td>" + stats.t.toFixed(2) + "</td>" +
+   '<td class="' + (sig ? "sig" : "") + '">' + (stats.p < 0.001 ? "<0.001" : stats.p.toFixed(3)) + "</td>" +
+  "</tr>";
+ }
+ return '<table class="method-table">' +
+  "<thead><tr><th>Method</th><th>n</th><th>r</th><th>r&sup2;</th><th>slope</th><th>t</th><th>p</th></tr></thead>" +
+  "<tbody>" + row("Pearson (OLS)", pearson) + row("Spearman (&rho;)", spear) + "</tbody>" +
+ "</table>" + (unitNote ? '<div class="method-note">' + unitNote + "</div>" : "");
 }
 
-let driftChart = null, regressionChart = null, sectorChart = null;
+let sectorChart = null, spreadHistogram = null, betaSpreadScatter = null, rel3mSpreadScatter = null;
 
 async function init(){
  try{
@@ -1210,270 +1181,198 @@ async function init(){
   if(!res.ok || data.error) throw new Error(data.error || "failed to load");
 
   RAW = data;
-  document.getElementById("updated").textContent = "As of " + new Date(data.generated_at_utc).toLocaleString("en-US", { month: "2-digit", day: "2-digit", year: "numeric", hour: "numeric", minute: "2-digit" });
+  document.getElementById("updated").textContent = "As of " + new Date(data.generated_at_utc).toLocaleString();
 
-  if(data.universe.inWindow === 0){
-   showWarning("No companies fall inside the coverage window yet. The Earnings Surprise History snapshot may need a refresh (see Methodology below). Charts and tables will be empty until then.");
-  }else if(data.universe.priceLoaded < data.universe.total){
-   showWarning("Only " + data.universe.priceLoaded + " of " + data.universe.total + " tickers' price data loaded. Some companies may be missing below.");
+  if(data.loadedCount < data.universeSize){
+   showWarning("Only " + data.loadedCount + " of " + data.universeSize + " S&P 500 constituents loaded this run — some data may be temporarily unavailable.");
+  }
+  if(!data.hasBetaData){
+   showWarning("The Equity Risk Premium page's data hasn't populated yet, so every company's beta is assumed to be 1 and the market ERP assumption uses a fallback constant rather than this site's own computed figure.");
   }
 
   renderStats();
-  renderDriftChart();
-  renderRegressionAndGroupTests();
   renderSectorChart();
-  renderLeaderTable(RAW.leaderboards.beatUp, "beatUpBody");
-  renderLeaderTable(RAW.leaderboards.beatDown, "beatDownBody");
-  renderLeaderTable(RAW.leaderboards.missUp, "missUpBody");
-  renderLeaderTable(RAW.leaderboards.missDown, "missDownBody");
-  renderCompanyTable();
+  renderSpreadHistogram();
+  renderBetaSpreadScatter();
+  renderRel3mSpreadScatter();
+  renderLeaderTable(data.creators, "creatorsBody");
+  renderLeaderTable(data.destroyers, "destroyersBody");
+  renderTable();
 
  }catch(e){
-  showError("Couldn't load post-earnings drift data (" + e.message + "). The /api/post-earnings-drift function may not have run yet.");
-  document.getElementById("companyBody").innerHTML =
+  showError("Couldn't load ROIC/WACC data (" + e.message + "). The /api/roic-wacc function may not have run yet.");
+  document.getElementById("tableBody").innerHTML =
    '<tr><td colspan="8" style="text-align:center; color:var(--muted); padding:30px;">No data available.</td></tr>';
  }
 }
 
-function beatVals20(){ return RAW.companies.filter(c => c.beat > 0 && c.excess.d20 !== null).map(c => c.excess.d20); }
-function missVals20(){ return RAW.companies.filter(c => c.beat < 0 && c.excess.d20 !== null).map(c => c.excess.d20); }
-
 function renderStats(){
- document.getElementById("statCoverage").textContent = RAW.universe.inWindow;
- document.getElementById("statCoverageNote").textContent = "of " + RAW.universe.total + " S&P 500 companies (" + RAW.universe.surpriseCompaniesAvailable + " had a surprise-% match)";
-
- const beatVals = beatVals20();
- const missVals = missVals20();
-
- const beatEl = document.getElementById("statBeatExcess");
- if(beatVals.length){
-  const avg = mean(beatVals);
-  beatEl.textContent = fmtPct(avg);
-  beatEl.classList.toggle("cell-neg", avg < 0);
-  document.getElementById("statBeatExcessNote").textContent = "n=" + beatVals.length + " beat companies";
- }else{
-  beatEl.textContent = "n/a";
- }
-
- const missEl = document.getElementById("statMissExcess");
- if(missVals.length){
-  const avg = mean(missVals);
-  missEl.textContent = fmtPct(avg);
-  missEl.classList.toggle("cell-neg", avg < 0);
-  document.getElementById("statMissExcessNote").textContent = "n=" + missVals.length + " miss companies";
- }else{
-  missEl.textContent = "n/a";
- }
-
- const pairs = RAW.companies.filter(c => c.surprisePct !== null && c.excess.d20 !== null);
- const corrEl = document.getElementById("statCorr");
- if(pairs.length >= 3){
-  const reg = linearRegression(pairs.map(c => c.surprisePct), pairs.map(c => c.excess.d20));
-  corrEl.textContent = "r = " + reg.r.toFixed(3) + (reg.p < 0.05 ? " (significant)" : " (not significant)");
-  document.getElementById("statCorrNote").textContent = "n=" + reg.n + ", p " + (reg.p < 0.001 ? "< 0.001" : "= " + reg.p.toFixed(3));
- }else{
-  corrEl.textContent = "n/a";
-  document.getElementById("statCorrNote").textContent = "Not enough companies with +20D data yet";
- }
-}
-
-function renderDriftChart(){
- const curve = RAW.driftCurve;
- const ctx = document.getElementById("driftChart").getContext("2d");
- if(driftChart) driftChart.destroy();
- driftChart = new Chart(ctx, {
-  data: {
-   labels: curve.horizons.map(h => "+" + h + "D"),
-   datasets: [
-    {
-     type: "line", label: "Beats: avg. cumulative excess return", data: curve.beat.avgExcess,
-     borderColor: ndr("green"), backgroundColor: "transparent", borderWidth: 1.75,
-     pointRadius: 3, pointBackgroundColor: ndr("green"), tension: 0,
-    },
-    {
-     type: "line", label: "Misses: avg. cumulative excess return", data: curve.miss.avgExcess,
-     borderColor: ndr("red"), backgroundColor: "transparent", borderWidth: 1.75,
-     pointRadius: 3, pointBackgroundColor: ndr("red"), tension: 0,
-    },
-   ],
-  },
-  options: {
-   responsive: true,
-   maintainAspectRatio: false,
-   interaction: { mode: "index", intersect: false },
-   plugins: {
-    legend: ndrLegend(),
-    tooltip: {
-     callbacks: {
-      title: items => "Trading day " + items[0].label.replace("+", "") + " since report",
-      label: ctx => {
-       const n = ctx.datasetIndex === 0 ? curve.beat.n[ctx.dataIndex] : curve.miss.n[ctx.dataIndex];
-       return ctx.dataset.label + ": " + fmtPct(ctx.raw) + " (n=" + n + ")";
-      },
-     },
-    },
-   },
-   scales: {
-    x: { ...ndrXScale(), title: { display: true, text: "Trading days since report date", color: ndr("axis-soft"), font: { size: 10 } } },
-    y: ndrYScale({ fmt: v => v + "%", title: "Avg. cumulative excess return" }),
-   },
-  },
- });
-}
-
-function renderRegressionAndGroupTests(){
- const pairs = RAW.companies.filter(c => c.surprisePct !== null && c.excess.d20 !== null);
- const ctx = document.getElementById("regressionChart").getContext("2d");
- if(regressionChart) regressionChart.destroy();
-
- const datasets = [
-  {
-   label: "Companies", data: pairs.map(c => ({ x: c.surprisePct, y: c.excess.d20, label: c.name + " (" + c.symbol + ")" })),
-   backgroundColor: pairs.map(c => c.beat > 0 ? ndr("green") : c.beat < 0 ? ndr("red") : ndr("slate")),
-   pointRadius: 3, showLine: false,
-  },
- ];
-
- if(pairs.length >= 3){
-  const xs = pairs.map(c => c.surprisePct);
-  const ys = pairs.map(c => c.excess.d20);
-  const pearson = linearRegression(xs, ys);
-  const spear = spearmanRegression(xs, ys);
-  const xMin = Math.min(...xs), xMax = Math.max(...xs);
-  datasets.push({
-   label: "Regression fit", type: "line",
-   data: [{ x: xMin, y: pearson.intercept + pearson.slope * xMin }, { x: xMax, y: pearson.intercept + pearson.slope * xMax }],
-   borderColor: ndr("navy"), borderWidth: 1.5, borderDash: [4, 3], pointRadius: 0, fill: false,
-  });
-
-  function row(label, stats){
-   const sig = stats.p < 0.05;
-   return "<tr>" +
-    "<td>" + label + "</td>" +
-    "<td>" + stats.n + "</td>" +
-    "<td>" + stats.r.toFixed(3) + "</td>" +
-    "<td>" + (stats.r2 * 100).toFixed(1) + "%</td>" +
-    "<td>" + (stats.slope >= 0 ? "+" : "") + stats.slope.toFixed(3) + "</td>" +
-    "<td>" + stats.t.toFixed(2) + "</td>" +
-    '<td class="' + (sig ? "sig" : "") + '">' + (stats.p < 0.001 ? "<0.001" : stats.p.toFixed(3)) + "</td>" +
-   "</tr>";
-  }
-  document.getElementById("regressionMethodTable").innerHTML =
-   '<table class="method-table">' +
-    "<thead><tr><th>Method</th><th>n</th><th>r</th><th>r&sup2;</th><th>slope</th><th>t</th><th>p</th></tr></thead>" +
-    "<tbody>" + row("Pearson (OLS)", pearson) + row("Spearman (&rho;)", spear) + "</tbody>" +
-   "</table>";
- }else{
-  document.getElementById("regressionMethodTable").innerHTML = '<div class="method-note">Not enough companies with both a surprise % and a +20-day excess return yet to fit a regression.</div>';
- }
-
- regressionChart = new Chart(ctx, {
-  type: "scatter",
-  data: { datasets },
-  options: {
-   responsive: true,
-   maintainAspectRatio: false,
-   plugins: {
-    legend: { display: false },
-    tooltip: { callbacks: { label: ctx => ctx.dataset.label === "Companies" ? (ctx.raw.label + ": surprise " + fmtPct(ctx.raw.x) + ", +20D excess " + fmtPct(ctx.raw.y)) : null } },
-   },
-   scales: {
-    x: ndrYScale({ position: "bottom", fmt: v => v + "%", title: "Earnings surprise (%)" }),
-    y: ndrYScale({ fmt: v => v + "%", title: "+20-trading-day excess return vs. SPY (%)" }),
-   },
-  },
- });
-
- const beatVals = beatVals20();
- const missVals = missVals20();
- const t = welchTTest(beatVals, missVals);
- if(t){
-  const sig = t.p < 0.05;
-  document.getElementById("groupMethodTable").innerHTML =
-   '<table class="method-table">' +
-    "<thead><tr><th>Group</th><th>n</th><th>mean +20D excess</th><th>median +20D excess</th></tr></thead>" +
-    "<tbody>" +
-     "<tr><td>Beats</td><td>" + beatVals.length + "</td><td>" + fmtPct(mean(beatVals)) + "</td><td>" + fmtPct(median(beatVals)) + "</td></tr>" +
-     "<tr><td>Misses</td><td>" + missVals.length + "</td><td>" + fmtPct(mean(missVals)) + "</td><td>" + fmtPct(median(missVals)) + "</td></tr>" +
-     "<tr><td>Welch two-sample t-test</td><td colspan='2'>t = " + t.t.toFixed(2) + ", df &asymp; " + t.dof.toFixed(1) + "</td>" +
-      '<td class="' + (sig ? "sig" : "") + '">p ' + (t.p < 0.001 ? "< 0.001" : "= " + t.p.toFixed(3)) + "</td></tr>" +
-    "</tbody>" +
-   "</table>";
- }else{
-  document.getElementById("groupMethodTable").innerHTML = '<div class="method-note">Not enough companies in both the beat and miss groups with +20-day data yet to run a two-sample test.</div>';
- }
+ document.getElementById("statCompanies").textContent = RAW.market.companyCount;
+ document.getElementById("statCompaniesNote").textContent = RAW.loadedCount + " of " + RAW.universeSize + " loaded, " + RAW.market.companyCount + " with usable statement history";
+ document.getElementById("statRoic").textContent = fmtPct(RAW.market.medianRoic);
+ document.getElementById("statWacc").textContent = fmtPct(RAW.market.medianWacc);
+ document.getElementById("statWaccNote").textContent = "Risk-free " + fmtPct(RAW.market.riskFreeRate) + " + beta × " + fmtPct(RAW.market.marketErpAssumption) + " market ERP";
+ document.getElementById("statCreatorPct").textContent = fmtPct(RAW.market.valueCreatorPct, 0);
 }
 
 function renderSectorChart(){
- const threshold = RAW.sectorThinThreshold;
- document.getElementById("sectorThresholdLabel").textContent = threshold;
- const all = RAW.sectorBreakdown || [];
- const rows = all.filter(r => !r.thin);
- const thinRows = all.filter(r => r.thin);
-
- const noteParts = [];
- if(thinRows.length){
-  noteParts.push("Excluded as too thin (fewer than " + threshold + " companies in the beat or miss group): " + thinRows.map(r => r.sector + " (beats n=" + r.beatN + ", misses n=" + r.missN + ")").join("; ") + ".");
- }
- if(!rows.length){
-  noteParts.unshift("No sector currently has at least " + threshold + " companies in both the beat and miss groups. The chart is empty until more sectors qualify.");
- }
- document.getElementById("sectorNote").textContent = noteParts.join(" ");
-
+ const sectors = RAW.sectors.map(s => s.sector);
  const ctx = document.getElementById("sectorChart").getContext("2d");
  if(sectorChart) sectorChart.destroy();
  sectorChart = new Chart(ctx, {
   type: "bar",
   data: {
-   labels: rows.map(r => r.sector),
+   labels: sectors,
    datasets: [
-    { label: "Beats", data: rows.map(r => r.beatMedianExcess20), backgroundColor: ndr("green"), borderRadius: 4 },
-    { label: "Misses", data: rows.map(r => r.missMedianExcess20), backgroundColor: ndr("red"), borderRadius: 4 },
+    { label: "ROIC", data: RAW.sectors.map(s => s.medianRoic), backgroundColor: ndr("gold"), borderRadius: 3 },
+    { label: "WACC", data: RAW.sectors.map(s => s.medianWacc), backgroundColor: ndr("navy"), borderRadius: 3 },
    ],
   },
   options: {
-   indexAxis: "y",
    responsive: true,
    maintainAspectRatio: false,
    plugins: {
-    legend: ndrLegend(),
-    tooltip: {
-     callbacks: {
-      label: ctx => {
-       const r = rows[ctx.dataIndex];
-       const n = ctx.dataset.label === "Beats" ? r.beatN : r.missN;
-       return ctx.dataset.label + " median +20D excess: " + fmtPct(ctx.raw) + " (n=" + n + ")";
-      },
-     },
-    },
+    legend: { display: true, position: "top", align: "start", labels: { boxWidth: 12, boxHeight: 12, color: ndr("axis"), font: { size: 11 } } },
+    tooltip: { callbacks: { label: ctx => ctx.dataset.label + ": " + fmtPct(ctx.parsed.y) } },
    },
    scales: {
-    x: ndrYScale({ position: "bottom", fmt: v => v + "%" }),
-    y: { ticks: { color: ndr("axis"), font: { size: 11 } }, grid: { color: "rgba(0,0,0,0)", borderColor: ndr("axis") } },
+    x: ndrXScale(),
+    y: ndrYScale({ fmt: v => v + "%" }),
    },
   },
  });
 }
 
+function renderSpreadHistogram(){
+ const spreads = RAW.companies.map(c => c.spread).filter(v => v !== null && v !== undefined && !isNaN(v));
+ const binWidth = 2; // percentage points
+ const minBin = Math.floor(Math.min(...spreads) / binWidth) * binWidth;
+ const maxBin = Math.ceil(Math.max(...spreads) / binWidth) * binWidth;
+ const bins = [];
+ for(let b = minBin; b < maxBin; b += binWidth) bins.push({ lo: b, hi: b + binWidth, count: 0 });
+ for(const v of spreads){
+  let idx = Math.floor((v - minBin) / binWidth);
+  if(idx < 0) idx = 0;
+  if(idx >= bins.length) idx = bins.length - 1;
+  bins[idx].count++;
+ }
+
+ const ctx = document.getElementById("spreadHistogram").getContext("2d");
+ if(spreadHistogram) spreadHistogram.destroy();
+ spreadHistogram = new Chart(ctx, {
+  type: "bar",
+  data: {
+   labels: bins.map(b => (b.lo >= 0 ? "+" : "") + b.lo + "to" + (b.hi >= 0 ? "+" : "") + b.hi),
+   datasets: [{ data: bins.map(b => b.count), backgroundColor: bins.map(b => (b.lo + b.hi) / 2 >= 0 ? ndr("green") : ndr("red")), borderRadius: 3, barPercentage: 1.0, categoryPercentage: 0.95 }],
+  },
+  options: {
+   responsive: true,
+   maintainAspectRatio: false,
+   plugins: {
+    legend: { display: false },
+    tooltip: { callbacks: { title: items => { const b = bins[items[0].dataIndex]; return (b.lo >= 0 ? "+" : "") + b.lo + "pp to " + (b.hi >= 0 ? "+" : "") + b.hi + "pp"; }, label: ctx => ctx.parsed.y + " companies" } },
+   },
+   scales: {
+    x: { ...ndrXScale(), title: { display: true, text: "ROIC − WACC (pp)", color: ndr("axis-soft"), font: { size: 10 } } },
+    y: ndrYScale({ title: "Companies" }),
+   },
+  },
+ });
+}
+
+function renderBetaSpreadScatter(){
+ const pairs = RAW.betaSpreadPairs || [];
+ if(pairs.length < 5){
+  document.getElementById("betaSpreadMethodTable").innerHTML = '<div class="method-note">Not enough companies with beta data to test.</div>';
+  return;
+ }
+ const pearson = linearRegression(pairs.map(p => p.x), pairs.map(p => p.y));
+ const spear = spearmanRegression(pairs.map(p => p.x), pairs.map(p => p.y));
+ const xs = pairs.map(p => p.x);
+ const xMin = Math.min(...xs), xMax = Math.max(...xs);
+ const linePoints = [{ x: xMin, y: pearson.intercept + pearson.slope * xMin }, { x: xMax, y: pearson.intercept + pearson.slope * xMax }];
+
+ const ctx = document.getElementById("betaSpreadScatter").getContext("2d");
+ if(betaSpreadScatter) betaSpreadScatter.destroy();
+ betaSpreadScatter = new Chart(ctx, {
+  type: "scatter",
+  data: {
+   datasets: [
+    { label: "Companies", data: pairs, backgroundColor: ndr("gold"), pointRadius: 2.5, showLine: false },
+    { label: "Regression fit", type: "line", data: linePoints, borderColor: ndr("navy"), borderWidth: 1.5, borderDash: [4, 3], pointRadius: 0, fill: false },
+   ],
+  },
+  options: {
+   responsive: true,
+   maintainAspectRatio: false,
+   plugins: {
+    legend: { display: false },
+    tooltip: { callbacks: { label: ctx => ctx.dataset.label === "Companies" ? (ctx.raw.symbol + ": beta " + ctx.raw.x.toFixed(2) + ", spread " + fmtPp(ctx.raw.y)) : null } },
+   },
+   scales: {
+    x: ndrYScale({ position: "bottom", title: "Beta" }),
+    y: ndrYScale({ fmt: v => v + "pp", title: "ROIC − WACC spread (pp)" }),
+   },
+  },
+ });
+
+ document.getElementById("betaSpreadMethodTable").innerHTML = methodTableHtml(pearson, spear,
+  "Slope is spread (pp) per 1.0 of beta. n=" + pearson.n + " companies with a reported beta.");
+}
+
+function renderRel3mSpreadScatter(){
+ const pairs = RAW.rel3MSpreadPairs || [];
+ if(pairs.length < 5){
+  document.getElementById("rel3mSpreadMethodTable").innerHTML = '<div class="method-note">Relative Strength Leaders/Laggards data isn’t available yet, so this test can’t run.</div>';
+  return;
+ }
+ const pearson = linearRegression(pairs.map(p => p.x), pairs.map(p => p.y));
+ const spear = spearmanRegression(pairs.map(p => p.x), pairs.map(p => p.y));
+ const xs = pairs.map(p => p.x);
+ const xMin = Math.min(...xs), xMax = Math.max(...xs);
+ const linePoints = [{ x: xMin, y: pearson.intercept + pearson.slope * xMin }, { x: xMax, y: pearson.intercept + pearson.slope * xMax }];
+
+ const ctx = document.getElementById("rel3mSpreadScatter").getContext("2d");
+ if(rel3mSpreadScatter) rel3mSpreadScatter.destroy();
+ rel3mSpreadScatter = new Chart(ctx, {
+  type: "scatter",
+  data: {
+   datasets: [
+    { label: "Companies", data: pairs, backgroundColor: ndr("gold"), pointRadius: 2.5, showLine: false },
+    { label: "Regression fit", type: "line", data: linePoints, borderColor: ndr("navy"), borderWidth: 1.5, borderDash: [4, 3], pointRadius: 0, fill: false },
+   ],
+  },
+  options: {
+   responsive: true,
+   maintainAspectRatio: false,
+   plugins: {
+    legend: { display: false },
+    tooltip: { callbacks: { label: ctx => ctx.dataset.label === "Companies" ? (ctx.raw.symbol + ": spread " + fmtPp(ctx.raw.x) + ", rel. 3M " + fmtPp(ctx.raw.y)) : null } },
+   },
+   scales: {
+    x: ndrYScale({ position: "bottom", fmt: v => v + "pp", title: "ROIC − WACC spread (pp)" }),
+    y: ndrYScale({ fmt: v => v + "pp", title: "3-month return vs. SPY (pp)" }),
+   },
+  },
+ });
+
+ document.getElementById("rel3mSpreadMethodTable").innerHTML = methodTableHtml(pearson, spear,
+  "Slope is relative-return pp per 1pp of spread. n=" + pearson.n + " companies. A single snapshot in time, not a forward-return test — a significant result here says the market's current pricing lines up with current economic profitability, not that spread predicts future returns.");
+}
+
 function renderLeaderTable(rows, tbodyId){
  const tbody = document.getElementById(tbodyId);
  if(!rows || !rows.length){
-  tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; color:var(--muted); padding:24px;">No qualifying companies yet.</td></tr>';
+  tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; color:var(--muted); padding:24px;">No qualifying companies.</td></tr>';
   return;
  }
  tbody.innerHTML = rows.map(r => `<tr>
-  <td><span class="sector-name">${r.name}</span> <span class="sector-ticker">${r.symbol}</span></td>
-  <td><span class="sector-ticker">${r.sector || "n/a"}</span></td>
-  <td>${fmtPct(r.surprisePct)}</td>
-  <td>${fmtPct(r.excess20)}</td>
+  <td><span class="sector-name">${r.symbol}</span></td>
+  <td><span class="sector-ticker">${r.sector || "—"}</span></td>
+  <td>${fmtPct(r.roic)}</td>
+  <td>${fmtPct(r.wacc)}</td>
+  <td class="${r.spread >= 0 ? "spread-pos" : "spread-neg"}">${fmtPp(r.spread)}</td>
  </tr>`).join("");
-}
-
-function companyRowValues(c){
- return {
-  symbol: c.symbol, name: c.name, sector: c.sector, reportedDate: c.reportedDate, beat: c.beat,
-  surprisePct: c.surprisePct, excess1: c.excess.d1, excess5: c.excess.d5, excess10: c.excess.d10, excess20: c.excess.d20,
- };
 }
 
 function sortBy(key){
@@ -1483,11 +1382,11 @@ function sortBy(key){
   SORT_KEY = key;
   SORT_DIR = 1;
  }
- renderCompanyTable();
+ renderTable();
 }
 
-function renderCompanyTable(){
- const rows = RAW.companies.map(companyRowValues).sort((a, b) => {
+function renderTable(){
+ const rows = [...RAW.companies].sort((a, b) => {
   const av = a[SORT_KEY], bv = b[SORT_KEY];
   if(av === null || av === undefined) return 1;
   if(bv === null || bv === undefined) return -1;
@@ -1495,23 +1394,19 @@ function renderCompanyTable(){
   return (av - bv) * SORT_DIR;
  });
 
- const tbody = document.getElementById("companyBody");
- if(!rows.length){
-  tbody.innerHTML = '<tr><td colspan="8" style="text-align:center; color:var(--muted); padding:30px;">No companies in the coverage window this run.</td></tr>';
- }else{
-  tbody.innerHTML = rows.map(r => `<tr>
-   <td><span class="sector-name">${r.name}</span> <span class="sector-ticker">${r.symbol}</span></td>
-   <td><span class="sector-ticker">${r.sector || "n/a"}</span></td>
-   <td>${fmtDate(r.reportedDate)} <span class="tag ${r.beat > 0 ? "beat" : r.beat < 0 ? "miss" : ""}">${r.beat > 0 ? "beat" : r.beat < 0 ? "miss" : "meet"}</span></td>
-   <td>${fmtPct(r.surprisePct)}</td>
-   <td>${fmtPct(r.excess1)}</td>
-   <td>${fmtPct(r.excess5)}</td>
-   <td>${fmtPct(r.excess10)}</td>
-   <td>${fmtPct(r.excess20)}</td>
-  </tr>`).join("");
- }
+ const tbody = document.getElementById("tableBody");
+ tbody.innerHTML = rows.map(r => `<tr>
+  <td><span class="sector-name">${r.symbol}</span></td>
+  <td><span class="sector-ticker">${r.sector || "—"}</span></td>
+  <td>${fmtPct(r.roic)}</td>
+  <td>${fmtPct(r.wacc)}</td>
+  <td class="${r.spread >= 0 ? "spread-pos" : "spread-neg"}">${fmtPp(r.spread)}</td>
+  <td>${fmtPct(r.costOfEquity)}</td>
+  <td>${fmtPct(r.costOfDebtAfterTax)}</td>
+  <td>${fmtBeta(r.beta)}</td>
+ </tr>`).join("");
 
- document.querySelectorAll("#companyTable thead th").forEach(th => {
+ document.querySelectorAll("#stockTable thead th").forEach(th => {
   const key = th.dataset.key;
   th.classList.toggle("sorted", key === SORT_KEY);
   const arrow = th.querySelector(".sort-arrow");
@@ -1519,15 +1414,9 @@ function renderCompanyTable(){
  });
 }
 
-document.querySelectorAll("#companyTable thead th").forEach(th => {
+document.querySelectorAll("#stockTable thead th").forEach(th => {
  const key = th.dataset.key;
- if(key){
-  const arrow = document.createElement("span");
-  arrow.className = "sort-arrow";
-  arrow.textContent = "▾";
-  th.appendChild(arrow);
-  th.addEventListener("click", () => sortBy(key));
- }
+ if(key) th.addEventListener("click", () => sortBy(key));
 });
 
 init();
