@@ -220,6 +220,11 @@
   status = 200
 
 [[redirects]]
+  from = "/api/roe-decomposition"
+  to = "/.netlify/functions/roe-decomposition"
+  status = 200
+
+[[redirects]]
   from = "/api/analyst-price-target"
   to = "/.netlify/functions/analyst-price-target"
   status = 200
@@ -669,6 +674,17 @@
   # two-statement sweeps. Optionally reads scheduled-relative-strength-
   # background's own published snapshot for the R&D-vs-relative-return
   # test; works fine without it (the test just doesn't render).
+
+[functions."scheduled-roe-decomposition-background"]
+  # One-time snapshot, no schedule — same convention as scheduled-roic-
+  # wacc-background above. Its own independent ~1006-call INCOME_STATEMENT
+  # + BALANCE_SHEET sweep, 28 quarters deep (same window as scheduled-
+  # margin-leverage-background) rather than extending that job's own
+  # checkpoint — see this function's own file for why. Needs the same
+  # checkpoint/resume machinery across runs as scheduled-roic-wacc-
+  # background and scheduled-cash-conversion-cycle-background; run it
+  # (Netlify dashboard "Run now") until a run completes without reporting
+  # partial:true.
 
 [functions."scheduled-analyst-price-target-background"]
   # One-time snapshot (2026-09-16) — no schedule, same reasoning as

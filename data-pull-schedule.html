@@ -21,7 +21,7 @@ small{opacity:.7}
 </head>
 <body>
 <h1>Data Schedule</h1>
-<p>(New York is UTC−4 until November 1, then UTC−5.) This page is regenerated from the site's configuration on every deploy (last updated 09-22-2026).</p>
+<p>(New York is UTC−4 until November 1, then UTC−5.) This page is regenerated from the site's configuration on every deploy (last updated 09-24-2026).</p>
 <div class="w">
 <table>
 <thead><tr><th>Page</th><th>Job</th><th>When</th><th>Pulled from</th><th>Notes</th></tr></thead>
@@ -75,6 +75,7 @@ small{opacity:.7}
 <tr><td><a href="/news-sentiment.html">News Sentiment Momentum | Michael J. Stevenson</a></td><td class="m">news-sentiment</td><td>Manual: run by hand</td><td>Alpha Vantage: NEWS_SENTIMENT</td><td>News articles and sentiment scores for every S&amp;P 500 stock.<br>Reads: relative-strength</td></tr>
 <tr><td><a href="/options-positioning.html">Options Positioning | Michael J. Stevenson</a></td><td class="m">options-positioning</td><td>Manual: run by hand</td><td>Alpha Vantage: HISTORICAL_PUT_CALL_RATIO</td><td>Put/call ratio for every S&amp;P 500 stock, joined against the relative-strength history for the momentum test.<br>Reads: relative-strength</td></tr>
 <tr><td><a href="/rd-intensity.html">R&amp;D Intensity</a></td><td class="m">rd-intensity</td><td>Manual: run by hand</td><td>Alpha Vantage: INCOME_STATEMENT</td><td>Reads: relative-strength</td></tr>
+<tr><td><a href="/roe-decomposition.html">ROE Decomposition (DuPont Analysis)</a></td><td class="m">roe-decomposition</td><td>Manual: run by hand</td><td>Alpha Vantage: BALANCE_SHEET, INCOME_STATEMENT</td><td></td></tr>
 <tr><td><a href="/roic-wacc.html">ROIC vs. Cost of Capital</a></td><td class="m">roic-wacc</td><td>Manual: run by hand</td><td>Alpha Vantage: BALANCE_SHEET, INCOME_STATEMENT, TREASURY_YIELD</td><td>Reads: equity-risk-premium, relative-strength</td></tr>
 <tr><td><a href="/shareholder-yield.html">Shareholder Yield: Buybacks vs. Dividends | Michael J. Stevenson</a></td><td class="m">shareholder-yield</td><td>Manual: run by hand</td><td>Alpha Vantage: OVERVIEW</td><td>Dividend yield for every S&amp;P 500 stock. Buyback yield is read from the share-count-trends data, not fetched again.<br>Reads: share-count</td></tr>
 <tr><td><a href="/spin-off-performance.html">Spin-Off Performance Tracker | Michael J. Stevenson</a></td><td class="m">spinoff</td><td>Manual: run by hand</td><td>Alpha Vantage: TIME_SERIES_DAILY_ADJUSTED</td><td>Prices for spun-off companies, their parents and SPY, around each spinoff.</td></tr>
