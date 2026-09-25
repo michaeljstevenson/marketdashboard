@@ -10,7 +10,6 @@
 </script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom@2"></script>
-<script src="date-format.js"></script>
 <script>
 // FRED-style zoom: drag horizontally on any chart to zoom into that range,
 // double-click to reset. Applied via Chart.defaults so every chart on the
@@ -153,7 +152,7 @@ document.addEventListener("DOMContentLoaded", function(){
 </script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Margin &amp; Leverage Cycle | Michael J. Stevenson</title>
+<title>52-Week High Momentum — Michael J. Stevenson</title>
 
 <style>
 
@@ -355,6 +354,7 @@ h1{
  border:1px solid var(--hair);
  border-radius:10px;
  padding:20px;
+ min-width:0;
 }
 
 .stat-label{
@@ -427,26 +427,6 @@ h1{
  padding:14px 14px 10px;
 }
 
-.metric-toggle{
- display:flex;
- gap:6px;
-}
-
-.metric-toggle button{
- background:var(--card-hover);
- border:1px solid var(--hair);
- color:var(--muted);
- border-radius:6px;
- padding:5px 12px;
- font-size:11px;
- cursor:pointer;
-}
-
-.metric-toggle button.active{
- color:var(--ink);
- border-color:var(--greed);
-}
-
 /* Two charts / method-tables side by side, same breakpoint as table-grid */
 .chart-grid{
  display:grid;
@@ -486,6 +466,7 @@ h1{
  border-radius:12px;
  overflow-x:auto;
  margin-bottom:30px;
+ min-width:0;
 }
 
 .table-grid .table-box{ margin-bottom:0; }
@@ -568,9 +549,9 @@ tbody td:nth-child(2){
 .cell-neg{ color:var(--ink); }
 .cell-na{ color:var(--muted); }
 
-.trend-up{ color:var(--greed); }
-.trend-down{ color:var(--fear); }
-.trend-flat{ color:var(--muted); }
+.tag-oversold{ color:var(--greed); }
+.tag-overbought{ color:var(--fear); }
+.tag-neutral{ color:var(--muted); }
 
 /* SCATTER / METHOD TABLE (mirrors /factor-analysis) */
 
@@ -591,7 +572,7 @@ tbody td:nth-child(2){
  margin-top:8px;
 }
 
-#marginRateMethodTable, #leverageRateMethodTable, #marginLeverageMethodTable{
+#momentumMethodTable{
  overflow-x:auto;
 }
 
@@ -631,26 +612,6 @@ tbody td:nth-child(2){
  color:var(--muted);
  margin-top:8px;
  font-style:italic;
-}
-
-/* SECTOR LEGEND (scatter / spaghetti charts) */
-
-.sector-legend{
- display:flex;
- flex-wrap:wrap;
- gap:10px 16px;
- margin-top:14px;
- font-size:11px;
- color:var(--muted);
-}
-
-.sector-legend .dot{
- display:inline-block;
- width:8px;
- height:8px;
- border-radius:50%;
- margin-right:5px;
- vertical-align:middle;
 }
 
 /* EXPLAINER */
@@ -770,7 +731,7 @@ tbody td:nth-child(2){
 <a href="/volatility.html">Implied vs. Realized Volatility</a>
 <a href="/market-breadth.html">Market Breadth</a>
 <a href="/ath-index.html">All-Time Highs and Lows</a>
-<a href="/margin-leverage.html" class="active">Margin &amp; Leverage Cycle</a>
+<a href="/margin-leverage.html">Margin &amp; Leverage Cycle</a>
 <a href="/short-sale-volume.html">Short Sale Volume</a>
 <a href="/news-sentiment.html">News Sentiment Momentum</a>
 <a href="/seasonality.html">Seasonality</a>
@@ -822,7 +783,7 @@ tbody td:nth-child(2){
 <a href="/country-sector-scorecard.html">Country / Sector Scorecard</a>
 <a href="/relative-strength-leaders.html">Relative Strength Leaders/Laggards</a>
 <a href="/rsi-reversal.html">RSI Mean-Reversion Screen</a>
-<a href="/52-week-high-momentum.html">52-Week High Momentum</a>
+<a href="/52-week-high-momentum.html" class="active">52-Week High Momentum</a>
 <a href="/concentration.html">Concentration</a>
 </div>
 </div>
@@ -869,7 +830,7 @@ tbody td:nth-child(2){
 </div>
 
 </div>
-<button class="theme-toggle" id="themeToggle" type="button" aria-label="Toggle light/dark mode" title="Toggle light/dark mode">&#9789;</button>
+<button aria-label="Toggle light/dark mode" class="theme-toggle" id="themeToggle" title="Toggle light/dark mode" type="button">☽</button>
 </nav>
 <script>
 // Class-driven (not pure :hover) nav dropdowns: pure CSS :hover drops the
@@ -913,8 +874,8 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 
 <div class="header">
 <div>
-<h1>Margin &amp; Leverage Cycle</h1>
-<div class="subtitle">How S&amp;P 500 profit margins and balance-sheet leverage have moved through the recent Fed hiking and cutting cycle: sector trends, a company-level margin-vs-leverage scatter, and a test of whether hiking regimes coincide with margin compression or rising leverage.</div>
+<h1>52-Week High Momentum</h1>
+<div class="subtitle">Does trading near its 52-week high tend to keep paying off for a stock, rather than mean-revert? The "52-week high effect" (George &amp; Hwang, 2004) says yes &mdash; the opposite-signed cousin of <a href="/rsi-reversal.html">RSI Mean-Reversion Screen</a>'s short-term-reversal test on this site.</div>
 </div>
 <div class="updated" id="updated">Loading...</div>
 </div>
@@ -922,219 +883,161 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <div class="stat-grid">
 <div class="stat-card">
 <div class="stat-label">Companies Loaded</div>
-<div class="stat-value" id="statCompanies" style="font-size:20px;">…</div>
+<div class="stat-value" id="statCompanies" style="font-size:20px;">—</div>
 <div class="stat-note" id="statCompaniesNote">Of full S&amp;P 500</div>
 </div>
 <div class="stat-card">
-<div class="stat-label">Median Operating Margin</div>
-<div class="stat-value" id="statMedianMargin">…</div>
-<div class="stat-note" id="statMedianMarginNote">Latest quarter, market-wide</div>
+<div class="stat-label">Median Range Position</div>
+<div class="stat-value" id="statMedianRangePos">—</div>
+<div class="stat-note">0% = 52-wk low, 100% = 52-wk high</div>
 </div>
 <div class="stat-card">
-<div class="stat-label">Median Net Debt / EBITDA</div>
-<div class="stat-value" id="statMedianLeverage">…</div>
-<div class="stat-note" id="statMedianLeverageNote">Latest quarter, market-wide</div>
+<div class="stat-label">Near High / Near Low</div>
+<div class="stat-value" id="statExtremeCounts" style="font-size:20px;">—</div>
+<div class="stat-note">Range position &ge;90% / &le;10%</div>
 </div>
 <div class="stat-card">
-<div class="stat-label">Current Fed Regime</div>
-<div class="stat-value" id="statRegime" style="font-size:20px;">…</div>
-<div class="stat-note" id="statRegimeNote">Avg. quarterly margin change, this regime</div>
+<div class="stat-label">Momentum Test (r)</div>
+<div class="stat-value" id="statMomentumR">—</div>
+<div class="stat-note" id="statMomentumRNote">Range position vs. next week's relative return</div>
 </div>
 </div>
 
 <div class="chart-box">
 <div class="chart-box-header">
 <div>
-<h2>Sector margins over time</h2>
-<div class="chart-subhead">Median quarterly margin across each SPDR sector's S&amp;P 500 constituents</div>
-</div>
-<div class="metric-toggle" id="marginMetricToggle">
-<button type="button" data-metric="operating" class="active">Operating</button>
-<button type="button" data-metric="gross">Gross</button>
-<button type="button" data-metric="net">Net</button>
+<h2>Current 52-week range position distribution</h2>
+<div class="chart-subhead">Every S&amp;P 500 constituent with a usable price/52-week-range reading this run, bucketed in 5-point bins &mdash; dashed lines mark the 10% and 90% "near the edge of the range" thresholds this page uses</div>
 </div>
 </div>
 <div class="ndr-panel">
 <div class="chart-canvas-wrap">
-<canvas id="sectorMarginChart"></canvas>
+<canvas id="rangePosHistogram"></canvas>
 </div>
 </div>
-<div class="sector-legend" id="marginLegend"></div>
 </div>
 
 <div class="chart-box">
 <div class="chart-box-header">
 <div>
-<h2>Sector leverage over time</h2>
-<div class="chart-subhead">Median net debt / trailing-twelve-month EBITDA by sector. Higher means more balance-sheet leverage relative to cash earnings.</div>
+<h2>Median range position by sector</h2>
+<div class="chart-subhead">This run's median 52-week range position across each SPDR sector's S&amp;P 500 constituents</div>
 </div>
 </div>
 <div class="ndr-panel">
 <div class="chart-canvas-wrap">
-<canvas id="sectorLeverageChart"></canvas>
+<canvas id="sectorChart"></canvas>
 </div>
 </div>
-<div class="sector-legend" id="leverageLegend"></div>
 </div>
 
-<div class="chart-grid">
 <div class="chart-box">
 <div class="chart-box-header">
 <div>
-<h2>Margin change by Fed regime</h2>
-<div class="chart-subhead">Median quarter-over-quarter operating margin change (ppt), grouped by that quarter's Fed-funds regime</div>
+<h2>Market-median range position, week by week</h2>
+<div class="chart-subhead">One point per weekly run &mdash; the current-price join needed to place each stock within its 52-week range is itself a current-state snapshot, so this builds up over time rather than backfilling</div>
 </div>
 </div>
 <div class="ndr-panel">
+<div class="chart-canvas-wrap" style="height:280px;">
+<canvas id="historyChart"></canvas>
+</div>
+</div>
+</div>
+
+<div class="chart-box">
+<div class="chart-box-header">
+<div>
+<h2>The momentum test: range-position decile vs. next week's relative return</h2>
+<div class="chart-subhead">Each week's range-position decile per company, paired with that company's realized return relative to SPY over the following week &mdash; if the 52-week-high effect is real, decile 10 (nearest the 52-week high) should show the strongest forward returns, not a reversal back toward the middle</div>
+</div>
+</div>
+<div id="decileChartWrap" class="ndr-panel">
 <div class="chart-canvas-wrap" style="height:300px;">
-<canvas id="regimeMarginChart"></canvas>
+<canvas id="decileChart"></canvas>
 </div>
 </div>
-</div>
-<div class="chart-box">
-<div class="chart-box-header">
-<div>
-<h2>Leverage change by Fed regime</h2>
-<div class="chart-subhead">Median quarter-over-quarter net-debt/EBITDA change (turns), grouped by regime</div>
-</div>
-</div>
-<div class="ndr-panel">
-<div class="chart-canvas-wrap" style="height:300px;">
-<canvas id="regimeLeverageChart"></canvas>
-</div>
-</div>
-</div>
-
-<div class="chart-grid">
-<div class="chart-box">
-<div class="chart-box-header">
-<div>
-<h2>Margin change vs. change in Fed funds rate</h2>
-<div class="chart-subhead">Each point is one calendar quarter: x is the trailing 3-month change in the effective Fed funds rate, y is that quarter's median operating-margin change</div>
-</div>
-</div>
-<div class="ndr-panel">
-<div class="scatter-canvas-wrap">
-<canvas id="marginRateScatter"></canvas>
-</div>
-</div>
-<div id="marginRateMethodTable"></div>
-</div>
-<div class="chart-box">
-<div class="chart-box-header">
-<div>
-<h2>Leverage change vs. change in Fed funds rate</h2>
-<div class="chart-subhead">Same construction, for the median net-debt/EBITDA change that quarter</div>
-</div>
-</div>
-<div class="ndr-panel">
-<div class="scatter-canvas-wrap">
-<canvas id="leverageRateScatter"></canvas>
-</div>
-</div>
-<div id="leverageRateMethodTable"></div>
-</div>
+<div id="decileColdStart"></div>
 </div>
 
 <div class="chart-box">
 <div class="chart-box-header">
 <div>
-<h2>Margin vs. leverage, most recent quarter</h2>
-<div class="chart-subhead">Every company with both figures available. Is thinner margin associated with more leverage right now?</div>
+<h2>Range position vs. next week's relative return</h2>
+<div class="chart-subhead">The single-number version of the same test &mdash; every accumulated (range position, forward relative return) pair, pooled across weeks. A positive slope is consistent with the 52-week-high effect: high range position today &rarr; higher return next week, low range position today &rarr; lower.</div>
 </div>
 </div>
-<div class="ndr-panel">
-<div class="scatter-canvas-wrap" style="height:380px;">
-<canvas id="marginLeverageScatter"></canvas>
+<div id="momentumScatterWrap" class="ndr-panel">
+<div class="scatter-canvas-wrap">
+<canvas id="momentumScatter"></canvas>
 </div>
 </div>
-<div id="marginLeverageMethodTable"></div>
-<div class="sector-legend" id="scatterLegend"></div>
+<div id="momentumMethodTable"></div>
 </div>
 
 <div class="table-grid">
 <div class="table-box">
 <div class="table-box-header">
-<h2>Widest sector-relative margins</h2>
-<div class="chart-subhead">Operating margin furthest above its own sector's median</div>
+<h2>Nearest the 52-week high</h2>
+<div class="chart-subhead">Highest range position, &ge;90%</div>
 </div>
-<table id="marginHighTable">
-<thead><tr><th>Symbol</th><th>Sector</th><th>Margin</th><th>vs. Sector</th></tr></thead>
-<tbody id="marginHighBody"><tr><td colspan="4" style="text-align:center; color:var(--muted); padding:24px;">Loading&hellip;</td></tr></tbody>
+<table id="nearHighTable">
+<thead><tr><th>Symbol</th><th>Sector</th><th>Range Pos.</th></tr></thead>
+<tbody id="nearHighBody"><tr><td colspan="3" style="text-align:center; color:var(--muted); padding:24px;">Loading&hellip;</td></tr></tbody>
 </table>
 </div>
 <div class="table-box">
 <div class="table-box-header">
-<h2>Thinnest sector-relative margins</h2>
-<div class="chart-subhead">Operating margin furthest below its own sector's median</div>
+<h2>Nearest the 52-week low</h2>
+<div class="chart-subhead">Lowest range position, &le;10%</div>
 </div>
-<table id="marginLowTable">
-<thead><tr><th>Symbol</th><th>Sector</th><th>Margin</th><th>vs. Sector</th></tr></thead>
-<tbody id="marginLowBody"><tr><td colspan="4" style="text-align:center; color:var(--muted); padding:24px;">Loading&hellip;</td></tr></tbody>
-</table>
-</div>
-</div>
-
-<div class="table-grid">
-<div class="table-box">
-<div class="table-box-header">
-<h2>Most levered vs. sector</h2>
-<div class="chart-subhead">Net debt/EBITDA furthest above its own sector's median</div>
-</div>
-<table id="leverageHighTable">
-<thead><tr><th>Symbol</th><th>Sector</th><th>Net Debt/EBITDA</th><th>vs. Sector</th></tr></thead>
-<tbody id="leverageHighBody"><tr><td colspan="4" style="text-align:center; color:var(--muted); padding:24px;">Loading&hellip;</td></tr></tbody>
-</table>
-</div>
-<div class="table-box">
-<div class="table-box-header">
-<h2>Least levered vs. sector</h2>
-<div class="chart-subhead">Net debt/EBITDA furthest below its own sector's median</div>
-</div>
-<table id="leverageLowTable">
-<thead><tr><th>Symbol</th><th>Sector</th><th>Net Debt/EBITDA</th><th>vs. Sector</th></tr></thead>
-<tbody id="leverageLowBody"><tr><td colspan="4" style="text-align:center; color:var(--muted); padding:24px;">Loading&hellip;</td></tr></tbody>
+<table id="nearLowTable">
+<thead><tr><th>Symbol</th><th>Sector</th><th>Range Pos.</th></tr></thead>
+<tbody id="nearLowBody"><tr><td colspan="3" style="text-align:center; color:var(--muted); padding:24px;">Loading&hellip;</td></tr></tbody>
 </table>
 </div>
 </div>
 
 <div class="table-box">
 <div class="table-box-header">
-<h2>All companies with statement history on file</h2>
-<div class="chart-subhead">Latest-quarter margins and leverage, full S&amp;P 500</div>
+<h2>All companies with a usable range-position reading</h2>
+<div class="chart-subhead">This run's full sortable 52-week range-position cross-section, full S&amp;P 500</div>
 </div>
 <table id="stockTable">
 <thead>
 <tr>
 <th data-key="symbol">Symbol</th>
 <th data-key="sector">Sector</th>
-<th data-key="grossMargin">Gross<span class="sort-arrow">▾</span></th>
-<th data-key="operatingMargin">Operating<span class="sort-arrow">▾</span></th>
-<th data-key="netMargin">Net<span class="sort-arrow">▾</span></th>
-<th data-key="netDebtEbitda">Net Debt/EBITDA<span class="sort-arrow">▾</span></th>
-<th data-key="marginTrendDirection">4Q Trend<span class="sort-arrow">▾</span></th>
+<th data-key="price">Price<span class="sort-arrow">▾</span></th>
+<th data-key="high">52W High<span class="sort-arrow">▾</span></th>
+<th data-key="low">52W Low<span class="sort-arrow">▾</span></th>
+<th data-key="rangePos">Range Pos.<span class="sort-arrow">▾</span></th>
+<th data-key="decile">Decile<span class="sort-arrow">▾</span></th>
+<th data-key="signalSort">Signal<span class="sort-arrow">▾</span></th>
 </tr>
 </thead>
 <tbody id="tableBody">
-<tr><td colspan="7" style="text-align:center; color:var(--muted); padding:30px;">Loading margin &amp; leverage data&hellip;</td></tr>
+<tr><td colspan="8" style="text-align:center; color:var(--muted); padding:30px;">Loading range-position data&hellip;</td></tr>
 </tbody>
 </table>
 </div>
 
 <div class="explainer">
 <h2>Methodology</h2>
-<p><strong>Data.</strong> The universe is the S&amp;P 500. For each company, Alpha Vantage's quarterly <code>INCOME_STATEMENT</code> and <code>BALANCE_SHEET</code> data are joined on fiscal quarter-end date. Gross, operating and net margin are gross profit, operating income and net income divided by total revenue for the quarter. Leverage is net debt (total debt, using Alpha Vantage's combined <code>shortLongTermDebtTotal</code> field where available, minus cash &amp; equivalents) divided by trailing-twelve-month EBITDA. EBITDA uses Alpha Vantage's <code>ebitda</code> field where populated, otherwise operating income plus depreciation &amp; amortization. Some tickers return the string <code>"None"</code> for a field. Those values are treated as missing, and the company-quarter is dropped from that metric.</p>
-<p><strong>Sector series.</strong> Each is the median across a SPDR sector's constituents for a calendar quarter. A fiscal quarter-end is placed in the calendar quarter its month falls in, so a company with a non-calendar fiscal year (a January quarter-end, for example) can land one quarter off its own numbering. That doesn't affect a sector median. A sector-quarter median is published only once at least 3 companies report.</p>
-<p><strong>Regime test.</strong> Each calendar quarter is classified as Hiking, Holding or Cutting using the same thresholds as <a href="/small-cap-vs-large-cap.html">Small Cap vs. Large Cap Spread</a>: a trailing-3-month change in the effective Fed funds rate above 0.1pp is hiking, below -0.1pp is cutting, otherwise holding. The test uses one point per calendar quarter, not each company's quarterly change (~500 overlapping points per quarter would overstate significance). That point is the cross-company <i>median</i> change in operating margin, and separately in net-debt/EBITDA, regressed against that quarter's Fed funds change (Pearson and Spearman, as on <a href="/factor-analysis.html">Factor Analysis</a>). With a few dozen quarters, and margins and leverage that move slowly, this is a small-sample test. A weak or insignificant result is still a result.</p>
-<p>Leaderboards and the per-company table compare each company to its <i>own</i> sector's latest median, since margin and leverage norms vary a lot by industry (software vs. retail, utilities vs. banks). A company can show the widest margin on the page and still look ordinary next to its sector peers.</p>
-<p>Refreshes weekly (Saturday morning), since fundamentals only change when a company files a new 10-Q or 10-K. Sector and company name come from <a href="/sector-beeswarm.html">Sector Beeswarm</a>.</p>
-<div class="source">Source: <a href="https://www.alphavantage.co/" target="_blank" rel="noopener">Alpha Vantage: INCOME_STATEMENT, BALANCE_SHEET, FEDERAL_FUNDS_RATE</a></div>
+<p>Universe is the full S&amp;P 500. For every constituent, Alpha Vantage's <code>OVERVIEW</code> endpoint returns <code>52WeekHigh</code> and <code>52WeekLow</code> &mdash; a single-endpoint sweep (~503 calls), the same shape/cost as <a href="/rd-intensity.html">R&amp;D Intensity</a> and <a href="/rsi-reversal.html">RSI Mean-Reversion Screen</a>. Current price for each company (needed to place it within its own 52-week range) is read from <a href="/relative-strength-leaders.html">Relative Strength Leaders/Laggards</a>' own weekly price history rather than a second price sweep &mdash; the same reuse this page's forward-return test also depends on (below). <b>Range position</b> is <code style="white-space:normal;">(price &minus; 52WeekLow) / (52WeekHigh &minus; 52WeekLow)</code>, expressed as a percentage from 0% (at the 52-week low) to 100% (at the 52-week high), clipped to that band on the rare occasion a live price sits fractionally outside a slightly-stale high/low reading (Alpha Vantage refreshes <code>52WeekHigh</code>/<code>52WeekLow</code> "generally the same day a company reports its latest earnings," not necessarily same-day as the price snapshot this page joins against).</p>
+<p>Every constituent is ranked by range position each run and split into 10 equal-count <b>deciles</b> (decile 1 = lowest range position / nearest the 52-week low, decile 10 = highest range position / nearest the 52-week high). Sector and company name come from the same weekly metadata sweep that backs <a href="/sector-beeswarm.html">Sector Beeswarm</a>.</p>
+<p>This page tests the <b>52-week high effect</b> (George &amp; Hwang, 2004) &mdash; the well-documented tendency for stocks trading near their 52-week high to keep outperforming, rather than mean-revert &mdash; the opposite-signed cousin of <a href="/rsi-reversal.html">RSI Mean-Reversion Screen</a>'s short-term-reversal test on this same site. Because the current-price join is itself a current-state snapshot, the test needs successive weekly runs: each week's range-position decile per company is recorded, then joined against that company's own realized return &mdash; relative to SPY, using the same compounding excess-return construction as <a href="/relative-strength-leaders.html">Relative Strength Leaders/Laggards</a> &mdash; from that snapshot to the <i>next</i> weekly snapshot. Company and SPY prices for that join are read directly from Relative Strength Leaders/Laggards' own weekly price history (it already keeps one point per week for its own rank-persistence test) rather than paying for a second full-index price sweep; a week is skipped from the test, not recorded as a fabricated zero-return week, if that source data hasn't advanced since this page's prior run. <span id="skippedNote"></span></p>
+<p>The core result is a decile-bucket bar chart of average next-week relative return, plus a pooled Pearson-and-Spearman regression (same two-method check as <a href="/factor-analysis.html">Factor Analysis</a>) of range position against forward relative return across every accumulated pair. A positive, statistically significant slope is consistent with the 52-week-high effect: today's near-high names continuing to outperform next week, today's near-low names continuing to underperform. This needs at least two weekly snapshots before a single forward-return pair exists at all, and several more before a per-decile average is anything but noise &mdash; the page shows a plain "not enough history yet" message rather than a chart or regression built on too little data.</p>
+<p>Weekly recurring job (Saturday) &mdash; unlike most fundamentals sweeps added to this site since mid-September 2026 (one-time snapshots re-run manually), this one has to keep running: the momentum test only exists because successive weekly range-position snapshots can be compared to each other.</p>
+<p style="font-size:12px;">This page was originally scoped as a headcount-based "Revenue per Employee" page using Alpha Vantage's <code>COMPANY_OVERVIEW</code> endpoint. Real test calls against five S&amp;P 500 constituents (and a check of the endpoint's own schema) confirmed no employee-count field exists in this account's <code>OVERVIEW</code> response at all &mdash; not a naming quirk, a genuine absence &mdash; so that idea was set aside as a confirmed dead end rather than shipped with guessed or fabricated data; see this site's build log for the full account.</p>
+<p style="font-size:12px;">George, T.J., &amp; Hwang, C.-Y. (2004). "The 52-Week High and Momentum Investing." <i>The Journal of Finance</i>, 59(5), 2145&ndash;2176.</p>
+<div class="source">Source: <a href="https://www.alphavantage.co/" target="_blank" rel="noopener">Alpha Vantage — OVERVIEW</a>, plus this site's own <a href="/relative-strength-leaders.html">Relative Strength Leaders/Laggards</a> weekly price history</div>
 </div>
 
 </div>
 
 <script>
-const DATA_URL = "/api/margin-leverage";
+const DATA_URL = "/api/52-week-high-momentum";
 
 const SECTOR_COLORS = {
  "Information Technology": "#d98a3d",
@@ -1150,35 +1053,47 @@ const SECTOR_COLORS = {
  "Communication Services": "#4f7ae0",
 };
 
-let RAW = null;
-let SORT_KEY = "operatingMargin";
-let SORT_DIR = -1;
-let MARGIN_METRIC = "operating";
+const RANGE_BIN_WIDTH = 5;
+const RANGE_MIN = 0;
+const RANGE_MAX = 100;
+const NEAR_HIGH_THRESHOLD = 90;
+const NEAR_LOW_THRESHOLD = 10;
 
-function fmtPct(v, digits){
- if(v === null || v === undefined || isNaN(v)) return "n/a";
+let RAW = null;
+let SORT_KEY = "rangePos";
+let SORT_DIR = -1;
+
+function fmtNum(v, digits){
+ if(v === null || v === undefined || isNaN(v)) return "—";
  digits = digits === undefined ? 1 : digits;
- return (v >= 0 ? "+" : "") + v.toFixed(digits) + "%";
+ return v.toFixed(digits);
 }
-function fmtPlainPct(v, digits){
- if(v === null || v === undefined || isNaN(v)) return "n/a";
+function fmtPrice(v){
+ if(v === null || v === undefined || isNaN(v)) return "—";
+ return "$" + v.toFixed(2);
+}
+function fmtPct(v, digits){
+ if(v === null || v === undefined || isNaN(v)) return "—";
  digits = digits === undefined ? 1 : digits;
  return v.toFixed(digits) + "%";
 }
-function fmtPpt(v, digits){
- if(v === null || v === undefined || isNaN(v)) return "n/a";
- digits = digits === undefined ? 2 : digits;
- return (v >= 0 ? "+" : "") + v.toFixed(digits) + "ppt";
+function fmtSignedPct(v, digits){
+ if(v === null || v === undefined || isNaN(v)) return "—";
+ digits = digits === undefined ? 1 : digits;
+ return (v >= 0 ? "+" : "") + v.toFixed(digits) + "%";
 }
-function fmtX(v, digits){
- if(v === null || v === undefined || isNaN(v)) return "n/a";
- digits = digits === undefined ? 2 : digits;
- return v.toFixed(digits) + "x";
+
+function signalFor(rangePos){
+ if(rangePos === null || rangePos === undefined) return "neutral";
+ if(rangePos >= NEAR_HIGH_THRESHOLD) return "nearHigh";
+ if(rangePos <= NEAR_LOW_THRESHOLD) return "nearLow";
+ return "neutral";
 }
-function fmtDeltaX(v, digits){
- if(v === null || v === undefined || isNaN(v)) return "n/a";
- digits = digits === undefined ? 2 : digits;
- return (v >= 0 ? "+" : "") + v.toFixed(digits) + "x";
+function signalLabel(sig){
+ return sig === "nearHigh" ? "Near High" : sig === "nearLow" ? "Near Low" : "Neutral";
+}
+function signalSortValue(sig){
+ return sig === "nearLow" ? 0 : sig === "nearHigh" ? 2 : 1;
 }
 
 function showError(message){
@@ -1192,31 +1107,7 @@ function showWarning(message){
  banner.style.display = "block";
 }
 
-function themeInkColor(){
- const v = getComputedStyle(document.documentElement).getPropertyValue("--ink").trim();
- return v || "#eae6da";
-}
-function themeMutedColor(){
- const v = getComputedStyle(document.documentElement).getPropertyValue("--muted").trim();
- return v || "#8b9199";
-}
-function themeHairColor(){
- const v = getComputedStyle(document.documentElement).getPropertyValue("--hair").trim();
- return v || "#2b3138";
-}
-function themeGreedColor(){
- const v = getComputedStyle(document.documentElement).getPropertyValue("--greed").trim();
- return v || "#d98a3d";
-}
-function themeFearColor(){
- const v = getComputedStyle(document.documentElement).getPropertyValue("--fear").trim();
- return v || "#6f8fac";
-}
-
-// ---- NDR chart styling helpers (matches /concentration) ----------------
-// Colours come from the --ndr-* custom properties (constant across themes)
-// so the charts keep their warm-paper look while still following the
-// site's "read chart colours from CSS, don't hardcode" rule.
+// ---- NDR chart styling helpers (matches /concentration, /accruals) ----
 function ndr(name){
  return getComputedStyle(document.documentElement).getPropertyValue("--ndr-" + name).trim();
 }
@@ -1224,8 +1115,11 @@ function ndr(name){
 Chart.defaults.font.family = "'Iowan Old Style','Palatino Linotype',Georgia,serif";
 Chart.defaults.color = ndr("axis-soft");
 
-function ndrXScale(){
+function ndrXScale(opts){
+ opts = opts || {};
  return {
+  type: opts.type,
+  title: opts.title ? { display: true, text: opts.title, color: ndr("axis-soft"), font: { size: 10 } } : { display: false },
   ticks: { color: ndr("axis"), maxTicksLimit: 9, maxRotation: 0, autoSkip: true, font: { size: 11 } },
   grid: { color: "rgba(0,0,0,0)", borderColor: ndr("axis") },
  };
@@ -1240,13 +1134,6 @@ function ndrYScale(opts){
   ticks: { color: ndr("axis"), font: { size: 11 }, callback: opts.fmt || undefined },
   title: opts.title ? { display: true, text: opts.title, color: ndr("axis-soft"), font: { size: 10 } } : { display: false },
   min: opts.min, max: opts.max,
- };
-}
-
-function ndrLegend(){
- return {
-  display: true, position: "top", align: "start",
-  labels: { boxWidth: 22, boxHeight: 2, color: ndr("axis"), font: { size: 11 } },
  };
 }
 
@@ -1313,8 +1200,44 @@ function methodTableHtml(pearson, spear, unitNote){
  "</table>" + (unitNote ? '<div class="method-note">' + unitNote + "</div>" : "");
 }
 
-let sectorMarginChart = null, sectorLeverageChart = null, regimeMarginChart = null, regimeLeverageChart = null;
-let marginRateScatter = null, leverageRateScatter = null, marginLeverageScatter = null;
+// A pair count below this is treated as "not enough history yet" — matches
+// the threshold /relative-strength-leaders.html uses for its own
+// accumulated-history persistence test.
+const MIN_PAIRS_FOR_TEST = 30;
+
+let sectorChart = null, rangePosHistogram = null, historyChart = null, decileChart = null, momentumScatter = null;
+
+// Draws dashed vertical reference lines at range position 10%/90% on the
+// histogram's category axis. Registered locally (not via Chart.defaults)
+// so it only applies to this one chart.
+const thresholdLinePlugin = {
+ id: "rangeThresholdLines",
+ afterDraw(chart){
+  const bins = chart.$rangeBins;
+  if(!bins) return;
+  const { ctx, chartArea, scales } = chart;
+  const xScale = scales.x;
+  [NEAR_LOW_THRESHOLD, NEAR_HIGH_THRESHOLD].forEach((threshold) => {
+   const k = (threshold - RANGE_MIN) / RANGE_BIN_WIDTH; // boundary sits between bin index k-1 and k
+   if(k < 1 || k > bins.length - 1) return;
+   const px = (xScale.getPixelForValue(k - 1) + xScale.getPixelForValue(k)) / 2;
+   ctx.save();
+   ctx.strokeStyle = ndr("axis");
+   ctx.setLineDash([4, 3]);
+   ctx.lineWidth = 1;
+   ctx.beginPath();
+   ctx.moveTo(px, chartArea.top);
+   ctx.lineTo(px, chartArea.bottom);
+   ctx.stroke();
+   ctx.setLineDash([]);
+   ctx.fillStyle = ndr("axis-soft");
+   ctx.font = "10px " + Chart.defaults.font.family;
+   ctx.textAlign = threshold === NEAR_LOW_THRESHOLD ? "right" : "left";
+   ctx.fillText(threshold + "%", px + (threshold === NEAR_LOW_THRESHOLD ? -4 : 4), chartArea.top + 10);
+   ctx.restore();
+  });
+ },
+};
 
 async function init(){
  try{
@@ -1323,338 +1246,289 @@ async function init(){
   if(!res.ok || data.error) throw new Error(data.error || "failed to load");
 
   RAW = data;
-  document.getElementById("updated").textContent = "As of " + new Date(data.generated_at_utc).toLocaleString("en-US", { month: "2-digit", day: "2-digit", year: "numeric", hour: "numeric", minute: "2-digit" });
+  document.getElementById("updated").textContent = "As of " + new Date(data.generated_at_utc).toLocaleString();
 
   if(data.loadedCount < data.universeSize){
-   showWarning("Only " + data.loadedCount + " of " + data.universeSize + " S&P 500 constituents loaded. Some data may be missing.");
+   showWarning("Only " + data.loadedCount + " of " + data.universeSize + " S&P 500 constituents loaded this run — some data may be temporarily unavailable.");
+  }
+  if(!data.hasPriceSnapshot){
+   showWarning("Relative Strength Leaders/Laggards' price history hasn't populated yet, so this week's snapshot couldn't be joined for the current-price/range-position calculation.");
+  }
+
+  const skippedNote = document.getElementById("skippedNote");
+  if(skippedNote){
+   skippedNote.textContent = (data.skippedStalePriceTransitions || 0) > 0
+    ? data.skippedStalePriceTransitions + " weekly transition(s) were skipped for exactly that reason so far."
+    : "";
   }
 
   renderStats();
-  renderSectorMarginChart();
-  renderSectorLeverageChart();
-  renderRegimeCharts();
-  renderRateScatters();
-  renderMarginLeverageScatter();
-  renderLeaderTable(data.marginLeaders.high, "marginHighBody", "margin");
-  renderLeaderTable(data.marginLeaders.low, "marginLowBody", "margin");
-  renderLeaderTable(data.leverageLeaders.high, "leverageHighBody", "leverage");
-  renderLeaderTable(data.leverageLeaders.low, "leverageLowBody", "leverage");
+  renderRangePosHistogram();
+  renderSectorChart();
+  renderHistoryChart();
+  renderDecileChart();
+  renderMomentumScatter();
+  renderLeaderTable(data.nearHighLeaders, "nearHighBody", "nearHigh");
+  renderLeaderTable(data.nearLowLeaders, "nearLowBody", "nearLow");
   renderTable();
 
  }catch(e){
-  showError("Couldn't load margin & leverage data (" + e.message + "). The /api/margin-leverage function may not have run yet.");
+  showError("Couldn't load 52-week high momentum data (" + e.message + "). The /api/52-week-high-momentum function may not have run yet.");
   document.getElementById("tableBody").innerHTML =
-   '<tr><td colspan="7" style="text-align:center; color:var(--muted); padding:30px;">No data available.</td></tr>';
+   '<tr><td colspan="8" style="text-align:center; color:var(--muted); padding:30px;">No data available.</td></tr>';
  }
-}
-
-function marketMedian(values){
- const v = values.filter(x => x !== null && x !== undefined && !isNaN(x)).sort((a, b) => a - b);
- if(!v.length) return null;
- const mid = Math.floor(v.length / 2);
- return v.length % 2 ? v[mid] : (v[mid - 1] + v[mid]) / 2;
 }
 
 function renderStats(){
- document.getElementById("statCompanies").textContent = RAW.companyCount;
- document.getElementById("statCompaniesNote").textContent = RAW.loadedCount + " of " + RAW.universeSize + " loaded, " + RAW.companyCount + " with usable history";
+ document.getElementById("statCompanies").textContent = RAW.market.companyCount;
+ document.getElementById("statCompaniesNote").textContent = RAW.loadedCount + " of " + RAW.universeSize + " loaded this run";
+ document.getElementById("statMedianRangePos").textContent = fmtPct(RAW.market.medianRangePos, 0);
+ document.getElementById("statExtremeCounts").textContent = RAW.market.nearHighCount + " / " + RAW.market.nearLowCount;
 
- const marginEl = document.getElementById("statMedianMargin");
- const marginVal = marketMedian(RAW.companies.map(c => c.operatingMargin));
- marginEl.textContent = marginVal === null ? "n/a" : fmtPlainPct(marginVal);
-
- const leverageEl = document.getElementById("statMedianLeverage");
- const leverageVal = marketMedian(RAW.companies.map(c => c.netDebtEbitda));
- leverageEl.textContent = leverageVal === null ? "n/a" : fmtX(leverageVal);
-
- const mq = RAW.marketQuarterly;
- const regimeEl = document.getElementById("statRegime");
- const regimeNoteEl = document.getElementById("statRegimeNote");
- if(mq && mq.length){
-  const current = mq[mq.length - 1];
-  const sameRegime = mq.filter(r => r.regime === current.regime && r.medianMarginDelta !== null);
-  const avg = sameRegime.length ? sameRegime.reduce((a, b) => a + b.medianMarginDelta, 0) / sameRegime.length : null;
-  regimeEl.textContent = current.regime || "n/a";
-  regimeNoteEl.textContent = avg === null ? "Not enough quarters to average" :
-   "Avg. " + fmtPpt(avg) + "/qtr in " + current.regime + " regimes (n=" + sameRegime.length + " qtrs)";
+ const pairs = RAW.momentumPairs || [];
+ if(pairs.length >= MIN_PAIRS_FOR_TEST){
+  const pearson = linearRegression(pairs.map(p => p.x), pairs.map(p => p.y));
+  document.getElementById("statMomentumR").textContent = pearson.r.toFixed(2);
+  document.getElementById("statMomentumR").className = "stat-value" + (pearson.r >= 0 ? "" : " cell-neg");
+  document.getElementById("statMomentumRNote").textContent = "Pearson r, n=" + pearson.n + (pearson.p < 0.05 ? " (p<0.05)" : " (not significant)");
  }else{
-  regimeEl.textContent = "n/a";
+  document.getElementById("statMomentumR").textContent = "—";
+  document.getElementById("statMomentumRNote").textContent = "Not enough weekly history yet (" + (RAW.weeksAccumulated || 0) + " snapshot" + (RAW.weeksAccumulated === 1 ? "" : "s") + ")";
  }
 }
 
-function alignedSeries(sector, field){
- const series = RAW.sectorSeries[sector] || [];
- const byQuarter = new Map(series.map(r => [r.quarter, r]));
- return RAW.quarters.map(q => {
-  const r = byQuarter.get(q);
-  return r ? r[field] : null;
+function renderRangePosHistogram(){
+ const values = RAW.companies.map(c => c.rangePos).filter(v => v !== null && v !== undefined && !isNaN(v));
+ const bins = [];
+ for(let b = RANGE_MIN; b < RANGE_MAX; b += RANGE_BIN_WIDTH) bins.push({ lo: b, hi: b + RANGE_BIN_WIDTH, count: 0 });
+ for(const v of values){
+  let idx = Math.floor((v - RANGE_MIN) / RANGE_BIN_WIDTH);
+  if(idx < 0) idx = 0;
+  if(idx >= bins.length) idx = bins.length - 1;
+  bins[idx].count++;
+ }
+
+ function binColor(b){
+  const mid = (b.lo + b.hi) / 2;
+  if(mid >= NEAR_HIGH_THRESHOLD) return ndr("green"); // near the 52-week high
+  if(mid <= NEAR_LOW_THRESHOLD) return ndr("red"); // near the 52-week low
+  return ndr("slate");
+ }
+
+ const ctx = document.getElementById("rangePosHistogram").getContext("2d");
+ if(rangePosHistogram) rangePosHistogram.destroy();
+ rangePosHistogram = new Chart(ctx, {
+  type: "bar",
+  data: {
+   labels: bins.map(b => b.lo + "–" + b.hi),
+   datasets: [{ data: bins.map(b => b.count), backgroundColor: bins.map(binColor), borderRadius: 3, barPercentage: 1.0, categoryPercentage: 0.95 }],
+  },
+  plugins: [thresholdLinePlugin],
+  options: {
+   responsive: true,
+   maintainAspectRatio: false,
+   plugins: {
+    legend: { display: false },
+    tooltip: { callbacks: { title: items => { const b = bins[items[0].dataIndex]; return b.lo + "–" + b.hi + "% of range"; }, label: ctx => ctx.parsed.y + " companies" } },
+   },
+   scales: {
+    x: { ...ndrXScale(), title: { display: true, text: "52-week range position (%)", color: ndr("axis-soft"), font: { size: 10 } } },
+    y: ndrYScale({ title: "Companies" }),
+   },
+  },
+ });
+ rangePosHistogram.$rangeBins = bins;
+}
+
+function renderSectorChart(){
+ const sectors = RAW.sectors.map(s => s.sector);
+ const values = RAW.sectors.map(s => s.medianRangePos);
+ const ctx = document.getElementById("sectorChart").getContext("2d");
+ if(sectorChart) sectorChart.destroy();
+ sectorChart = new Chart(ctx, {
+  type: "bar",
+  data: {
+   labels: sectors,
+   datasets: [
+    { label: "Median range position", data: values, backgroundColor: values.map(v => v >= NEAR_HIGH_THRESHOLD ? ndr("green") : v <= NEAR_LOW_THRESHOLD ? ndr("red") : ndr("gold")), borderRadius: 3 },
+   ],
+  },
+  options: {
+   responsive: true,
+   maintainAspectRatio: false,
+   plugins: {
+    legend: { display: false },
+    tooltip: { callbacks: { label: ctx => "Median range position: " + fmtPct(ctx.parsed.y, 0) } },
+   },
+   scales: {
+    x: ndrXScale(),
+    y: ndrYScale({ min: 0, max: 100, fmt: v => v + "%" }),
+   },
+  },
  });
 }
 
-function renderSectorMarginChart(){
- const field = MARGIN_METRIC === "gross" ? "medianGrossMargin" : MARGIN_METRIC === "net" ? "medianNetMargin" : "medianOperatingMargin";
- const sectors = Object.keys(RAW.sectorSeries).sort();
- const datasets = sectors.map(sector => ({
-  label: sector,
-  data: alignedSeries(sector, field),
-  borderColor: SECTOR_COLORS[sector] || "#8b9199",
-  backgroundColor: "transparent",
-  borderWidth: 1.75,
-  pointRadius: 0,
-  tension: 0.15,
-  spanGaps: true,
- }));
-
- const ctx = document.getElementById("sectorMarginChart").getContext("2d");
- if(sectorMarginChart) sectorMarginChart.destroy();
- sectorMarginChart = new Chart(ctx, {
+function renderHistoryChart(){
+ const points = RAW.medianRangePosHistory || [];
+ const canvasEl = document.getElementById("historyChart");
+ const existingNote = document.getElementById("historyColdStart");
+ if(existingNote) existingNote.remove();
+ if(points.length < 2){
+  // Not enough history yet to draw a meaningful line — still render the
+  // single available point (or none) rather than erroring, same
+  // convention as /earnings-revisions' own history chart, plus a small
+  // caption so it's clear why the line looks flat/sparse.
+  canvasEl.parentElement.insertAdjacentHTML("beforeend",
+   '<div class="method-note" id="historyColdStart">Only ' + points.length + ' weekly snapshot' + (points.length === 1 ? "" : "s") + ' recorded so far — check back as this job keeps running weekly.</div>');
+ }
+ const ctx = canvasEl.getContext("2d");
+ if(historyChart) historyChart.destroy();
+ historyChart = new Chart(ctx, {
   type: "line",
-  data: { labels: RAW.quarters, datasets },
+  data: {
+   labels: points.map(p => p.date),
+   datasets: [{
+    label: "Market-median range position",
+    data: points.map(p => p.medianRangePos),
+    borderColor: ndr("navy"),
+    backgroundColor: "rgba(47,75,110,0.12)",
+    fill: true,
+    tension: 0.15,
+    pointRadius: 2,
+   }],
+  },
   options: {
    responsive: true,
    maintainAspectRatio: false,
-   // Many overlapping sector lines — "nearest" hit-tests every dataset on
-   // every mousemove and has hung this site's tab before at this kind of
-   // spaghetti-plot scale (see CLAUDE.md).
-   interaction: { mode: "point", intersect: true },
+   interaction: { mode: "index", intersect: false },
    plugins: {
     legend: { display: false },
-    tooltip: { callbacks: { label: ctx => ctx.dataset.label + ": " + fmtPlainPct(ctx.parsed.y) } },
+    tooltip: { callbacks: { label: ctx => "Median range position: " + fmtPct(ctx.parsed.y, 0) } },
    },
    scales: {
-    x: { ...ndrXScale(), maxTicksLimit: 10 },
-    y: ndrYScale({ fmt: v => v + "%" }),
+    x: ndrXScale(),
+    y: ndrYScale({ min: 0, max: 100, title: "Range position (%)", fmt: v => v + "%" }),
    },
   },
  });
-
- document.getElementById("marginLegend").innerHTML = sectors.map(sector =>
-  '<span><span class="dot" style="background:' + (SECTOR_COLORS[sector] || "#8b9199") + '"></span>' + sector + '</span>'
- ).join("");
 }
 
-function renderSectorLeverageChart(){
- const sectors = Object.keys(RAW.sectorSeries).sort();
- const datasets = sectors.map(sector => ({
-  label: sector,
-  data: alignedSeries(sector, "medianNetDebtEbitda"),
-  borderColor: SECTOR_COLORS[sector] || "#8b9199",
-  backgroundColor: "transparent",
-  borderWidth: 1.75,
-  pointRadius: 0,
-  tension: 0.15,
-  spanGaps: true,
- }));
-
- const ctx = document.getElementById("sectorLeverageChart").getContext("2d");
- if(sectorLeverageChart) sectorLeverageChart.destroy();
- sectorLeverageChart = new Chart(ctx, {
-  type: "line",
-  data: { labels: RAW.quarters, datasets },
-  options: {
-   responsive: true,
-   maintainAspectRatio: false,
-   interaction: { mode: "point", intersect: true },
-   plugins: {
-    legend: { display: false },
-    tooltip: { callbacks: { label: ctx => ctx.dataset.label + ": " + fmtX(ctx.parsed.y) } },
-   },
-   scales: {
-    x: { ...ndrXScale(), maxTicksLimit: 10 },
-    y: ndrYScale({ fmt: v => v + "x" }),
-   },
-  },
- });
-
- document.getElementById("leverageLegend").innerHTML = sectors.map(sector =>
-  '<span><span class="dot" style="background:' + (SECTOR_COLORS[sector] || "#8b9199") + '"></span>' + sector + '</span>'
- ).join("");
-}
-
-document.querySelectorAll("#marginMetricToggle button").forEach(btn => {
- btn.addEventListener("click", () => {
-  MARGIN_METRIC = btn.dataset.metric;
-  document.querySelectorAll("#marginMetricToggle button").forEach(b => b.classList.toggle("active", b === btn));
-  renderSectorMarginChart();
- });
-});
-
-function buildRegimeStats(field){
- const order = ["Cutting", "Holding", "Hiking"];
- const groups = { Cutting: [], Holding: [], Hiking: [] };
- for(const r of RAW.marketQuarterly){
-  if(r[field] === null || !groups[r.regime]) continue;
-  groups[r.regime].push(r[field]);
- }
- return order.map(k => {
-  const vals = groups[k];
-  const n = vals.length;
-  const mean = n ? vals.reduce((a, b) => a + b, 0) / n : null;
-  return { regime: k, n, mean };
- });
-}
-
-function renderRegimeCharts(){
- const marginStats = buildRegimeStats("medianMarginDelta");
- const leverageStats = buildRegimeStats("medianLeverageDelta");
-
- function draw(canvasId, stats, unitFmt, existing){
-  const colors = stats.map(s => s.mean === null ? ndr("slate") : s.mean >= 0 ? ndr("green") : ndr("red"));
-  const ctx = document.getElementById(canvasId).getContext("2d");
-  if(existing) existing.destroy();
-  return new Chart(ctx, {
-   type: "bar",
-   data: { labels: stats.map(s => s.regime), datasets: [{ data: stats.map(s => s.mean), backgroundColor: colors, borderRadius: 4 }] },
-   options: {
-    responsive: true,
-    maintainAspectRatio: false,
-    plugins: {
-     legend: { display: false },
-     tooltip: { callbacks: { label: ctx => { const s = stats[ctx.dataIndex]; return ["Avg: " + unitFmt(s.mean), "n=" + s.n + " qtrs"]; } } },
-    },
-    scales: {
-     x: ndrXScale(),
-     y: ndrYScale({ fmt: v => unitFmt(v) }),
-    },
-   },
-  });
- }
-
- regimeMarginChart = draw("regimeMarginChart", marginStats, fmtPpt, regimeMarginChart);
- regimeLeverageChart = draw("regimeLeverageChart", leverageStats, v => fmtDeltaX(v), regimeLeverageChart);
-}
-
-function renderRateScatters(){
- const pairs = RAW.marketQuarterly
-  .filter(r => r.fedFundsChange3m !== null && r.medianMarginDelta !== null)
-  .map(r => ({ x: r.fedFundsChange3m, y: r.medianMarginDelta, quarter: r.quarter }));
- const leveragePairs = RAW.marketQuarterly
-  .filter(r => r.fedFundsChange3m !== null && r.medianLeverageDelta !== null)
-  .map(r => ({ x: r.fedFundsChange3m, y: r.medianLeverageDelta, quarter: r.quarter }));
-
- function draw(canvasId, methodTableId, pts, yLabel, yFmt, existing){
-  if(pts.length < 5){
-   document.getElementById(methodTableId).innerHTML = '<div class="method-note">Not enough quarters with both figures to test.</div>';
-   if(existing) existing.destroy();
-   return null;
-  }
-  const pearson = linearRegression(pts.map(p => p.x), pts.map(p => p.y));
-  const spear = spearmanRegression(pts.map(p => p.x), pts.map(p => p.y));
-  const xs = pts.map(p => p.x);
-  const xMin = Math.min(...xs), xMax = Math.max(...xs);
-  const linePoints = [{ x: xMin, y: pearson.intercept + pearson.slope * xMin }, { x: xMax, y: pearson.intercept + pearson.slope * xMax }];
-
-  const ctx = document.getElementById(canvasId).getContext("2d");
-  if(existing) existing.destroy();
-  const chart = new Chart(ctx, {
-   type: "scatter",
-   data: {
-    datasets: [
-     { label: "Quarters", data: pts, backgroundColor: ndr("gold"), pointRadius: 3.5, showLine: false },
-     { label: "Regression fit", type: "line", data: linePoints, borderColor: ndr("navy"), borderWidth: 1.5, borderDash: [4, 3], pointRadius: 0, fill: false },
-    ],
-   },
-   options: {
-    responsive: true,
-    maintainAspectRatio: false,
-    plugins: {
-     legend: { display: false },
-     tooltip: { callbacks: { label: ctx => ctx.dataset.label === "Quarters" ? (ctx.raw.quarter + ": " + (ctx.raw.x >= 0 ? "+" : "") + ctx.raw.x.toFixed(2) + "pp → " + yFmt(ctx.raw.y)) : null } },
-    },
-    scales: {
-     x: ndrYScale({ position: "bottom", title: "Δ Fed funds rate, trailing 3mo (pp)" }),
-     y: ndrYScale({ title: yLabel }),
-    },
-   },
-  });
-
-  document.getElementById(methodTableId).innerHTML = methodTableHtml(pearson, spear,
-   "Slope is per 1pp move in the trailing-3-month Fed funds change that quarter. n=" + pearson.n + " calendar quarters. That's a small sample, and margins and leverage move slowly, so a modest r is expected here.");
-  return chart;
- }
-
- marginRateScatter = draw("marginRateScatter", "marginRateMethodTable", pairs, "Median margin change (ppt)", fmtPpt, marginRateScatter);
- leverageRateScatter = draw("leverageRateScatter", "leverageRateMethodTable", leveragePairs, "Median leverage change (turns)", fmtDeltaX, leverageRateScatter);
-}
-
-function renderMarginLeverageScatter(){
- const points = RAW.scatterLatest || [];
- const bySector = {};
- for(const p of points){
-  if(!bySector[p.sector]) bySector[p.sector] = [];
-  bySector[p.sector].push({ x: p.operatingMargin, y: p.netDebtEbitda, symbol: p.symbol });
- }
- const sectors = Object.keys(bySector).sort();
- const datasets = sectors.map(sector => ({
-  label: sector,
-  data: bySector[sector],
-  backgroundColor: SECTOR_COLORS[sector] || "#8b9199",
-  pointRadius: 3,
-  showLine: false,
- }));
-
- const allPoints = points.map(p => ({ x: p.operatingMargin, y: p.netDebtEbitda }));
- const pearson = linearRegression(allPoints.map(p => p.x), allPoints.map(p => p.y));
- const spear = spearmanRegression(allPoints.map(p => p.x), allPoints.map(p => p.y));
- const xs = allPoints.map(p => p.x);
- const xMin = Math.min(...xs), xMax = Math.max(...xs);
- datasets.push({ label: "Regression fit", type: "line", data: [{ x: xMin, y: pearson.intercept + pearson.slope * xMin }, { x: xMax, y: pearson.intercept + pearson.slope * xMax }], borderColor: ndr("navy"), borderWidth: 1.5, borderDash: [4, 3], pointRadius: 0, fill: false });
-
- const ctx = document.getElementById("marginLeverageScatter").getContext("2d");
- if(marginLeverageScatter) marginLeverageScatter.destroy();
- marginLeverageScatter = new Chart(ctx, {
-  type: "scatter",
-  data: { datasets },
-  options: {
-   responsive: true,
-   maintainAspectRatio: false,
-   plugins: {
-    legend: { display: false },
-    tooltip: { callbacks: { label: ctx => ctx.dataset.label === "Regression fit" ? null : (ctx.raw.symbol + " (" + ctx.dataset.label + "): margin " + fmtPlainPct(ctx.raw.x) + ", " + fmtX(ctx.raw.y) + " net debt/EBITDA") } },
-   },
-   scales: {
-    x: ndrYScale({ position: "bottom", fmt: v => v + "%", title: "Operating margin (%)" }),
-    y: ndrYScale({ fmt: v => v + "x", title: "Net debt / EBITDA (x)" }),
-   },
-  },
- });
-
- document.getElementById("marginLeverageMethodTable").innerHTML = methodTableHtml(pearson, spear,
-  "Negative slope would mean thinner margins go with more leverage; positive would mean the opposite. n=" + pearson.n + " companies, most recent quarter each.");
- document.getElementById("scatterLegend").innerHTML = sectors.map(sector =>
-  '<span><span class="dot" style="background:' + (SECTOR_COLORS[sector] || "#8b9199") + '"></span>' + sector + '</span>'
- ).join("");
-}
-
-function renderLeaderTable(rows, tbodyId, kind){
- const tbody = document.getElementById(tbodyId);
- if(!rows || !rows.length){
-  tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; color:var(--muted); padding:24px;">No qualifying companies.</td></tr>';
+function renderDecileChart(){
+ const pairs = RAW.momentumPairs || [];
+ const coldStartEl = document.getElementById("decileColdStart");
+ const wrap = document.getElementById("decileChartWrap");
+ if(pairs.length < MIN_PAIRS_FOR_TEST){
+  if(decileChart){ decileChart.destroy(); decileChart = null; }
+  wrap.style.display = "none";
+  coldStartEl.innerHTML = '<div class="method-note">Not enough weekly history accumulated yet (' +
+   (RAW.weeksAccumulated || 0) + ' snapshot' + (RAW.weeksAccumulated === 1 ? "" : "s") +
+   ' so far, ' + pairs.length + ' forward-return pair' + (pairs.length === 1 ? "" : "s") +
+   '). This test needs at least two consecutive weekly runs to produce a single data point, and several more for a stable per-decile average — check back in a few weeks.</div>';
   return;
  }
- tbody.innerHTML = rows.map(r => {
-  if(kind === "margin"){
-   return `<tr>
-    <td><span class="sector-name">${r.symbol}</span></td>
-    <td><span class="sector-ticker">${r.sector || "n/a"}</span></td>
-    <td>${fmtPlainPct(r.operatingMargin)}</td>
-    <td>${fmtPpt(r.sectorRelMarginPpt)}</td>
-   </tr>`;
-  }
-  return `<tr>
-   <td><span class="sector-name">${r.symbol}</span></td>
-   <td><span class="sector-ticker">${r.sector || "n/a"}</span></td>
-   <td>${fmtX(r.netDebtEbitda)}</td>
-   <td>${fmtDeltaX(r.sectorRelLeverageX)}</td>
-  </tr>`;
- }).join("");
+ wrap.style.display = "";
+ coldStartEl.innerHTML = "";
+
+ const byDecile = {};
+ for(let d = 1; d <= 10; d++) byDecile[d] = [];
+ pairs.forEach(p => { if(byDecile[p.decile]) byDecile[p.decile].push(p.y); });
+ const avgs = [];
+ const counts = [];
+ for(let d = 1; d <= 10; d++){
+  const vals = byDecile[d];
+  counts.push(vals.length);
+  avgs.push(vals.length ? vals.reduce((a, b) => a + b, 0) / vals.length : null);
+ }
+
+ const ctx = document.getElementById("decileChart").getContext("2d");
+ if(decileChart) decileChart.destroy();
+ decileChart = new Chart(ctx, {
+  type: "bar",
+  data: {
+   labels: ["1 (nearest low)", "2", "3", "4", "5", "6", "7", "8", "9", "10 (nearest high)"],
+   datasets: [{
+    data: avgs,
+    backgroundColor: avgs.map(v => v === null ? ndr("slate") : v >= 0 ? ndr("green") : ndr("red")),
+    borderRadius: 3,
+   }],
+  },
+  options: {
+   responsive: true,
+   maintainAspectRatio: false,
+   plugins: {
+    legend: { display: false },
+    tooltip: { callbacks: { label: ctx => fmtSignedPct(ctx.parsed.y) + " avg. (n=" + counts[ctx.dataIndex] + ")" } },
+   },
+   scales: {
+    x: { ...ndrXScale(), title: { display: true, text: "Range-position decile at time of snapshot", color: ndr("axis-soft"), font: { size: 10 } } },
+    y: ndrYScale({ fmt: v => v + "%", title: "Avg. next-week return vs. SPY (%)" }),
+   },
+  },
+ });
 }
 
-function trendArrow(dir){
- if(dir === "up") return '<span class="trend-up">&uarr; up</span>';
- if(dir === "down") return '<span class="trend-down">&darr; down</span>';
- if(dir === "flat") return '<span class="trend-flat">&rarr; flat</span>';
- return '<span class="cell-na">: </span>';
+function renderMomentumScatter(){
+ const pairs = RAW.momentumPairs || [];
+ const wrap = document.getElementById("momentumScatterWrap");
+ if(pairs.length < MIN_PAIRS_FOR_TEST){
+  if(momentumScatter){ momentumScatter.destroy(); momentumScatter = null; }
+  wrap.style.display = "none";
+  document.getElementById("momentumMethodTable").innerHTML =
+   '<div class="method-note">Not enough weekly history accumulated yet (' + (RAW.weeksAccumulated || 0) + ' snapshot' + (RAW.weeksAccumulated === 1 ? "" : "s") + ' so far). Check back in a few weeks as weekly snapshots build up.</div>';
+  return;
+ }
+ wrap.style.display = "";
+
+ const pearson = linearRegression(pairs.map(p => p.x), pairs.map(p => p.y));
+ const spear = spearmanRegression(pairs.map(p => p.x), pairs.map(p => p.y));
+ const xs = pairs.map(p => p.x);
+ const xMin = Math.min(...xs), xMax = Math.max(...xs);
+ const linePoints = [{ x: xMin, y: pearson.intercept + pearson.slope * xMin }, { x: xMax, y: pearson.intercept + pearson.slope * xMax }];
+
+ const ctx = document.getElementById("momentumScatter").getContext("2d");
+ if(momentumScatter) momentumScatter.destroy();
+ momentumScatter = new Chart(ctx, {
+  type: "scatter",
+  data: {
+   datasets: [
+    { label: "Stock-weeks", data: pairs, backgroundColor: ndr("slate"), pointRadius: 2, pointHoverRadius: 4, showLine: false },
+    { label: "Regression fit", type: "line", data: linePoints, borderColor: ndr("green"), borderWidth: 1.5, borderDash: [4, 3], pointRadius: 0, fill: false },
+   ],
+  },
+  options: {
+   responsive: true,
+   maintainAspectRatio: false,
+   // Many overlapping stock-week points — {mode:"point",intersect:true} per
+   // site convention, not "nearest" (which hit-tests every point on every
+   // mousemove and has hung the tab before at this scale).
+   interaction: { mode: "point", intersect: true },
+   plugins: {
+    legend: { display: false },
+    tooltip: { callbacks: { label: ctx => ctx.dataset.label === "Stock-weeks" ? (ctx.raw.symbol + " (range pos. " + fmtPct(ctx.raw.x, 0) + ", decile " + ctx.raw.decile + "): " + fmtSignedPct(ctx.raw.y) + " next week") : null } },
+   },
+   scales: {
+    x: ndrYScale({ position: "bottom", min: 0, max: 100, title: "Range position (%) at snapshot" }),
+    y: ndrYScale({ fmt: v => v + "%", title: "Next-week return vs. SPY (%)" }),
+   },
+  },
+ });
+
+ document.getElementById("momentumMethodTable").innerHTML = methodTableHtml(pearson, spear,
+  "Slope is next-week relative-return pp per 1 percentage point of range position. n=" + pearson.n + " stock-weeks, pooled across " + (RAW.weeksAccumulated || 0) + " weekly snapshot" + (RAW.weeksAccumulated === 1 ? "" : "s") + ". A positive slope is consistent with the 52-week-high effect.");
+}
+
+function renderLeaderTable(rows, tbodyId, signal){
+ const tbody = document.getElementById(tbodyId);
+ if(!rows || !rows.length){
+  tbody.innerHTML = '<tr><td colspan="3" style="text-align:center; color:var(--muted); padding:24px;">No qualifying companies.</td></tr>';
+  return;
+ }
+ const cls = signal === "nearHigh" ? "tag-overbought" : "tag-oversold";
+ tbody.innerHTML = rows.map(r => `<tr>
+  <td><span class="sector-name">${r.symbol}</span></td>
+  <td><span class="sector-ticker">${r.sector || "—"}</span></td>
+  <td class="${cls}">${fmtPct(r.rangePos, 0)}</td>
+ </tr>`).join("");
 }
 
 function sortBy(key){
@@ -1668,7 +1542,11 @@ function sortBy(key){
 }
 
 function renderTable(){
- const rows = [...RAW.companies].sort((a, b) => {
+ const enriched = RAW.companies.map(c => {
+  const sig = signalFor(c.rangePos);
+  return { ...c, signal: sig, signalSort: signalSortValue(sig) };
+ });
+ const rows = enriched.sort((a, b) => {
   const av = a[SORT_KEY], bv = b[SORT_KEY];
   if(av === null || av === undefined) return 1;
   if(bv === null || bv === undefined) return -1;
@@ -1676,15 +1554,18 @@ function renderTable(){
   return (av - bv) * SORT_DIR;
  });
 
+ const tagCls = { nearHigh: "tag-overbought", nearLow: "tag-oversold", neutral: "tag-neutral" };
+
  const tbody = document.getElementById("tableBody");
  tbody.innerHTML = rows.map(r => `<tr>
   <td><span class="sector-name">${r.symbol}</span></td>
-  <td><span class="sector-ticker">${r.sector || "n/a"}</span></td>
-  <td>${fmtPlainPct(r.grossMargin)}</td>
-  <td>${fmtPlainPct(r.operatingMargin)}</td>
-  <td>${fmtPlainPct(r.netMargin)}</td>
-  <td>${fmtX(r.netDebtEbitda)}</td>
-  <td>${trendArrow(r.marginTrendDirection)}</td>
+  <td><span class="sector-ticker">${r.sector || "—"}</span></td>
+  <td>${fmtPrice(r.price)}</td>
+  <td>${fmtPrice(r.high)}</td>
+  <td>${fmtPrice(r.low)}</td>
+  <td>${fmtPct(r.rangePos, 0)}</td>
+  <td>${r.decile ?? "—"}</td>
+  <td class="${tagCls[r.signal] || "tag-neutral"}">${signalLabel(r.signal)}</td>
  </tr>`).join("");
 
  document.querySelectorAll("#stockTable thead th").forEach(th => {
@@ -1704,4 +1585,5 @@ init();
 </script>
 
 </body>
+
 </html>
