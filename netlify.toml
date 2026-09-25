@@ -245,6 +245,11 @@
   status = 200
 
 [[redirects]]
+  from = "/api/beta-stability"
+  to = "/.netlify/functions/beta-stability"
+  status = 200
+
+[[redirects]]
   from = "/api/analyst-price-target"
   to = "/.netlify/functions/analyst-price-target"
   status = 200
@@ -920,3 +925,16 @@
   # Optionally reads scheduled-relative-strength-background's own
   # published snapshot for the VRP-vs-relative-return test; works fine
   # without it (the test just doesn't render).
+
+[functions."scheduled-beta-stability-background"]
+  # One-time snapshot, no schedule — same convention as scheduled-rd-
+  # intensity-background above. This site's first full-universe job that
+  # needs ZERO Alpha Vantage calls: per-company beta (vs. SPY) is computed
+  # twice, from two non-overlapping ~1.5-year halves of a ~3-year trailing
+  # window of Yahoo Finance weekly closes, to test whether beta is a
+  # durable property or drifts — see scheduled-beta-stability-
+  # background.js's own file header for the full methodology, including
+  # why weekly (not daily) returns are used. Optionally reads scheduled-
+  # relative-strength-background's own published snapshot for the drift-
+  # vs-relative-return test; works fine without it (the test just doesn't
+  # render).
