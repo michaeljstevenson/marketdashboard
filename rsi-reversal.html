@@ -10,7 +10,6 @@
 </script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom@2"></script>
-<script src="date-format.js"></script>
 <script>
 // FRED-style zoom: drag horizontally on any chart to zoom into that range,
 // double-click to reset. Applied via Chart.defaults so every chart on the
@@ -153,7 +152,7 @@ document.addEventListener("DOMContentLoaded", function(){
 </script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Short Sale Volume | Michael J. Stevenson</title>
+<title>RSI Mean-Reversion Screen — Michael J. Stevenson</title>
 
 <style>
 
@@ -176,7 +175,7 @@ document.addEventListener("DOMContentLoaded", function(){
 
   /* NDR-style chart palette. Deliberately the SAME in light and dark —
      these charts keep a constant warm-paper look as a homage to the Ned
-     Davis Research print charts that inspired concentration.html. JS reads
+     Davis Research print charts that inspired /concentration. JS reads
      them via getComputedStyle (per the site convention) rather than
      hardcoding. */
   --ndr-plot:#f5f1e6;
@@ -355,6 +354,7 @@ h1{
  border:1px solid var(--hair);
  border-radius:10px;
  padding:20px;
+ min-width:0;
 }
 
 .stat-label{
@@ -419,12 +419,32 @@ h1{
 }
 
 /* The warm-paper plot panel behind each canvas — the NDR homage
-   (matches /concentration.html). */
+   (matches /concentration). */
 .ndr-panel{
  background:var(--ndr-plot);
  border:1px solid var(--ndr-grid);
  border-radius:8px;
  padding:14px 14px 10px;
+}
+
+/* Two charts / method-tables side by side, same breakpoint as table-grid */
+.chart-grid{
+ display:grid;
+ grid-template-columns:1fr 1fr;
+ gap:16px;
+ margin-bottom:30px;
+}
+
+.chart-grid .chart-box{
+ margin-bottom:0;
+ min-width:0; /* grid items default to min-width:auto (their content's min-content
+                 size), which a wide method table would otherwise force past this
+                 column's track width — same "grid blowout" the site-wide
+                 table{min-width:600px} rule creates if left unchecked here */
+}
+
+@media (max-width:900px){
+ .chart-grid{ grid-template-columns:1fr; }
 }
 
 /* TABLE */
@@ -446,15 +466,10 @@ h1{
  border-radius:12px;
  overflow-x:auto;
  margin-bottom:30px;
+ min-width:0;
 }
 
-.table-grid .table-box{ margin-bottom:0; min-width:0; }
-
-/* Prevents the CSS Grid item's default min-width:auto from letting the
-   600px-min table inside blow out the whole two-column grid on narrow
-   viewports — the table's own overflow-x:auto (from .table-box) then
-   handles the horizontal scroll instead. */
-#regressionMethodTable{ overflow-x:auto; }
+.table-grid .table-box{ margin-bottom:0; }
 
 .table-box-header{
  padding:18px 20px 4px;
@@ -534,6 +549,10 @@ tbody td:nth-child(2){
 .cell-neg{ color:var(--ink); }
 .cell-na{ color:var(--muted); }
 
+.tag-oversold{ color:var(--greed); }
+.tag-overbought{ color:var(--fear); }
+.tag-neutral{ color:var(--muted); }
+
 /* SCATTER / METHOD TABLE (mirrors /factor-analysis) */
 
 .scatter-canvas-wrap{
@@ -544,10 +563,17 @@ tbody td:nth-child(2){
 
 .method-table{
  width:100%;
+ min-width:0; /* overrides the site-wide table{min-width:600px} rule below — two of these
+                 side by side in .chart-grid would otherwise force the whole page wider
+                 than its container even though a 7-column method table never needs 600px */
  border-collapse:collapse;
  font-family:var(--mono);
  font-size:11px;
  margin-top:8px;
+}
+
+#reversalMethodTable{
+ overflow-x:auto;
 }
 
 .method-table th{
@@ -706,7 +732,7 @@ tbody td:nth-child(2){
 <a href="/market-breadth.html">Market Breadth</a>
 <a href="/ath-index.html">All-Time Highs and Lows</a>
 <a href="/margin-leverage.html">Margin &amp; Leverage Cycle</a>
-<a href="/short-sale-volume.html" class="active">Short Sale Volume</a>
+<a href="/short-sale-volume.html">Short Sale Volume</a>
 <a href="/news-sentiment.html">News Sentiment Momentum</a>
 <a href="/seasonality.html">Seasonality</a>
 </div>
@@ -756,7 +782,7 @@ tbody td:nth-child(2){
 <a href="/international-vs-us.html">International vs. US Relative Performance</a>
 <a href="/country-sector-scorecard.html">Country / Sector Scorecard</a>
 <a href="/relative-strength-leaders.html">Relative Strength Leaders/Laggards</a>
-<a href="/rsi-reversal.html">RSI Mean-Reversion Screen</a>
+<a href="/rsi-reversal.html" class="active">RSI Mean-Reversion Screen</a>
 <a href="/concentration.html">Concentration</a>
 </div>
 </div>
@@ -803,7 +829,7 @@ tbody td:nth-child(2){
 </div>
 
 </div>
-<button class="theme-toggle" id="themeToggle" type="button" aria-label="Toggle light/dark mode" title="Toggle light/dark mode">&#9789;</button>
+<button aria-label="Toggle light/dark mode" class="theme-toggle" id="themeToggle" title="Toggle light/dark mode" type="button">☽</button>
 </nav>
 <script>
 // Class-driven (not pure :hover) nav dropdowns: pure CSS :hover drops the
@@ -847,40 +873,54 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 
 <div class="header">
 <div>
-<h1>Short Sale Volume</h1>
-<div class="subtitle">What share of the S&amp;P 500's daily trading volume is flagged as a short sale, from FINRA's free daily Reg SHO files. It is a free proxy for short-selling activity, since short interest data is now behind FINRA's paid API Console.</div>
+<h1>RSI Mean-Reversion Screen</h1>
+<div class="subtitle">Do stocks with an extreme 14-day RSI reading now tend to give some of it back over the following week? The short-term-reversal literature (Jegadeesh 1990; Lehmann 1990) says yes &mdash; a different, opposite-sign phenomenon from <a href="/relative-strength-leaders.html">Relative Strength Leaders/Laggards</a>' 1&ndash;3 month momentum.</div>
 </div>
 <div class="updated" id="updated">Loading...</div>
 </div>
 
 <div class="stat-grid">
 <div class="stat-card">
-<div class="stat-label">Market Median SVR</div>
-<div class="stat-value" id="statMedianSvr">…</div>
-<div class="stat-note" id="statMedianSvrNote">Short volume ÷ total volume</div>
+<div class="stat-label">Companies Loaded</div>
+<div class="stat-value" id="statCompanies" style="font-size:20px;">—</div>
+<div class="stat-note" id="statCompaniesNote">Of full S&amp;P 500</div>
 </div>
 <div class="stat-card">
-<div class="stat-label">Window</div>
-<div class="stat-value" id="statWindow" style="color:var(--ink); font-size:18px;">…</div>
-<div class="stat-note" id="statWindowNote">Trading days covered</div>
+<div class="stat-label">Median RSI(14)</div>
+<div class="stat-value" id="statMedianRsi">—</div>
+<div class="stat-note">Market-wide, this run</div>
 </div>
 <div class="stat-card">
-<div class="stat-label">Most-Shorted Sector</div>
-<div class="stat-value" id="statBestSector" style="font-size:20px;">…</div>
-<div class="stat-note" id="statBestSectorNote">Median sector SVR</div>
+<div class="stat-label">Oversold / Overbought</div>
+<div class="stat-value" id="statExtremeCounts" style="font-size:20px;">—</div>
+<div class="stat-note">RSI &lt; 30 / RSI &gt; 70</div>
 </div>
 <div class="stat-card">
-<div class="stat-label">Least-Shorted Sector</div>
-<div class="stat-value" id="statWorstSector" style="font-size:20px;">…</div>
-<div class="stat-note" id="statWorstSectorNote">Median sector SVR</div>
+<div class="stat-label">Reversal Test (r)</div>
+<div class="stat-value" id="statReversalR">—</div>
+<div class="stat-note" id="statReversalRNote">RSI level vs. next week's relative return</div>
 </div>
 </div>
 
 <div class="chart-box">
 <div class="chart-box-header">
 <div>
-<h2>Median short sale volume ratio by sector</h2>
-<div class="chart-subhead">Median of each stock's trailing ~1-month average (short volume ÷ total volume), by GICS sector.</div>
+<h2>Current RSI distribution</h2>
+<div class="chart-subhead">Every S&amp;P 500 constituent with a usable RSI(14) reading this run, bucketed in 5-point bins &mdash; dashed lines mark the conventional 30 (oversold) and 70 (overbought) thresholds</div>
+</div>
+</div>
+<div class="ndr-panel">
+<div class="chart-canvas-wrap">
+<canvas id="rsiHistogram"></canvas>
+</div>
+</div>
+</div>
+
+<div class="chart-box">
+<div class="chart-box-header">
+<div>
+<h2>Median RSI by sector</h2>
+<div class="chart-subhead">This run's median RSI(14) across each SPDR sector's S&amp;P 500 constituents</div>
 </div>
 </div>
 <div class="ndr-panel">
@@ -893,12 +933,12 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <div class="chart-box">
 <div class="chart-box-header">
 <div>
-<h2>Market median short sale volume ratio over time</h2>
-<div class="chart-subhead">One point per trading day, computed directly from FINRA's daily files. The full window is filled from the first run.</div>
+<h2>Market-median RSI, week by week</h2>
+<div class="chart-subhead">One point per weekly run &mdash; RSI is a current-state snapshot, not a queryable historical cross-section, so this builds up over time rather than backfilling</div>
 </div>
 </div>
 <div class="ndr-panel">
-<div class="chart-canvas-wrap">
+<div class="chart-canvas-wrap" style="height:280px;">
 <canvas id="historyChart"></canvas>
 </div>
 </div>
@@ -907,94 +947,138 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <div class="chart-box">
 <div class="chart-box-header">
 <div>
-<h2>Does elevated short-selling predict weaker forward returns?</h2>
-<div class="chart-subhead">Each point is one stock. X is its average short-sale-volume ratio over the older half of the window, Y is its relative return vs. SPY over the newer half. The two periods don't overlap.</div>
+<h2>The reversal test: RSI decile vs. next week's relative return</h2>
+<div class="chart-subhead">Each week's RSI decile per company, paired with that company's realized return relative to SPY over the following week &mdash; if short-term reversal is real, the extreme deciles (1 and 10) should show returns pulling back toward the middle</div>
 </div>
 </div>
-<div class="ndr-panel">
+<div id="decileChartWrap" class="ndr-panel">
+<div class="chart-canvas-wrap" style="height:300px;">
+<canvas id="decileChart"></canvas>
+</div>
+</div>
+<div id="decileColdStart"></div>
+</div>
+
+<div class="chart-box">
+<div class="chart-box-header">
+<div>
+<h2>RSI level vs. next week's relative return</h2>
+<div class="chart-subhead">The single-number version of the same test &mdash; every accumulated (RSI, forward relative return) pair, pooled across weeks. A negative slope is consistent with reversal: low RSI today &rarr; higher return next week, high RSI today &rarr; lower.</div>
+</div>
+</div>
+<div id="reversalScatterWrap" class="ndr-panel">
 <div class="scatter-canvas-wrap">
-<canvas id="regressionScatter"></canvas>
+<canvas id="reversalScatter"></canvas>
 </div>
 </div>
-<div id="regressionMethodTable"></div>
+<div id="reversalMethodTable"></div>
 </div>
 
 <div class="table-grid">
 <div class="table-box">
 <div class="table-box-header">
-<h2>Most Shorted</h2>
-<div class="chart-subhead">Highest average short-sale-volume ratio, trailing ~1 month</div>
+<h2>Most oversold</h2>
+<div class="chart-subhead">Lowest RSI(14) readings, RSI &lt; 30</div>
 </div>
-<table id="mostShortedTable">
-<thead><tr><th>Symbol</th><th>Sector</th><th>SVR</th></tr></thead>
-<tbody id="mostShortedBody"><tr><td colspan="3" style="text-align:center; color:var(--muted); padding:24px;">Loading&hellip;</td></tr></tbody>
+<table id="oversoldTable">
+<thead><tr><th>Symbol</th><th>Sector</th><th>RSI(14)</th></tr></thead>
+<tbody id="oversoldBody"><tr><td colspan="3" style="text-align:center; color:var(--muted); padding:24px;">Loading&hellip;</td></tr></tbody>
 </table>
 </div>
 <div class="table-box">
 <div class="table-box-header">
-<h2>Least Shorted</h2>
-<div class="chart-subhead">Lowest average short-sale-volume ratio, trailing ~1 month</div>
+<h2>Most overbought</h2>
+<div class="chart-subhead">Highest RSI(14) readings, RSI &gt; 70</div>
 </div>
-<table id="leastShortedTable">
-<thead><tr><th>Symbol</th><th>Sector</th><th>SVR</th></tr></thead>
-<tbody id="leastShortedBody"><tr><td colspan="3" style="text-align:center; color:var(--muted); padding:24px;">Loading&hellip;</td></tr></tbody>
+<table id="overboughtTable">
+<thead><tr><th>Symbol</th><th>Sector</th><th>RSI(14)</th></tr></thead>
+<tbody id="overboughtBody"><tr><td colspan="3" style="text-align:center; color:var(--muted); padding:24px;">Loading&hellip;</td></tr></tbody>
 </table>
 </div>
 </div>
 
 <div class="table-box">
 <div class="table-box-header">
-<h2>Full S&amp;P 500</h2>
-<div class="chart-subhead">Trailing ~1-month average short-sale-volume ratio per constituent</div>
+<h2>All companies with a usable RSI reading</h2>
+<div class="chart-subhead">This run's full sortable RSI(14) cross-section, full S&amp;P 500</div>
 </div>
 <table id="stockTable">
 <thead>
 <tr>
 <th data-key="symbol">Symbol</th>
 <th data-key="sector">Sector</th>
-<th data-key="avgSvr">Avg. SVR<span class="sort-arrow">▾</span></th>
-<th data-key="rank">Rank<span class="sort-arrow">▾</span></th>
+<th data-key="rsi">RSI(14)<span class="sort-arrow">▾</span></th>
+<th data-key="decile">Decile<span class="sort-arrow">▾</span></th>
+<th data-key="signalSort">Signal<span class="sort-arrow">▾</span></th>
+<th data-key="asOfDate">As of<span class="sort-arrow">▾</span></th>
 </tr>
 </thead>
 <tbody id="tableBody">
-<tr><td colspan="4" style="text-align:center; color:var(--muted); padding:30px;">Loading short sale volume data&hellip;</td></tr>
+<tr><td colspan="6" style="text-align:center; color:var(--muted); padding:30px;">Loading RSI data&hellip;</td></tr>
 </tbody>
 </table>
 </div>
 
 <div class="explainer">
 <h2>Methodology</h2>
-<p><strong>Data.</strong> The universe is the S&amp;P 500. The data is FINRA's daily Regulation SHO short-sale-volume file (the "CNMS" tape), published free at a per-date URL with no registration. FINRA's <em>short interest</em> data (total shares held short, reported twice a month) is behind a paid, registration-gated API Console, so it isn't used. <strong>Short sale volume and short interest are different metrics.</strong> This page measures a <em>flow</em>: the share of a stock's daily volume executed as a short sale. It doesn't measure a <em>stock</em> of outstanding short positions. A high short-sale-volume ratio (SVR) doesn't necessarily mean a large short position is building, since some of that volume closes out the same day or is market-maker hedging. It's an imperfect proxy for short-selling activity, not a substitute for short interest.</p>
-<p><strong>Calculation.</strong> For each company, SVR on a given day is <code>ShortVolume / TotalVolume</code> from that day's FINRA file. The sector chart, leaderboards and full table use each stock's average SVR over the most recent ~21 trading days. The market-median trend chart plots the market-wide median SVR for every trading day in FINRA's files. FINRA republishes full daily history, so the whole ~3-month window is built in a single run.</p>
-<p><strong>Forward-return test.</strong> It splits the ~3-month window into two non-overlapping halves, the same overlapping-window issue covered on <a href="/share-count-trends.html">Share Count Trends</a> and <a href="/relative-strength-leaders.html">Relative Strength Leaders/Laggards</a>. Each stock's average SVR over the <em>older</em> half is the predictor, and its return relative to SPY over the <em>newer</em> half (Yahoo Finance daily adjusted closes) is the outcome. A negative relationship would match the finding that short sellers are informed (e.g. Diether, Lee &amp; Werner, 2009): more short-sale activity before weaker returns. A flat or positive one would mean it isn't showing up in this window. Pearson (linear) and Spearman (rank) fits are both shown, as on <a href="/factor-analysis.html">Factor Analysis</a>.</p>
-<p>Company name and sector come from <a href="/sector-beeswarm.html">Sector Beeswarm</a>. Dual-share-class tickers (e.g. Berkshire Hathaway's B shares) use a dash in the site's ticker convention and a dot in FINRA's data. Both forms are tried, and a ticker is left out if neither matches. This is a one-time snapshot for now. Refresh manually for a newer window.</p>
-<div class="source">Source: <a href="https://www.finra.org/finra-data/browse-catalog/short-sale-volume-data" target="_blank" rel="noopener">FINRA Regulation SHO Daily Short Sale Volume Files</a> and <a href="https://finance.yahoo.com/" target="_blank" rel="noopener">Yahoo Finance daily adjusted close</a>.</div>
+<p>Universe is the full S&amp;P 500. For every constituent, Alpha Vantage's <code>RSI</code> technical-indicator endpoint (daily interval, <code>time_period=14</code>, <code>series_type=close</code>) returns a full daily 14-day Relative Strength Index time series; only the most recent value is used for this page's cross-sectional snapshot &mdash; the same "full series returned, only the last point used" shape as <a href="/stock-split-tracker.html">Stock Split Tracker</a>'s <code>SPLITS</code> calls. This is the first page on this site built on any Alpha Vantage technical-indicator endpoint; every other page is fundamentals-, price-return-, or flow-based. RSI(14) itself is a bounded 0&ndash;100 oscillator built from the ratio of average gains to average losses over the trailing 14 trading days &mdash; conventionally read as "oversold" below 30 and "overbought" above 70, though those thresholds are a convention, not a law of markets.</p>
+<p>Every constituent is ranked by RSI each run and split into 10 equal-count <b>deciles</b> (decile 1 = lowest RSI / most oversold, decile 10 = highest RSI / most overbought). Sector and company name come from the same weekly metadata sweep that backs <a href="/sector-beeswarm.html">Sector Beeswarm</a>.</p>
+<p>This page tests <b>short-term reversal</b> &mdash; Jegadeesh (1990) and Lehmann (1990)'s well-documented tendency for stocks with extreme recent price moves to partially revert over the following days/weeks &mdash; a different, opposite-sign phenomenon from <a href="/relative-strength-leaders.html">Relative Strength Leaders/Laggards</a>' 1&ndash;3 month momentum test on this same site. Because RSI is a current-state snapshot (not a queryable historical cross-section), the test needs successive weekly runs: each week's RSI decile per company is recorded, then joined against that company's own realized return &mdash; relative to SPY, using the same compounding excess-return construction as <a href="/relative-strength-leaders.html">Relative Strength Leaders/Laggards</a> &mdash; from that snapshot to the <i>next</i> weekly snapshot. Company and SPY prices for that join are read directly from Relative Strength Leaders/Laggards' own weekly price history (it already keeps one point per week for its own rank-persistence test) rather than paying for a second full-index price sweep; a week is skipped from the test, not recorded as a fabricated zero-return week, if that source data hasn't advanced since this page's prior run. <span id="skippedNote"></span></p>
+<p>The core result is a decile-bucket bar chart of average next-week relative return, plus a pooled Pearson-and-Spearman regression (same two-method check as <a href="/factor-analysis.html">Factor Analysis</a>) of RSI level against forward relative return across every accumulated pair. A negative, statistically significant slope is consistent with reversal: today's low-RSI names outperforming next week, today's high-RSI names underperforming. This needs at least two weekly snapshots before a single forward-return pair exists at all, and several more before a per-decile average is anything but noise &mdash; the page shows a plain "not enough history yet" message rather than a chart or regression built on too little data.</p>
+<p>Weekly recurring job (Saturday) &mdash; unlike most fundamentals sweeps added to this site since mid-September 2026 (one-time snapshots re-run manually), this one has to keep running: the reversal test only exists because successive weekly RSI snapshots can be compared to each other.</p>
+<p style="font-size:12px;">Jegadeesh, N. (1990). "Evidence of Predictable Behavior of Security Returns." <i>The Journal of Finance</i>, 45(3), 881&ndash;898. Lehmann, B.N. (1990). "Fads, Martingales, and Market Efficiency." <i>The Quarterly Journal of Economics</i>, 105(1), 1&ndash;28.</p>
+<div class="source">Source: <a href="https://www.alphavantage.co/" target="_blank" rel="noopener">Alpha Vantage — RSI</a>, plus this site's own <a href="/relative-strength-leaders.html">Relative Strength Leaders/Laggards</a> weekly price history</div>
 </div>
 
 </div>
 
 <script>
-const DATA_URL = "/api/short-sale-volume";
+const DATA_URL = "/api/rsi-reversal";
+
+const SECTOR_COLORS = {
+ "Information Technology": "#d98a3d",
+ "Financials": "#6f8fac",
+ "Health Care": "#8e7cc3",
+ "Energy": "#c0564f",
+ "Industrials": "#5a9d6f",
+ "Consumer Discretionary": "#e0b04f",
+ "Consumer Staples": "#4fb0c0",
+ "Utilities": "#b56f2a",
+ "Materials": "#9a9a9a",
+ "Real Estate": "#c77dbd",
+ "Communication Services": "#4f7ae0",
+};
+
+const RSI_BIN_WIDTH = 5;
+const RSI_MIN = 0;
+const RSI_MAX = 100;
 
 let RAW = null;
-let SORT_KEY = "avgSvr";
-let SORT_DIR = -1;
+let SORT_KEY = "rsi";
+let SORT_DIR = 1;
 
-function fmtPct(v, digits){
- if(v === null || v === undefined || isNaN(v)) return "n/a";
- digits = digits === undefined ? 2 : digits;
+function fmtNum(v, digits){
+ if(v === null || v === undefined || isNaN(v)) return "—";
+ digits = digits === undefined ? 1 : digits;
+ return v.toFixed(digits);
+}
+function fmtSignedPct(v, digits){
+ if(v === null || v === undefined || isNaN(v)) return "—";
+ digits = digits === undefined ? 1 : digits;
  return (v >= 0 ? "+" : "") + v.toFixed(digits) + "%";
 }
 
-function fmtSvr(v){
- if(v === null || v === undefined || isNaN(v)) return "n/a";
- return (v * 100).toFixed(2) + "%";
+function signalFor(rsi){
+ if(rsi === null || rsi === undefined) return "neutral";
+ if(rsi < 30) return "oversold";
+ if(rsi > 70) return "overbought";
+ return "neutral";
 }
-
-function fmtNum(v, digits){
- if(v === null || v === undefined || isNaN(v)) return "n/a";
- digits = digits === undefined ? 2 : digits;
- return v.toFixed(digits);
+function signalLabel(sig){
+ return sig === "oversold" ? "Oversold" : sig === "overbought" ? "Overbought" : "Neutral";
+}
+function signalSortValue(sig){
+ return sig === "oversold" ? 0 : sig === "overbought" ? 2 : 1;
 }
 
 function showError(message){
@@ -1008,19 +1092,7 @@ function showWarning(message){
  banner.style.display = "block";
 }
 
-function themeInkColor(){
- const v = getComputedStyle(document.documentElement).getPropertyValue("--ink").trim();
- return v || "#eae6da";
-}
-function themeMutedColor(){
- const v = getComputedStyle(document.documentElement).getPropertyValue("--muted").trim();
- return v || "#8b9199";
-}
-
-// ---- NDR chart styling helpers (matches /concentration.html) -----------
-// Colours come from the --ndr-* custom properties (constant across themes)
-// so the charts keep their warm-paper look while still following the
-// site's "read chart colours from CSS, don't hardcode" rule.
+// ---- NDR chart styling helpers (matches /concentration, /accruals) ----
 function ndr(name){
  return getComputedStyle(document.documentElement).getPropertyValue("--ndr-" + name).trim();
 }
@@ -1028,8 +1100,11 @@ function ndr(name){
 Chart.defaults.font.family = "'Iowan Old Style','Palatino Linotype',Georgia,serif";
 Chart.defaults.color = ndr("axis-soft");
 
-function ndrXScale(){
+function ndrXScale(opts){
+ opts = opts || {};
  return {
+  type: opts.type,
+  title: opts.title ? { display: true, text: opts.title, color: ndr("axis-soft"), font: { size: 10 } } : { display: false },
   ticks: { color: ndr("axis"), maxTicksLimit: 9, maxRotation: 0, autoSkip: true, font: { size: 11 } },
   grid: { color: "rgba(0,0,0,0)", borderColor: ndr("axis") },
  };
@@ -1044,22 +1119,6 @@ function ndrYScale(opts){
   ticks: { color: ndr("axis"), font: { size: 11 }, callback: opts.fmt || undefined },
   title: opts.title ? { display: true, text: opts.title, color: ndr("axis-soft"), font: { size: 10 } } : { display: false },
   min: opts.min, max: opts.max,
- };
-}
-
-function ndrCategoryScale(){
- return {
-  ticks: { color: ndr("axis"), font: { size: 11 } },
-  grid: { display: false },
- };
-}
-
-function ndrNumericScale(opts){
- opts = opts || {};
- return {
-  title: opts.title ? { display: true, text: opts.title, color: ndr("axis-soft"), font: { size: 10 } } : { display: false },
-  ticks: { color: ndr("axis"), font: { size: 10 } },
-  grid: { color: ndr("grid"), drawBorder: false },
  };
 }
 
@@ -1107,172 +1166,7 @@ function rankArray(arr){
 }
 function spearmanRegression(xs, ys){ return linearRegression(rankArray(xs), rankArray(ys)); }
 
-let sectorChart = null, historyChart = null, regressionScatter = null;
-
-async function init(){
- try{
-  const res = await fetch(DATA_URL, { cache: "no-store" });
-  const data = await res.json();
-  if(!res.ok || data.error) throw new Error(data.error || "failed to load");
-
-  RAW = data;
-  document.getElementById("updated").textContent = "As of " + new Date(data.generated_at_utc).toLocaleString("en-US", { month: "2-digit", day: "2-digit", year: "numeric", hour: "numeric", minute: "2-digit" });
-
-  if(data.loadedCount < data.universeSize){
-   showWarning("Only " + data.loadedCount + " of " + data.universeSize + " S&P 500 constituents loaded. Some data may be missing.");
-  }
-
-  renderStats();
-  renderSectorChart();
-  renderHistoryChart();
-  renderRegressionScatter();
-  renderLeaderTable(data.mostShorted, "mostShortedBody");
-  renderLeaderTable(data.leastShorted, "leastShortedBody");
-  renderTable();
-
- }catch(e){
-  showError("Couldn't load short sale volume data (" + e.message + "). The /api/short-sale-volume function may not have run yet.");
-  document.getElementById("tableBody").innerHTML =
-   '<tr><td colspan="4" style="text-align:center; color:var(--muted); padding:30px;">No data available.</td></tr>';
- }
-}
-
-function renderStats(){
- const m = RAW.market;
- document.getElementById("statMedianSvr").textContent = fmtSvr(m.medianSvr);
- document.getElementById("statMedianSvrNote").textContent = "n=" + m.companyCount + " companies";
-
- document.getElementById("statWindow").textContent = RAW.tradingDays + " days";
- document.getElementById("statWindowNote").textContent = RAW.windowStart + " to " + RAW.windowEnd;
-
- const sortedSectors = [...RAW.sectors].sort((a, b) => (b.medianSvr ?? -Infinity) - (a.medianSvr ?? -Infinity));
- if(sortedSectors.length){
-  const best = sortedSectors[0], worst = sortedSectors[sortedSectors.length - 1];
-  document.getElementById("statBestSector").textContent = best.sector;
-  document.getElementById("statBestSectorNote").textContent = fmtSvr(best.medianSvr);
-  document.getElementById("statWorstSector").textContent = worst.sector;
-  document.getElementById("statWorstSectorNote").textContent = fmtSvr(worst.medianSvr);
- }
-}
-
-function renderSectorChart(){
- const sorted = [...RAW.sectors].sort((a, b) => (b.medianSvr ?? -Infinity) - (a.medianSvr ?? -Infinity));
- const ctx = document.getElementById("sectorChart").getContext("2d");
- if(sectorChart) sectorChart.destroy();
- sectorChart = new Chart(ctx, {
-  type: "bar",
-  data: {
-   labels: sorted.map(s => s.sector),
-   datasets: [{ label: "Median SVR", data: sorted.map(s => s.medianSvr), backgroundColor: ndr("navy"), borderRadius: 4 }],
-  },
-  options: {
-   indexAxis: "y",
-   responsive: true,
-   maintainAspectRatio: false,
-   plugins: {
-    legend: { display: false },
-    tooltip: {
-     callbacks: {
-      label: ctx => {
-       const s = sorted[ctx.dataIndex];
-       return [
-        "Median SVR: " + fmtSvr(s.medianSvr),
-        "Avg. SVR: " + fmtSvr(s.avgSvr),
-        "n=" + s.companyCount + " companies",
-       ];
-      },
-     },
-    },
-   },
-   scales: {
-    x: ndrYScale({ fmt: (v) => (Math.round(v * 10000) / 100) + "%" }),
-    y: ndrCategoryScale(),
-   },
-  },
- });
-}
-
-function renderHistoryChart(){
- const points = RAW.trend || [];
- const ctx = document.getElementById("historyChart").getContext("2d");
- if(historyChart) historyChart.destroy();
- historyChart = new Chart(ctx, {
-  type: "line",
-  data: {
-   labels: points.map(p => p.date),
-   datasets: [{
-    label: "Market Median SVR",
-    data: points.map(p => p.medianSvr),
-    borderColor: ndr("navy"),
-    backgroundColor: ndr("navy"),
-    borderWidth: 1.5,
-    pointRadius: 0,
-    fill: false,
-   }],
-  },
-  options: {
-   responsive: true,
-   maintainAspectRatio: false,
-   interaction: { mode: "index", intersect: false },
-   plugins: {
-    legend: { display: false },
-    tooltip: { callbacks: { label: ctx => "Median SVR: " + fmtSvr(ctx.parsed.y) } },
-   },
-   scales: {
-    x: ndrXScale(),
-    y: ndrYScale({ fmt: (v) => (Math.round(v * 10000) / 100) + "%" }),
-   },
-  },
- });
-}
-
-function renderRegressionScatter(){
- const pairs = (RAW.regression && RAW.regression.pairs) || [];
- if(pairs.length < 20){
-  if(regressionScatter){ regressionScatter.destroy(); regressionScatter = null; }
-  document.getElementById("regressionMethodTable").innerHTML =
-   '<div class="method-note">Not enough stocks with both a valid short-sale-volume ratio and price history to test.</div>';
-  return;
- }
-
- const xs = pairs.map(p => p.svr), ys = pairs.map(p => p.relReturn);
- const pearson = linearRegression(xs, ys);
- const spear = spearmanRegression(xs, ys);
-
- const xMin = Math.min(...xs), xMax = Math.max(...xs);
- const linePoints = [
-  { x: xMin, y: pearson.intercept + pearson.slope * xMin },
-  { x: xMax, y: pearson.intercept + pearson.slope * xMax },
- ];
-
- const ctx = document.getElementById("regressionScatter").getContext("2d");
- if(regressionScatter) regressionScatter.destroy();
- regressionScatter = new Chart(ctx, {
-  type: "scatter",
-  data: {
-   datasets: [
-    { label: "Stocks", data: pairs.map(p => ({ x: p.svr, y: p.relReturn, symbol: p.symbol })), backgroundColor: ndr("navy"), pointRadius: 2.5, pointHoverRadius: 4, showLine: false },
-    { label: "Regression fit", type: "line", data: linePoints, borderColor: ndr("red"), borderWidth: 1.5, borderDash: [4, 3], pointRadius: 0, fill: false },
-   ],
-  },
-  options: {
-   responsive: true,
-   maintainAspectRatio: false,
-   plugins: {
-    legend: { display: false },
-    tooltip: {
-     callbacks: {
-      label: ctx => ctx.dataset.label === "Stocks" ? (ctx.raw.symbol + ": SVR " + fmtSvr(ctx.raw.x) + ", rel. return " + fmtPct(ctx.raw.y)) : null,
-     },
-    },
-   },
-   scales: {
-    x: ndrNumericScale({ title: "Period A avg. SVR" }),
-    y: ndrNumericScale({ title: "Period B return vs. SPY (%)" }),
-   },
-  },
- });
-
+function methodTableHtml(pearson, spear, unitNote){
  function row(label, stats){
   const sig = stats.p < 0.05;
   return "<tr>" +
@@ -1285,24 +1179,340 @@ function renderRegressionScatter(){
    '<td class="' + (sig ? "sig" : "") + '">' + (stats.p < 0.001 ? "<0.001" : stats.p.toFixed(3)) + "</td>" +
   "</tr>";
  }
- document.getElementById("regressionMethodTable").innerHTML =
-  '<table class="method-table">' +
-   "<thead><tr><th>Method</th><th>n</th><th>r</th><th>r&sup2;</th><th>slope</th><th>t</th><th>p</th></tr></thead>" +
-   "<tbody>" + row("Pearson (OLS)", pearson) + row("Spearman (&rho;)", spear) + "</tbody>" +
-  "</table>" +
-  '<div class="method-note">A negative slope means stocks with more short-selling in the older half of the window went on to underperform SPY in the newer half, which is consistent with short sellers being informed. A flat or positive slope means that isn\'t showing up here.</div>';
+ return '<table class="method-table">' +
+  "<thead><tr><th>Method</th><th>n</th><th>r</th><th>r&sup2;</th><th>slope</th><th>t</th><th>p</th></tr></thead>" +
+  "<tbody>" + row("Pearson (OLS)", pearson) + row("Spearman (&rho;)", spear) + "</tbody>" +
+ "</table>" + (unitNote ? '<div class="method-note">' + unitNote + "</div>" : "");
 }
 
-function renderLeaderTable(rows, tbodyId){
- const tbody = document.getElementById(tbodyId);
- if(!rows || !rows.length){
-  tbody.innerHTML = '<tr><td colspan="3" style="text-align:center; color:var(--muted); padding:24px;">No qualifying stocks.</td></tr>';
+// A pair count below this is treated as "not enough history yet" — matches
+// the threshold /relative-strength-leaders.html uses for its own
+// accumulated-history persistence test.
+const MIN_PAIRS_FOR_TEST = 30;
+
+let sectorChart = null, rsiHistogram = null, historyChart = null, decileChart = null, reversalScatter = null;
+
+// Draws dashed vertical reference lines at RSI 30/70 on the histogram's
+// category axis. Registered locally (not via Chart.defaults) so it only
+// applies to this one chart.
+const thresholdLinePlugin = {
+ id: "rsiThresholdLines",
+ afterDraw(chart){
+  const bins = chart.$rsiBins;
+  if(!bins) return;
+  const { ctx, chartArea, scales } = chart;
+  const xScale = scales.x;
+  [30, 70].forEach((threshold) => {
+   const k = (threshold - RSI_MIN) / RSI_BIN_WIDTH; // boundary sits between bin index k-1 and k
+   if(k < 1 || k > bins.length - 1) return;
+   const px = (xScale.getPixelForValue(k - 1) + xScale.getPixelForValue(k)) / 2;
+   ctx.save();
+   ctx.strokeStyle = ndr("axis");
+   ctx.setLineDash([4, 3]);
+   ctx.lineWidth = 1;
+   ctx.beginPath();
+   ctx.moveTo(px, chartArea.top);
+   ctx.lineTo(px, chartArea.bottom);
+   ctx.stroke();
+   ctx.setLineDash([]);
+   ctx.fillStyle = ndr("axis-soft");
+   ctx.font = "10px " + Chart.defaults.font.family;
+   ctx.textAlign = threshold === 30 ? "right" : "left";
+   ctx.fillText(threshold, px + (threshold === 30 ? -4 : 4), chartArea.top + 10);
+   ctx.restore();
+  });
+ },
+};
+
+async function init(){
+ try{
+  const res = await fetch(DATA_URL, { cache: "no-store" });
+  const data = await res.json();
+  if(!res.ok || data.error) throw new Error(data.error || "failed to load");
+
+  RAW = data;
+  document.getElementById("updated").textContent = "As of " + new Date(data.generated_at_utc).toLocaleString();
+
+  if(data.loadedCount < data.universeSize){
+   showWarning("Only " + data.loadedCount + " of " + data.universeSize + " S&P 500 constituents loaded this run — some data may be temporarily unavailable.");
+  }
+  if(!data.hasPriceSnapshot){
+   showWarning("Relative Strength Leaders/Laggards' price history hasn't populated yet, so this week's snapshot couldn't be joined for the reversal test.");
+  }
+
+  const skippedNote = document.getElementById("skippedNote");
+  if(skippedNote){
+   skippedNote.textContent = (data.skippedStalePriceTransitions || 0) > 0
+    ? data.skippedStalePriceTransitions + " weekly transition(s) were skipped for exactly that reason so far."
+    : "";
+  }
+
+  renderStats();
+  renderRsiHistogram();
+  renderSectorChart();
+  renderHistoryChart();
+  renderDecileChart();
+  renderReversalScatter();
+  renderLeaderTable(data.oversoldLeaders, "oversoldBody", "oversold");
+  renderLeaderTable(data.overboughtLeaders, "overboughtBody", "overbought");
+  renderTable();
+
+ }catch(e){
+  showError("Couldn't load RSI reversal data (" + e.message + "). The /api/rsi-reversal function may not have run yet.");
+  document.getElementById("tableBody").innerHTML =
+   '<tr><td colspan="6" style="text-align:center; color:var(--muted); padding:30px;">No data available.</td></tr>';
+ }
+}
+
+function renderStats(){
+ document.getElementById("statCompanies").textContent = RAW.market.companyCount;
+ document.getElementById("statCompaniesNote").textContent = RAW.loadedCount + " of " + RAW.universeSize + " loaded this run";
+ document.getElementById("statMedianRsi").textContent = fmtNum(RAW.market.medianRsi);
+ document.getElementById("statExtremeCounts").textContent = RAW.market.oversoldCount + " / " + RAW.market.overboughtCount;
+
+ const pairs = RAW.reversalPairs || [];
+ if(pairs.length >= MIN_PAIRS_FOR_TEST){
+  const pearson = linearRegression(pairs.map(p => p.x), pairs.map(p => p.y));
+  document.getElementById("statReversalR").textContent = pearson.r.toFixed(2);
+  document.getElementById("statReversalR").className = "stat-value" + (pearson.r < 0 ? "" : " cell-neg");
+  document.getElementById("statReversalRNote").textContent = "Pearson r, n=" + pearson.n + (pearson.p < 0.05 ? " (p<0.05)" : " (not significant)");
+ }else{
+  document.getElementById("statReversalR").textContent = "—";
+  document.getElementById("statReversalRNote").textContent = "Not enough weekly history yet (" + (RAW.weeksAccumulated || 0) + " snapshot" + (RAW.weeksAccumulated === 1 ? "" : "s") + ")";
+ }
+}
+
+function renderRsiHistogram(){
+ const values = RAW.companies.map(c => c.rsi).filter(v => v !== null && v !== undefined && !isNaN(v));
+ const bins = [];
+ for(let b = RSI_MIN; b < RSI_MAX; b += RSI_BIN_WIDTH) bins.push({ lo: b, hi: b + RSI_BIN_WIDTH, count: 0 });
+ for(const v of values){
+  let idx = Math.floor((v - RSI_MIN) / RSI_BIN_WIDTH);
+  if(idx < 0) idx = 0;
+  if(idx >= bins.length) idx = bins.length - 1;
+  bins[idx].count++;
+ }
+
+ function binColor(b){
+  const mid = (b.lo + b.hi) / 2;
+  if(mid < 30) return ndr("green"); // oversold — conventionally the "buy" zone
+  if(mid > 70) return ndr("red"); // overbought — conventionally the "sell" zone
+  return ndr("slate");
+ }
+
+ const ctx = document.getElementById("rsiHistogram").getContext("2d");
+ if(rsiHistogram) rsiHistogram.destroy();
+ rsiHistogram = new Chart(ctx, {
+  type: "bar",
+  data: {
+   labels: bins.map(b => b.lo + "–" + b.hi),
+   datasets: [{ data: bins.map(b => b.count), backgroundColor: bins.map(binColor), borderRadius: 3, barPercentage: 1.0, categoryPercentage: 0.95 }],
+  },
+  plugins: [thresholdLinePlugin],
+  options: {
+   responsive: true,
+   maintainAspectRatio: false,
+   plugins: {
+    legend: { display: false },
+    tooltip: { callbacks: { title: items => { const b = bins[items[0].dataIndex]; return "RSI " + b.lo + "–" + b.hi; }, label: ctx => ctx.parsed.y + " companies" } },
+   },
+   scales: {
+    x: { ...ndrXScale(), title: { display: true, text: "RSI(14)", color: ndr("axis-soft"), font: { size: 10 } } },
+    y: ndrYScale({ title: "Companies" }),
+   },
+  },
+ });
+ rsiHistogram.$rsiBins = bins;
+}
+
+function renderSectorChart(){
+ const sectors = RAW.sectors.map(s => s.sector);
+ const values = RAW.sectors.map(s => s.medianRsi);
+ const ctx = document.getElementById("sectorChart").getContext("2d");
+ if(sectorChart) sectorChart.destroy();
+ sectorChart = new Chart(ctx, {
+  type: "bar",
+  data: {
+   labels: sectors,
+   datasets: [
+    { label: "Median RSI(14)", data: values, backgroundColor: values.map(v => v < 30 ? ndr("green") : v > 70 ? ndr("red") : ndr("gold")), borderRadius: 3 },
+   ],
+  },
+  options: {
+   responsive: true,
+   maintainAspectRatio: false,
+   plugins: {
+    legend: { display: false },
+    tooltip: { callbacks: { label: ctx => "Median RSI(14): " + fmtNum(ctx.parsed.y) } },
+   },
+   scales: {
+    x: ndrXScale(),
+    y: ndrYScale({ min: 0, max: 100 }),
+   },
+  },
+ });
+}
+
+function renderHistoryChart(){
+ const points = RAW.medianRsiHistory || [];
+ const canvasEl = document.getElementById("historyChart");
+ const existingNote = document.getElementById("historyColdStart");
+ if(existingNote) existingNote.remove();
+ if(points.length < 2){
+  // Not enough history yet to draw a meaningful line — still render the
+  // single available point (or none) rather than erroring, same
+  // convention as /earnings-revisions' own history chart, plus a small
+  // caption so it's clear why the line looks flat/sparse.
+  canvasEl.parentElement.insertAdjacentHTML("beforeend",
+   '<div class="method-note" id="historyColdStart">Only ' + points.length + ' weekly snapshot' + (points.length === 1 ? "" : "s") + ' recorded so far — check back as this job keeps running weekly.</div>');
+ }
+ const ctx = canvasEl.getContext("2d");
+ if(historyChart) historyChart.destroy();
+ historyChart = new Chart(ctx, {
+  type: "line",
+  data: {
+   labels: points.map(p => p.date),
+   datasets: [{
+    label: "Market-median RSI(14)",
+    data: points.map(p => p.medianRsi),
+    borderColor: ndr("navy"),
+    backgroundColor: "rgba(47,75,110,0.12)",
+    fill: true,
+    tension: 0.15,
+    pointRadius: 2,
+   }],
+  },
+  options: {
+   responsive: true,
+   maintainAspectRatio: false,
+   interaction: { mode: "index", intersect: false },
+   plugins: {
+    legend: { display: false },
+    tooltip: { callbacks: { label: ctx => "Median RSI: " + fmtNum(ctx.parsed.y) } },
+   },
+   scales: {
+    x: ndrXScale(),
+    y: ndrYScale({ min: 0, max: 100, title: "RSI(14)" }),
+   },
+  },
+ });
+}
+
+function renderDecileChart(){
+ const pairs = RAW.reversalPairs || [];
+ const coldStartEl = document.getElementById("decileColdStart");
+ const wrap = document.getElementById("decileChartWrap");
+ if(pairs.length < MIN_PAIRS_FOR_TEST){
+  if(decileChart){ decileChart.destroy(); decileChart = null; }
+  wrap.style.display = "none";
+  coldStartEl.innerHTML = '<div class="method-note">Not enough weekly history accumulated yet (' +
+   (RAW.weeksAccumulated || 0) + ' snapshot' + (RAW.weeksAccumulated === 1 ? "" : "s") +
+   ' so far, ' + pairs.length + ' forward-return pair' + (pairs.length === 1 ? "" : "s") +
+   '). This test needs at least two consecutive weekly runs to produce a single data point, and several more for a stable per-decile average — check back in a few weeks.</div>';
   return;
  }
+ wrap.style.display = "";
+ coldStartEl.innerHTML = "";
+
+ const byDecile = {};
+ for(let d = 1; d <= 10; d++) byDecile[d] = [];
+ pairs.forEach(p => { if(byDecile[p.decile]) byDecile[p.decile].push(p.y); });
+ const avgs = [];
+ const counts = [];
+ for(let d = 1; d <= 10; d++){
+  const vals = byDecile[d];
+  counts.push(vals.length);
+  avgs.push(vals.length ? vals.reduce((a, b) => a + b, 0) / vals.length : null);
+ }
+
+ const ctx = document.getElementById("decileChart").getContext("2d");
+ if(decileChart) decileChart.destroy();
+ decileChart = new Chart(ctx, {
+  type: "bar",
+  data: {
+   labels: ["1 (most oversold)", "2", "3", "4", "5", "6", "7", "8", "9", "10 (most overbought)"],
+   datasets: [{
+    data: avgs,
+    backgroundColor: avgs.map(v => v === null ? ndr("slate") : v >= 0 ? ndr("green") : ndr("red")),
+    borderRadius: 3,
+   }],
+  },
+  options: {
+   responsive: true,
+   maintainAspectRatio: false,
+   plugins: {
+    legend: { display: false },
+    tooltip: { callbacks: { label: ctx => fmtSignedPct(ctx.parsed.y) + " avg. (n=" + counts[ctx.dataIndex] + ")" } },
+   },
+   scales: {
+    x: { ...ndrXScale(), title: { display: true, text: "RSI decile at time of snapshot", color: ndr("axis-soft"), font: { size: 10 } } },
+    y: ndrYScale({ fmt: v => v + "%", title: "Avg. next-week return vs. SPY (%)" }),
+   },
+  },
+ });
+}
+
+function renderReversalScatter(){
+ const pairs = RAW.reversalPairs || [];
+ const wrap = document.getElementById("reversalScatterWrap");
+ if(pairs.length < MIN_PAIRS_FOR_TEST){
+  if(reversalScatter){ reversalScatter.destroy(); reversalScatter = null; }
+  wrap.style.display = "none";
+  document.getElementById("reversalMethodTable").innerHTML =
+   '<div class="method-note">Not enough weekly history accumulated yet (' + (RAW.weeksAccumulated || 0) + ' snapshot' + (RAW.weeksAccumulated === 1 ? "" : "s") + ' so far). Check back in a few weeks as weekly snapshots build up.</div>';
+  return;
+ }
+ wrap.style.display = "";
+
+ const pearson = linearRegression(pairs.map(p => p.x), pairs.map(p => p.y));
+ const spear = spearmanRegression(pairs.map(p => p.x), pairs.map(p => p.y));
+ const xs = pairs.map(p => p.x);
+ const xMin = Math.min(...xs), xMax = Math.max(...xs);
+ const linePoints = [{ x: xMin, y: pearson.intercept + pearson.slope * xMin }, { x: xMax, y: pearson.intercept + pearson.slope * xMax }];
+
+ const ctx = document.getElementById("reversalScatter").getContext("2d");
+ if(reversalScatter) reversalScatter.destroy();
+ reversalScatter = new Chart(ctx, {
+  type: "scatter",
+  data: {
+   datasets: [
+    { label: "Stock-weeks", data: pairs, backgroundColor: ndr("slate"), pointRadius: 2, pointHoverRadius: 4, showLine: false },
+    { label: "Regression fit", type: "line", data: linePoints, borderColor: ndr("red"), borderWidth: 1.5, borderDash: [4, 3], pointRadius: 0, fill: false },
+   ],
+  },
+  options: {
+   responsive: true,
+   maintainAspectRatio: false,
+   // Many overlapping stock-week points — {mode:"point",intersect:true} per
+   // site convention, not "nearest" (which hit-tests every point on every
+   // mousemove and has hung the tab before at this scale).
+   interaction: { mode: "point", intersect: true },
+   plugins: {
+    legend: { display: false },
+    tooltip: { callbacks: { label: ctx => ctx.dataset.label === "Stock-weeks" ? (ctx.raw.symbol + " (RSI " + fmtNum(ctx.raw.x) + ", decile " + ctx.raw.decile + "): " + fmtSignedPct(ctx.raw.y) + " next week") : null } },
+   },
+   scales: {
+    x: ndrYScale({ position: "bottom", min: 0, max: 100, title: "RSI(14) at snapshot" }),
+    y: ndrYScale({ fmt: v => v + "%", title: "Next-week return vs. SPY (%)" }),
+   },
+  },
+ });
+
+ document.getElementById("reversalMethodTable").innerHTML = methodTableHtml(pearson, spear,
+  "Slope is next-week relative-return pp per 1 RSI point. n=" + pearson.n + " stock-weeks, pooled across " + (RAW.weeksAccumulated || 0) + " weekly snapshot" + (RAW.weeksAccumulated === 1 ? "" : "s") + ". A negative slope is consistent with short-term reversal.");
+}
+
+function renderLeaderTable(rows, tbodyId, signal){
+ const tbody = document.getElementById(tbodyId);
+ if(!rows || !rows.length){
+  tbody.innerHTML = '<tr><td colspan="3" style="text-align:center; color:var(--muted); padding:24px;">No qualifying companies.</td></tr>';
+  return;
+ }
+ const cls = signal === "oversold" ? "tag-oversold" : "tag-overbought";
  tbody.innerHTML = rows.map(r => `<tr>
   <td><span class="sector-name">${r.symbol}</span></td>
-  <td><span class="sector-ticker">${r.sector || "n/a"}</span></td>
-  <td>${fmtSvr(r.avgSvr)}</td>
+  <td><span class="sector-ticker">${r.sector || "—"}</span></td>
+  <td class="${cls}">${fmtNum(r.rsi)}</td>
  </tr>`).join("");
 }
 
@@ -1311,13 +1521,17 @@ function sortBy(key){
   SORT_DIR = -SORT_DIR;
  }else{
   SORT_KEY = key;
-  SORT_DIR = -1;
+  SORT_DIR = 1;
  }
  renderTable();
 }
 
 function renderTable(){
- const rows = [...RAW.companies].sort((a, b) => {
+ const enriched = RAW.companies.map(c => {
+  const sig = signalFor(c.rsi);
+  return { ...c, signal: sig, signalSort: signalSortValue(sig) };
+ });
+ const rows = enriched.sort((a, b) => {
   const av = a[SORT_KEY], bv = b[SORT_KEY];
   if(av === null || av === undefined) return 1;
   if(bv === null || bv === undefined) return -1;
@@ -1327,11 +1541,13 @@ function renderTable(){
 
  const tbody = document.getElementById("tableBody");
  tbody.innerHTML = rows.map(r => `<tr>
-   <td><span class="sector-name">${r.symbol}</span></td>
-   <td><span class="sector-ticker">${r.sector || "n/a"}</span></td>
-   <td>${fmtSvr(r.avgSvr)}</td>
-   <td>${r.rank ?? "n/a"}</td>
-  </tr>`).join("");
+  <td><span class="sector-name">${r.symbol}</span></td>
+  <td><span class="sector-ticker">${r.sector || "—"}</span></td>
+  <td>${fmtNum(r.rsi)}</td>
+  <td>${r.decile ?? "—"}</td>
+  <td class="tag-${r.signal}">${signalLabel(r.signal)}</td>
+  <td>${r.asOfDate || "—"}</td>
+ </tr>`).join("");
 
  document.querySelectorAll("#stockTable thead th").forEach(th => {
   const key = th.dataset.key;
@@ -1350,4 +1566,5 @@ init();
 </script>
 
 </body>
+
 </html>

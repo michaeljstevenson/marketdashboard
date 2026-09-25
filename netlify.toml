@@ -225,6 +225,11 @@
   status = 200
 
 [[redirects]]
+  from = "/api/rsi-reversal"
+  to = "/.netlify/functions/rsi-reversal"
+  status = 200
+
+[[redirects]]
   from = "/api/analyst-price-target"
   to = "/.netlify/functions/analyst-price-target"
   status = 200
@@ -838,3 +843,21 @@
   # background (for the momentum join) but degrades gracefully if that
   # blob is stale or missing. ~503 sequential HISTORICAL_PUT_CALL_RATIO
   # calls at 1050ms spacing plus a retry pass.
+
+[functions."scheduled-rsi-reversal-background"]
+  # Weekly, Saturday 15:15 UTC — the last job in the Saturday block as of
+  # this addition, after scheduled-short-sale-volume-background (14:50 UTC,
+  # "a few minutes end to end" per that function's own comment, so done well
+  # before 15:15). A real recurring schedule, not a one-time snapshot like
+  # most fundamentals sweeps added since 2026-09-16: the short-term-reversal
+  # test needs successive weekly RSI snapshots to ever produce a forward-
+  # return data point, so this job has to keep running. ~503 sequential RSI
+  # calls at 1050ms spacing plus a retry pass, same cadence as
+  # scheduled-rd-intensity-background and scheduled-revisions-background.
+  # Reads (not writes) scheduled-relative-strength-background's own weekly
+  # price history for this run's price snapshot — no benefit to running
+  # immediately after that job specifically (13:10 UTC), since this job only
+  # needs whatever relative-strength's *most recent* weekly snapshot is, not
+  # a same-day-fresh one — see scheduled-rsi-reversal-background.js's own
+  # file header for the full reasoning.
+  schedule = "15 15 * * 6"
