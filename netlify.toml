@@ -240,6 +240,11 @@
   status = 200
 
 [[redirects]]
+  from = "/api/vol-risk-premium"
+  to = "/.netlify/functions/vol-risk-premium"
+  status = 200
+
+[[redirects]]
   from = "/api/analyst-price-target"
   to = "/.netlify/functions/analyst-price-target"
   status = 200
@@ -902,3 +907,16 @@
   # check writeup. Optionally reads scheduled-relative-strength-
   # background's own published snapshot for the payout-ratio-vs-relative-
   # return test; works fine without it (the test just doesn't render).
+
+[functions."scheduled-vol-risk-premium-background"]
+  # One-time snapshot, no schedule — same convention as scheduled-rd-
+  # intensity-background above. A single-Alpha-Vantage-endpoint sweep
+  # (~503 HISTORICAL_OPTIONS calls, one per constituent) for at-the-money
+  # implied volatility, joined against Yahoo Finance daily closes (no
+  # second Alpha Vantage sweep) for trailing realized volatility — see
+  # scheduled-vol-risk-premium-background.js's own file header for the
+  # full methodology, including why no separate spot-price lookup is
+  # needed (the ATM contract is located by delta, not by strike-vs-price).
+  # Optionally reads scheduled-relative-strength-background's own
+  # published snapshot for the VRP-vs-relative-return test; works fine
+  # without it (the test just doesn't render).
