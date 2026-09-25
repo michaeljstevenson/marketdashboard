@@ -21,7 +21,7 @@ small{opacity:.7}
 </head>
 <body>
 <h1>Data Schedule</h1>
-<p>(New York is UTC−4 until November 1, then UTC−5.) This page is regenerated from the site's configuration on every deploy (last updated 09-22-2026).</p>
+<p>(New York is UTC−4 until November 1, then UTC−5.) This page is regenerated from the site's configuration on every deploy (last updated 09-25-2026).</p>
 <div class="w">
 <table>
 <thead><tr><th>Page</th><th>Job</th><th>When</th><th>Pulled from</th><th>Notes</th></tr></thead>
@@ -64,6 +64,7 @@ small{opacity:.7}
 <tr><td><a href="/congressional-trading.html">Congressional Trading Activity | Michael J. Stevenson</a></td><td class="m">congress-trades</td><td>Manual: run by hand</td><td>Alpha Vantage: CONGRESS_TRADES</td><td>Stock trades by members of Congress, matched to S&amp;P 500 stocks.<br>Reads: relative-strength</td></tr>
 <tr><td><a href="/earnings-call-sentiment.html">Earnings Call Sentiment | Michael J. Stevenson</a></td><td class="m">earnings-call-sentiment</td><td>Manual: run by hand</td><td>Alpha Vantage: EARNINGS, EARNINGS_CALL_TRANSCRIPT</td><td>Earnings history and call transcripts, scored for tone, for every S&amp;P 500 stock. Two runs finish one cycle: the sweep is too long for one 15-minute run, so each run saves progress and the next resumes.</td></tr>
 <tr><td><a href="/earnings-growth-divergence.html">Earnings Growth vs. Price Performance | Michael J. Stevenson</a></td><td class="m">earnings-growth-divergence</td><td>Manual: run by hand</td><td>Alpha Vantage: EARNINGS</td><td>Earnings history for every S&amp;P 500 stock, compared with price performance.<br>Reads: relative-strength</td></tr>
+<tr><td><a href="/accruals.html">Earnings Quality via Accruals</a></td><td class="m">accruals</td><td>Manual: run by hand</td><td>Alpha Vantage: BALANCE_SHEET, CASH_FLOW</td><td>Reads: relative-strength</td></tr>
 <tr><td><a href="/earnings-surprise.html">Earnings Surprise History | Michael J. Stevenson</a></td><td class="m">surprise</td><td>Manual: run by hand</td><td>Alpha Vantage: EARNINGS</td><td>Reported versus estimated earnings for every S&amp;P 500 stock. Manual snapshot; post-earnings-drift depends on it.</td></tr>
 <tr><td><a href="/equity-risk-premium.html">Equity Risk Premium by Sector | Michael J. Stevenson</a></td><td class="m">equity-risk-premium</td><td>Manual: run by hand</td><td>Alpha Vantage: OVERVIEW, TREASURY_YIELD</td><td>Company overviews for every S&amp;P 500 stock, plus Treasury yields.</td></tr>
 <tr><td><a href="/quality-score.html">Financial Quality Screener | Michael J. Stevenson</a> <small>(via another job)</small></td><td class="m">quality-financials</td><td>Manual: run by hand</td><td>Stored data: margin-leverage</td><td>Annual balance sheet and income figures for every S&amp;P 500 stock. Makes no API calls: reads the annual reports margin-leverage already saved.</td></tr>

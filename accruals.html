@@ -10,7 +10,6 @@
 </script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom@2"></script>
-<script src="date-format.js"></script>
 <script>
 // FRED-style zoom: drag horizontally on any chart to zoom into that range,
 // double-click to reset. Applied via Chart.defaults so every chart on the
@@ -153,7 +152,7 @@ document.addEventListener("DOMContentLoaded", function(){
 </script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Quality &amp; Low-Volatility Factor Screen | Michael J. Stevenson</title>
+<title>Earnings Quality via Accruals — Michael J. Stevenson</title>
 
 <style>
 
@@ -418,8 +417,6 @@ h1{
  height:380px;
 }
 
-.chart-canvas-wrap.short{ height:260px; }
-
 /* The warm-paper plot panel behind each canvas — the NDR homage
    (matches /concentration). */
 .ndr-panel{
@@ -427,7 +424,6 @@ h1{
  border:1px solid var(--ndr-grid);
  border-radius:8px;
  padding:14px 14px 10px;
- position:relative;
 }
 
 /* Two charts / method-tables side by side, same breakpoint as table-grid */
@@ -493,15 +489,6 @@ table{
  min-width:600px;
 }
 
-/* The narrower leaderboard/divergence tables don't need the 600px floor
-   above — it's sized for the many-column full table. Left at 600px in a
-   narrower box, the site-wide rule would push the value column(s) that
-   matter out past the box's visible width, requiring a manual horizontal
-   scroll to see them — a real bug already found and fixed on
-   /news-sentiment.html, /institutional-ownership.html and
-   /congressional-trading.html, applied proactively here from the start. */
-#highestCombinedTable, #lowestCombinedTable, #divergentHighQVolTable, #divergentLowQVolTable{ min-width:0; }
-
 thead th{
  text-align:right;
  padding:14px 12px;
@@ -560,18 +547,8 @@ tbody td:nth-child(2){
 .cell-neg{ color:var(--ink); }
 .cell-na{ color:var(--muted); }
 
-.badge-quintile{
- display:inline-block;
- background:rgba(217,138,61,0.16);
- color:var(--greed);
- border:1px solid rgba(217,138,61,0.4);
- border-radius:4px;
- font-size:10px;
- padding:1px 5px;
- margin-left:6px;
- font-family:var(--sans);
- vertical-align:middle;
-}
+.spread-pos{ color:var(--greed); }
+.spread-neg{ color:var(--fear); }
 
 /* SCATTER / METHOD TABLE (mirrors /factor-analysis) */
 
@@ -583,12 +560,17 @@ tbody td:nth-child(2){
 
 .method-table{
  width:100%;
- min-width:0; /* overrides the site-wide table{min-width:600px} rule below — a
-                 7-column method table never needs 600px */
+ min-width:0; /* overrides the site-wide table{min-width:600px} rule below — two of these
+                 side by side in .chart-grid would otherwise force the whole page wider
+                 than its container even though a 7-column method table never needs 600px */
  border-collapse:collapse;
  font-family:var(--mono);
  font-size:11px;
  margin-top:8px;
+}
+
+#betaSpreadMethodTable, #rel3mSpreadMethodTable{
+ overflow-x:auto;
 }
 
 .method-table th{
@@ -627,6 +609,26 @@ tbody td:nth-child(2){
  color:var(--muted);
  margin-top:8px;
  font-style:italic;
+}
+
+/* SECTOR LEGEND (scatter / spaghetti charts) */
+
+.sector-legend{
+ display:flex;
+ flex-wrap:wrap;
+ gap:10px 16px;
+ margin-top:14px;
+ font-size:11px;
+ color:var(--muted);
+}
+
+.sector-legend .dot{
+ display:inline-block;
+ width:8px;
+ height:8px;
+ border-radius:50%;
+ margin-right:5px;
+ vertical-align:middle;
 }
 
 /* EXPLAINER */
@@ -697,13 +699,6 @@ tbody td:nth-child(2){
  margin-bottom:20px;
  font-size:13px;
  display:none;
-}
-
-.method-note-box{
- font-size:12px;
- color:var(--muted);
- padding:16px 20px;
- text-align:center;
 }
 
 
@@ -787,7 +782,7 @@ tbody td:nth-child(2){
 <a href="/roic-wacc.html">ROIC vs. Cost of Capital</a>
 <a href="/cash-conversion-cycle.html">Cash Conversion Cycle</a>
 <a href="/rd-intensity.html">R&amp;D Intensity</a>
-<a href="/accruals.html">Earnings Quality (Accruals)</a>
+<a href="/accruals.html" class="active">Earnings Quality (Accruals)</a>
 </div>
 </div>
 
@@ -799,7 +794,7 @@ tbody td:nth-child(2){
 <a href="/sector-correlation.html">Sector Correlation Matrix</a>
 <a href="/sector-rotation.html">Sector Rotation Model</a>
 <a href="/factor-analysis.html">Factor Analysis</a>
-<a href="/quality-lowvol-factors.html" class="active">Quality &amp; Low-Volatility Factor Screen</a>
+<a href="/quality-lowvol-factors.html">Quality &amp; Low-Volatility Factor Screen</a>
 <a href="/small-cap-vs-large-cap.html">Small Cap vs. Large Cap Spread</a>
 <a href="/international-vs-us.html">International vs. US Relative Performance</a>
 <a href="/country-sector-scorecard.html">Country / Sector Scorecard</a>
@@ -850,7 +845,7 @@ tbody td:nth-child(2){
 </div>
 
 </div>
-<button class="theme-toggle" id="themeToggle" type="button" aria-label="Toggle light/dark mode" title="Toggle light/dark mode">&#9789;</button>
+<button aria-label="Toggle light/dark mode" class="theme-toggle" id="themeToggle" title="Toggle light/dark mode" type="button">☽</button>
 </nav>
 <script>
 // Class-driven (not pure :hover) nav dropdowns: pure CSS :hover drops the
@@ -894,211 +889,174 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 
 <div class="header">
 <div>
-<h1>Quality &amp; Low-Volatility Factor Screen</h1>
-<div class="subtitle">A quality plus low-volatility composite across the S&amp;P 500. Quality uses operating margin and net-debt/EBITDA from <a href="/margin-leverage.html">Margin &amp; Leverage Cycle</a>. Low-vol uses trailing 3-month realized volatility. Tested against subsequent relative price performance. Covers the quality and low-vol factors that <a href="/factor-analysis.html">Factor Analysis</a> notes are missing from the Ken French series.</div>
+<h1>Earnings Quality via Accruals</h1>
+<div class="subtitle">How much of reported net income is backed by real operating cash flow, vs. how much is "accruals" &mdash; the non-cash gap between the two? Sloan's (1996) accrual anomaly across the full S&amp;P 500, sector by sector and company by company.</div>
 </div>
 <div class="updated" id="updated">Loading...</div>
 </div>
 
 <div class="stat-grid">
 <div class="stat-card">
-<div class="stat-label">Companies Scored</div>
-<div class="stat-value" id="statCompanies" style="font-size:20px;">…</div>
-<div class="stat-note" id="statCompaniesNote">S&amp;P 500 companies with both inputs</div>
+<div class="stat-label">Companies Loaded</div>
+<div class="stat-value" id="statCompanies" style="font-size:20px;">—</div>
+<div class="stat-note" id="statCompaniesNote">Of full S&amp;P 500</div>
 </div>
 <div class="stat-card">
-<div class="stat-label">Median Realized Vol (63d, ann.)</div>
-<div class="stat-value" id="statVol">…</div>
-<div class="stat-note">Trailing 3-month annualized realized volatility</div>
+<div class="stat-label">Median Accrual Ratio</div>
+<div class="stat-value" id="statAccrual">—</div>
+<div class="stat-note">Trailing twelve months, market-wide</div>
 </div>
 <div class="stat-card">
-<div class="stat-label">Median Operating Margin</div>
-<div class="stat-value" id="statMargin">…</div>
-<div class="stat-note">Latest quarter, from Margin &amp; Leverage Cycle</div>
+<div class="stat-label">Cash-Backed Earnings</div>
+<div class="stat-value" id="statCashBackedPct">—</div>
+<div class="stat-note">Share of companies with a negative (conservative) accrual ratio</div>
 </div>
 <div class="stat-card">
-<div class="stat-label">Q1 vs. Q5 Fwd. 3M Return Spread</div>
-<div class="stat-value" id="statSpread">…</div>
-<div class="stat-note" id="statSpreadNote">Highest vs. lowest combined-score quintile</div>
+<div class="stat-label">Accrual Anomaly (r)</div>
+<div class="stat-value" id="statAnomalyR">—</div>
+<div class="stat-note" id="statAnomalyRNote">Accrual ratio vs. 3-month relative return</div>
 </div>
 </div>
 
 <div class="chart-box">
 <div class="chart-box-header">
 <div>
-<h2>Does the top quintile beat the bottom quintile?</h2>
-<div class="chart-subhead">Average subsequent 3-month return relative to SPY, by combined score quintile. Q1 is the highest-scoring fifth of the S&amp;P 500 (highest quality, lowest vol), Q5 the lowest.</div>
+<h2>Median accrual ratio by sector</h2>
+<div class="chart-subhead">Median TTM total accruals &divide; average total assets across each SPDR sector's S&amp;P 500 constituents &mdash; below zero means the typical company in that sector books less income than it collects in cash</div>
 </div>
 </div>
 <div class="ndr-panel">
 <div class="chart-canvas-wrap">
-<canvas id="quintileChart"></canvas>
-</div>
-</div>
-<div class="method-note" id="quintileNote"></div>
-</div>
-
-<div class="chart-grid">
-<div class="chart-box">
-<div class="chart-box-header">
-<div>
-<h2>Average combined score by sector</h2>
-<div class="chart-subhead">Which sectors currently screen as highest quality + lowest volatility</div>
-</div>
-</div>
-<div class="ndr-panel">
-<div class="chart-canvas-wrap short">
 <canvas id="sectorChart"></canvas>
 </div>
 </div>
 </div>
+
 <div class="chart-box">
 <div class="chart-box-header">
 <div>
-<h2>Quality vs. low-vol: independent, or correlated?</h2>
-<div class="chart-subhead">Each point is one company's quality and low-vol z-scores. If the two measured the same thing, the points would form a tight diagonal.</div>
+<h2>Distribution of the accrual ratio</h2>
+<div class="chart-subhead">Every S&amp;P 500 constituent with usable statement history, bucketed by accrual ratio (% of average total assets)</div>
 </div>
 </div>
 <div class="ndr-panel">
-<div class="scatter-canvas-wrap">
-<canvas id="qualityVolScatter"></canvas>
+<div class="chart-canvas-wrap" style="height:300px;">
+<canvas id="accrualHistogram"></canvas>
 </div>
-</div>
-<div id="qualityVolMethodTable"></div>
 </div>
 </div>
 
 <div class="chart-box">
 <div class="chart-box-header">
 <div>
-<h2>Does the composite predict subsequent relative price performance?</h2>
-<div class="chart-subhead">Each point is one company. X is the combined z-score, Y is the 3-month return relative to SPY.</div>
+<h2>Accrual ratio vs. 3-month relative return</h2>
+<div class="chart-subhead">The actual accrual-anomaly test: do high-accrual (lower-quality earnings) companies really show weaker relative price performance?</div>
 </div>
 </div>
 <div class="ndr-panel">
 <div class="scatter-canvas-wrap">
-<canvas id="returnScatter"></canvas>
+<canvas id="accrualRel3mScatter"></canvas>
 </div>
 </div>
-<div id="returnMethodTable"></div>
+<div id="accrualRel3mMethodTable"></div>
 </div>
 
 <div class="table-grid">
 <div class="table-box">
 <div class="table-box-header">
-<h2>Highest combined score</h2>
-<div class="chart-subhead">Highest quality + lowest volatility, by average z-score</div>
+<h2>Most cash-backed earnings</h2>
+<div class="chart-subhead">Most negative accrual ratio &mdash; income backed most heavily by operating cash flow</div>
 </div>
-<table id="highestCombinedTable">
-<thead><tr><th>Symbol</th><th>Sector</th><th>Combined Z</th></tr></thead>
-<tbody id="highestCombinedBody"><tr><td colspan="3" style="text-align:center; color:var(--muted); padding:24px;">Loading&hellip;</td></tr></tbody>
+<table id="cashBackedTable">
+<thead><tr><th>Symbol</th><th>Sector</th><th>Accrual Ratio</th></tr></thead>
+<tbody id="cashBackedBody"><tr><td colspan="3" style="text-align:center; color:var(--muted); padding:24px;">Loading&hellip;</td></tr></tbody>
 </table>
 </div>
 <div class="table-box">
 <div class="table-box-header">
-<h2>Lowest combined score</h2>
-<div class="chart-subhead">Lowest quality + highest volatility, by average z-score</div>
+<h2>Most aggressive accruals</h2>
+<div class="chart-subhead">Most positive accrual ratio &mdash; income furthest ahead of operating cash flow</div>
 </div>
-<table id="lowestCombinedTable">
-<thead><tr><th>Symbol</th><th>Sector</th><th>Combined Z</th></tr></thead>
-<tbody id="lowestCombinedBody"><tr><td colspan="3" style="text-align:center; color:var(--muted); padding:24px;">Loading&hellip;</td></tr></tbody>
-</table>
-</div>
-</div>
-
-<div class="table-grid" id="divergentGrid" style="display:none;">
-<div class="table-box">
-<div class="table-box-header">
-<h2>High quality, high volatility</h2>
-<div class="chart-subhead">Strong quality, but volatile enough that the low-vol score pulls the other way.</div>
-</div>
-<table id="divergentHighQVolTable">
-<thead><tr><th>Symbol</th><th>Sector</th><th>Quality Z</th><th>Low-Vol Z</th></tr></thead>
-<tbody id="divergentHighQVolBody"></tbody>
-</table>
-</div>
-<div class="table-box">
-<div class="table-box-header">
-<h2>Low quality, low volatility</h2>
-<div class="chart-subhead">Weak quality, but unusually calm price action.</div>
-</div>
-<table id="divergentLowQVolTable">
-<thead><tr><th>Symbol</th><th>Sector</th><th>Quality Z</th><th>Low-Vol Z</th></tr></thead>
-<tbody id="divergentLowQVolBody"></tbody>
+<table id="aggressiveTable">
+<thead><tr><th>Symbol</th><th>Sector</th><th>Accrual Ratio</th></tr></thead>
+<tbody id="aggressiveBody"><tr><td colspan="3" style="text-align:center; color:var(--muted); padding:24px;">Loading&hellip;</td></tr></tbody>
 </table>
 </div>
 </div>
 
 <div class="table-box">
 <div class="table-box-header">
-<h2>Full S&amp;P 500</h2>
-<div class="chart-subhead">Every S&amp;P 500 company with both a quality input (from Margin &amp; Leverage Cycle) and a realized volatility reading.</div>
+<h2>All companies with usable statement history</h2>
+<div class="chart-subhead">Trailing-twelve-month accrual ratio and its underlying components, full S&amp;P 500</div>
 </div>
 <table id="stockTable">
 <thead>
 <tr>
 <th data-key="symbol">Symbol</th>
 <th data-key="sector">Sector</th>
-<th data-key="operatingMargin">Op. Margin<span class="sort-arrow">▾</span></th>
-<th data-key="netDebtEbitda">Net Debt/EBITDA<span class="sort-arrow">▾</span></th>
-<th data-key="realizedVol">Realized Vol<span class="sort-arrow">▾</span></th>
-<th data-key="qualityZ">Quality Z<span class="sort-arrow">▾</span></th>
-<th data-key="lowVolZ">Low-Vol Z<span class="sort-arrow">▾</span></th>
-<th data-key="combinedZ">Combined<span class="sort-arrow">▾</span></th>
-<th data-key="quintile">Quintile<span class="sort-arrow">▾</span></th>
+<th data-key="accrualRatio">Accrual Ratio<span class="sort-arrow">▾</span></th>
+<th data-key="ttmNetIncomeUsd">TTM Net Income<span class="sort-arrow">▾</span></th>
+<th data-key="ttmCfoUsd">TTM CFO<span class="sort-arrow">▾</span></th>
+<th data-key="totalAccrualsUsd">Total Accruals<span class="sort-arrow">▾</span></th>
+<th data-key="rel3M">3M Rel. Return<span class="sort-arrow">▾</span></th>
 </tr>
 </thead>
 <tbody id="tableBody">
-<tr><td colspan="9" style="text-align:center; color:var(--muted); padding:30px;">Loading quality &amp; low-vol factor data&hellip;</td></tr>
+<tr><td colspan="7" style="text-align:center; color:var(--muted); padding:30px;">Loading accruals data&hellip;</td></tr>
 </tbody>
 </table>
 </div>
 
 <div class="explainer">
 <h2>Methodology</h2>
-<p><b>Universe.</b> S&amp;P 500 companies with both a quality input and a realized volatility reading. Companies missing either (recent IPOs, data gaps) are excluded.</p>
-<p><b>Quality.</b> The z-score of operating margin minus the z-score of net-debt/EBITDA, both across the universe. Higher margin is better and higher leverage is worse. A company with a strong margin and low (or negative) leverage scores high, and a thin-margin, heavily indebted one scores low. This is a simple 2-input proxy, not a full quality model like MSCI's or AQR's QMJ, which also weigh earnings stability, payout policy and growth. Inputs are the latest-quarter figures from <a href="/margin-leverage.html">Margin &amp; Leverage Cycle</a>.</p>
-<p><b>Low volatility.</b> Trailing 63-trading-day (~3 month) realized volatility: the standard deviation of daily log returns, annualized (&times;&radic;252). It is z-scored across the universe and negated, so a higher score means lower volatility, the same "higher is better" direction as quality. Prices are Yahoo Finance daily adjusted closes for the last ~100 trading days.</p>
-<p><b>Combined score.</b> The simple average of the two z-scores. Companies are ranked into quintiles on it: Q1 is the highest-scoring fifth, Q5 the lowest.</p>
-<p><b>Versus <a href="/volatility.html">Implied vs. Realized Volatility</a>.</b> That page tracks one market-level series (VIX vs. S&amp;P 500 realized volatility). This page scores about 500 individual stocks at a 63-day lookback.</p>
-<p><b>Tests.</b> Two checks on whether the score predicts performance: average forward 3-month return relative to SPY by quintile, and a Pearson and Spearman regression of the score against the same return. Returns come from <a href="/relative-strength-leaders.html">Relative Strength Leaders/Laggards</a>. If that hasn't refreshed, everything else still shows and a banner says the two return tests are unavailable.</p>
-<p><b>Callout tables.</b> They list companies where the two z-scores point opposite ways, both beyond &plusmn;0.5 standard deviations. They appear only when the data produces such a group.</p>
-<p><b>Names and sectors</b> come from the weekly data behind <a href="/sector-beeswarm.html">Sector Beeswarm</a>.</p>
-<div class="source">Source: <a href="/margin-leverage.html">Margin &amp; Leverage Cycle</a> and <a href="/relative-strength-leaders.html">Relative Strength Leaders/Laggards</a> output, plus <a href="https://finance.yahoo.com/" target="_blank" rel="noopener">Yahoo Finance daily adjusted closes</a>.</div>
+<p>Universe is the full S&amp;P 500. For every constituent, Alpha Vantage's <code>CASH_FLOW</code> endpoint (quarterly) supplies the trailing four quarters needed for trailing-twelve-month (TTM) net income and cash flow from operations (CFO), and its <code>BALANCE_SHEET</code> endpoint (quarterly) supplies total assets at the latest quarter and again roughly four quarters (one year) earlier. <b>Total accruals</b> = TTM net income &minus; TTM CFO. <b>Average total assets</b> = (latest-quarter total assets + total assets from ~4 quarters earlier) &divide; 2 &mdash; Sloan's (1996) original construction, averaging rather than using a single point-in-time asset base so a one-off acquisition or divestiture doesn't swing the ratio purely through the denominator. <b>Accrual ratio</b> = total accruals &divide; average total assets, shown as a percentage.</p>
+<p>A positive accrual ratio means reported net income exceeds the cash the business actually generated that year &mdash; earnings are running ahead of cash, which Sloan's original research ties to more aggressive revenue recognition, working-capital build, or other non-cash items, and to weaker forward stock performance on average. A negative accrual ratio means cash flow exceeds net income &mdash; earnings are conservatively stated relative to the cash actually collected, sometimes called "high quality" or "cash-backed" earnings. Neither reading is a verdict on a company by itself: a fast-growing business legitimately builds receivables and inventory (positive accruals) as part of normal expansion, and heavy depreciation or a one-time write-down can push a mature business's accrual ratio sharply negative without saying anything about aggressive accounting either way. The ratio is a screen, not a fraud detector.</p>
+<p>A company is included only if all four trailing quarters report both net income and operating cash flow, and a <code>BALANCE_SHEET</code> row for the matching latest fiscal quarter exists together with one from roughly four quarters earlier. Companies missing that prior-period balance sheet &mdash; a real, not-uncommon gap for names with a shorter Alpha Vantage history or a fiscal-calendar change &mdash; are excluded entirely rather than falling back to a single point-in-time asset base, which would quietly abandon Sloan's own averaging construction. <span id="excludedNote"></span></p>
+<p>The core test is a single-snapshot cross-sectional Pearson-and-Spearman regression (same two-method check as <a href="/factor-analysis.html">Factor Analysis</a>) of each company's accrual ratio against its 3-month price return relative to SPY, reusing <a href="/relative-strength-leaders.html">Relative Strength Leaders/Laggards</a>' own weekly snapshot rather than a second price sweep. This is honestly a contemporaneous snapshot, not a true lagged or panel replication of Sloan's original design, which tracked realized forward stock returns over the year <i>following</i> each accrual measurement across many years of history. A negative, statistically significant slope here is consistent with the accrual anomaly (high-accrual names showing weaker relative performance around the same time their accruals are elevated); it isn't, on its own, proof that today's accrual ratio predicts tomorrow's return the way the original multi-decade panel study demonstrated.</p>
+<p>One-time snapshot &mdash; no recurring schedule, matching every other full-universe fundamentals sweep added to this site since mid-September 2026. Re-run manually for a fresh pass; quarterly fundamentals don't move day to day. Sector and company name come from the same weekly metadata sweep that backs <a href="/sector-beeswarm.html">Sector Beeswarm</a>.</p>
+<p style="font-size:12px;">Sloan, R.G. (1996). "Do Stock Prices Fully Reflect Information in Accruals and Cash Flows about Future Earnings?" <i>The Accounting Review</i>, 71(3), 289&ndash;315.</p>
+<div class="source">Source: <a href="https://www.alphavantage.co/" target="_blank" rel="noopener">Alpha Vantage — CASH_FLOW, BALANCE_SHEET</a>, plus this site's own <a href="/relative-strength-leaders.html">Relative Strength Leaders/Laggards</a> data</div>
 </div>
 
 </div>
 
 <script>
-const DATA_URL = "/api/quality-lowvol-factors";
+const DATA_URL = "/api/accruals";
+
+const SECTOR_COLORS = {
+ "Information Technology": "#d98a3d",
+ "Financials": "#6f8fac",
+ "Health Care": "#8e7cc3",
+ "Energy": "#c0564f",
+ "Industrials": "#5a9d6f",
+ "Consumer Discretionary": "#e0b04f",
+ "Consumer Staples": "#4fb0c0",
+ "Utilities": "#b56f2a",
+ "Materials": "#9a9a9a",
+ "Real Estate": "#c77dbd",
+ "Communication Services": "#4f7ae0",
+};
 
 let RAW = null;
-let SORT_KEY = "combinedZ";
+let SORT_KEY = "accrualRatio";
 let SORT_DIR = -1;
 
 function fmtPct(v, digits){
- if(v === null || v === undefined || isNaN(v)) return "n/a";
+ if(v === null || v === undefined || isNaN(v)) return "—";
  digits = digits === undefined ? 1 : digits;
  return v.toFixed(digits) + "%";
 }
-function fmtPctSigned(v, digits){
- if(v === null || v === undefined || isNaN(v)) return "n/a";
+function fmtSignedPct(v, digits){
+ if(v === null || v === undefined || isNaN(v)) return "—";
  digits = digits === undefined ? 1 : digits;
  return (v >= 0 ? "+" : "") + v.toFixed(digits) + "%";
 }
-function fmtScore(v, digits){
- if(v === null || v === undefined || isNaN(v)) return "n/a";
- digits = digits === undefined ? 2 : digits;
- return (v >= 0 ? "+" : "") + v.toFixed(digits);
-}
-function fmtRatio(v, digits){
- if(v === null || v === undefined || isNaN(v)) return "n/a";
- digits = digits === undefined ? 2 : digits;
- return v.toFixed(digits) + "x";
-}
-function fmtCount(v){
- if(v === null || v === undefined || isNaN(v)) return "n/a";
- return Math.round(v).toLocaleString();
+function fmtUsd(v){
+ if(v === null || v === undefined || isNaN(v)) return "—";
+ const abs = Math.abs(v);
+ if(abs >= 1e9) return (v < 0 ? "-" : "") + "$" + (abs / 1e9).toFixed(1) + "B";
+ if(abs >= 1e6) return (v < 0 ? "-" : "") + "$" + (abs / 1e6).toFixed(1) + "M";
+ return (v < 0 ? "-" : "") + "$" + Math.round(abs).toLocaleString();
 }
 
 function showError(message){
@@ -1112,13 +1070,20 @@ function showWarning(message){
  banner.style.display = "block";
 }
 
-// ---- NDR chart styling helpers (matches /concentration) ----------------
+// ---- NDR chart styling helpers (matches /concentration, /margin-leverage) ----
 function ndr(name){
  return getComputedStyle(document.documentElement).getPropertyValue("--ndr-" + name).trim();
 }
 
 Chart.defaults.font.family = "'Iowan Old Style','Palatino Linotype',Georgia,serif";
 Chart.defaults.color = ndr("axis-soft");
+
+function ndrXScale(){
+ return {
+  ticks: { color: ndr("axis"), maxTicksLimit: 9, maxRotation: 0, autoSkip: true, font: { size: 11 } },
+  grid: { color: "rgba(0,0,0,0)", borderColor: ndr("axis") },
+ };
+}
 
 function ndrYScale(opts){
  opts = opts || {};
@@ -1129,22 +1094,6 @@ function ndrYScale(opts){
   ticks: { color: ndr("axis"), font: { size: 11 }, callback: opts.fmt || undefined },
   title: opts.title ? { display: true, text: opts.title, color: ndr("axis-soft"), font: { size: 10 } } : { display: false },
   min: opts.min, max: opts.max,
- };
-}
-
-function ndrCategoryScale(){
- return {
-  ticks: { color: ndr("axis"), font: { size: 11 } },
-  grid: { display: false },
- };
-}
-
-function ndrNumericScale(opts){
- opts = opts || {};
- return {
-  title: opts.title ? { display: true, text: opts.title, color: ndr("axis-soft"), font: { size: 10 } } : { display: false },
-  ticks: { color: ndr("axis"), font: { size: 10 } },
-  grid: { color: ndr("grid"), drawBorder: false },
  };
 }
 
@@ -1192,7 +1141,7 @@ function rankArray(arr){
 }
 function spearmanRegression(xs, ys){ return linearRegression(rankArray(xs), rankArray(ys)); }
 
-function methodTableHtml(pearson, spear, note){
+function methodTableHtml(pearson, spear, unitNote){
  function row(label, stats){
   const sig = stats.p < 0.05;
   return "<tr>" +
@@ -1208,11 +1157,10 @@ function methodTableHtml(pearson, spear, note){
  return '<table class="method-table">' +
   "<thead><tr><th>Method</th><th>n</th><th>r</th><th>r&sup2;</th><th>slope</th><th>t</th><th>p</th></tr></thead>" +
   "<tbody>" + row("Pearson (OLS)", pearson) + row("Spearman (&rho;)", spear) + "</tbody>" +
- "</table>" +
- '<div class="method-note">' + note + '</div>';
+ "</table>" + (unitNote ? '<div class="method-note">' + unitNote + "</div>" : "");
 }
 
-let quintileChart = null, sectorChart = null, qualityVolScatter = null, returnScatter = null;
+let sectorChart = null, accrualHistogram = null, accrualRel3mScatter = null;
 
 async function init(){
  try{
@@ -1221,150 +1169,66 @@ async function init(){
   if(!res.ok || data.error) throw new Error(data.error || "failed to load");
 
   RAW = data;
-  document.getElementById("updated").textContent = "As of " + new Date(data.generated_at_utc).toLocaleString("en-US", { month: "2-digit", day: "2-digit", year: "numeric", hour: "numeric", minute: "2-digit" });
+  document.getElementById("updated").textContent = "As of " + new Date(data.generated_at_utc).toLocaleString();
 
-  if(data.volLoadedCount < data.universeSize){
-   showWarning("Realized volatility only computed for " + data.volLoadedCount + " of " + data.universeSize + " S&P 500 constituents this run. Some data may be temporarily unavailable.");
-  }else if(!data.hasPriceData){
-   showWarning("Price data isn't available yet (Relative Strength Leaders/Laggards hasn't refreshed). The two forward-return tests below are unavailable.");
+  if(data.loadedCount < data.universeSize){
+   showWarning("Only " + data.loadedCount + " of " + data.universeSize + " S&P 500 constituents loaded this run — some data may be temporarily unavailable.");
+  }
+  if(!data.hasRel3M){
+   showWarning("Relative Strength Leaders/Laggards' data hasn't populated yet, so the accrual-anomaly regression can't run yet.");
+  }
+
+  const excludedNote = document.getElementById("excludedNote");
+  if(excludedNote){
+   excludedNote.textContent = (data.excludedForMissingPriorAssets || 0) > 0
+    ? data.excludedForMissingPriorAssets + " companies were excluded specifically for a missing prior-period balance sheet."
+    : "";
   }
 
   renderStats();
-  renderQuintileChart();
   renderSectorChart();
-  renderQualityVolScatter();
-  renderReturnScatter();
-  renderLeaderTable(data.highestCombined, "highestCombinedBody");
-  renderLeaderTable(data.lowestCombined, "lowestCombinedBody");
-  renderDivergentTables();
+  renderAccrualHistogram();
+  renderAccrualRel3mScatter();
+  renderLeaderTable(data.mostCashBacked, "cashBackedBody");
+  renderLeaderTable(data.mostAggressive, "aggressiveBody");
   renderTable();
 
  }catch(e){
-  showError("Couldn't load quality & low-vol factor data (" + e.message + "). It may not have refreshed yet.");
+  showError("Couldn't load accruals data (" + e.message + "). The /api/accruals function may not have run yet.");
   document.getElementById("tableBody").innerHTML =
-   '<tr><td colspan="9" style="text-align:center; color:var(--muted); padding:30px;">No data available.</td></tr>';
+   '<tr><td colspan="7" style="text-align:center; color:var(--muted); padding:30px;">No data available.</td></tr>';
  }
 }
 
 function renderStats(){
- const m = RAW.market;
- document.getElementById("statCompanies").textContent = m.companyCount;
- document.getElementById("statCompaniesNote").textContent = RAW.qualityUniverseCount + " with quality data, " + RAW.volLoadedCount + " with volatility, " + m.companyCount + " scored on both";
- document.getElementById("statVol").textContent = fmtPct(m.medianRealizedVol);
- document.getElementById("statMargin").textContent = fmtPct(m.medianOperatingMargin);
+ document.getElementById("statCompanies").textContent = RAW.market.companyCount;
+ document.getElementById("statCompaniesNote").textContent = RAW.loadedCount + " of " + RAW.universeSize + " loaded, " + RAW.market.companyCount + " with usable statement history";
+ document.getElementById("statAccrual").textContent = fmtSignedPct(RAW.market.medianAccrualRatio);
+ document.getElementById("statCashBackedPct").textContent = fmtPct(RAW.market.cashBackedPct, 0);
 
- const q1 = RAW.quintiles.find(q => q.quintile === 1);
- const q5 = RAW.quintiles.find(q => q.quintile === 5);
- const spreadEl = document.getElementById("statSpread");
- if(q1 && q5 && q1.avgForwardRelReturn3M !== null && q5.avgForwardRelReturn3M !== null){
-  const spread = q1.avgForwardRelReturn3M - q5.avgForwardRelReturn3M;
-  spreadEl.textContent = fmtPctSigned(spread);
-  spreadEl.classList.toggle("cell-neg", spread < 0);
-  document.getElementById("statSpreadNote").textContent = "Q1 " + fmtPctSigned(q1.avgForwardRelReturn3M) + " vs. Q5 " + fmtPctSigned(q5.avgForwardRelReturn3M);
+ const pairs = RAW.accrualRel3MPairs || [];
+ if(pairs.length >= 5){
+  const pearson = linearRegression(pairs.map(p => p.x), pairs.map(p => p.y));
+  document.getElementById("statAnomalyR").textContent = pearson.r.toFixed(2);
+  document.getElementById("statAnomalyR").className = "stat-value" + (pearson.r < 0 ? "" : " cell-neg");
+  document.getElementById("statAnomalyRNote").textContent = "Pearson r, n=" + pearson.n + (pearson.p < 0.05 ? " (p<0.05)" : " (not significant)");
  }else{
-  spreadEl.textContent = "n/a";
-  document.getElementById("statSpreadNote").textContent = "Price-performance data not yet available";
+  document.getElementById("statAnomalyR").textContent = "—";
+  document.getElementById("statAnomalyRNote").textContent = "Not enough data to test yet";
  }
-}
-
-function renderQuintileChart(){
- const qs = RAW.quintiles;
- const ctx = document.getElementById("quintileChart").getContext("2d");
- if(quintileChart) quintileChart.destroy();
-
- if(!RAW.hasPriceData || qs.every(q => q.avgForwardRelReturn3M === null)){
-  document.getElementById("quintileChart").closest(".ndr-panel").innerHTML =
-   '<div class="method-note-box">Price data isn\'t available yet. This test will appear once Relative Strength Leaders/Laggards refreshes.</div>';
-  document.getElementById("quintileNote").textContent = "";
-  return;
- }
-
- quintileChart = new Chart(ctx, {
-  type: "bar",
-  data: {
-   labels: qs.map(q => "Q" + q.quintile + (q.quintile === 1 ? " (best)" : q.quintile === 5 ? " (worst)" : "")),
-   datasets: [{
-    label: "Avg. forward 3M relative return",
-    data: qs.map(q => q.avgForwardRelReturn3M),
-    backgroundColor: qs.map(q => (q.avgForwardRelReturn3M ?? 0) >= 0 ? ndr("green") : ndr("red")),
-    borderRadius: 4,
-   }],
-  },
-  options: {
-   responsive: true,
-   maintainAspectRatio: false,
-   plugins: {
-    legend: { display: false },
-    tooltip: { callbacks: { label: ctx => fmtPctSigned(ctx.parsed.y) + " (n=" + qs[ctx.dataIndex].nWithReturn + " companies)" } },
-   },
-   scales: {
-    x: ndrCategoryScale(),
-    y: ndrYScale({ fmt: v => fmtPctSigned(Number(v)), title: "Avg. fwd. 3M return vs. SPY" }),
-   },
-  },
- });
-
- document.getElementById("quintileNote").textContent =
-  "Each quintile is about 1/5 of the scored companies. Bars sloping down from Q1 to Q5 would support the quality + low-vol thesis. Flat or noisy bars would not.";
 }
 
 function renderSectorChart(){
- const sorted = [...RAW.sectors].sort((a, b) => (b.avgCombinedZ ?? -Infinity) - (a.avgCombinedZ ?? -Infinity));
+ const sectors = RAW.sectors.map(s => s.sector);
+ const values = RAW.sectors.map(s => s.medianAccrualRatio);
  const ctx = document.getElementById("sectorChart").getContext("2d");
  if(sectorChart) sectorChart.destroy();
  sectorChart = new Chart(ctx, {
   type: "bar",
   data: {
-   labels: sorted.map(s => s.sector),
-   datasets: [{
-    label: "Avg. combined score",
-    data: sorted.map(s => s.avgCombinedZ),
-    backgroundColor: sorted.map(s => (s.avgCombinedZ ?? 0) >= 0 ? ndr("green") : ndr("red")),
-    borderRadius: 4,
-   }],
-  },
-  options: {
-   indexAxis: "y",
-   responsive: true,
-   maintainAspectRatio: false,
-   plugins: {
-    legend: { display: false },
-    tooltip: { callbacks: { label: ctx => fmtScore(ctx.parsed.x) + " (n=" + sorted[ctx.dataIndex].companyCount + ")" } },
-   },
-   scales: {
-    x: ndrYScale({ fmt: v => fmtScore(Number(v)) }),
-    y: ndrCategoryScale(),
-   },
-  },
- });
-}
-
-function renderQualityVolScatter(){
- const pairs = RAW.qualityVsLowVolPairs || [];
- if(qualityVolScatter){ qualityVolScatter.destroy(); qualityVolScatter = null; }
- if(pairs.length < 20){
-  document.getElementById("qualityVolMethodTable").innerHTML =
-   '<div class="method-note">Not enough scored companies this run to test.</div>';
-  return;
- }
-
- const pearson = linearRegression(pairs.map(p => p.x), pairs.map(p => p.y));
- const spear = spearmanRegression(pairs.map(p => p.x), pairs.map(p => p.y));
-
- const xs = pairs.map(p => p.x);
- const xMin = Math.min(...xs), xMax = Math.max(...xs);
- const linePoints = [
-  { x: xMin, y: pearson.intercept + pearson.slope * xMin },
-  { x: xMax, y: pearson.intercept + pearson.slope * xMax },
- ];
-
- const ctx = document.getElementById("qualityVolScatter").getContext("2d");
- qualityVolScatter = new Chart(ctx, {
-  type: "scatter",
-  data: {
+   labels: sectors,
    datasets: [
-    { label: "Companies", data: pairs, backgroundColor: ndr("navy"), pointRadius: 2.5, pointHoverRadius: 4, showLine: false },
-    { label: "Regression fit", type: "line", data: linePoints, borderColor: ndr("red"), borderWidth: 1.5, borderDash: [4, 3], pointRadius: 0, fill: false },
+    { label: "Median accrual ratio", data: values, backgroundColor: values.map(v => v < 0 ? ndr("green") : ndr("red")), borderRadius: 3 },
    ],
   },
   options: {
@@ -1372,55 +1236,73 @@ function renderQualityVolScatter(){
    maintainAspectRatio: false,
    plugins: {
     legend: { display: false },
-    tooltip: {
-     callbacks: {
-      label: ctx => ctx.dataset.label === "Companies" ? (ctx.raw.symbol + " (" + (ctx.raw.sector || "n/a") + "): quality " + fmtScore(ctx.raw.x) + ", low-vol " + fmtScore(ctx.raw.y)) : null,
-     },
-    },
+    tooltip: { callbacks: { label: ctx => "Median accrual ratio: " + fmtSignedPct(ctx.parsed.y) } },
    },
    scales: {
-    x: ndrNumericScale({ title: "Quality z-score" }),
-    y: ndrNumericScale({ title: "Low-vol z-score" }),
+    x: ndrXScale(),
+    y: ndrYScale({ fmt: v => v + "%" }),
    },
   },
  });
-
- const relStrength = Math.abs(pearson.r) < 0.15 ? "essentially independent dimensions in this snapshot"
-  : Math.abs(pearson.r) < 0.35 ? "weakly related in this snapshot"
-  : pearson.r > 0 ? "meaningfully positively correlated in this snapshot. Higher-quality names also tended to be calmer"
-  : "meaningfully negatively correlated in this snapshot. Higher-quality names tended to be more volatile, not less";
- document.getElementById("qualityVolMethodTable").innerHTML = methodTableHtml(pearson, spear,
-  "Quality and low-vol are " + relStrength + " (Pearson r=" + pearson.r.toFixed(2) + ").");
 }
 
-function renderReturnScatter(){
- const pairs = RAW.returnRegressionPairs || [];
- if(returnScatter){ returnScatter.destroy(); returnScatter = null; }
- if(pairs.length < 20){
-  document.getElementById("returnMethodTable").innerHTML =
-   '<div class="method-note">' + (RAW.hasPriceData
-    ? "Not enough companies with both a combined score and price data this run to test."
-    : "Price data isn't available yet (Relative Strength Leaders/Laggards hasn't refreshed).") + '</div>';
-  return;
+function renderAccrualHistogram(){
+ const ratios = RAW.companies.map(c => c.accrualRatio).filter(v => v !== null && v !== undefined && !isNaN(v));
+ const binWidth = 2; // percentage points of average total assets
+ const minBin = Math.floor(Math.min(...ratios) / binWidth) * binWidth;
+ const maxBin = Math.ceil(Math.max(...ratios) / binWidth) * binWidth;
+ const bins = [];
+ for(let b = minBin; b < maxBin; b += binWidth) bins.push({ lo: b, hi: b + binWidth, count: 0 });
+ for(const v of ratios){
+  let idx = Math.floor((v - minBin) / binWidth);
+  if(idx < 0) idx = 0;
+  if(idx >= bins.length) idx = bins.length - 1;
+  bins[idx].count++;
  }
 
+ const ctx = document.getElementById("accrualHistogram").getContext("2d");
+ if(accrualHistogram) accrualHistogram.destroy();
+ accrualHistogram = new Chart(ctx, {
+  type: "bar",
+  data: {
+   labels: bins.map(b => (b.lo >= 0 ? "+" : "") + b.lo + "to" + (b.hi >= 0 ? "+" : "") + b.hi),
+   datasets: [{ data: bins.map(b => b.count), backgroundColor: bins.map(b => (b.lo + b.hi) / 2 < 0 ? ndr("green") : ndr("red")), borderRadius: 3, barPercentage: 1.0, categoryPercentage: 0.95 }],
+  },
+  options: {
+   responsive: true,
+   maintainAspectRatio: false,
+   plugins: {
+    legend: { display: false },
+    tooltip: { callbacks: { title: items => { const b = bins[items[0].dataIndex]; return (b.lo >= 0 ? "+" : "") + b.lo + "% to " + (b.hi >= 0 ? "+" : "") + b.hi + "%"; }, label: ctx => ctx.parsed.y + " companies" } },
+   },
+   scales: {
+    x: { ...ndrXScale(), title: { display: true, text: "Accrual ratio (% of average total assets)", color: ndr("axis-soft"), font: { size: 10 } } },
+    y: ndrYScale({ title: "Companies" }),
+   },
+  },
+ });
+}
+
+function renderAccrualRel3mScatter(){
+ const pairs = RAW.accrualRel3MPairs || [];
+ if(pairs.length < 5){
+  document.getElementById("accrualRel3mMethodTable").innerHTML = '<div class="method-note">Relative Strength Leaders/Laggards data isn’t available yet, so this test can’t run.</div>';
+  return;
+ }
  const pearson = linearRegression(pairs.map(p => p.x), pairs.map(p => p.y));
  const spear = spearmanRegression(pairs.map(p => p.x), pairs.map(p => p.y));
-
  const xs = pairs.map(p => p.x);
  const xMin = Math.min(...xs), xMax = Math.max(...xs);
- const linePoints = [
-  { x: xMin, y: pearson.intercept + pearson.slope * xMin },
-  { x: xMax, y: pearson.intercept + pearson.slope * xMax },
- ];
+ const linePoints = [{ x: xMin, y: pearson.intercept + pearson.slope * xMin }, { x: xMax, y: pearson.intercept + pearson.slope * xMax }];
 
- const ctx = document.getElementById("returnScatter").getContext("2d");
- returnScatter = new Chart(ctx, {
+ const ctx = document.getElementById("accrualRel3mScatter").getContext("2d");
+ if(accrualRel3mScatter) accrualRel3mScatter.destroy();
+ accrualRel3mScatter = new Chart(ctx, {
   type: "scatter",
   data: {
    datasets: [
-    { label: "Companies", data: pairs, backgroundColor: ndr("navy"), pointRadius: 2.5, pointHoverRadius: 4, showLine: false },
-    { label: "Regression fit", type: "line", data: linePoints, borderColor: ndr("red"), borderWidth: 1.5, borderDash: [4, 3], pointRadius: 0, fill: false },
+    { label: "Companies", data: pairs, backgroundColor: ndr("gold"), pointRadius: 2.5, showLine: false },
+    { label: "Regression fit", type: "line", data: linePoints, borderColor: ndr("navy"), borderWidth: 1.5, borderDash: [4, 3], pointRadius: 0, fill: false },
    ],
   },
   options: {
@@ -1428,21 +1310,17 @@ function renderReturnScatter(){
    maintainAspectRatio: false,
    plugins: {
     legend: { display: false },
-    tooltip: {
-     callbacks: {
-      label: ctx => ctx.dataset.label === "Companies" ? (ctx.raw.symbol + ": score " + fmtScore(ctx.raw.x) + ", price " + fmtScore(ctx.raw.y, 1) + "%") : null,
-     },
-    },
+    tooltip: { callbacks: { label: ctx => ctx.dataset.label === "Companies" ? (ctx.raw.symbol + ": accrual ratio " + fmtSignedPct(ctx.raw.x) + ", rel. 3M " + fmtSignedPct(ctx.raw.y)) : null } },
    },
    scales: {
-    x: ndrNumericScale({ title: "Combined quality + low-vol z-score" }),
-    y: ndrNumericScale({ title: "3-month relative price return (%)" }),
+    x: ndrYScale({ position: "bottom", fmt: v => v + "%", title: "Accrual ratio (%)" }),
+    y: ndrYScale({ fmt: v => v + "%", title: "3-month return vs. SPY (%)" }),
    },
   },
  });
 
- document.getElementById("returnMethodTable").innerHTML = methodTableHtml(pearson, spear,
-  "A positive, significant relationship means higher-scoring companies (higher quality, lower vol) went on to outperform over the next 3 months. A weak or flat one means the composite isn't a reliable signal at this horizon.");
+ document.getElementById("accrualRel3mMethodTable").innerHTML = methodTableHtml(pearson, spear,
+  "Slope is relative-return pp per 1pp of accrual ratio. n=" + pearson.n + " companies. A single snapshot in time, not a forward-return test — see the methodology section for how this compares to Sloan's original lagged panel design.");
 }
 
 function renderLeaderTable(rows, tbodyId){
@@ -1453,29 +1331,9 @@ function renderLeaderTable(rows, tbodyId){
  }
  tbody.innerHTML = rows.map(r => `<tr>
   <td><span class="sector-name">${r.symbol}</span></td>
-  <td><span class="sector-ticker">${r.sector || "n/a"}</span></td>
-  <td>${fmtScore(r.combinedZ)}</td>
+  <td><span class="sector-ticker">${r.sector || "—"}</span></td>
+  <td class="${r.accrualRatio < 0 ? "spread-pos" : "spread-neg"}">${fmtSignedPct(r.accrualRatio)}</td>
  </tr>`).join("");
-}
-
-function renderDivergentTables(){
- const div = RAW.divergent || { highQualityHighVol: [], lowQualityLowVol: [] };
- const hasAny = (div.highQualityHighVol && div.highQualityHighVol.length) || (div.lowQualityLowVol && div.lowQualityLowVol.length);
- if(!hasAny) return; // left hidden: this run's data didn't produce a meaningfully differentiated cut
-
- document.getElementById("divergentGrid").style.display = "";
-
- function rows(list){
-  if(!list || !list.length) return '<tr><td colspan="4" style="text-align:center; color:var(--muted); padding:24px;">None this run.</td></tr>';
-  return list.map(r => `<tr>
-   <td><span class="sector-name">${r.symbol}</span></td>
-   <td><span class="sector-ticker">${r.sector || "n/a"}</span></td>
-   <td>${fmtScore(r.qualityZ)}</td>
-   <td>${fmtScore(r.lowVolZ)}</td>
-  </tr>`).join("");
- }
- document.getElementById("divergentHighQVolBody").innerHTML = rows(div.highQualityHighVol);
- document.getElementById("divergentLowQVolBody").innerHTML = rows(div.lowQualityLowVol);
 }
 
 function sortBy(key){
@@ -1483,13 +1341,13 @@ function sortBy(key){
   SORT_DIR = -SORT_DIR;
  }else{
   SORT_KEY = key;
-  SORT_DIR = -1;
+  SORT_DIR = 1;
  }
  renderTable();
 }
 
 function renderTable(){
- const rows = [...(RAW.companies || [])].sort((a, b) => {
+ const rows = [...RAW.companies].sort((a, b) => {
   const av = a[SORT_KEY], bv = b[SORT_KEY];
   if(av === null || av === undefined) return 1;
   if(bv === null || bv === undefined) return -1;
@@ -1500,14 +1358,12 @@ function renderTable(){
  const tbody = document.getElementById("tableBody");
  tbody.innerHTML = rows.map(r => `<tr>
   <td><span class="sector-name">${r.symbol}</span></td>
-  <td><span class="sector-ticker">${r.sector || "n/a"}</span></td>
-  <td>${fmtPct(r.operatingMargin)}</td>
-  <td>${fmtRatio(r.netDebtEbitda)}</td>
-  <td>${fmtPct(r.realizedVol)}</td>
-  <td>${fmtScore(r.qualityZ)}</td>
-  <td>${fmtScore(r.lowVolZ)}</td>
-  <td>${fmtScore(r.combinedZ)}</td>
-  <td>${r.quintile !== null && r.quintile !== undefined ? "Q" + r.quintile : "n/a"}</td>
+  <td><span class="sector-ticker">${r.sector || "—"}</span></td>
+  <td class="${r.accrualRatio < 0 ? "spread-pos" : "spread-neg"}">${fmtSignedPct(r.accrualRatio)}</td>
+  <td>${fmtUsd(r.ttmNetIncomeUsd)}</td>
+  <td>${fmtUsd(r.ttmCfoUsd)}</td>
+  <td>${fmtUsd(r.totalAccrualsUsd)}</td>
+  <td>${r.rel3M === null ? "—" : fmtSignedPct(r.rel3M)}</td>
  </tr>`).join("");
 
  document.querySelectorAll("#stockTable thead th").forEach(th => {
@@ -1527,4 +1383,5 @@ init();
 </script>
 
 </body>
+
 </html>

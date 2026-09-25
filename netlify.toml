@@ -220,6 +220,11 @@
   status = 200
 
 [[redirects]]
+  from = "/api/accruals"
+  to = "/.netlify/functions/accruals"
+  status = 200
+
+[[redirects]]
   from = "/api/analyst-price-target"
   to = "/.netlify/functions/analyst-price-target"
   status = 200
@@ -668,6 +673,17 @@
   # roic-wacc-background's and scheduled-cash-conversion-cycle-background's
   # two-statement sweeps. Optionally reads scheduled-relative-strength-
   # background's own published snapshot for the R&D-vs-relative-return
+  # test; works fine without it (the test just doesn't render).
+
+[functions."scheduled-accruals-background"]
+  # One-time snapshot, no schedule — same convention as scheduled-roic-
+  # wacc-background above. Its own independent ~1006-call CASH_FLOW +
+  # BALANCE_SHEET sweep (the Sloan accrual construction needs net income
+  # and operating cash flow, TTM, plus total assets at the latest quarter
+  # and ~4 quarters back for the averaging denominator — no existing
+  # two-statement checkpoint on this site carries that BALANCE_SHEET
+  # lookback depth). Optionally reads scheduled-relative-strength-
+  # background's own published snapshot for the accrual-vs-relative-return
   # test; works fine without it (the test just doesn't render).
 
 [functions."scheduled-analyst-price-target-background"]
