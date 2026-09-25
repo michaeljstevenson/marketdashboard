@@ -235,6 +235,11 @@
   status = 200
 
 [[redirects]]
+  from = "/api/dividend-coverage"
+  to = "/.netlify/functions/dividend-coverage"
+  status = 200
+
+[[redirects]]
   from = "/api/analyst-price-target"
   to = "/.netlify/functions/analyst-price-target"
   status = 200
@@ -885,3 +890,15 @@
   # forward-return test — same reasoning as
   # scheduled-rsi-reversal-background.js's own file header.
   schedule = "35 15 * * 6"
+
+[functions."scheduled-dividend-coverage-background"]
+  # One-time snapshot, no schedule — same convention as scheduled-rd-
+  # intensity-background and scheduled-buyback-effectiveness-background
+  # above. A single-endpoint CASH_FLOW sweep (~503 calls, no checkpoint
+  # needed — TTM only, 4 quarters). Started life as a different proposed
+  # idea ("Buyback Timing Skill") that was investigated and deliberately
+  # not built — see scheduled-dividend-coverage-background.js's own file
+  # header and this run's ROUTINE_BRIEF.md entry for the full duplication-
+  # check writeup. Optionally reads scheduled-relative-strength-
+  # background's own published snapshot for the payout-ratio-vs-relative-
+  # return test; works fine without it (the test just doesn't render).
