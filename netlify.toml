@@ -220,6 +220,36 @@
   status = 200
 
 [[redirects]]
+  from = "/api/accruals"
+  to = "/.netlify/functions/accruals"
+  status = 200
+
+[[redirects]]
+  from = "/api/rsi-reversal"
+  to = "/.netlify/functions/rsi-reversal"
+  status = 200
+
+[[redirects]]
+  from = "/api/52-week-high-momentum"
+  to = "/.netlify/functions/high52-momentum"
+  status = 200
+
+[[redirects]]
+  from = "/api/dividend-coverage"
+  to = "/.netlify/functions/dividend-coverage"
+  status = 200
+
+[[redirects]]
+  from = "/api/vol-risk-premium"
+  to = "/.netlify/functions/vol-risk-premium"
+  status = 200
+
+[[redirects]]
+  from = "/api/beta-stability"
+  to = "/.netlify/functions/beta-stability"
+  status = 200
+
+[[redirects]]
   from = "/api/analyst-price-target"
   to = "/.netlify/functions/analyst-price-target"
   status = 200
@@ -670,6 +700,17 @@
   # background's own published snapshot for the R&D-vs-relative-return
   # test; works fine without it (the test just doesn't render).
 
+[functions."scheduled-accruals-background"]
+  # One-time snapshot, no schedule — same convention as scheduled-roic-
+  # wacc-background above. Its own independent ~1006-call CASH_FLOW +
+  # BALANCE_SHEET sweep (the Sloan accrual construction needs net income
+  # and operating cash flow, TTM, plus total assets at the latest quarter
+  # and ~4 quarters back for the averaging denominator — no existing
+  # two-statement checkpoint on this site carries that BALANCE_SHEET
+  # lookback depth). Optionally reads scheduled-relative-strength-
+  # background's own published snapshot for the accrual-vs-relative-return
+  # test; works fine without it (the test just doesn't render).
+
 [functions."scheduled-analyst-price-target-background"]
   # One-time snapshot (2026-09-16) — no schedule, same reasoning as
   # scheduled-institutional-ownership-background above: matches this
@@ -822,3 +863,78 @@
   # background (for the momentum join) but degrades gracefully if that
   # blob is stale or missing. ~503 sequential HISTORICAL_PUT_CALL_RATIO
   # calls at 1050ms spacing plus a retry pass.
+
+[functions."scheduled-rsi-reversal-background"]
+  # Weekly, Saturday 15:15 UTC — the last job in the Saturday block as of
+  # this addition, after scheduled-short-sale-volume-background (14:50 UTC,
+  # "a few minutes end to end" per that function's own comment, so done well
+  # before 15:15). A real recurring schedule, not a one-time snapshot like
+  # most fundamentals sweeps added since 2026-09-16: the short-term-reversal
+  # test needs successive weekly RSI snapshots to ever produce a forward-
+  # return data point, so this job has to keep running. ~503 sequential RSI
+  # calls at 1050ms spacing plus a retry pass, same cadence as
+  # scheduled-rd-intensity-background and scheduled-revisions-background.
+  # Reads (not writes) scheduled-relative-strength-background's own weekly
+  # price history for this run's price snapshot — no benefit to running
+  # immediately after that job specifically (13:10 UTC), since this job only
+  # needs whatever relative-strength's *most recent* weekly snapshot is, not
+  # a same-day-fresh one — see scheduled-rsi-reversal-background.js's own
+  # file header for the full reasoning.
+  schedule = "15 15 * * 6"
+
+[functions."scheduled-high52-momentum-background"]
+  # Weekly, Saturday 15:35 UTC — 20 minutes after scheduled-rsi-reversal-
+  # background (15:15 UTC), now the last job in the Saturday block. Both
+  # jobs are independent ~503-call OVERVIEW/RSI sweeps with no data
+  # dependency on each other, but a full sweep can take up to ~15 minutes
+  # worst-case with its retry pass (per this codebase's own repeated notes
+  # on Background Functions' runtime ceiling), so this is staggered rather
+  # than run concurrently, same collision-avoidance discipline as every
+  # other Saturday job's own schedule comment. Like scheduled-rsi-reversal-
+  # background, this is a real recurring weekly job, not a one-time
+  # snapshot: the 52-week-high-effect test needs successive weekly
+  # range-position snapshots to ever produce a forward-return data point.
+  # Reads (not writes) scheduled-relative-strength-background's own weekly
+  # price history for both this run's current-price join (needed to place
+  # each stock within its 52-week range) and its price snapshot for the
+  # forward-return test — same reasoning as
+  # scheduled-rsi-reversal-background.js's own file header.
+  schedule = "35 15 * * 6"
+
+[functions."scheduled-dividend-coverage-background"]
+  # One-time snapshot, no schedule — same convention as scheduled-rd-
+  # intensity-background and scheduled-buyback-effectiveness-background
+  # above. A single-endpoint CASH_FLOW sweep (~503 calls, no checkpoint
+  # needed — TTM only, 4 quarters). Started life as a different proposed
+  # idea ("Buyback Timing Skill") that was investigated and deliberately
+  # not built — see scheduled-dividend-coverage-background.js's own file
+  # header and this run's ROUTINE_BRIEF.md entry for the full duplication-
+  # check writeup. Optionally reads scheduled-relative-strength-
+  # background's own published snapshot for the payout-ratio-vs-relative-
+  # return test; works fine without it (the test just doesn't render).
+
+[functions."scheduled-vol-risk-premium-background"]
+  # One-time snapshot, no schedule — same convention as scheduled-rd-
+  # intensity-background above. A single-Alpha-Vantage-endpoint sweep
+  # (~503 HISTORICAL_OPTIONS calls, one per constituent) for at-the-money
+  # implied volatility, joined against Yahoo Finance daily closes (no
+  # second Alpha Vantage sweep) for trailing realized volatility — see
+  # scheduled-vol-risk-premium-background.js's own file header for the
+  # full methodology, including why no separate spot-price lookup is
+  # needed (the ATM contract is located by delta, not by strike-vs-price).
+  # Optionally reads scheduled-relative-strength-background's own
+  # published snapshot for the VRP-vs-relative-return test; works fine
+  # without it (the test just doesn't render).
+
+[functions."scheduled-beta-stability-background"]
+  # One-time snapshot, no schedule — same convention as scheduled-rd-
+  # intensity-background above. This site's first full-universe job that
+  # needs ZERO Alpha Vantage calls: per-company beta (vs. SPY) is computed
+  # twice, from two non-overlapping ~1.5-year halves of a ~3-year trailing
+  # window of Yahoo Finance weekly closes, to test whether beta is a
+  # durable property or drifts — see scheduled-beta-stability-
+  # background.js's own file header for the full methodology, including
+  # why weekly (not daily) returns are used. Optionally reads scheduled-
+  # relative-strength-background's own published snapshot for the drift-
+  # vs-relative-return test; works fine without it (the test just doesn't
+  # render).

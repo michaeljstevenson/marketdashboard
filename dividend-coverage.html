@@ -1,0 +1,1489 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<script>
+// Applied before first paint to avoid a flash of the wrong theme.
+(function(){
+ var saved = localStorage.getItem("theme");
+ if(saved === "light") document.documentElement.setAttribute("data-theme", "light");
+})();
+</script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom@2"></script>
+<script src="date-format.js"></script>
+<script>
+// FRED-style zoom: drag horizontally on any chart to zoom into that range,
+// double-click to reset. Applied via Chart.defaults so every chart on the
+// page gets it without touching each individual new Chart(...) call.
+Chart.defaults.plugins.zoom = {
+ zoom: {
+  wheel: { enabled: false },
+  pinch: { enabled: false },
+  drag: { enabled: true, backgroundColor: "rgba(217,138,61,0.15)", borderColor: "rgba(217,138,61,0.4)", borderWidth: 1 },
+  mode: "x",
+ },
+ pan: { enabled: true, mode: "x", modifierKey: "shift" },
+};
+document.addEventListener("dblclick", function(e){
+ if(e.target.tagName === "CANVAS"){
+  var chart = Chart.getChart(e.target);
+  if(chart) chart.resetZoom();
+ }
+});
+document.addEventListener("DOMContentLoaded", function(){
+ document.querySelectorAll(".chart-canvas-wrap canvas").forEach(function(c){
+  c.title = "Drag to zoom · shift-drag to pan · double-click to reset";
+ });
+});
+</script>
+<style>
+.chart-fullscreen-btn{
+ position:absolute;
+ top:8px;
+ right:8px;
+ z-index:5;
+ background:var(--card, #1c2127);
+ border:1px solid var(--hair, #2b3138);
+ color:var(--muted, #8b9199);
+ border-radius:6px;
+ width:28px;
+ height:28px;
+ display:flex;
+ align-items:center;
+ justify-content:center;
+ cursor:pointer;
+ padding:0;
+ opacity:0.85;
+}
+.chart-fullscreen-btn:hover{ color:var(--ink, #eae6da); border-color:#3a424b; opacity:1; }
+.is-chart-fullscreen{
+ background:var(--bg, #14181c) !important;
+ padding:24px !important;
+ display:flex !important;
+ flex-direction:column !important;
+ overflow:auto !important;
+}
+.is-chart-fullscreen canvas{
+ max-height:none !important;
+}
+</style>
+<script>
+// Expand-to-fullscreen button on every chart, matching the pattern from
+// sites like GuruFocus: a small corner button on each chart's canvas
+// area that fullscreens the whole chart card (title, legend, controls
+// included) via the Fullscreen API. Finds every <canvas> generically
+// rather than relying on one wrapper class name, since different pages
+// on this site use different card markup (.chart-box, .scatter-box,
+// .chart, herd-mentality tiles, etc.).
+document.addEventListener("DOMContentLoaded", function(){
+ function requestFs(el){
+  var fn = el.requestFullscreen || el.webkitRequestFullscreen || el.mozRequestFullScreen || el.msRequestFullscreen;
+  if(fn) fn.call(el);
+ }
+ function exitFs(){
+  var fn = document.exitFullscreen || document.webkitExitFullscreen || document.mozCancelFullScreen || document.msExitFullscreen;
+  if(fn) fn.call(document);
+ }
+ function currentFsEl(){
+  return document.fullscreenElement || document.webkitFullscreenElement || document.mozFullScreenElement || document.msFullscreenElement;
+ }
+ function resolveCard(canvas){
+  return canvas.closest(".chart-box, .scatter-box, .herd-cell, .modal-chart")
+   || canvas.parentElement.closest("div")
+   || canvas.parentElement;
+ }
+ function resizeChartIn(wrap){
+  var canvas = wrap.querySelector("canvas");
+  var chart = canvas && window.Chart && Chart.getChart(canvas);
+  if(chart) chart.resize();
+ }
+
+ var entries = []; // { card, wrap }
+
+ document.querySelectorAll("canvas").forEach(function(canvas){
+  if(canvas.closest(".chart-fullscreen-btn")) return;
+  var card = resolveCard(canvas);
+  if(!card || card.querySelector(".chart-fullscreen-btn")) return; // one button per card, not per canvas
+
+  var wrap = canvas.parentElement;
+  var wrapStyle = getComputedStyle(wrap);
+  if(wrapStyle.position === "static") wrap.style.position = "relative";
+
+  var btn = document.createElement("button");
+  btn.type = "button";
+  btn.className = "chart-fullscreen-btn";
+  btn.title = "Expand chart";
+  btn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3H5a2 2 0 0 0-2 2v3"/><path d="M16 3h3a2 2 0 0 1 2 2v3"/><path d="M8 21H5a2 2 0 0 1-2-2v-3"/><path d="M16 21h3a2 2 0 0 0 2-2v-3"/></svg>';
+  btn.addEventListener("click", function(e){
+   e.stopPropagation();
+   if(currentFsEl() === card) exitFs();
+   else requestFs(card);
+  });
+  wrap.appendChild(btn);
+  entries.push({ card: card, wrap: wrap });
+
+  if(window.ResizeObserver){
+   new ResizeObserver(function(){ resizeChartIn(wrap); }).observe(wrap);
+  }
+ });
+
+ function onFsChange(){
+  var fsEl = currentFsEl();
+  entries.forEach(function(entry){
+   var isFs = fsEl === entry.card;
+   entry.card.classList.toggle("is-chart-fullscreen", isFs);
+   if(isFs){
+    entry.wrap.dataset.fsPrevHeight = entry.wrap.style.height || "";
+    entry.wrap.dataset.fsPrevFlex = entry.wrap.style.flex || "";
+    entry.wrap.style.flex = "1 1 auto";
+    entry.wrap.style.minHeight = "0";
+    entry.wrap.style.height = "auto";
+   }else if(entry.wrap.dataset.fsPrevHeight !== undefined){
+    entry.wrap.style.height = entry.wrap.dataset.fsPrevHeight;
+    entry.wrap.style.flex = entry.wrap.dataset.fsPrevFlex;
+    entry.wrap.style.minHeight = "";
+   }
+  });
+  entries.forEach(function(entry){ resizeChartIn(entry.wrap); });
+ }
+ ["fullscreenchange", "webkitfullscreenchange", "mozfullscreenchange", "MSFullscreenChange"].forEach(function(evt){
+  document.addEventListener(evt, onFsChange);
+ });
+});
+</script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Dividend Coverage: Earnings vs. Free Cash Flow Payout | Michael J. Stevenson</title>
+
+<style>
+
+:root{
+  --bg:#14181c;
+  --card:#1c2127;
+  --card-hover:#20262d;
+  --ink:#eae6da;
+  --muted:#8b9199;
+  --hair:#2b3138;
+
+  --fear:#6f8fac;
+  --neutral:#7c828a;
+  --greed:#d98a3d;
+  --extreme:#b56f2a;
+
+  --serif:'Iowan Old Style','Palatino Linotype',Georgia,serif;
+  --mono:'SF Mono','JetBrains Mono',ui-monospace,Menlo,monospace;
+  --sans:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+
+  /* NDR-style chart palette. Deliberately the SAME in light and dark —
+     these charts keep a constant warm-paper look, matching every other
+     chart-grid page on this site. JS reads them via getComputedStyle (per
+     the site convention) rather than hardcoding. */
+  --ndr-plot:#f5f1e6;
+  --ndr-axis:#3c3a33;
+  --ndr-axis-soft:#6f6a5c;
+  --ndr-grid:#ddd6c2;
+  --ndr-red:#a83c36;
+  --ndr-green:#4f6f3f;
+  --ndr-gold:#c1902f;
+  --ndr-navy:#2f4b6e;
+  --ndr-slate:#7d8a99;
+}
+
+:root[data-theme="light"]{
+  --bg:#f7f5f0;
+  --card:#ffffff;
+  --card-hover:#f2efe6;
+  --ink:#1c1f24;
+  --muted:#6b6f76;
+  --hair:#e1dbcd;
+  --fear:#4f6f8c;
+  --neutral:#6c7178;
+  --greed:#b9701f;
+  --extreme:#96591c;
+}
+
+*{ box-sizing:border-box; }
+
+body{
+ margin:0;
+ background:var(--bg);
+ color:var(--ink);
+ font-family:var(--sans);
+}
+
+a{ color:inherit; }
+
+/* SITE NAV (shared with homepage) */
+
+.sitenav{
+ display:grid;
+ grid-template-columns:1fr auto 1fr;
+ align-items:center;
+ padding:16px 24px;
+ border-bottom:1px solid var(--hair);
+ position:relative;
+ z-index:50;
+}
+
+.sitenav .brand{
+ justify-self:start;
+}
+
+.sitenav .brand{
+ font-family:var(--serif);
+ font-size:17px;
+ color:var(--ink);
+ text-decoration:none;
+ letter-spacing:0.3px;
+}
+
+.navlinks{
+ display:flex;
+ gap:26px;
+ align-items:center;
+}
+
+.navlinks > a{
+ color:var(--muted);
+ font-size:13px;
+ text-decoration:none;
+ padding:6px 0;
+}
+
+.navlinks > a:hover, .navlinks > a.active{ color:var(--ink); }
+
+.navdrop{ position:relative; }
+
+
+.navdrop > .navlabel{
+ color:var(--muted);
+ font-size:13px;
+ cursor:default;
+ padding:6px 0;
+ user-select:none;
+}
+
+.navdrop:hover > .navlabel, .navdrop.open > .navlabel{ color:var(--ink); }
+
+.navdrop .dropdown{
+ display:none;
+ position:absolute;
+ top:100%;
+ left:0;
+ background:var(--card);
+ border:1px solid var(--hair);
+ border-radius:8px;
+ padding:8px 0;
+ min-width:230px;
+ margin-top:12px;
+ box-shadow:0 10px 30px rgba(0,0,0,0.45);
+}
+
+/* Driven by the .open class (see the script right after </nav>), not
+   pure :hover — see that script for why. */
+.navdrop.open .dropdown{ display:block; }
+
+.dropdown a{
+ display:block;
+ padding:9px 16px;
+ color:var(--muted);
+ text-decoration:none;
+ font-size:13px;
+}
+
+.dropdown a:hover{
+ background:var(--card-hover);
+ color:var(--ink);
+}
+
+.dropdown a.active{ color:var(--greed); }
+
+@media (max-width:720px){
+ .navlinks{ display:none; }
+}
+
+.container{
+ max-width:1100px;
+ margin:auto;
+ padding:30px 20px 60px;
+}
+
+/* HEADER */
+
+.header{
+ display:flex;
+ justify-content:space-between;
+ align-items:flex-end;
+ border-bottom:1px solid var(--hair);
+ padding-bottom:18px;
+ margin-bottom:25px;
+ flex-wrap:wrap;
+ gap:12px;
+}
+
+h1{
+ font-family:var(--serif);
+ font-size:28px;
+ font-weight:400;
+ margin:0;
+}
+
+.subtitle{
+ color:var(--muted);
+ font-size:13px;
+ margin-top:6px;
+ max-width:640px;
+}
+
+.updated{
+ color:var(--muted);
+ font-size:12px;
+}
+
+/* STAT ROW */
+
+.stat-grid{
+ display:grid;
+ grid-template-columns:repeat(4,1fr);
+ gap:16px;
+ margin-bottom:30px;
+}
+
+.stat-card{
+ background:var(--card);
+ border:1px solid var(--hair);
+ border-radius:10px;
+ padding:20px;
+ min-width:0;
+}
+
+.stat-label{
+ color:var(--muted);
+ font-size:12px;
+ letter-spacing:0.04em;
+ margin-bottom:8px;
+}
+
+.stat-value{
+ font-family:var(--mono);
+ font-size:24px;
+ color:var(--greed);
+}
+
+.stat-value.cell-neg{ color:var(--fear); }
+
+.stat-note{
+ color:var(--muted);
+ font-size:12px;
+ margin-top:6px;
+}
+
+@media (max-width:900px){
+ .stat-grid{ grid-template-columns:repeat(2,1fr); }
+}
+
+/* CHART */
+
+.chart-box{
+ background:var(--card);
+ border:1px solid var(--hair);
+ border-radius:12px;
+ padding:20px;
+ margin-bottom:30px;
+}
+
+.chart-box-header{
+ display:flex;
+ justify-content:space-between;
+ align-items:center;
+ flex-wrap:wrap;
+ gap:10px;
+ margin-bottom:16px;
+}
+
+.chart-box h2{
+ font-family:var(--serif);
+ font-weight:400;
+ font-size:18px;
+ margin:0;
+}
+
+.chart-subhead{
+ color:var(--muted);
+ font-size:12px;
+ margin-top:4px;
+}
+
+/* The warm-paper plot panel behind each canvas. */
+.ndr-panel{
+ background:var(--ndr-plot);
+ border:1px solid var(--ndr-grid);
+ border-radius:8px;
+ padding:14px 14px 10px;
+}
+
+.chart-canvas-wrap{
+ height:380px;
+}
+
+.chart-canvas-wrap.short{ height:280px; }
+
+/* Two charts / method-tables side by side, same breakpoint as table-grid */
+.chart-grid{
+ display:grid;
+ grid-template-columns:1fr 1fr;
+ gap:16px;
+ margin-bottom:30px;
+}
+
+.chart-grid .chart-box{
+ margin-bottom:0;
+ min-width:0; /* grid items default to min-width:auto (their content's min-content
+                 size), which a wide method table would otherwise force past this
+                 column's track width */
+}
+
+@media (max-width:900px){
+ .chart-grid{ grid-template-columns:1fr; }
+}
+
+/* TABLE */
+
+.table-box{
+ background:var(--card);
+ border:1px solid var(--hair);
+ border-radius:12px;
+ overflow-x:auto;
+ margin-bottom:30px;
+}
+
+.table-box-header{
+ padding:18px 20px 4px;
+}
+
+.table-box-header h2{
+ font-family:var(--serif);
+ font-weight:400;
+ font-size:18px;
+ margin:0;
+}
+
+.table-box-header .chart-subhead{ margin-bottom:6px; }
+
+table{
+ width:100%;
+ border-collapse:collapse;
+ font-size:13px;
+ min-width:640px;
+}
+
+thead th{
+ text-align:right;
+ padding:14px 12px;
+ color:var(--muted);
+ font-size:11px;
+ letter-spacing:0.04em;
+ font-weight:600;
+ cursor:pointer;
+ user-select:none;
+ white-space:nowrap;
+ border-bottom:1px solid var(--hair);
+}
+
+thead th:first-child, thead th:nth-child(2){
+ text-align:left;
+}
+
+thead th:hover{ color:var(--ink); }
+
+thead th:not([data-key]){ cursor:default; }
+
+thead th .sort-arrow{
+ opacity:0.4;
+ margin-left:3px;
+ font-size:10px;
+}
+
+thead th.sorted .sort-arrow{ opacity:1; color:var(--greed); }
+
+tbody td{
+ padding:11px 12px;
+ text-align:right;
+ font-family:var(--mono);
+ white-space:nowrap;
+ border-bottom:1px solid var(--hair);
+}
+
+tbody tr:last-child td{ border-bottom:none; }
+
+tbody tr:hover{ background:var(--card-hover); }
+
+tbody td:first-child{
+ text-align:left;
+ font-family:var(--sans);
+}
+
+.sector-name{ color:var(--ink); }
+.sector-ticker{ color:var(--muted); font-size:11px; }
+
+.cell-pos{ color:var(--ink); }
+.cell-neg{ color:var(--ink); }
+.cell-na{ color:var(--muted); }
+.cell-risk{ color:var(--extreme); }
+
+.table-footnote{
+ padding:2px 20px 16px;
+ color:var(--muted);
+ font-size:11px;
+}
+
+.table-grid{
+ display:grid;
+ grid-template-columns:1fr 1fr;
+ gap:20px;
+}
+
+@media (max-width:900px){
+ .table-grid{ grid-template-columns:1fr; }
+}
+
+/* SCATTER / METHOD TABLE (mirrors /factor-analysis) */
+
+.scatter-canvas-wrap{
+ height:320px;
+ margin-bottom:12px;
+ position:relative;
+}
+
+/* The two regression method-table containers get their own horizontal
+   scroll, proactively — a 7-column mono-font method table (Method, n, r,
+   r², slope, t, p) is wider than its own .chart-grid column at phone
+   width even with min-width:0 below, the same class of overflow bug
+   flagged repeatedly elsewhere on this site (margin-leverage.html,
+   spin-off-performance.html). Caught directly by this page's own
+   Playwright mobile pass. */
+#coverageMethodTable, #returnMethodTable{ overflow-x:auto; }
+
+.method-table{
+ width:100%;
+ min-width:0; /* overrides the site-wide table{min-width:640px} rule below —
+                 inside .chart-grid's 1fr columns that min-width forces a
+                 grid blowout */
+ border-collapse:collapse;
+ font-family:var(--mono);
+ font-size:11px;
+ margin-top:8px;
+}
+
+.method-table th{
+ text-align:right;
+ padding:6px 5px;
+ color:var(--muted);
+ font-size:10px;
+ letter-spacing:0.03em;
+ font-weight:600;
+ border-bottom:1px solid var(--hair);
+ white-space:nowrap;
+}
+
+.method-table th:first-child{ text-align:left; }
+
+.method-table td{
+ padding:7px 5px;
+ text-align:right;
+ border-bottom:1px solid var(--hair);
+ white-space:nowrap;
+ color:var(--ink);
+}
+
+.method-table td:first-child{
+ text-align:left;
+ font-family:var(--sans);
+ color:var(--muted);
+}
+
+.method-table tr:last-child td{ border-bottom:none; }
+
+.method-table .sig{ color:var(--greed); }
+
+.method-note{
+ font-size:11px;
+ color:var(--muted);
+ margin-top:8px;
+ font-style:italic;
+}
+
+/* EXPLAINER */
+
+.explainer{
+ background:var(--card);
+ border:1px solid var(--hair);
+ border-radius:12px;
+ padding:24px 26px;
+ margin-bottom:30px;
+}
+
+.explainer h2{
+ font-family:var(--serif);
+ font-weight:400;
+ font-size:18px;
+ margin:0 0 12px;
+}
+
+.explainer p{
+ color:var(--muted);
+ font-size:14px;
+ line-height:1.7;
+ margin:0 0 14px;
+}
+
+.explainer code{
+ font-family:var(--mono);
+ background:var(--card-hover);
+ padding:2px 6px;
+ border-radius:4px;
+ font-size:0.92em;
+ white-space:nowrap;
+}
+
+.explainer p:last-child{ margin-bottom:0; }
+
+.explainer .source{
+ margin-top:16px;
+ font-size:11px;
+}
+
+.explainer .source a{
+ color:var(--muted);
+ text-decoration:none;
+ border-bottom:1px dotted var(--muted);
+}
+
+.explainer .source a:hover{ color:var(--ink); }
+
+.error-banner{
+ background:#2a1c1c;
+ border:1px solid #5a3030;
+ color:#e0a0a0;
+ border-radius:8px;
+ padding:12px 15px;
+ margin-bottom:20px;
+ font-size:13px;
+ display:none;
+}
+
+.warning-banner{
+ background:#2a2419;
+ border:1px solid #5a4f30;
+ color:#d9b877;
+ border-radius:8px;
+ padding:12px 15px;
+ margin-bottom:20px;
+ font-size:13px;
+ display:none;
+}
+
+
+.theme-toggle{
+ justify-self:end;
+ background:none;
+ border:1px solid var(--hair);
+ color:var(--muted);
+ border-radius:6px;
+ width:32px;
+ height:32px;
+ display:flex;
+ align-items:center;
+ justify-content:center;
+ cursor:pointer;
+ font-size:15px;
+ line-height:1;
+}
+
+.theme-toggle:hover{ color:var(--ink); border-color:var(--hair); }
+
+
+/* Light-theme overrides for hardcoded (non-var) dark colors */
+
+[data-theme="light"] .error-banner{
+ background:#fdecea;
+ border-color:#f0b8b0;
+ color:#a83a30;
+}
+
+[data-theme="light"] .warning-banner{
+ background:#fdf3d9;
+ border-color:#e9cf8a;
+ color:#8a6a1f;
+}
+</style>
+</head>
+<body>
+
+<nav class="sitenav">
+<a class="brand" href="/">Michael J. Stevenson, CAIA<span style="font-size:0.6em; vertical-align:super;">&reg;</span></a>
+<div class="navlinks">
+<div class="navdrop">
+<span class="navlabel">Sentiment ▾</span>
+<div class="dropdown">
+<a href="/sentiment-index.html">Sentiment Index</a>
+<a href="/volatility.html">Implied vs. Realized Volatility</a>
+<a href="/vol-risk-premium.html">Volatility Risk Premium</a>
+<a href="/beta-stability.html">Beta Stability</a>
+<a href="/market-breadth.html">Market Breadth</a>
+<a href="/ath-index.html">All-Time Highs and Lows</a>
+<a href="/margin-leverage.html">Margin &amp; Leverage Cycle</a>
+<a href="/short-sale-volume.html">Short Sale Volume</a>
+<a href="/news-sentiment.html">News Sentiment Momentum</a>
+<a href="/seasonality.html">Seasonality</a>
+</div>
+</div>
+
+<div class="navdrop">
+<span class="navlabel">Valuation ▾</span>
+<div class="dropdown">
+<a href="/valuations.html">Valuations</a>
+<a href="/implied-erp.html">Implied Equity Risk Premium</a>
+<a href="/equity-risk-premium.html">Equity Risk Premium by Sector</a>
+<a href="/pe-divergence.html">Forward vs. Trailing P/E Divergence</a>
+<a href="/expectations-vs-reality.html">Expectations vs. Reality</a>
+<a href="/analyst-price-target.html">Analyst Price Target Upside</a>
+<a href="/analyst-estimate-dispersion.html">Analyst Estimate Dispersion</a>
+<a href="/earnings-growth-divergence.html">Earnings Growth vs. Price Performance</a>
+</div>
+</div>
+
+<div class="navdrop">
+<span class="navlabel">Earnings ▾</span>
+<div class="dropdown">
+<a href="/earnings-revisions.html">Earnings Revisions</a>
+<a href="/earnings-surprise.html">Earnings Surprise History</a>
+<a href="/post-earnings-drift.html">Post-Earnings Announcement Drift</a>
+<a href="/earnings-call-sentiment.html">Earnings Call Sentiment</a>
+<a href="/fcf-yield.html">Free Cash Flow Yield</a>
+<a href="/quality-score.html">Financial Quality Screener (Piotroski)</a>
+<a href="/ai-capex-tracker.html">AI Capex Tracker</a>
+<a href="/roic-wacc.html">ROIC vs. Cost of Capital</a>
+<a href="/cash-conversion-cycle.html">Cash Conversion Cycle</a>
+<a href="/rd-intensity.html">R&amp;D Intensity</a>
+<a href="/accruals.html">Earnings Quality (Accruals)</a>
+</div>
+</div>
+
+<div class="navdrop">
+<span class="navlabel">Sectors &amp; Style ▾</span>
+<div class="dropdown">
+<a href="/sector-analysis.html">Sector Performance</a>
+<a href="/sector-beeswarm.html">Sector Beeswarm</a>
+<a href="/sector-correlation.html">Sector Correlation Matrix</a>
+<a href="/sector-rotation.html">Sector Rotation Model</a>
+<a href="/factor-analysis.html">Factor Analysis</a>
+<a href="/quality-lowvol-factors.html">Quality &amp; Low-Volatility Factor Screen</a>
+<a href="/small-cap-vs-large-cap.html">Small Cap vs. Large Cap Spread</a>
+<a href="/international-vs-us.html">International vs. US Relative Performance</a>
+<a href="/country-sector-scorecard.html">Country / Sector Scorecard</a>
+<a href="/relative-strength-leaders.html">Relative Strength Leaders/Laggards</a>
+<a href="/rsi-reversal.html">RSI Mean-Reversion Screen</a>
+<a href="/52-week-high-momentum.html">52-Week High Momentum</a>
+<a href="/concentration.html">Concentration</a>
+</div>
+</div>
+
+<div class="navdrop">
+<span class="navlabel">Capital Returns ▾</span>
+<div class="dropdown">
+<a href="/dividend-growth-screener.html">Dividend Growth Screener</a>
+<a href="/dividend-coverage.html" class="active">Dividend Coverage &amp; Cut Risk</a>
+<a href="/shareholder-yield.html">Shareholder Yield</a>
+<a href="/buyback-effectiveness.html">Buyback Effectiveness</a>
+<a href="/share-count-trends.html">Share Count Trends</a>
+<a href="/stock-split-tracker.html">Stock Split Tracker</a>
+<a href="/spin-off-performance.html">Spin-Off Performance Tracker</a>
+<a href="/ipo-activity.html">IPO Activity</a>
+<a href="/ipo-pipeline.html">IPO Pipeline</a>
+</div>
+</div>
+
+<div class="navdrop">
+<span class="navlabel">Ownership &amp; Flows ▾</span>
+<div class="dropdown">
+<a href="/insider-buying-selling.html">Insider Buying/Selling</a>
+<a href="/institutional-ownership.html">Institutional Ownership &amp; 13F Flow</a>
+<a href="/congressional-trading.html">Congressional Trading Activity</a>
+<a href="/small-cap-liquidity.html">Small-Cap Liquidity</a>
+<a href="/options-positioning.html">Options Positioning</a>
+</div>
+</div>
+
+<div class="navdrop">
+<span class="navlabel">Rates &amp; Macro ▾</span>
+<div class="dropdown">
+<a href="/yield-curves.html">Yield Curves</a>
+</div>
+</div>
+
+<div class="navdrop">
+<span class="navlabel">Tools ▾</span>
+<div class="dropdown">
+<a href="/portfolio-simulator.html">Portfolio Simulator</a>
+<a href="/backtesting.html">Backtesting</a>
+<a href="/statistical-engine">Statistical Engine</a>
+</div>
+</div>
+
+</div>
+<button class="theme-toggle" id="themeToggle" type="button" aria-label="Toggle light/dark mode" title="Toggle light/dark mode">&#9789;</button>
+</nav>
+<script>
+// Class-driven (not pure :hover) nav dropdowns: pure CSS :hover drops the
+// menu the instant the cursor leaves .navdrop, which includes the moment
+// it's crossing the gap between the label and the dropdown box below —
+// exactly the "sometimes works, sometimes doesn't" flakiness reported.
+// A short close-delay after mouseleave gives the cursor room to travel
+// down into the dropdown without losing it.
+document.querySelectorAll(".navdrop").forEach(function(navdrop){
+ var closeTimer = null;
+ navdrop.addEventListener("mouseenter", function(){
+  clearTimeout(closeTimer);
+  navdrop.classList.add("open");
+ });
+ navdrop.addEventListener("mouseleave", function(){
+  closeTimer = setTimeout(function(){ navdrop.classList.remove("open"); }, 300);
+ });
+});
+</script>
+<script>
+(function(){
+ var btn = document.getElementById("themeToggle");
+ if(!btn) return;
+ var theme = document.documentElement.getAttribute("data-theme") === "light" ? "light" : "dark";
+ btn.textContent = theme === "light" ? "☀" : "☽";
+ btn.addEventListener("click", function(){
+  var current = document.documentElement.getAttribute("data-theme") === "light" ? "light" : "dark";
+  var next = current === "light" ? "dark" : "light";
+  localStorage.setItem("theme", next);
+  location.reload();
+ });
+})();
+</script>
+
+
+
+<div class="container">
+
+<div class="error-banner" id="errorBanner"></div>
+<div class="warning-banner" id="warningBanner"></div>
+
+<div class="header">
+<div>
+<h1>Dividend Coverage &amp; Cut Risk</h1>
+<div class="subtitle">Is the dividend actually covered by real cash, or just by reported earnings? Compares each S&amp;P 500 payer's trailing-12-month payout ratio computed two ways &mdash; against net income, and against free cash flow.</div>
+</div>
+<div class="updated" id="updated">Loading...</div>
+</div>
+
+<div class="stat-grid">
+<div class="stat-card">
+<div class="stat-label">Dividend Payers Covered</div>
+<div class="stat-value" id="statCompanies">…</div>
+<div class="stat-note" id="statCompaniesNote">Of the full S&amp;P 500</div>
+</div>
+<div class="stat-card">
+<div class="stat-label">Median FCF Payout Ratio</div>
+<div class="stat-value" id="statFcfRatio">…</div>
+<div class="stat-note">Dividends &divide; (operating cash flow &minus; capex), TTM</div>
+</div>
+<div class="stat-card">
+<div class="stat-label">Median Earnings Payout Ratio</div>
+<div class="stat-value" id="statEarningsRatio">…</div>
+<div class="stat-note">Dividends &divide; net income, TTM</div>
+</div>
+<div class="stat-card">
+<div class="stat-label">Paying Out More Than TTM FCF</div>
+<div class="stat-value" id="statOverCovered">…</div>
+<div class="stat-note" id="statOverCoveredNote">Cut-risk flag: FCF payout ratio &gt; 100%</div>
+</div>
+</div>
+
+<div class="chart-box">
+<div class="chart-box-header">
+<div>
+<h2>FCF payout ratio by sector</h2>
+<div class="chart-subhead">Median (dividends &divide; free cash flow) across each sector's covered payers, trailing 12 months.</div>
+</div>
+</div>
+<div class="ndr-panel">
+<div class="chart-canvas-wrap">
+<canvas id="sectorChart"></canvas>
+</div>
+</div>
+</div>
+
+<div class="chart-box">
+<div class="chart-box-header">
+<div>
+<h2>FCF payout ratio distribution</h2>
+<div class="chart-subhead">Every S&amp;P 500 dividend payer with a usable ratio this run, bucketed in 10-point bins &mdash; the dashed line marks 100%, where the dividend stops being covered by trailing free cash flow.</div>
+</div>
+</div>
+<div class="ndr-panel">
+<div class="chart-canvas-wrap">
+<canvas id="ratioHistogram"></canvas>
+</div>
+</div>
+</div>
+
+<div class="chart-grid">
+<div class="chart-box">
+<div class="chart-box-header">
+<div>
+<h2>Earnings payout ratio vs. FCF payout ratio</h2>
+<div class="chart-subhead">Each point is one payer. On the 45&deg; line, reported earnings and free cash flow tell the same coverage story. Above it, the dividend looks safer on an earnings basis than it actually is in cash.</div>
+</div>
+</div>
+<div class="ndr-panel">
+<div class="scatter-canvas-wrap">
+<canvas id="coverageScatter"></canvas>
+</div>
+</div>
+<div id="coverageMethodTable"></div>
+</div>
+<div class="chart-box">
+<div class="chart-box-header">
+<div>
+<h2>FCF payout ratio vs. 3-month relative return</h2>
+<div class="chart-subhead">Each point is one payer. Does the market already treat a stretched payout ratio as a warning sign?</div>
+</div>
+</div>
+<div class="ndr-panel">
+<div class="scatter-canvas-wrap">
+<canvas id="returnScatter"></canvas>
+</div>
+</div>
+<div id="returnMethodTable"></div>
+</div>
+</div>
+
+<div class="table-box">
+<div class="table-box-header">
+<h2>Most stretched &mdash; highest cut risk</h2>
+<div class="chart-subhead">Highest FCF payout ratio among covered payers (min. 15 shown). A ratio over 100% means the trailing-12-month dividend exceeded trailing free cash flow.</div>
+</div>
+<table>
+<thead><tr><th>Ticker</th><th>Sector</th><th>FCF Payout</th><th>Earnings Payout</th></tr></thead>
+<tbody id="mostStretchedTable">
+<tr><td colspan="4" style="text-align:center; color:var(--muted); padding:24px;">Loading&hellip;</td></tr>
+</tbody>
+</table>
+</div>
+
+<div class="table-grid">
+<div class="table-box">
+<div class="table-box-header">
+<h2>Best covered</h2>
+<div class="chart-subhead">Lowest FCF payout ratio among covered payers &mdash; most room to keep paying (or raise) the dividend</div>
+</div>
+<table>
+<thead><tr><th>Ticker</th><th>Sector</th><th>FCF Payout</th><th>TTM Dividends</th></tr></thead>
+<tbody id="safestTable">
+<tr><td colspan="4" style="text-align:center; color:var(--muted); padding:24px;">Loading&hellip;</td></tr>
+</tbody>
+</table>
+</div>
+
+<div class="table-box">
+<div class="table-box-header">
+<h2>Widest earnings/cash-flow gap</h2>
+<div class="chart-subhead">Biggest gap between the two ratios &mdash; earnings make the payout look safer than the cash flow statement does.</div>
+</div>
+<table>
+<thead><tr><th>Ticker</th><th>Sector</th><th>Gap</th><th>FCF Payout</th></tr></thead>
+<tbody id="widestGapTable">
+<tr><td colspan="4" style="text-align:center; color:var(--muted); padding:24px;">Loading&hellip;</td></tr>
+</tbody>
+</table>
+</div>
+</div>
+
+<div class="table-box">
+<div class="table-box-header">
+<h2>All dividend payers with coverage data on file</h2>
+<div class="chart-subhead">Trailing-12-month dividend payout, earnings payout ratio, FCF payout ratio, and the gap between them for every covered S&amp;P 500 payer.</div>
+</div>
+<table id="stockTable">
+<thead>
+<tr>
+<th data-key="symbol">Symbol</th>
+<th data-key="sector">Sector</th>
+<th data-key="ttmDividendPayout">TTM Dividends<span class="sort-arrow">▾</span></th>
+<th data-key="earningsPayoutRatio">Earnings Payout<span class="sort-arrow">▾</span></th>
+<th data-key="fcfPayoutRatio">FCF Payout<span class="sort-arrow">▾</span></th>
+<th data-key="coverageGap">Gap<span class="sort-arrow">▾</span></th>
+</tr>
+</thead>
+<tbody id="tableBody">
+<tr><td colspan="6" style="text-align:center; color:var(--muted); padding:30px;">Loading dividend coverage data&hellip;</td></tr>
+</tbody>
+</table>
+<div class="table-footnote">"Earnings Payout" and "FCF Payout" are blank where TTM net income or TTM free cash flow was zero/negative (shown as "neg." in the table) &mdash; a payout ratio isn't meaningful against a non-positive base, and a negative base is itself a stronger risk signal than any ratio number would be. "Gap" is FCF Payout minus Earnings Payout, in percentage points.</div>
+</div>
+
+<div class="explainer">
+<h2>Methodology</h2>
+<p><strong>Two payout ratios, same TTM window.</strong> Both come from Alpha Vantage's <code>CASH_FLOW</code> statement, trailing 12 months (last 4 reported quarters). The dividend figure is <code>dividendPayoutCommonStock</code> (falling back to the combined <code>dividendPayout</code> field on the rare filer where the common-stock-specific one is missing). The <strong>earnings payout ratio</strong> divides that by TTM <code>netIncome</code> &mdash; the "accounting" view, the one usually quoted. The <strong>FCF payout ratio</strong> divides it by TTM free cash flow (<code>operatingCashflow &minus; capitalExpenditures</code>) &mdash; whether the company actually generated enough spare cash to cover what it paid out, independent of non-cash accounting items. Both use the exact same numerator, so any difference between them is a real cash-vs-accrual gap, not a methodology mismatch.</p>
+<p><strong>How this differs from the site's other dividend/buyback pages.</strong> <a href="/dividend-growth-screener.html">Dividend Growth Screener</a> tracks whether the dividend has grown (streak, CAGR) &mdash; nothing about whether it's safe. <a href="/shareholder-yield.html">Shareholder Yield</a> combines dividend and buyback yield into one magnitude number. <a href="/buyback-effectiveness.html">Buyback Effectiveness</a> asks a completely different capital-allocation question about repurchases, not dividends. None of them test dividend <em>sustainability</em> &mdash; this page applies the same reported-earnings-vs-real-cash lens as <a href="/accruals.html">Earnings Quality (Accruals)</a>, but specifically to the question "can they keep paying this."</p>
+<p><strong>Tests.</strong> The earnings-vs-FCF scatter is a self-contained cross-sectional Pearson+Spearman regression (same two-method check as <a href="/factor-analysis.html">Factor Analysis</a>) of the two ratios against each other &mdash; how tightly the accounting view and the cash view agree. The FCF-payout-vs-return scatter reuses <a href="/relative-strength-leaders.html">Relative Strength Leaders/Laggards</a>' own weekly snapshot for each payer's 3-month return relative to SPY, testing whether a stretched payout ratio already shows up as underperformance. Both are single-snapshot, contemporaneous cross-sections &mdash; not a lagged or forward-return replication of any published dividend-cut-prediction study &mdash; and are described as such rather than implied to be predictive.</p>
+<p>Companies with zero reported dividend payout across all 4 trailing quarters are treated as non-payers and excluded entirely, matching <a href="/dividend-growth-screener.html">Dividend Growth Screener</a>'s convention of only screening established payers. Sector and company name come from <a href="/sector-beeswarm.html">Sector Beeswarm</a>. This page is a one-time snapshot as of the date below, not a recurring refresh, since quarterly cash flow statements don't move day to day.</p>
+<div class="source">Source: <a href="https://www.alphavantage.co/" target="_blank" rel="noopener">Alpha Vantage</a>: CASH_FLOW, COMPANY_OVERVIEW/beeswarm metadata (sector, name, via Sector Beeswarm), relative price return (via Relative Strength Leaders/Laggards)</div>
+</div>
+
+</div>
+
+<script>
+const DATA_URL = "/api/dividend-coverage";
+const RATIO_BIN_WIDTH = 10;
+const RATIO_MIN = 0;
+const RATIO_MAX = 200; // ratios above this are clipped into the top bin
+const MIN_PAIRS_FOR_TEST = 8;
+
+let RAW = null;
+let SORT_KEY = "fcfPayoutRatio";
+let SORT_DIR = -1;
+
+function showError(message){
+ const banner = document.getElementById("errorBanner");
+ banner.textContent = message;
+ banner.style.display = "block";
+}
+
+function showWarning(message){
+ const banner = document.getElementById("warningBanner");
+ banner.textContent = message;
+ banner.style.display = "block";
+}
+
+function fmtPct(v, digits){
+ if(v === null || v === undefined || isNaN(v)) return "n/a";
+ digits = digits === undefined ? 1 : digits;
+ return (v >= 0 ? "+" : "") + v.toFixed(digits) + "%";
+}
+
+function fmtPlainPct(v, digits){
+ if(v === null || v === undefined || isNaN(v)) return "n/a";
+ digits = digits === undefined ? 1 : digits;
+ return v.toFixed(digits) + "%";
+}
+
+function fmtRatio(v, negFlag){
+ if(v === null || v === undefined || isNaN(v)) return negFlag ? "neg." : "n/a";
+ return v.toFixed(1) + "%";
+}
+
+function fmtUsd(v){
+ if(v === null || v === undefined || isNaN(v)) return "n/a";
+ const abs = Math.abs(v);
+ if(abs >= 1e9) return "$" + (v / 1e9).toFixed(1) + "B";
+ if(abs >= 1e6) return "$" + (v / 1e6).toFixed(1) + "M";
+ return "$" + Math.round(v).toLocaleString();
+}
+
+function ndr(name){
+ return getComputedStyle(document.documentElement).getPropertyValue("--ndr-" + name).trim();
+}
+
+Chart.defaults.font.family = "'Iowan Old Style','Palatino Linotype',Georgia,serif";
+Chart.defaults.color = ndr("axis-soft");
+
+function ndrXScale(){
+ return {
+  ticks: { color: ndr("axis"), maxTicksLimit: 9, maxRotation: 0, autoSkip: true, font: { size: 11 } },
+  grid: { color: "rgba(0,0,0,0)", borderColor: ndr("axis") },
+ };
+}
+
+function ndrYScale(opts){
+ opts = opts || {};
+ return {
+  type: opts.log ? "logarithmic" : "linear",
+  position: opts.position || "left",
+  grid: { color: ndr("grid"), drawBorder: false },
+  ticks: { color: ndr("axis"), font: { size: 11 }, callback: opts.fmt || undefined },
+  title: opts.title ? { display: true, text: opts.title, color: ndr("axis-soft"), font: { size: 10 } } : { display: false },
+  min: opts.min, max: opts.max,
+ };
+}
+
+// ---- Stats helpers — same methodology as /factor-analysis, duplicated
+// here since every page on this site is self-contained (see CLAUDE.md). ----
+
+function linearRegression(xs, ys){
+ const n = xs.length;
+ const mx = xs.reduce((a, b) => a + b, 0) / n;
+ const my = ys.reduce((a, b) => a + b, 0) / n;
+ const sxx = xs.reduce((s, x) => s + (x - mx) ** 2, 0);
+ const sxy = xs.reduce((s, x, i) => s + (x - mx) * (ys[i] - my), 0);
+ const syy = ys.reduce((s, y) => s + (y - my) ** 2, 0);
+ const slope = sxy / sxx;
+ const intercept = my - slope * mx;
+ const r = sxy / Math.sqrt(sxx * syy);
+ const r2 = r * r;
+ const dof = n - 2;
+ const sse = ys.reduce((s, y, i) => s + (y - (intercept + slope * xs[i])) ** 2, 0);
+ const seSlope = Math.sqrt((sse / dof) / sxx);
+ const t = slope / seSlope;
+ const p = 2 * (1 - normalCdf(Math.abs(t)));
+ return { n, slope, intercept, r, r2, t, dof, p, sse };
+}
+
+function normalCdf(x){
+ return 0.5 * (1 + erf(x / Math.SQRT2));
+}
+
+// Abramowitz & Stegun 7.1.26 approximation — accurate to ~1e-7.
+function erf(x){
+ const sign = x < 0 ? -1 : 1;
+ x = Math.abs(x);
+ const a1 = 0.254829592, a2 = -0.284496736, a3 = 1.421413741, a4 = -1.453152027, a5 = 1.061405429, p = 0.3275911;
+ const t = 1 / (1 + p * x);
+ const y = 1 - (((((a5 * t + a4) * t) + a3) * t + a2) * t + a1) * t * Math.exp(-x * x);
+ return sign * y;
+}
+
+function rankArray(arr){
+ const idx = arr.map((v, i) => i).sort((a, b) => arr[a] - arr[b]);
+ const ranks = new Array(arr.length);
+ let i = 0;
+ while(i < idx.length){
+  let j = i;
+  while(j + 1 < idx.length && arr[idx[j + 1]] === arr[idx[i]]) j++;
+  const avgRank = (i + j) / 2 + 1;
+  for(let k = i; k <= j; k++) ranks[idx[k]] = avgRank;
+  i = j + 1;
+ }
+ return ranks;
+}
+
+function spearmanRegression(xs, ys){
+ return linearRegression(rankArray(xs), rankArray(ys));
+}
+
+function methodTableHtml(pearson, spear, unitNote){
+ function row(label, stats){
+  const sig = stats.p < 0.05;
+  return "<tr>" +
+   "<td>" + label + "</td>" +
+   "<td>" + stats.n + "</td>" +
+   "<td>" + stats.r.toFixed(2) + "</td>" +
+   "<td>" + (stats.r2 * 100).toFixed(1) + "%</td>" +
+   "<td>" + (stats.slope >= 0 ? "+" : "") + stats.slope.toFixed(3) + "</td>" +
+   "<td>" + stats.t.toFixed(2) + "</td>" +
+   '<td class="' + (sig ? "sig" : "") + '">' + (stats.p < 0.001 ? "<0.001" : stats.p.toFixed(3)) + "</td>" +
+  "</tr>";
+ }
+ return '<table class="method-table">' +
+  "<thead><tr><th>Method</th><th>n</th><th>r</th><th>r&sup2;</th><th>slope</th><th>t</th><th>p</th></tr></thead>" +
+  "<tbody>" + row("Pearson (OLS)", pearson) + row("Spearman (&rho;)", spear) + "</tbody>" +
+ "</table>" + (unitNote ? '<div class="method-note">' + unitNote + "</div>" : "");
+}
+
+// Draws a dashed vertical reference line at 100% on the histogram's
+// category axis. Registered locally (not via Chart.defaults) so it only
+// applies to this one chart — same pattern as /rsi-reversal.html's
+// thresholdLinePlugin, just a single line instead of two.
+const thresholdLinePlugin = {
+ id: "ratioThresholdLine",
+ afterDraw(chart){
+  const bins = chart.$ratioBins;
+  if(!bins) return;
+  const { ctx, chartArea, scales } = chart;
+  const xScale = scales.x;
+  const k = (100 - RATIO_MIN) / RATIO_BIN_WIDTH;
+  if(k < 1 || k > bins.length - 1) return;
+  const px = (xScale.getPixelForValue(k - 1) + xScale.getPixelForValue(k)) / 2;
+  ctx.save();
+  ctx.strokeStyle = ndr("red");
+  ctx.setLineDash([4, 3]);
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(px, chartArea.top);
+  ctx.lineTo(px, chartArea.bottom);
+  ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.fillStyle = ndr("red");
+  ctx.font = "10px " + Chart.defaults.font.family;
+  ctx.textAlign = "left";
+  ctx.fillText("100%", px + 4, chartArea.top + 10);
+  ctx.restore();
+ },
+};
+
+let sectorChart = null, ratioHistogram = null, coverageScatter = null, returnScatter = null;
+
+async function init(){
+ try{
+  const res = await fetch(DATA_URL, { cache: "no-store" });
+  const data = await res.json();
+  if(!res.ok || data.error) throw new Error(data.error || "failed to load");
+
+  RAW = data;
+  document.getElementById("updated").textContent =
+   "As of " + new Date(data.generated_at_utc).toLocaleDateString("en-US", { month: "2-digit", day: "2-digit", year: "numeric" }) + " · " + data.loadedCount + "/" + data.universeSize + " constituents swept";
+
+  if(data.loadedCount < data.universeSize){
+   showWarning("Only " + data.loadedCount + " of " + data.universeSize + " S&P 500 constituents loaded this run — some data may be temporarily unavailable.");
+  }
+  if(!data.hasRel3M){
+   showWarning("Relative Strength Leaders/Laggards' data hasn't populated yet, so the FCF-payout-vs-return test can't render this run.");
+  }
+
+  renderStats(data);
+  renderSectorChart(data);
+  renderHistogram(data);
+  renderCoverageScatter(data);
+  renderReturnScatter(data);
+  renderLeaderboard("mostStretchedTable", data.mostStretched, "stretched");
+  renderLeaderboard("safestTable", data.safestCoverage, "safest");
+  renderLeaderboard("widestGapTable", data.widestGap, "gap");
+  renderTable();
+
+ }catch(e){
+  showError("Couldn't load dividend coverage data (" + e.message + "). The /api/dividend-coverage function may not have run yet.");
+  document.getElementById("tableBody").innerHTML =
+   '<tr><td colspan="6" style="text-align:center; color:var(--muted); padding:30px;">No data available.</td></tr>';
+ }
+}
+
+function renderStats(data){
+ document.getElementById("statCompanies").textContent = data.market.companyCount;
+ document.getElementById("statCompaniesNote").textContent = data.loadedCount + " of " + data.universeSize + " swept, dividend payers only";
+ document.getElementById("statFcfRatio").textContent = fmtPlainPct(data.market.medianFcfPayoutRatio);
+ document.getElementById("statEarningsRatio").textContent = fmtPlainPct(data.market.medianEarningsPayoutRatio);
+ const overEl = document.getElementById("statOverCovered");
+ overEl.textContent = data.market.overCoveredCount + (data.market.overCoveredPct !== null ? " (" + data.market.overCoveredPct.toFixed(1) + "%)" : "");
+ overEl.classList.toggle("cell-neg", data.market.overCoveredCount > 0);
+ document.getElementById("statOverCoveredNote").textContent = "Cut-risk flag: FCF payout ratio > 100% · " + data.market.negativeFcfPayerCount + " paying from negative TTM FCF";
+}
+
+function renderSectorChart(data){
+ const sectors = [...data.sectors].sort((a, b) => (b.medianFcfPayoutRatio || 0) - (a.medianFcfPayoutRatio || 0));
+ const ctx = document.getElementById("sectorChart").getContext("2d");
+ if(sectorChart) sectorChart.destroy();
+ sectorChart = new Chart(ctx, {
+  type: "bar",
+  data: {
+   labels: sectors.map(s => s.sector),
+   datasets: [{ label: "FCF payout ratio", data: sectors.map(s => s.medianFcfPayoutRatio), backgroundColor: ndr("navy") }],
+  },
+  options: {
+   responsive: true,
+   maintainAspectRatio: false,
+   indexAxis: "y",
+   plugins: {
+    legend: { display: false },
+    tooltip: { callbacks: { label: ctx => {
+     const s = sectors[ctx.dataIndex];
+     return ["FCF payout: " + fmtPlainPct(s.medianFcfPayoutRatio), "Earnings payout: " + fmtPlainPct(s.medianEarningsPayoutRatio), "n=" + s.companyCount];
+    } } },
+   },
+   scales: {
+    x: { ...ndrYScale({ fmt: v => v + "%" }) },
+    y: { ticks: { color: ndr("axis"), font: { size: 11 } }, grid: { color: "rgba(0,0,0,0)", borderColor: ndr("axis") } },
+   },
+  },
+ });
+}
+
+function renderHistogram(data){
+ const values = data.companies.map(c => c.fcfPayoutRatio).filter(v => v !== null && v !== undefined && !isNaN(v));
+ const bins = [];
+ for(let b = RATIO_MIN; b < RATIO_MAX; b += RATIO_BIN_WIDTH) bins.push({ lo: b, hi: b + RATIO_BIN_WIDTH, count: 0 });
+ for(const v of values){
+  let idx = Math.floor((v - RATIO_MIN) / RATIO_BIN_WIDTH);
+  if(idx < 0) idx = 0;
+  if(idx >= bins.length) idx = bins.length - 1;
+  bins[idx].count++;
+ }
+
+ function binColor(b){
+  return (b.lo + b.hi) / 2 > 100 ? ndr("red") : ndr("slate");
+ }
+
+ const ctx = document.getElementById("ratioHistogram").getContext("2d");
+ if(ratioHistogram) ratioHistogram.destroy();
+ ratioHistogram = new Chart(ctx, {
+  type: "bar",
+  data: {
+   labels: bins.map((b, i) => i === bins.length - 1 ? b.lo + "%+" : b.lo + "–" + b.hi + "%"),
+   datasets: [{ data: bins.map(b => b.count), backgroundColor: bins.map(binColor), borderRadius: 3, barPercentage: 1.0, categoryPercentage: 0.95 }],
+  },
+  plugins: [thresholdLinePlugin],
+  options: {
+   responsive: true,
+   maintainAspectRatio: false,
+   plugins: {
+    legend: { display: false },
+    tooltip: { callbacks: { title: items => { const b = bins[items[0].dataIndex]; return "FCF payout " + b.lo + "–" + b.hi + "%"; }, label: ctx => ctx.parsed.y + " companies" } },
+   },
+   scales: {
+    x: { ...ndrXScale(), title: { display: true, text: "FCF payout ratio", color: ndr("axis-soft"), font: { size: 10 } } },
+    y: ndrYScale({ title: "Companies" }),
+   },
+  },
+ });
+ ratioHistogram.$ratioBins = bins;
+}
+
+function renderCoverageScatter(data){
+ const pairs = data.earningsVsFcfPairs || [];
+ const ctx = document.getElementById("coverageScatter").getContext("2d");
+ if(coverageScatter) coverageScatter.destroy();
+ if(pairs.length < MIN_PAIRS_FOR_TEST){
+  document.getElementById("coverageMethodTable").innerHTML = '<div class="method-note">Not enough covered payers loaded yet for a regression.</div>';
+  coverageScatter = new Chart(ctx, { type: "scatter", data: { datasets: [] }, options: { responsive: true, maintainAspectRatio: false } });
+  return;
+ }
+
+ const pearson = linearRegression(pairs.map(p => p.x), pairs.map(p => p.y));
+ const spear = spearmanRegression(pairs.map(p => p.x), pairs.map(p => p.y));
+ const xs = pairs.map(p => p.x);
+ const xMin = Math.min(...xs), xMax = Math.max(...xs);
+ const fitPoints = [{ x: xMin, y: pearson.intercept + pearson.slope * xMin }, { x: xMax, y: pearson.intercept + pearson.slope * xMax }];
+ const parityPoints = [{ x: xMin, y: xMin }, { x: xMax, y: xMax }];
+
+ coverageScatter = new Chart(ctx, {
+  type: "scatter",
+  data: {
+   datasets: [
+    { label: "Payers", data: pairs, backgroundColor: ndr("navy"), pointRadius: 3, showLine: false },
+    { label: "Regression fit", type: "line", data: fitPoints, borderColor: ndr("red"), borderWidth: 1.5, borderDash: [4, 3], pointRadius: 0, fill: false },
+    { label: "45° (earnings = cash)", data: parityPoints, type: "line", borderColor: ndr("slate"), borderWidth: 1, borderDash: [2, 3], pointRadius: 0, fill: false },
+   ],
+  },
+  options: {
+   responsive: true,
+   maintainAspectRatio: false,
+   plugins: {
+    legend: { display: true, position: "top", align: "start", labels: { boxWidth: 22, boxHeight: 2, color: ndr("axis"), font: { size: 11 } } },
+    tooltip: { callbacks: { label: ctx => ctx.dataset.label === "Payers" ? (ctx.raw.symbol + " (" + ctx.raw.sector + "): earnings " + fmtPlainPct(ctx.raw.x) + ", FCF " + fmtPlainPct(ctx.raw.y)) : null } },
+   },
+   scales: {
+    x: { title: { display: true, text: "Earnings payout ratio (%)", color: ndr("axis-soft"), font: { size: 10 } }, ticks: { color: ndr("axis"), font: { size: 10 } }, grid: { color: ndr("grid") } },
+    y: ndrYScale({ title: "FCF payout ratio (%)" }),
+   },
+  },
+ });
+
+ document.getElementById("coverageMethodTable").innerHTML = methodTableHtml(pearson, spear,
+  "Slope is percentage points of FCF payout ratio per 1pp of earnings payout ratio. A slope near 1.0 with a small intercept means the two views mostly agree; a slope above 1 means FCF-based risk grows faster than the earnings-based ratio suggests.");
+}
+
+function renderReturnScatter(data){
+ const pairs = data.fcfVsRel3MPairs || [];
+ const ctx = document.getElementById("returnScatter").getContext("2d");
+ if(returnScatter) returnScatter.destroy();
+ if(!data.hasRel3M || pairs.length < MIN_PAIRS_FOR_TEST){
+  document.getElementById("returnMethodTable").innerHTML = '<div class="method-note">' + (data.hasRel3M ? "Not enough covered payers loaded yet for a regression." : "Relative Strength Leaders/Laggards hasn't populated yet — this test isn't available this run.") + '</div>';
+  returnScatter = new Chart(ctx, { type: "scatter", data: { datasets: [] }, options: { responsive: true, maintainAspectRatio: false } });
+  return;
+ }
+
+ const pearson = linearRegression(pairs.map(p => p.x), pairs.map(p => p.y));
+ const spear = spearmanRegression(pairs.map(p => p.x), pairs.map(p => p.y));
+ const xs = pairs.map(p => p.x);
+ const xMin = Math.min(...xs), xMax = Math.max(...xs);
+ const fitPoints = [{ x: xMin, y: pearson.intercept + pearson.slope * xMin }, { x: xMax, y: pearson.intercept + pearson.slope * xMax }];
+
+ returnScatter = new Chart(ctx, {
+  type: "scatter",
+  data: {
+   datasets: [
+    { label: "Payers", data: pairs, backgroundColor: ndr("gold"), pointRadius: 3, showLine: false },
+    { label: "Regression fit", type: "line", data: fitPoints, borderColor: ndr("navy"), borderWidth: 1.5, borderDash: [4, 3], pointRadius: 0, fill: false },
+   ],
+  },
+  options: {
+   responsive: true,
+   maintainAspectRatio: false,
+   plugins: {
+    legend: { display: false },
+    tooltip: { callbacks: { label: ctx => ctx.dataset.label === "Payers" ? (ctx.raw.symbol + " (" + ctx.raw.sector + "): FCF payout " + fmtPlainPct(ctx.raw.x) + ", 3M rel. return " + fmtPct(ctx.raw.y)) : null } },
+   },
+   scales: {
+    x: { title: { display: true, text: "FCF payout ratio (%)", color: ndr("axis-soft"), font: { size: 10 } }, ticks: { color: ndr("axis"), font: { size: 10 } }, grid: { color: ndr("grid") } },
+    y: ndrYScale({ title: "3-month return vs. SPY (%)" }),
+   },
+  },
+ });
+
+ document.getElementById("returnMethodTable").innerHTML = methodTableHtml(pearson, spear,
+  "Slope is percentage points of 3-month relative return per 1pp of FCF payout ratio. A contemporaneous cross-section, not a forward-return test — n=" + pearson.n + " payers this run.");
+}
+
+function renderLeaderboard(elId, rows, mode){
+ const el = document.getElementById(elId);
+ if(!rows || !rows.length){
+  el.innerHTML = '<tr><td colspan="4" style="text-align:center; color:var(--muted); padding:24px;">No qualifying companies.</td></tr>';
+  return;
+ }
+ el.innerHTML = rows.map(r => {
+  if(mode === "stretched"){
+   return "<tr><td>" + r.symbol + "</td><td>" + r.sector + "</td><td class=\"" + (r.fcfPayoutRatio > 100 ? "cell-risk" : "") + "\">" + fmtRatio(r.fcfPayoutRatio, r.negativeFcf) + "</td><td>" + fmtRatio(r.earningsPayoutRatio, r.negativeEarnings) + "</td></tr>";
+  }
+  if(mode === "safest"){
+   return "<tr><td>" + r.symbol + "</td><td>" + r.sector + "</td><td>" + fmtRatio(r.fcfPayoutRatio, r.negativeFcf) + "</td><td>" + fmtUsd(r.ttmDividendPayout) + "</td></tr>";
+  }
+  return "<tr><td>" + r.symbol + "</td><td>" + r.sector + "</td><td>" + fmtPct(r.coverageGap) + "</td><td>" + fmtRatio(r.fcfPayoutRatio, r.negativeFcf) + "</td></tr>";
+ }).join("");
+}
+
+function sortBy(key){
+ if(SORT_KEY === key){
+  SORT_DIR = -SORT_DIR;
+ }else{
+  SORT_KEY = key;
+  SORT_DIR = key === "symbol" || key === "sector" ? 1 : -1;
+ }
+ renderTable();
+}
+
+function renderTable(){
+ if(!RAW) return;
+ const rows = [...RAW.companies].sort((a, b) => {
+  const av = a[SORT_KEY], bv = b[SORT_KEY];
+  if(av === null || av === undefined) return 1;
+  if(bv === null || bv === undefined) return -1;
+  if(typeof av === "string") return av.localeCompare(bv) * SORT_DIR;
+  return (av - bv) * SORT_DIR;
+ });
+
+ const tbody = document.getElementById("tableBody");
+ tbody.innerHTML = rows.map(r => {
+  const fcfCls = r.fcfPayoutRatio === null ? "cell-na" : r.fcfPayoutRatio > 100 ? "cell-risk" : "cell-pos";
+  return `<tr>
+   <td><span class="sector-name">${r.symbol}</span></td>
+   <td><span class="sector-ticker">${r.sector || "n/a"}</span></td>
+   <td>${fmtUsd(r.ttmDividendPayout)}</td>
+   <td>${fmtRatio(r.earningsPayoutRatio, r.negativeEarnings)}</td>
+   <td class="${fcfCls}">${fmtRatio(r.fcfPayoutRatio, r.negativeFcf)}</td>
+   <td>${fmtPct(r.coverageGap)}</td>
+  </tr>`;
+ }).join("");
+
+ document.querySelectorAll("#stockTable thead th").forEach(th => {
+  const key = th.dataset.key;
+  th.classList.toggle("sorted", key === SORT_KEY);
+  const arrow = th.querySelector(".sort-arrow");
+  if(arrow) arrow.textContent = (key === SORT_KEY && SORT_DIR === 1) ? "▴" : "▾";
+ });
+}
+
+document.querySelectorAll("#stockTable thead th").forEach(th => {
+ const key = th.dataset.key;
+ if(key) th.addEventListener("click", () => sortBy(key));
+});
+
+init();
+</script>
+
+</body>
+</html>
