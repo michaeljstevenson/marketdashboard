@@ -284,6 +284,16 @@
   to = "/.netlify/functions/options-positioning"
   status = 200
 
+[[redirects]]
+  from = "/api/sbc-dilution"
+  to = "/.netlify/functions/sbc-dilution"
+  status = 200
+
+[[redirects]]
+  from = "/api/effective-tax-rate"
+  to = "/.netlify/functions/effective-tax-rate"
+  status = 200
+
 # The Statistical Engine page was briefly at these paths.
 [[redirects]]
   from = "/streak-scanner"
@@ -822,3 +832,30 @@
   # background (for the momentum join) but degrades gracefully if that
   # blob is stale or missing. ~503 sequential HISTORICAL_PUT_CALL_RATIO
   # calls at 1050ms spacing plus a retry pass.
+
+[functions."scheduled-sbc-dilution-background"]
+  # One-time snapshot — no schedule, same convention as every page added
+  # since 2026-09-16. Run manually via the Netlify dashboard's "Run now"
+  # *after* scheduled-margin-leverage-background has populated its
+  # checkpoint at least once — this job reads that checkpoint directly
+  # (for revenue history) and fails fast if it hasn't. Optionally benefits
+  # from scheduled-share-count-background having run too (for the
+  # SBC-vs-dilution cross-check), but degrades gracefully if that blob is
+  # stale or missing. ~503 sequential CASH_FLOW calls at 1050ms spacing
+  # plus a retry pass — see this function's own file for the full
+  # methodology, including the high-SBC-sector cohort definition and the
+  # SBC-intensity structural-break test.
+
+[functions."scheduled-effective-tax-rate-background"]
+  # One-time snapshot — no schedule, same convention as every page added
+  # since 2026-09-16. Run manually via the Netlify dashboard's "Run now" —
+  # no ordering dependency on any other job (unlike scheduled-ai-capex-
+  # background and scheduled-sbc-dilution-background, this one doesn't read
+  # scheduled-margin-leverage-background's checkpoint; its own single
+  # INCOME_STATEMENT call already carries everything it needs). Optionally
+  # benefits from scheduled-relative-strength-background having run too
+  # (for the ETR-vs-relative-return cross-check), but degrades gracefully
+  # if that blob is stale or missing. ~503 sequential INCOME_STATEMENT
+  # calls at 1050ms spacing plus a retry pass — see this function's own
+  # file for the full methodology, including the Real Estate (REIT
+  # pass-through) cohort definition and the ETR structural-break test.

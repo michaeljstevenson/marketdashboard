@@ -153,7 +153,7 @@ document.addEventListener("DOMContentLoaded", function(){
 </script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>News Sentiment Momentum | Michael J. Stevenson</title>
+<title>Stock-Based Compensation Dilution | Michael J. Stevenson</title>
 
 <style>
 
@@ -176,9 +176,8 @@ document.addEventListener("DOMContentLoaded", function(){
 
   /* NDR-style chart palette. Deliberately the SAME in light and dark —
      these charts keep a constant warm-paper look as a homage to the Ned
-     Davis Research print charts that inspired /concentration. JS reads
-     them via getComputedStyle (per the site convention) rather than
-     hardcoding. */
+     Davis Research print charts that inspired the page. JS reads them via
+     getComputedStyle (per the site convention) rather than hardcoding. */
   --ndr-plot:#f5f1e6;
   --ndr-axis:#3c3a33;
   --ndr-axis-soft:#6f6a5c;
@@ -355,6 +354,7 @@ h1{
  border:1px solid var(--hair);
  border-radius:10px;
  padding:20px;
+ min-width:0;
 }
 
 .stat-label{
@@ -414,25 +414,24 @@ h1{
  margin-top:4px;
 }
 
-.chart-canvas-wrap{
- height:380px;
-}
-
-.chart-canvas-wrap.short{ height:260px; }
-
-/* The warm-paper plot panel behind each canvas — the NDR homage
-   (matches /concentration). */
+/* The warm-paper plot panel behind each canvas — the NDR homage. */
 .ndr-panel{
  background:var(--ndr-plot);
  border:1px solid var(--ndr-grid);
  border-radius:8px;
  padding:14px 14px 10px;
- position:relative;
 }
+
+.chart-canvas-wrap{
+ height:380px;
+}
+
+.chart-canvas-wrap.short{ height:280px; }
 
 .metric-toggle{
  display:flex;
  gap:6px;
+ flex-wrap:wrap;
 }
 
 .metric-toggle button{
@@ -450,38 +449,7 @@ h1{
  border-color:var(--greed);
 }
 
-/* Two charts / method-tables side by side, same breakpoint as table-grid */
-.chart-grid{
- display:grid;
- grid-template-columns:1fr 1fr;
- gap:16px;
- margin-bottom:30px;
-}
-
-.chart-grid .chart-box{
- margin-bottom:0;
- min-width:0; /* grid items default to min-width:auto (their content's min-content
-                 size), which a wide method table would otherwise force past this
-                 column's track width — same "grid blowout" the site-wide
-                 table{min-width:600px} rule creates if left unchecked here */
-}
-
-@media (max-width:900px){
- .chart-grid{ grid-template-columns:1fr; }
-}
-
 /* TABLE */
-
-.table-grid{
- display:grid;
- grid-template-columns:1fr 1fr;
- gap:16px;
- margin-bottom:30px;
-}
-
-@media (max-width:900px){
- .table-grid{ grid-template-columns:1fr; }
-}
 
 .table-box{
  background:var(--card);
@@ -490,8 +458,6 @@ h1{
  overflow-x:auto;
  margin-bottom:30px;
 }
-
-.table-grid .table-box{ margin-bottom:0; }
 
 .table-box-header{
  padding:18px 20px 4px;
@@ -510,19 +476,8 @@ table{
  width:100%;
  border-collapse:collapse;
  font-size:13px;
- min-width:600px;
+ min-width:640px;
 }
-
-/* The three-column leaderboard tables (Most Bullish/Bearish, Highest
-   Attention) don't need the 600px floor above — it's sized for the
-   many-column full table. Left at 600px in a .table-grid's ~522px-wide
-   column, the site-wide rule pushed the one value column that matters
-   (the actual score) out past the box's visible width, requiring a manual
-   horizontal scroll to see it — a real bug found in this page's own
-   Playwright pass (and, on inspection, present on /institutional-ownership
-   too, inherited from this same page markup/CSS — out of scope to fix
-   here per CLAUDE.md, not touched). */
-#mostBullishTable, #mostBearishTable, #highestAttentionTable{ min-width:0; }
 
 thead th{
  text-align:right;
@@ -543,6 +498,8 @@ thead th:first-child, thead th:nth-child(2){
 
 thead th:hover{ color:var(--ink); }
 
+thead th:not([data-key]){ cursor:default; }
+
 thead th .sort-arrow{
  opacity:0.4;
  margin-left:3px;
@@ -550,8 +507,6 @@ thead th .sort-arrow{
 }
 
 thead th.sorted .sort-arrow{ opacity:1; color:var(--greed); }
-
-thead th:not([data-key]){ cursor:default; }
 
 tbody td{
  padding:11px 12px;
@@ -570,11 +525,6 @@ tbody td:first-child{
  font-family:var(--sans);
 }
 
-tbody td:nth-child(2){
- text-align:left;
- color:var(--muted);
-}
-
 .sector-name{ color:var(--ink); }
 .sector-ticker{ color:var(--muted); font-size:11px; }
 
@@ -582,31 +532,50 @@ tbody td:nth-child(2){
 .cell-neg{ color:var(--ink); }
 .cell-na{ color:var(--muted); }
 
-.trend-up{ color:var(--greed); }
-.trend-down{ color:var(--fear); }
-.trend-flat{ color:var(--muted); }
+.sbc-tag{
+ display:inline-block;
+ margin-left:6px;
+ padding:1px 6px;
+ border-radius:4px;
+ font-size:9px;
+ letter-spacing:0.03em;
+ background:rgba(217,138,61,0.16);
+ color:var(--greed);
+ vertical-align:middle;
+}
+
+.table-footnote{
+ padding:2px 20px 16px;
+ color:var(--muted);
+ font-size:11px;
+}
+
+.table-grid{
+ display:grid;
+ grid-template-columns:1fr 1fr;
+ gap:20px;
+}
+
+@media (max-width:900px){
+ .table-grid{ grid-template-columns:1fr; }
+ .table-grid > .table-box{ min-width:0; }
+}
 
 /* SCATTER / METHOD TABLE (mirrors /factor-analysis) */
 
 .scatter-canvas-wrap{
- height:300px;
+ height:320px;
  margin-bottom:12px;
  position:relative;
 }
 
 .method-table{
  width:100%;
- min-width:0; /* overrides the site-wide table{min-width:600px} rule below — two of these
-                 side by side in .chart-grid would otherwise force the whole page wider
-                 than its container even though a 7-column method table never needs 600px */
+ min-width:0;
  border-collapse:collapse;
  font-family:var(--mono);
  font-size:11px;
  margin-top:8px;
-}
-
-#attentionMethodTable, #returnMethodTable{
- overflow-x:auto;
 }
 
 .method-table th{
@@ -647,24 +616,13 @@ tbody td:nth-child(2){
  font-style:italic;
 }
 
-/* SECTOR LEGEND (scatter / spaghetti charts) */
-
-.sector-legend{
- display:flex;
- flex-wrap:wrap;
- gap:10px 16px;
- margin-top:14px;
- font-size:11px;
- color:var(--muted);
-}
-
-.sector-legend .dot{
- display:inline-block;
- width:8px;
- height:8px;
- border-radius:50%;
- margin-right:5px;
- vertical-align:middle;
+/* The trend-break table's cells run long ("slope +0.014ppt/q, r=0.42,
+   p=<0.001 (n=12)"), wide enough on a phone viewport to force the whole
+   page wider if this div doesn't scroll on its own — same class of bug
+   noted in /spin-off-performance.html, /margin-leverage.html and
+   /ai-capex-tracker.html's own methodology comments. */
+#trendBreakTable, #dilutionMethodTable{
+ overflow-x:auto;
 }
 
 /* EXPLAINER */
@@ -786,7 +744,7 @@ tbody td:nth-child(2){
 <a href="/ath-index.html">All-Time Highs and Lows</a>
 <a href="/margin-leverage.html">Margin &amp; Leverage Cycle</a>
 <a href="/short-sale-volume.html">Short Sale Volume</a>
-<a href="/news-sentiment.html" class="active">News Sentiment Momentum</a>
+<a href="/news-sentiment.html">News Sentiment Momentum</a>
 <a href="/seasonality.html">Seasonality</a>
 </div>
 </div>
@@ -818,7 +776,7 @@ tbody td:nth-child(2){
 <a href="/roic-wacc.html">ROIC vs. Cost of Capital</a>
 <a href="/cash-conversion-cycle.html">Cash Conversion Cycle</a>
 <a href="/rd-intensity.html">R&amp;D Intensity</a>
-<a href="/sbc-dilution.html">Stock-Based Comp Dilution</a>
+<a href="/sbc-dilution.html" class="active">Stock-Based Comp Dilution</a>
 <a href="/effective-tax-rate.html">Effective Tax Rate</a>
 </div>
 </div>
@@ -926,40 +884,84 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 
 <div class="header">
 <div>
-<h1>News Sentiment Momentum</h1>
-<div class="subtitle">Financial news sentiment by stock and sector across the S&amp;P 500, from the last ~50 news articles Alpha Vantage has matched to each company. This is not a market-wide gauge (see <a href="/sentiment-index.html">Sentiment Index</a> for that). Does heavier news coverage skew more positive or negative, and does the sentiment in a stock's recent headlines predict where its price goes next?</div>
+<h1>Stock-Based Compensation Dilution</h1>
+<div class="subtitle">How much of S&amp;P 500 revenue and cash flow goes to equity compensation, and whether heavy stock-based comp still shows up as real share dilution once buybacks are netted in.</div>
 </div>
 <div class="updated" id="updated">Loading...</div>
 </div>
 
 <div class="stat-grid">
 <div class="stat-card">
-<div class="stat-label">Companies Loaded</div>
-<div class="stat-value" id="statCompanies" style="font-size:20px;">…</div>
-<div class="stat-note" id="statCompaniesNote">Of full S&amp;P 500</div>
+<div class="stat-label">S&amp;P 500 TTM SBC</div>
+<div class="stat-value" id="statTotalSbc">…</div>
+<div class="stat-note">Trailing 12 months, full index</div>
 </div>
 <div class="stat-card">
-<div class="stat-label">Median Weighted Sentiment</div>
-<div class="stat-value" id="statMedianSentiment">…</div>
-<div class="stat-note" id="statMedianSentimentNote">Relevance-weighted, sufficiently-covered names only</div>
+<div class="stat-label">Avg. SBC Intensity</div>
+<div class="stat-value" id="statIntensity">…</div>
+<div class="stat-note">SBC &divide; revenue, TTM, equal-weighted</div>
 </div>
 <div class="stat-card">
-<div class="stat-label">Articles Matched</div>
-<div class="stat-value" id="statArticles" style="font-size:20px;">…</div>
-<div class="stat-note" id="statArticlesNote">Total across all loaded companies this run</div>
+<div class="stat-label">Avg. SBC / Operating Cash Flow</div>
+<div class="stat-value" id="statSbcToOcf">…</div>
+<div class="stat-note">The "real" cash-flow cost, not just an add-back</div>
 </div>
 <div class="stat-card">
-<div class="stat-label">Market Skew</div>
-<div class="stat-value" id="statSkew" style="font-size:20px;">…</div>
-<div class="stat-note" id="statSkewNote">Of sufficiently-covered names</div>
+<div class="stat-label">Median SBC Growth</div>
+<div class="stat-value" id="statMedianGrowth">…</div>
+<div class="stat-note">TTM vs. prior TTM</div>
 </div>
 </div>
 
 <div class="chart-box">
 <div class="chart-box-header">
 <div>
-<h2>Sentiment by sector</h2>
-<div class="chart-subhead">Average relevance-weighted sentiment score across each sector's constituents (sufficiently covered names only). Shows where the recent news has been kindest and harshest.</div>
+<h2>SBC intensity over time: high-SBC sectors vs. rest of the index</h2>
+<div class="chart-subhead">Aggregate quarterly SBC as a share of aggregate quarterly revenue (sum, not per-company average), for Information Technology + Communication Services vs. every other S&amp;P 500 sector with enough history.</div>
+</div>
+</div>
+<div class="ndr-panel">
+<div class="chart-canvas-wrap">
+<canvas id="intensityChart"></canvas>
+</div>
+</div>
+</div>
+
+<div class="chart-box">
+<div class="chart-box-header">
+<div>
+<h2>Has SBC intensity actually trended higher?</h2>
+<div class="chart-subhead">Each series above is split into two equal-length halves (oldest vs. most recent) and a Chow test asks whether the trend's slope genuinely differs between them, not just whether the line looks steeper lately.</div>
+</div>
+</div>
+<div id="trendBreakTable"></div>
+</div>
+
+<div class="chart-box">
+<div class="chart-box-header">
+<div>
+<h2>Does heavier SBC show up as real dilution?</h2>
+<div class="chart-subhead">Each point is one S&amp;P 500 company: TTM SBC intensity against the trailing-12-month change in shares outstanding (from <a href="/share-count-trends.html">Share Count Trends</a>) &mdash; a number that already nets out every buyback, issuance, and SBC-driven grant. A positive relationship means heavier equity comp still shows up in the share count even after buybacks work against it.</div>
+</div>
+</div>
+<div class="ndr-panel">
+<div class="scatter-canvas-wrap">
+<canvas id="dilutionScatter"></canvas>
+</div>
+</div>
+<div id="dilutionMethodTable"></div>
+</div>
+
+<div class="chart-box">
+<div class="chart-box-header">
+<div>
+<h2 id="sectorChartTitle">SBC intensity by sector</h2>
+<div class="chart-subhead" id="sectorChartSubhead">Trailing-12-month SBC as a share of trailing-12-month revenue, averaged across each sector's constituents.</div>
+</div>
+<div class="metric-toggle" id="sectorMetricToggle">
+<button type="button" data-metric="avgSbcIntensity" class="active">SBC Intensity</button>
+<button type="button" data-metric="avgSbcToOcf">SBC / OCF</button>
+<button type="button" data-metric="avgYoySbcGrowth">SBC Growth</button>
 </div>
 </div>
 <div class="ndr-panel">
@@ -969,168 +971,121 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 </div>
 </div>
 
-<div class="chart-box">
-<div class="chart-box-header">
-<div>
-<h2>Does heavier news coverage skew more positive or negative?</h2>
-<div class="chart-subhead">Each point is one company. X is matched-article count (attention), Y is relevance-weighted sentiment score.</div>
+<div class="table-box">
+<div class="table-box-header">
+<h2>Heaviest SBC, still diluting despite buybacks</h2>
+<div class="chart-subhead">Highest SBC intensity among companies whose share count still grew over the trailing 12 months &mdash; equity comp outrunning whatever buybacks were also happening.</div>
 </div>
-</div>
-<div class="ndr-panel">
-<div class="scatter-canvas-wrap">
-<canvas id="attentionScatter"></canvas>
-</div>
-</div>
-<div id="attentionMethodTable"></div>
-</div>
-
-<div class="chart-box">
-<div class="chart-box-header">
-<div>
-<h2>Market-wide sentiment trend, over time</h2>
-<div class="chart-subhead" id="historyChartSub">Median relevance-weighted sentiment score, saved weekly. The line gets more useful with each week's run.</div>
-</div>
-</div>
-<div class="ndr-panel">
-<div class="chart-canvas-wrap">
-<canvas id="historyChart"></canvas>
-</div>
-</div>
+<table>
+<thead><tr><th>Ticker</th><th>Sector</th><th>SBC Intensity</th><th>Share Count Chg (1Y)</th></tr></thead>
+<tbody id="heaviestStillDilutingTable">
+<tr><td colspan="4" style="text-align:center; color:var(--muted); padding:24px;">Loading&hellip;</td></tr>
+</tbody>
+</table>
+<div class="table-footnote">Excludes companies without a matching Share Count Trends figure. A blank table here is a good sign, not missing data &mdash; it would mean no heavy SBC issuer is diluting on net.</div>
 </div>
 
 <div class="table-grid">
 <div class="table-box">
 <div class="table-box-header">
-<h2>Most bullish</h2>
-<div class="chart-subhead">Highest relevance-weighted sentiment score. Minimum <span id="minArticlesNoteA">5</span> matched articles, to keep thinly covered names out.</div>
+<h2>Highest SBC intensity</h2>
+<div class="chart-subhead">SBC as a share of revenue, TTM &mdash; not necessarily the biggest dollar spenders.</div>
 </div>
-<table id="mostBullishTable">
-<thead><tr><th>Symbol</th><th>Sector</th><th>Sentiment</th></tr></thead>
-<tbody id="mostBullishBody"><tr><td colspan="3" style="text-align:center; color:var(--muted); padding:24px;">Loading&hellip;</td></tr></tbody>
+<table>
+<thead><tr><th>Ticker</th><th>Sector</th><th>Intensity</th><th>TTM SBC</th></tr></thead>
+<tbody id="topIntensityTable">
+<tr><td colspan="4" style="text-align:center; color:var(--muted); padding:24px;">Loading&hellip;</td></tr>
+</tbody>
 </table>
 </div>
+
 <div class="table-box">
 <div class="table-box-header">
-<h2>Most bearish</h2>
-<div class="chart-subhead">Lowest relevance-weighted sentiment score. Same coverage minimum as the leaderboard above.</div>
+<h2>Highest SBC / operating cash flow</h2>
+<div class="chart-subhead">SBC as a share of TTM operating cash flow &mdash; how big a bite equity comp takes out of the cash the business actually generated.</div>
 </div>
-<table id="mostBearishTable">
-<thead><tr><th>Symbol</th><th>Sector</th><th>Sentiment</th></tr></thead>
-<tbody id="mostBearishBody"><tr><td colspan="3" style="text-align:center; color:var(--muted); padding:24px;">Loading&hellip;</td></tr></tbody>
+<table>
+<thead><tr><th>Ticker</th><th>Sector</th><th>SBC / OCF</th><th>TTM SBC</th></tr></thead>
+<tbody id="topSbcToOcfTable">
+<tr><td colspan="4" style="text-align:center; color:var(--muted); padding:24px;">Loading&hellip;</td></tr>
+</tbody>
 </table>
 </div>
 </div>
 
 <div class="table-box">
 <div class="table-box-header">
-<h2>Highest news attention</h2>
-<div class="chart-subhead">Most matched articles in the last ~50-article window per company: where the news is paying the most attention, regardless of tone.</div>
-</div>
-<table id="highestAttentionTable">
-<thead><tr><th>Symbol</th><th>Sector</th><th>Articles</th></tr></thead>
-<tbody id="highestAttentionBody"><tr><td colspan="3" style="text-align:center; color:var(--muted); padding:24px;">Loading&hellip;</td></tr></tbody>
-</table>
-</div>
-
-<div class="chart-box">
-<div class="chart-box-header">
-<div>
-<h2>Does news sentiment predict subsequent relative price performance?</h2>
-<div class="chart-subhead">The Tetlock (2007) question: does media sentiment predict returns? Each point is one company. X is relevance-weighted sentiment score, Y is 3-month price return relative to SPY.</div>
-</div>
-</div>
-<div class="ndr-panel">
-<div class="scatter-canvas-wrap">
-<canvas id="returnScatter"></canvas>
-</div>
-</div>
-<div id="returnMethodTable"></div>
-</div>
-
-<div class="table-box">
-<div class="table-box-header">
-<h2>Full S&amp;P 500</h2>
-<div class="chart-subhead">Weighted sentiment score, matched article count, bullish/bearish article counts and dominant sentiment label for each S&amp;P 500 company.</div>
+<h2>All companies with SBC and revenue history on file</h2>
+<div class="chart-subhead">Trailing-12-month SBC, SBC intensity, SBC/OCF, and the trailing-12-month share-count change for the full S&amp;P 500. The tag marks Information Technology and Communication Services constituents.</div>
 </div>
 <table id="stockTable">
 <thead>
 <tr>
 <th data-key="symbol">Symbol</th>
 <th data-key="sector">Sector</th>
-<th data-key="weightedSentiment">Sentiment<span class="sort-arrow">▾</span></th>
-<th data-key="articleCount">Articles<span class="sort-arrow">▾</span></th>
-<th data-key="bullishCount">Bullish<span class="sort-arrow">▾</span></th>
-<th data-key="bearishCount">Bearish<span class="sort-arrow">▾</span></th>
-<th data-key="dominantLabel">Dominant Label<span class="sort-arrow">▾</span></th>
+<th data-key="ttmSbc">TTM SBC<span class="sort-arrow">▾</span></th>
+<th data-key="sbcIntensity">SBC Intensity<span class="sort-arrow">▾</span></th>
+<th data-key="sbcToOcf">SBC / OCF<span class="sort-arrow">▾</span></th>
+<th data-key="yoySbcGrowth">SBC Growth<span class="sort-arrow">▾</span></th>
+<th data-key="shareCountChange1Y">Share Count Chg (1Y)<span class="sort-arrow">▾</span></th>
 </tr>
 </thead>
 <tbody id="tableBody">
-<tr><td colspan="7" style="text-align:center; color:var(--muted); padding:30px;">Loading news sentiment data&hellip;</td></tr>
+<tr><td colspan="7" style="text-align:center; color:var(--muted); padding:30px;">Loading SBC data&hellip;</td></tr>
 </tbody>
 </table>
+<div class="table-footnote">"SBC Growth" is trailing-12-month vs. the prior 12 months, blank for companies without 8 consecutive quarters of matched history. "Share Count Chg (1Y)" is read from Share Count Trends and is blank if that page hasn't covered the company.</div>
 </div>
 
 <div class="explainer">
 <h2>Methodology</h2>
-<p>This page is separate from <a href="/sentiment-index.html">Sentiment Index</a>. That page is one market-wide gauge built from positioning, volatility, breadth and credit indicators. This page scores individual companies and sectors by what recent financial news says about them. Different question, different data.</p>
-<p><strong>Sentiment score.</strong> The universe is the S&amp;P 500. For each company, Alpha Vantage's <code>NEWS_SENTIMENT</code> endpoint is queried with <code>tickers=&lt;symbol&gt;&amp;limit=50</code>, which returns up to the 50 most recent matched articles. For each article, the <code>ticker_sentiment</code> entry for that company is located directly (an article can mention several companies in any order). Articles with no matching entry are skipped. The weighted sentiment score is the relevance-weighted average of <code>ticker_sentiment_score</code>: each score multiplied by <code>relevance_score</code>, summed, then divided by the sum of <code>relevance_score</code>. Articles where either field fails to parse are skipped.<br><br><strong>Article count and labels.</strong> Article count is how many articles matched. It measures attention, which is a separate question from tone. Bullish/bearish counts (plus neutral, somewhat-bullish and somewhat-bearish) are a tally of each article's own <code>ticker_sentiment_label</code>, Alpha Vantage's five-bucket scale, and give a second view next to the weighted average. Everything else about each article is discarded once these values are extracted.</p>
-<p>A company with fewer than <span id="minArticlesNoteB">5</span> matched articles is tagged "insufficient coverage" in the full table and excluded from the sector chart, both scatter charts, the regression and all three leaderboards. With only a handful of articles, the weighted average is dominated by whichever one or two ran that week. Five is a low floor that blunts a single outlier while still leaving most of the S&amp;P 500 eligible in most weeks. Every company still appears in the full table.</p>
-<p><code>NEWS_SENTIMENT</code> returns only a snapshot: the latest ~50 articles as of each run, with no historical series. Each run's market-wide median weighted-sentiment score is added to a running history, so the trend line is short at first and only becomes meaningful after several weeks of runs.</p>
-<p><strong>Forward-return test.</strong> The regression uses the 3-month price return relative to SPY from <a href="/relative-strength-leaders.html">Relative Strength Leaders/Laggards</a>. If that hasn't refreshed, everything else still shows and a banner says the regression is unavailable.</p>
-<p>Sector and company name come from <a href="/sector-beeswarm.html">Sector Beeswarm</a>. Data is refreshed manually.</p>
-<div class="source">Source: <a href="https://www.alphavantage.co/" target="_blank" rel="noopener">Alpha Vantage: NEWS_SENTIMENT</a> and <a href="/relative-strength-leaders.html">Relative Strength Leaders/Laggards</a> data.</div>
+<p><strong>Data.</strong> SBC is <code>stockBasedCompensation</code> from Alpha Vantage's quarterly <code>CASH_FLOW</code> statement &mdash; the non-cash expense add-back every company with equity comp reports there. Revenue is <code>totalRevenue</code> from quarterly <code>INCOME_STATEMENT</code>, joined by exact fiscal-quarter-end date rather than re-swept here &mdash; it's read from the same 28-quarter (~7 year) history <a href="/margin-leverage.html">Margin &amp; Leverage Cycle</a> already keeps, so this page pays for one new full-index sweep (SBC) instead of two, the same reuse pattern <a href="/ai-capex-tracker.html">AI Capex Tracker</a> uses. A company only counts once both series line up on at least 8 consecutive matched quarters.</p>
+<p><strong>Why this is a different question from what's already on this site.</strong> <a href="/share-count-trends.html">Share Count Trends</a> measures the <em>net</em> change in shares outstanding &mdash; buybacks, issuance, and SBC-driven grants all netted into one number, with no way to see SBC's own contribution. <a href="/buyback-effectiveness.html">Buyback Effectiveness</a> measures real dollar buyback spend against that same net change. Neither looks at the SBC expense itself. This page starts from the cost &mdash; dollars of equity comp, straight off the cash flow statement &mdash; and asks whether it shows up downstream as dilution, which is the actual substance of the "SBC is hidden dilution" critique often leveled at high-growth and technology companies: GAAP expenses it, but it's added back in the cash flow statement and routinely excluded from non-GAAP earnings, so its real cost is easy to lose track of.</p>
+<p><strong>SBC / operating cash flow.</strong> A second, blunter lens on the same cost: SBC as a share of TTM operating cash flow, rather than of revenue. A company can have modest SBC-to-revenue but still see equity comp eat a large share of the actual cash it generates, especially early-growth names with thin margins &mdash; this ratio surfaces that case separately from the intensity figure.</p>
+<p><strong>The high-SBC-sector cohort.</strong> Information Technology and Communication Services, chosen because equity-heavy compensation is a well-documented, industry-wide norm in software and internet businesses specifically, not a handful of individual companies' choices &mdash; a sector cut is the more defensible split here than <a href="/ai-capex-tracker.html">AI Capex Tracker</a>'s hand-picked company list, since this page is measuring a compensation-structure norm across an industry, not a handful of firms' capital decisions.</p>
+<p><strong>The structural break test.</strong> Aggregate quarterly SBC intensity (sum of SBC across the group &divide; sum of revenue, not an average of ratios) is regressed against a plain quarter index, split into two equal-length halves &mdash; oldest vs. most recent, the same equal-sample-size convention <a href="/factor-analysis.html">Factor Analysis</a> and <a href="/ai-capex-tracker.html">AI Capex Tracker</a> use &mdash; and a Chow test asks whether the trend's slope genuinely differs between the two halves.</p>
+<p><strong>The dilution scatter.</strong> Pearson and Spearman correlation between TTM SBC intensity and the trailing-12-month change in shares outstanding, across every S&amp;P 500 constituent with a matching Share Count Trends figure &mdash; the same two-method check as every regression on this site. A positive, significant relationship means heavier equity comp coincides with actual share growth even after buybacks are netted in; a weak or flat one would suggest buybacks are, on average, absorbing SBC-driven issuance across the index.</p>
+<p>Sector and company name come from <a href="/sector-beeswarm.html">Sector Beeswarm</a>'s own weekly metadata. This page is a one-time snapshot as of the date below, not a recurring refresh, since cash flow and income statements only change when a company files a new 10-Q or 10-K.</p>
+<div class="source">Source: <a href="https://www.alphavantage.co/" target="_blank" rel="noopener">Alpha Vantage</a>: CASH_FLOW, INCOME_STATEMENT (via Margin &amp; Leverage Cycle), COMPANY_OVERVIEW (sector/name, via Sector Beeswarm); trailing share-count change via Share Count Trends</div>
 </div>
 
 </div>
 
 <script>
-const DATA_URL = "/api/news-sentiment";
-
-const SECTOR_COLORS = {
- "Information Technology": "#d98a3d",
- "Financials": "#6f8fac",
- "Health Care": "#8e7cc3",
- "Energy": "#c0564f",
- "Industrials": "#5a9d6f",
- "Consumer Discretionary": "#e0b04f",
- "Consumer Staples": "#4fb0c0",
- "Utilities": "#b56f2a",
- "Materials": "#9a9a9a",
- "Real Estate": "#c77dbd",
- "Communication Services": "#4f7ae0",
-};
+const DATA_URL = "/api/sbc-dilution";
 
 let RAW = null;
-let SORT_KEY = "weightedSentiment";
+let SORT_KEY = "ttmSbc";
 let SORT_DIR = -1;
-
-function fmtScore(v, digits){
- if(v === null || v === undefined || isNaN(v)) return "n/a";
- digits = digits === undefined ? 3 : digits;
- return (v >= 0 ? "+" : "") + v.toFixed(digits);
-}
-function fmtPlainPct(v, digits){
- if(v === null || v === undefined || isNaN(v)) return "n/a";
- digits = digits === undefined ? 1 : digits;
- return v.toFixed(digits) + "%";
-}
-function fmtCount(v){
- if(v === null || v === undefined || isNaN(v)) return "n/a";
- return Math.round(v).toLocaleString();
-}
+let SECTOR_METRIC = "avgSbcIntensity";
 
 function showError(message){
  const banner = document.getElementById("errorBanner");
  banner.textContent = message;
  banner.style.display = "block";
 }
-function showWarning(message){
- const banner = document.getElementById("warningBanner");
- banner.textContent = message;
- banner.style.display = "block";
+
+function fmtPct(v, digits){
+ if(v === null || v === undefined || isNaN(v)) return "n/a";
+ digits = digits === undefined ? 2 : digits;
+ return (v >= 0 ? "+" : "") + v.toFixed(digits) + "%";
 }
 
-// ---- NDR chart styling helpers (matches /concentration) ----------------
+function fmtPlainPct(v, digits){
+ if(v === null || v === undefined || isNaN(v)) return "n/a";
+ digits = digits === undefined ? 2 : digits;
+ return v.toFixed(digits) + "%";
+}
+
+function fmtUsd(v){
+ if(v === null || v === undefined || isNaN(v)) return "n/a";
+ const abs = Math.abs(v);
+ if(abs >= 1e9) return (v < 0 ? "-" : "") + "$" + (abs / 1e9).toFixed(1) + "B";
+ if(abs >= 1e6) return (v < 0 ? "-" : "") + "$" + (abs / 1e6).toFixed(1) + "M";
+ return "$" + Math.round(v).toLocaleString();
+}
+
+// ---- NDR chart styling helpers -----------------------------------------
 // Colours come from the --ndr-* custom properties (constant across themes)
 // so the charts keep their warm-paper look while still following the
 // site's "read chart colours from CSS, don't hardcode" rule.
@@ -1160,24 +1115,9 @@ function ndrYScale(opts){
  };
 }
 
-function ndrCategoryScale(){
- return {
-  ticks: { color: ndr("axis"), font: { size: 11 } },
-  grid: { display: false },
- };
-}
-
-function ndrNumericScale(opts){
- opts = opts || {};
- return {
-  title: opts.title ? { display: true, text: opts.title, color: ndr("axis-soft"), font: { size: 10 } } : { display: false },
-  ticks: { color: ndr("axis"), font: { size: 10 } },
-  grid: { color: ndr("grid"), drawBorder: false },
- };
-}
-
 // ---- Stats helpers — same methodology as /factor-analysis, duplicated
 // here since every page on this site is self-contained (see CLAUDE.md). ----
+
 function linearRegression(xs, ys){
  const n = xs.length;
  const mx = xs.reduce((a, b) => a + b, 0) / n;
@@ -1196,7 +1136,12 @@ function linearRegression(xs, ys){
  const p = 2 * (1 - normalCdf(Math.abs(t)));
  return { n, slope, intercept, r, r2, t, dof, p, sse };
 }
-function normalCdf(x){ return 0.5 * (1 + erf(x / Math.SQRT2)); }
+
+function normalCdf(x){
+ return 0.5 * (1 + erf(x / Math.SQRT2));
+}
+
+// Abramowitz & Stegun 7.1.26 approximation — accurate to ~1e-7.
 function erf(x){
  const sign = x < 0 ? -1 : 1;
  x = Math.abs(x);
@@ -1205,6 +1150,7 @@ function erf(x){
  const y = 1 - (((((a5 * t + a4) * t) + a3) * t + a2) * t + a1) * t * Math.exp(-x * x);
  return sign * y;
 }
+
 function rankArray(arr){
  const idx = arr.map((v, i) => i).sort((a, b) => arr[a] - arr[b]);
  const ranks = new Array(arr.length);
@@ -1218,256 +1164,12 @@ function rankArray(arr){
  }
  return ranks;
 }
-function spearmanRegression(xs, ys){ return linearRegression(rankArray(xs), rankArray(ys)); }
 
-let sectorChart = null, attentionScatter = null, historyChart = null, returnScatter = null;
-
-async function init(){
- try{
-  const res = await fetch(DATA_URL, { cache: "no-store" });
-  const data = await res.json();
-  if(!res.ok || data.error) throw new Error(data.error || "failed to load");
-
-  RAW = data;
-  document.getElementById("updated").textContent = "As of " + new Date(data.generated_at_utc).toLocaleString("en-US", { month: "2-digit", day: "2-digit", year: "numeric", hour: "numeric", minute: "2-digit" });
-
-  const minArticles = data.minArticlesForSentiment || 5;
-  document.getElementById("minArticlesNoteA").textContent = minArticles;
-  document.getElementById("minArticlesNoteB").textContent = minArticles;
-
-  if(data.loadedCount < data.universeSize){
-   showWarning("Only " + data.loadedCount + " of " + data.universeSize + " S&P 500 constituents loaded. Some data may be missing.");
-  }else if(!data.hasPriceData){
-   showWarning("Price data isn't available yet (Relative Strength Leaders/Laggards hasn't refreshed). Showing sentiment and attention data only. The forward-return test below is unavailable.");
-  }
-
-  renderStats();
-  renderSectorChart();
-  renderAttentionScatter();
-  renderHistoryChart();
-  renderLeaderTable(data.mostBullish, "mostBullishBody", "score", "weightedSentiment");
-  renderLeaderTable(data.mostBearish, "mostBearishBody", "score", "weightedSentiment");
-  renderLeaderTable(data.highestAttention, "highestAttentionBody", "count", "articleCount");
-  renderReturnScatter();
-  renderTable();
-
- }catch(e){
-  showError("Couldn't load news sentiment data (" + e.message + "). The /api/news-sentiment function may not have run yet.");
-  document.getElementById("tableBody").innerHTML =
-   '<tr><td colspan="7" style="text-align:center; color:var(--muted); padding:30px;">No data available.</td></tr>';
- }
+function spearmanRegression(xs, ys){
+ return linearRegression(rankArray(xs), rankArray(ys));
 }
 
-function renderStats(){
- const m = RAW.market;
- document.getElementById("statCompanies").textContent = m.companyCount;
- document.getElementById("statCompaniesNote").textContent = RAW.loadedCount + " of " + RAW.universeSize + " loaded, " + m.companyCount + " with usable data";
-
- const sentEl = document.getElementById("statMedianSentiment");
- sentEl.textContent = m.medianWeightedSentiment === null ? "n/a" : fmtScore(m.medianWeightedSentiment);
- sentEl.classList.toggle("cell-neg", m.medianWeightedSentiment !== null && m.medianWeightedSentiment < 0);
- document.getElementById("statMedianSentimentNote").textContent = "n=" + m.withCoverage + " with >=" + (RAW.minArticlesForSentiment || 5) + " matched articles";
-
- document.getElementById("statArticles").textContent = fmtCount(m.totalArticlesMatched);
- document.getElementById("statArticlesNote").textContent = "Across " + m.companyCount + " loaded companies";
-
- const skewPct = m.bullishSkewPct;
- const skewEl = document.getElementById("statSkew");
- if(skewPct === null || skewPct === undefined){
-  skewEl.textContent = "n/a";
- }else{
-  skewEl.textContent = fmtPlainPct(skewPct, 0) + (skewPct >= 50 ? " bullish" : " bearish");
-  skewEl.classList.toggle("cell-neg", skewPct < 50);
- }
-}
-
-function renderSectorChart(){
- const sorted = [...RAW.sectors].sort((a, b) => (b.avgWeightedSentiment ?? -Infinity) - (a.avgWeightedSentiment ?? -Infinity));
- const ctx = document.getElementById("sectorChart").getContext("2d");
- if(sectorChart) sectorChart.destroy();
- sectorChart = new Chart(ctx, {
-  type: "bar",
-  data: {
-   labels: sorted.map(s => s.sector),
-   datasets: [{
-    label: "Avg. weighted sentiment score",
-    data: sorted.map(s => s.avgWeightedSentiment),
-    backgroundColor: sorted.map(s => (s.avgWeightedSentiment ?? 0) >= 0 ? ndr("green") : ndr("red")),
-    borderRadius: 4,
-   }],
-  },
-  options: {
-   indexAxis: "y",
-   responsive: true,
-   maintainAspectRatio: false,
-   plugins: {
-    legend: { display: false },
-    tooltip: { callbacks: { label: ctx => fmtScore(ctx.parsed.x) + " (n=" + sorted[ctx.dataIndex].companyCount + ")" } },
-   },
-   scales: {
-    x: ndrYScale({ fmt: v => Number(v).toFixed(2) }),
-    y: ndrCategoryScale(),
-   },
-  },
- });
-}
-
-function renderAttentionScatter(){
- const pairs = RAW.attentionScatterPairs || [];
- if(attentionScatter){ attentionScatter.destroy(); attentionScatter = null; }
- if(pairs.length < 20){
-  document.getElementById("attentionMethodTable").innerHTML =
-   '<div class="method-note">Not enough sufficiently covered companies to plot coverage against sentiment.</div>';
-  return;
- }
-
- const pearson = linearRegression(pairs.map(p => p.x), pairs.map(p => p.y));
- const spear = spearmanRegression(pairs.map(p => p.x), pairs.map(p => p.y));
- const xs = pairs.map(p => p.x);
- const xMin = Math.min(...xs), xMax = Math.max(...xs);
- const linePoints = [
-  { x: xMin, y: pearson.intercept + pearson.slope * xMin },
-  { x: xMax, y: pearson.intercept + pearson.slope * xMax },
- ];
-
- const ctx = document.getElementById("attentionScatter").getContext("2d");
- attentionScatter = new Chart(ctx, {
-  type: "scatter",
-  data: {
-   datasets: [
-    { label: "Companies", data: pairs, backgroundColor: ndr("navy"), pointRadius: 2.5, pointHoverRadius: 4, showLine: false },
-    { label: "Regression fit", type: "line", data: linePoints, borderColor: ndr("red"), borderWidth: 1.5, borderDash: [4, 3], pointRadius: 0, fill: false },
-   ],
-  },
-  options: {
-   responsive: true,
-   maintainAspectRatio: false,
-   plugins: {
-    legend: { display: false },
-    tooltip: {
-     callbacks: {
-      label: ctx => ctx.dataset.label === "Companies" ? (ctx.raw.symbol + ": " + ctx.raw.x + " articles, sentiment " + fmtScore(ctx.raw.y)) : null,
-     },
-    },
-   },
-   scales: {
-    x: ndrNumericScale({ title: "Matched articles (attention)" }),
-    y: ndrNumericScale({ title: "Weighted sentiment score" }),
-   },
-  },
- });
-
- function row(label, stats){
-  const sig = stats.p < 0.05;
-  return "<tr>" +
-   "<td>" + label + "</td>" +
-   "<td>" + stats.n + "</td>" +
-   "<td>" + stats.r.toFixed(2) + "</td>" +
-   "<td>" + (stats.r2 * 100).toFixed(1) + "%</td>" +
-   "<td>" + (stats.slope >= 0 ? "+" : "") + stats.slope.toFixed(4) + "</td>" +
-   "<td>" + stats.t.toFixed(2) + "</td>" +
-   '<td class="' + (sig ? "sig" : "") + '">' + (stats.p < 0.001 ? "<0.001" : stats.p.toFixed(3)) + "</td>" +
-  "</tr>";
- }
- document.getElementById("attentionMethodTable").innerHTML =
-  '<table class="method-table">' +
-   "<thead><tr><th>Method</th><th>n</th><th>r</th><th>r&sup2;</th><th>slope</th><th>t</th><th>p</th></tr></thead>" +
-   "<tbody>" + row("Pearson (OLS)", pearson) + row("Spearman (&rho;)", spear) + "</tbody>" +
-  "</table>" +
-  '<div class="method-note">A positive, significant relationship means heavier news coverage runs more bullish. A negative one means heavier coverage skews bearish (for example, controversy or bad-news cycles drawing more articles). A weak or flat one means coverage volume and tone are independent in the current data.</div>';
-}
-
-function renderHistoryChart(){
- const rows = RAW.history || [];
- const ctx = document.getElementById("historyChart").getContext("2d");
- const wrap = ctx.canvas.parentElement;
- wrap.querySelectorAll(".history-empty-msg").forEach(el => el.remove());
- if(historyChart){ historyChart.destroy(); historyChart = null; }
-
- if(rows.length < 2){
-  wrap.insertAdjacentHTML("beforeend",
-   '<div class="history-empty-msg" style="text-align:center; color:var(--muted); padding-top:140px;">' +
-   (rows.length === 0
-    ? "No history yet: check back after next week's run."
-    : "Only one week of history so far. A trend needs several weeks of runs. Check back after next week's run.") +
-   '</div>');
-  return;
- }
-
- historyChart = new Chart(ctx, {
-  type: "line",
-  data: {
-   labels: rows.map(r => r.week),
-   datasets: [{
-    label: "Median weighted sentiment score",
-    data: rows.map(r => r.medianWeightedSentiment),
-    borderColor: ndr("navy"),
-    backgroundColor: "transparent",
-    borderWidth: 2,
-    pointRadius: 1,
-    tension: 0.15,
-   }],
-  },
-  options: {
-   responsive: true,
-   maintainAspectRatio: false,
-   plugins: { legend: { display: false } },
-   scales: {
-    x: ndrXScale(),
-    y: ndrYScale({ fmt: v => Number(v).toFixed(2) }),
-   },
-  },
- });
-}
-
-function renderReturnScatter(){
- const pairs = RAW.returnRegressionPairs || [];
- if(returnScatter){ returnScatter.destroy(); returnScatter = null; }
- if(pairs.length < 20){
-  document.getElementById("returnMethodTable").innerHTML =
-   '<div class="method-note">' + (RAW.hasPriceData
-    ? "Not enough companies with both a weighted sentiment score and price data to test."
-    : "Price data isn't available yet (Relative Strength Leaders/Laggards hasn't refreshed).") + '</div>';
-  return;
- }
-
- const pearson = linearRegression(pairs.map(p => p.x), pairs.map(p => p.y));
- const spear = spearmanRegression(pairs.map(p => p.x), pairs.map(p => p.y));
-
- const xs = pairs.map(p => p.x);
- const xMin = Math.min(...xs), xMax = Math.max(...xs);
- const linePoints = [
-  { x: xMin, y: pearson.intercept + pearson.slope * xMin },
-  { x: xMax, y: pearson.intercept + pearson.slope * xMax },
- ];
-
- const ctx = document.getElementById("returnScatter").getContext("2d");
- returnScatter = new Chart(ctx, {
-  type: "scatter",
-  data: {
-   datasets: [
-    { label: "Companies", data: pairs, backgroundColor: ndr("navy"), pointRadius: 2.5, pointHoverRadius: 4, showLine: false },
-    { label: "Regression fit", type: "line", data: linePoints, borderColor: ndr("red"), borderWidth: 1.5, borderDash: [4, 3], pointRadius: 0, fill: false },
-   ],
-  },
-  options: {
-   responsive: true,
-   maintainAspectRatio: false,
-   plugins: {
-    legend: { display: false },
-    tooltip: {
-     callbacks: {
-      label: ctx => ctx.dataset.label === "Companies" ? (ctx.raw.symbol + ": sentiment " + fmtScore(ctx.raw.x) + ", price " + fmtScore(ctx.raw.y, 1) + "%") : null,
-     },
-    },
-   },
-   scales: {
-    x: ndrNumericScale({ title: "Weighted sentiment score" }),
-    y: ndrNumericScale({ title: "3-month relative price return (%)" }),
-   },
-  },
- });
-
+function methodTableHtml(pearson, spear, unitNote){
  function row(label, stats){
   const sig = stats.p < 0.05;
   return "<tr>" +
@@ -1480,26 +1182,225 @@ function renderReturnScatter(){
    '<td class="' + (sig ? "sig" : "") + '">' + (stats.p < 0.001 ? "<0.001" : stats.p.toFixed(3)) + "</td>" +
   "</tr>";
  }
- document.getElementById("returnMethodTable").innerHTML =
-  '<table class="method-table">' +
-   "<thead><tr><th>Method</th><th>n</th><th>r</th><th>r&sup2;</th><th>slope</th><th>t</th><th>p</th></tr></thead>" +
-   "<tbody>" + row("Pearson (OLS)", pearson) + row("Spearman (&rho;)", spear) + "</tbody>" +
-  "</table>" +
-  '<div class="method-note">A positive, significant relationship means stocks with more bullish recent news went on to outperform over the next 3 months, consistent with Tetlock (2007). A weak or flat one means the sentiment score isn\'t a reliable signal at this horizon.</div>';
+ return '<table class="method-table">' +
+  "<thead><tr><th>Method</th><th>n</th><th>r</th><th>r&sup2;</th><th>slope</th><th>t</th><th>p</th></tr></thead>" +
+  "<tbody>" + row("Pearson (OLS)", pearson) + row("Spearman (&rho;)", spear) + "</tbody>" +
+ "</table>" + (unitNote ? '<div class="method-note">' + unitNote + "</div>" : "");
 }
 
-function renderLeaderTable(rows, tbodyId, fmtKind, valueField){
- const tbody = document.getElementById(tbodyId);
- if(!rows || !rows.length){
-  tbody.innerHTML = '<tr><td colspan="3" style="text-align:center; color:var(--muted); padding:24px;">No qualifying companies.</td></tr>';
+const SECTOR_METRIC_META = {
+ avgSbcIntensity: { label: "SBC intensity", title: "SBC intensity by sector", subhead: "Trailing-12-month SBC as a share of trailing-12-month revenue, averaged across each sector's constituents.", fmt: v => v + "%" },
+ avgSbcToOcf: { label: "SBC / OCF", title: "SBC / operating cash flow by sector", subhead: "Trailing-12-month SBC as a share of trailing-12-month operating cash flow, averaged across each sector's constituents.", fmt: v => v + "%" },
+ avgYoySbcGrowth: { label: "SBC growth", title: "SBC growth by sector", subhead: "Trailing-12-month SBC growth vs. the prior 12 months, averaged across each sector's constituents.", fmt: v => (v >= 0 ? "+" : "") + v + "%" },
+};
+
+let sectorChart = null, dilutionScatter = null, intensityChart = null;
+
+async function init(){
+ try{
+  const res = await fetch(DATA_URL, { cache: "no-store" });
+  const data = await res.json();
+  if(!res.ok || data.error) throw new Error(data.error || "failed to load");
+
+  RAW = data;
+  document.getElementById("updated").textContent =
+   "As of " + new Date(data.generated_at_utc).toLocaleDateString("en-US", { month: "2-digit", day: "2-digit", year: "numeric" }) + " · " + data.loadedCount + "/" + data.universeSize + " constituents covered";
+
+  renderStats(data);
+  renderIntensityChart(data);
+  renderTrendBreakTable(data);
+  renderDilutionScatter(data);
+  renderSectorChart();
+  renderLeaderboard("heaviestStillDilutingTable", data.heaviestStillDiluting, "diluting");
+  renderLeaderboard("topIntensityTable", data.topIntensity, "intensity");
+  renderLeaderboard("topSbcToOcfTable", data.topSbcToOcf, "ocf");
+  renderTable();
+
+ }catch(e){
+  showError("Couldn't load SBC dilution data (" + e.message + "). The /api/sbc-dilution function may not have run yet.");
+ }
+}
+
+function renderStats(data){
+ document.getElementById("statTotalSbc").textContent = fmtUsd(data.market.totalTtmSbc);
+ document.getElementById("statIntensity").textContent = fmtPlainPct(data.market.avgSbcIntensity, 2);
+ document.getElementById("statSbcToOcf").textContent = fmtPlainPct(data.market.avgSbcToOcf, 2);
+ const growthEl = document.getElementById("statMedianGrowth");
+ growthEl.textContent = fmtPct(data.market.medianYoySbcGrowth, 1);
+ growthEl.classList.toggle("cell-neg", (data.market.medianYoySbcGrowth || 0) < 0);
+}
+
+function renderIntensityChart(data){
+ const ctx = document.getElementById("intensityChart").getContext("2d");
+ if(intensityChart) intensityChart.destroy();
+
+ const quarters = [...new Set([...(data.cohortSeries || []), ...(data.restSeries || [])].map(r => r.q))].sort();
+ const cohortByQ = new Map((data.cohortSeries || []).map(r => [r.q, r.sbcIntensity]));
+ const restByQ = new Map((data.restSeries || []).map(r => [r.q, r.sbcIntensity]));
+
+ intensityChart = new Chart(ctx, {
+  type: "line",
+  data: {
+   labels: quarters,
+   datasets: [
+    { label: "Info Tech + Communication Services", data: quarters.map(q => cohortByQ.has(q) ? cohortByQ.get(q) : null), borderColor: ndr("red"), backgroundColor: ndr("red"), borderWidth: 2, pointRadius: 2, tension: 0.15, spanGaps: true },
+    { label: "Rest of S&P 500", data: quarters.map(q => restByQ.has(q) ? restByQ.get(q) : null), borderColor: ndr("navy"), backgroundColor: ndr("navy"), borderWidth: 2, pointRadius: 2, tension: 0.15, spanGaps: true },
+   ],
+  },
+  options: {
+   responsive: true,
+   maintainAspectRatio: false,
+   plugins: {
+    legend: { display: true, position: "top", align: "start", labels: { boxWidth: 22, boxHeight: 2, color: ndr("axis"), font: { size: 11 } } },
+    tooltip: { callbacks: { label: ctx => ctx.dataset.label + ": " + fmtPlainPct(ctx.parsed.y) } },
+   },
+   scales: {
+    x: ndrXScale(),
+    y: ndrYScale({ title: "SBC / revenue (%)", fmt: v => v + "%" }),
+   },
+  },
+ });
+}
+
+function renderTrendBreakTable(data){
+ const rows = [
+  { label: "Info Tech + Communication Services", brk: data.cohortTrendBreak },
+  { label: "Rest of S&P 500", brk: data.restTrendBreak },
+  { label: "Full index", brk: data.marketTrendBreak },
+ ].filter(r => r.brk);
+
+ if(!rows.length){
+  document.getElementById("trendBreakTable").innerHTML = '<div class="method-note">Not enough quarterly history yet for a structural-break test.</div>';
   return;
  }
- const fmt = fmtKind === "count" ? fmtCount : fmtScore;
- tbody.innerHTML = rows.map(r => `<tr>
-  <td><span class="sector-name">${r.symbol}</span></td>
-  <td><span class="sector-ticker">${r.sector || "n/a"}</span></td>
-  <td>${fmt(r[valueField])}</td>
- </tr>`).join("");
+
+ const fmtHalf = (h) => "slope " + (h.slope >= 0 ? "+" : "") + h.slope.toFixed(3) + "ppt/q, r=" + h.r.toFixed(2) + ", p=" + (h.p < 0.001 ? "<0.001" : h.p.toFixed(3)) + " (n=" + h.n + ")";
+
+ const table = '<table class="method-table">' +
+  "<thead><tr><th>Group</th><th>Earlier half</th><th>Recent half</th><th>Chow test (slope break)</th></tr></thead>" +
+  "<tbody>" + rows.map(r => {
+   const sig = r.brk.chow.p < 0.05;
+   return "<tr>" +
+    "<td>" + r.label + "</td>" +
+    "<td>" + fmtHalf(r.brk.pre) + "</td>" +
+    "<td>" + fmtHalf(r.brk.post) + "</td>" +
+    '<td class="' + (sig ? "sig" : "") + '">F=' + r.brk.chow.F.toFixed(2) + ", p=" + (r.brk.chow.p < 0.001 ? "<0.001" : r.brk.chow.p.toFixed(3)) + "</td>" +
+   "</tr>";
+  }).join("") + "</tbody></table>" +
+  '<div class="method-note">Earlier half: ' + rows[0].brk.preQuarters[0] + " to " + rows[0].brk.preQuarters[1] + ". Recent half: " + rows[0].brk.postQuarters[0] + " to " + rows[0].brk.postQuarters[1] + ". A significant (p&lt;0.05) Chow test means the two halves’ trend slopes are formally different, not just visually different.</div>";
+
+ document.getElementById("trendBreakTable").innerHTML = table;
+}
+
+function renderDilutionScatter(data){
+ const pairs = data.scatter || [];
+ const ctx = document.getElementById("dilutionScatter").getContext("2d");
+ if(dilutionScatter) dilutionScatter.destroy();
+ if(!data.dilutionTest || pairs.length < 8){
+  document.getElementById("dilutionMethodTable").innerHTML = '<div class="method-note">Not enough constituents with a matching Share Count Trends figure loaded yet for a regression.</div>';
+  dilutionScatter = new Chart(ctx, { type: "scatter", data: { datasets: [] }, options: { responsive: true, maintainAspectRatio: false } });
+  return;
+ }
+
+ const cohortPairs = pairs.filter(p => p.isHighSbcSector);
+ const restPairs = pairs.filter(p => !p.isHighSbcSector);
+
+ const allX = pairs.map(p => p.sbcIntensity), allY = pairs.map(p => p.shareCountChange1Y);
+ const xMin = Math.min(...allX), xMax = Math.max(...allX);
+ const reg = linearRegression(allX, allY);
+ const fitPoints = [{ x: xMin, y: reg.intercept + reg.slope * xMin }, { x: xMax, y: reg.intercept + reg.slope * xMax }];
+
+ dilutionScatter = new Chart(ctx, {
+  type: "scatter",
+  data: {
+   datasets: [
+    { label: "Rest of S&P 500", data: restPairs.map(p => ({ x: p.sbcIntensity, y: p.shareCountChange1Y, symbol: p.symbol, sector: p.sector })), backgroundColor: ndr("navy"), pointRadius: 3, showLine: false },
+    { label: "Info Tech + Communication Services", data: cohortPairs.map(p => ({ x: p.sbcIntensity, y: p.shareCountChange1Y, symbol: p.symbol, sector: p.sector })), backgroundColor: ndr("red"), pointRadius: 4.5, pointStyle: "triangle", showLine: false },
+    { label: "Regression fit", type: "line", data: fitPoints, borderColor: ndr("gold"), borderWidth: 1.5, borderDash: [4, 3], pointRadius: 0, fill: false },
+   ],
+  },
+  options: {
+   responsive: true,
+   maintainAspectRatio: false,
+   plugins: {
+    legend: { display: true, position: "top", align: "start", labels: { boxWidth: 22, boxHeight: 2, color: ndr("axis"), font: { size: 11 } } },
+    tooltip: {
+     callbacks: {
+      label: ctx => ctx.dataset.label === "Regression fit" ? null : (ctx.raw.symbol + " (" + ctx.raw.sector + "): SBC intensity " + fmtPlainPct(ctx.raw.x, 2) + ", share count change (1Y) " + fmtPct(ctx.raw.y, 1)),
+     },
+    },
+   },
+   scales: {
+    x: { title: { display: true, text: "TTM SBC intensity (%)", color: ndr("axis-soft"), font: { size: 10 } }, ticks: { color: ndr("axis"), font: { size: 10 } }, grid: { color: ndr("grid") } },
+    y: ndrYScale({ title: "Share count change, 1Y (%)", fmt: v => v + "%" }),
+   },
+  },
+ });
+
+ document.getElementById("dilutionMethodTable").innerHTML = methodTableHtml(data.dilutionTest.pearson, data.dilutionTest.spearman,
+  "Slope is percentage points of trailing 1-year share-count change per 1 percentage point of SBC intensity. Triangles are Information Technology and Communication Services; the regression line is fit across the full index, both groups included.");
+}
+
+function renderSectorChart(){
+ const meta = SECTOR_METRIC_META[SECTOR_METRIC];
+ document.getElementById("sectorChartTitle").textContent = meta.title;
+ document.getElementById("sectorChartSubhead").textContent = meta.subhead;
+
+ const sectors = [...RAW.sectors].sort((a, b) => (b[SECTOR_METRIC] || 0) - (a[SECTOR_METRIC] || 0));
+ const ctx = document.getElementById("sectorChart").getContext("2d");
+ if(sectorChart) sectorChart.destroy();
+ sectorChart = new Chart(ctx, {
+  type: "bar",
+  data: {
+   labels: sectors.map(s => s.sector),
+   datasets: [{ label: meta.label, data: sectors.map(s => s[SECTOR_METRIC]), backgroundColor: ndr("navy") }],
+  },
+  options: {
+   responsive: true,
+   maintainAspectRatio: false,
+   indexAxis: "y",
+   plugins: {
+    legend: { display: false },
+    tooltip: { callbacks: { label: ctx => {
+     const s = sectors[ctx.dataIndex];
+     return [meta.label + ": " + meta.fmt(s[SECTOR_METRIC]), "n=" + s.count];
+    } } },
+   },
+   scales: {
+    x: { ...ndrYScale({ fmt: meta.fmt }) },
+    y: { ticks: { color: ndr("axis"), font: { size: 11 } }, grid: { color: "rgba(0,0,0,0)", borderColor: ndr("axis") } },
+   },
+  },
+ });
+}
+
+document.querySelectorAll("#sectorMetricToggle button").forEach(btn => {
+ btn.addEventListener("click", () => {
+  SECTOR_METRIC = btn.dataset.metric;
+  document.querySelectorAll("#sectorMetricToggle button").forEach(b => b.classList.toggle("active", b === btn));
+  renderSectorChart();
+ });
+});
+
+function sbcTag(isHighSbcSector){
+ return isHighSbcSector ? '<span class="sbc-tag">IT/CS</span>' : "";
+}
+
+function renderLeaderboard(elId, rows, mode){
+ const el = document.getElementById(elId);
+ if(!rows || !rows.length){
+  el.innerHTML = '<tr><td colspan="4" style="text-align:center; color:var(--muted); padding:24px;">No qualifying companies.</td></tr>';
+  return;
+ }
+ el.innerHTML = rows.map(r => {
+  if(mode === "diluting"){
+   return "<tr><td>" + r.symbol + sbcTag(r.isHighSbcSector) + "</td><td>" + r.sector + "</td><td>" + fmtPlainPct(r.sbcIntensity) + "</td><td>" + fmtPct(r.shareCountChange1Y, 1) + "</td></tr>";
+  }
+  if(mode === "intensity"){
+   return "<tr><td>" + r.symbol + sbcTag(r.isHighSbcSector) + "</td><td>" + r.sector + "</td><td>" + fmtPlainPct(r.sbcIntensity) + "</td><td>" + fmtUsd(r.ttmSbc) + "</td></tr>";
+  }
+  return "<tr><td>" + r.symbol + sbcTag(r.isHighSbcSector) + "</td><td>" + r.sector + "</td><td>" + fmtPlainPct(r.sbcToOcf) + "</td><td>" + fmtUsd(r.ttmSbc) + "</td></tr>";
+ }).join("");
 }
 
 function sortBy(key){
@@ -1507,12 +1408,13 @@ function sortBy(key){
   SORT_DIR = -SORT_DIR;
  }else{
   SORT_KEY = key;
-  SORT_DIR = -1;
+  SORT_DIR = key === "symbol" || key === "sector" ? 1 : -1;
  }
  renderTable();
 }
 
 function renderTable(){
+ if(!RAW) return;
  const rows = [...RAW.companies].sort((a, b) => {
   const av = a[SORT_KEY], bv = b[SORT_KEY];
   if(av === null || av === undefined) return 1;
@@ -1522,15 +1424,17 @@ function renderTable(){
  });
 
  const tbody = document.getElementById("tableBody");
- tbody.innerHTML = rows.map(r => `<tr>
-  <td><span class="sector-name">${r.symbol}</span></td>
-  <td><span class="sector-ticker">${r.sector || "n/a"}</span></td>
-  <td>${!r.hasCoverage ? '<span class="cell-na" title="Fewer than ' + (RAW.minArticlesForSentiment || 5) + ' matched articles">insufficient coverage</span>' : fmtScore(r.weightedSentiment)}</td>
-  <td>${fmtCount(r.articleCount)}</td>
-  <td>${fmtCount(r.bullishCount)}</td>
-  <td>${fmtCount(r.bearishCount)}</td>
-  <td>${r.dominantLabel || '<span class="cell-na">: </span>'}</td>
- </tr>`).join("");
+ tbody.innerHTML = rows.map(r => {
+  return `<tr>
+   <td><span class="sector-name">${r.symbol}</span>${sbcTag(r.isHighSbcSector)}</td>
+   <td><span class="sector-ticker">${r.sector || "n/a"}</span></td>
+   <td>${fmtUsd(r.ttmSbc)}</td>
+   <td>${fmtPlainPct(r.sbcIntensity)}</td>
+   <td>${fmtPlainPct(r.sbcToOcf)}</td>
+   <td>${fmtPct(r.yoySbcGrowth, 1)}</td>
+   <td>${fmtPct(r.shareCountChange1Y, 1)}</td>
+  </tr>`;
+ }).join("");
 
  document.querySelectorAll("#stockTable thead th").forEach(th => {
   const key = th.dataset.key;
