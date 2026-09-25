@@ -21,7 +21,7 @@ small{opacity:.7}
 </head>
 <body>
 <h1>Data Schedule</h1>
-<p>(New York is UTC−4 until November 1, then UTC−5.) This page is regenerated from the site's configuration on every deploy (last updated 09-22-2026).</p>
+<p>(New York is UTC−4 until November 1, then UTC−5.) This page is regenerated from the site's configuration on every deploy (last updated 09-23-2026).</p>
 <div class="w">
 <table>
 <thead><tr><th>Page</th><th>Job</th><th>When</th><th>Pulled from</th><th>Notes</th></tr></thead>
@@ -52,6 +52,7 @@ small{opacity:.7}
 <tr><td><a href="/post-earnings-drift.html">Post-Earnings Announcement Drift | Michael J. Stevenson</a></td><td class="m">post-earnings-drift</td><td>Saturday 11:30 UTC</td><td>Yahoo Finance</td><td>Daily prices for every S&amp;P 500 stock, lined up with their earnings reports. Uses the earnings-surprise data, which is a manual snapshot.<br>Reads: surprise</td></tr>
 <tr><td><a href="/dividend-growth-screener.html">Dividend Growth Screener | Michael J. Stevenson</a></td><td class="m">dividend-growth</td><td>Saturday 12:00 UTC</td><td>Yahoo Finance</td><td>Dividend history for every S&amp;P 500 stock. Only companies with three or more full years of dividends are included.</td></tr>
 <tr><td><a href="/stock-split-tracker.html">Stock Split Tracker | Michael J. Stevenson</a></td><td class="m">splits</td><td>Saturday 12:20 UTC</td><td>Alpha Vantage: SPLITS<br>Yahoo Finance</td><td>Stock split history for every S&amp;P 500 stock, plus prices around recent splits.</td></tr>
+<tr><td><a href="/analyst-coverage.html">Analyst Coverage &amp; the Neglected Firm Effect</a></td><td class="m">analyst-coverage</td><td>Saturday 12:40 UTC</td><td>Alpha Vantage: EARNINGS_ESTIMATES</td><td>Reads: relative-strength</td></tr>
 <tr><td><a href="/relative-strength-leaders.html">Relative Strength Leaders/Laggards | Michael J. Stevenson</a></td><td class="m">relative-strength</td><td>Saturday 13:10 UTC</td><td>Yahoo Finance</td><td>Daily prices for every S&amp;P 500 stock and SPY, for 1-month and 3-month relative strength.</td></tr>
 <tr><td><a href="/quality-lowvol-factors.html">Quality &amp; Low-Volatility Factor Screen | Michael J. Stevenson</a></td><td class="m">quality-lowvol</td><td>Saturday 13:40 UTC</td><td>Yahoo Finance</td><td>Daily prices for every S&amp;P 500 stock, to measure volatility. Needs margin-leverage and relative-strength to have run first.<br>Reads: margin-leverage, relative-strength</td></tr>
 <tr><td><a href="/small-cap-liquidity.html">Small-Cap Liquidity &amp; Volume Trends | Michael J. Stevenson</a></td><td class="m">smallcap-liquidity</td><td>Saturday 14:20 UTC</td><td>Yahoo Finance</td><td>Daily prices and volume for about 200 large and small stocks.</td></tr>
@@ -72,6 +73,7 @@ small{opacity:.7}
 <tr><td><a href="/fcf-yield.html">Free Cash Flow Yield &amp; Earnings Quality | Michael J. Stevenson</a></td><td class="m">fcf-yield</td><td>Manual: run by hand</td><td>Alpha Vantage: CASH_FLOW</td><td>Quarterly cash flow for every S&amp;P 500 stock.</td></tr>
 <tr><td><a href="/ipo-pipeline.html">IPO Pipeline &amp; Aftermarket Tracker | Michael J. Stevenson</a></td><td class="m">ipo-pipeline</td><td>Manual: run by hand</td><td>Alpha Vantage: IPO_CALENDAR, TIME_SERIES_DAILY_ADJUSTED</td><td>Upcoming IPOs, and prices for recent ones.</td></tr>
 <tr><td><a href="/margin-leverage.html">Margin &amp; Leverage Cycle | Michael J. Stevenson</a></td><td class="m">margin-leverage</td><td>Manual: run by hand</td><td>Alpha Vantage: BALANCE_SHEET, FEDERAL_FUNDS_RATE, INCOME_STATEMENT</td><td>Income statements and balance sheets for every S&amp;P 500 stock, plus the fed funds rate. Two runs finish one cycle: the sweep is too long for one 15-minute run, so each run saves progress and the next resumes.</td></tr>
+<tr><td><a href="/net-cash-position.html">Net Cash Position &amp; the Value of Cash</a></td><td class="m">net-cash-position</td><td>Manual: run by hand</td><td>Alpha Vantage: BALANCE_SHEET</td><td>Reads: relative-strength, roic-wacc</td></tr>
 <tr><td><a href="/news-sentiment.html">News Sentiment Momentum | Michael J. Stevenson</a></td><td class="m">news-sentiment</td><td>Manual: run by hand</td><td>Alpha Vantage: NEWS_SENTIMENT</td><td>News articles and sentiment scores for every S&amp;P 500 stock.<br>Reads: relative-strength</td></tr>
 <tr><td><a href="/options-positioning.html">Options Positioning | Michael J. Stevenson</a></td><td class="m">options-positioning</td><td>Manual: run by hand</td><td>Alpha Vantage: HISTORICAL_PUT_CALL_RATIO</td><td>Put/call ratio for every S&amp;P 500 stock, joined against the relative-strength history for the momentum test.<br>Reads: relative-strength</td></tr>
 <tr><td><a href="/rd-intensity.html">R&amp;D Intensity</a></td><td class="m">rd-intensity</td><td>Manual: run by hand</td><td>Alpha Vantage: INCOME_STATEMENT</td><td>Reads: relative-strength</td></tr>

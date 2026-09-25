@@ -225,6 +225,16 @@
   status = 200
 
 [[redirects]]
+  from = "/api/analyst-coverage"
+  to = "/.netlify/functions/analyst-coverage"
+  status = 200
+
+[[redirects]]
+  from = "/api/net-cash-position"
+  to = "/.netlify/functions/net-cash-position"
+  status = 200
+
+[[redirects]]
   from = "/api/congress-trades"
   to = "/.netlify/functions/congress-trades"
   status = 200
@@ -494,6 +504,22 @@
   # last 5 years.
   schedule = "20 12 * * 6"
 
+[functions."scheduled-analyst-coverage-background"]
+  # Weekly, Saturday 12:40 UTC — after scheduled-splits-background's own
+  # two-stage sweep (starts 12:20; a Background Function's ~15-minute
+  # ceiling means it can't still be running past ~12:35), and comfortably
+  # before scheduled-relative-strength-background (13:10 UTC), whose own
+  # latest.json this job optionally reads for 3-month relative return —
+  # a stale read (last week's, if this job somehow ran before that one)
+  # degrades gracefully rather than blocking, so there's no hard ordering
+  # dependency, just scheduling courtesy. ~503 sequential EARNINGS_ESTIMATES
+  # calls at 1050ms spacing plus a retry pass, same cadence as
+  # scheduled-revisions-background and scheduled-dispersion-background,
+  # which sweep this same endpoint for different fields — see this
+  # function's own file for why analyst-coverage needs its own third sweep
+  # rather than reading either of those jobs' blobs.
+  schedule = "40 12 * * 6"
+
 [functions."scheduled-pe-divergence-background"]
   # One-time snapshot (2026-09-16) — no schedule, same reasoning as
   # scheduled-surprise-background above. Kept for reference, the original
@@ -669,6 +695,17 @@
   # two-statement sweeps. Optionally reads scheduled-relative-strength-
   # background's own published snapshot for the R&D-vs-relative-return
   # test; works fine without it (the test just doesn't render).
+
+[functions."scheduled-net-cash-position-background"]
+  # One-time snapshot, no schedule — same convention as scheduled-roic-
+  # wacc-background above. A single-endpoint BALANCE_SHEET sweep, latest
+  # quarter only (~503 calls, no checkpoint needed, lighter than scheduled-
+  # roic-wacc-background's and scheduled-cash-conversion-cycle-background's
+  # two-statement sweeps and even scheduled-rd-intensity-background's own
+  # 8-quarter single-endpoint pull). Optionally reads scheduled-relative-
+  # strength-background's and scheduled-roic-wacc-background's own
+  # published snapshots for its two cash-vs-value tests; works fine without
+  # either (those tests just don't render).
 
 [functions."scheduled-analyst-price-target-background"]
   # One-time snapshot (2026-09-16) — no schedule, same reasoning as
