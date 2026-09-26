@@ -636,6 +636,19 @@ tbody td:first-child{
  border-color:#e9cf8a;
  color:#8a6a1f;
 }
+.full-list-details{ margin-top:4px; }
+.full-list-summary{
+  cursor:pointer;
+  font-weight:600;
+  padding:10px 0;
+  color:var(--ink);
+  list-style:none;
+  user-select:none;
+}
+.full-list-summary::-webkit-details-marker{ display:none; }
+.full-list-summary::before{ content:"▸ "; display:inline-block; width:1em; }
+.full-list-details[open] .full-list-summary::before{ content:"▾ "; }
+.full-list-details table{ margin-top:8px; }
 </style>
 </head>
 <body>
@@ -935,6 +948,8 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <h2>All companies with buyback data on file</h2>
 <div class="chart-subhead">Trailing-12-month spend, intensity, dollar yield, net share-count change and dilution offset for the full S&amp;P 500.</div>
 </div>
+<details class="full-list-details">
+<summary class="full-list-summary">Show full list</summary>
 <table id="stockTable">
 <thead>
 <tr>
@@ -951,6 +966,7 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <tr><td colspan="7" style="text-align:center; color:var(--muted); padding:30px;">Loading buyback data&hellip;</td></tr>
 </tbody>
 </table>
+</details>
 <div class="table-footnote">"Net Yield" is the trailing-12-month figure from Share Count Trends (the negative of the % change in shares outstanding). "Offset" is blank where the dollar yield is under 0.1% of market cap, because the ratio isn't meaningful on a denominator that small.</div>
 </div>
 

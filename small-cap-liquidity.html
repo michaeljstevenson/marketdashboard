@@ -623,6 +623,19 @@ tbody td:nth-child(2){
  border-color:#e9cf8a;
  color:#8a6a1f;
 }
+.full-list-details{ margin-top:4px; }
+.full-list-summary{
+  cursor:pointer;
+  font-weight:600;
+  padding:10px 0;
+  color:var(--ink);
+  list-style:none;
+  user-select:none;
+}
+.full-list-summary::-webkit-details-marker{ display:none; }
+.full-list-summary::before{ content:"▸ "; display:inline-block; width:1em; }
+.full-list-details[open] .full-list-summary::before{ content:"▾ "; }
+.full-list-details table{ margin-top:8px; }
 </style>
 </head>
 <body>
@@ -881,6 +894,8 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <h2>Full constituent table</h2>
 <div class="chart-subhead">Latest 21-day rolling values, both cohorts combined. Click a column to sort.</div>
 </div>
+<details class="full-list-details">
+<summary class="full-list-summary">Show full list</summary>
 <table id="tickerTable">
 <thead>
 <tr>
@@ -898,6 +913,7 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <tr><td colspan="8" style="text-align:center; color:var(--muted); padding:24px;">Loading&hellip;</td></tr>
 </tbody>
 </table>
+</details>
 <div class="table-footnote">All figures are 21-trading-day rolling averages as of the latest run. Amihud ratio is illiquidity (price impact) per $1M of dollar volume traded, so higher means less liquid. C-S Spread is the Corwin-Schultz estimated bid-ask spread, as a percentage of price.</div>
 </div>
 

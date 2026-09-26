@@ -656,6 +656,19 @@ tbody td:first-child{
  border-color:#e9cf8a;
  color:#8a6a1f;
 }
+.full-list-details{ margin-top:4px; }
+.full-list-summary{
+  cursor:pointer;
+  font-weight:600;
+  padding:10px 0;
+  color:var(--ink);
+  list-style:none;
+  user-select:none;
+}
+.full-list-summary::-webkit-details-marker{ display:none; }
+.full-list-summary::before{ content:"▸ "; display:inline-block; width:1em; }
+.full-list-details[open] .full-list-summary::before{ content:"▾ "; }
+.full-list-details table{ margin-top:8px; }
 </style>
 </head>
 <body>
@@ -953,6 +966,8 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <h2>All companies with capex and revenue history on file</h2>
 <div class="chart-subhead">Trailing-12-month capex, capex intensity, and capex/revenue growth for the full S&amp;P 500. The AI tag marks the six-name hyperscaler/infrastructure cohort.</div>
 </div>
+<details class="full-list-details">
+<summary class="full-list-summary">Show full list</summary>
 <table id="stockTable">
 <thead>
 <tr>
@@ -968,6 +983,7 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <tr><td colspan="6" style="text-align:center; color:var(--muted); padding:30px;">Loading capex data&hellip;</td></tr>
 </tbody>
 </table>
+</details>
 <div class="table-footnote">"Capex Growth" and "Revenue Growth" are trailing-12-month vs. the prior 12 months, and are blank for companies without 8 consecutive quarters of matched capex/revenue history.</div>
 </div>
 
