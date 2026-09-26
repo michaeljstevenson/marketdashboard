@@ -10,7 +10,6 @@
 </script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom@2"></script>
-<script src="date-format.js"></script>
 <script>
 // FRED-style zoom: drag horizontally on any chart to zoom into that range,
 // double-click to reset. Applied via Chart.defaults so every chart on the
@@ -85,7 +84,7 @@ document.addEventListener("DOMContentLoaded", function(){
   if(fn) fn.call(document);
  }
  function currentFsEl(){
-  return document.fullscreenElement || document.webkitFullscreenElement || document.mozFullscreenElement || document.msFullscreenElement;
+  return document.fullscreenElement || document.webkitFullscreenElement || document.mozFullScreenElement || document.msFullscreenElement;
  }
  function resolveCard(canvas){
   return canvas.closest(".chart-box, .scatter-box, .herd-cell, .modal-chart")
@@ -153,7 +152,7 @@ document.addEventListener("DOMContentLoaded", function(){
 </script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Earnings Growth vs. Price Performance | Michael J. Stevenson</title>
+<title>Altman Z-Score — Michael J. Stevenson</title>
 
 <style>
 
@@ -176,7 +175,7 @@ document.addEventListener("DOMContentLoaded", function(){
 
   /* NDR-style chart palette. Deliberately the SAME in light and dark —
      these charts keep a constant warm-paper look as a homage to the Ned
-     Davis Research print charts that inspired concentration.html. JS reads
+     Davis Research print charts that inspired /concentration. JS reads
      them via getComputedStyle (per the site convention) rather than
      hardcoding. */
   --ndr-plot:#f5f1e6;
@@ -284,6 +283,7 @@ h1{
  border:1px solid var(--hair);
  border-radius:10px;
  padding:20px;
+ min-width:0;
 }
 
 .stat-label{
@@ -348,12 +348,32 @@ h1{
 }
 
 /* The warm-paper plot panel behind each canvas — the NDR homage
-   (matches /concentration.html). */
+   (matches /concentration). */
 .ndr-panel{
  background:var(--ndr-plot);
  border:1px solid var(--ndr-grid);
  border-radius:8px;
  padding:14px 14px 10px;
+}
+
+/* Two charts / method-tables side by side, same breakpoint as table-grid */
+.chart-grid{
+ display:grid;
+ grid-template-columns:1fr 1fr;
+ gap:16px;
+ margin-bottom:30px;
+}
+
+.chart-grid .chart-box{
+ margin-bottom:0;
+ min-width:0; /* grid items default to min-width:auto (their content's min-content
+                 size), which a wide method table would otherwise force past this
+                 column's track width — same "grid blowout" the site-wide
+                 table{min-width:600px} rule creates if left unchecked here */
+}
+
+@media (max-width:900px){
+ .chart-grid{ grid-template-columns:1fr; }
 }
 
 /* TABLE */
@@ -377,7 +397,13 @@ h1{
  margin-bottom:30px;
 }
 
-.table-grid .table-box{ margin-bottom:0; }
+.table-grid .table-box{
+ margin-bottom:0;
+ min-width:0; /* grid items default to min-width:auto (their content's min-content size) —
+                 the site-wide table{min-width:600px} rule would otherwise force this
+                 column's track past the mobile viewport even though .table-box already
+                 scrolls its own overflow internally */
+}
 
 .table-box-header{
  padding:18px 20px 4px;
@@ -457,7 +483,11 @@ tbody td:nth-child(2){
 .cell-neg{ color:var(--ink); }
 .cell-na{ color:var(--muted); }
 
-/* SCATTER / METHOD TABLE (mirrors /factor-analysis) */
+.zone-safe{ color:var(--ndr-green, #4f6f3f); }
+.zone-grey{ color:var(--greed); }
+.zone-distress{ color:var(--fear); }
+
+/* SCATTER / METHOD TABLE (mirrors /factor-analysis, /roic-wacc) */
 
 .scatter-canvas-wrap{
  height:300px;
@@ -467,10 +497,17 @@ tbody td:nth-child(2){
 
 .method-table{
  width:100%;
+ min-width:0; /* overrides the site-wide table{min-width:600px} rule below — two of these
+                 side by side in .chart-grid would otherwise force the whole page wider
+                 than its container even though a 7-column method table never needs 600px */
  border-collapse:collapse;
  font-family:var(--mono);
  font-size:11px;
  margin-top:8px;
+}
+
+#zBetaMethodTable, #zRel3mMethodTable{
+ overflow-x:auto;
 }
 
 .method-table th{
@@ -509,6 +546,26 @@ tbody td:nth-child(2){
  color:var(--muted);
  margin-top:8px;
  font-style:italic;
+}
+
+/* SECTOR LEGEND (scatter / spaghetti charts) */
+
+.sector-legend{
+ display:flex;
+ flex-wrap:wrap;
+ gap:10px 16px;
+ margin-top:14px;
+ font-size:11px;
+ color:var(--muted);
+}
+
+.sector-legend .dot{
+ display:inline-block;
+ width:8px;
+ height:8px;
+ border-radius:50%;
+ margin-right:5px;
+ vertical-align:middle;
 }
 
 /* EXPLAINER */
@@ -659,7 +716,7 @@ tbody td:nth-child(2){
 <a href="/earnings-surprise.html">Earnings Surprise History</a>
 <a href="/post-earnings-drift.html">Post-Earnings Announcement Drift</a>
 <a href="/earnings-call-sentiment.html">Earnings Call Sentiment</a>
-<a href="/earnings-growth-divergence.html" class="active">Earnings Growth vs. Price Performance</a>
+<a href="/earnings-growth-divergence.html">Earnings Growth vs. Price Performance</a>
 </div>
 <div class="mcol"><h4>Fundamentals &amp; Quality</h4>
 <a href="/fcf-yield.html">Free Cash Flow Yield</a>
@@ -668,7 +725,7 @@ tbody td:nth-child(2){
 <a href="/cash-conversion-cycle.html">Cash Conversion Cycle</a>
 <a href="/rd-intensity.html">R&amp;D Intensity</a>
 <a href="/ai-capex-tracker.html">AI Capex Tracker</a>
-<a href="/altman-z-score.html">Altman Z-Score</a>
+<a href="/altman-z-score.html" class="active">Altman Z-Score</a>
 <a href="/magic-formula.html">Magic Formula Screen</a>
 </div>
 </div></div>
@@ -737,7 +794,7 @@ tbody td:nth-child(2){
 </div></div>
 </div>
 </div>
-<button class="theme-toggle" id="themeToggle" type="button" aria-label="Toggle light/dark mode" title="Toggle light/dark mode">&#9789;</button>
+<button aria-label="Toggle light/dark mode" class="theme-toggle" id="themeToggle" title="Toggle light/dark mode" type="button">☽</button>
 </nav>
 <script>
 // Class-driven (not pure :hover) nav dropdowns: pure CSS :hover drops the
@@ -781,40 +838,40 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 
 <div class="header">
 <div>
-<h1>Earnings Growth vs. Price Performance</h1>
-<div class="subtitle">Where has the market already priced in a company's earnings growth, and where hasn't it? Trailing year-over-year EPS growth vs. 3-month price performance relative to SPY, across the S&amp;P 500.</div>
+<h1>Altman Z-Score</h1>
+<div class="subtitle">The classic Altman (1968) bankruptcy/financial-distress screen, applied across the full S&amp;P 500 — a single number built from five balance-sheet and income-statement ratios that has held up for over half a century as a rough gauge of solvency risk.</div>
 </div>
 <div class="updated" id="updated">Loading...</div>
 </div>
 
 <div class="stat-grid">
 <div class="stat-card">
-<div class="stat-label">Median YoY EPS Growth</div>
-<div class="stat-value" id="statMedianEps">…</div>
-<div class="stat-note" id="statMedianEpsNote">Full universe</div>
+<div class="stat-label">Companies Scored</div>
+<div class="stat-value" id="statCompanies" style="font-size:20px;">—</div>
+<div class="stat-note" id="statCompaniesNote">Of full S&amp;P 500, ex-Financials/Real Estate</div>
 </div>
 <div class="stat-card">
-<div class="stat-label">Median 3M Relative Return</div>
-<div class="stat-value" id="statMedianPrice">…</div>
-<div class="stat-note" id="statMedianPriceNote">vs. SPY, full universe</div>
+<div class="stat-label">Median Z-Score</div>
+<div class="stat-value" id="statMedianZ">—</div>
+<div class="stat-note">Market-wide, latest fiscal year</div>
 </div>
 <div class="stat-card">
-<div class="stat-label">Growth Ahead of Price</div>
-<div class="stat-value" id="statGrowthAhead" style="font-size:20px;">…</div>
-<div class="stat-note" id="statGrowthAheadNote">Strongest earnings growth, weakest relative price</div>
+<div class="stat-label">Distress Zone</div>
+<div class="stat-value" id="statDistressPct">—</div>
+<div class="stat-note">Z &lt; 1.81 — share of companies scored</div>
 </div>
 <div class="stat-card">
-<div class="stat-label">Price Ahead of Growth</div>
-<div class="stat-value" id="statPriceAhead" style="font-size:20px;">…</div>
-<div class="stat-note" id="statPriceAheadNote">Strongest relative price, weakest earnings growth</div>
+<div class="stat-label">Safe Zone</div>
+<div class="stat-value" id="statSafePct">—</div>
+<div class="stat-note">Z &gt; 2.99 — share of companies scored</div>
 </div>
 </div>
 
 <div class="chart-box">
 <div class="chart-box-header">
 <div>
-<h2>Median YoY EPS growth vs. median 3-month relative return, by sector</h2>
-<div class="chart-subhead">Two bars per sector. Do they broadly agree, or diverge?</div>
+<h2>Median Z-Score by sector</h2>
+<div class="chart-subhead">Bar color follows the zone the sector's median score falls into — green above 2.99 (Safe), amber 1.81&ndash;2.99 (Grey Zone), red below 1.81 (Distress)</div>
 </div>
 </div>
 <div class="ndr-panel">
@@ -827,89 +884,139 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <div class="chart-box">
 <div class="chart-box-header">
 <div>
-<h2>Does 3-month relative price performance track earnings growth?</h2>
-<div class="chart-subhead">Each point is one stock. X is trailing year-over-year EPS growth, Y is 3-month price return relative to SPY.</div>
+<h2>Distribution of Z-Scores</h2>
+<div class="chart-subhead">Every scored S&amp;P 500 constituent (ex-Financials/Real Estate), bucketed by Z-Score, colored by zone</div>
+</div>
+</div>
+<div class="ndr-panel">
+<div class="chart-canvas-wrap" style="height:300px;">
+<canvas id="zHistogram"></canvas>
+</div>
+</div>
+</div>
+
+<div class="chart-grid">
+<div class="chart-box">
+<div class="chart-box-header">
+<div>
+<h2>Z-Score vs. beta</h2>
+<div class="chart-subhead">Does the market's own risk pricing (beta) actually line up with fundamental distress risk, or is there no such relationship?</div>
 </div>
 </div>
 <div class="ndr-panel">
 <div class="scatter-canvas-wrap">
-<canvas id="growthScatter"></canvas>
+<canvas id="zBetaScatter"></canvas>
 </div>
 </div>
-<div id="growthMethodTable"></div>
+<div id="zBetaMethodTable"></div>
+</div>
+<div class="chart-box">
+<div class="chart-box-header">
+<div>
+<h2>Z-Score vs. 3-month relative return</h2>
+<div class="chart-subhead">Does fundamental distress risk currently show up in recent relative price performance?</div>
+</div>
+</div>
+<div class="ndr-panel">
+<div class="scatter-canvas-wrap">
+<canvas id="zRel3mScatter"></canvas>
+</div>
+</div>
+<div id="zRel3mMethodTable"></div>
+</div>
 </div>
 
 <div class="table-grid">
 <div class="table-box">
 <div class="table-box-header">
-<h2>Growth Ahead of Price</h2>
-<div class="chart-subhead">Strong earnings growth the market hasn't rewarded (yet), or has good reason not to.</div>
+<h2>Safest balance sheets</h2>
+<div class="chart-subhead">Highest Z-Score</div>
 </div>
-<table id="leaderTable">
-<thead><tr><th>Symbol</th><th>Sector</th><th>EPS YoY</th><th>Price 3M</th></tr></thead>
-<tbody id="leaderBody"><tr><td colspan="4" style="text-align:center; color:var(--muted); padding:24px;">Loading&hellip;</td></tr></tbody>
+<table id="safestTable">
+<thead><tr><th>Symbol</th><th>Sector</th><th>Z-Score</th><th>Zone</th></tr></thead>
+<tbody id="safestBody"><tr><td colspan="4" style="text-align:center; color:var(--muted); padding:24px;">Loading&hellip;</td></tr></tbody>
 </table>
 </div>
 <div class="table-box">
 <div class="table-box-header">
-<h2>Price Ahead of Growth</h2>
-<div class="chart-subhead">Strong relative price performance without matching earnings growth</div>
+<h2>Most distressed</h2>
+<div class="chart-subhead">Lowest Z-Score</div>
 </div>
-<table id="laggardTable">
-<thead><tr><th>Symbol</th><th>Sector</th><th>EPS YoY</th><th>Price 3M</th></tr></thead>
-<tbody id="laggardBody"><tr><td colspan="4" style="text-align:center; color:var(--muted); padding:24px;">Loading&hellip;</td></tr></tbody>
+<table id="distressedTable">
+<thead><tr><th>Symbol</th><th>Sector</th><th>Z-Score</th><th>Zone</th></tr></thead>
+<tbody id="distressedBody"><tr><td colspan="4" style="text-align:center; color:var(--muted); padding:24px;">Loading&hellip;</td></tr></tbody>
 </table>
 </div>
 </div>
 
 <div class="table-box">
 <div class="table-box-header">
-<h2>Full S&amp;P 500</h2>
-<div class="chart-subhead">Trailing year-over-year EPS growth and 3-month price return relative to SPY for each S&amp;P 500 company.</div>
+<h2>All scored companies</h2>
+<div class="chart-subhead">Z-Score and its five components, full S&amp;P 500 ex-Financials/Real Estate</div>
 </div>
 <table id="stockTable">
 <thead>
 <tr>
 <th data-key="symbol">Symbol</th>
 <th data-key="sector">Sector</th>
-<th data-key="epsGrowthYoY">EPS YoY<span class="sort-arrow">▾</span></th>
-<th data-key="relPrice3M">Price 3M<span class="sort-arrow">▾</span></th>
-<th data-key="divergenceScore">Divergence<span class="sort-arrow">▾</span></th>
+<th data-key="z">Z-Score<span class="sort-arrow">▾</span></th>
+<th data-key="zone">Zone</th>
+<th data-key="x1">WC/TA<span class="sort-arrow">▾</span></th>
+<th data-key="x2">RE/TA<span class="sort-arrow">▾</span></th>
+<th data-key="x3">EBIT/TA<span class="sort-arrow">▾</span></th>
+<th data-key="x4">MVE/TL<span class="sort-arrow">▾</span></th>
+<th data-key="x5">Sales/TA<span class="sort-arrow">▾</span></th>
 </tr>
 </thead>
 <tbody id="tableBody">
-<tr><td colspan="5" style="text-align:center; color:var(--muted); padding:30px;">Loading earnings growth data&hellip;</td></tr>
+<tr><td colspan="9" style="text-align:center; color:var(--muted); padding:30px;">Loading Altman Z-Score data&hellip;</td></tr>
 </tbody>
 </table>
 </div>
 
 <div class="explainer">
 <h2>Methodology</h2>
-<p><strong>EPS growth.</strong> The universe is the S&amp;P 500. Alpha Vantage's <code>EARNINGS</code> endpoint provides quarterly reported EPS. Year-over-year growth compares the latest quarter with the same quarter a year earlier (4 quarters back), not the prior quarter, to avoid seasonal noise (a retailer's Q4 vs. Q3, for example). Companies with a loss (zero or negative EPS) in the year-ago quarter are excluded, because a swing from a loss to a profit isn't a meaningful growth rate.</p>
-<p><strong>Price performance.</strong> It is the 3-month return relative to SPY from <a href="/relative-strength-leaders.html">Relative Strength Leaders/Laggards</a>, from the same Saturday morning data run. A stock with no value on that page (recent IPO, data gap) has no price figure here either.</p>
-<p><strong>Divergence score.</strong> Every stock is ranked twice, by EPS growth (1 = fastest growing) and by 3-month relative price return (1 = best performing), and the score is the difference. A large positive score means price performance ranks far better than earnings growth: the market is paying up for something other than trailing fundamentals, or pricing in growth not yet reported. A large negative score means the reverse. Earnings are growing faster than the stock is moving, which is either an overlooked opportunity or the market correctly discounting something the trailing EPS number misses (rising costs, a slowing outlook, a one-off tax benefit). This page shows the divergence. It doesn't say which explanation applies to a given name.</p>
-<p>Refreshes weekly (Saturday, after Relative Strength Leaders/Laggards and Equity Risk Premium by Sector). A trailing-quarter EPS comparison only changes when a company reports, so a daily refresh would add nothing. Sector and company name come from <a href="/sector-beeswarm.html">Sector Beeswarm</a>.</p>
-<div class="source">Source: <a href="https://www.alphavantage.co/" target="_blank" rel="noopener">Alpha Vantage: EARNINGS</a> and Relative Strength Leaders/Laggards data.</div>
+<p>Universe is the full S&amp;P 500, excluding Financials and Real Estate &mdash; a bank's or REIT's balance sheet (deposits and float as "liabilities," leveraged property as the asset base) isn't the kind of capital structure Edward Altman's 1968 model was built to read, and including those sectors would otherwise dominate the distress leaderboard for reasons that have nothing to do with financial distress. For every remaining constituent, Alpha Vantage's <code>INCOME_STATEMENT</code> and <code>BALANCE_SHEET</code> endpoints supply the latest full fiscal year's statements &mdash; a single point-in-time snapshot, not a trailing-twelve-month flow figure, matching how the original model is actually specified.</p>
+<p>The Z-Score is Z = 1.2&times;X1 + 1.4&times;X2 + 3.3&times;X3 + 0.6&times;X4 + 1.0&times;X5, where <b>X1</b> is working capital (current assets &minus; current liabilities) over total assets, <b>X2</b> is retained earnings over total assets, <b>X3</b> is EBIT (Alpha Vantage's direct <code>ebit</code> field, falling back to operating income) over total assets, <b>X4</b> is market value of equity (market capitalization, reused from <a href="/sector-beeswarm.html">Sector Beeswarm</a>'s own weekly metadata sweep rather than a separate <code>OVERVIEW</code> call) over total liabilities, and <b>X5</b> is total revenue over total assets. Zones follow Altman's original thresholds: Z &gt; 2.99 is the "Safe" zone, 1.81&ndash;2.99 is the "Grey Zone," and Z &lt; 1.81 is the "Distress" zone historically associated with elevated bankruptcy risk within about two years.</p>
+<p>A negative X2 is common and meaningful, not an error &mdash; young or heavily-levered companies, and companies with large accumulated losses, are supposed to score worse on this term, and it's left as reported rather than floored at zero. A company is excluded only when a required input is missing outright, or when total assets or total liabilities are non-positive (making the ratio itself undefined), or when no market capitalization is on file yet.</p>
+<p>The two regression tests are single-snapshot cross-sections (no accumulated history needed): Z-Score vs. beta (reusing <a href="/equity-risk-premium.html">Equity Risk Premium by Sector</a>'s own beta data) asks whether the market's own risk pricing lines up with fundamental distress risk, and Z-Score vs. 3-month relative price return (reusing <a href="/relative-strength-leaders.html">Relative Strength Leaders/Laggards</a>'s own weekly price data) asks whether distress risk currently shows up in recent relative performance. Both use the same Pearson-and-Spearman two-method check as <a href="/factor-analysis.html">Factor Analysis</a>.</p>
+<p>One-time snapshot &mdash; no recurring schedule, matching every other full-universe fundamentals sweep added to this site since mid-September 2026. Re-run manually for a fresh pass; annual fundamentals don't move day to day. Sector, company name, and market cap come from the same weekly metadata sweep that backs <a href="/sector-beeswarm.html">Sector Beeswarm</a>.</p>
+<div class="source">Source: <a href="https://www.alphavantage.co/" target="_blank" rel="noopener">Alpha Vantage — INCOME_STATEMENT, BALANCE_SHEET, COMPANY_OVERVIEW</a>, plus this site's own <a href="/equity-risk-premium.html">Equity Risk Premium by Sector</a> and <a href="/relative-strength-leaders.html">Relative Strength Leaders/Laggards</a> data</div>
 </div>
 
 </div>
 
 <script>
-const DATA_URL = "/api/earnings-growth-divergence";
+const DATA_URL = "/api/altman-z";
+
+const ZONE_COLOR = { "Safe": "green", "Grey Zone": "gold", "Distress": "red" };
+const ZONE_CLASS = { "Safe": "zone-safe", "Grey Zone": "zone-grey", "Distress": "zone-distress" };
 
 let RAW = null;
-let SORT_KEY = "divergenceScore";
-let SORT_DIR = -1;
+let SORT_KEY = "z";
+let SORT_DIR = 1;
 
-function fmtPct(v, digits){
- if(v === null || v === undefined || isNaN(v)) return "n/a";
- digits = digits === undefined ? 1 : digits;
- return (v >= 0 ? "+" : "") + v.toFixed(digits) + "%";
+function fmtZ(v){
+ if(v === null || v === undefined || isNaN(v)) return "—";
+ return v.toFixed(2);
 }
-
-function fmtNum(v){
- if(v === null || v === undefined || isNaN(v)) return "n/a";
- return (v >= 0 ? "+" : "") + v;
+function fmtRatio(v){
+ if(v === null || v === undefined || isNaN(v)) return "—";
+ return v.toFixed(3);
+}
+function fmtPct(v, digits){
+ if(v === null || v === undefined || isNaN(v)) return "—";
+ digits = digits === undefined ? 1 : digits;
+ return v.toFixed(digits) + "%";
+}
+function fmtPp(v, digits){
+ if(v === null || v === undefined || isNaN(v)) return "—";
+ digits = digits === undefined ? 1 : digits;
+ return (v >= 0 ? "+" : "") + v.toFixed(digits) + "pp";
+}
+function fmtBeta(v){
+ if(v === null || v === undefined || isNaN(v)) return "—";
+ return v.toFixed(2);
 }
 
 function showError(message){
@@ -923,31 +1030,7 @@ function showWarning(message){
  banner.style.display = "block";
 }
 
-function themeInkColor(){
- const v = getComputedStyle(document.documentElement).getPropertyValue("--ink").trim();
- return v || "#eae6da";
-}
-function themeMutedColor(){
- const v = getComputedStyle(document.documentElement).getPropertyValue("--muted").trim();
- return v || "#8b9199";
-}
-function themeHairColor(){
- const v = getComputedStyle(document.documentElement).getPropertyValue("--hair").trim();
- return v || "#2b3138";
-}
-function themeGreedColor(){
- const v = getComputedStyle(document.documentElement).getPropertyValue("--greed").trim();
- return v || "#d98a3d";
-}
-function themeFearColor(){
- const v = getComputedStyle(document.documentElement).getPropertyValue("--fear").trim();
- return v || "#6f8fac";
-}
-
-// ---- NDR chart styling helpers (matches /concentration.html) -----------
-// Colours come from the --ndr-* custom properties (constant across themes)
-// so the charts keep their warm-paper look while still following the
-// site's "read chart colours from CSS, don't hardcode" rule.
+// ---- NDR chart styling helpers (matches /concentration, /roic-wacc) ----
 function ndr(name){
  return getComputedStyle(document.documentElement).getPropertyValue("--ndr-" + name).trim();
 }
@@ -971,36 +1054,6 @@ function ndrYScale(opts){
   ticks: { color: ndr("axis"), font: { size: 11 }, callback: opts.fmt || undefined },
   title: opts.title ? { display: true, text: opts.title, color: ndr("axis-soft"), font: { size: 10 } } : { display: false },
   min: opts.min, max: opts.max,
- };
-}
-
-function ndrLegend(){
- return {
-  display: true, position: "top", align: "start",
-  labels: { boxWidth: 22, boxHeight: 2, color: ndr("axis"), font: { size: 11 } },
- };
-}
-
-// This page's sector chart flips to indexAxis:"y" (sector names on y,
-// values on x) — reuses ndr() colors but keeps the plain category
-// styling the original chart had (no ticks/grid on the label axis).
-function ndrCategoryScale(){
- return {
-  ticks: { color: ndr("axis"), font: { size: 11 } },
-  grid: { display: false },
- };
-}
-
-// This page's scatter chart uses a genuinely numeric (linear) x-axis —
-// EPS growth, not a date-string category axis — so it needs its own
-// scale helper rather than ndrXScale (which is category-shaped, per
-// concentration.html's "no date adapter" convention).
-function ndrNumericScale(opts){
- opts = opts || {};
- return {
-  title: opts.title ? { display: true, text: opts.title, color: ndr("axis-soft"), font: { size: 10 } } : { display: false },
-  ticks: { color: ndr("axis"), font: { size: 10 } },
-  grid: { color: ndr("grid"), drawBorder: false },
  };
 }
 
@@ -1048,139 +1101,7 @@ function rankArray(arr){
 }
 function spearmanRegression(xs, ys){ return linearRegression(rankArray(xs), rankArray(ys)); }
 
-let sectorChart = null, growthScatter = null;
-
-async function init(){
- try{
-  const res = await fetch(DATA_URL, { cache: "no-store" });
-  const data = await res.json();
-  if(!res.ok || data.error) throw new Error(data.error || "failed to load");
-
-  RAW = data;
-  document.getElementById("updated").textContent = "As of " + new Date(data.generated_at_utc).toLocaleString("en-US", { month: "2-digit", day: "2-digit", year: "numeric", hour: "numeric", minute: "2-digit" });
-
-  if(data.loadedCount < data.universeSize){
-   showWarning("Only " + data.loadedCount + " of " + data.universeSize + " S&P 500 constituents loaded. Some data may be missing.");
-  }else if(!data.hasPriceData){
-   showWarning("Price data isn't available yet (Relative Strength Leaders/Laggards hasn't refreshed). Showing earnings growth only.");
-  }
-
-  renderStats();
-  renderSectorChart();
-  renderScatter();
-  renderLeaderTable(data.growthAheadOfPrice, "leaderBody");
-  renderLeaderTable(data.priceAheadOfGrowth, "laggardBody");
-  renderTable();
-
- }catch(e){
-  showError("Couldn't load earnings growth divergence data (" + e.message + "). The /api/earnings-growth-divergence function may not have run yet.");
-  document.getElementById("tableBody").innerHTML =
-   '<tr><td colspan="5" style="text-align:center; color:var(--muted); padding:30px;">No data available.</td></tr>';
- }
-}
-
-function renderStats(){
- const m = RAW.market;
- const epsEl = document.getElementById("statMedianEps");
- epsEl.textContent = fmtPct(m.medianEpsGrowth);
- epsEl.classList.toggle("cell-neg", m.medianEpsGrowth !== null && m.medianEpsGrowth < 0);
- document.getElementById("statMedianEpsNote").textContent = "n=" + m.withEpsGrowth + " with a valid YoY figure";
-
- const priceEl = document.getElementById("statMedianPrice");
- priceEl.textContent = fmtPct(m.medianRelPrice3M);
- priceEl.classList.toggle("cell-neg", m.medianRelPrice3M !== null && m.medianRelPrice3M < 0);
- document.getElementById("statMedianPriceNote").textContent = "n=" + m.withPriceData + " with price data";
-
- const growthAhead = RAW.growthAheadOfPrice[0];
- if(growthAhead){
-  document.getElementById("statGrowthAhead").textContent = growthAhead.symbol;
-  document.getElementById("statGrowthAheadNote").textContent = fmtPct(growthAhead.epsGrowthYoY) + " EPS, " + fmtPct(growthAhead.relPrice3M) + " price";
- }
- const priceAhead = RAW.priceAheadOfGrowth[0];
- if(priceAhead){
-  document.getElementById("statPriceAhead").textContent = priceAhead.symbol;
-  document.getElementById("statPriceAheadNote").textContent = fmtPct(priceAhead.relPrice3M) + " price, " + fmtPct(priceAhead.epsGrowthYoY) + " EPS";
- }
-}
-
-function renderSectorChart(){
- const sorted = [...RAW.sectors].sort((a, b) => (b.medianEpsGrowth ?? -Infinity) - (a.medianEpsGrowth ?? -Infinity));
- const ctx = document.getElementById("sectorChart").getContext("2d");
- if(sectorChart) sectorChart.destroy();
- sectorChart = new Chart(ctx, {
-  type: "bar",
-  data: {
-   labels: sorted.map(s => s.sector),
-   datasets: [
-    { label: "Median EPS growth YoY", data: sorted.map(s => s.medianEpsGrowth), backgroundColor: ndr("green"), borderRadius: 4 },
-    { label: "Median 3M relative price", data: sorted.map(s => s.medianRelPrice3M), backgroundColor: ndr("navy"), borderRadius: 4 },
-   ],
-  },
-  options: {
-   indexAxis: "y",
-   responsive: true,
-   maintainAspectRatio: false,
-   plugins: {
-    legend: ndrLegend(),
-    tooltip: { callbacks: { label: ctx => ctx.dataset.label + ": " + fmtPct(ctx.parsed.x) } },
-   },
-   // indexAxis:"y" flips the usual roles: x is the value scale here, y
-   // is the sector-name category axis.
-   scales: {
-    x: ndrYScale({ fmt: (v) => (Math.round(v * 100) / 100) + "%" }),
-    y: ndrCategoryScale(),
-   },
-  },
- });
-}
-
-function renderScatter(){
- const pairs = RAW.scatterPairs || [];
- if(pairs.length < 20){
-  if(growthScatter){ growthScatter.destroy(); growthScatter = null; }
-  document.getElementById("growthMethodTable").innerHTML =
-   '<div class="method-note">Not enough stocks with both a valid EPS growth figure and price data to test.</div>';
-  return;
- }
-
- const pearson = linearRegression(pairs.map(p => p.x), pairs.map(p => p.y));
- const spear = spearmanRegression(pairs.map(p => p.x), pairs.map(p => p.y));
-
- const xs = pairs.map(p => p.x);
- const xMin = Math.min(...xs), xMax = Math.max(...xs);
- const linePoints = [
-  { x: xMin, y: pearson.intercept + pearson.slope * xMin },
-  { x: xMax, y: pearson.intercept + pearson.slope * xMax },
- ];
-
- const ctx = document.getElementById("growthScatter").getContext("2d");
- if(growthScatter) growthScatter.destroy();
- growthScatter = new Chart(ctx, {
-  type: "scatter",
-  data: {
-   datasets: [
-    { label: "Stocks", data: pairs, backgroundColor: ndr("navy"), pointRadius: 2.5, pointHoverRadius: 4, showLine: false },
-    { label: "Regression fit", type: "line", data: linePoints, borderColor: ndr("red"), borderWidth: 1.5, borderDash: [4, 3], pointRadius: 0, fill: false },
-   ],
-  },
-  options: {
-   responsive: true,
-   maintainAspectRatio: false,
-   plugins: {
-    legend: { display: false },
-    tooltip: {
-     callbacks: {
-      label: ctx => ctx.dataset.label === "Stocks" ? (ctx.raw.symbol + ": EPS " + fmtPct(ctx.raw.x) + ", price " + fmtPct(ctx.raw.y)) : null,
-     },
-    },
-   },
-   scales: {
-    x: ndrNumericScale({ title: "YoY EPS growth (%)" }),
-    y: ndrNumericScale({ title: "3-month relative price return (%)" }),
-   },
-  },
- });
-
+function methodTableHtml(pearson, spear, unitNote){
  function row(label, stats){
   const sig = stats.p < 0.05;
   return "<tr>" +
@@ -1193,25 +1114,209 @@ function renderScatter(){
    '<td class="' + (sig ? "sig" : "") + '">' + (stats.p < 0.001 ? "<0.001" : stats.p.toFixed(3)) + "</td>" +
   "</tr>";
  }
- document.getElementById("growthMethodTable").innerHTML =
-  '<table class="method-table">' +
-   "<thead><tr><th>Method</th><th>n</th><th>r</th><th>r&sup2;</th><th>slope</th><th>t</th><th>p</th></tr></thead>" +
-   "<tbody>" + row("Pearson (OLS)", pearson) + row("Spearman (&rho;)", spear) + "</tbody>" +
-  "</table>" +
-  '<div class="method-note">A positive, significant relationship means faster earnings growth has coincided with stronger relative price performance over the same window. A weak or flat one means the market isn\'t (yet, or at all) rewarding trailing EPS growth.</div>';
+ return '<table class="method-table">' +
+  "<thead><tr><th>Method</th><th>n</th><th>r</th><th>r&sup2;</th><th>slope</th><th>t</th><th>p</th></tr></thead>" +
+  "<tbody>" + row("Pearson (OLS)", pearson) + row("Spearman (&rho;)", spear) + "</tbody>" +
+ "</table>" + (unitNote ? '<div class="method-note">' + unitNote + "</div>" : "");
+}
+
+let sectorChart = null, zHistogram = null, zBetaScatter = null, zRel3mScatter = null;
+
+async function init(){
+ try{
+  const res = await fetch(DATA_URL, { cache: "no-store" });
+  const data = await res.json();
+  if(!res.ok || data.error) throw new Error(data.error || "failed to load");
+
+  RAW = data;
+  document.getElementById("updated").textContent = "As of " + new Date(data.generated_at_utc).toLocaleString();
+
+  if(data.loadedCount < data.universeSize){
+   showWarning("Only " + data.loadedCount + " of " + data.universeSize + " S&P 500 constituents loaded this run — some data may be temporarily unavailable.");
+  }
+  if(!data.hasBetaData){
+   showWarning("The Equity Risk Premium page's data hasn't populated yet, so the Z-Score-vs-beta test can't run.");
+  }
+
+  renderStats();
+  renderSectorChart();
+  renderZHistogram();
+  renderZBetaScatter();
+  renderZRel3mScatter();
+  renderLeaderTable(data.safest, "safestBody");
+  renderLeaderTable(data.mostDistressed, "distressedBody");
+  renderTable();
+
+ }catch(e){
+  showError("Couldn't load Altman Z-Score data (" + e.message + "). The /api/altman-z function may not have run yet.");
+  document.getElementById("tableBody").innerHTML =
+   '<tr><td colspan="9" style="text-align:center; color:var(--muted); padding:30px;">No data available.</td></tr>';
+ }
+}
+
+function renderStats(){
+ document.getElementById("statCompanies").textContent = RAW.market.companyCount;
+ document.getElementById("statCompaniesNote").textContent = RAW.loadedCount + " of " + RAW.universeSize + " loaded, " + RAW.market.companyCount + " scored";
+ document.getElementById("statMedianZ").textContent = fmtZ(RAW.market.medianZ);
+ document.getElementById("statDistressPct").textContent = fmtPct(RAW.market.distressPct, 0);
+ document.getElementById("statSafePct").textContent = fmtPct(RAW.market.safePct, 0);
+}
+
+function renderSectorChart(){
+ const sectors = RAW.sectors.map(s => s.sector);
+ const ctx = document.getElementById("sectorChart").getContext("2d");
+ if(sectorChart) sectorChart.destroy();
+ sectorChart = new Chart(ctx, {
+  type: "bar",
+  data: {
+   labels: sectors,
+   datasets: [
+    { label: "Median Z-Score", data: RAW.sectors.map(s => s.medianZ), backgroundColor: RAW.sectors.map(s => ndr(s.medianZ > 2.99 ? "green" : s.medianZ >= 1.81 ? "gold" : "red")), borderRadius: 3 },
+   ],
+  },
+  options: {
+   responsive: true,
+   maintainAspectRatio: false,
+   plugins: {
+    legend: { display: false },
+    tooltip: { callbacks: { label: ctx => "Median Z-Score: " + fmtZ(ctx.parsed.y) } },
+   },
+   scales: {
+    x: ndrXScale(),
+    y: ndrYScale({ title: "Z-Score" }),
+   },
+  },
+ });
+}
+
+function renderZHistogram(){
+ const zs = RAW.companies.map(c => c.z).filter(v => v !== null && v !== undefined && !isNaN(v));
+ const binWidth = 1;
+ const minBin = Math.floor(Math.min(...zs) / binWidth) * binWidth;
+ const maxBin = Math.ceil(Math.max(...zs) / binWidth) * binWidth;
+ const bins = [];
+ for(let b = minBin; b < maxBin; b += binWidth) bins.push({ lo: b, hi: b + binWidth, count: 0 });
+ for(const v of zs){
+  let idx = Math.floor((v - minBin) / binWidth);
+  if(idx < 0) idx = 0;
+  if(idx >= bins.length) idx = bins.length - 1;
+  bins[idx].count++;
+ }
+
+ const ctx = document.getElementById("zHistogram").getContext("2d");
+ if(zHistogram) zHistogram.destroy();
+ zHistogram = new Chart(ctx, {
+  type: "bar",
+  data: {
+   labels: bins.map(b => b.lo + "to" + b.hi),
+   datasets: [{ data: bins.map(b => b.count), backgroundColor: bins.map(b => { const mid = (b.lo + b.hi) / 2; return ndr(mid > 2.99 ? "green" : mid >= 1.81 ? "gold" : "red"); }), borderRadius: 3, barPercentage: 1.0, categoryPercentage: 0.95 }],
+  },
+  options: {
+   responsive: true,
+   maintainAspectRatio: false,
+   plugins: {
+    legend: { display: false },
+    tooltip: { callbacks: { title: items => { const b = bins[items[0].dataIndex]; return "Z " + b.lo + " to " + b.hi; }, label: ctx => ctx.parsed.y + " companies" } },
+   },
+   scales: {
+    x: { ...ndrXScale(), title: { display: true, text: "Z-Score", color: ndr("axis-soft"), font: { size: 10 } } },
+    y: ndrYScale({ title: "Companies" }),
+   },
+  },
+ });
+}
+
+function renderZBetaScatter(){
+ const pairs = RAW.zBetaPairs || [];
+ if(pairs.length < 5){
+  document.getElementById("zBetaMethodTable").innerHTML = '<div class="method-note">Not enough companies with beta data to test.</div>';
+  return;
+ }
+ const pearson = linearRegression(pairs.map(p => p.x), pairs.map(p => p.y));
+ const spear = spearmanRegression(pairs.map(p => p.x), pairs.map(p => p.y));
+ const xs = pairs.map(p => p.x);
+ const xMin = Math.min(...xs), xMax = Math.max(...xs);
+ const linePoints = [{ x: xMin, y: pearson.intercept + pearson.slope * xMin }, { x: xMax, y: pearson.intercept + pearson.slope * xMax }];
+
+ const ctx = document.getElementById("zBetaScatter").getContext("2d");
+ if(zBetaScatter) zBetaScatter.destroy();
+ zBetaScatter = new Chart(ctx, {
+  type: "scatter",
+  data: {
+   datasets: [
+    { label: "Companies", data: pairs, backgroundColor: ndr("gold"), pointRadius: 2.5, showLine: false },
+    { label: "Regression fit", type: "line", data: linePoints, borderColor: ndr("navy"), borderWidth: 1.5, borderDash: [4, 3], pointRadius: 0, fill: false },
+   ],
+  },
+  options: {
+   responsive: true,
+   maintainAspectRatio: false,
+   plugins: {
+    legend: { display: false },
+    tooltip: { callbacks: { label: ctx => ctx.dataset.label === "Companies" ? (ctx.raw.symbol + ": beta " + ctx.raw.x.toFixed(2) + ", Z " + fmtZ(ctx.raw.y)) : null } },
+   },
+   scales: {
+    x: ndrYScale({ position: "bottom", title: "Beta" }),
+    y: ndrYScale({ title: "Z-Score" }),
+   },
+  },
+ });
+
+ document.getElementById("zBetaMethodTable").innerHTML = methodTableHtml(pearson, spear,
+  "Slope is Z-Score per 1.0 of beta. n=" + pearson.n + " companies with a reported beta.");
+}
+
+function renderZRel3mScatter(){
+ const pairs = RAW.zRel3mPairs || [];
+ if(pairs.length < 5){
+  document.getElementById("zRel3mMethodTable").innerHTML = '<div class="method-note">Relative Strength Leaders/Laggards data isn’t available yet, so this test can’t run.</div>';
+  return;
+ }
+ const pearson = linearRegression(pairs.map(p => p.x), pairs.map(p => p.y));
+ const spear = spearmanRegression(pairs.map(p => p.x), pairs.map(p => p.y));
+ const xs = pairs.map(p => p.x);
+ const xMin = Math.min(...xs), xMax = Math.max(...xs);
+ const linePoints = [{ x: xMin, y: pearson.intercept + pearson.slope * xMin }, { x: xMax, y: pearson.intercept + pearson.slope * xMax }];
+
+ const ctx = document.getElementById("zRel3mScatter").getContext("2d");
+ if(zRel3mScatter) zRel3mScatter.destroy();
+ zRel3mScatter = new Chart(ctx, {
+  type: "scatter",
+  data: {
+   datasets: [
+    { label: "Companies", data: pairs, backgroundColor: ndr("gold"), pointRadius: 2.5, showLine: false },
+    { label: "Regression fit", type: "line", data: linePoints, borderColor: ndr("navy"), borderWidth: 1.5, borderDash: [4, 3], pointRadius: 0, fill: false },
+   ],
+  },
+  options: {
+   responsive: true,
+   maintainAspectRatio: false,
+   plugins: {
+    legend: { display: false },
+    tooltip: { callbacks: { label: ctx => ctx.dataset.label === "Companies" ? (ctx.raw.symbol + ": Z " + fmtZ(ctx.raw.x) + ", rel. 3M " + fmtPp(ctx.raw.y)) : null } },
+   },
+   scales: {
+    x: ndrYScale({ position: "bottom", title: "Z-Score" }),
+    y: ndrYScale({ fmt: v => v + "pp", title: "3-month return vs. SPY (pp)" }),
+   },
+  },
+ });
+
+ document.getElementById("zRel3mMethodTable").innerHTML = methodTableHtml(pearson, spear,
+  "Slope is relative-return pp per 1.0 of Z-Score. n=" + pearson.n + " companies. A single snapshot in time, not a forward-return test.");
 }
 
 function renderLeaderTable(rows, tbodyId){
  const tbody = document.getElementById(tbodyId);
  if(!rows || !rows.length){
-  tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; color:var(--muted); padding:24px;">No qualifying stocks.</td></tr>';
+  tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; color:var(--muted); padding:24px;">No qualifying companies.</td></tr>';
   return;
  }
  tbody.innerHTML = rows.map(r => `<tr>
   <td><span class="sector-name">${r.symbol}</span></td>
-  <td><span class="sector-ticker">${r.sector || "n/a"}</span></td>
-  <td>${fmtPct(r.epsGrowthYoY)}</td>
-  <td>${fmtPct(r.relPrice3M)}</td>
+  <td><span class="sector-ticker">${r.sector || "—"}</span></td>
+  <td>${fmtZ(r.z)}</td>
+  <td class="${ZONE_CLASS[r.zone] || ""}">${r.zone}</td>
  </tr>`).join("");
 }
 
@@ -1220,7 +1325,7 @@ function sortBy(key){
   SORT_DIR = -SORT_DIR;
  }else{
   SORT_KEY = key;
-  SORT_DIR = -1;
+  SORT_DIR = 1;
  }
  renderTable();
 }
@@ -1236,12 +1341,16 @@ function renderTable(){
 
  const tbody = document.getElementById("tableBody");
  tbody.innerHTML = rows.map(r => `<tr>
-   <td><span class="sector-name">${r.symbol}</span></td>
-   <td><span class="sector-ticker">${r.sector || "n/a"}</span></td>
-   <td>${fmtPct(r.epsGrowthYoY)}</td>
-   <td>${fmtPct(r.relPrice3M)}</td>
-   <td>${fmtNum(r.divergenceScore)}</td>
-  </tr>`).join("");
+  <td><span class="sector-name">${r.symbol}</span></td>
+  <td><span class="sector-ticker">${r.sector || "—"}</span></td>
+  <td>${fmtZ(r.z)}</td>
+  <td class="${ZONE_CLASS[r.zone] || ""}">${r.zone}</td>
+  <td>${fmtRatio(r.x1)}</td>
+  <td>${fmtRatio(r.x2)}</td>
+  <td>${fmtRatio(r.x3)}</td>
+  <td>${fmtRatio(r.x4)}</td>
+  <td>${fmtRatio(r.x5)}</td>
+ </tr>`).join("");
 
  document.querySelectorAll("#stockTable thead th").forEach(th => {
   const key = th.dataset.key;
