@@ -329,6 +329,16 @@ h1{
  margin-bottom:16px;
 }
 
+.chart-grid{
+ display:grid;
+ grid-template-columns:1fr 1fr;
+ gap:16px;
+}
+.chart-grid .chart-box{ margin-bottom:0; }
+@media (max-width:900px){
+ .chart-grid{ grid-template-columns:1fr; }
+}
+
 .chart-box h2{
  font-family:var(--serif);
  font-weight:400;
@@ -778,16 +788,31 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 </div>
 </div>
 
+<div class="chart-grid">
 <div class="chart-box">
 <div class="chart-box-header">
 <div>
-<h2>Developed &amp; emerging / US ratios, since 2003</h2>
-<div class="chart-subhead">EFA and EEM adjusted close ÷ SPY adjusted close, all indexed to 100 at EEM's inception. Rising means international is outperforming.</div>
+<h2>Developed / US ratio, since 2003</h2>
+<div class="chart-subhead">EFA adjusted close ÷ SPY adjusted close, indexed to 100 at EEM's inception. Rising means developed international is outperforming.</div>
 </div>
 </div>
 <div class="ndr-panel">
 <div class="chart-canvas-wrap">
-<canvas id="ratioChart"></canvas>
+<canvas id="ratioDevelopedChart"></canvas>
+</div>
+</div>
+</div>
+<div class="chart-box">
+<div class="chart-box-header">
+<div>
+<h2>Emerging / US ratio, since 2003</h2>
+<div class="chart-subhead">EEM adjusted close ÷ SPY adjusted close, indexed to 100 at EEM's inception. Rising means emerging markets are outperforming.</div>
+</div>
+</div>
+<div class="ndr-panel">
+<div class="chart-canvas-wrap">
+<canvas id="ratioEmergingChart"></canvas>
+</div>
 </div>
 </div>
 </div>
@@ -1056,7 +1081,7 @@ function buildMonthly(data){
  return { records, regimeStats, currentRegime, corrPairs };
 }
 
-let ratioChart = null, rollingChart = null, regimeChart = null, corrScatter = null;
+let ratioDevelopedChart = null, ratioEmergingChart = null, rollingChart = null, regimeChart = null, corrScatter = null;
 
 async function init(){
  try{
@@ -1070,7 +1095,7 @@ async function init(){
 
   const monthly = buildMonthly(data);
   renderStats(data, monthly);
-  renderRatioChart(data);
+  renderRatioCharts(data);
   renderLadderTable(data);
   renderRollingChart(data);
   renderRegimeChart(monthly);
@@ -1131,32 +1156,36 @@ function renderStats(data, monthly){
  }
 }
 
-function renderRatioChart(data){
- const ctx = document.getElementById("ratioChart").getContext("2d");
- if(ratioChart) ratioChart.destroy();
- ratioChart = new Chart(ctx, {
-  type: "line",
-  data: {
-   labels: data.dates,
-   datasets: [
-    { label: "Developed/US ratio", data: data.ratioDevelopedUS, borderColor: ndr("navy"), backgroundColor: ndr("navy"), borderWidth: 1.3, pointRadius: 0, fill: false },
-    { label: "Emerging/US ratio", data: data.ratioEmergingUS, borderColor: ndr("gold"), backgroundColor: ndr("gold"), borderWidth: 1.3, pointRadius: 0, fill: false },
-   ],
-  },
-  options: {
-   responsive: true,
-   maintainAspectRatio: false,
-   interaction: { mode: "index", intersect: false },
-   plugins: {
-    legend: ndrLegend(),
-    tooltip: { callbacks: { label: ctx => ctx.dataset.label + ": " + ctx.parsed.y.toFixed(1) } },
+function renderRatioCharts(data){
+ function draw(canvasId, existing, label, series, color){
+  const ctx = document.getElementById(canvasId).getContext("2d");
+  if(existing) existing.destroy();
+  return new Chart(ctx, {
+   type: "line",
+   data: {
+    labels: data.dates,
+    datasets: [
+     { label: label, data: series, borderColor: ndr(color), backgroundColor: ndr(color), borderWidth: 1.3, pointRadius: 0, fill: false },
+    ],
    },
-   scales: {
-    x: ndrXScale(),
-    y: ndrYScale(),
+   options: {
+    responsive: true,
+    maintainAspectRatio: false,
+    interaction: { mode: "index", intersect: false },
+    plugins: {
+     legend: { display: false },
+     tooltip: { callbacks: { label: ctx => ctx.dataset.label + ": " + ctx.parsed.y.toFixed(1) } },
+    },
+    scales: {
+     x: ndrXScale(),
+     y: ndrYScale(),
+    },
    },
-  },
- });
+  });
+ }
+
+ ratioDevelopedChart = draw("ratioDevelopedChart", ratioDevelopedChart, "Developed/US ratio", data.ratioDevelopedUS, "navy");
+ ratioEmergingChart = draw("ratioEmergingChart", ratioEmergingChart, "Emerging/US ratio", data.ratioEmergingUS, "gold");
 }
 
 function fmtLadderCell(cell){
