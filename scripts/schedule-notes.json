@@ -39,7 +39,6 @@
   "fcf-yield": "Quarterly cash flow for every S&P 500 stock.",
   "ipo-pipeline": "Upcoming IPOs, and prices for recent ones.",
   "margin-leverage": "Income statements and balance sheets for every S&P 500 stock, plus the fed funds rate. Two runs finish one cycle: the sweep is too long for one 15-minute run, so each run saves progress and the next resumes.",
-  "news-sentiment": "News articles and sentiment scores for every S&P 500 stock.",
   "pe-divergence": "Trailing and forward P/E for every S&P 500 stock.",
   "quality-financials": "Annual balance sheet and income figures for every S&P 500 stock. Makes no API calls: reads the annual reports margin-leverage already saved.",
   "quality-score": "Cash flow for every S&P 500 stock, added to the financials for a quality score. Second stage of the Quality Score page. Needs quality-financials first.",

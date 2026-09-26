@@ -21,7 +21,7 @@ small{opacity:.7}
 </head>
 <body>
 <h1>Data Schedule</h1>
-<p>(New York is UTC−4 until November 1, then UTC−5.) This page is regenerated from the site's configuration on every deploy (last updated 09-22-2026).</p>
+<p>(New York is UTC−4 until November 1, then UTC−5.) This page is regenerated from the site's configuration on every deploy (last updated 09-26-2026).</p>
 <div class="w">
 <table>
 <thead><tr><th>Page</th><th>Job</th><th>When</th><th>Pulled from</th><th>Notes</th></tr></thead>
@@ -72,7 +72,6 @@ small{opacity:.7}
 <tr><td><a href="/fcf-yield.html">Free Cash Flow Yield &amp; Earnings Quality | Michael J. Stevenson</a></td><td class="m">fcf-yield</td><td>Manual: run by hand</td><td>Alpha Vantage: CASH_FLOW</td><td>Quarterly cash flow for every S&amp;P 500 stock.</td></tr>
 <tr><td><a href="/ipo-pipeline.html">IPO Pipeline &amp; Aftermarket Tracker | Michael J. Stevenson</a></td><td class="m">ipo-pipeline</td><td>Manual: run by hand</td><td>Alpha Vantage: IPO_CALENDAR, TIME_SERIES_DAILY_ADJUSTED</td><td>Upcoming IPOs, and prices for recent ones.</td></tr>
 <tr><td><a href="/margin-leverage.html">Margin &amp; Leverage Cycle | Michael J. Stevenson</a></td><td class="m">margin-leverage</td><td>Manual: run by hand</td><td>Alpha Vantage: BALANCE_SHEET, FEDERAL_FUNDS_RATE, INCOME_STATEMENT</td><td>Income statements and balance sheets for every S&amp;P 500 stock, plus the fed funds rate. Two runs finish one cycle: the sweep is too long for one 15-minute run, so each run saves progress and the next resumes.</td></tr>
-<tr><td><a href="/news-sentiment.html">News Sentiment Momentum | Michael J. Stevenson</a></td><td class="m">news-sentiment</td><td>Manual: run by hand</td><td>Alpha Vantage: NEWS_SENTIMENT</td><td>News articles and sentiment scores for every S&amp;P 500 stock.<br>Reads: relative-strength</td></tr>
 <tr><td><a href="/options-positioning.html">Options Positioning | Michael J. Stevenson</a></td><td class="m">options-positioning</td><td>Manual: run by hand</td><td>Alpha Vantage: HISTORICAL_PUT_CALL_RATIO</td><td>Put/call ratio for every S&amp;P 500 stock, joined against the relative-strength history for the momentum test.<br>Reads: relative-strength</td></tr>
 <tr><td><a href="/rd-intensity.html">R&amp;D Intensity</a></td><td class="m">rd-intensity</td><td>Manual: run by hand</td><td>Alpha Vantage: INCOME_STATEMENT</td><td>Reads: relative-strength</td></tr>
 <tr><td><a href="/roic-wacc.html">ROIC vs. Cost of Capital</a></td><td class="m">roic-wacc</td><td>Manual: run by hand</td><td>Alpha Vantage: BALANCE_SHEET, INCOME_STATEMENT, TREASURY_YIELD</td><td>Reads: equity-risk-premium, relative-strength</td></tr>
