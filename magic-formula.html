@@ -10,7 +10,6 @@
 </script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom@2"></script>
-<script src="date-format.js"></script>
 <script>
 // FRED-style zoom: drag horizontally on any chart to zoom into that range,
 // double-click to reset. Applied via Chart.defaults so every chart on the
@@ -85,7 +84,7 @@ document.addEventListener("DOMContentLoaded", function(){
   if(fn) fn.call(document);
  }
  function currentFsEl(){
-  return document.fullscreenElement || document.webkitFullscreenElement || document.mozFullscreenElement || document.msFullscreenElement;
+  return document.fullscreenElement || document.webkitFullscreenElement || document.mozFullScreenElement || document.msFullscreenElement;
  }
  function resolveCard(canvas){
   return canvas.closest(".chart-box, .scatter-box, .herd-cell, .modal-chart")
@@ -153,7 +152,7 @@ document.addEventListener("DOMContentLoaded", function(){
 </script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Earnings Growth vs. Price Performance | Michael J. Stevenson</title>
+<title>Magic Formula Screen — Michael J. Stevenson</title>
 
 <style>
 
@@ -176,7 +175,7 @@ document.addEventListener("DOMContentLoaded", function(){
 
   /* NDR-style chart palette. Deliberately the SAME in light and dark —
      these charts keep a constant warm-paper look as a homage to the Ned
-     Davis Research print charts that inspired concentration.html. JS reads
+     Davis Research print charts that inspired /concentration. JS reads
      them via getComputedStyle (per the site convention) rather than
      hardcoding. */
   --ndr-plot:#f5f1e6;
@@ -284,6 +283,7 @@ h1{
  border:1px solid var(--hair);
  border-radius:10px;
  padding:20px;
+ min-width:0;
 }
 
 .stat-label{
@@ -348,7 +348,7 @@ h1{
 }
 
 /* The warm-paper plot panel behind each canvas — the NDR homage
-   (matches /concentration.html). */
+   (matches /concentration). */
 .ndr-panel{
  background:var(--ndr-plot);
  border:1px solid var(--ndr-grid);
@@ -356,18 +356,27 @@ h1{
  padding:14px 14px 10px;
 }
 
-/* TABLE */
-
-.table-grid{
+/* Two charts / method-tables side by side, same breakpoint as table-grid */
+.chart-grid{
  display:grid;
  grid-template-columns:1fr 1fr;
  gap:16px;
  margin-bottom:30px;
 }
 
-@media (max-width:900px){
- .table-grid{ grid-template-columns:1fr; }
+.chart-grid .chart-box{
+ margin-bottom:0;
+ min-width:0; /* grid items default to min-width:auto (their content's min-content
+                 size), which a wide method table would otherwise force past this
+                 column's track width — same "grid blowout" the site-wide
+                 table{min-width:600px} rule creates if left unchecked here */
 }
+
+@media (max-width:900px){
+ .chart-grid{ grid-template-columns:1fr; }
+}
+
+/* TABLE */
 
 .table-box{
  background:var(--card);
@@ -376,8 +385,6 @@ h1{
  overflow-x:auto;
  margin-bottom:30px;
 }
-
-.table-grid .table-box{ margin-bottom:0; }
 
 .table-box-header{
  padding:18px 20px 4px;
@@ -453,11 +460,9 @@ tbody td:nth-child(2){
 .sector-name{ color:var(--ink); }
 .sector-ticker{ color:var(--muted); font-size:11px; }
 
-.cell-pos{ color:var(--ink); }
-.cell-neg{ color:var(--ink); }
-.cell-na{ color:var(--muted); }
+.rank-highlight{ color:var(--greed); }
 
-/* SCATTER / METHOD TABLE (mirrors /factor-analysis) */
+/* SCATTER / METHOD TABLE (mirrors /factor-analysis, /roic-wacc) */
 
 .scatter-canvas-wrap{
  height:300px;
@@ -467,10 +472,16 @@ tbody td:nth-child(2){
 
 .method-table{
  width:100%;
+ min-width:0; /* overrides the site-wide table{min-width:600px} rule below — a method
+                 table never needs 600px */
  border-collapse:collapse;
  font-family:var(--mono);
  font-size:11px;
  margin-top:8px;
+}
+
+#rankRel3mMethodTable{
+ overflow-x:auto;
 }
 
 .method-table th{
@@ -659,7 +670,7 @@ tbody td:nth-child(2){
 <a href="/earnings-surprise.html">Earnings Surprise History</a>
 <a href="/post-earnings-drift.html">Post-Earnings Announcement Drift</a>
 <a href="/earnings-call-sentiment.html">Earnings Call Sentiment</a>
-<a href="/earnings-growth-divergence.html" class="active">Earnings Growth vs. Price Performance</a>
+<a href="/earnings-growth-divergence.html">Earnings Growth vs. Price Performance</a>
 </div>
 <div class="mcol"><h4>Fundamentals &amp; Quality</h4>
 <a href="/fcf-yield.html">Free Cash Flow Yield</a>
@@ -669,7 +680,7 @@ tbody td:nth-child(2){
 <a href="/rd-intensity.html">R&amp;D Intensity</a>
 <a href="/ai-capex-tracker.html">AI Capex Tracker</a>
 <a href="/altman-z-score.html">Altman Z-Score</a>
-<a href="/magic-formula.html">Magic Formula Screen</a>
+<a href="/magic-formula.html" class="active">Magic Formula Screen</a>
 </div>
 </div></div>
 </div>
@@ -737,7 +748,7 @@ tbody td:nth-child(2){
 </div></div>
 </div>
 </div>
-<button class="theme-toggle" id="themeToggle" type="button" aria-label="Toggle light/dark mode" title="Toggle light/dark mode">&#9789;</button>
+<button aria-label="Toggle light/dark mode" class="theme-toggle" id="themeToggle" title="Toggle light/dark mode" type="button">☽</button>
 </nav>
 <script>
 // Class-driven (not pure :hover) nav dropdowns: pure CSS :hover drops the
@@ -781,44 +792,58 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 
 <div class="header">
 <div>
-<h1>Earnings Growth vs. Price Performance</h1>
-<div class="subtitle">Where has the market already priced in a company's earnings growth, and where hasn't it? Trailing year-over-year EPS growth vs. 3-month price performance relative to SPY, across the S&amp;P 500.</div>
+<h1>Magic Formula Screen</h1>
+<div class="subtitle">Joel Greenblatt's "Magic Formula" (<i>The Little Book That Beats the Market</i>): rank the S&amp;P 500 by return on capital and by earnings yield, add the two ranks together, and see what the cheapest, highest-quality combination actually looks like right now.</div>
 </div>
 <div class="updated" id="updated">Loading...</div>
 </div>
 
 <div class="stat-grid">
 <div class="stat-card">
-<div class="stat-label">Median YoY EPS Growth</div>
-<div class="stat-value" id="statMedianEps">…</div>
-<div class="stat-note" id="statMedianEpsNote">Full universe</div>
+<div class="stat-label">Companies Ranked</div>
+<div class="stat-value" id="statCompanies" style="font-size:20px;">—</div>
+<div class="stat-note">With both a ROIC and an earnings-yield figure on file</div>
 </div>
 <div class="stat-card">
-<div class="stat-label">Median 3M Relative Return</div>
-<div class="stat-value" id="statMedianPrice">…</div>
-<div class="stat-note" id="statMedianPriceNote">vs. SPY, full universe</div>
+<div class="stat-label">Top 30 Median ROIC</div>
+<div class="stat-value" id="statTopRoic">—</div>
+<div class="stat-note">vs. market-wide median</div>
 </div>
 <div class="stat-card">
-<div class="stat-label">Growth Ahead of Price</div>
-<div class="stat-value" id="statGrowthAhead" style="font-size:20px;">…</div>
-<div class="stat-note" id="statGrowthAheadNote">Strongest earnings growth, weakest relative price</div>
+<div class="stat-label">Top 30 Median Earnings Yield</div>
+<div class="stat-value" id="statTopEy">—</div>
+<div class="stat-note">vs. market-wide median</div>
 </div>
 <div class="stat-card">
-<div class="stat-label">Price Ahead of Growth</div>
-<div class="stat-value" id="statPriceAhead" style="font-size:20px;">…</div>
-<div class="stat-note" id="statPriceAheadNote">Strongest relative price, weakest earnings growth</div>
+<div class="stat-label">Top 30 Sector Spread</div>
+<div class="stat-value" id="statTopSectors" style="font-size:20px;">—</div>
+<div class="stat-note">Distinct sectors represented in the top 30</div>
 </div>
 </div>
 
 <div class="chart-box">
 <div class="chart-box-header">
 <div>
-<h2>Median YoY EPS growth vs. median 3-month relative return, by sector</h2>
-<div class="chart-subhead">Two bars per sector. Do they broadly agree, or diverge?</div>
+<h2>Return on capital vs. earnings yield</h2>
+<div class="chart-subhead">Every ranked S&amp;P 500 constituent — the top 30 combined-rank picks are highlighted; everything else is muted</div>
 </div>
 </div>
 <div class="ndr-panel">
-<div class="chart-canvas-wrap">
+<div class="chart-canvas-wrap" style="height:420px;">
+<canvas id="scatterChart"></canvas>
+</div>
+</div>
+</div>
+
+<div class="chart-box">
+<div class="chart-box-header">
+<div>
+<h2>Top 30 by sector</h2>
+<div class="chart-subhead">Where the current Magic Formula picks concentrate — a screen built from two ratios can end up lopsided toward whichever sectors happen to combine high capital returns with a cheap multiple right now</div>
+</div>
+</div>
+<div class="ndr-panel">
+<div class="chart-canvas-wrap" style="height:300px;">
 <canvas id="sectorChart"></canvas>
 </div>
 </div>
@@ -827,89 +852,73 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <div class="chart-box">
 <div class="chart-box-header">
 <div>
-<h2>Does 3-month relative price performance track earnings growth?</h2>
-<div class="chart-subhead">Each point is one stock. X is trailing year-over-year EPS growth, Y is 3-month price return relative to SPY.</div>
+<h2>Combined rank vs. 3-month relative return</h2>
+<div class="chart-subhead">Does a better (lower) Magic Formula rank currently show up in better relative price performance?</div>
 </div>
 </div>
 <div class="ndr-panel">
-<div class="scatter-canvas-wrap">
-<canvas id="growthScatter"></canvas>
+<div class="scatter-canvas-wrap" style="height:320px;">
+<canvas id="rankRel3mScatter"></canvas>
 </div>
 </div>
-<div id="growthMethodTable"></div>
-</div>
-
-<div class="table-grid">
-<div class="table-box">
-<div class="table-box-header">
-<h2>Growth Ahead of Price</h2>
-<div class="chart-subhead">Strong earnings growth the market hasn't rewarded (yet), or has good reason not to.</div>
-</div>
-<table id="leaderTable">
-<thead><tr><th>Symbol</th><th>Sector</th><th>EPS YoY</th><th>Price 3M</th></tr></thead>
-<tbody id="leaderBody"><tr><td colspan="4" style="text-align:center; color:var(--muted); padding:24px;">Loading&hellip;</td></tr></tbody>
-</table>
-</div>
-<div class="table-box">
-<div class="table-box-header">
-<h2>Price Ahead of Growth</h2>
-<div class="chart-subhead">Strong relative price performance without matching earnings growth</div>
-</div>
-<table id="laggardTable">
-<thead><tr><th>Symbol</th><th>Sector</th><th>EPS YoY</th><th>Price 3M</th></tr></thead>
-<tbody id="laggardBody"><tr><td colspan="4" style="text-align:center; color:var(--muted); padding:24px;">Loading&hellip;</td></tr></tbody>
-</table>
-</div>
+<div id="rankRel3mMethodTable"></div>
 </div>
 
 <div class="table-box">
 <div class="table-box-header">
-<h2>Full S&amp;P 500</h2>
-<div class="chart-subhead">Trailing year-over-year EPS growth and 3-month price return relative to SPY for each S&amp;P 500 company.</div>
+<h2>Full ranking</h2>
+<div class="chart-subhead">Every scored S&amp;P 500 constituent, sorted by combined rank (lower is better) by default</div>
 </div>
 <table id="stockTable">
 <thead>
 <tr>
+<th data-key="combinedRank">Combined Rank<span class="sort-arrow">▾</span></th>
 <th data-key="symbol">Symbol</th>
 <th data-key="sector">Sector</th>
-<th data-key="epsGrowthYoY">EPS YoY<span class="sort-arrow">▾</span></th>
-<th data-key="relPrice3M">Price 3M<span class="sort-arrow">▾</span></th>
-<th data-key="divergenceScore">Divergence<span class="sort-arrow">▾</span></th>
+<th data-key="roic">ROIC<span class="sort-arrow">▾</span></th>
+<th data-key="roicRank">ROIC Rank<span class="sort-arrow">▾</span></th>
+<th data-key="earningsYield">Earnings Yield<span class="sort-arrow">▾</span></th>
+<th data-key="eyRank">EY Rank<span class="sort-arrow">▾</span></th>
+<th data-key="rel3M">3M Rel. Return<span class="sort-arrow">▾</span></th>
 </tr>
 </thead>
 <tbody id="tableBody">
-<tr><td colspan="5" style="text-align:center; color:var(--muted); padding:30px;">Loading earnings growth data&hellip;</td></tr>
+<tr><td colspan="8" style="text-align:center; color:var(--muted); padding:30px;">Loading Magic Formula data&hellip;</td></tr>
 </tbody>
 </table>
 </div>
 
 <div class="explainer">
 <h2>Methodology</h2>
-<p><strong>EPS growth.</strong> The universe is the S&amp;P 500. Alpha Vantage's <code>EARNINGS</code> endpoint provides quarterly reported EPS. Year-over-year growth compares the latest quarter with the same quarter a year earlier (4 quarters back), not the prior quarter, to avoid seasonal noise (a retailer's Q4 vs. Q3, for example). Companies with a loss (zero or negative EPS) in the year-ago quarter are excluded, because a swing from a loss to a profit isn't a meaningful growth rate.</p>
-<p><strong>Price performance.</strong> It is the 3-month return relative to SPY from <a href="/relative-strength-leaders.html">Relative Strength Leaders/Laggards</a>, from the same Saturday morning data run. A stock with no value on that page (recent IPO, data gap) has no price figure here either.</p>
-<p><strong>Divergence score.</strong> Every stock is ranked twice, by EPS growth (1 = fastest growing) and by 3-month relative price return (1 = best performing), and the score is the difference. A large positive score means price performance ranks far better than earnings growth: the market is paying up for something other than trailing fundamentals, or pricing in growth not yet reported. A large negative score means the reverse. Earnings are growing faster than the stock is moving, which is either an overlooked opportunity or the market correctly discounting something the trailing EPS number misses (rising costs, a slowing outlook, a one-off tax benefit). This page shows the divergence. It doesn't say which explanation applies to a given name.</p>
-<p>Refreshes weekly (Saturday, after Relative Strength Leaders/Laggards and Equity Risk Premium by Sector). A trailing-quarter EPS comparison only changes when a company reports, so a daily refresh would add nothing. Sector and company name come from <a href="/sector-beeswarm.html">Sector Beeswarm</a>.</p>
-<div class="source">Source: <a href="https://www.alphavantage.co/" target="_blank" rel="noopener">Alpha Vantage: EARNINGS</a> and Relative Strength Leaders/Laggards data.</div>
+<p>This page makes no Alpha Vantage calls of its own — it joins three snapshots this site already publishes: <a href="/roic-wacc.html">ROIC vs. Cost of Capital</a> for each company's return on invested capital, <a href="/equity-risk-premium.html">Equity Risk Premium by Sector</a> for each company's trailing earnings yield, and <a href="/relative-strength-leaders.html">Relative Strength Leaders/Laggards</a> for the 3-month relative-return test. Universe is every symbol with a usable figure on <i>both</i> of the first two pages (a company missing either one can't be ranked, since the Magic Formula needs both legs).</p>
+<p>This is a deliberate adaptation of Greenblatt's original formula, not an exact replication, and the deviations are worth being explicit about: Greenblatt's own "return on capital" is EBIT &divide; (net working capital + net fixed assets), and his "earnings yield" is EBIT &divide; enterprise value — both built to be capital-structure-neutral (pre-interest, pre-tax-shield). This page substitutes this site's own already-computed <b>ROIC</b> (NOPAT &divide; invested capital) and <b>trailing-P/E-based earnings yield</b> (100 &divide; P/E) as readily-available stand-ins, reusing two pages that already exist rather than standing up a third full-universe statement sweep for figures that would tell a very similar story. Each company is ranked twice — once by ROIC (highest first) and once by earnings yield (highest first) — and the two ranks are simply added together; the <b>combined rank</b> sorts ascending, so the single best possible outcome is rank 1 + rank 1 = 2. Ties are broken by ROIC.</p>
+<p>The regression test is a single-snapshot cross-section (no accumulated history needed): combined rank vs. 3-month relative return asks whether the market currently rewards this screen's picks with better relative price performance — not whether the screen predicts future returns, which is the actual historical claim behind the strategy and isn't something a single snapshot can test. Uses the same Pearson-and-Spearman two-method check as <a href="/factor-analysis.html">Factor Analysis</a>.</p>
+<p>No schedule of its own to run or maintain — this page simply reads whatever <a href="/roic-wacc.html">ROIC vs. Cost of Capital</a> and <a href="/equity-risk-premium.html">Equity Risk Premium by Sector</a>'s own snapshots currently say, live, on every page load, so it's automatically as fresh as the more recently-updated of those two.</p>
+<div class="source">Source: this site's own <a href="/roic-wacc.html">ROIC vs. Cost of Capital</a>, <a href="/equity-risk-premium.html">Equity Risk Premium by Sector</a>, and <a href="/relative-strength-leaders.html">Relative Strength Leaders/Laggards</a> data, all ultimately sourced from <a href="https://www.alphavantage.co/" target="_blank" rel="noopener">Alpha Vantage</a></div>
 </div>
 
 </div>
 
 <script>
-const DATA_URL = "/api/earnings-growth-divergence";
+const TOP_N = 30;
 
 let RAW = null;
-let SORT_KEY = "divergenceScore";
-let SORT_DIR = -1;
+let SORT_KEY = "combinedRank";
+let SORT_DIR = 1;
 
 function fmtPct(v, digits){
- if(v === null || v === undefined || isNaN(v)) return "n/a";
+ if(v === null || v === undefined || isNaN(v)) return "—";
  digits = digits === undefined ? 1 : digits;
- return (v >= 0 ? "+" : "") + v.toFixed(digits) + "%";
+ return v.toFixed(digits) + "%";
 }
-
-function fmtNum(v){
- if(v === null || v === undefined || isNaN(v)) return "n/a";
- return (v >= 0 ? "+" : "") + v;
+function fmtPp(v, digits){
+ if(v === null || v === undefined || isNaN(v)) return "—";
+ digits = digits === undefined ? 1 : digits;
+ return (v >= 0 ? "+" : "") + v.toFixed(digits) + "pp";
+}
+function fmtInt(v){
+ if(v === null || v === undefined || isNaN(v)) return "—";
+ return String(v);
 }
 
 function showError(message){
@@ -923,31 +932,7 @@ function showWarning(message){
  banner.style.display = "block";
 }
 
-function themeInkColor(){
- const v = getComputedStyle(document.documentElement).getPropertyValue("--ink").trim();
- return v || "#eae6da";
-}
-function themeMutedColor(){
- const v = getComputedStyle(document.documentElement).getPropertyValue("--muted").trim();
- return v || "#8b9199";
-}
-function themeHairColor(){
- const v = getComputedStyle(document.documentElement).getPropertyValue("--hair").trim();
- return v || "#2b3138";
-}
-function themeGreedColor(){
- const v = getComputedStyle(document.documentElement).getPropertyValue("--greed").trim();
- return v || "#d98a3d";
-}
-function themeFearColor(){
- const v = getComputedStyle(document.documentElement).getPropertyValue("--fear").trim();
- return v || "#6f8fac";
-}
-
-// ---- NDR chart styling helpers (matches /concentration.html) -----------
-// Colours come from the --ndr-* custom properties (constant across themes)
-// so the charts keep their warm-paper look while still following the
-// site's "read chart colours from CSS, don't hardcode" rule.
+// ---- NDR chart styling helpers (matches /concentration, /roic-wacc) ----
 function ndr(name){
  return getComputedStyle(document.documentElement).getPropertyValue("--ndr-" + name).trim();
 }
@@ -971,36 +956,6 @@ function ndrYScale(opts){
   ticks: { color: ndr("axis"), font: { size: 11 }, callback: opts.fmt || undefined },
   title: opts.title ? { display: true, text: opts.title, color: ndr("axis-soft"), font: { size: 10 } } : { display: false },
   min: opts.min, max: opts.max,
- };
-}
-
-function ndrLegend(){
- return {
-  display: true, position: "top", align: "start",
-  labels: { boxWidth: 22, boxHeight: 2, color: ndr("axis"), font: { size: 11 } },
- };
-}
-
-// This page's sector chart flips to indexAxis:"y" (sector names on y,
-// values on x) — reuses ndr() colors but keeps the plain category
-// styling the original chart had (no ticks/grid on the label axis).
-function ndrCategoryScale(){
- return {
-  ticks: { color: ndr("axis"), font: { size: 11 } },
-  grid: { display: false },
- };
-}
-
-// This page's scatter chart uses a genuinely numeric (linear) x-axis —
-// EPS growth, not a date-string category axis — so it needs its own
-// scale helper rather than ndrXScale (which is category-shaped, per
-// concentration.html's "no date adapter" convention).
-function ndrNumericScale(opts){
- opts = opts || {};
- return {
-  title: opts.title ? { display: true, text: opts.title, color: ndr("axis-soft"), font: { size: 10 } } : { display: false },
-  ticks: { color: ndr("axis"), font: { size: 10 } },
-  grid: { color: ndr("grid"), drawBorder: false },
  };
 }
 
@@ -1048,139 +1003,7 @@ function rankArray(arr){
 }
 function spearmanRegression(xs, ys){ return linearRegression(rankArray(xs), rankArray(ys)); }
 
-let sectorChart = null, growthScatter = null;
-
-async function init(){
- try{
-  const res = await fetch(DATA_URL, { cache: "no-store" });
-  const data = await res.json();
-  if(!res.ok || data.error) throw new Error(data.error || "failed to load");
-
-  RAW = data;
-  document.getElementById("updated").textContent = "As of " + new Date(data.generated_at_utc).toLocaleString("en-US", { month: "2-digit", day: "2-digit", year: "numeric", hour: "numeric", minute: "2-digit" });
-
-  if(data.loadedCount < data.universeSize){
-   showWarning("Only " + data.loadedCount + " of " + data.universeSize + " S&P 500 constituents loaded. Some data may be missing.");
-  }else if(!data.hasPriceData){
-   showWarning("Price data isn't available yet (Relative Strength Leaders/Laggards hasn't refreshed). Showing earnings growth only.");
-  }
-
-  renderStats();
-  renderSectorChart();
-  renderScatter();
-  renderLeaderTable(data.growthAheadOfPrice, "leaderBody");
-  renderLeaderTable(data.priceAheadOfGrowth, "laggardBody");
-  renderTable();
-
- }catch(e){
-  showError("Couldn't load earnings growth divergence data (" + e.message + "). The /api/earnings-growth-divergence function may not have run yet.");
-  document.getElementById("tableBody").innerHTML =
-   '<tr><td colspan="5" style="text-align:center; color:var(--muted); padding:30px;">No data available.</td></tr>';
- }
-}
-
-function renderStats(){
- const m = RAW.market;
- const epsEl = document.getElementById("statMedianEps");
- epsEl.textContent = fmtPct(m.medianEpsGrowth);
- epsEl.classList.toggle("cell-neg", m.medianEpsGrowth !== null && m.medianEpsGrowth < 0);
- document.getElementById("statMedianEpsNote").textContent = "n=" + m.withEpsGrowth + " with a valid YoY figure";
-
- const priceEl = document.getElementById("statMedianPrice");
- priceEl.textContent = fmtPct(m.medianRelPrice3M);
- priceEl.classList.toggle("cell-neg", m.medianRelPrice3M !== null && m.medianRelPrice3M < 0);
- document.getElementById("statMedianPriceNote").textContent = "n=" + m.withPriceData + " with price data";
-
- const growthAhead = RAW.growthAheadOfPrice[0];
- if(growthAhead){
-  document.getElementById("statGrowthAhead").textContent = growthAhead.symbol;
-  document.getElementById("statGrowthAheadNote").textContent = fmtPct(growthAhead.epsGrowthYoY) + " EPS, " + fmtPct(growthAhead.relPrice3M) + " price";
- }
- const priceAhead = RAW.priceAheadOfGrowth[0];
- if(priceAhead){
-  document.getElementById("statPriceAhead").textContent = priceAhead.symbol;
-  document.getElementById("statPriceAheadNote").textContent = fmtPct(priceAhead.relPrice3M) + " price, " + fmtPct(priceAhead.epsGrowthYoY) + " EPS";
- }
-}
-
-function renderSectorChart(){
- const sorted = [...RAW.sectors].sort((a, b) => (b.medianEpsGrowth ?? -Infinity) - (a.medianEpsGrowth ?? -Infinity));
- const ctx = document.getElementById("sectorChart").getContext("2d");
- if(sectorChart) sectorChart.destroy();
- sectorChart = new Chart(ctx, {
-  type: "bar",
-  data: {
-   labels: sorted.map(s => s.sector),
-   datasets: [
-    { label: "Median EPS growth YoY", data: sorted.map(s => s.medianEpsGrowth), backgroundColor: ndr("green"), borderRadius: 4 },
-    { label: "Median 3M relative price", data: sorted.map(s => s.medianRelPrice3M), backgroundColor: ndr("navy"), borderRadius: 4 },
-   ],
-  },
-  options: {
-   indexAxis: "y",
-   responsive: true,
-   maintainAspectRatio: false,
-   plugins: {
-    legend: ndrLegend(),
-    tooltip: { callbacks: { label: ctx => ctx.dataset.label + ": " + fmtPct(ctx.parsed.x) } },
-   },
-   // indexAxis:"y" flips the usual roles: x is the value scale here, y
-   // is the sector-name category axis.
-   scales: {
-    x: ndrYScale({ fmt: (v) => (Math.round(v * 100) / 100) + "%" }),
-    y: ndrCategoryScale(),
-   },
-  },
- });
-}
-
-function renderScatter(){
- const pairs = RAW.scatterPairs || [];
- if(pairs.length < 20){
-  if(growthScatter){ growthScatter.destroy(); growthScatter = null; }
-  document.getElementById("growthMethodTable").innerHTML =
-   '<div class="method-note">Not enough stocks with both a valid EPS growth figure and price data to test.</div>';
-  return;
- }
-
- const pearson = linearRegression(pairs.map(p => p.x), pairs.map(p => p.y));
- const spear = spearmanRegression(pairs.map(p => p.x), pairs.map(p => p.y));
-
- const xs = pairs.map(p => p.x);
- const xMin = Math.min(...xs), xMax = Math.max(...xs);
- const linePoints = [
-  { x: xMin, y: pearson.intercept + pearson.slope * xMin },
-  { x: xMax, y: pearson.intercept + pearson.slope * xMax },
- ];
-
- const ctx = document.getElementById("growthScatter").getContext("2d");
- if(growthScatter) growthScatter.destroy();
- growthScatter = new Chart(ctx, {
-  type: "scatter",
-  data: {
-   datasets: [
-    { label: "Stocks", data: pairs, backgroundColor: ndr("navy"), pointRadius: 2.5, pointHoverRadius: 4, showLine: false },
-    { label: "Regression fit", type: "line", data: linePoints, borderColor: ndr("red"), borderWidth: 1.5, borderDash: [4, 3], pointRadius: 0, fill: false },
-   ],
-  },
-  options: {
-   responsive: true,
-   maintainAspectRatio: false,
-   plugins: {
-    legend: { display: false },
-    tooltip: {
-     callbacks: {
-      label: ctx => ctx.dataset.label === "Stocks" ? (ctx.raw.symbol + ": EPS " + fmtPct(ctx.raw.x) + ", price " + fmtPct(ctx.raw.y)) : null,
-     },
-    },
-   },
-   scales: {
-    x: ndrNumericScale({ title: "YoY EPS growth (%)" }),
-    y: ndrNumericScale({ title: "3-month relative price return (%)" }),
-   },
-  },
- });
-
+function methodTableHtml(pearson, spear, unitNote){
  function row(label, stats){
   const sig = stats.p < 0.05;
   return "<tr>" +
@@ -1193,26 +1016,198 @@ function renderScatter(){
    '<td class="' + (sig ? "sig" : "") + '">' + (stats.p < 0.001 ? "<0.001" : stats.p.toFixed(3)) + "</td>" +
   "</tr>";
  }
- document.getElementById("growthMethodTable").innerHTML =
-  '<table class="method-table">' +
-   "<thead><tr><th>Method</th><th>n</th><th>r</th><th>r&sup2;</th><th>slope</th><th>t</th><th>p</th></tr></thead>" +
-   "<tbody>" + row("Pearson (OLS)", pearson) + row("Spearman (&rho;)", spear) + "</tbody>" +
-  "</table>" +
-  '<div class="method-note">A positive, significant relationship means faster earnings growth has coincided with stronger relative price performance over the same window. A weak or flat one means the market isn\'t (yet, or at all) rewarding trailing EPS growth.</div>';
+ return '<table class="method-table">' +
+  "<thead><tr><th>Method</th><th>n</th><th>r</th><th>r&sup2;</th><th>slope</th><th>t</th><th>p</th></tr></thead>" +
+  "<tbody>" + row("Pearson (OLS)", pearson) + row("Spearman (&rho;)", spear) + "</tbody>" +
+ "</table>" + (unitNote ? '<div class="method-note">' + unitNote + "</div>" : "");
 }
 
-function renderLeaderTable(rows, tbodyId){
- const tbody = document.getElementById(tbodyId);
- if(!rows || !rows.length){
-  tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; color:var(--muted); padding:24px;">No qualifying stocks.</td></tr>';
+function median(values){
+ const v = values.filter(x => x !== null && x !== undefined && !isNaN(x)).sort((a, b) => a - b);
+ if(!v.length) return null;
+ const mid = Math.floor(v.length / 2);
+ return v.length % 2 ? v[mid] : (v[mid - 1] + v[mid]) / 2;
+}
+
+let scatterChart = null, sectorChart = null, rankRel3mScatter = null;
+
+async function init(){
+ try{
+  const [roicRes, erpRes, rsRes] = await Promise.all([
+   fetch("/api/roic-wacc", { cache: "no-store" }),
+   fetch("/api/equity-risk-premium", { cache: "no-store" }),
+   fetch("/api/relative-strength", { cache: "no-store" }).catch(() => null),
+  ]);
+  const roicData = await roicRes.json();
+  const erpData = await erpRes.json();
+  if(!roicRes.ok || roicData.error) throw new Error("ROIC vs. Cost of Capital: " + (roicData.error || "failed to load"));
+  if(!erpRes.ok || erpData.error) throw new Error("Equity Risk Premium by Sector: " + (erpData.error || "failed to load"));
+
+  let rsBySymbol = {};
+  if(rsRes && rsRes.ok){
+   const rsData = await rsRes.json();
+   if(Array.isArray(rsData.companies)){
+    for(const c of rsData.companies) if(c.rel3M !== null && c.rel3M !== undefined) rsBySymbol[c.symbol] = c.rel3M;
+   }
+  }
+  const hasRel3M = Object.keys(rsBySymbol).length > 0;
+  if(!hasRel3M) showWarning("Relative Strength Leaders/Laggards data isn't available yet, so the combined-rank-vs-return test can't run.");
+
+  const erpBySymbol = {};
+  for(const c of (erpData.companies || [])){
+   if(c.earningsYield !== null && c.earningsYield !== undefined) erpBySymbol[c.symbol] = c.earningsYield;
+  }
+
+  const joined = [];
+  for(const c of (roicData.companies || [])){
+   if(c.roic === null || c.roic === undefined) continue;
+   const ey = erpBySymbol[c.symbol];
+   if(ey === undefined) continue;
+   joined.push({ symbol: c.symbol, sector: c.sector, roic: c.roic, earningsYield: ey, rel3M: rsBySymbol[c.symbol] ?? null });
+  }
+  if(!joined.length) throw new Error("No companies had both a ROIC and an earnings-yield figure to join");
+
+  const byRoicDesc = [...joined].sort((a, b) => b.roic - a.roic);
+  const roicRankOf = new Map();
+  byRoicDesc.forEach((c, i) => roicRankOf.set(c.symbol, i + 1));
+
+  const byEyDesc = [...joined].sort((a, b) => b.earningsYield - a.earningsYield);
+  const eyRankOf = new Map();
+  byEyDesc.forEach((c, i) => eyRankOf.set(c.symbol, i + 1));
+
+  for(const c of joined){
+   c.roicRank = roicRankOf.get(c.symbol);
+   c.eyRank = eyRankOf.get(c.symbol);
+   c.combinedRank = c.roicRank + c.eyRank;
+  }
+  joined.sort((a, b) => a.combinedRank - b.combinedRank || b.roic - a.roic);
+  joined.forEach((c, i) => { c.overallRank = i + 1; c.isTop = i < TOP_N; });
+
+  RAW = { generatedAt: new Date().toISOString(), companies: joined, hasRel3M, roicAsOf: roicData.generated_at_utc, erpAsOf: erpData.generated_at_utc };
+  document.getElementById("updated").textContent = "Joined live — ROIC data as of " + new Date(roicData.generated_at_utc).toLocaleDateString() + ", earnings yield as of " + new Date(erpData.generated_at_utc).toLocaleDateString();
+
+  renderStats();
+  renderScatterChart();
+  renderSectorChart();
+  renderRankRel3mScatter();
+  renderTable();
+
+ }catch(e){
+  showError("Couldn't build the Magic Formula screen (" + e.message + "). Both /api/roic-wacc and /api/equity-risk-premium need to have run at least once.");
+  document.getElementById("tableBody").innerHTML =
+   '<tr><td colspan="8" style="text-align:center; color:var(--muted); padding:30px;">No data available.</td></tr>';
+ }
+}
+
+function renderStats(){
+ const all = RAW.companies;
+ const top = all.filter(c => c.isTop);
+ document.getElementById("statCompanies").textContent = all.length;
+ document.getElementById("statTopRoic").textContent = fmtPct(median(top.map(c => c.roic)));
+ document.getElementById("statTopEy").textContent = fmtPct(median(top.map(c => c.earningsYield)));
+ document.getElementById("statTopSectors").textContent = new Set(top.map(c => c.sector)).size;
+}
+
+function renderScatterChart(){
+ const all = RAW.companies;
+ const rest = all.filter(c => !c.isTop).map(c => ({ x: c.earningsYield, y: c.roic, symbol: c.symbol }));
+ const top = all.filter(c => c.isTop).map(c => ({ x: c.earningsYield, y: c.roic, symbol: c.symbol }));
+
+ const ctx = document.getElementById("scatterChart").getContext("2d");
+ if(scatterChart) scatterChart.destroy();
+ scatterChart = new Chart(ctx, {
+  type: "scatter",
+  data: {
+   datasets: [
+    { label: "Rest of universe", data: rest, backgroundColor: "rgba(125,138,153,0.35)", pointRadius: 2.5, showLine: false },
+    { label: "Top " + TOP_N + " (Magic Formula)", data: top, backgroundColor: ndr("gold"), pointRadius: 4, showLine: false },
+   ],
+  },
+  options: {
+   responsive: true,
+   maintainAspectRatio: false,
+   plugins: {
+    legend: { display: true, position: "top", align: "start", labels: { boxWidth: 12, boxHeight: 12, color: ndr("axis"), font: { size: 11 } } },
+    tooltip: { callbacks: { label: ctx => ctx.raw.symbol + ": EY " + fmtPct(ctx.raw.x) + ", ROIC " + fmtPct(ctx.raw.y) } },
+   },
+   scales: {
+    x: ndrYScale({ position: "bottom", fmt: v => v + "%", title: "Earnings yield" }),
+    y: ndrYScale({ fmt: v => v + "%", title: "ROIC" }),
+   },
+  },
+ });
+}
+
+function renderSectorChart(){
+ const top = RAW.companies.filter(c => c.isTop);
+ const counts = {};
+ for(const c of top) counts[c.sector] = (counts[c.sector] || 0) + 1;
+ const sectors = Object.keys(counts).sort((a, b) => counts[b] - counts[a]);
+
+ const ctx = document.getElementById("sectorChart").getContext("2d");
+ if(sectorChart) sectorChart.destroy();
+ sectorChart = new Chart(ctx, {
+  type: "bar",
+  data: {
+   labels: sectors,
+   datasets: [{ data: sectors.map(s => counts[s]), backgroundColor: ndr("gold"), borderRadius: 3, barPercentage: 0.7 }],
+  },
+  options: {
+   responsive: true,
+   maintainAspectRatio: false,
+   indexAxis: "y",
+   plugins: {
+    legend: { display: false },
+    tooltip: { callbacks: { label: ctx => ctx.parsed.x + " of top " + TOP_N } },
+   },
+   scales: {
+    x: ndrYScale({ title: "Companies in top " + TOP_N }),
+    y: { ticks: { color: ndr("axis"), font: { size: 11 } }, grid: { display: false } },
+   },
+  },
+ });
+}
+
+function renderRankRel3mScatter(){
+ const pairs = RAW.hasRel3M
+  ? RAW.companies.filter(c => c.rel3M !== null).map(c => ({ x: c.combinedRank, y: c.rel3M, symbol: c.symbol }))
+  : [];
+ if(pairs.length < 5){
+  document.getElementById("rankRel3mMethodTable").innerHTML = '<div class="method-note">Not enough data to test.</div>';
   return;
  }
- tbody.innerHTML = rows.map(r => `<tr>
-  <td><span class="sector-name">${r.symbol}</span></td>
-  <td><span class="sector-ticker">${r.sector || "n/a"}</span></td>
-  <td>${fmtPct(r.epsGrowthYoY)}</td>
-  <td>${fmtPct(r.relPrice3M)}</td>
- </tr>`).join("");
+ const pearson = linearRegression(pairs.map(p => p.x), pairs.map(p => p.y));
+ const spear = spearmanRegression(pairs.map(p => p.x), pairs.map(p => p.y));
+ const xs = pairs.map(p => p.x);
+ const xMin = Math.min(...xs), xMax = Math.max(...xs);
+ const linePoints = [{ x: xMin, y: pearson.intercept + pearson.slope * xMin }, { x: xMax, y: pearson.intercept + pearson.slope * xMax }];
+
+ const ctx = document.getElementById("rankRel3mScatter").getContext("2d");
+ if(rankRel3mScatter) rankRel3mScatter.destroy();
+ rankRel3mScatter = new Chart(ctx, {
+  type: "scatter",
+  data: {
+   datasets: [
+    { label: "Companies", data: pairs, backgroundColor: ndr("gold"), pointRadius: 2.5, showLine: false },
+    { label: "Regression fit", type: "line", data: linePoints, borderColor: ndr("navy"), borderWidth: 1.5, borderDash: [4, 3], pointRadius: 0, fill: false },
+   ],
+  },
+  options: {
+   responsive: true,
+   maintainAspectRatio: false,
+   plugins: {
+    legend: { display: false },
+    tooltip: { callbacks: { label: ctx => ctx.dataset.label === "Companies" ? (ctx.raw.symbol + ": rank " + ctx.raw.x + ", rel. 3M " + fmtPp(ctx.raw.y)) : null } },
+   },
+   scales: {
+    x: ndrYScale({ position: "bottom", title: "Combined rank (lower is better)" }),
+    y: ndrYScale({ fmt: v => v + "pp", title: "3-month return vs. SPY (pp)" }),
+   },
+  },
+ });
+
+ document.getElementById("rankRel3mMethodTable").innerHTML = methodTableHtml(pearson, spear,
+  "Slope is relative-return pp per 1 unit of combined rank. n=" + pearson.n + " companies. A single snapshot in time — a negative, significant slope would say a better rank currently comes with better relative performance, not that the rank predicts future returns.");
 }
 
 function sortBy(key){
@@ -1220,7 +1215,7 @@ function sortBy(key){
   SORT_DIR = -SORT_DIR;
  }else{
   SORT_KEY = key;
-  SORT_DIR = -1;
+  SORT_DIR = 1;
  }
  renderTable();
 }
@@ -1236,12 +1231,15 @@ function renderTable(){
 
  const tbody = document.getElementById("tableBody");
  tbody.innerHTML = rows.map(r => `<tr>
-   <td><span class="sector-name">${r.symbol}</span></td>
-   <td><span class="sector-ticker">${r.sector || "n/a"}</span></td>
-   <td>${fmtPct(r.epsGrowthYoY)}</td>
-   <td>${fmtPct(r.relPrice3M)}</td>
-   <td>${fmtNum(r.divergenceScore)}</td>
-  </tr>`).join("");
+  <td class="${r.isTop ? "rank-highlight" : ""}">${fmtInt(r.combinedRank)}</td>
+  <td><span class="sector-name">${r.symbol}</span></td>
+  <td><span class="sector-ticker">${r.sector || "—"}</span></td>
+  <td>${fmtPct(r.roic)}</td>
+  <td>${fmtInt(r.roicRank)}</td>
+  <td>${fmtPct(r.earningsYield)}</td>
+  <td>${fmtInt(r.eyRank)}</td>
+  <td>${fmtPp(r.rel3M)}</td>
+ </tr>`).join("");
 
  document.querySelectorAll("#stockTable thead th").forEach(th => {
   const key = th.dataset.key;
