@@ -215,94 +215,23 @@ body{
 
 a{ color:inherit; }
 
-/* SITE NAV (shared with homepage) */
-
-.sitenav{
- display:grid;
- grid-template-columns:1fr auto 1fr;
- align-items:center;
- padding:16px 24px;
- border-bottom:1px solid var(--hair);
- position:relative;
- z-index:50;
-}
-
-.sitenav .brand{
- justify-self:start;
-}
-
-.sitenav .brand{
- font-family:var(--serif);
- font-size:17px;
- color:var(--ink);
- text-decoration:none;
- letter-spacing:0.3px;
-}
-
-.navlinks{
- display:flex;
- gap:26px;
- align-items:center;
-}
-
-.navlinks > a{
- color:var(--muted);
- font-size:13px;
- text-decoration:none;
- padding:6px 0;
-}
-
-.navlinks > a:hover, .navlinks > a.active{ color:var(--ink); }
-
-.navdrop{ position:relative; }
-
-
-.navdrop > .navlabel{
- color:var(--muted);
- font-size:13px;
- cursor:default;
- padding:6px 0;
- user-select:none;
-}
-
-.navdrop:hover > .navlabel, .navdrop.open > .navlabel{ color:var(--ink); }
-
-.navdrop .dropdown{
- display:none;
- position:absolute;
- top:100%;
- left:0;
- background:var(--card);
- border:1px solid var(--hair);
- border-radius:8px;
- padding:8px 0;
- min-width:230px;
- margin-top:12px;
- box-shadow:0 10px 30px rgba(0,0,0,0.45);
-}
-
-/* Driven by the .open class (see the script right after </nav>), not
-   pure :hover — see that script for why. */
+/* SITE NAV (mega-menu, shared with homepage) */
+.sitenav{ display:grid; grid-template-columns:auto 1fr auto; align-items:center; padding:16px 24px; border-bottom:1px solid var(--hair); position:relative; z-index:50; }
+.sitenav .brand{ justify-self:start; white-space:nowrap; font-family:var(--serif); font-size:16px; color:var(--ink); text-decoration:none; letter-spacing:0.3px; }
+.navlinks{ display:flex; gap:2px; align-items:center; justify-self:center; }
+.navdrop{ position:static; }
+.navdrop > .navlabel{ display:block; white-space:nowrap; color:var(--muted); font-size:13px; cursor:default; padding:8px 14px; border-radius:6px; user-select:none; }
+.navdrop:hover > .navlabel, .navdrop.open > .navlabel, .navdrop.has-active > .navlabel{ color:var(--ink); }
+.navdrop.open > .navlabel{ background:var(--card-hover); }
+.navdrop .dropdown{ display:none; position:absolute; top:100%; left:0; right:0; min-width:0; margin-top:0; background:var(--card); border:0; border-top:1px solid var(--hair); border-bottom:1px solid var(--hair); border-radius:0; padding:22px 24px 26px; box-shadow:0 18px 40px rgba(0,0,0,0.35); }
 .navdrop.open .dropdown{ display:block; }
-
-.dropdown a{
- display:block;
- padding:9px 16px;
- color:var(--muted);
- text-decoration:none;
- font-size:13px;
-}
-
-.dropdown a:hover{
- background:var(--card-hover);
- color:var(--ink);
-}
-
-.dropdown a.active{ color:var(--greed); }
-
-@media (max-width:720px){
- .navlinks{ display:none; }
-}
+.mega{ max-width:1000px; margin:0 auto; display:grid; grid-template-columns:repeat(auto-fit,minmax(210px,1fr)); gap:8px 40px; }
+.mcol h4{ margin:0 0 8px; padding-bottom:7px; border-bottom:1px solid var(--hair); font-size:12px; font-weight:600; color:var(--muted); letter-spacing:0.02em; }
+.dropdown .mcol a{ display:block; padding:6px 0; color:var(--ink); text-decoration:none; font-size:13.5px; line-height:1.35; }
+.dropdown .mcol a:hover{ color:var(--greed, #d98a3d); background:none; }
+.dropdown .mcol a.active{ color:var(--greed, #d98a3d); }
+@media (max-width:1100px){ .sitenav{ padding:14px 16px; } .sitenav .brand{ font-size:15px; } .navdrop > .navlabel{ padding:8px 8px; font-size:12.5px; } }
+@media (max-width:720px){ .navlinks{ display:none; } }
 
 .container{
  max-width:1000px;
@@ -498,115 +427,119 @@ h1{
 <nav class="sitenav">
 <a class="brand" href="/">Michael J. Stevenson, CAIA<span style="font-size:0.6em; vertical-align:super;">&reg;</span></a>
 <div class="navlinks">
-<div class="navdrop">
-<span class="navlabel">Sentiment ▾</span>
-<div class="dropdown">
+<div class="navdrop has-active">
+<span class="navlabel">Market Internals ▾</span>
+<div class="dropdown"><div class="mega">
+<div class="mcol"><h4>Sentiment</h4>
 <a href="/sentiment-index.html">Sentiment Index</a>
 <a href="/volatility.html" class="active">Implied vs. Realized Volatility</a>
+<a href="/news-sentiment.html">News Sentiment Momentum</a>
+<a href="/seasonality.html">Seasonality</a>
+</div>
+<div class="mcol"><h4>Breadth &amp; Positioning</h4>
 <a href="/market-breadth.html">Market Breadth</a>
 <a href="/ath-index.html">All-Time Highs and Lows</a>
 <a href="/margin-leverage.html">Margin &amp; Leverage Cycle</a>
 <a href="/short-sale-volume.html">Short Sale Volume</a>
-<a href="/news-sentiment.html">News Sentiment Momentum</a>
-<a href="/seasonality.html">Seasonality</a>
+<a href="/options-positioning.html">Options Positioning</a>
 </div>
+<div class="mcol"><h4>Market Structure</h4>
+<a href="/concentration.html">Concentration</a>
 </div>
-
+</div></div>
+</div>
 <div class="navdrop">
-<span class="navlabel">Valuation ▾</span>
-<div class="dropdown">
+<span class="navlabel">Valuation &amp; Earnings ▾</span>
+<div class="dropdown"><div class="mega">
+<div class="mcol"><h4>Valuation</h4>
 <a href="/valuations.html">Valuations</a>
 <a href="/implied-erp.html">Implied Equity Risk Premium</a>
 <a href="/equity-risk-premium.html">Equity Risk Premium by Sector</a>
 <a href="/pe-divergence.html">Forward vs. Trailing P/E Divergence</a>
 <a href="/expectations-vs-reality.html">Expectations vs. Reality</a>
+</div>
+<div class="mcol"><h4>Estimates &amp; Surprises</h4>
 <a href="/analyst-price-target.html">Analyst Price Target Upside</a>
 <a href="/analyst-estimate-dispersion.html">Analyst Estimate Dispersion</a>
-<a href="/earnings-growth-divergence.html">Earnings Growth vs. Price Performance</a>
-</div>
-</div>
-
-<div class="navdrop">
-<span class="navlabel">Earnings ▾</span>
-<div class="dropdown">
 <a href="/earnings-revisions.html">Earnings Revisions</a>
 <a href="/earnings-surprise.html">Earnings Surprise History</a>
 <a href="/post-earnings-drift.html">Post-Earnings Announcement Drift</a>
 <a href="/earnings-call-sentiment.html">Earnings Call Sentiment</a>
+<a href="/earnings-growth-divergence.html">Earnings Growth vs. Price Performance</a>
+</div>
+<div class="mcol"><h4>Fundamentals &amp; Quality</h4>
 <a href="/fcf-yield.html">Free Cash Flow Yield</a>
 <a href="/quality-score.html">Financial Quality Screener (Piotroski)</a>
-<a href="/ai-capex-tracker.html">AI Capex Tracker</a>
 <a href="/roic-wacc.html">ROIC vs. Cost of Capital</a>
 <a href="/cash-conversion-cycle.html">Cash Conversion Cycle</a>
 <a href="/rd-intensity.html">R&amp;D Intensity</a>
+<a href="/ai-capex-tracker.html">AI Capex Tracker</a>
 </div>
+</div></div>
 </div>
-
 <div class="navdrop">
-<span class="navlabel">Sectors &amp; Style ▾</span>
-<div class="dropdown">
+<span class="navlabel">Sectors &amp; Factors ▾</span>
+<div class="dropdown"><div class="mega">
+<div class="mcol"><h4>Sectors</h4>
 <a href="/sector-analysis.html">Sector Performance</a>
 <a href="/sector-beeswarm.html">Sector Beeswarm</a>
 <a href="/sector-correlation.html">Sector Correlation Matrix</a>
 <a href="/sector-rotation.html">Sector Rotation Model</a>
+<a href="/country-sector-scorecard.html">Country / Sector Scorecard</a>
+</div>
+<div class="mcol"><h4>Style &amp; Relative Performance</h4>
 <a href="/factor-analysis.html">Factor Analysis</a>
 <a href="/quality-lowvol-factors.html">Quality &amp; Low-Volatility Factor Screen</a>
 <a href="/small-cap-vs-large-cap.html">Small Cap vs. Large Cap Spread</a>
 <a href="/international-vs-us.html">International vs. US Relative Performance</a>
-<a href="/country-sector-scorecard.html">Country / Sector Scorecard</a>
 <a href="/relative-strength-leaders.html">Relative Strength Leaders/Laggards</a>
-<a href="/concentration.html">Concentration</a>
 </div>
+</div></div>
 </div>
-
 <div class="navdrop">
-<span class="navlabel">Capital Returns ▾</span>
-<div class="dropdown">
+<span class="navlabel">Capital &amp; Ownership ▾</span>
+<div class="dropdown"><div class="mega">
+<div class="mcol"><h4>Shareholder Returns</h4>
 <a href="/dividend-growth-screener.html">Dividend Growth Screener</a>
 <a href="/shareholder-yield.html">Shareholder Yield</a>
 <a href="/buyback-effectiveness.html">Buyback Effectiveness</a>
 <a href="/share-count-trends.html">Share Count Trends</a>
+</div>
+<div class="mcol"><h4>Issuance &amp; Corporate Actions</h4>
 <a href="/stock-split-tracker.html">Stock Split Tracker</a>
 <a href="/spin-off-performance.html">Spin-Off Performance Tracker</a>
 <a href="/ipo-activity.html">IPO Activity</a>
 <a href="/ipo-pipeline.html">IPO Pipeline</a>
 </div>
-</div>
-
-<div class="navdrop">
-<span class="navlabel">Ownership &amp; Flows ▾</span>
-<div class="dropdown">
+<div class="mcol"><h4>Ownership &amp; Flows</h4>
 <a href="/insider-buying-selling.html">Insider Buying/Selling</a>
 <a href="/institutional-ownership.html">Institutional Ownership &amp; 13F Flow</a>
 <a href="/congressional-trading.html">Congressional Trading Activity</a>
 <a href="/small-cap-liquidity.html">Small-Cap Liquidity</a>
-<a href="/options-positioning.html">Options Positioning</a>
 </div>
+</div></div>
 </div>
-
 <div class="navdrop">
-<span class="navlabel">Rates &amp; Macro ▾</span>
-<div class="dropdown">
+<span class="navlabel">Macro &amp; Tools ▾</span>
+<div class="dropdown"><div class="mega">
+<div class="mcol"><h4>Rates &amp; Macro</h4>
 <a href="/yield-curves.html">Yield Curves</a>
 </div>
-</div>
-
-<div class="navdrop">
-<span class="navlabel">Tools ▾</span>
-<div class="dropdown">
+<div class="mcol"><h4>Tools</h4>
 <a href="/portfolio-simulator.html">Portfolio Simulator</a>
 <a href="/backtesting.html">Backtesting</a>
 <a href="/statistical-engine">Statistical Engine</a>
 </div>
+</div></div>
 </div>
-
 <div class="navdrop">
 <span class="navlabel">Research ▾</span>
-<div class="dropdown">
+<div class="dropdown"><div class="mega">
+<div class="mcol"><h4>Reports</h4>
 <a href="/research/beneath-the-index.pdf" target="_blank" rel="noopener">Beneath the Index</a>
 </div>
+</div></div>
 </div>
-
 </div>
 <button class="theme-toggle" id="themeToggle" type="button" aria-label="Toggle light/dark mode" title="Toggle light/dark mode">&#9789;</button>
 </nav>
