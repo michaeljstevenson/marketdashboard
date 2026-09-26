@@ -10,7 +10,6 @@
 </script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom@2"></script>
-<script src="date-format.js"></script>
 <script>
 // FRED-style zoom: drag horizontally on any chart to zoom into that range,
 // double-click to reset. Applied via Chart.defaults so every chart on the
@@ -74,7 +73,7 @@ document.addEventListener("DOMContentLoaded", function(){
 // included) via the Fullscreen API. Finds every <canvas> generically
 // rather than relying on one wrapper class name, since different pages
 // on this site use different card markup (.chart-box, .scatter-box,
-// herd-mentality tiles, etc.).
+// .chart, herd-mentality tiles, etc.).
 document.addEventListener("DOMContentLoaded", function(){
  function requestFs(el){
   var fn = el.requestFullscreen || el.webkitRequestFullscreen || el.mozRequestFullScreen || el.msRequestFullscreen;
@@ -153,7 +152,7 @@ document.addEventListener("DOMContentLoaded", function(){
 </script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Small-Cap Liquidity &amp; Volume Trends | Michael J. Stevenson</title>
+<title>Altman Z-Score — Michael J. Stevenson</title>
 
 <style>
 
@@ -176,8 +175,9 @@ document.addEventListener("DOMContentLoaded", function(){
 
   /* NDR-style chart palette. Deliberately the SAME in light and dark —
      these charts keep a constant warm-paper look as a homage to the Ned
-     Davis Research print charts that inspired the page. JS reads them via
-     getComputedStyle (per the site convention) rather than hardcoding. */
+     Davis Research print charts that inspired /concentration. JS reads
+     them via getComputedStyle (per the site convention) rather than
+     hardcoding. */
   --ndr-plot:#f5f1e6;
   --ndr-axis:#3c3a33;
   --ndr-axis-soft:#6f6a5c;
@@ -283,6 +283,7 @@ h1{
  border:1px solid var(--hair);
  border-radius:10px;
  padding:20px;
+ min-width:0;
 }
 
 .stat-label{
@@ -318,7 +319,6 @@ h1{
  border-radius:12px;
  padding:20px;
  margin-bottom:30px;
- position:relative;
 }
 
 .chart-box-header{
@@ -343,7 +343,12 @@ h1{
  margin-top:4px;
 }
 
-/* The warm-paper plot panel behind each canvas — the NDR homage. */
+.chart-canvas-wrap{
+ height:380px;
+}
+
+/* The warm-paper plot panel behind each canvas — the NDR homage
+   (matches /concentration). */
 .ndr-panel{
  background:var(--ndr-plot);
  border:1px solid var(--ndr-grid);
@@ -351,13 +356,38 @@ h1{
  padding:14px 14px 10px;
 }
 
-.chart-canvas-wrap{
- height:340px;
+/* Two charts / method-tables side by side, same breakpoint as table-grid */
+.chart-grid{
+ display:grid;
+ grid-template-columns:1fr 1fr;
+ gap:16px;
+ margin-bottom:30px;
 }
 
-.chart-canvas-wrap.short{ height:280px; }
+.chart-grid .chart-box{
+ margin-bottom:0;
+ min-width:0; /* grid items default to min-width:auto (their content's min-content
+                 size), which a wide method table would otherwise force past this
+                 column's track width — same "grid blowout" the site-wide
+                 table{min-width:600px} rule creates if left unchecked here */
+}
+
+@media (max-width:900px){
+ .chart-grid{ grid-template-columns:1fr; }
+}
 
 /* TABLE */
+
+.table-grid{
+ display:grid;
+ grid-template-columns:1fr 1fr;
+ gap:16px;
+ margin-bottom:30px;
+}
+
+@media (max-width:900px){
+ .table-grid{ grid-template-columns:1fr; }
+}
 
 .table-box{
  background:var(--card);
@@ -365,6 +395,14 @@ h1{
  border-radius:12px;
  overflow-x:auto;
  margin-bottom:30px;
+}
+
+.table-grid .table-box{
+ margin-bottom:0;
+ min-width:0; /* grid items default to min-width:auto (their content's min-content size) —
+                 the site-wide table{min-width:600px} rule would otherwise force this
+                 column's track past the mobile viewport even though .table-box already
+                 scrolls its own overflow internally */
 }
 
 .table-box-header{
@@ -384,7 +422,7 @@ table{
  width:100%;
  border-collapse:collapse;
  font-size:13px;
- min-width:720px;
+ min-width:600px;
 }
 
 thead th{
@@ -436,50 +474,40 @@ tbody td:first-child{
 tbody td:nth-child(2){
  text-align:left;
  color:var(--muted);
- font-family:var(--sans);
- font-size:12.5px;
 }
 
-.cohort-tag{
- font-size:10.5px;
- letter-spacing:0.03em;
- padding:2px 7px;
- border-radius:20px;
- border:1px solid var(--hair);
- color:var(--muted);
-}
-
-.cohort-tag.small{ color:var(--greed); border-color:var(--greed); }
-.cohort-tag.mega{ color:var(--fear); border-color:var(--fear); }
+.sector-name{ color:var(--ink); }
+.sector-ticker{ color:var(--muted); font-size:11px; }
 
 .cell-pos{ color:var(--ink); }
 .cell-neg{ color:var(--ink); }
 .cell-na{ color:var(--muted); }
 
-.table-footnote{
- padding:2px 20px 16px;
- color:var(--muted);
- font-size:11px;
-}
+.zone-safe{ color:var(--ndr-green, #4f6f3f); }
+.zone-grey{ color:var(--greed); }
+.zone-distress{ color:var(--fear); }
 
-/* SCATTER / METHOD TABLE (mirrors /factor-analysis) */
+/* SCATTER / METHOD TABLE (mirrors /factor-analysis, /roic-wacc) */
 
 .scatter-canvas-wrap{
- height:260px;
+ height:300px;
  margin-bottom:12px;
  position:relative;
 }
 
-#regressionMethodTable{
- overflow-x:auto;
-}
-
 .method-table{
  width:100%;
+ min-width:0; /* overrides the site-wide table{min-width:600px} rule below — two of these
+                 side by side in .chart-grid would otherwise force the whole page wider
+                 than its container even though a 7-column method table never needs 600px */
  border-collapse:collapse;
  font-family:var(--mono);
  font-size:11px;
  margin-top:8px;
+}
+
+#zBetaMethodTable, #zRel3mMethodTable{
+ overflow-x:auto;
 }
 
 .method-table th{
@@ -518,6 +546,26 @@ tbody td:nth-child(2){
  color:var(--muted);
  margin-top:8px;
  font-style:italic;
+}
+
+/* SECTOR LEGEND (scatter / spaghetti charts) */
+
+.sector-legend{
+ display:flex;
+ flex-wrap:wrap;
+ gap:10px 16px;
+ margin-top:14px;
+ font-size:11px;
+ color:var(--muted);
+}
+
+.sector-legend .dot{
+ display:inline-block;
+ width:8px;
+ height:8px;
+ border-radius:50%;
+ margin-right:5px;
+ vertical-align:middle;
 }
 
 /* EXPLAINER */
@@ -585,7 +633,7 @@ tbody td:nth-child(2){
  color:#d9b877;
  border-radius:8px;
  padding:12px 15px;
- margin-bottom:16px;
+ margin-bottom:20px;
  font-size:13px;
  display:none;
 }
@@ -651,7 +699,7 @@ tbody td:nth-child(2){
 </div>
 </div></div>
 </div>
-<div class="navdrop">
+<div class="navdrop has-active">
 <span class="navlabel">Valuation &amp; Earnings ▾</span>
 <div class="dropdown"><div class="mega">
 <div class="mcol"><h4>Valuation</h4>
@@ -677,7 +725,7 @@ tbody td:nth-child(2){
 <a href="/cash-conversion-cycle.html">Cash Conversion Cycle</a>
 <a href="/rd-intensity.html">R&amp;D Intensity</a>
 <a href="/ai-capex-tracker.html">AI Capex Tracker</a>
-<a href="/altman-z-score.html">Altman Z-Score</a>
+<a href="/altman-z-score.html" class="active">Altman Z-Score</a>
 </div>
 </div></div>
 </div>
@@ -700,7 +748,7 @@ tbody td:nth-child(2){
 </div>
 </div></div>
 </div>
-<div class="navdrop has-active">
+<div class="navdrop">
 <span class="navlabel">Capital &amp; Ownership ▾</span>
 <div class="dropdown"><div class="mega">
 <div class="mcol"><h4>Shareholder Returns</h4>
@@ -719,7 +767,7 @@ tbody td:nth-child(2){
 <a href="/insider-buying-selling.html">Insider Buying/Selling</a>
 <a href="/institutional-ownership.html">Institutional Ownership &amp; 13F Flow</a>
 <a href="/congressional-trading.html">Congressional Trading Activity</a>
-<a href="/small-cap-liquidity.html" class="active">Small-Cap Liquidity</a>
+<a href="/small-cap-liquidity.html">Small-Cap Liquidity</a>
 </div>
 </div></div>
 </div>
@@ -745,7 +793,7 @@ tbody td:nth-child(2){
 </div></div>
 </div>
 </div>
-<button class="theme-toggle" id="themeToggle" type="button" aria-label="Toggle light/dark mode" title="Toggle light/dark mode">&#9789;</button>
+<button aria-label="Toggle light/dark mode" class="theme-toggle" id="themeToggle" title="Toggle light/dark mode" type="button">☽</button>
 </nav>
 <script>
 // Class-driven (not pure :hover) nav dropdowns: pure CSS :hover drops the
@@ -785,48 +833,49 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <div class="container">
 
 <div class="error-banner" id="errorBanner"></div>
+<div class="warning-banner" id="warningBanner"></div>
 
 <div class="header">
 <div>
-<h1>Small-Cap Liquidity &amp; Volume Trends</h1>
-<div class="subtitle">Trading depth and transaction-cost proxies for the smallest vs. largest members of the S&amp;P 500, and whether the gap widens when small-caps underperform.</div>
+<h1>Altman Z-Score</h1>
+<div class="subtitle">The classic Altman (1968) bankruptcy/financial-distress screen, applied across the full S&amp;P 500 — a single number built from five balance-sheet and income-statement ratios that has held up for over half a century as a rough gauge of solvency risk.</div>
 </div>
 <div class="updated" id="updated">Loading...</div>
 </div>
 
 <div class="stat-grid">
 <div class="stat-card">
-<div class="stat-label">Avg. Dollar Volume</div>
-<div class="stat-value" id="statVolume" style="font-size:20px;">…</div>
-<div class="stat-note" id="statVolumeNote">Small-cap cohort, 21-day rolling avg.</div>
+<div class="stat-label">Companies Scored</div>
+<div class="stat-value" id="statCompanies" style="font-size:20px;">—</div>
+<div class="stat-note" id="statCompaniesNote">Of full S&amp;P 500, ex-Financials/Real Estate</div>
 </div>
 <div class="stat-card">
-<div class="stat-label">Small-Cap Amihud Ratio</div>
-<div class="stat-value" id="statSmallAmihud" style="font-size:20px;">…</div>
-<div class="stat-note">21-day rolling avg., illiquidity per $1M traded</div>
+<div class="stat-label">Median Z-Score</div>
+<div class="stat-value" id="statMedianZ">—</div>
+<div class="stat-note">Market-wide, latest fiscal year</div>
 </div>
 <div class="stat-card">
-<div class="stat-label">Mega-Cap Amihud Ratio</div>
-<div class="stat-value" id="statMegaAmihud" style="font-size:20px;">…</div>
-<div class="stat-note">21-day rolling avg., illiquidity per $1M traded</div>
+<div class="stat-label">Distress Zone</div>
+<div class="stat-value" id="statDistressPct">—</div>
+<div class="stat-note">Z &lt; 1.81 — share of companies scored</div>
 </div>
 <div class="stat-card">
-<div class="stat-label">Small/Mega Liquidity Gap</div>
-<div class="stat-value" id="statRatio">…</div>
-<div class="stat-note">Small-cap illiquidity ÷ mega-cap illiquidity</div>
+<div class="stat-label">Safe Zone</div>
+<div class="stat-value" id="statSafePct">—</div>
+<div class="stat-note">Z &gt; 2.99 — share of companies scored</div>
 </div>
 </div>
 
 <div class="chart-box">
 <div class="chart-box-header">
 <div>
-<h2>Average daily dollar volume, ~2-year trend</h2>
-<div class="chart-subhead">Equal-weighted average across each cohort (~100 tickers), 21-trading-day rolling average, log scale.</div>
+<h2>Median Z-Score by sector</h2>
+<div class="chart-subhead">Bar color follows the zone the sector's median score falls into — green above 2.99 (Safe), amber 1.81&ndash;2.99 (Grey Zone), red below 1.81 (Distress)</div>
 </div>
 </div>
 <div class="ndr-panel">
 <div class="chart-canvas-wrap">
-<canvas id="volumeChart"></canvas>
+<canvas id="sectorChart"></canvas>
 </div>
 </div>
 </div>
@@ -834,91 +883,153 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <div class="chart-box">
 <div class="chart-box-header">
 <div>
-<h2>Small/Mega Amihud illiquidity ratio: the "liquidity gap"</h2>
-<div class="chart-subhead">Small-cap cohort's rolling Amihud ratio ÷ mega-cap cohort's. Rising means small-caps are getting relatively less liquid.</div>
+<h2>Distribution of Z-Scores</h2>
+<div class="chart-subhead">Every scored S&amp;P 500 constituent (ex-Financials/Real Estate), bucketed by Z-Score, colored by zone</div>
 </div>
 </div>
 <div class="ndr-panel">
-<div class="chart-canvas-wrap short">
-<canvas id="gapChart"></canvas>
+<div class="chart-canvas-wrap" style="height:300px;">
+<canvas id="zHistogram"></canvas>
 </div>
 </div>
 </div>
 
+<div class="chart-grid">
 <div class="chart-box">
 <div class="chart-box-header">
 <div>
-<h2>Corwin-Schultz bid-ask spread estimate, ~2-year trend</h2>
-<div class="chart-subhead">Equal-weighted average across each cohort, 21-trading-day rolling average of the Corwin &amp; Schultz (2012) high-low spread estimator.</div>
+<h2>Z-Score vs. beta</h2>
+<div class="chart-subhead">Does the market's own risk pricing (beta) actually line up with fundamental distress risk, or is there no such relationship?</div>
 </div>
 </div>
-<div class="ndr-panel">
-<div class="chart-canvas-wrap">
-<canvas id="spreadChart"></canvas>
-</div>
-</div>
-</div>
-
-<div class="chart-box">
-<div class="chart-box-header">
-<div>
-<h2>Liquidity gap vs. small-cap relative performance</h2>
-<div class="chart-subhead">Each point is one month. X is that month's small-cap vs. large-cap relative return (from <a href="/small-cap-vs-large-cap.html">Small Cap vs. Large Cap Spread</a>), Y is that month's change in the Small/Mega Amihud ratio.</div>
-</div>
-</div>
-<div class="warning-banner" id="regressionFallback"></div>
-<div id="regressionContent">
 <div class="ndr-panel">
 <div class="scatter-canvas-wrap">
-<canvas id="regressionScatter"></canvas>
+<canvas id="zBetaScatter"></canvas>
 </div>
 </div>
-<div id="regressionMethodTable"></div>
+<div id="zBetaMethodTable"></div>
+</div>
+<div class="chart-box">
+<div class="chart-box-header">
+<div>
+<h2>Z-Score vs. 3-month relative return</h2>
+<div class="chart-subhead">Does fundamental distress risk currently show up in recent relative price performance?</div>
+</div>
+</div>
+<div class="ndr-panel">
+<div class="scatter-canvas-wrap">
+<canvas id="zRel3mScatter"></canvas>
+</div>
+</div>
+<div id="zRel3mMethodTable"></div>
+</div>
+</div>
+
+<div class="table-grid">
+<div class="table-box">
+<div class="table-box-header">
+<h2>Safest balance sheets</h2>
+<div class="chart-subhead">Highest Z-Score</div>
+</div>
+<table id="safestTable">
+<thead><tr><th>Symbol</th><th>Sector</th><th>Z-Score</th><th>Zone</th></tr></thead>
+<tbody id="safestBody"><tr><td colspan="4" style="text-align:center; color:var(--muted); padding:24px;">Loading&hellip;</td></tr></tbody>
+</table>
+</div>
+<div class="table-box">
+<div class="table-box-header">
+<h2>Most distressed</h2>
+<div class="chart-subhead">Lowest Z-Score</div>
+</div>
+<table id="distressedTable">
+<thead><tr><th>Symbol</th><th>Sector</th><th>Z-Score</th><th>Zone</th></tr></thead>
+<tbody id="distressedBody"><tr><td colspan="4" style="text-align:center; color:var(--muted); padding:24px;">Loading&hellip;</td></tr></tbody>
+</table>
 </div>
 </div>
 
 <div class="table-box">
 <div class="table-box-header">
-<h2>Full constituent table</h2>
-<div class="chart-subhead">Latest 21-day rolling values, both cohorts combined. Click a column to sort.</div>
+<h2>All scored companies</h2>
+<div class="chart-subhead">Z-Score and its five components, full S&amp;P 500 ex-Financials/Real Estate</div>
 </div>
-<table id="tickerTable">
+<table id="stockTable">
 <thead>
 <tr>
 <th data-key="symbol">Symbol</th>
-<th data-key="name">Name</th>
-<th data-key="sector">Sector<span class="sort-arrow">▾</span></th>
-<th data-key="cohort">Cohort<span class="sort-arrow">▾</span></th>
-<th data-key="marketCap">Mkt Cap<span class="sort-arrow">▾</span></th>
-<th data-key="dollarVolume">$ Volume<span class="sort-arrow">▾</span></th>
-<th data-key="amihud">Amihud<span class="sort-arrow">▾</span></th>
-<th data-key="corwinSchultz">C-S Spread<span class="sort-arrow">▾</span></th>
+<th data-key="sector">Sector</th>
+<th data-key="z">Z-Score<span class="sort-arrow">▾</span></th>
+<th data-key="zone">Zone</th>
+<th data-key="x1">WC/TA<span class="sort-arrow">▾</span></th>
+<th data-key="x2">RE/TA<span class="sort-arrow">▾</span></th>
+<th data-key="x3">EBIT/TA<span class="sort-arrow">▾</span></th>
+<th data-key="x4">MVE/TL<span class="sort-arrow">▾</span></th>
+<th data-key="x5">Sales/TA<span class="sort-arrow">▾</span></th>
 </tr>
 </thead>
 <tbody id="tableBody">
-<tr><td colspan="8" style="text-align:center; color:var(--muted); padding:24px;">Loading&hellip;</td></tr>
+<tr><td colspan="9" style="text-align:center; color:var(--muted); padding:30px;">Loading Altman Z-Score data&hellip;</td></tr>
 </tbody>
 </table>
-<div class="table-footnote">All figures are 21-trading-day rolling averages as of the latest run. Amihud ratio is illiquidity (price impact) per $1M of dollar volume traded, so higher means less liquid. C-S Spread is the Corwin-Schultz estimated bid-ask spread, as a percentage of price.</div>
 </div>
 
 <div class="explainer">
 <h2>Methodology</h2>
-<p><strong>The cohorts are a proxy, not a small-cap index.</strong> "Small-Cap" here is the bottom quintile (~100 names) of the S&amp;P 500 by market cap, and "Mega-Cap" is the top quintile (~100 names) of the same index. Neither is the Russell 2000, S&amp;P SmallCap 600 or any dedicated small-cap benchmark. There is no free small-cap constituent list, so the cohorts use the S&amp;P 500's own weekly metadata (name, sector, shares outstanding, market cap, from Sector Beeswarm's <code>meta.json</code>). Even the smallest S&amp;P 500 company is worth billions and is more liquid than a typical small-cap, so read "small-cap" on this page as "smallest within the S&amp;P 500."</p>
-<p><strong>Liquidity metrics.</strong> <em>Dollar volume</em> is adjusted close × share volume. The <em>Amihud (2002) illiquidity ratio</em> (Amihud, "Illiquidity and Stock Returns: Cross-Section and Time-Series Effects," <em>Journal of Financial Markets</em>) is |daily return| ÷ dollar volume, scaled to price impact per $1M traded. A stock that moves a lot on little dollar volume scores high. The <em>Corwin-Schultz (2012) spread estimator</em> (Corwin &amp; Schultz, "A Simple Way to Estimate Bid-Ask Spreads from Daily High and Low Prices," <em>Journal of Finance</em>) infers the bid-ask spread from two consecutive days' high/low ranges, with no intraday quotes needed. The formula can produce a negative spread in low-volatility stretches, which is a known property of the estimator. This page sets those to zero.</p>
-<p><strong>21-day rolling window.</strong> All three metrics are 21-trading-day (about one calendar month) rolling averages in the charts and the table. Daily dollar volume and the Amihud ratio are very noisy day to day (one block trade can move them by an order of magnitude), and a rolling average is the standard way to smooth that. Cohort series are the equal-weighted average of each ticker's rolling value across the ~100 names in the cohort, over the trailing ~2 years (~504 trading days). Each weekly run recomputes everything from scratch.</p>
-<p><strong>The regression.</strong> The chart tests whether liquidity gets worse in months when small-caps underperform. Each point is one calendar month. X is that month's small-cap vs. large-cap relative return, from the same month-end IWM/SPY ratio logic as <a href="/small-cap-vs-large-cap.html">Small Cap vs. Large Cap Spread</a>. Y is that month's change in the Small/Mega Amihud ratio (this month-end minus last month-end). A <strong>negative</strong> correlation means liquidity deteriorates when small-caps underperform: months of small-cap weakness (negative X) pair with a widening liquidity gap (positive Y). A <strong>positive</strong> correlation means the opposite. As on <a href="/factor-analysis.html">Factor Analysis</a> and <a href="/small-cap-vs-large-cap.html">Small Cap vs. Large Cap Spread</a>, Pearson (OLS) and Spearman rank correlation are shown side by side, so a couple of extreme months can't carry the result. A low r&sup2; just means one variable explains little of the other.</p>
-<p>Refreshes weekly (Saturday), after the cohort membership (Sector Beeswarm's <code>meta.json</code>) refreshes. It runs weekly, not daily, because the ~200-ticker history pull is heavy and cohort membership changes slowly.</p>
-<div class="source">Source: <a href="https://finance.yahoo.com/" target="_blank" rel="noopener">Yahoo Finance</a> daily OHLCV. Cohort metadata from the weekly S&amp;P 500 constituent data behind Sector Beeswarm.</div>
+<p>Universe is the full S&amp;P 500, excluding Financials and Real Estate &mdash; a bank's or REIT's balance sheet (deposits and float as "liabilities," leveraged property as the asset base) isn't the kind of capital structure Edward Altman's 1968 model was built to read, and including those sectors would otherwise dominate the distress leaderboard for reasons that have nothing to do with financial distress. For every remaining constituent, Alpha Vantage's <code>INCOME_STATEMENT</code> and <code>BALANCE_SHEET</code> endpoints supply the latest full fiscal year's statements &mdash; a single point-in-time snapshot, not a trailing-twelve-month flow figure, matching how the original model is actually specified.</p>
+<p>The Z-Score is Z = 1.2&times;X1 + 1.4&times;X2 + 3.3&times;X3 + 0.6&times;X4 + 1.0&times;X5, where <b>X1</b> is working capital (current assets &minus; current liabilities) over total assets, <b>X2</b> is retained earnings over total assets, <b>X3</b> is EBIT (Alpha Vantage's direct <code>ebit</code> field, falling back to operating income) over total assets, <b>X4</b> is market value of equity (market capitalization, reused from <a href="/sector-beeswarm.html">Sector Beeswarm</a>'s own weekly metadata sweep rather than a separate <code>OVERVIEW</code> call) over total liabilities, and <b>X5</b> is total revenue over total assets. Zones follow Altman's original thresholds: Z &gt; 2.99 is the "Safe" zone, 1.81&ndash;2.99 is the "Grey Zone," and Z &lt; 1.81 is the "Distress" zone historically associated with elevated bankruptcy risk within about two years.</p>
+<p>A negative X2 is common and meaningful, not an error &mdash; young or heavily-levered companies, and companies with large accumulated losses, are supposed to score worse on this term, and it's left as reported rather than floored at zero. A company is excluded only when a required input is missing outright, or when total assets or total liabilities are non-positive (making the ratio itself undefined), or when no market capitalization is on file yet.</p>
+<p>The two regression tests are single-snapshot cross-sections (no accumulated history needed): Z-Score vs. beta (reusing <a href="/equity-risk-premium.html">Equity Risk Premium by Sector</a>'s own beta data) asks whether the market's own risk pricing lines up with fundamental distress risk, and Z-Score vs. 3-month relative price return (reusing <a href="/relative-strength-leaders.html">Relative Strength Leaders/Laggards</a>'s own weekly price data) asks whether distress risk currently shows up in recent relative performance. Both use the same Pearson-and-Spearman two-method check as <a href="/factor-analysis.html">Factor Analysis</a>.</p>
+<p>One-time snapshot &mdash; no recurring schedule, matching every other full-universe fundamentals sweep added to this site since mid-September 2026. Re-run manually for a fresh pass; annual fundamentals don't move day to day. Sector, company name, and market cap come from the same weekly metadata sweep that backs <a href="/sector-beeswarm.html">Sector Beeswarm</a>.</p>
+<div class="source">Source: <a href="https://www.alphavantage.co/" target="_blank" rel="noopener">Alpha Vantage — INCOME_STATEMENT, BALANCE_SHEET, COMPANY_OVERVIEW</a>, plus this site's own <a href="/equity-risk-premium.html">Equity Risk Premium by Sector</a> and <a href="/relative-strength-leaders.html">Relative Strength Leaders/Laggards</a> data</div>
 </div>
 
 </div>
 
 <script>
-// ---- NDR chart styling helpers -----------------------------------------
-// Colours come from the --ndr-* custom properties (constant across themes)
-// so the charts keep their warm-paper look while still following the
-// site's "read chart colours from CSS, don't hardcode" rule.
+const DATA_URL = "/api/altman-z";
+
+const ZONE_COLOR = { "Safe": "green", "Grey Zone": "gold", "Distress": "red" };
+const ZONE_CLASS = { "Safe": "zone-safe", "Grey Zone": "zone-grey", "Distress": "zone-distress" };
+
+let RAW = null;
+let SORT_KEY = "z";
+let SORT_DIR = 1;
+
+function fmtZ(v){
+ if(v === null || v === undefined || isNaN(v)) return "—";
+ return v.toFixed(2);
+}
+function fmtRatio(v){
+ if(v === null || v === undefined || isNaN(v)) return "—";
+ return v.toFixed(3);
+}
+function fmtPct(v, digits){
+ if(v === null || v === undefined || isNaN(v)) return "—";
+ digits = digits === undefined ? 1 : digits;
+ return v.toFixed(digits) + "%";
+}
+function fmtPp(v, digits){
+ if(v === null || v === undefined || isNaN(v)) return "—";
+ digits = digits === undefined ? 1 : digits;
+ return (v >= 0 ? "+" : "") + v.toFixed(digits) + "pp";
+}
+function fmtBeta(v){
+ if(v === null || v === undefined || isNaN(v)) return "—";
+ return v.toFixed(2);
+}
+
+function showError(message){
+ const banner = document.getElementById("errorBanner");
+ banner.textContent = message;
+ banner.style.display = "block";
+}
+function showWarning(message){
+ const banner = document.getElementById("warningBanner");
+ banner.textContent = message;
+ banner.style.display = "block";
+}
+
+// ---- NDR chart styling helpers (matches /concentration, /roic-wacc) ----
 function ndr(name){
  return getComputedStyle(document.documentElement).getPropertyValue("--ndr-" + name).trim();
 }
@@ -926,12 +1037,10 @@ function ndr(name){
 Chart.defaults.font.family = "'Iowan Old Style','Palatino Linotype',Georgia,serif";
 Chart.defaults.color = ndr("axis-soft");
 
-function ndrXScale(opts){
- opts = opts || {};
+function ndrXScale(){
  return {
   ticks: { color: ndr("axis"), maxTicksLimit: 9, maxRotation: 0, autoSkip: true, font: { size: 11 } },
   grid: { color: "rgba(0,0,0,0)", borderColor: ndr("axis") },
-  title: opts.title ? { display: true, text: opts.title, color: ndr("axis-soft"), font: { size: 10 } } : { display: false },
  };
 }
 
@@ -947,83 +1056,8 @@ function ndrYScale(opts){
  };
 }
 
-function ndrLegend(){
- return {
-  display: true, position: "top", align: "start",
-  labels: { boxWidth: 22, boxHeight: 2, color: ndr("axis"), font: { size: 11 } },
- };
-}
-
-const DATA_URL = "/api/smallcap-liquidity";
-const SPREAD_DATA_URL = "/api/smallcap-largecap";
-
-let RAW = null;
-let SORT_KEY = "dollarVolume";
-let SORT_DIR = -1;
-
-function showError(message){
- const banner = document.getElementById("errorBanner");
- banner.textContent = message;
- banner.style.display = "block";
-}
-
-function showRegressionUnavailable(message){
- const banner = document.getElementById("regressionFallback");
- banner.textContent = message;
- banner.style.display = "block";
- document.getElementById("regressionContent").style.display = "none";
-}
-
-function fmtUsd(v){
- if(v === null || v === undefined || isNaN(v)) return "n/a";
- const abs = Math.abs(v);
- const sign = v < 0 ? "-" : "";
- if(abs >= 1e9) return sign + "$" + (abs/1e9).toFixed(2) + "B";
- if(abs >= 1e6) return sign + "$" + (abs/1e6).toFixed(2) + "M";
- if(abs >= 1e3) return sign + "$" + (abs/1e3).toFixed(1) + "K";
- return sign + "$" + abs.toFixed(0);
-}
-
-function fmtAmihud(v){
- if(v === null || v === undefined || isNaN(v)) return "n/a";
- return v < 0.001 ? v.toFixed(6) : v.toFixed(4);
-}
-
-function fmtSpreadPct(v){
- if(v === null || v === undefined || isNaN(v)) return "n/a";
- return (v * 100).toFixed(3) + "%";
-}
-
-function fmtPct(v, digits){
- if(v === null || v === undefined || isNaN(v)) return "n/a";
- digits = digits === undefined ? 2 : digits;
- return (v >= 0 ? "+" : "") + v.toFixed(digits) + "%";
-}
-
-function themeInkColor(){
- const v = getComputedStyle(document.documentElement).getPropertyValue("--ink").trim();
- return v || "#eae6da";
-}
-function themeMutedColor(){
- const v = getComputedStyle(document.documentElement).getPropertyValue("--muted").trim();
- return v || "#8b9199";
-}
-function themeHairColor(){
- const v = getComputedStyle(document.documentElement).getPropertyValue("--hair").trim();
- return v || "#2b3138";
-}
-function themeGreedColor(){
- const v = getComputedStyle(document.documentElement).getPropertyValue("--greed").trim();
- return v || "#d98a3d";
-}
-function themeFearColor(){
- const v = getComputedStyle(document.documentElement).getPropertyValue("--fear").trim();
- return v || "#6f8fac";
-}
-
 // ---- Stats helpers — same methodology as /factor-analysis, duplicated
 // here since every page on this site is self-contained (see CLAUDE.md). ----
-
 function linearRegression(xs, ys){
  const n = xs.length;
  const mx = xs.reduce((a, b) => a + b, 0) / n;
@@ -1042,12 +1076,7 @@ function linearRegression(xs, ys){
  const p = 2 * (1 - normalCdf(Math.abs(t)));
  return { n, slope, intercept, r, r2, t, dof, p, sse };
 }
-
-function normalCdf(x){
- return 0.5 * (1 + erf(x / Math.SQRT2));
-}
-
-// Abramowitz & Stegun 7.1.26 approximation — accurate to ~1e-7.
+function normalCdf(x){ return 0.5 * (1 + erf(x / Math.SQRT2)); }
 function erf(x){
  const sign = x < 0 ? -1 : 1;
  x = Math.abs(x);
@@ -1056,7 +1085,6 @@ function erf(x){
  const y = 1 - (((((a5 * t + a4) * t) + a3) * t + a2) * t + a1) * t * Math.exp(-x * x);
  return sign * y;
 }
-
 function rankArray(arr){
  const idx = arr.map((v, i) => i).sort((a, b) => arr[a] - arr[b]);
  const ranks = new Array(arr.length);
@@ -1070,248 +1098,9 @@ function rankArray(arr){
  }
  return ranks;
 }
+function spearmanRegression(xs, ys){ return linearRegression(rankArray(xs), rankArray(ys)); }
 
-function spearmanRegression(xs, ys){
- return linearRegression(rankArray(xs), rankArray(ys));
-}
-
-// ---- Monthly bucketing (shared shape with /small-cap-vs-large-cap's
-// buildMonthly, but only the pieces this page's regression needs). ----
-
-function prevMonthKey(ym){
- let [y, m] = ym.split("-").map(Number);
- m -= 1;
- if(m < 1){ m = 12; y -= 1; }
- return y + "-" + String(m).padStart(2, "0");
-}
-
-function monthEndMap(dates, values){
- const map = new Map();
- for(let i = 0; i < dates.length; i++) map.set(dates[i].slice(0, 7), values[i]); // last write per key wins = month-end
- return map;
-}
-
-// Month-over-month % change in the small-cap-vs-large-cap ratio, keyed by
-// month — identical construction to /small-cap-vs-large-cap's own monthly
-// spread-return series, so the two pages' "same month" always means the
-// same thing.
-function buildRelReturnByMonth(spreadData){
- const ratioByMonth = monthEndMap(spreadData.dates, spreadData.ratioSmallLarge);
- const map = new Map();
- for(const ym of ratioByMonth.keys()){
-  const now = ratioByMonth.get(ym);
-  const prev = ratioByMonth.get(prevMonthKey(ym));
-  if(now !== undefined && prev !== undefined){
-   map.set(ym, Math.round((now / prev - 1) * 10000) / 100);
-  }
- }
- return map;
-}
-
-// Month-over-month change (in ratio points, not %) in this page's own
-// Small/Mega Amihud ratio.
-function buildRatioChangeByMonth(ratioAmihud){
- const byMonth = monthEndMap(ratioAmihud.dates, ratioAmihud.values);
- const map = new Map();
- for(const ym of byMonth.keys()){
-  const now = byMonth.get(ym);
-  const prev = byMonth.get(prevMonthKey(ym));
-  if(now !== null && now !== undefined && prev !== null && prev !== undefined){
-   map.set(ym, Math.round((now - prev) * 1000) / 1000);
-  }
- }
- return map;
-}
-
-let volumeChart = null, gapChart = null, spreadChart = null, regressionScatter = null;
-
-async function init(){
- try{
-  const res = await fetch(DATA_URL, { cache: "no-store" });
-  const data = await res.json();
-  if(!res.ok || data.error) throw new Error(data.error || "failed to load");
-
-  RAW = data;
-  document.getElementById("updated").textContent =
-   "As of " + usDate(data.asOfDate) + " · " + new Date(data.generated_at_utc).toLocaleString("en-US", { month: "2-digit", day: "2-digit", year: "numeric", hour: "numeric", minute: "2-digit" });
-
-  renderStats(data);
-  renderVolumeChart(data);
-  renderGapChart(data);
-  renderSpreadChart(data);
-  renderTable();
-
-  attemptRegression(data);
-
- }catch(e){
-  showError("Couldn't load small-cap liquidity data (" + e.message + "). The /api/smallcap-liquidity function may not have run yet.");
- }
-}
-
-async function attemptRegression(data){
- try{
-  const res = await fetch(SPREAD_DATA_URL, { cache: "no-store" });
-  const spreadData = await res.json();
-  if(!res.ok || spreadData.error) throw new Error(spreadData.error || "failed to load");
-
-  const relReturnByMonth = buildRelReturnByMonth(spreadData);
-  const ratioChangeByMonth = buildRatioChangeByMonth(data.ratioAmihud);
-
-  const pairs = [];
-  for(const [ym, y] of ratioChangeByMonth.entries()){
-   if(relReturnByMonth.has(ym)) pairs.push({ ym, x: relReturnByMonth.get(ym), y });
-  }
-
-  if(pairs.length < 6){
-   showRegressionUnavailable("Not enough overlapping months yet (" + pairs.length + ") between the two datasets to compute a reliable correlation. Check back after a few more weekly runs.");
-   return;
-  }
-
-  renderRegression(pairs);
- }catch(e){
-  showRegressionUnavailable("Couldn't load the small-cap-vs-large-cap comparison (" + e.message + "). This regression depends on /api/smallcap-largecap, which appears unreachable right now. The rest of this page is unaffected.");
- }
-}
-
-function renderStats(data){
- const small = data.latest.small, mega = data.latest.mega;
-
- document.getElementById("statVolume").textContent = fmtUsd(small.avgDollarVolume);
- document.getElementById("statVolumeNote").textContent =
-  "Mega-cap: " + fmtUsd(mega.avgDollarVolume) +
-  (small.avgDollarVolume > 0 ? " (" + (mega.avgDollarVolume / small.avgDollarVolume).toFixed(0) + "x larger)" : "");
-
- document.getElementById("statSmallAmihud").textContent = fmtAmihud(small.avgAmihud);
- document.getElementById("statMegaAmihud").textContent = fmtAmihud(mega.avgAmihud);
-
- const ratioEl = document.getElementById("statRatio");
- if(data.latest.ratioAmihud !== null && data.latest.ratioAmihud !== undefined){
-  ratioEl.textContent = data.latest.ratioAmihud.toFixed(2) + "x";
- }
-}
-
-function renderVolumeChart(data){
- const ctx = document.getElementById("volumeChart").getContext("2d");
- if(volumeChart) volumeChart.destroy();
- volumeChart = new Chart(ctx, {
-  type: "line",
-  data: {
-   labels: data.cohorts.small.dates,
-   datasets: [
-    { label: "Small-Cap", data: data.cohorts.small.dollarVolume, borderColor: ndr("gold"), backgroundColor: ndr("gold"), borderWidth: 1.3, pointRadius: 0, fill: false },
-    { label: "Mega-Cap", data: data.cohorts.mega.dollarVolume, borderColor: ndr("navy"), backgroundColor: ndr("navy"), borderWidth: 1.3, pointRadius: 0, fill: false },
-   ],
-  },
-  options: {
-   responsive: true,
-   maintainAspectRatio: false,
-   interaction: { mode: "index", intersect: false },
-   plugins: {
-    legend: ndrLegend(),
-    tooltip: { callbacks: { label: ctx => ctx.dataset.label + ": " + fmtUsd(ctx.parsed.y) } },
-   },
-   scales: {
-    x: ndrXScale(),
-    y: ndrYScale({ log: true, fmt: v => fmtUsd(v) }),
-   },
-  },
- });
-}
-
-function renderGapChart(data){
- const ctx = document.getElementById("gapChart").getContext("2d");
- if(gapChart) gapChart.destroy();
- gapChart = new Chart(ctx, {
-  type: "line",
-  data: {
-   labels: data.ratioAmihud.dates,
-   datasets: [
-    { label: "Small/Mega Amihud ratio", data: data.ratioAmihud.values, borderColor: ndr("red"), backgroundColor: ndr("red"), borderWidth: 1.3, pointRadius: 0, fill: false },
-   ],
-  },
-  options: {
-   responsive: true,
-   maintainAspectRatio: false,
-   interaction: { mode: "index", intersect: false },
-   plugins: {
-    legend: { display: false },
-    tooltip: { callbacks: { label: ctx => "Ratio: " + (ctx.parsed.y === null ? "n/a" : ctx.parsed.y.toFixed(2) + "x") } },
-   },
-   scales: {
-    x: ndrXScale(),
-    y: ndrYScale({ fmt: v => v.toFixed(1) + "x" }),
-   },
-  },
- });
-}
-
-function renderSpreadChart(data){
- const ctx = document.getElementById("spreadChart").getContext("2d");
- if(spreadChart) spreadChart.destroy();
- spreadChart = new Chart(ctx, {
-  type: "line",
-  data: {
-   labels: data.cohorts.small.dates,
-   datasets: [
-    { label: "Small-Cap", data: data.cohorts.small.corwinSchultz, borderColor: ndr("gold"), backgroundColor: ndr("gold"), borderWidth: 1.3, pointRadius: 0, fill: false },
-    { label: "Mega-Cap", data: data.cohorts.mega.corwinSchultz, borderColor: ndr("navy"), backgroundColor: ndr("navy"), borderWidth: 1.3, pointRadius: 0, fill: false },
-   ],
-  },
-  options: {
-   responsive: true,
-   maintainAspectRatio: false,
-   interaction: { mode: "index", intersect: false },
-   plugins: {
-    legend: ndrLegend(),
-    tooltip: { callbacks: { label: ctx => ctx.dataset.label + ": " + fmtSpreadPct(ctx.parsed.y) } },
-   },
-   scales: {
-    x: ndrXScale(),
-    y: ndrYScale({ fmt: v => (v * 100).toFixed(2) + "%" }),
-   },
-  },
- });
-}
-
-function renderRegression(pairs){
- const pearson = linearRegression(pairs.map(p => p.x), pairs.map(p => p.y));
- const spear = spearmanRegression(pairs.map(p => p.x), pairs.map(p => p.y));
-
- const xs = pairs.map(p => p.x);
- const xMin = Math.min(...xs), xMax = Math.max(...xs);
- const linePoints = [
-  { x: xMin, y: pearson.intercept + pearson.slope * xMin },
-  { x: xMax, y: pearson.intercept + pearson.slope * xMax },
- ];
-
- const ctx = document.getElementById("regressionScatter").getContext("2d");
- if(regressionScatter) regressionScatter.destroy();
- regressionScatter = new Chart(ctx, {
-  type: "scatter",
-  data: {
-   datasets: [
-    { label: "Months", data: pairs, backgroundColor: ndr("gold"), pointRadius: 3.5, showLine: false },
-    { label: "Regression fit", type: "line", data: linePoints, borderColor: ndr("navy"), borderWidth: 1.5, borderDash: [4, 3], pointRadius: 0, fill: false },
-   ],
-  },
-  options: {
-   responsive: true,
-   maintainAspectRatio: false,
-   plugins: {
-    legend: { display: false },
-    tooltip: {
-     callbacks: {
-      label: ctx => ctx.dataset.label === "Months" ? (ctx.raw.ym + ": rel. return " + fmtPct(ctx.raw.x) + " → Δ ratio " + (ctx.raw.y >= 0 ? "+" : "") + ctx.raw.y.toFixed(3)) : null,
-     },
-    },
-   },
-   scales: {
-    x: ndrXScale({ title: "Small-vs-large relative return that month (%)" }),
-    y: ndrYScale({ title: "Δ Small/Mega Amihud ratio (pts)" }),
-   },
-  },
- });
-
+function methodTableHtml(pearson, spear, unitNote){
  function row(label, stats){
   const sig = stats.p < 0.05;
   return "<tr>" +
@@ -1324,49 +1113,210 @@ function renderRegression(pairs){
    '<td class="' + (sig ? "sig" : "") + '">' + (stats.p < 0.001 ? "<0.001" : stats.p.toFixed(3)) + "</td>" +
   "</tr>";
  }
-
- let interp = "No meaningful linear relationship in this sample.";
- if(Math.abs(pearson.r) >= 0.15){
-  interp = pearson.r < 0
-   ? "Consistent with liquidity deteriorating when small-caps underperform: months of small-cap weakness have tended to pair with a widening Small/Mega liquidity gap."
-   : "The opposite of liquidity deteriorating when small-caps underperform: months of small-cap weakness have tended to pair with a narrowing liquidity gap.";
- }
-
- document.getElementById("regressionMethodTable").innerHTML =
-  '<table class="method-table">' +
-   "<thead><tr><th>Method</th><th>n</th><th>r</th><th>r&sup2;</th><th>slope</th><th>t</th><th>p</th></tr></thead>" +
-   "<tbody>" + row("Pearson (OLS)", pearson) + row("Spearman (&rho;)", spear) + "</tbody>" +
-  "</table>" +
-  '<div class="method-note">' + interp + ' (n=' + pearson.n + ' months, p ' + (pearson.p < 0.05 ? '&lt; 0.05' : '&ge; 0.05') + ').</div>';
+ return '<table class="method-table">' +
+  "<thead><tr><th>Method</th><th>n</th><th>r</th><th>r&sup2;</th><th>slope</th><th>t</th><th>p</th></tr></thead>" +
+  "<tbody>" + row("Pearson (OLS)", pearson) + row("Spearman (&rho;)", spear) + "</tbody>" +
+ "</table>" + (unitNote ? '<div class="method-note">' + unitNote + "</div>" : "");
 }
 
-function renderTable(){
- const rows = [...RAW.tickers].sort((a, b) => {
-  const av = a[SORT_KEY], bv = b[SORT_KEY];
-  if(av === null || av === undefined) return 1;
-  if(bv === null || bv === undefined) return -1;
-  if(typeof av === "string") return av.localeCompare(bv) * SORT_DIR;
-  return (av - bv) * SORT_DIR;
+let sectorChart = null, zHistogram = null, zBetaScatter = null, zRel3mScatter = null;
+
+async function init(){
+ try{
+  const res = await fetch(DATA_URL, { cache: "no-store" });
+  const data = await res.json();
+  if(!res.ok || data.error) throw new Error(data.error || "failed to load");
+
+  RAW = data;
+  document.getElementById("updated").textContent = "As of " + new Date(data.generated_at_utc).toLocaleString();
+
+  if(data.loadedCount < data.universeSize){
+   showWarning("Only " + data.loadedCount + " of " + data.universeSize + " S&P 500 constituents loaded this run — some data may be temporarily unavailable.");
+  }
+  if(!data.hasBetaData){
+   showWarning("The Equity Risk Premium page's data hasn't populated yet, so the Z-Score-vs-beta test can't run.");
+  }
+
+  renderStats();
+  renderSectorChart();
+  renderZHistogram();
+  renderZBetaScatter();
+  renderZRel3mScatter();
+  renderLeaderTable(data.safest, "safestBody");
+  renderLeaderTable(data.mostDistressed, "distressedBody");
+  renderTable();
+
+ }catch(e){
+  showError("Couldn't load Altman Z-Score data (" + e.message + "). The /api/altman-z function may not have run yet.");
+  document.getElementById("tableBody").innerHTML =
+   '<tr><td colspan="9" style="text-align:center; color:var(--muted); padding:30px;">No data available.</td></tr>';
+ }
+}
+
+function renderStats(){
+ document.getElementById("statCompanies").textContent = RAW.market.companyCount;
+ document.getElementById("statCompaniesNote").textContent = RAW.loadedCount + " of " + RAW.universeSize + " loaded, " + RAW.market.companyCount + " scored";
+ document.getElementById("statMedianZ").textContent = fmtZ(RAW.market.medianZ);
+ document.getElementById("statDistressPct").textContent = fmtPct(RAW.market.distressPct, 0);
+ document.getElementById("statSafePct").textContent = fmtPct(RAW.market.safePct, 0);
+}
+
+function renderSectorChart(){
+ const sectors = RAW.sectors.map(s => s.sector);
+ const ctx = document.getElementById("sectorChart").getContext("2d");
+ if(sectorChart) sectorChart.destroy();
+ sectorChart = new Chart(ctx, {
+  type: "bar",
+  data: {
+   labels: sectors,
+   datasets: [
+    { label: "Median Z-Score", data: RAW.sectors.map(s => s.medianZ), backgroundColor: RAW.sectors.map(s => ndr(s.medianZ > 2.99 ? "green" : s.medianZ >= 1.81 ? "gold" : "red")), borderRadius: 3 },
+   ],
+  },
+  options: {
+   responsive: true,
+   maintainAspectRatio: false,
+   plugins: {
+    legend: { display: false },
+    tooltip: { callbacks: { label: ctx => "Median Z-Score: " + fmtZ(ctx.parsed.y) } },
+   },
+   scales: {
+    x: ndrXScale(),
+    y: ndrYScale({ title: "Z-Score" }),
+   },
+  },
+ });
+}
+
+function renderZHistogram(){
+ const zs = RAW.companies.map(c => c.z).filter(v => v !== null && v !== undefined && !isNaN(v));
+ const binWidth = 1;
+ const minBin = Math.floor(Math.min(...zs) / binWidth) * binWidth;
+ const maxBin = Math.ceil(Math.max(...zs) / binWidth) * binWidth;
+ const bins = [];
+ for(let b = minBin; b < maxBin; b += binWidth) bins.push({ lo: b, hi: b + binWidth, count: 0 });
+ for(const v of zs){
+  let idx = Math.floor((v - minBin) / binWidth);
+  if(idx < 0) idx = 0;
+  if(idx >= bins.length) idx = bins.length - 1;
+  bins[idx].count++;
+ }
+
+ const ctx = document.getElementById("zHistogram").getContext("2d");
+ if(zHistogram) zHistogram.destroy();
+ zHistogram = new Chart(ctx, {
+  type: "bar",
+  data: {
+   labels: bins.map(b => b.lo + "to" + b.hi),
+   datasets: [{ data: bins.map(b => b.count), backgroundColor: bins.map(b => { const mid = (b.lo + b.hi) / 2; return ndr(mid > 2.99 ? "green" : mid >= 1.81 ? "gold" : "red"); }), borderRadius: 3, barPercentage: 1.0, categoryPercentage: 0.95 }],
+  },
+  options: {
+   responsive: true,
+   maintainAspectRatio: false,
+   plugins: {
+    legend: { display: false },
+    tooltip: { callbacks: { title: items => { const b = bins[items[0].dataIndex]; return "Z " + b.lo + " to " + b.hi; }, label: ctx => ctx.parsed.y + " companies" } },
+   },
+   scales: {
+    x: { ...ndrXScale(), title: { display: true, text: "Z-Score", color: ndr("axis-soft"), font: { size: 10 } } },
+    y: ndrYScale({ title: "Companies" }),
+   },
+  },
+ });
+}
+
+function renderZBetaScatter(){
+ const pairs = RAW.zBetaPairs || [];
+ if(pairs.length < 5){
+  document.getElementById("zBetaMethodTable").innerHTML = '<div class="method-note">Not enough companies with beta data to test.</div>';
+  return;
+ }
+ const pearson = linearRegression(pairs.map(p => p.x), pairs.map(p => p.y));
+ const spear = spearmanRegression(pairs.map(p => p.x), pairs.map(p => p.y));
+ const xs = pairs.map(p => p.x);
+ const xMin = Math.min(...xs), xMax = Math.max(...xs);
+ const linePoints = [{ x: xMin, y: pearson.intercept + pearson.slope * xMin }, { x: xMax, y: pearson.intercept + pearson.slope * xMax }];
+
+ const ctx = document.getElementById("zBetaScatter").getContext("2d");
+ if(zBetaScatter) zBetaScatter.destroy();
+ zBetaScatter = new Chart(ctx, {
+  type: "scatter",
+  data: {
+   datasets: [
+    { label: "Companies", data: pairs, backgroundColor: ndr("gold"), pointRadius: 2.5, showLine: false },
+    { label: "Regression fit", type: "line", data: linePoints, borderColor: ndr("navy"), borderWidth: 1.5, borderDash: [4, 3], pointRadius: 0, fill: false },
+   ],
+  },
+  options: {
+   responsive: true,
+   maintainAspectRatio: false,
+   plugins: {
+    legend: { display: false },
+    tooltip: { callbacks: { label: ctx => ctx.dataset.label === "Companies" ? (ctx.raw.symbol + ": beta " + ctx.raw.x.toFixed(2) + ", Z " + fmtZ(ctx.raw.y)) : null } },
+   },
+   scales: {
+    x: ndrYScale({ position: "bottom", title: "Beta" }),
+    y: ndrYScale({ title: "Z-Score" }),
+   },
+  },
  });
 
- const tbody = document.getElementById("tableBody");
+ document.getElementById("zBetaMethodTable").innerHTML = methodTableHtml(pearson, spear,
+  "Slope is Z-Score per 1.0 of beta. n=" + pearson.n + " companies with a reported beta.");
+}
+
+function renderZRel3mScatter(){
+ const pairs = RAW.zRel3mPairs || [];
+ if(pairs.length < 5){
+  document.getElementById("zRel3mMethodTable").innerHTML = '<div class="method-note">Relative Strength Leaders/Laggards data isn’t available yet, so this test can’t run.</div>';
+  return;
+ }
+ const pearson = linearRegression(pairs.map(p => p.x), pairs.map(p => p.y));
+ const spear = spearmanRegression(pairs.map(p => p.x), pairs.map(p => p.y));
+ const xs = pairs.map(p => p.x);
+ const xMin = Math.min(...xs), xMax = Math.max(...xs);
+ const linePoints = [{ x: xMin, y: pearson.intercept + pearson.slope * xMin }, { x: xMax, y: pearson.intercept + pearson.slope * xMax }];
+
+ const ctx = document.getElementById("zRel3mScatter").getContext("2d");
+ if(zRel3mScatter) zRel3mScatter.destroy();
+ zRel3mScatter = new Chart(ctx, {
+  type: "scatter",
+  data: {
+   datasets: [
+    { label: "Companies", data: pairs, backgroundColor: ndr("gold"), pointRadius: 2.5, showLine: false },
+    { label: "Regression fit", type: "line", data: linePoints, borderColor: ndr("navy"), borderWidth: 1.5, borderDash: [4, 3], pointRadius: 0, fill: false },
+   ],
+  },
+  options: {
+   responsive: true,
+   maintainAspectRatio: false,
+   plugins: {
+    legend: { display: false },
+    tooltip: { callbacks: { label: ctx => ctx.dataset.label === "Companies" ? (ctx.raw.symbol + ": Z " + fmtZ(ctx.raw.x) + ", rel. 3M " + fmtPp(ctx.raw.y)) : null } },
+   },
+   scales: {
+    x: ndrYScale({ position: "bottom", title: "Z-Score" }),
+    y: ndrYScale({ fmt: v => v + "pp", title: "3-month return vs. SPY (pp)" }),
+   },
+  },
+ });
+
+ document.getElementById("zRel3mMethodTable").innerHTML = methodTableHtml(pearson, spear,
+  "Slope is relative-return pp per 1.0 of Z-Score. n=" + pearson.n + " companies. A single snapshot in time, not a forward-return test.");
+}
+
+function renderLeaderTable(rows, tbodyId){
+ const tbody = document.getElementById(tbodyId);
+ if(!rows || !rows.length){
+  tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; color:var(--muted); padding:24px;">No qualifying companies.</td></tr>';
+  return;
+ }
  tbody.innerHTML = rows.map(r => `<tr>
-  <td>${r.symbol}</td>
-  <td>${r.name || "n/a"}</td>
-  <td>${r.sector || "n/a"}</td>
-  <td><span class="cohort-tag ${r.cohort}">${r.cohort === "small" ? "Small" : "Mega"}</span></td>
-  <td>${fmtUsd(r.marketCap)}</td>
-  <td>${fmtUsd(r.dollarVolume)}</td>
-  <td>${fmtAmihud(r.amihud)}</td>
-  <td>${fmtSpreadPct(r.corwinSchultz)}</td>
+  <td><span class="sector-name">${r.symbol}</span></td>
+  <td><span class="sector-ticker">${r.sector || "—"}</span></td>
+  <td>${fmtZ(r.z)}</td>
+  <td class="${ZONE_CLASS[r.zone] || ""}">${r.zone}</td>
  </tr>`).join("");
-
- document.querySelectorAll("#tickerTable thead th").forEach(th => {
-  const key = th.dataset.key;
-  th.classList.toggle("sorted", key === SORT_KEY);
-  const arrow = th.querySelector(".sort-arrow");
-  if(arrow) arrow.textContent = (key === SORT_KEY && SORT_DIR === 1) ? "▴" : "▾";
- });
 }
 
 function sortBy(key){
@@ -1379,7 +1329,37 @@ function sortBy(key){
  renderTable();
 }
 
-document.querySelectorAll("#tickerTable thead th").forEach(th => {
+function renderTable(){
+ const rows = [...RAW.companies].sort((a, b) => {
+  const av = a[SORT_KEY], bv = b[SORT_KEY];
+  if(av === null || av === undefined) return 1;
+  if(bv === null || bv === undefined) return -1;
+  if(typeof av === "string") return av.localeCompare(bv) * SORT_DIR;
+  return (av - bv) * SORT_DIR;
+ });
+
+ const tbody = document.getElementById("tableBody");
+ tbody.innerHTML = rows.map(r => `<tr>
+  <td><span class="sector-name">${r.symbol}</span></td>
+  <td><span class="sector-ticker">${r.sector || "—"}</span></td>
+  <td>${fmtZ(r.z)}</td>
+  <td class="${ZONE_CLASS[r.zone] || ""}">${r.zone}</td>
+  <td>${fmtRatio(r.x1)}</td>
+  <td>${fmtRatio(r.x2)}</td>
+  <td>${fmtRatio(r.x3)}</td>
+  <td>${fmtRatio(r.x4)}</td>
+  <td>${fmtRatio(r.x5)}</td>
+ </tr>`).join("");
+
+ document.querySelectorAll("#stockTable thead th").forEach(th => {
+  const key = th.dataset.key;
+  th.classList.toggle("sorted", key === SORT_KEY);
+  const arrow = th.querySelector(".sort-arrow");
+  if(arrow) arrow.textContent = (key === SORT_KEY && SORT_DIR === 1) ? "▴" : "▾";
+ });
+}
+
+document.querySelectorAll("#stockTable thead th").forEach(th => {
  const key = th.dataset.key;
  if(key) th.addEventListener("click", () => sortBy(key));
 });

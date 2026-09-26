@@ -220,6 +220,11 @@
   status = 200
 
 [[redirects]]
+  from = "/api/altman-z"
+  to = "/.netlify/functions/altman-z"
+  status = 200
+
+[[redirects]]
   from = "/api/analyst-price-target"
   to = "/.netlify/functions/analyst-price-target"
   status = 200
@@ -669,6 +674,17 @@
   # two-statement sweeps. Optionally reads scheduled-relative-strength-
   # background's own published snapshot for the R&D-vs-relative-return
   # test; works fine without it (the test just doesn't render).
+
+[functions."scheduled-altman-z-background"]
+  # One-time snapshot, no schedule — same convention as scheduled-roic-
+  # wacc-background above. Its own independent ~1006-call INCOME_STATEMENT
+  # + BALANCE_SHEET sweep (annual reports, not quarterly — the Altman
+  # Z-Score is a single fiscal-year snapshot, and no existing checkpoint on
+  # this site keeps totalLiabilities/retainedEarnings alongside the other
+  # balance-sheet fields it needs). Optionally reads scheduled-equity-risk-
+  # premium-background's and scheduled-relative-strength-background's own
+  # published snapshots for the Z-vs-beta and Z-vs-return tests; works fine
+  # without either (the tests just don't render).
 
 [functions."scheduled-analyst-price-target-background"]
   # One-time snapshot (2026-09-16) — no schedule, same reasoning as

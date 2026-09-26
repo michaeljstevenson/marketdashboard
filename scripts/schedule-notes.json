@@ -51,5 +51,6 @@
   "momentum-history": "Daily prices for SPY.",
   "backtest-prices": "Daily prices for whatever symbol you enter.",
   "ai-capex": "Quarterly capex for every S&P 500 stock, joined against the revenue history margin-leverage already collected.",
-  "options-positioning": "Put/call ratio for every S&P 500 stock, joined against the relative-strength history for the momentum test."
+  "options-positioning": "Put/call ratio for every S&P 500 stock, joined against the relative-strength history for the momentum test.",
+  "altman-z": "Annual income statements and balance sheets for every S&P 500 stock, for the classic bankruptcy-risk score."
 }

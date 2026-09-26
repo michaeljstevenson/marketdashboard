@@ -21,7 +21,7 @@ small{opacity:.7}
 </head>
 <body>
 <h1>Data Schedule</h1>
-<p>(New York is UTC−4 until November 1, then UTC−5.) This page is regenerated from the site's configuration on every deploy (last updated 09-22-2026).</p>
+<p>(New York is UTC−4 until November 1, then UTC−5.) This page is regenerated from the site's configuration on every deploy (last updated 09-26-2026).</p>
 <div class="w">
 <table>
 <thead><tr><th>Page</th><th>Job</th><th>When</th><th>Pulled from</th><th>Notes</th></tr></thead>
@@ -57,6 +57,7 @@ small{opacity:.7}
 <tr><td><a href="/small-cap-liquidity.html">Small-Cap Liquidity &amp; Volume Trends | Michael J. Stevenson</a></td><td class="m">smallcap-liquidity</td><td>Saturday 14:20 UTC</td><td>Yahoo Finance</td><td>Daily prices and volume for about 200 large and small stocks.</td></tr>
 <tr><td><a href="/short-sale-volume.html">Short Sale Volume | Michael J. Stevenson</a></td><td class="m">short-sale-volume</td><td>Saturday 14:50 UTC</td><td>Yahoo Finance<br>FINRA</td><td>Daily short-sale volume from FINRA, plus daily prices.</td></tr>
 <tr><td><a href="/ai-capex-tracker.html">AI Capex Tracker | Michael J. Stevenson</a></td><td class="m">ai-capex</td><td>Manual: run by hand</td><td>Alpha Vantage: CASH_FLOW</td><td>Quarterly capex for every S&amp;P 500 stock, joined against the revenue history margin-leverage already collected.<br>Reads: margin-leverage</td></tr>
+<tr><td><a href="/altman-z-score.html">Altman Z-Score</a></td><td class="m">altman-z</td><td>Manual: run by hand</td><td>Alpha Vantage: BALANCE_SHEET, INCOME_STATEMENT</td><td>Annual income statements and balance sheets for every S&amp;P 500 stock, for the classic bankruptcy-risk score.<br>Reads: equity-risk-premium, relative-strength</td></tr>
 <tr><td><a href="/analyst-estimate-dispersion.html">Analyst Estimate Dispersion | Michael J. Stevenson</a></td><td class="m">dispersion</td><td>Manual: run by hand</td><td>Alpha Vantage: EARNINGS_ESTIMATES</td><td>Analyst EPS estimate highs, lows and averages for every S&amp;P 500 stock.</td></tr>
 <tr><td><a href="/analyst-price-target.html">Analyst Price Target Upside | Michael J. Stevenson</a></td><td class="m">analyst-price-target</td><td>Manual: run by hand</td><td>Alpha Vantage: OVERVIEW</td><td>Analyst price target and buy, hold and sell ratings for every S&amp;P 500 stock.<br>Reads: relative-strength</td></tr>
 <tr><td><a href="/buyback-effectiveness.html">Buyback Effectiveness: Spend vs. Share Count Impact | Michael J. Stevenson</a></td><td class="m">buyback-effectiveness</td><td>Manual: run by hand</td><td>Alpha Vantage: CASH_FLOW, FEDERAL_FUNDS_RATE</td><td>Cash flow (including buybacks) for every S&amp;P 500 stock, plus the fed funds rate.<br>Reads: share-count</td></tr>
