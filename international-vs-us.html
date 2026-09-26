@@ -817,6 +817,20 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 </div>
 </div>
 
+<div class="chart-box">
+<div class="chart-box-header">
+<div>
+<h2>US vs. developed markets ex-US, year by year</h2>
+<div class="chart-subhead">SPY vs. EFA calendar-year total return. Full calendar years only — the first (partial, since EEM inception) and current (still in progress) years are excluded.</div>
+</div>
+</div>
+<div class="ndr-panel">
+<div class="chart-canvas-wrap">
+<canvas id="yearlyChart"></canvas>
+</div>
+</div>
+</div>
+
 <div class="table-box">
 <div class="table-box-header">
 <h2>Trailing return ladder</h2>
@@ -1081,7 +1095,7 @@ function buildMonthly(data){
  return { records, regimeStats, currentRegime, corrPairs };
 }
 
-let ratioDevelopedChart = null, ratioEmergingChart = null, rollingChart = null, regimeChart = null, corrScatter = null;
+let ratioDevelopedChart = null, ratioEmergingChart = null, rollingChart = null, regimeChart = null, corrScatter = null, yearlyChart = null;
 
 async function init(){
  try{
@@ -1096,6 +1110,7 @@ async function init(){
   const monthly = buildMonthly(data);
   renderStats(data, monthly);
   renderRatioCharts(data);
+  renderYearlyChart(data);
   renderLadderTable(data);
   renderRollingChart(data);
   renderRegimeChart(monthly);
@@ -1186,6 +1201,76 @@ function renderRatioCharts(data){
 
  ratioDevelopedChart = draw("ratioDevelopedChart", ratioDevelopedChart, "Developed/US ratio", data.ratioDevelopedUS, "navy");
  ratioEmergingChart = draw("ratioEmergingChart", ratioEmergingChart, "Emerging/US ratio", data.ratioEmergingUS, "gold");
+}
+
+// Calendar-year start/end indices into the shared dates array. Drops a
+// partial first year (dataset starts mid-year, at EEM's inception) and a
+// partial current year, same convention as Factor Analysis's
+// annualReturnsByField — a partial year isn't comparable to a full one.
+// Each year's base is the prior year's last trading day, so the return
+// captures the Dec 31 -> Jan close too, not just first-trading-day-to-last.
+function buildCalendarYearBoundaries(dates){
+ const firstIdxByYear = new Map(), lastIdxByYear = new Map();
+ for(let i = 0; i < dates.length; i++){
+  const year = dates[i].slice(0, 4);
+  if(!firstIdxByYear.has(year)) firstIdxByYear.set(year, i);
+  lastIdxByYear.set(year, i);
+ }
+ const years = [...lastIdxByYear.keys()].sort();
+ const boundaries = [];
+ for(let i = 0; i < years.length; i++){
+  const year = years[i];
+  const isFirstYear = i === 0, isLastYear = i === years.length - 1;
+  const lastIdx = lastIdxByYear.get(year);
+  const endsInDecember = dates[lastIdx].slice(5, 7) === "12";
+  if(isLastYear && !endsInDecember) continue;
+  let baseIdx;
+  if(isFirstYear){
+   const firstIdx = firstIdxByYear.get(year);
+   if(dates[firstIdx].slice(5, 7) !== "01") continue;
+   baseIdx = firstIdx;
+  }else{
+   baseIdx = lastIdxByYear.get(years[i - 1]);
+  }
+  boundaries.push({ year: parseInt(year, 10), baseIdx, lastIdx });
+ }
+ return boundaries;
+}
+
+function annualReturnPts(levels, boundaries){
+ return boundaries.map(b => Math.round((levels[b.lastIdx] / levels[b.baseIdx] - 1) * 1000) / 10);
+}
+
+function renderYearlyChart(data){
+ const boundaries = buildCalendarYearBoundaries(data.dates);
+ const years = boundaries.map(b => String(b.year));
+ const usReturns = annualReturnPts(data.us, boundaries);
+ const devReturns = annualReturnPts(data.developed, boundaries);
+
+ const ctx = document.getElementById("yearlyChart").getContext("2d");
+ if(yearlyChart) yearlyChart.destroy();
+ yearlyChart = new Chart(ctx, {
+  type: "bar",
+  data: {
+   labels: years,
+   datasets: [
+    { label: "US (SPY)", data: usReturns, backgroundColor: ndr("navy"), borderRadius: 3, maxBarThickness: 28 },
+    { label: "Developed ex-US (EFA)", data: devReturns, backgroundColor: ndr("gold"), borderRadius: 3, maxBarThickness: 28 },
+   ],
+  },
+  options: {
+   responsive: true,
+   maintainAspectRatio: false,
+   plugins: {
+    legend: ndrLegend(),
+    tooltip: { callbacks: { label: ctx => ctx.dataset.label + ": " + ctx.parsed.y.toFixed(1) + "%" } },
+   },
+   scales: {
+    x: ndrXScale(),
+    y: ndrYScale({ fmt: v => v + "%" }),
+   },
+  },
+ });
 }
 
 function fmtLadderCell(cell){
