@@ -1242,6 +1242,7 @@ function renderQuintileChart(){
     data: qs.map(q => q.avgForwardRelReturn3M),
     backgroundColor: qs.map(q => (q.avgForwardRelReturn3M ?? 0) >= 0 ? ndr("green") : ndr("red")),
     borderRadius: 4,
+    maxBarThickness: 64,
    }],
   },
   options: {

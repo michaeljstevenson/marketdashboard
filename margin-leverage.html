@@ -233,7 +233,7 @@ a{ color:inherit; }
 @media (max-width:720px){ .navlinks{ display:none; } }
 
 .container{
- max-width:1100px;
+ max-width:1360px;
  margin:auto;
  padding:30px 20px 60px;
 }
@@ -407,6 +407,11 @@ h1{
 
 @media (max-width:900px){
  .table-grid{ grid-template-columns:1fr; }
+}
+
+.leaderboard-grid{ grid-template-columns:1fr 1fr; }
+@media (max-width:640px){
+ .leaderboard-grid{ grid-template-columns:1fr; }
 }
 
 .table-box{
@@ -980,7 +985,7 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <div class="sector-legend" id="scatterLegend"></div>
 </div>
 
-<div class="table-grid">
+<div class="table-grid leaderboard-grid">
 <div class="table-box">
 <div class="table-box-header">
 <h2>Widest sector-relative margins</h2>
@@ -1001,9 +1006,6 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <tbody id="marginLowBody"><tr><td colspan="4" style="text-align:center; color:var(--muted); padding:24px;">Loading&hellip;</td></tr></tbody>
 </table>
 </div>
-</div>
-
-<div class="table-grid">
 <div class="table-box">
 <div class="table-box-header">
 <h2>Most levered vs. sector</h2>
@@ -1404,7 +1406,7 @@ function renderRegimeCharts(){
   if(existing) existing.destroy();
   return new Chart(ctx, {
    type: "bar",
-   data: { labels: stats.map(s => s.regime), datasets: [{ data: stats.map(s => s.mean), backgroundColor: colors, borderRadius: 4 }] },
+   data: { labels: stats.map(s => s.regime), datasets: [{ data: stats.map(s => s.mean), backgroundColor: colors, borderRadius: 4, maxBarThickness: 64 }] },
    options: {
     responsive: true,
     maintainAspectRatio: false,

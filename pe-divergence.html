@@ -1213,7 +1213,7 @@ function renderHistogram(){
  if(histogramChart) histogramChart.destroy();
  histogramChart = new Chart(ctx, {
   type: "bar",
-  data: { labels: buckets.map(b => b.label), datasets: [{ label: "Companies", data: counts, backgroundColor: ndr("gold"), borderRadius: 4 }] },
+  data: { labels: buckets.map(b => b.label), datasets: [{ label: "Companies", data: counts, backgroundColor: ndr("gold"), borderRadius: 4, maxBarThickness: 64 }] },
   options: {
    responsive: true,
    maintainAspectRatio: false,

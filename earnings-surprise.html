@@ -1143,6 +1143,7 @@ function renderDistChart(){
     data: bins.map(b => b.count),
     backgroundColor: bins.map(b => (b.hi <= 0 ? ndr("red") : ndr("green"))),
     borderRadius: 4,
+    maxBarThickness: 64,
    }],
   },
   options: {

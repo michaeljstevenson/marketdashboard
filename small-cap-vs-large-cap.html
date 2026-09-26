@@ -1175,7 +1175,7 @@ function renderRegimeChart(monthly){
   type: "bar",
   data: {
    labels: order,
-   datasets: [{ label: "Avg. monthly spread return", data: stats.map(s => s.mean), backgroundColor: colors, borderRadius: 4 }],
+   datasets: [{ label: "Avg. monthly spread return", data: stats.map(s => s.mean), backgroundColor: colors, borderRadius: 4, maxBarThickness: 64 }],
   },
   options: {
    responsive: true,
