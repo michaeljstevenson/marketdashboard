@@ -98,3 +98,4 @@ footer{border-top:1px solid var(--hair)}
 
 .snap .s-chg.up{color:var(--up)}
 .snap .s-chg.down{color:var(--down)}
+.category-card a:hover{color:var(--up)}
