@@ -643,7 +643,6 @@ tbody td:first-child{
 </div>
 <div class="mcol"><h4>Estimates &amp; Surprises</h4>
 <a href="/analyst-price-target.html">Analyst Price Target Upside</a>
-<a href="/analyst-estimate-dispersion.html">Analyst Estimate Dispersion</a>
 <a href="/earnings-revisions.html">Earnings Revisions</a>
 <a href="/earnings-surprise.html">Earnings Surprise History</a>
 <a href="/post-earnings-drift.html">Post-Earnings Announcement Drift</a>
@@ -862,7 +861,6 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <h2>Methodology</h2>
 <p><strong>Data.</strong> Dividend yield is the <code>DividendYield</code> field from Alpha Vantage's <code>COMPANY_OVERVIEW</code>, a trailing, price-normalized yield. Buyback yield is the negative of the trailing-12-month % change in shares outstanding, taken from <a href="/share-count-trends.html">Share Count Trends</a> (quarterly <code>BALANCE_SHEET</code> filings). A shrinking share count is a buyback. A growing one is net dilution, from new issuance, option exercises or stock-based comp outrunning repurchases, so a negative buyback yield below means the company diluted shareholders. Total shareholder yield is the two added together. Dividends and buybacks both return cash to shareholders, and a company that leans on one doesn't necessarily return less in total.</p>
 <p><strong>Scatter.</strong> The scatter tests a common claim: dividend payers and buyback-heavy companies are different populations. Mature, stable-cash-flow businesses favor dividends (investors punish a cut), while companies with more variable earnings favor buybacks (discretionary, easy to pause). If that's right, dividend yield and buyback yield should show a weak or negative correlation across the index. Pearson (OLS) and Spearman rank correlation are both shown, as on <a href="/factor-analysis.html">Factor Analysis</a>, so one or two extreme stocks can't carry the result.</p>
-<p>Sector and company name come from <a href="/sector-beeswarm.html">Sector Beeswarm</a>. Refreshes weekly (Saturday), after <a href="/share-count-trends.html">Share Count Trends</a> (so the buyback numbers are fresh) and after <a href="/analyst-estimate-dispersion.html">Analyst Estimate Dispersion</a> (so the two jobs don't compete for Alpha Vantage's rate limit). Dividend policy and buyback pace don't move much day to day.</p>
 <div class="source">Source: <a href="https://www.alphavantage.co/" target="_blank" rel="noopener">Alpha Vantage</a>: COMPANY_OVERVIEW, BALANCE_SHEET (via Share Count Trends)</div>
 </div>
 

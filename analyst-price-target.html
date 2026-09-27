@@ -721,7 +721,6 @@ tbody td:nth-child(2){
 </div>
 <div class="mcol"><h4>Estimates &amp; Surprises</h4>
 <a href="/analyst-price-target.html" class="active">Analyst Price Target Upside</a>
-<a href="/analyst-estimate-dispersion.html">Analyst Estimate Dispersion</a>
 <a href="/earnings-revisions.html">Earnings Revisions</a>
 <a href="/earnings-surprise.html">Earnings Surprise History</a>
 <a href="/post-earnings-drift.html">Post-Earnings Announcement Drift</a>
@@ -985,7 +984,6 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <div class="explainer">
 <h2>Methodology</h2>
 <p><strong>Data.</strong> The universe is the S&amp;P 500. Alpha Vantage's <code>COMPANY_OVERVIEW</code> endpoint includes the sell-side consensus 12-month price target (<code>AnalystTargetPrice</code>) and a five-bucket rating count (Strong Buy / Buy / Hold / Sell / Strong Sell). <strong>Target Upside</strong> is <code>(target price / last close) − 1</code>, using the last close from <a href="/relative-strength-leaders.html">Relative Strength Leaders/Laggards</a>. <strong>Buy Ratio</strong> is the share of covering analysts rating a stock Strong Buy or Buy. A <strong>Consensus Score</strong> (1&ndash;5, Strong Sell to Strong Buy, weighted by analyst count) is also in the full table. It mostly tracks Buy Ratio, so it isn't a headline metric.</p>
-<p><strong>Versus the other analyst pages.</strong> <a href="/earnings-revisions.html">Earnings Revisions</a> and <a href="/analyst-estimate-dispersion.html">Analyst Estimate Dispersion</a> are about the consensus <em>EPS estimate</em>: whether it's moving and how much analysts disagree. This page is about the <em>price target</em> and the buy/sell <em>recommendation</em>. Both have known biases. Price targets come from the analysts who cover the stock and often lag price moves. Buy ratings outnumber Sell ratings across Wall Street research, because investment banks sell more to companies they rate favorably. Neither figure is a neutral forecast.</p>
 <p><strong>Scatter.</strong> The scatter tests one version of that lag: does the Street assign more upside to stocks that have already sold off (analysts revising targets more slowly than the market re-prices), or does upside track recent winners? It uses the trailing 3-month relative returns from Relative Strength Leaders/Laggards, as <a href="/institutional-ownership.html">Institutional Ownership</a> does. It is a same-period relationship, not a forward-looking one. Linear (Pearson) and rank-based (Spearman) fits are both shown, since one can mislead when the relationship isn't linear.</p>
 <p>Sector and company name come from each stock's <code>COMPANY_OVERVIEW</code> response, GICS-normalized the same way as <a href="/sector-beeswarm.html">Sector Beeswarm</a>. Leaderboards require at least 3 covering analysts, since a one- or two-analyst target can be an outlier. This is a one-time snapshot as of the date above, not a continuously refreshed feed, and can be rerun manually.</p>
 <div class="source">Source: <a href="https://www.alphavantage.co/" target="_blank" rel="noopener">Alpha Vantage: COMPANY_OVERVIEW</a>. Not investment advice.</div>

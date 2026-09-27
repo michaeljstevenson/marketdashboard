@@ -32,7 +32,6 @@
   "analyst-price-target": "Analyst price target and buy, hold and sell ratings for every S&P 500 stock.",
   "buyback-effectiveness": "Cash flow (including buybacks) for every S&P 500 stock, plus the fed funds rate.",
   "congress-trades": "Stock trades by members of Congress, matched to S&P 500 stocks.",
-  "dispersion": "Analyst EPS estimate highs, lows and averages for every S&P 500 stock.",
   "earnings-call-sentiment": "Earnings history and call transcripts, scored for tone, for every S&P 500 stock. Two runs finish one cycle: the sweep is too long for one 15-minute run, so each run saves progress and the next resumes.",
   "earnings-growth-divergence": "Earnings history for every S&P 500 stock, compared with price performance.",
   "equity-risk-premium": "Company overviews for every S&P 500 stock, plus Treasury yields.",
