@@ -612,6 +612,11 @@ h1{
 
 }
 
+.history-box{ background:var(--card); border:1px solid var(--hair); border-radius:12px; padding:20px; margin-top:25px; }
+.history-box .chart-box-header{ display:flex; justify-content:flex-end; margin-bottom:12px; }
+.history-box .history-controls{ margin:0 !important; }
+.chart.history-chart{ display:block; position:relative; height:420px; padding:0; border:0; background:none; }
+
 .chart{
 
  height:300px;
@@ -1326,12 +1331,13 @@ Waiting for data...
 
 <div class="hist-chips" id="histChips"></div>
 
+<div class="chart-box history-box">
+<div class="chart-box-header">
 <div class="history-controls" id="historyRangeControls"></div>
-
-<div class="chart">
-
+</div>
+<div class="chart history-chart">
 <canvas id="historyChart"></canvas>
-
+</div>
 </div>
 
 <div class="insight">
@@ -2554,6 +2560,7 @@ yAxisID:"price"
 
 
 options:{
+ maintainAspectRatio:false,
 
 
 responsive:true,
@@ -2603,7 +2610,7 @@ grid:{ drawOnChartArea:false }
 
 x:{
 
-ticks:{ color: mutedColor() },
+ticks:{ color: mutedColor(), maxRotation:0, autoSkip:true, maxTicksLimit:8 },
 
 grid:{ color: gridColor() }
 
