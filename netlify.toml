@@ -250,6 +250,11 @@
   status = 200
 
 [[redirects]]
+  from = "/api/buyback-timing"
+  to = "/.netlify/functions/buyback-timing"
+  status = 200
+
+[[redirects]]
   from = "/api/fcf-yield"
   to = "/.netlify/functions/fcf-yield"
   status = 200
@@ -787,3 +792,13 @@
   # background (for the momentum join) but degrades gracefully if that
   # blob is stale or missing. ~503 sequential HISTORICAL_PUT_CALL_RATIO
   # calls at 1050ms spacing plus a retry pass.
+
+[functions."scheduled-buyback-timing-background"]
+  # One-time snapshot, no schedule — same convention as scheduled-roic-
+  # wacc-background above. Two sources per ticker (Alpha Vantage CASH_FLOW
+  # + Yahoo Finance daily history, ~1006 total requests), so it's
+  # checkpointed/resumable the same way that job's two-statement sweep is —
+  # see scheduled-buyback-timing-background.js's own header for why Yahoo,
+  # not a second Alpha Vantage endpoint, carries the price side of this
+  # sweep. Run manually via the Netlify dashboard's "Run now"; run it again
+  # if a run stops partway with a "run again to finish" log line.

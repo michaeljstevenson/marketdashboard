@@ -21,7 +21,7 @@ small{opacity:.7}
 </head>
 <body>
 <h1>Data Schedule</h1>
-<p>(New York is UTC−4 until November 1, then UTC−5.) This page is regenerated from the site's configuration on every deploy (last updated 09-26-2026).</p>
+<p>(New York is UTC−4 until November 1, then UTC−5.) This page is regenerated from the site's configuration on every deploy (last updated 09-27-2026).</p>
 <div class="w">
 <table>
 <thead><tr><th>Page</th><th>Job</th><th>When</th><th>Pulled from</th><th>Notes</th></tr></thead>
@@ -60,6 +60,7 @@ small{opacity:.7}
 <tr><td><a href="/analyst-estimate-dispersion.html">Analyst Estimate Dispersion | Michael J. Stevenson</a></td><td class="m">dispersion</td><td>Manual: run by hand</td><td>Alpha Vantage: EARNINGS_ESTIMATES</td><td>Analyst EPS estimate highs, lows and averages for every S&amp;P 500 stock.</td></tr>
 <tr><td><a href="/analyst-price-target.html">Analyst Price Target Upside | Michael J. Stevenson</a></td><td class="m">analyst-price-target</td><td>Manual: run by hand</td><td>Alpha Vantage: OVERVIEW</td><td>Analyst price target and buy, hold and sell ratings for every S&amp;P 500 stock.<br>Reads: relative-strength</td></tr>
 <tr><td><a href="/buyback-effectiveness.html">Buyback Effectiveness: Spend vs. Share Count Impact | Michael J. Stevenson</a></td><td class="m">buyback-effectiveness</td><td>Manual: run by hand</td><td>Alpha Vantage: CASH_FLOW, FEDERAL_FUNDS_RATE</td><td>Cash flow (including buybacks) for every S&amp;P 500 stock, plus the fed funds rate.<br>Reads: share-count</td></tr>
+<tr><td><a href="/buyback-timing.html">Buyback Timing: Are Companies Buying High or Low? | Michael J. Stevenson</a></td><td class="m">buyback-timing</td><td>Manual: run by hand</td><td>Alpha Vantage: CASH_FLOW<br>Yahoo Finance</td><td>Quarterly buyback spend for every S&amp;P 500 stock (CASH_FLOW), joined against multi-year Yahoo Finance daily price history for the 52-week-range-at-purchase and forward-return calculations.</td></tr>
 <tr><td><a href="/cash-conversion-cycle.html">Cash Conversion Cycle</a></td><td class="m">cash-conversion-cycle</td><td>Manual: run by hand</td><td>Alpha Vantage: BALANCE_SHEET, INCOME_STATEMENT</td><td>Reads: roic-wacc</td></tr>
 <tr><td><a href="/congressional-trading.html">Congressional Trading Activity | Michael J. Stevenson</a></td><td class="m">congress-trades</td><td>Manual: run by hand</td><td>Alpha Vantage: CONGRESS_TRADES</td><td>Stock trades by members of Congress, matched to S&amp;P 500 stocks.<br>Reads: relative-strength</td></tr>
 <tr><td><a href="/earnings-call-sentiment.html">Earnings Call Sentiment | Michael J. Stevenson</a></td><td class="m">earnings-call-sentiment</td><td>Manual: run by hand</td><td>Alpha Vantage: EARNINGS, EARNINGS_CALL_TRANSCRIPT</td><td>Earnings history and call transcripts, scored for tone, for every S&amp;P 500 stock. Two runs finish one cycle: the sweep is too long for one 15-minute run, so each run saves progress and the next resumes.</td></tr>
