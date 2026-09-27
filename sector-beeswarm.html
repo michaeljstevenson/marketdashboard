@@ -32,7 +32,7 @@
   --sans:'Times New Roman',Times,serif;
 
   --grid:rgba(139,145,153,0.16);
-  --plot-bg:#171b20;
+  --plot-bg:#16171a;
 }
 
 :root[data-theme="light"]{
@@ -47,7 +47,7 @@
   --greed:#b9701f;
   --extreme:#96591c;
   --grid:rgba(107,111,118,0.18);
-  --plot-bg:#fbfaf6;
+  --plot-bg:#f7f8fa;
 }
 
 *{ box-sizing:border-box; }
@@ -238,9 +238,17 @@ h1{ font-family:var(--serif); font-size:28px; font-weight:400; margin:0; }
 #chart .spy-line{ stroke:var(--ink); stroke-opacity:0.5; stroke-dasharray:5 4; }
 #chart .spy-tag{ fill:var(--muted); font-size:11px; }
 #chart .sector-label{ fill:var(--ink); font-size:12px; }
-#chart .bubble{ stroke-width:1; }
-#chart .bubble-label{ fill:#1a1a1a; font-size:10px; font-weight:600; pointer-events:none; }
+#chart .bubble{ stroke-width:0.8; stroke:var(--plot-bg); stroke-opacity:.9; }
+#chart .band{ fill:var(--ink); fill-opacity:.025; }
+#chart .grid-line{ stroke:var(--ink); stroke-opacity:.07; }
+#chart .grid-line.zero{ stroke-opacity:.22; }
+.legend-note{ color:var(--muted); font-size:12px; }
+.ret-legend{ display:flex; align-items:center; gap:8px; font-family:var(--mono); font-size:11px; color:var(--muted); align-self:flex-end; }
+.ret-legend .bar{ width:140px; height:8px; border-radius:4px; }
+#chart .bubble-label{ fill:#fff; font-size:10px; font-weight:600; pointer-events:none; paint-order:stroke; stroke:rgba(0,0,0,.35); stroke-width:2.5px; stroke-linejoin:round; }
 #chart .bubble-label.out{ fill:var(--ink); }
+#chart .bubble-label.value{ fill:var(--ink); stroke:none; font-family:var(--mono); font-size:12px; font-weight:500; }
+#chart .bubble.lolli{ stroke:var(--plot-bg); stroke-width:2; fill-opacity:1; }
 #chart .bubble-label.sector{ font-size:10px; font-weight:600; fill:var(--ink); dominant-baseline:central; paint-order:stroke; stroke:var(--plot-bg); stroke-width:3.5px; stroke-linejoin:round; }
 
 .tooltip{
@@ -488,6 +496,7 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <div class="sub" id="plotDate">…</div>
 <div class="spy" id="plotSpy">…</div>
 </div>
+<div class="ret-legend" aria-hidden="true"><span id="legLo"></span><span class="bar" id="legBar"></span><span id="legHi"></span></div>
 </div>
 <svg id="chart" viewBox="0 0 1120 660" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Sector beeswarm chart"></svg>
 </div>
@@ -605,6 +614,26 @@ function niceDate(iso){
 
 /* ----- scales / layout ------------------------------------------------- */
 
+// Bubbles are colored by return (red → neutral → green) rather than by sector,
+// since position already encodes sector. Saturation caps at ±RET_CAP.
+function cssVar(n, f){ return getComputedStyle(document.documentElement).getPropertyValue(n).trim() || f; }
+const RET_COLORS = { up: cssVar("--up", "#3fb950"), down: cssVar("--down", "#f85149"),
+ mid: document.documentElement.getAttribute("data-theme") === "light" ? "#c3c8d0" : "#5b606a" };
+function retCap(){ return mode === "daily" ? 3 : 25; }
+function retColor(v){
+ const c = retCap(), lin = Math.max(-1, Math.min(1, (v || 0) / c));
+ // sqrt easing so small moves already read as green/red instead of grey
+ const t = Math.sign(lin) * Math.sqrt(Math.abs(lin));
+ return t >= 0 ? d3.interpolateRgb(RET_COLORS.mid, RET_COLORS.up)(t) : d3.interpolateRgb(RET_COLORS.mid, RET_COLORS.down)(-t);
+}
+function updateRetLegend(){
+ const c = retCap();
+ document.getElementById("legLo").textContent = "-" + c + "%";
+ document.getElementById("legHi").textContent = "+" + c + "%";
+ document.getElementById("legBar").style.background =
+  `linear-gradient(90deg, ${RET_COLORS.down}, ${RET_COLORS.mid}, ${RET_COLORS.up})`;
+}
+
 const xBand = d3.scalePoint().domain(SECTOR_ORDER).range([M.left + PLOT_W * 0.02, M.left + PLOT_W * 0.98]).padding(0.5);
 
 function buildYScale(frame){
@@ -702,8 +731,7 @@ function ensureLayers(){
    .attr("fill", PLOT_BG).attr("rx", 4);
  layers.axis.append("line").attr("class", "spy-line");
  layers.axis.append("text").attr("class", "ytitle").attr("text-anchor", "middle").style("font-size", "11px")
-   .attr("transform", `translate(${VB_W - 16},${M.top + PLOT_H / 2}) rotate(90)`)
-   .text("Return");
+   .text("");
  return layers;
 }
 
@@ -719,12 +747,19 @@ function renderStatic(y){
   if(mode === "daily" && d >= DAILY_CLAMP) return "> " + DAILY_CLAMP + "%";
   return d + "%";
  };
- // return scale on the right edge only — numbers, no gridlines
+ updateRetLegend();
+ const colW = xBand.step();
+ L.grid.selectAll("rect.band").data(SECTOR_ORDER.filter((d, i) => i % 2 === 0), d => d).join("rect")
+   .attr("class", "band").attr("x", d => xBand(d) - colW / 2).attr("width", colW)
+   .attr("y", M.top).attr("height", PLOT_H);
+ L.grid.selectAll("line.grid-line").data(ticks, d => d).join("line")
+   .attr("class", d => "grid-line" + (d === 0 ? " zero" : ""))
+   .attr("x1", M.left).attr("x2", M.left + PLOT_W).attr("y1", d => y(d)).attr("y2", d => y(d));
+ // return scale on the right edge
  L.axis.selectAll("text.tickR").data(ticks, d => d).join("text")
    .attr("class", "tickR").attr("text-anchor", "start").attr("dominant-baseline", "middle")
    .attr("x", M.left + PLOT_W + 10).attr("y", d => y(d)).text(tickLabel);
- // sector column labels: daily only (annual bubbles carry their own sector name)
- L.axis.selectAll("text.sector-label").data(mode === "daily" ? SECTOR_ORDER : [], d => d).join("text")
+  L.axis.selectAll("text.sector-label").data(SECTOR_ORDER, d => d).join("text")
    .attr("class", "sector-label").attr("text-anchor", "middle")
    .attr("x", d => xBand(d)).attr("y", (d, i) => M.top + PLOT_H + 22 + (i % 2 ? 20 : 0))
    .text(d => d);
@@ -746,16 +781,18 @@ function updateSpyLine(y, spyReturn, T){
  (T || (s => s))(tag).attr("y", spyY - 9);
 }
 
-// ANNUAL render: 11 bubbles, one per column, positioned directly and eased.
+// ANNUAL render: one lollipop per sector — a stem from 0% to the return, a dot
+// sized by index weight, and the return printed beyond the dot.
 function render(frame, animate){
  const L = ensureLayers();
  const y = buildYScale(frame);
- const r = buildRScale();
+ const r = d3.scaleSqrt().domain([0, 34]).range([4, 11]).clamp(true);
  frame.nodes.forEach(n => {
-  n.r = Math.max(3, r(n.size));
+  n.r = r(n.size);
   n.x = xBand(n.sector);
   n.y = y(clampForMode(n.ret, y));
  });
+ const y0 = y(Math.max(y.domain()[0], Math.min(y.domain()[1], 0)));
  const dur = animate === true ? 1000 : (+animate || 0);
  const ease = animate === true ? d3.easeCubicOut : d3.easeLinear;
  const T = sel => (dur > 0 ? sel.transition().duration(dur).ease(ease) : sel);
@@ -764,30 +801,27 @@ function render(frame, animate){
  renderStatic(y);
  updateSpyLine(y, frame.spyReturn, T);
 
- T(L.bubbles.selectAll("circle.bubble").data(frame.nodes, d => d.key).join(
-   ent => ent.append("circle").attr("class", "bubble")
-     .attr("cx", d => d.x).attr("cy", d => d.y).attr("r", 0)
-     .attr("fill", d => SECTOR_COLOR[d.sector]).attr("fill-opacity", 0.82)
-     .attr("stroke", d => SECTOR_STROKE[d.sector])
-     .on("mousemove", onHover).on("mouseleave", onLeave),
-   upd => upd,
-   ex => (dur > 0 ? ex.transition().duration(dur).attr("r", 0).remove() : ex.remove()),
- )).attr("cx", d => d.x).attr("cy", d => d.y).attr("r", d => d.r);
+ T(L.bubbles.selectAll("line.stem").data(frame.nodes, d => d.key).join(
+   ent => ent.append("line").attr("class", "stem").attr("stroke-width", 3).attr("stroke-linecap", "round")
+     .attr("x1", d => d.x).attr("x2", d => d.x).attr("y1", y0).attr("y2", y0),
+   upd => upd, ex => ex.remove(),
+ )).attr("x1", d => d.x).attr("x2", d => d.x).attr("y1", y0).attr("y2", d => d.y)
+   .attr("stroke", d => retColor(d.ret));
 
- const labMerged = L.labels.selectAll("text.bubble-label").data(frame.nodes, d => d.key).join(
-   ent => ent.append("text").attr("class", "bubble-label sector").attr("text-anchor", "middle")
-     .attr("x", d => d.x).attr("y", d => d.y).attr("opacity", 0),
-   upd => upd,
-   ex => (dur > 0 ? ex.transition().duration(dur).attr("opacity", 0).remove() : ex.remove()),
- );
- labMerged.each(function(d){
-  const lines = wrapSector(d.label || d.ticker);
-  const sel = d3.select(this);
-  sel.text(null);
-  const dy0 = -((lines.length - 1) * 0.55) + "em";
-  lines.forEach((ln, i) => sel.append("tspan").attr("x", d.x).attr("dy", i ? "1.1em" : dy0).text(ln));
- });
- T(labMerged).attr("opacity", 1).attr("x", d => d.x).attr("y", d => d.y);
+ T(L.bubbles.selectAll("circle.bubble").data(frame.nodes, d => d.key).join(
+   ent => ent.append("circle").attr("class", "bubble lolli")
+     .attr("cx", d => d.x).attr("cy", y0).attr("r", d => d.r)
+     .on("mousemove", onHover).on("mouseleave", onLeave),
+   upd => upd, ex => ex.remove(),
+ )).attr("cx", d => d.x).attr("cy", d => d.y).attr("r", d => d.r).attr("fill", d => retColor(d.ret));
+
+ T(L.labels.selectAll("text.bubble-label").data(frame.nodes, d => d.key).join(
+   ent => ent.append("text").attr("class", "bubble-label value").attr("text-anchor", "middle")
+     .attr("x", d => d.x).attr("y", y0),
+   upd => upd, ex => ex.remove(),
+ )).attr("x", d => d.x)
+   .attr("y", d => d.ret >= 0 ? d.y - d.r - 8 : d.y + d.r + 14)
+   .text(d => fmtPct(d.ret));
 
  updateChrome(frame.label, frame.spyReturn);
 }
@@ -899,8 +933,7 @@ function startDailySession(p){
  const labelKeys = new Set([...dailyNodes].sort((a, b) => b.size - a.size).slice(0, DAILY_LABEL_N).map(n => n.key));
  dailyCircleSel = L.bubbles.selectAll("circle.bubble").data(dailyNodes, d => d.key).join(
    ent => ent.append("circle").attr("class", "bubble")
-     .attr("fill", d => SECTOR_COLOR[d.sector]).attr("fill-opacity", 0.82)
-     .attr("stroke", d => SECTOR_STROKE[d.sector])
+     .attr("fill-opacity", 0.9)
      .on("mousemove", onHover).on("mouseleave", onLeave),
    upd => upd, ex => ex.remove(),
  ).attr("r", d => d.rad);
@@ -925,7 +958,8 @@ function drawDailyAt(t){
   n.x = A[k].x + (B[k].x - A[k].x) * f;
   n.y = A[k].y + (B[k].y - A[k].y) * f;
  });
- dailyCircleSel.attr("cx", d => d.x).attr("cy", d => d.y);
+ dailyCircleSel.attr("cx", d => d.x).attr("cy", d => d.y)
+   .attr("fill", d => retColor(d.r[i0] + (d.r[i1] - d.r[i0]) * f));
  dailyLabelSel.attr("x", d => d.x).attr("y", d => d.y);
 
  const spyRv = p.spy[i0] + (p.spy[i1] - p.spy[i0]) * f;
@@ -998,6 +1032,7 @@ function setMode(next){
  stopDailyEngine();
  lastStaticKey = null;
  svg.selectAll("circle.bubble").remove();
+ svg.selectAll("line.stem").remove();
  svg.selectAll("text.bubble-label").remove();
  if(next === "annual") initAnnualFrames();
  else initDailyFrames();
