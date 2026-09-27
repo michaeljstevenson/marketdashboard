@@ -255,6 +255,11 @@
   status = 200
 
 [[redirects]]
+  from = "/api/momentum-crash-risk"
+  to = "/.netlify/functions/momentum-crash-risk"
+  status = 200
+
+[[redirects]]
   from = "/api/fcf-yield"
   to = "/.netlify/functions/fcf-yield"
   status = 200
@@ -802,3 +807,12 @@
   # not a second Alpha Vantage endpoint, carries the price side of this
   # sweep. Run manually via the Netlify dashboard's "Run now"; run it again
   # if a run stops partway with a "run again to finish" log line.
+
+[functions."scheduled-momentum-crash-risk-background"]
+  # One-time snapshot, no schedule — same convention as scheduled-roic-
+  # wacc-background above, but a single-source sweep (Yahoo Finance daily
+  # history only, ~504 calls at 300ms spacing, no checkpoint needed) since
+  # it's a retrospective backtest over each ticker's own price history —
+  # see scheduled-momentum-crash-risk-background.js's own header for why
+  # this needs no Alpha Vantage calls at all. Run manually via the Netlify
+  # dashboard's "Run now" for a fresh ~24-month backtest.

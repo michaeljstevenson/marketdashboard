@@ -51,5 +51,6 @@
   "backtest-prices": "Daily prices for whatever symbol you enter.",
   "ai-capex": "Quarterly capex for every S&P 500 stock, joined against the revenue history margin-leverage already collected.",
   "options-positioning": "Put/call ratio for every S&P 500 stock, joined against the relative-strength history for the momentum test.",
-  "buyback-timing": "Quarterly buyback spend for every S&P 500 stock (CASH_FLOW), joined against multi-year Yahoo Finance daily price history for the 52-week-range-at-purchase and forward-return calculations."
+  "buyback-timing": "Quarterly buyback spend for every S&P 500 stock (CASH_FLOW), joined against multi-year Yahoo Finance daily price history for the 52-week-range-at-purchase and forward-return calculations.",
+  "momentum-crash-risk": "Full daily price history for every S&P 500 stock and SPY, used to reconstruct ~24 months of monthly momentum-decile rebalances retrospectively."
 }

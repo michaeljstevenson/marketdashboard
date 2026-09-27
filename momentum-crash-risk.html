@@ -153,7 +153,7 @@ document.addEventListener("DOMContentLoaded", function(){
 </script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Earnings Surprise History | Michael J. Stevenson</title>
+<title>Momentum Tail Risk | Michael J. Stevenson</title>
 
 <style>
 
@@ -176,8 +176,9 @@ document.addEventListener("DOMContentLoaded", function(){
 
   /* NDR-style chart palette. Deliberately the SAME in light and dark —
      these charts keep a constant warm-paper look as a homage to the Ned
-     Davis Research print charts that inspired the page. JS reads them via
-     getComputedStyle (per the site convention) rather than hardcoding. */
+     Davis Research print charts that inspired /concentration. JS reads
+     them via getComputedStyle (per the site convention) rather than
+     hardcoding. */
   --ndr-plot:#f5f1e6;
   --ndr-axis:#3c3a33;
   --ndr-axis-soft:#6f6a5c;
@@ -283,6 +284,7 @@ h1{
  border:1px solid var(--hair);
  border-radius:10px;
  padding:20px;
+ min-width:0;
 }
 
 .stat-label{
@@ -294,12 +296,11 @@ h1{
 
 .stat-value{
  font-family:var(--mono);
- font-size:26px;
+ font-size:24px;
  color:var(--greed);
 }
 
-.stat-value.down{ color:var(--fear); }
-.stat-value.neutral{ color:var(--ink); }
+.stat-value.cell-neg{ color:var(--fear); }
 
 .stat-note{
  color:var(--muted);
@@ -307,31 +308,8 @@ h1{
  margin-top:6px;
 }
 
-/* CONTROLS */
-
-.toggle-group{
- display:inline-flex;
- background:var(--card);
- border:1px solid var(--hair);
- border-radius:8px;
- padding:3px;
-}
-
-.toggle-btn{
- background:none;
- border:none;
- color:var(--muted);
- font-family:var(--sans);
- font-size:13px;
- padding:7px 16px;
- border-radius:6px;
- cursor:pointer;
-}
-
-.toggle-btn.active{
- background:var(--greed);
- color:#1a1408;
- font-weight:600;
+@media (max-width:900px){
+ .stat-grid{ grid-template-columns:repeat(2,1fr); }
 }
 
 /* CHART */
@@ -344,13 +322,6 @@ h1{
  margin-bottom:30px;
 }
 
-.chart-box h2{
- font-family:var(--serif);
- font-weight:400;
- font-size:18px;
- margin:0;
-}
-
 .chart-box-header{
  display:flex;
  justify-content:space-between;
@@ -360,7 +331,14 @@ h1{
  margin-bottom:16px;
 }
 
-.chart-box-sub{
+.chart-box h2{
+ font-family:var(--serif);
+ font-weight:400;
+ font-size:18px;
+ margin:0;
+}
+
+.chart-subhead{
  color:var(--muted);
  font-size:12px;
  margin-top:4px;
@@ -375,27 +353,59 @@ h1{
 }
 
 .chart-canvas-wrap{
- height:420px;
+ height:380px;
 }
 
-.chart-canvas-wrap.tall{ height:460px; }
-.chart-canvas-wrap.short{ height:320px; }
+.chart-canvas-wrap.short{ height:280px; }
 
-/* TABLES */
+/* Two charts / method-tables side by side, same breakpoint as table-grid */
+.chart-grid{
+ display:grid;
+ grid-template-columns:1fr 1fr;
+ gap:16px;
+ margin-bottom:30px;
+}
+
+.chart-grid .chart-box{
+ margin-bottom:0;
+ min-width:0; /* grid items default to min-width:auto (their content's min-content
+                 size), which a wide method table would otherwise force past this
+                 column's track width — same "grid blowout" the site-wide
+                 table{min-width:600px} rule creates if left unchecked here */
+}
+
+@media (max-width:900px){
+ .chart-grid{ grid-template-columns:1fr; }
+}
+
+/* TABLE */
 
 .table-box{
  background:var(--card);
  border:1px solid var(--hair);
  border-radius:12px;
  overflow-x:auto;
- margin-bottom:22px;
+ margin-bottom:30px;
 }
+
+.table-box-header{
+ padding:18px 20px 4px;
+}
+
+.table-box-header h2{
+ font-family:var(--serif);
+ font-weight:400;
+ font-size:18px;
+ margin:0;
+}
+
+.table-box-header .chart-subhead{ margin-bottom:6px; }
 
 table{
  width:100%;
  border-collapse:collapse;
  font-size:13px;
- min-width:600px;
+ min-width:640px;
 }
 
 thead th{
@@ -405,13 +415,27 @@ thead th{
  font-size:11px;
  letter-spacing:0.04em;
  font-weight:600;
+ cursor:pointer;
+ user-select:none;
  white-space:nowrap;
  border-bottom:1px solid var(--hair);
 }
 
-thead th:first-child, thead th:nth-child(2), thead th:nth-child(3){
+thead th:first-child, thead th:nth-child(2){
  text-align:left;
 }
+
+thead th:hover{ color:var(--ink); }
+
+thead th:not([data-key]){ cursor:default; }
+
+thead th .sort-arrow{
+ opacity:0.4;
+ margin-left:3px;
+ font-size:10px;
+}
+
+thead th.sorted .sort-arrow{ opacity:1; color:var(--greed); }
 
 tbody td{
  padding:11px 12px;
@@ -422,72 +446,102 @@ tbody td{
 }
 
 tbody tr:last-child td{ border-bottom:none; }
+
 tbody tr:hover{ background:var(--card-hover); }
 
-tbody td:first-child, tbody td:nth-child(2), tbody td:nth-child(3){
+tbody td:first-child{
  text-align:left;
  font-family:var(--sans);
 }
 
-tbody td:nth-child(2){ color:var(--muted); }
-tbody td:nth-child(3){ color:var(--muted); font-size:11px; }
+.sector-name{ color:var(--ink); }
+.sector-ticker{ color:var(--muted); font-size:11px; }
 
-.cell-pos{ color:var(--greed); }
-.cell-neg{ color:var(--fear); }
+.cell-pos{ color:var(--ink); }
+.cell-neg{ color:var(--ink); }
+.cell-na{ color:var(--muted); }
 
-.leaderboard-grid{
+.table-footnote{
+ padding:2px 20px 16px;
+ color:var(--muted);
+ font-size:11px;
+}
+
+.table-grid{
  display:grid;
  grid-template-columns:1fr 1fr;
- gap:16px;
- margin-bottom:22px;
+ gap:20px;
 }
 
-.leaderboard-col h3{
- font-family:var(--serif);
- font-weight:400;
- font-size:15px;
- margin:0 0 10px;
- color:var(--muted);
+@media (max-width:900px){
+ .table-grid{ grid-template-columns:1fr; }
 }
 
-.leaderboard-col h3.up{ color:var(--greed); }
-.leaderboard-col h3.down{ color:var(--fear); }
+/* SCATTER / METHOD TABLE (mirrors /factor-analysis) */
 
-@media (max-width:800px){
- .leaderboard-grid{ grid-template-columns:1fr; }
+.scatter-canvas-wrap{
+ height:320px;
+ margin-bottom:12px;
+ position:relative;
 }
 
-/* PERSISTENCE TABLE */
-
-.persist-grid{
- display:grid;
- grid-template-columns:repeat(3,1fr);
- gap:16px;
- margin-bottom:16px;
-}
-
-.persist-card{
- background:var(--card-hover);
- border:1px solid var(--hair);
- border-radius:10px;
- padding:16px;
- text-align:center;
-}
-
-.persist-card .persist-label{
- color:var(--muted);
- font-size:11.5px;
- margin-bottom:8px;
-}
-
-.persist-card .persist-value{
+.method-table{
+ width:100%;
+ min-width:0; /* overrides the site-wide table{min-width:640px} rule below —
+                 inside .chart-grid's 1fr columns that min-width forces a
+                 grid blowout, same bug already fixed once on
+                 /margin-leverage.html */
+ border-collapse:collapse;
  font-family:var(--mono);
- font-size:22px;
+ font-size:11px;
+ margin-top:8px;
+}
+
+.method-table th{
+ text-align:right;
+ padding:6px 5px;
+ color:var(--muted);
+ font-size:10px;
+ letter-spacing:0.03em;
+ font-weight:600;
+ border-bottom:1px solid var(--hair);
+ white-space:nowrap;
+}
+
+.method-table th:first-child{ text-align:left; }
+
+.method-table td{
+ padding:7px 5px;
+ text-align:right;
+ border-bottom:1px solid var(--hair);
+ white-space:nowrap;
  color:var(--ink);
 }
 
-@media (max-width:720px){
- .persist-grid{ grid-template-columns:1fr; }
+.method-table td:first-child{
+ text-align:left;
+ font-family:var(--sans);
+ color:var(--muted);
+}
+
+.method-table tr:last-child td{ border-bottom:none; }
+
+.method-table .sig{ color:var(--greed); }
+
+/* This page's Welch's-test table has a wider first column ("Near-lows vs.
+   near-highs") than the site's usual Pearson/Spearman method table, which
+   can push past a narrow mobile viewport the same way a wide table has
+   forced page-level overflow elsewhere on this site (see e.g. /spin-off-
+   performance's and /margin-leverage's own methodology notes) — contained
+   here rather than at the .chart-box level so it doesn't affect the chart
+   canvas or its fullscreen button. */
+#crashTestTable{ overflow-x:auto; }
+
+.method-note{
+ font-size:11px;
+ color:var(--muted);
+ margin-top:8px;
+ font-style:italic;
 }
 
 /* EXPLAINER */
@@ -497,7 +551,7 @@ tbody td:nth-child(3){ color:var(--muted); font-size:11px; }
  border:1px solid var(--hair);
  border-radius:12px;
  padding:24px 26px;
- margin-bottom:22px;
+ margin-bottom:30px;
 }
 
 .explainer h2{
@@ -512,6 +566,29 @@ tbody td:nth-child(3){ color:var(--muted); font-size:11px; }
  font-size:14px;
  line-height:1.7;
  margin:0 0 14px;
+}
+
+.explainer code{
+ font-family:var(--mono);
+ background:var(--card-hover);
+ padding:2px 6px;
+ border-radius:4px;
+ font-size:0.92em;
+ white-space:nowrap;
+ max-width:100%;
+ overflow-wrap:break-word;
+}
+
+/* This page's methodology quotes several long, unbroken Alpha Vantage
+   field names (e.g. proceedsFromRepurchaseOfEquity, 31 characters) as
+   inline <code> — at a narrow mobile width, a single nowrap span that
+   long can be wider than the paragraph's own content box and force the
+   page wide, the same class of overflow bug flagged throughout this
+   site's other methodology sections. break-word here lets a single long
+   token wrap mid-word rather than pushing the layout wider; it only ever
+   engages when a span alone exceeds the available width. */
+@media (max-width:480px){
+ .explainer code{ white-space:normal; word-break:break-word; }
 }
 
 .explainer p:last-child{ margin-bottom:0; }
@@ -551,6 +628,7 @@ tbody td:nth-child(3){ color:var(--muted); font-size:11px; }
  display:none;
 }
 
+
 .theme-toggle{
  justify-self:end;
  background:none;
@@ -569,9 +647,6 @@ tbody td:nth-child(3){ color:var(--muted); font-size:11px; }
 
 .theme-toggle:hover{ color:var(--ink); border-color:var(--hair); }
 
-@media (max-width:720px){
- .stat-grid{ grid-template-columns:1fr 1fr; }
-}
 
 /* Light-theme overrides for hardcoded (non-var) dark colors */
 
@@ -586,6 +661,19 @@ tbody td:nth-child(3){ color:var(--muted); font-size:11px; }
  border-color:#e9cf8a;
  color:#8a6a1f;
 }
+.full-list-details{ margin-top:4px; }
+.full-list-summary{
+  cursor:pointer;
+  font-weight:600;
+  padding:10px 0;
+  color:var(--ink);
+  list-style:none;
+  user-select:none;
+}
+.full-list-summary::-webkit-details-marker{ display:none; }
+.full-list-summary::before{ content:"▸ "; display:inline-block; width:1em; }
+.full-list-details[open] .full-list-summary::before{ content:"▾ "; }
+.full-list-details table{ margin-top:8px; }
 </style>
 <link rel="stylesheet" href="/site.css">
 </head>
@@ -622,7 +710,7 @@ tbody td:nth-child(3){ color:var(--muted); font-size:11px; }
 </div>
 </div></div>
 </div>
-<div class="navdrop has-active">
+<div class="navdrop">
 <span class="navlabel">Valuation &amp; Earnings ▾</span>
 <div class="dropdown"><div class="mega">
 <div class="mcol"><h4>Valuation</h4>
@@ -636,7 +724,7 @@ tbody td:nth-child(3){ color:var(--muted); font-size:11px; }
 <a href="/analyst-price-target.html">Analyst Price Target Upside</a>
 <a href="/analyst-estimate-dispersion.html">Analyst Estimate Dispersion</a>
 <a href="/earnings-revisions.html">Earnings Revisions</a>
-<a href="/earnings-surprise.html" class="active">Earnings Surprise History</a>
+<a href="/earnings-surprise.html">Earnings Surprise History</a>
 <a href="/post-earnings-drift.html">Post-Earnings Announcement Drift</a>
 <a href="/earnings-call-sentiment.html">Earnings Call Sentiment</a>
 <a href="/earnings-growth-divergence.html">Earnings Growth vs. Price Performance</a>
@@ -651,7 +739,7 @@ tbody td:nth-child(3){ color:var(--muted); font-size:11px; }
 </div>
 </div></div>
 </div>
-<div class="navdrop">
+<div class="navdrop has-active">
 <span class="navlabel">Sectors &amp; Factors ▾</span>
 <div class="dropdown"><div class="mega">
 <div class="mcol"><h4>Sectors</h4>
@@ -668,7 +756,7 @@ tbody td:nth-child(3){ color:var(--muted); font-size:11px; }
 <a href="/small-cap-vs-large-cap.html">Small Cap vs. Large Cap Spread</a>
 <a href="/international-vs-us.html">International vs. US Relative Performance</a>
 <a href="/relative-strength-leaders.html">Relative Strength Leaders/Laggards</a>
-<a href="/momentum-crash-risk.html">Momentum Tail Risk</a>
+<a href="/momentum-crash-risk.html" class="active">Momentum Tail Risk</a>
 </div>
 </div></div>
 </div>
@@ -746,6 +834,7 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 </script>
 
 
+
 <div class="container">
 
 <div class="error-banner" id="errorBanner"></div>
@@ -753,175 +842,148 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 
 <div class="header">
 <div>
-<h1>Earnings Surprise History</h1>
-<div class="subtitle">How often S&amp;P 500 companies beat, meet or miss the Street's EPS estimate, by sector and over time, and whether a beat (or a miss) tends to repeat next quarter.</div>
+<h1>Momentum Tail Risk</h1>
+<div class="subtitle">A 24-month retrospective decile backtest of trailing 12-month momentum across the S&amp;P 500 — not just whether chasing momentum pays on average, but whether it carries extra downside tail risk.</div>
 </div>
 <div class="updated" id="updated">Loading...</div>
 </div>
 
 <div class="stat-grid">
 <div class="stat-card">
-<div class="stat-label">Latest Quarter Beat Rate</div>
-<div class="stat-value" id="statBeatRate">…</div>
-<div class="stat-note" id="statBeatRateNote">Share of reporters beating consensus EPS</div>
+<div class="stat-label">Momentum Premium</div>
+<div class="stat-value" id="statPremium">…</div>
+<div class="stat-note">Winners&rsquo; minus losers&rsquo; avg. fwd. relative return</div>
 </div>
 <div class="stat-card">
-<div class="stat-label">Avg. Surprise Magnitude</div>
-<div class="stat-value neutral" id="statAvgSurprise">…</div>
-<div class="stat-note">Mean surprise %, latest quarter</div>
+<div class="stat-label">Winners&rsquo; Crash Rate</div>
+<div class="stat-value" id="statWinnerCrash">…</div>
+<div class="stat-note">Share of winner-decile months with a &gt;10% relative decline</div>
 </div>
 <div class="stat-card">
-<div class="stat-label">Beat Rate After a Beat</div>
-<div class="stat-value neutral" id="statPersistence">…</div>
-<div class="stat-note" id="statPersistenceNote">vs. unconditional beat rate</div>
+<div class="stat-label">Losers&rsquo; Crash Rate</div>
+<div class="stat-value" id="statLoserCrash">…</div>
+<div class="stat-note">Same measure, bottom decile</div>
 </div>
 <div class="stat-card">
-<div class="stat-label">Coverage</div>
-<div class="stat-value neutral" id="statCoverage">…</div>
-<div class="stat-note">S&amp;P 500 constituents with usable earnings data</div>
+<div class="stat-label">Winners &minus; Losers Crash Gap</div>
+<div class="stat-value" id="statCrashGap">…</div>
+<div class="stat-note" id="statCrashGapNote">Percentage points, with a significance test below</div>
 </div>
 </div>
 
 <div class="chart-box">
 <div class="chart-box-header">
 <div>
-<h2>Beat rate over time</h2>
-<div class="chart-box-sub">Share of the mapped universe beating consensus EPS in each calendarized reporting quarter, market-wide.</div>
-</div>
-</div>
-<div class="ndr-panel">
-<div class="chart-canvas-wrap short">
-<canvas id="trendChart"></canvas>
-</div>
-</div>
-</div>
-
-<div class="chart-box">
-<div class="chart-box-header">
-<div>
-<h2>By sector, latest quarter</h2>
-<div class="chart-box-sub" id="sectorChartSub">Beat rate: share of sector constituents beating consensus EPS.</div>
-</div>
-<div class="toggle-group">
-<button class="toggle-btn active" id="btnBeatRate">Beat rate</button>
-<button class="toggle-btn" id="btnMagnitude">Avg. surprise %</button>
+<h2>Forward relative return by momentum decile</h2>
+<div class="chart-subhead">S&amp;P 500 constituents ranked by trailing 12-month return each month over the lookback window, split into 10 deciles, then averaged across all months. This is the classic momentum-premium chart — does last year's winner keep winning next month?</div>
 </div>
 </div>
 <div class="ndr-panel">
 <div class="chart-canvas-wrap">
-<canvas id="sectorChart"></canvas>
+<canvas id="decileChart"></canvas>
 </div>
 </div>
 </div>
 
+<div class="chart-grid">
 <div class="chart-box">
 <div class="chart-box-header">
 <div>
-<h2>Surprise magnitude distribution</h2>
-<div class="chart-box-sub">Latest quarter, all reporters with usable estimates. A longer right tail than left reflects the well-documented tendency for upside surprises to run larger than downside ones.</div>
+<h2>Crash rate by momentum decile</h2>
+<div class="chart-subhead">Share of decile-months with a forward relative return worse than &minus;10% &mdash; not the average outcome, but how often the outcome was a real blow-up.</div>
 </div>
 </div>
 <div class="ndr-panel">
-<div class="chart-canvas-wrap short">
-<canvas id="distChart"></canvas>
+<div class="chart-canvas-wrap" style="height:300px;">
+<canvas id="crashChart"></canvas>
 </div>
 </div>
+<div id="crashTestTable"></div>
 </div>
-
 <div class="chart-box">
 <div class="chart-box-header">
 <div>
-<h2>Does a beat predict another beat?</h2>
-<div class="chart-box-sub">Pooled across the panel: how often the next quarter is also a beat, depending on whether this quarter was a beat or a miss.</div>
+<h2>Momentum spread over time</h2>
+<div class="chart-subhead">Winners&rsquo; minus losers&rsquo; average forward relative return, one point per rebalance month over the lookback window.</div>
 </div>
 </div>
-<div class="persist-grid">
-<div class="persist-card">
-<div class="persist-label">Beat rate after a beat</div>
-<div class="persist-value" id="persistAfterBeat">…</div>
+<div class="ndr-panel">
+<div class="chart-canvas-wrap" style="height:300px;">
+<canvas id="spreadChart"></canvas>
 </div>
-<div class="persist-card">
-<div class="persist-label">Beat rate after a miss</div>
-<div class="persist-value" id="persistAfterMiss">…</div>
-</div>
-<div class="persist-card">
-<div class="persist-label">Unconditional beat rate</div>
-<div class="persist-value" id="persistUnconditional">…</div>
-</div>
-</div>
-<div class="chart-box-sub" id="persistStats">…</div>
-</div>
-
-<div class="leaderboard-grid">
-<div class="leaderboard-col">
-<h3 class="up">Longest active beat streaks</h3>
-<div class="table-box">
-<table>
-<thead>
-<tr><th>Ticker</th><th>Company</th><th>Sector</th><th>Streak</th><th>Latest surprise</th></tr>
-</thead>
-<tbody id="streaksBeatBody"><tr><td colspan="5" style="text-align:center; color:var(--muted); padding:20px;">Loading&hellip;</td></tr></tbody>
-</table>
-</div>
-</div>
-<div class="leaderboard-col">
-<h3 class="down">Longest active miss streaks</h3>
-<div class="table-box">
-<table>
-<thead>
-<tr><th>Ticker</th><th>Company</th><th>Sector</th><th>Streak</th><th>Latest surprise</th></tr>
-</thead>
-<tbody id="streaksMissBody"><tr><td colspan="5" style="text-align:center; color:var(--muted); padding:20px;">Loading&hellip;</td></tr></tbody>
-</table>
 </div>
 </div>
 </div>
 
-<div class="leaderboard-grid">
-<div class="leaderboard-col">
-<h3 class="up">Biggest beats, latest quarter</h3>
+<div class="table-grid">
 <div class="table-box">
+<div class="table-box-header">
+<h2>Highest momentum right now</h2>
+<div class="chart-subhead">Strongest trailing 12-month return, as of the latest month-end</div>
+</div>
 <table>
-<thead>
-<tr><th>Ticker</th><th>Company</th><th>Sector</th><th>Reported</th><th>Est.</th><th>Surprise</th></tr>
-</thead>
-<tbody id="biggestBeatsBody"><tr><td colspan="6" style="text-align:center; color:var(--muted); padding:20px;">Loading&hellip;</td></tr></tbody>
+<thead><tr><th>Ticker</th><th>Sector</th><th>Trailing 12M</th><th>Decile</th></tr></thead>
+<tbody id="topMomentumTable">
+<tr><td colspan="4" style="text-align:center; color:var(--muted); padding:24px;">Loading&hellip;</td></tr>
+</tbody>
+</table>
+</div>
+
+<div class="table-box">
+<div class="table-box-header">
+<h2>Lowest momentum right now</h2>
+<div class="chart-subhead">Weakest trailing 12-month return, as of the latest month-end</div>
+</div>
+<table>
+<thead><tr><th>Ticker</th><th>Sector</th><th>Trailing 12M</th><th>Decile</th></tr></thead>
+<tbody id="lowMomentumTable">
+<tr><td colspan="4" style="text-align:center; color:var(--muted); padding:24px;">Loading&hellip;</td></tr>
+</tbody>
 </table>
 </div>
 </div>
-<div class="leaderboard-col">
-<h3 class="down">Biggest misses, latest quarter</h3>
+
 <div class="table-box">
-<table>
+<div class="table-box-header">
+<h2>All companies, current momentum snapshot</h2>
+<div class="chart-subhead">Trailing 12-month return and momentum decile as of the latest month-end, across the full S&amp;P 500.</div>
+</div>
+<details class="full-list-details">
+<summary class="full-list-summary">Show full list</summary>
+<table id="stockTable">
 <thead>
-<tr><th>Ticker</th><th>Company</th><th>Sector</th><th>Reported</th><th>Est.</th><th>Surprise</th></tr>
+<tr>
+<th data-key="symbol">Symbol</th>
+<th data-key="sector">Sector</th>
+<th data-key="trailing12M">Trailing 12M<span class="sort-arrow">▾</span></th>
+<th data-key="decile">Decile<span class="sort-arrow">▾</span></th>
+</tr>
 </thead>
-<tbody id="biggestMissesBody"><tr><td colspan="6" style="text-align:center; color:var(--muted); padding:20px;">Loading&hellip;</td></tr></tbody>
+<tbody id="tableBody">
+<tr><td colspan="4" style="text-align:center; color:var(--muted); padding:30px;">Loading momentum data&hellip;</td></tr>
+</tbody>
 </table>
-</div>
-</div>
+</details>
 </div>
 
 <div class="explainer">
 <h2>Methodology</h2>
-<p>Each quarter, an S&amp;P 500 company either <strong>beats</strong>, <strong>meets</strong> or <strong>misses</strong> the consensus analyst EPS estimate. The gap between reported and estimated EPS, as a percentage of the estimate, is the <strong>surprise</strong>. This page pulls Alpha Vantage's quarterly earnings history for every S&amp;P 500 company (sector and name come from <a href="/sector-beeswarm.html">Sector Beeswarm</a>) and works out three things: how often companies beat, by how much, and whether beating (or missing) tends to repeat.</p>
-<p><strong>Filters.</strong> Two filters apply before a quarter counts. A quarter with a consensus estimate under 5&cent; is dropped, because dividing by a number that close to zero turns a penny of upside into a triple-digit "surprise." Any surprise beyond &plusmn;200% is also dropped, for the same reason. This keeps a few near-zero-EPS names from dominating a mean or leaderboard meant to describe the other 490-odd companies.</p>
-<p><strong>Calendarized quarters.</strong> A fiscal period ending in a given three-month calendar window (Jan&ndash;Mar, Apr&ndash;Jun, Jul&ndash;Sep, Oct&ndash;Dec) is grouped together, so a September-year-end company like Apple lines up with a December-year-end peer reporting a similar period. It's an approximation. The "latest quarter" for the headline stats, sector breakdown and biggest-beat/miss tables is the most recent calendarized quarter where at least half the mapped universe has reported, because early in a reporting season the first few dozen reporters aren't representative.</p>
-<p><strong>Persistence.</strong> The test pools every consecutive pair of a company's own filtered quarters across the whole panel and asks: given this quarter was a beat, was the next one also a beat? How does that compare with the same question after a miss, and with the overall beat rate? The z-statistic and p-value test whether the after-a-beat and after-a-miss rates differ by more than sampling noise. It's a standard two-proportion z-test, not a claim about causation or a trading signal, and it says nothing about price reaction. That would need a price series around each report date, which this page doesn't include.</p>
-<p>Recomputed weekly (Saturday) across all ~500 constituents. There's no page history to accumulate, because Alpha Vantage's EARNINGS endpoint returns years of quarterly history in one call. The trend chart is historical data recomputed each run.</p>
-<div class="source">Source: <a href="https://www.alphavantage.co/" target="_blank" rel="noopener">Alpha Vantage: EARNINGS</a>. Not investment advice.</div>
+<p><strong>A different question from this site's other momentum page.</strong> <a href="/relative-strength-leaders.html">Relative Strength Leaders/Laggards</a> asks whether momentum persists on average — does last quarter's leader keep leading. This page asks a question from the academic momentum literature (Daniel &amp; Moskowitz, "Momentum Crashes," 2016): even where momentum pays on average, does it carry more downside tail risk than the average return alone would suggest? A decile can have a strong average forward return and still blow up more often than a decile with a weaker average — those are different properties of a return distribution, and this page reports both rather than just the average.</p>
+<p><strong>Backtest construction.</strong> Every S&amp;P 500 constituent's own trailing 12-month (252-session) return is computed as of each of its last ~24 calendar month-ends, using daily adjusted closes from Yahoo Finance. Each month, the full cross-section of constituents with a valid reading is ranked and split into 10 equal-sized deciles (decile 1 = weakest trailing momentum, decile 10 = strongest). <strong>Forward relative return</strong> is each stock's actual return from that month-end to the next, compounded against SPY's return over the same stretch — <code>(1+stock)/(1+SPY) &minus; 1</code>, the same construction used on <a href="/small-cap-vs-large-cap.html">Small Cap vs. Large Cap Spread</a> and Relative Strength Leaders/Laggards. A <strong>crash</strong> is any single decile-month observation worse than &minus;10% relative return. This is a retrospective backtest, not a forward-accumulating snapshot, so it has real historical depth (~24 months) from its first run, unlike several other pages on this site that need weeks of real snapshots to accumulate.</p>
+<p><strong>Why this reads location and tail risk separately.</strong> A decile with a persistently negative average return will also cross any fixed &minus;10% threshold more often than a decile with a flat or positive average, even with no special "crash" behavior at all — a bad average and a fat left tail both raise the crash rate, and this page can't fully separate them from the crash-rate number alone. The forward-return-by-decile chart and the crash-rate-by-decile chart are shown side by side specifically so a reader can see whether a decile's crash rate looks proportionate to its average return or notably worse, rather than reading crash rate in isolation.</p>
+<p><strong>Test.</strong> A two-proportion z-test compares the winner decile's crash rate against the loser decile's, and separately against the two middle deciles pooled — same test family as <a href="/earnings-surprise.html">Earnings Surprise History</a>'s own beat-rate-persistence test. Reported both ways rather than picking whichever comparison looks more interesting.</p>
+<p>Sector and company name come from <a href="/sector-beeswarm.html">Sector Beeswarm</a>. This page is a one-time snapshot as of the date below, not a recurring refresh, though its ~24-month lookback means each fresh run rolls the whole backtest forward by however long it's been since the last one.</p>
+<div class="source">Source: Yahoo Finance daily adjusted price history for the full S&amp;P 500 and SPY</div>
 </div>
 
 </div>
 
 <script>
-const DATA_URL = "/api/earnings-surprise";
+const DATA_URL = "/api/momentum-crash-risk";
 
 let RAW = null;
-let trendChart = null;
-let sectorChart = null;
-let distChart = null;
-let SECTOR_MODE = "beatRate"; // "beatRate" | "magnitude"
+let SORT_KEY = "trailing12M";
+let SORT_DIR = -1;
 
 function showError(message){
  const banner = document.getElementById("errorBanner");
@@ -929,32 +991,10 @@ function showError(message){
  banner.style.display = "block";
 }
 
-function showWarning(message){
- const banner = document.getElementById("warningBanner");
- banner.textContent = message;
- banner.style.display = "block";
-}
-
 function fmtPct(v, digits){
  if(v === null || v === undefined || isNaN(v)) return "n/a";
- return (v >= 0 ? "+" : "") + v.toFixed(digits === undefined ? 2 : digits) + "%";
-}
-
-function fmtPlainPct(v, digits){
- if(v === null || v === undefined || isNaN(v)) return "n/a";
- return v.toFixed(digits === undefined ? 1 : digits) + "%";
-}
-
-function classForValue(v){
- if(v === null || v === undefined || isNaN(v)) return "";
- return v >= 0 ? "cell-pos" : "cell-neg";
-}
-
-function themeMutedColor(){
- return getComputedStyle(document.documentElement).getPropertyValue("--muted").trim() || "#8b9199";
-}
-function themeHairColor(){
- return getComputedStyle(document.documentElement).getPropertyValue("--hair").trim() || "#2b3138";
+ digits = digits === undefined ? 2 : digits;
+ return (v >= 0 ? "+" : "") + v.toFixed(digits) + "%";
 }
 
 // ---- NDR chart styling helpers -----------------------------------------
@@ -987,12 +1027,7 @@ function ndrYScale(opts){
  };
 }
 
-function ndrLegend(){
- return {
-  display: true, position: "top", align: "start",
-  labels: { boxWidth: 22, boxHeight: 2, color: ndr("axis"), font: { size: 11 } },
- };
-}
+let decileChart = null, crashChart = null, spreadChart = null;
 
 async function init(){
  try{
@@ -1001,210 +1036,175 @@ async function init(){
   if(!res.ok || data.error) throw new Error(data.error || "failed to load");
 
   RAW = data;
-  document.getElementById("updated").textContent = "As of " + new Date(data.generated_at_utc).toLocaleString("en-US", { month: "2-digit", day: "2-digit", year: "numeric", hour: "numeric", minute: "2-digit" });
+  document.getElementById("updated").textContent =
+   "As of " + new Date(data.generated_at_utc).toLocaleDateString("en-US", { month: "2-digit", day: "2-digit", year: "numeric" }) + " · " + data.loadedCount + "/" + data.universeSize + " constituents covered · " + data.monthsUsed + " months in the backtest";
 
-  if(data.universe_size < data.universe_total * 0.85){
-   showWarning("Only " + data.universe_size + " of " + data.universe_total + " S&P 500 constituents had usable earnings data. Some figures may be based on partial coverage.");
-  }
-
-  renderStats();
-  renderTrendChart();
-  renderSectorChart();
-  renderDistChart();
-  renderPersistence();
-  renderLeaderboards();
+  renderStats(data);
+  renderDecileChart(data);
+  renderCrashChart(data);
+  renderSpreadChart(data);
+  renderMomentumLeaderboards(data);
+  renderTable();
 
  }catch(e){
-  showError("Couldn't load earnings surprise data (" + e.message + "). The /api/earnings-surprise function may be unreachable.");
+  showError("Couldn't load momentum data (" + e.message + "). The /api/momentum-crash-risk function may not have run yet.");
  }
 }
 
-function renderStats(){
- const m = RAW.market;
- document.getElementById("statBeatRate").textContent = fmtPlainPct(m.beatRate);
- document.getElementById("statBeatRateNote").textContent = RAW.latestQuarter.label + " · n=" + RAW.latestQuarter.count;
- document.getElementById("statAvgSurprise").textContent = fmtPct(m.avgSurprise);
- document.getElementById("statAvgSurprise").className = "stat-value" + (m.avgSurprise < 0 ? " down" : " neutral");
+function renderStats(data){
+ const losers = data.decileStats[0], winners = data.decileStats[data.decileStats.length - 1];
+ const premium = (winners.avgFwdRelReturn !== null && losers.avgFwdRelReturn !== null) ? winners.avgFwdRelReturn - losers.avgFwdRelReturn : null;
+ document.getElementById("statPremium").textContent = fmtPct(premium);
+ document.getElementById("statWinnerCrash").textContent = winners.crashRatePct === null ? "n/a" : winners.crashRatePct.toFixed(1) + "%";
+ document.getElementById("statLoserCrash").textContent = losers.crashRatePct === null ? "n/a" : losers.crashRatePct.toFixed(1) + "%";
 
- const p = RAW.persistence;
- document.getElementById("statPersistence").textContent = fmtPlainPct(p.beatRateAfterBeat);
- document.getElementById("statPersistenceNote").textContent = "vs. " + fmtPlainPct(p.unconditionalBeatRate) + " unconditional";
- document.getElementById("statCoverage").textContent = RAW.universe_size + " / " + RAW.universe_total;
+ const gapEl = document.getElementById("statCrashGap");
+ const wl = data.winnersVsLosers;
+ if(wl && wl.rate1 !== null && wl.rate2 !== null){
+  const gap = wl.rate1 - wl.rate2;
+  gapEl.textContent = (gap >= 0 ? "+" : "") + gap.toFixed(1) + "pp";
+  gapEl.classList.toggle("cell-neg", gap > 0);
+  document.getElementById("statCrashGapNote").textContent = "p=" + (wl.p === null ? "n/a" : wl.p < 0.001 ? "<0.001" : wl.p.toFixed(3)) + " (two-proportion z-test)";
+ }else{
+  gapEl.textContent = "n/a";
+ }
 }
 
-function renderTrendChart(){
- const points = RAW.trend || [];
- const ctx = document.getElementById("trendChart").getContext("2d");
- if(trendChart) trendChart.destroy();
- trendChart = new Chart(ctx, {
-  type: "line",
+function renderDecileChart(data){
+ const d = data.decileStats;
+ const ctx = document.getElementById("decileChart").getContext("2d");
+ if(decileChart) decileChart.destroy();
+ decileChart = new Chart(ctx, {
+  type: "bar",
   data: {
-   labels: points.map(p => p.label),
-   datasets: [{
-    label: "Beat rate",
-    data: points.map(p => p.beatRate),
-    borderColor: ndr("navy"),
-    backgroundColor: ndr("navy"),
-    borderWidth: 1.5,
-    pointRadius: points.length < 8 ? 3 : 0,
-    fill: false,
-   }],
+   labels: d.map(x => x.label),
+   datasets: [{ label: "Avg. fwd. relative return", data: d.map(x => x.avgFwdRelReturn), backgroundColor: d.map(x => x.avgFwdRelReturn >= 0 ? ndr("green") : ndr("red")) }],
   },
   options: {
    responsive: true,
    maintainAspectRatio: false,
-   interaction: { mode: "index", intersect: false },
    plugins: {
     legend: { display: false },
-    tooltip: {
-     callbacks: {
-      label: ctx => "Beat rate: " + fmtPlainPct(ctx.parsed.y) + " (n=" + points[ctx.dataIndex].count + ")",
-      afterLabel: ctx => "Avg. surprise: " + fmtPct(points[ctx.dataIndex].avgSurprise),
-     },
-    },
+    tooltip: { callbacks: { label: ctx => { const s = d[ctx.dataIndex]; return ["Avg: " + fmtPct(s.avgFwdRelReturn), "Median: " + fmtPct(s.medianFwdRelReturn), "n=" + s.n]; } } },
+   },
+   scales: {
+    x: { ticks: { color: ndr("axis"), font: { size: 11 } }, grid: { color: "rgba(0,0,0,0)", borderColor: ndr("axis") }, title: { display: true, text: "Momentum decile (1 = weakest trailing return, 10 = strongest)", color: ndr("axis-soft"), font: { size: 10 } } },
+    y: ndrYScale({ title: "Avg. fwd. relative return (%)" }),
+   },
+  },
+ });
+}
+
+function renderCrashChart(data){
+ const d = data.decileStats;
+ const ctx = document.getElementById("crashChart").getContext("2d");
+ if(crashChart) crashChart.destroy();
+ crashChart = new Chart(ctx, {
+  type: "bar",
+  data: {
+   labels: d.map(x => x.label),
+   datasets: [{ label: "Crash rate", data: d.map(x => x.crashRatePct), backgroundColor: ndr("gold"), borderRadius: 4 }],
+  },
+  options: {
+   responsive: true,
+   maintainAspectRatio: false,
+   plugins: {
+    legend: { display: false },
+    tooltip: { callbacks: { label: ctx => { const s = d[ctx.dataIndex]; return ["Crash rate: " + s.crashRatePct + "%", s.crashN + " of " + s.n + " decile-months"]; } } },
    },
    scales: {
     x: ndrXScale(),
-    y: ndrYScale({ fmt: v => v + "%" }),
+    y: ndrYScale({ title: "Share of months < -10% relative return", min: 0, fmt: v => v + "%" }),
    },
   },
  });
+
+ const wl = data.winnersVsLosers, wm = data.winnersVsMiddle;
+ function row(label, t){
+  if(!t) return "";
+  return "<tr><td>" + label + "</td><td>" + t.n1 + "</td><td>" + t.n2 + "</td><td>" + t.rate1 + "%</td><td>" + t.rate2 + "%</td><td>" + t.z + "</td><td class=\"" + (t.p !== null && t.p < 0.05 ? "sig" : "") + "\">" + (t.p === null ? "n/a" : t.p < 0.001 ? "<0.001" : t.p.toFixed(3)) + "</td></tr>";
+ }
+ document.getElementById("crashTestTable").innerHTML =
+  '<table class="method-table"><thead><tr><th>Comparison</th><th>n (winners)</th><th>n (other)</th><th>rate (winners)</th><th>rate (other)</th><th>z</th><th>p</th></tr></thead>' +
+  "<tbody>" + row("Winners vs. losers", wl) + row("Winners vs. middle (5&ndash;6)", wm) + "</tbody></table>" +
+  '<div class="method-note">Two-proportion z-test on the share of decile-months worse than &minus;10% relative return. n=' + (wl ? wl.n1 + wl.n2 : "n/a") + ' decile-month observations for the winners/losers comparison.</div>';
 }
 
-function renderSectorChart(){
- const sectors = [...RAW.sectors].sort((a, b) => {
-  const av = SECTOR_MODE === "beatRate" ? a.beatRate : a.avgSurprise;
-  const bv = SECTOR_MODE === "beatRate" ? b.beatRate : b.avgSurprise;
-  return (bv ?? -Infinity) - (av ?? -Infinity);
- });
-
- const values = sectors.map(s => SECTOR_MODE === "beatRate" ? s.beatRate : s.avgSurprise);
- const colors = values.map(v => (v === null ? ndr("slate") : (v >= 0 ? ndr("green") : ndr("red"))));
-
- const ctx = document.getElementById("sectorChart").getContext("2d");
- if(sectorChart) sectorChart.destroy();
- sectorChart = new Chart(ctx, {
-  type: "bar",
+function renderSpreadChart(data){
+ const pts = data.spreadByMonth || [];
+ const ctx = document.getElementById("spreadChart").getContext("2d");
+ if(spreadChart) spreadChart.destroy();
+ spreadChart = new Chart(ctx, {
+  type: "line",
   data: {
-   labels: sectors.map(s => s.sector),
-   datasets: [{
-    label: SECTOR_MODE === "beatRate" ? "Beat rate (%)" : "Avg. surprise (%)",
-    data: values,
-    backgroundColor: colors,
-    borderRadius: 4,
-   }],
-  },
-  options: {
-   indexAxis: "y",
-   responsive: true,
-   maintainAspectRatio: false,
-   plugins: {
-    legend: { display: false },
-    tooltip: {
-     callbacks: {
-      label: ctx => (SECTOR_MODE === "beatRate"
-       ? "Beat rate: " + fmtPlainPct(ctx.parsed.x)
-       : "Avg. surprise: " + fmtPct(ctx.parsed.x)) + " (n=" + sectors[ctx.dataIndex].count + ")",
-     },
-    },
-   },
-   // Horizontal bar: x is the value axis (numeric), y the category axis
-   // (sector names) — the reverse of the usual layout, so the ndr scale
-   // helpers (built for a category x / numeric y) are applied swapped.
-   scales: {
-    x: ndrYScale({ title: SECTOR_MODE === "beatRate" ? "Beat rate (%)" : "Avg. surprise (%)" }),
-    y: { ticks: { color: ndr("axis"), font: { size: 11 } }, grid: { display: false } },
-   },
-  },
- });
-}
-
-document.getElementById("btnBeatRate").addEventListener("click", () => {
- SECTOR_MODE = "beatRate";
- document.getElementById("btnBeatRate").classList.add("active");
- document.getElementById("btnMagnitude").classList.remove("active");
- document.getElementById("sectorChartSub").textContent = "Beat rate: share of sector constituents beating consensus EPS.";
- renderSectorChart();
-});
-document.getElementById("btnMagnitude").addEventListener("click", () => {
- SECTOR_MODE = "magnitude";
- document.getElementById("btnMagnitude").classList.add("active");
- document.getElementById("btnBeatRate").classList.remove("active");
- document.getElementById("sectorChartSub").textContent = "Avg. surprise %: mean gap between reported and estimated EPS, by sector.";
- renderSectorChart();
-});
-
-function renderDistChart(){
- const bins = RAW.distribution || [];
- const ctx = document.getElementById("distChart").getContext("2d");
- if(distChart) distChart.destroy();
- distChart = new Chart(ctx, {
-  type: "bar",
-  data: {
-   labels: bins.map(b => b.label),
-   datasets: [{
-    label: "Reporters",
-    data: bins.map(b => b.count),
-    backgroundColor: bins.map(b => (b.hi <= 0 ? ndr("red") : ndr("green"))),
-    borderRadius: 4,
-    maxBarThickness: 64,
-   }],
+   labels: pts.map(p => p.month),
+   datasets: [{ label: "Momentum spread", data: pts.map(p => p.spread), borderColor: ndr("navy"), backgroundColor: "rgba(0,0,0,0)", borderWidth: 1.5, pointRadius: 2, tension: 0.15 }],
   },
   options: {
    responsive: true,
    maintainAspectRatio: false,
    plugins: {
     legend: { display: false },
-    tooltip: { callbacks: { label: ctx => ctx.parsed.y + " reporters" } },
+    tooltip: { callbacks: { label: ctx => fmtPct(ctx.parsed.y) } },
    },
    scales: {
-    x: { ...ndrXScale(), title: { display: true, text: "Surprise %", color: ndr("axis-soft"), font: { size: 10 } } },
-    y: ndrYScale({ title: "Number of companies", fmt: v => Number(v).toFixed(0) }),
+    x: ndrXScale(),
+    y: ndrYScale({ title: "Winners − losers, fwd. relative return (%)" }),
    },
   },
  });
 }
 
-function renderPersistence(){
- const p = RAW.persistence;
- document.getElementById("persistAfterBeat").textContent = fmtPlainPct(p.beatRateAfterBeat) + " (n=" + p.nAfterBeat + ")";
- document.getElementById("persistAfterMiss").textContent = fmtPlainPct(p.beatRateAfterMiss) + " (n=" + p.nAfterMiss + ")";
- document.getElementById("persistUnconditional").textContent = fmtPlainPct(p.unconditionalBeatRate);
- const zText = p.z === null ? "not enough data to test" : "z = " + p.z.toFixed(2) + ", p " + (p.pValue < 0.001 ? "< 0.001" : "= " + p.pValue);
- document.getElementById("persistStats").textContent = "Two-proportion z-test, after-a-beat vs. after-a-miss: " + zText + ".";
+function renderMomentumLeaderboards(data){
+ const ranked = [...data.companies].filter(c => c.trailing12M !== null).sort((a, b) => b.trailing12M - a.trailing12M);
+ const row = c => "<tr><td>" + c.symbol + "</td><td>" + (c.sector || "n/a") + "</td><td>" + fmtPct(c.trailing12M) + "</td><td>" + (c.decile ?? "n/a") + "</td></tr>";
+ document.getElementById("topMomentumTable").innerHTML = ranked.slice(0, 15).map(row).join("");
+ document.getElementById("lowMomentumTable").innerHTML = [...ranked].reverse().slice(0, 15).map(row).join("");
 }
 
-function streakRowHtml(r, cls){
- return `<tr>
-  <td>${r.ticker}</td>
-  <td>${r.name}</td>
-  <td>${r.sector}</td>
-  <td class="${cls}">${r.streak}</td>
-  <td class="${classForValue(r.latestSurprisePct)}">${fmtPct(r.latestSurprisePct)}</td>
- </tr>`;
+function sortBy(key){
+ if(SORT_KEY === key){
+  SORT_DIR = -SORT_DIR;
+ }else{
+  SORT_KEY = key;
+  SORT_DIR = key === "symbol" || key === "sector" ? 1 : -1;
+ }
+ renderTable();
 }
 
-function surpriseRowHtml(r){
- return `<tr>
-  <td>${r.ticker}</td>
-  <td>${r.name}</td>
-  <td>${r.sector}</td>
-  <td>${r.reportedEPS === null ? "n/a" : "$" + r.reportedEPS.toFixed(2)}</td>
-  <td>${r.estimatedEPS === null ? "n/a" : "$" + r.estimatedEPS.toFixed(2)}</td>
-  <td class="${classForValue(r.surprisePct)}">${fmtPct(r.surprisePct)}</td>
- </tr>`;
+function renderTable(){
+ if(!RAW) return;
+ const rows = [...RAW.companies].sort((a, b) => {
+  const av = a[SORT_KEY], bv = b[SORT_KEY];
+  if(av === null || av === undefined) return 1;
+  if(bv === null || bv === undefined) return -1;
+  if(typeof av === "string") return av.localeCompare(bv) * SORT_DIR;
+  return (av - bv) * SORT_DIR;
+ });
+
+ const tbody = document.getElementById("tableBody");
+ tbody.innerHTML = rows.map(r => {
+  const cls = r.trailing12M === null ? "cell-na" : r.trailing12M >= 0 ? "cell-pos" : "cell-neg";
+  return `<tr>
+   <td><span class="sector-name">${r.symbol}</span></td>
+   <td><span class="sector-ticker">${r.sector || "n/a"}</span></td>
+   <td class="${cls}">${fmtPct(r.trailing12M)}</td>
+   <td>${r.decile ?? "n/a"}</td>
+  </tr>`;
+ }).join("");
+
+ document.querySelectorAll("#stockTable thead th").forEach(th => {
+  const key = th.dataset.key;
+  th.classList.toggle("sorted", key === SORT_KEY);
+  const arrow = th.querySelector(".sort-arrow");
+  if(arrow) arrow.textContent = (key === SORT_KEY && SORT_DIR === 1) ? "▴" : "▾";
+ });
 }
 
-function renderLeaderboards(){
- document.getElementById("streaksBeatBody").innerHTML = (RAW.streaksBeat || []).map(r => streakRowHtml(r, "cell-pos")).join("")
-  || '<tr><td colspan="5" style="text-align:center; color:var(--muted); padding:20px;">No streaks &ge; 3 quarters</td></tr>';
- document.getElementById("streaksMissBody").innerHTML = (RAW.streaksMiss || []).map(r => streakRowHtml(r, "cell-neg")).join("")
-  || '<tr><td colspan="5" style="text-align:center; color:var(--muted); padding:20px;">No streaks &ge; 3 quarters</td></tr>';
- document.getElementById("biggestBeatsBody").innerHTML = (RAW.biggestBeats || []).map(surpriseRowHtml).join("")
-  || '<tr><td colspan="6" style="text-align:center; color:var(--muted); padding:20px;">No data</td></tr>';
- document.getElementById("biggestMissesBody").innerHTML = (RAW.biggestMisses || []).map(surpriseRowHtml).join("")
-  || '<tr><td colspan="6" style="text-align:center; color:var(--muted); padding:20px;">No data</td></tr>';
-}
+document.querySelectorAll("#stockTable thead th").forEach(th => {
+ const key = th.dataset.key;
+ if(key) th.addEventListener("click", () => sortBy(key));
+});
 
 init();
 </script>
