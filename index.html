@@ -406,6 +406,7 @@ footer .footlink{position:absolute;right:24px;top:50%;transform:translateY(-50%)
 @media (max-width:1100px){ .sitenav{ padding:14px 16px; } .sitenav .brand{ font-size:15px; } .navdrop > .navlabel{ padding:8px 8px; font-size:12.5px; } }
 @media (max-width:720px){ .navlinks{ display:none; } }
 </style>
+<link rel="stylesheet" href="/glass.css">
 </head>
 <body>
 
@@ -567,15 +568,18 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 </div>
 
 <div class="hero">
+<div class="hero-copy">
 <h1>Data-driven research on markets, macro, and investor psychology.</h1>
 <p>My working portfolio of research, models, and dashboards</p>
+</div>
+<aside class="snapshot" aria-label="Market snapshot"><div class="snap-grid" id="snapshot"></div></aside>
 </div>
 
 <div class="section" id="research">
 <div class="section-title">Research Areas</div>
 <div class="category-grid">
 
-<details class="category-card">
+<details class="category-card" open>
 <summary><h4>Market Internals</h4></summary>
 <ul>
 <li class="group">Sentiment</li>
@@ -593,7 +597,7 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 </ul>
 </details>
 
-<details class="category-card">
+<details class="category-card" open>
 <summary><h4>Valuation &amp; Earnings</h4></summary>
 <ul>
 <li class="group">Valuation</li>
@@ -620,7 +624,7 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 </ul>
 </details>
 
-<details class="category-card">
+<details class="category-card" open>
 <summary><h4>Sectors &amp; Factors</h4></summary>
 <ul>
 <li class="group">Sectors</li>
@@ -638,7 +642,7 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 </ul>
 </details>
 
-<details class="category-card">
+<details class="category-card" open>
 <summary><h4>Capital &amp; Ownership</h4></summary>
 <ul>
 <li class="group">Shareholder Returns</li>
@@ -660,7 +664,7 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 </ul>
 </details>
 
-<details class="category-card">
+<details class="category-card" open>
 <summary><h4>Macro &amp; Tools</h4></summary>
 <ul>
 <li class="group">Rates &amp; Macro</li>
@@ -682,7 +686,7 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 </ul>
 </details>
 
-<details class="category-card">
+<details class="category-card" open>
 <summary><h4>Research</h4></summary>
 <ul>
 <li class="group">Reports</li>
@@ -725,6 +729,16 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 
   const html = items.map(renderItem).join("");
   track.innerHTML = html + html;
+
+  const SNAPSHOT_ORDER = ["S&P 500", "MSCI World Index", "NASDAQ Composite", "VIX", "WTI Crude Oil", "Fed Funds Rate"];
+  const snapItems = SNAPSHOT_ORDER.map(l => items.find(i => i.label === l)).filter(Boolean);
+  const pct = (v, cls) => v == null ? `<span class="${cls}"></span>`
+   : `<span class="${cls} ${v >= 0 ? "up" : "down"}">${v >= 0 ? "▲" : "▼"} ${Math.abs(v).toFixed(2)}%</span>`;
+  document.getElementById("snapshot").innerHTML =
+   `<div class="snap snap-head"><span class="s-label"></span><span class="s-value"></span><span class="s-chg">1D</span><span class="s-chg">YTD</span></div>` +
+   snapItems.map(i =>
+    `<div class="snap"><span class="s-label">${i.label}</span><span class="s-value">${i.isRate ? i.value + "%" : i.value}</span>${pct(i.changePercent, "s-chg")}${pct(i.ytdPercent, "s-chg")}</div>`
+   ).join("");
 
   // The CSS's 90s default duration was tuned for ~23 items; the -50%
   // keyframe always scrolls exactly one full (undoubled) pass of the

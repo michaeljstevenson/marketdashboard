@@ -16,7 +16,7 @@
 const { TICKER_CONSTITUENTS } = require("./ticker-constituents");
 const { getTickerStore, BLOB_KEY } = require("./ticker-blob-store");
 const { recordAvCall } = require("./av-call-counter");
-const { fetchQuotes } = require("./yahoo-client");
+const { fetchQuotes, fetchPriorYearEndCloses } = require("./yahoo-client");
 
 const ALPHA_VANTAGE_URL = "https://www.alphavantage.co/query";
 
@@ -77,13 +77,17 @@ const INDEXES = [
 ];
 const MSCI_WORLD = { symbol: "^990100-USD-STRD", label: "MSCI World Index" };
 const WTI = { symbol: "CL=F", label: "WTI Crude Oil" };
+// Rows that show a YTD change in the homepage's market snapshot panel.
+const YTD_SYMBOLS = ["^GSPC", "^IXIC", MSCI_WORLD.symbol, WTI.symbol];
 
-function quoteItem(label, q) {
-  return {
+function quoteItem(label, q, ytdBase) {
+  const item = {
     label,
     value: round(q.price, 2),
     changePercent: round((q.price / q.prevClose - 1) * 100, 2),
   };
+  if (ytdBase) item.ytdPercent = round((q.price / ytdBase - 1) * 100, 2);
+  return item;
 }
 
 exports.handler = async () => {
@@ -118,6 +122,19 @@ exports.handler = async () => {
     }
     const slowByLabel = new Map(slowItems.map((i) => [i.label, i]));
 
+    // Prior-year-end closes never change within a year, so they're fetched
+    // once per year (or until every symbol has one) and carried in the blob.
+    const year = new Date().getUTCFullYear();
+    let ytdBase = existing && existing.ytdBase;
+    if (!ytdBase || ytdBase.year !== year || YTD_SYMBOLS.some((s) => ytdBase.closes[s] == null)) {
+      try {
+        ytdBase = { year, closes: Object.fromEntries(await fetchPriorYearEndCloses(YTD_SYMBOLS, year)) };
+      } catch (err) {
+        warnings.push(`YTD base fetch failed: ${err.message}`);
+        ytdBase = ytdBase && ytdBase.year === year ? ytdBase : { year, closes: {} };
+      }
+    }
+
     const symbols = [...INDEXES.map((i) => i.symbol), MSCI_WORLD.symbol, WTI.symbol, ...TICKER_CONSTITUENTS];
     const quotes = await fetchQuotes(symbols);
     const fromQuote = (label, symbol) => {
@@ -126,7 +143,7 @@ exports.handler = async () => {
         warnings.push(`Incomplete Yahoo quote for ${symbol}`);
         return { __failed: true };
       }
-      return quoteItem(label, q);
+      return quoteItem(label, q, ytdBase.closes[symbol]);
     };
 
     // Same order the tape has always shown: indices, Fed Funds, MSCI World, WTI, stocks.
@@ -149,6 +166,7 @@ exports.handler = async () => {
     const payload = {
       generated_at_utc: new Date().toISOString(),
       slowFetchedAt,
+      ytdBase,
       items,
       warnings,
     };

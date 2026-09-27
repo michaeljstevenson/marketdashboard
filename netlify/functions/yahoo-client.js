@@ -80,6 +80,30 @@ async function fetchQuotes(symbols) {
   return out;
 }
 
+// Last close of the prior calendar year for many symbols (one call per 20),
+// the base for year-to-date returns. Returns Map(symbol -> close); symbols
+// with no bar before Jan 1 of `year` are absent.
+async function fetchPriorYearEndCloses(symbols, year) {
+  const out = new Map();
+  const yahooSymbol = (s) => YAHOO_ALIASES[s] || s;
+  for (let i = 0; i < symbols.length; i += SPARK_BATCH_SIZE) {
+    const batch = symbols.slice(i, i + SPARK_BATCH_SIZE);
+    const payload = await fetchYahooJson(
+      `https://query1.finance.yahoo.com/v8/finance/spark?symbols=${batch.map((s) => encodeURIComponent(yahooSymbol(s))).join(",")}&range=1y&interval=1d`
+    );
+    for (const symbol of batch) {
+      const e = payload[yahooSymbol(symbol)];
+      if (!e || !e.timestamp || !e.close) continue;
+      let base = null;
+      e.timestamp.forEach((t, k) => {
+        if (e.close[k] != null && new Date(t * 1000).getUTCFullYear() < year) base = e.close[k];
+      });
+      if (base != null) out.set(symbol, base);
+    }
+  }
+  return out;
+}
+
 async function fetchChartResult(symbol, { interval = "1d", events = "div,splits" } = {}) {
   const url =
     `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(YAHOO_ALIASES[symbol] || symbol)}` +
@@ -178,6 +202,7 @@ module.exports = {
   fetchSplitEvents,
   fetchMonthEndCloses,
   fetchQuotes,
+  fetchPriorYearEndCloses,
   fetchIntradayBatch,
   sleep,
 };
