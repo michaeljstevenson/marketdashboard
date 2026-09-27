@@ -806,7 +806,7 @@ function renderAdChart(rangeKey){
      type: "bar",
      label: "Net advances (adv - decl)",
      data: netAd,
-     backgroundColor: netAd.map(v => v >= 0 ? "rgba(90,157,111,0.75)" : "rgba(111,143,172,0.75)"),
+     backgroundColor: netAd.map(v => v >= 0 ? "rgba(63,185,80,0.75)" : "rgba(248,81,73,0.75)"),
      yAxisID: "y",
      order: 2,
     },
@@ -946,12 +946,12 @@ function renderHlChart(rangeKey){
     {
      label: "New Highs",
      data: rows.map(r => r.newHighs),
-     backgroundColor: "rgba(217,138,61,0.75)",
+     backgroundColor: "rgba(63,185,80,0.75)",
     },
     {
      label: "New Lows",
      data: rows.map(r => -r.newLows),
-     backgroundColor: "rgba(111,143,172,0.75)",
+     backgroundColor: "rgba(248,81,73,0.75)",
     },
    ],
   },
@@ -1142,7 +1142,7 @@ function renderDayChangeRange(data, rangeKey, isLive){
    labels,
    datasets: [{
     data: counts,
-    backgroundColor: labels.map((l, i) => (edges[i] < 0 ? "rgba(111,143,172,0.75)" : "rgba(90,157,111,0.75)")),
+    backgroundColor: labels.map((l, i) => (edges[i] < 0 ? "rgba(248,81,73,0.75)" : "rgba(63,185,80,0.75)")),
    }],
   },
   options: {

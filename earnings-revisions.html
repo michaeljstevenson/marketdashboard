@@ -923,7 +923,7 @@ function renderSectorChart(){
  });
 
  const values = sectors.map(s => SECTOR_MODE === "breadth" ? s.netRevisionRatio30 : s.drift30);
- const colors = values.map(v => (v === null ? themeMutedColor() : (v >= 0 ? "#d98a3d" : "#6f8fac")));
+ const colors = values.map(v => (v === null ? themeMutedColor() : (v >= 0 ? "#3fb950" : "#f85149")));
 
  const ctx = document.getElementById("sectorChart").getContext("2d");
  if(sectorChart) sectorChart.destroy();

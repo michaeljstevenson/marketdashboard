@@ -15,6 +15,9 @@
   --up:#3fb950;
   --down:#f85149;
 }
+/* Pages used orange/blue (--greed/--fear) for up/down and as the accent; the site is green/red now.
+   The Sentiment Index keeps them, since there they mean greed and fear. */
+:root:not(.sentiment-palette){--greed:var(--up);--fear:var(--down)}
 :root[data-theme="light"]{
   --bg:#d9dde3;
   --ink:#111318;

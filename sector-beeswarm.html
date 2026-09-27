@@ -733,7 +733,7 @@ function renderStatic(y){
 function updateChrome(label, spyReturn){
  document.getElementById("plotDate").textContent = label;
  document.getElementById("plotSpy").innerHTML = "SPY <strong>" + fmtPct(spyReturn) + "</strong>";
- document.getElementById("plotSpy").style.color = spyReturn >= 0 ? "var(--fear)" : "var(--extreme)";
+ document.getElementById("plotSpy").style.color = spyReturn >= 0 ? "var(--up)" : "var(--down)";
 }
 function updateSpyLine(y, spyReturn, T){
  const L = layers, spyY = y(clampForMode(spyReturn, y));

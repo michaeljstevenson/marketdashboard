@@ -933,7 +933,7 @@ function init(){
    datasets: [{
     label: "Actual return minus target-implied return",
     data: rows.map(r => r.missReturnPts),
-    backgroundColor: rows.map(r => r.missReturnPts >= 0 ? "rgba(90,157,111,0.75)" : "rgba(111,143,172,0.75)"),
+    backgroundColor: rows.map(r => r.missReturnPts >= 0 ? "rgba(63,185,80,0.75)" : "rgba(248,81,73,0.75)"),
    }],
   },
   options: {
@@ -1257,7 +1257,7 @@ function renderHerdCharts(rows){
       datasets: [{
        label: "Implied return",
        data: sorted.map(f => pct(f.target, priorClose)),
-       backgroundColor: sorted.map(f => hasActual && pct(f.target, priorClose) >= row.actualReturn ? "rgba(90,157,111,0.75)" : "rgba(111,143,172,0.75)"),
+       backgroundColor: sorted.map(f => hasActual && pct(f.target, priorClose) >= row.actualReturn ? "rgba(63,185,80,0.75)" : "rgba(248,81,73,0.75)"),
        barThickness: 20,
       }],
      },

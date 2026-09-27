@@ -19,7 +19,7 @@ Chart.defaults.plugins.zoom = {
  zoom: {
   wheel: { enabled: false },
   pinch: { enabled: false },
-  drag: { enabled: true, backgroundColor: "rgba(217,138,61,0.15)", borderColor: "rgba(217,138,61,0.4)", borderWidth: 1 },
+  drag: { enabled: true, backgroundColor: "rgba(63,185,80,0.15)", borderColor: "rgba(63,185,80,0.4)", borderWidth: 1 },
   mode: "x",
  },
  pan: { enabled: true, mode: "x", modifierKey: "shift" },
@@ -389,8 +389,8 @@ h1{
 
 .range-btn.active{
  background:var(--card-hover);
- color:var(--greed);
- border-color:var(--greed);
+ color:var(--up);
+ border-color:var(--up);
 }
 
 .chart-canvas-wrap{
@@ -439,7 +439,7 @@ thead th .sort-arrow{
  font-size:10px;
 }
 
-thead th.sorted .sort-arrow{ opacity:1; color:var(--greed); }
+thead th.sorted .sort-arrow{ opacity:1; color:var(--up); }
 
 tbody td{
  padding:11px 12px;
@@ -902,11 +902,9 @@ function colorForValue(value, columnValues){
  const maxAbs = Math.max(0.01, ...columnValues.filter(v => v !== null && v !== undefined).map(Math.abs));
  const intensity = Math.min(1, Math.abs(value) / maxAbs);
  if(value >= 0){
-  // greed (orange) for positive
-  return `rgba(217,138,61,${(0.12 + intensity * 0.38).toFixed(3)})`;
+  return `rgba(63,185,80,${(0.12 + intensity * 0.38).toFixed(3)})`;
  }
- // fear (blue-gray) for negative
- return `rgba(111,143,172,${(0.12 + intensity * 0.38).toFixed(3)})`;
+ return `rgba(248,81,73,${(0.12 + intensity * 0.38).toFixed(3)})`;
 }
 
 function render(){

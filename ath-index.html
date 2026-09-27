@@ -420,8 +420,8 @@ h1{
 }
 
 .ticker-chip{
- background:rgba(217,138,61,0.14);
- border:1px solid rgba(217,138,61,0.35);
+ background:rgba(63,185,80,0.14);
+ border:1px solid rgba(63,185,80,0.35);
  color:var(--greed);
  border-radius:6px;
  padding:6px 12px;
@@ -898,7 +898,7 @@ async function init(){
    document.getElementById("atlStatDate").textContent = usDate(latest.date);
    const atlTickerGrid = document.getElementById("atlTickerGrid");
    atlTickerGrid.innerHTML = atlTickers.length
-    ? atlTickers.map(t => `<span class="ticker-chip" style="background:rgba(111,143,172,0.14);border-color:rgba(111,143,172,0.35);color:var(--fear);">${t}</span>`).join("")
+    ? atlTickers.map(t => `<span class="ticker-chip" style="background:rgba(248,81,73,0.14);border-color:rgba(248,81,73,0.35);color:var(--fear);">${t}</span>`).join("")
     : '<span class="ticker-empty">No S&P 500 constituents are at an all-time low today.</span>';
 
    updatedText = "Current data from TradingView, generated " + new Date(tvResult.value.data.generated_at_utc).toLocaleString("en-US", { month: "2-digit", day: "2-digit", year: "numeric", hour: "numeric", minute: "2-digit" });
@@ -1022,7 +1022,7 @@ function renderNetChartRange(rangeKey){
      type: "bar",
      label: "ATH − ATL",
      data: rows.map(r => r.net),
-     backgroundColor: rows.map(r => r.net >= 0 ? "rgba(217,138,61,0.65)" : "rgba(111,143,172,0.65)"),
+     backgroundColor: rows.map(r => r.net >= 0 ? "rgba(63,185,80,0.65)" : "rgba(248,81,73,0.65)"),
      yAxisID: "y",
      order: 2,
     },
