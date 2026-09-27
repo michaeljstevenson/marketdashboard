@@ -874,11 +874,14 @@ let dailyY = null;
 let dailyT = 0;              // float position within the session, 0 .. times.length-1
 let dailyTickTs = 0;
 let dailyRAF = null;
+let dailySessionId = 0;
+let dailyLayoutsDone = false;
 const DAILY_MARKS_PER_SEC = 26 / 24;   // a full session plays in ~24s
 const DAILY_LABEL_N = 14;
 
 function stopDailyEngine(){
  cancelAnimationFrame(dailyRAF);
+ dailySessionId++;
  dailyNodes = [];
  dailyLayouts = [];
 }
@@ -919,16 +922,39 @@ function startDailySession(p){
   .force("y", yForce)
   .force("collide", d3.forceCollide(d => d.rad + 0.7).strength(1).iterations(2));
 
- dailyLayouts = [];
- for(let m = 0; m < p.times.length; m++){
+ // Laying out every mark up front froze the page for seconds. Instead the
+ // closing mark is laid out cold and drawn at once, then earlier marks are
+ // filled in backwards (each warm-started from the next) in small chunks, so
+ // forward playback still ends exactly on the picture already on screen.
+ const N = p.times.length;
+ const layoutMark = (m, ticks, alpha) => {
   dailyNodes.forEach(n => { n.ty = dailyY(clampForMode(n.r[m], dailyY)); });
-  sim.alpha(m === 0 ? 1 : 0.45).alphaTarget(0);
-  const ticks = m === 0 ? 300 : 110;
+  sim.alpha(alpha).alphaTarget(0);
   for(let i = 0; i < ticks; i++) sim.tick();
   dailyNodes.forEach(clampNode);
-  dailyLayouts.push(dailyNodes.map(n => ({ x: n.x, y: n.y })));
+  dailyLayouts[m] = dailyNodes.map(n => ({ x: n.x, y: n.y }));
+ };
+ dailyLayouts = new Array(N);
+ dailyLayoutsDone = N <= 1;
+ layoutMark(N - 1, 300, 1);
+ const session = ++dailySessionId;
+ const closeLayout = dailyLayouts[N - 1];
+ let m = N - 2;
+ const fillChunk = () => {
+  if(session !== dailySessionId) return;
+  const until = performance.now() + 12;
+  while(m >= 0 && performance.now() < until){ layoutMark(m, 60, 0.45); m--; }
+  if(m >= 0){ setTimeout(fillChunk, 0); return; }
+  sim.stop();
+  dailyLayoutsDone = true;
+  // the background pass moved the shared nodes; put them back on the close
+  dailyNodes.forEach((n, k) => { n.x = closeLayout[k].x; n.y = closeLayout[k].y; });
+  document.getElementById("scrubber").style.opacity = 1;
+ };
+ if(!dailyLayoutsDone){
+  document.getElementById("scrubber").style.opacity = 0.55;
+  setTimeout(fillChunk, 0);
  }
- sim.stop();
 
  const labelKeys = new Set([...dailyNodes].sort((a, b) => b.size - a.size).slice(0, DAILY_LABEL_N).map(n => n.key));
  dailyCircleSel = L.bubbles.selectAll("circle.bubble").data(dailyNodes, d => d.key).join(
@@ -953,7 +979,7 @@ function drawDailyAt(t){
  const i0 = Math.max(0, Math.min(N - 1, Math.floor(t)));
  const i1 = Math.min(N - 1, i0 + 1);
  const f = t - i0;
- const A = dailyLayouts[i0], B = dailyLayouts[i1];
+ const A = dailyLayouts[i0] || dailyLayouts[N - 1], B = dailyLayouts[i1] || A;
  dailyNodes.forEach((n, k) => {
   n.x = A[k].x + (B[k].x - A[k].x) * f;
   n.y = A[k].y + (B[k].y - A[k].y) * f;
@@ -970,7 +996,7 @@ function drawDailyAt(t){
 }
 
 function dailySeek(t){
- if(!dailyLayouts.length) return;
+ if(!dailyLayoutsDone) return;
  dailyT = Math.max(0, Math.min(currentDay.times.length - 1, t));
  document.getElementById("frameRange").value = Math.round(dailyT);
  drawDailyAt(dailyT);
@@ -1010,7 +1036,7 @@ function togglePlay(){
   };
   rafId = requestAnimationFrame(tick);
  } else {
-  if(!dailyLayouts.length){ playing = false; document.getElementById("playBtn").innerHTML = "&#9654;"; return; }
+  if(!dailyLayoutsDone){ playing = false; document.getElementById("playBtn").innerHTML = "&#9654;"; return; }
   if(dailyT >= currentDay.times.length - 1) dailyT = 0;
   dailyTickTs = performance.now();
   dailyRAF = requestAnimationFrame(dailyPlayLoop);
@@ -1034,7 +1060,7 @@ function setMode(next){
  svg.selectAll("circle.bubble").remove();
  svg.selectAll("line.stem").remove();
  svg.selectAll("text.bubble-label").remove();
- if(next === "annual") initAnnualFrames();
+ if(next === "annual") annualLoad.then(() => { if(mode === "annual") initAnnualFrames(); });
  else initDailyFrames();
 }
 
@@ -1148,15 +1174,15 @@ window.addEventListener("resize", () => {
 });
 
 /* boot: load annual (always available), then try daily as the default view */
-fetch(API_ANNUAL).then(r => { if(!r.ok) throw new Error("HTTP " + r.status); return r.json(); })
- .then(data => {
-  annualData = data;
-  document.getElementById("legendNote").textContent = "Intraday return · pick a session, then play it through · one bubble per S&P 500 company";
-  initDailyFrames().then(() => {
-   if(!frames.length){ mode = "annual"; document.getElementById("btnDaily").classList.remove("active"); document.getElementById("btnAnnual").classList.add("active"); initAnnualFrames(); }
-  });
- })
- .catch(err => showError("Couldn't load visualization data (" + err.message + ")."));
+const annualLoad = fetch(API_ANNUAL).then(r => { if(!r.ok) throw new Error("HTTP " + r.status); return r.json(); })
+ .then(data => { annualData = data; });
+document.getElementById("legendNote").textContent = "Intraday return · pick a session, then play it through · one bubble per S&P 500 company";
+initDailyFrames().then(() => {
+ if(frames.length) return;
+ annualLoad.then(() => {
+  mode = "annual"; document.getElementById("btnDaily").classList.remove("active"); document.getElementById("btnAnnual").classList.add("active"); initAnnualFrames();
+ }).catch(err => showError("Couldn't load visualization data (" + err.message + ")."));
+});
 </script>
 
 </body>
