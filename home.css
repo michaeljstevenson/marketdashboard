@@ -99,3 +99,6 @@ footer{border-top:1px solid var(--hair)}
 .snap .s-chg.up{color:var(--up)}
 .snap .s-chg.down{color:var(--down)}
 .category-card a:hover{color:var(--up)}
+.category-card.collapsible summary{pointer-events:auto;cursor:pointer}
+.category-card.collapsible summary::after{display:inline;margin-left:10px}
+.category-card.collapsible:not([open]){align-items:center}
