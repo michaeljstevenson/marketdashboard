@@ -153,7 +153,7 @@ document.addEventListener("DOMContentLoaded", function(){
 </script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Free Cash Flow Yield &amp; Earnings Quality | Michael J. Stevenson</title>
+<title>Sector Beta &amp; Risk Regime | Michael J. Stevenson</title>
 
 <style>
 
@@ -176,8 +176,9 @@ document.addEventListener("DOMContentLoaded", function(){
 
   /* NDR-style chart palette. Deliberately the SAME in light and dark —
      these charts keep a constant warm-paper look as a homage to the Ned
-     Davis Research print charts that inspired the page. JS reads them via
-     getComputedStyle (per the site convention) rather than hardcoding. */
+     Davis Research print charts that inspired /concentration. JS reads
+     them via getComputedStyle (per the site convention) rather than
+     hardcoding. */
   --ndr-plot:#f5f1e6;
   --ndr-axis:#3c3a33;
   --ndr-axis-soft:#6f6a5c;
@@ -283,6 +284,7 @@ h1{
  border:1px solid var(--hair);
  border-radius:10px;
  padding:20px;
+ min-width:0;
 }
 
 .stat-label{
@@ -296,6 +298,16 @@ h1{
  font-family:var(--mono);
  font-size:24px;
  color:var(--greed);
+}
+
+/* Two of this page's stat-values hold a sector name, not a bare number —
+   too wide at the numeric 24px size and it blows out the stat-grid's
+   column on a phone viewport (CSS Grid's default min-width:auto on grid
+   items), the same fix already used on /options-positioning. */
+.stat-value.stat-value-text{
+ font-family:var(--sans);
+ font-size:16px;
+ line-height:1.3;
 }
 
 .stat-value.cell-neg{ color:var(--fear); }
@@ -356,25 +368,24 @@ h1{
 
 .chart-canvas-wrap.short{ height:280px; }
 
-.metric-toggle{
- display:flex;
- gap:6px;
- flex-wrap:wrap;
+/* Two charts / method-tables side by side, same breakpoint as table-grid */
+.chart-grid{
+ display:grid;
+ grid-template-columns:1fr 1fr;
+ gap:16px;
+ margin-bottom:30px;
 }
 
-.metric-toggle button{
- background:var(--card-hover);
- border:1px solid var(--hair);
- color:var(--muted);
- border-radius:6px;
- padding:5px 12px;
- font-size:11px;
- cursor:pointer;
+.chart-grid .chart-box{
+ margin-bottom:0;
+ min-width:0; /* grid items default to min-width:auto (their content's min-content
+                 size), which a wide method table would otherwise force past this
+                 column's track width — same "grid blowout" the site-wide
+                 table{min-width:600px} rule creates if left unchecked here */
 }
 
-.metric-toggle button.active{
- color:var(--ink);
- border-color:var(--greed);
+@media (max-width:900px){
+ .chart-grid{ grid-template-columns:1fr; }
 }
 
 /* TABLE */
@@ -476,11 +487,6 @@ tbody td:first-child{
  .table-grid{ grid-template-columns:1fr; }
 }
 
-.leaderboard-grid{ grid-template-columns:1fr 1fr; }
-@media (max-width:640px){
- .leaderboard-grid{ grid-template-columns:1fr; }
-}
-
 /* SCATTER / METHOD TABLE (mirrors /factor-analysis) */
 
 .scatter-canvas-wrap{
@@ -491,7 +497,10 @@ tbody td:first-child{
 
 .method-table{
  width:100%;
- min-width:0;
+ min-width:0; /* overrides the site-wide table{min-width:640px} rule below —
+                 inside .chart-grid's 1fr columns that min-width forces a
+                 grid blowout, same bug already fixed once on
+                 /margin-leverage.html */
  border-collapse:collapse;
  font-family:var(--mono);
  font-size:11px;
@@ -528,6 +537,12 @@ tbody td:first-child{
 .method-table tr:last-child td{ border-bottom:none; }
 
 .method-table .sig{ color:var(--greed); }
+
+/* Defensive containment for the method table's own scrollbar, same class
+   of fix as e.g. /spin-off-performance's and /margin-leverage's own
+   methodology notes — applied here rather than at the .chart-box level so
+   it doesn't affect the chart canvas or its fullscreen button. */
+#betaMethodTable{ overflow-x:auto; }
 
 .method-note{
  font-size:11px;
@@ -567,6 +582,17 @@ tbody td:first-child{
  border-radius:4px;
  font-size:0.92em;
  white-space:nowrap;
+ max-width:100%;
+ overflow-wrap:break-word;
+}
+
+/* Defensive: a long unbroken inline <code> token can be wider than the
+   paragraph's own content box at a narrow mobile width and force the page
+   wide, the same class of overflow bug flagged throughout this site's
+   other methodology sections. break-word only ever engages when a span
+   alone exceeds the available width. */
+@media (max-width:480px){
+ .explainer code{ white-space:normal; word-break:break-word; }
 }
 
 .explainer p:last-child{ margin-bottom:0; }
@@ -688,7 +714,7 @@ tbody td:first-child{
 </div>
 </div></div>
 </div>
-<div class="navdrop has-active">
+<div class="navdrop">
 <span class="navlabel">Valuation &amp; Earnings ▾</span>
 <div class="dropdown"><div class="mega">
 <div class="mcol"><h4>Valuation</h4>
@@ -708,7 +734,7 @@ tbody td:first-child{
 <a href="/earnings-growth-divergence.html">Earnings Growth vs. Price Performance</a>
 </div>
 <div class="mcol"><h4>Fundamentals &amp; Quality</h4>
-<a href="/fcf-yield.html" class="active">Free Cash Flow Yield</a>
+<a href="/fcf-yield.html">Free Cash Flow Yield</a>
 <a href="/quality-score.html">Financial Quality Screener (Piotroski)</a>
 <a href="/roic-wacc.html">ROIC vs. Cost of Capital</a>
 <a href="/cash-conversion-cycle.html">Cash Conversion Cycle</a>
@@ -717,7 +743,7 @@ tbody td:first-child{
 </div>
 </div></div>
 </div>
-<div class="navdrop">
+<div class="navdrop has-active">
 <span class="navlabel">Sectors &amp; Factors ▾</span>
 <div class="dropdown"><div class="mega">
 <div class="mcol"><h4>Sectors</h4>
@@ -725,7 +751,7 @@ tbody td:first-child{
 <a href="/sector-beeswarm.html">Sector Beeswarm</a>
 <a href="/sector-correlation.html">Sector Correlation Matrix</a>
 <a href="/sector-rotation.html">Sector Rotation Model</a>
-<a href="/sector-beta.html">Sector Beta &amp; Risk Regime</a>
+<a href="/sector-beta.html" class="active">Sector Beta &amp; Risk Regime</a>
 <a href="/country-sector-scorecard.html">Country / Sector Scorecard</a>
 </div>
 <div class="mcol"><h4>Style &amp; Relative Performance</h4>
@@ -819,46 +845,40 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 
 <div class="header">
 <div>
-<h1>Free Cash Flow Yield &amp; Earnings Quality</h1>
-<div class="subtitle">Free cash flow yield by stock across the S&amp;P 500, and whether reported earnings turn into cash or capex and accruals eat the difference.</div>
+<h1>Sector Beta &amp; Risk Regime</h1>
+<div class="subtitle">How much each S&amp;P 500 sector currently amplifies or dampens the market's moves, how stable that has been, and whether a sector's own trailing beta says anything about what it does next.</div>
 </div>
 <div class="updated" id="updated">Loading...</div>
 </div>
 
 <div class="stat-grid">
 <div class="stat-card">
-<div class="stat-label">Avg. FCF Yield</div>
-<div class="stat-value" id="statFcfYield">…</div>
-<div class="stat-note">(Operating cash flow &minus; capex) &divide; market cap, TTM</div>
+<div class="stat-label">Highest Beta Sector</div>
+<div class="stat-value stat-value-text" id="statHighBeta">…</div>
+<div class="stat-note" id="statHighBetaNote">Rolling 63-session beta vs. SPY</div>
 </div>
 <div class="stat-card">
-<div class="stat-label">Avg. Earnings Yield</div>
-<div class="stat-value" id="statEarningsYield">…</div>
-<div class="stat-note">Net income &divide; market cap, TTM</div>
+<div class="stat-label">Lowest Beta Sector</div>
+<div class="stat-value stat-value-text" id="statLowBeta">…</div>
+<div class="stat-note" id="statLowBetaNote">Rolling 63-session beta vs. SPY</div>
 </div>
 <div class="stat-card">
-<div class="stat-label">Avg. Capex Intensity</div>
-<div class="stat-value" id="statCapex">…</div>
-<div class="stat-note">Capex &divide; operating cash flow, TTM</div>
+<div class="stat-label">Current Beta Dispersion</div>
+<div class="stat-value" id="statDispersion">…</div>
+<div class="stat-note">Highest sector beta minus lowest, right now</div>
 </div>
 <div class="stat-card">
-<div class="stat-label">Avg. FCF Conversion</div>
-<div class="stat-value" id="statConversion">…</div>
-<div class="stat-note">Free cash flow &divide; net income, TTM</div>
+<div class="stat-label">Most Regime-Shifting Sector</div>
+<div class="stat-value stat-value-text" id="statMostUnstable">…</div>
+<div class="stat-note">Largest swing in rolling beta over the lookback window</div>
 </div>
 </div>
 
 <div class="chart-box">
 <div class="chart-box-header">
 <div>
-<h2 id="sectorChartTitle">FCF yield by sector</h2>
-<div class="chart-subhead" id="sectorChartSubhead">Trailing-12-month free cash flow as a share of market cap, averaged across each sector's constituents.</div>
-</div>
-<div class="metric-toggle" id="sectorMetricToggle">
-<button type="button" data-metric="fcfYield" class="active">FCF Yield</button>
-<button type="button" data-metric="earningsYield">Earnings Yield</button>
-<button type="button" data-metric="capexIntensity">Capex Intensity</button>
-<button type="button" data-metric="fcfConversion">FCF Conversion</button>
+<h2>Current beta by sector</h2>
+<div class="chart-subhead">Rolling 63-trading-session (one calendar quarter) beta of each SPDR sector ETF against SPY, as of the most recent trading day. Above 1.0 means a sector has recently amplified the market's moves; below 1.0 means it has dampened them.</div>
 </div>
 </div>
 <div class="ndr-panel">
@@ -868,43 +888,45 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 </div>
 </div>
 
+<div class="chart-grid">
 <div class="chart-box">
 <div class="chart-box-header">
 <div>
-<h2>FCF yield vs. earnings yield</h2>
-<div class="chart-subhead">Each point is one S&amp;P 500 company. On the 45&deg; line, reported earnings and free cash flow agree exactly. Below it, earnings are running ahead of cash, a common earnings-quality warning.</div>
+<h2>Sector beta dispersion over time</h2>
+<div class="chart-subhead">Highest rolling sector beta minus lowest, each week over the lookback window. A narrow band means sectors are behaving similarly (moving together); a wide band means their risk profiles have pulled apart.</div>
+</div>
+</div>
+<div class="ndr-panel">
+<div class="chart-canvas-wrap" style="height:300px;">
+<canvas id="dispersionChart"></canvas>
+</div>
+</div>
+</div>
+<div class="chart-box">
+<div class="chart-box-header">
+<div>
+<h2>Trailing beta vs. what came next</h2>
+<div class="chart-subhead">Each point is one sector in one non-overlapping quarter: X is its rolling beta at the start of the quarter, Y is that sector's actual relative return (vs. SPY) over the quarter that followed.</div>
 </div>
 </div>
 <div class="ndr-panel">
 <div class="scatter-canvas-wrap">
-<canvas id="qualityScatter"></canvas>
+<canvas id="betaScatter"></canvas>
 </div>
 </div>
-<div id="qualityMethodTable"></div>
+<div id="betaMethodTable"></div>
+</div>
 </div>
 
+<div class="table-grid">
 <div class="table-box">
 <div class="table-box-header">
-<h2>Highest free cash flow yield</h2>
-<div class="chart-subhead">By FCF yield alone, regardless of how it compares to reported earnings.</div>
+<h2>Most stable beta</h2>
+<div class="chart-subhead">Smallest swing (max &minus; min) in rolling beta over the lookback window — a consistent risk profile</div>
 </div>
 <table>
-<thead><tr><th>Ticker</th><th>Sector</th><th>FCF Yield</th><th>Earnings Yield</th></tr></thead>
-<tbody id="topFcfTable">
-<tr><td colspan="4" style="text-align:center; color:var(--muted); padding:24px;">Loading&hellip;</td></tr>
-</tbody>
-</table>
-</div>
-
-<div class="table-grid leaderboard-grid">
-<div class="table-box">
-<div class="table-box-header">
-<h2>Lowest FCF conversion</h2>
-<div class="chart-subhead">Reported earnings least backed by cash (min. 0.1% earnings yield).</div>
-</div>
-<table>
-<thead><tr><th>Ticker</th><th>Sector</th><th>Conversion</th><th>Earnings Yield</th></tr></thead>
-<tbody id="lowestConversionTable">
+<thead><tr><th>Sector</th><th>Current Beta</th><th>Beta Range</th><th>3M Rel. Return</th></tr></thead>
+<tbody id="mostStableTable">
 <tr><td colspan="4" style="text-align:center; color:var(--muted); padding:24px;">Loading&hellip;</td></tr>
 </tbody>
 </table>
@@ -912,38 +934,12 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 
 <div class="table-box">
 <div class="table-box-header">
-<h2>Highest FCF conversion</h2>
-<div class="chart-subhead">Cash generation running ahead of reported earnings</div>
+<h2>Most regime-shifting beta</h2>
+<div class="chart-subhead">Largest swing (max &minus; min) in rolling beta over the lookback window — a risk profile that has changed</div>
 </div>
 <table>
-<thead><tr><th>Ticker</th><th>Sector</th><th>Conversion</th><th>Earnings Yield</th></tr></thead>
-<tbody id="highestConversionTable">
-<tr><td colspan="4" style="text-align:center; color:var(--muted); padding:24px;">Loading&hellip;</td></tr>
-</tbody>
-</table>
-</div>
-
-<div class="table-box">
-<div class="table-box-header">
-<h2>Biggest positive gap</h2>
-<div class="chart-subhead">FCF yield furthest above earnings yield: cash generation the income statement understates.</div>
-</div>
-<table>
-<thead><tr><th>Ticker</th><th>Sector</th><th>FCF Yield</th><th>Gap</th></tr></thead>
-<tbody id="posGapTable">
-<tr><td colspan="4" style="text-align:center; color:var(--muted); padding:24px;">Loading&hellip;</td></tr>
-</tbody>
-</table>
-</div>
-
-<div class="table-box">
-<div class="table-box-header">
-<h2>Biggest negative gap</h2>
-<div class="chart-subhead">Earnings yield furthest above FCF yield: the earnings-quality watchlist</div>
-</div>
-<table>
-<thead><tr><th>Ticker</th><th>Sector</th><th>FCF Yield</th><th>Gap</th></tr></thead>
-<tbody id="negGapTable">
+<thead><tr><th>Sector</th><th>Current Beta</th><th>Beta Range</th><th>3M Rel. Return</th></tr></thead>
+<tbody id="mostShiftingTable">
 <tr><td colspan="4" style="text-align:center; color:var(--muted); padding:24px;">Loading&hellip;</td></tr>
 </tbody>
 </table>
@@ -952,48 +948,47 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 
 <div class="table-box">
 <div class="table-box-header">
-<h2>All companies with cash flow data on file</h2>
-<div class="chart-subhead">Trailing-12-month FCF yield, earnings yield, capex intensity and FCF conversion for the full S&amp;P 500.</div>
+<h2>All 11 sectors</h2>
+<div class="chart-subhead">Current, average and range of rolling beta over the lookback window, plus the latest trailing 3-month relative return.</div>
 </div>
-<details class="full-list-details">
-<summary class="full-list-summary">Show full list</summary>
 <table id="stockTable">
 <thead>
 <tr>
-<th data-key="symbol">Symbol</th>
 <th data-key="sector">Sector</th>
-<th data-key="fcfYield">FCF Yield<span class="sort-arrow">▾</span></th>
-<th data-key="earningsYield">Earnings Yield<span class="sort-arrow">▾</span></th>
-<th data-key="capexIntensity">Capex Intensity<span class="sort-arrow">▾</span></th>
-<th data-key="fcfConversion">Conversion<span class="sort-arrow">▾</span></th>
+<th data-key="currentBeta">Current Beta<span class="sort-arrow">▾</span></th>
+<th data-key="avgBeta">Avg. Beta<span class="sort-arrow">▾</span></th>
+<th data-key="betaRange">Beta Range<span class="sort-arrow">▾</span></th>
+<th data-key="rel3M">3M Rel. Return<span class="sort-arrow">▾</span></th>
 </tr>
 </thead>
 <tbody id="tableBody">
-<tr><td colspan="6" style="text-align:center; color:var(--muted); padding:30px;">Loading cash flow data&hellip;</td></tr>
+<tr><td colspan="5" style="text-align:center; color:var(--muted); padding:30px;">Loading sector data&hellip;</td></tr>
 </tbody>
 </table>
-</details>
-<div class="table-footnote">"Conversion" is blank for companies with a trailing-12-month loss or an earnings yield under 0.1% of market cap, because the ratio isn't meaningful on a denominator that small.</div>
 </div>
 
 <div class="explainer">
 <h2>Methodology</h2>
-<p><strong>Data.</strong> Free cash flow is <code>operatingCashflow &minus; capitalExpenditures</code>, both from Alpha Vantage's quarterly <code>CASH_FLOW</code> statement (the same source as <a href="/buyback-effectiveness.html">Buyback Effectiveness</a>). Trailing-12-month figures need all four recent quarters with every field populated. A company with a gap in its latest filing is left out. Earnings yield is trailing net income &divide; market cap, calculated the same way as FCF yield, so it differs from <a href="/equity-risk-premium.html">Equity Risk Premium</a>'s trailing-P/E-based figure. Any gap between the two yields on this page then reflects cash vs. accruals, not a different method.</p>
-<p><strong>Why this page.</strong> <a href="/valuations.html">Valuations</a> is industry-level (94 classifications) and multiple-based (P/E, EV/EBITDA, P/B), sourced from Damodaran. <a href="/equity-risk-premium.html">Equity Risk Premium</a> is stock-level but earnings-based (trailing P/E vs. the 10-year Treasury). Neither asks whether the earnings behind a P/E turned into cash. A company can report healthy net income while spending heavily on capex, or recognizing revenue aggressively, so that free cash flow looks very different. FCF conversion (free cash flow &divide; net income) measures that. Below 100%, cash is lagging earnings. Above 100%, it's running ahead. Capex-heavy sectors (Utilities, Real Estate, Energy) should run lower conversion than asset-light ones (Information Technology, Communication Services). The sector chart's toggle checks that against the current data. It isn't meant to flag every capital-intensive business.</p>
-<p><strong>Correlation.</strong> The scatter runs Pearson (OLS) and Spearman rank correlation on FCF yield vs. earnings yield across the index, as on <a href="/factor-analysis.html">Factor Analysis</a>. A strong, tight relationship near the 45&deg; line means the two yields mostly agree. A weak one, or a cluster of names well below the line, means cash and accrual earnings tell different stories for part of the index.</p>
-<p>Sector and company name, and the market cap for both yields, come from <a href="/sector-beeswarm.html">Sector Beeswarm</a>. This page is a one-time snapshot as of the date below, not a recurring refresh, since cash flow statements only change when a company files a new 10-Q or 10-K.</p>
-<div class="source">Source: <a href="https://www.alphavantage.co/" target="_blank" rel="noopener">Alpha Vantage</a>: CASH_FLOW, COMPANY_OVERVIEW (market cap, via Sector Beeswarm)</div>
+<p><strong>A different lens from this site's other sector pages.</strong> <a href="/sector-correlation.html">Sector Correlation Matrix</a> asks how strongly sectors move together. <a href="/sector-rotation.html">Sector Rotation Model</a> asks which sectors are leading or lagging on price momentum. Neither asks how much a sector <em>amplifies</em> the market's own moves, which is what beta measures — a sector can be highly correlated with SPY and still have a beta well above or below 1.0, and a sector's beta can drift over time even when its correlation to the market stays roughly the same.</p>
+<p><strong>Rolling beta</strong> is the slope of an ordinary least-squares regression of a sector ETF's daily returns on SPY's daily returns, over the trailing 63 trading sessions (one calendar quarter), recomputed for every trading day in the lookback window. <strong>Beta dispersion</strong> is the spread between the highest and lowest of the 11 sectors' rolling betas on a given day. <strong>Beta range</strong> (in the tables) is each sector's own max minus min rolling beta over the whole window — how much its risk profile itself has moved, not how far from 1.0 it sits.</p>
+<p><strong>Data.</strong> Reuses the same ~2 years of daily adjusted-close history already fetched for <a href="/sector-analysis.html">Sector Performance</a> (the 11 SPDR sector ETFs plus SPY) rather than pulling any new data — pure client-side analysis of an existing dataset, the same approach <a href="/sector-correlation.html">Sector Correlation Matrix</a> and <a href="/sector-rotation.html">Sector Rotation Model</a> already use. The trailing 3-month relative return in the table comes from that same payload's own precomputed figure.</p>
+<p><strong>Test.</strong> The scatter pools one point per sector per <em>non-overlapping</em> quarter (roughly 6-7 quarters &times; 11 sectors) — a sector's rolling beta at the start of the quarter against its actual relative return over the quarter that followed — Pearson (OLS) and Spearman rank correlation, same convention as <a href="/factor-analysis.html">Factor Analysis</a>. Non-overlapping quarters avoid the mechanical correlation two heavily-overlapping rolling windows would otherwise share, the same overlapping-window pitfall <a href="/share-count-trends.html">Share Count Trends</a>' own methodology flags; because the same 11 sectors reappear across quarters, this is still a repeated-sector panel, not a fully independent sample, and is reported as descriptive evidence rather than a strong significance claim on this small a universe.</p>
+<div class="source">Source: Alpha Vantage/Yahoo Finance daily price history for the 11 SPDR sector ETFs and SPY, via <a href="/sector-analysis.html">Sector Performance</a>'s own daily job</div>
 </div>
 
 </div>
 
 <script>
-const DATA_URL = "/api/fcf-yield";
+const DATA_URL = "/api/sector-performance";
+
+const ROLL_WINDOW = 63; // ~1 calendar quarter of trading sessions
+const DAILY_POINTS_USED = 460; // stays inside the ~2yr daily portion of history; older history is weekly-thinned (see scheduled-sectors-background.js)
+const DISPERSION_SAMPLE_EVERY = 5; // thin the dispersion time series to roughly weekly points for a lighter, readable chart
 
 let RAW = null;
-let SORT_KEY = "fcfYield";
+let SECTOR_STATS = null; // computed once in init(), reused by every render*/sort function
+let SORT_KEY = "currentBeta";
 let SORT_DIR = -1;
-let SECTOR_METRIC = "fcfYield";
 
 function showError(message){
  const banner = document.getElementById("errorBanner");
@@ -1009,8 +1004,56 @@ function fmtPct(v, digits){
 
 function fmtPlainPct(v, digits){
  if(v === null || v === undefined || isNaN(v)) return "n/a";
- digits = digits === undefined ? 2 : digits;
- return v.toFixed(digits) + "%";
+ digits = digits === undefined ? 1 : digits;
+ return v.toFixed(digits);
+}
+
+function fmtBeta(v){
+ if(v === null || v === undefined || isNaN(v)) return "n/a";
+ return v.toFixed(2);
+}
+
+// ---- Beta analysis helpers ----------------------------------------------
+
+function mean(values){
+ return values.reduce((a, b) => a + b, 0) / values.length;
+}
+
+// Daily returns from a history array, staying inside the genuinely-daily
+// tail of the payload (older history is weekly-thinned server-side — see
+// scheduled-sectors-background.js — and this avoids ever computing a
+// "return" across that daily/weekly seam).
+function dailyReturns(history){
+ const h = history.slice(-DAILY_POINTS_USED);
+ const out = [];
+ for(let i = 1; i < h.length; i++) out.push({ date: h[i].date, r: h[i].close / h[i - 1].close - 1 });
+ return out;
+}
+
+// Rolling `window`-session OLS beta of `rets` against `benchRets` (assumed
+// index-aligned by trading day, same convention /sector-correlation and
+// /sector-rotation already use for this payload). Returns one entry per
+// valid window, keyed by the ORIGINAL index i into `rets`/`benchRets` so
+// forward-looking slices (the non-overlapping-quarter panel below) can
+// line back up against the raw return arrays.
+function rollingBeta(rets, benchRets, window){
+ const out = [];
+ for(let i = window - 1; i < rets.length; i++){
+  const s = rets.slice(i - window + 1, i + 1).map(x => x.r);
+  const b = benchRets.slice(i - window + 1, i + 1).map(x => x.r);
+  const ms = mean(s), mb = mean(b);
+  let cov = 0, varB = 0;
+  for(let k = 0; k < window; k++){ cov += (s[k] - ms) * (b[k] - mb); varB += (b[k] - mb) ** 2; }
+  out.push({ i, date: rets[i].date, beta: varB > 0 ? cov / varB : null });
+ }
+ return out;
+}
+
+// Compounded return of `rets` over index range [from, to] inclusive.
+function compoundReturn(rets, from, to){
+ let acc = 1;
+ for(let k = from; k <= to; k++) acc *= 1 + rets[k].r;
+ return acc - 1;
 }
 
 // ---- NDR chart styling helpers -----------------------------------------
@@ -1116,14 +1159,72 @@ function methodTableHtml(pearson, spear, unitNote){
  "</table>" + (unitNote ? '<div class="method-note">' + unitNote + "</div>" : "");
 }
 
-const SECTOR_METRIC_META = {
- fcfYield: { field: "avgFcfYield", label: "FCF yield", title: "FCF yield by sector", subhead: "Trailing-12-month free cash flow as a share of market cap, averaged across each sector's constituents." },
- earningsYield: { field: "avgEarningsYield", label: "Earnings yield", title: "Earnings yield by sector", subhead: "Trailing-12-month net income as a share of market cap, averaged across each sector's constituents" },
- capexIntensity: { field: "avgCapexIntensity", label: "Capex intensity", title: "Capex intensity by sector", subhead: "Trailing-12-month capex as a share of operating cash flow, averaged across each sector's constituents" },
- fcfConversion: { field: "avgFcfConversion", label: "FCF conversion", title: "FCF conversion by sector", subhead: "Trailing-12-month free cash flow as a share of net income, averaged across each sector's constituents" },
-};
+let sectorChart = null, dispersionChart = null, betaScatter = null;
 
-let sectorChart = null, qualityScatter = null;
+// One point per sector per non-overlapping ~quarter: rolling beta at the
+// start of the period vs. the sector's actual relative return over the
+// period that followed. Walking rb's own index space (rb[k].i = ROLL_WINDOW
+// - 1 + k) means each period's forward window shares no trading days with
+// the one before or after it — the same overlapping-window pitfall Share
+// Count Trends' own methodology flags for its year-over-year test.
+function computeSectorStats(data){
+ const spyRets = dailyReturns(data.benchmark.history);
+
+ const perSector = data.sectors.map(s => {
+  const rets = dailyReturns(s.history);
+  const n = Math.min(rets.length, spyRets.length);
+  const trimmedRets = rets.slice(0, n);
+  const trimmedSpy = spyRets.slice(0, n);
+  const rb = rollingBeta(trimmedRets, trimmedSpy, ROLL_WINDOW);
+  return {
+   ticker: s.ticker, name: s.name, rets: trimmedRets, spyRets: trimmedSpy, rb,
+   rel3M: s.relative && s.relative.m3 !== undefined ? s.relative.m3 : null,
+  };
+ });
+
+ const scatter = [];
+ for(const sec of perSector){
+  if(!sec.rb.length) continue;
+  const startI = sec.rb[0].i;
+  for(let k = 0; startI + k * ROLL_WINDOW + ROLL_WINDOW < sec.rets.length; k++){
+   const i0 = startI + k * ROLL_WINDOW;
+   const betaEntry = sec.rb[i0 - startI];
+   if(!betaEntry || betaEntry.beta === null) continue;
+   const stockFwd = compoundReturn(sec.rets, i0 + 1, i0 + ROLL_WINDOW);
+   const spyFwd = compoundReturn(sec.spyRets, i0 + 1, i0 + ROLL_WINDOW);
+   const relFwd = ((1 + stockFwd) / (1 + spyFwd) - 1) * 100;
+   scatter.push({ x: betaEntry.beta, y: relFwd, sector: sec.name });
+  }
+ }
+
+ const minRbLen = Math.min(...perSector.map(s => s.rb.length));
+ const dispersion = [];
+ for(let k = 0; k < minRbLen; k += DISPERSION_SAMPLE_EVERY){
+  const betas = perSector.map(s => s.rb[k].beta).filter(b => b !== null);
+  if(betas.length < 2) continue;
+  dispersion.push({ date: perSector[0].rb[k].date, spread: Math.max(...betas) - Math.min(...betas) });
+ }
+
+ const sectorSummaries = perSector.map(s => {
+  const betas = s.rb.map(e => e.beta).filter(b => b !== null);
+  return {
+   ticker: s.ticker,
+   name: s.name,
+   currentBeta: betas.length ? betas[betas.length - 1] : null,
+   avgBeta: betas.length ? round(mean(betas), 3) : null,
+   betaRange: betas.length ? round(Math.max(...betas) - Math.min(...betas), 3) : null,
+   rel3M: s.rel3M,
+  };
+ });
+
+ return { sectorSummaries, dispersion, scatter };
+}
+
+function round(v, d){
+ if(v === null || v === undefined || !Number.isFinite(v)) return null;
+ const f = 10 ** d;
+ return Math.round(v * f) / f;
+}
 
 async function init(){
  try{
@@ -1132,44 +1233,44 @@ async function init(){
   if(!res.ok || data.error) throw new Error(data.error || "failed to load");
 
   RAW = data;
+  SECTOR_STATS = computeSectorStats(data);
   document.getElementById("updated").textContent =
-   "As of " + new Date(data.generated_at_utc).toLocaleDateString("en-US", { month: "2-digit", day: "2-digit", year: "numeric" }) + " · " + data.loadedCount + "/" + data.universeSize + " constituents covered";
+   "As of " + new Date(data.benchmark.asOfDate + "T00:00:00Z").toLocaleDateString("en-US", { month: "2-digit", day: "2-digit", year: "numeric" }) + " · 11/11 sectors covered";
 
-  renderStats(data);
+  renderStats();
   renderSectorChart();
-  renderQualityScatter(data);
-  renderLeaderboard("topFcfTable", data.topFcfYield, "yield");
-  renderLeaderboard("lowestConversionTable", data.lowestConversion, "conversion");
-  renderLeaderboard("highestConversionTable", data.highestConversion, "conversion");
-  renderLeaderboard("posGapTable", data.biggestPositiveGap, "gap");
-  renderLeaderboard("negGapTable", data.biggestNegativeGap, "gap");
+  renderDispersionChart();
+  renderBetaScatter();
+  renderLeaderboards();
   renderTable();
 
  }catch(e){
-  showError("Couldn't load FCF yield data (" + e.message + "). The /api/fcf-yield function may not have run yet.");
+  showError("Couldn't load sector data (" + e.message + "). The /api/sector-performance function may not have run yet.");
  }
 }
 
-function renderStats(data){
- document.getElementById("statFcfYield").textContent = fmtPlainPct(data.market.avgFcfYield, 3);
- document.getElementById("statEarningsYield").textContent = fmtPlainPct(data.market.avgEarningsYield, 3);
- document.getElementById("statCapex").textContent = fmtPlainPct(data.market.avgCapexIntensity);
- document.getElementById("statConversion").textContent = fmtPlainPct(data.market.avgFcfConversion);
+function renderStats(){
+ const withBeta = SECTOR_STATS.sectorSummaries.filter(s => s.currentBeta !== null);
+ const byBeta = [...withBeta].sort((a, b) => b.currentBeta - a.currentBeta);
+ const highest = byBeta[0], lowest = byBeta[byBeta.length - 1];
+
+ document.getElementById("statHighBeta").textContent = highest ? highest.name + " · " + fmtBeta(highest.currentBeta) : "n/a";
+ document.getElementById("statLowBeta").textContent = lowest ? lowest.name + " · " + fmtBeta(lowest.currentBeta) : "n/a";
+ document.getElementById("statDispersion").textContent = (highest && lowest) ? fmtBeta(highest.currentBeta - lowest.currentBeta) : "n/a";
+
+ const byRange = withBeta.filter(s => s.betaRange !== null).sort((a, b) => b.betaRange - a.betaRange);
+ document.getElementById("statMostUnstable").textContent = byRange.length ? byRange[0].name + " (±" + fmtBeta(byRange[0].betaRange) + ")" : "n/a";
 }
 
 function renderSectorChart(){
- const meta = SECTOR_METRIC_META[SECTOR_METRIC];
- document.getElementById("sectorChartTitle").textContent = meta.title;
- document.getElementById("sectorChartSubhead").textContent = meta.subhead;
-
- const sectors = [...RAW.sectors].sort((a, b) => (b[meta.field] || 0) - (a[meta.field] || 0));
+ const sectors = [...SECTOR_STATS.sectorSummaries].filter(s => s.currentBeta !== null).sort((a, b) => b.currentBeta - a.currentBeta);
  const ctx = document.getElementById("sectorChart").getContext("2d");
  if(sectorChart) sectorChart.destroy();
  sectorChart = new Chart(ctx, {
   type: "bar",
   data: {
-   labels: sectors.map(s => s.sector),
-   datasets: [{ label: meta.label, data: sectors.map(s => s[meta.field]), backgroundColor: ndr("navy") }],
+   labels: sectors.map(s => s.name),
+   datasets: [{ label: "Current beta", data: sectors.map(s => s.currentBeta), backgroundColor: sectors.map(s => s.currentBeta >= 1 ? ndr("red") : ndr("navy")) }],
   },
   options: {
    responsive: true,
@@ -1179,89 +1280,97 @@ function renderSectorChart(){
     legend: { display: false },
     tooltip: { callbacks: { label: ctx => {
      const s = sectors[ctx.dataIndex];
-     return [meta.label + ": " + fmtPlainPct(s[meta.field]), "n=" + s.count];
+     return ["Current beta: " + fmtBeta(s.currentBeta), "Avg. beta (window): " + fmtBeta(s.avgBeta), "Beta range: " + fmtBeta(s.betaRange)];
     } } },
    },
    scales: {
-    x: { ...ndrYScale({ fmt: v => v + "%" }) },
+    x: ndrYScale({ title: "Rolling 63-session beta vs. SPY" }),
     y: { ticks: { color: ndr("axis"), font: { size: 11 } }, grid: { color: "rgba(0,0,0,0)", borderColor: ndr("axis") } },
    },
   },
  });
 }
 
-document.querySelectorAll("#sectorMetricToggle button").forEach(btn => {
- btn.addEventListener("click", () => {
-  SECTOR_METRIC = btn.dataset.metric;
-  document.querySelectorAll("#sectorMetricToggle button").forEach(b => b.classList.toggle("active", b === btn));
-  renderSectorChart();
+function renderDispersionChart(){
+ const pts = SECTOR_STATS.dispersion;
+ const ctx = document.getElementById("dispersionChart").getContext("2d");
+ if(dispersionChart) dispersionChart.destroy();
+ dispersionChart = new Chart(ctx, {
+  type: "line",
+  data: {
+   labels: pts.map(p => p.date),
+   datasets: [{ label: "Beta dispersion", data: pts.map(p => p.spread), borderColor: ndr("navy"), backgroundColor: "rgba(0,0,0,0)", borderWidth: 1.5, pointRadius: 0, tension: 0.15 }],
+  },
+  options: {
+   responsive: true,
+   maintainAspectRatio: false,
+   // Single dataset, so Chart.js's default "nearest" interaction is fine
+   // here — the CLAUDE.md warning about "nearest" hanging the tab is for
+   // many-dataset spaghetti plots hit-testing every series on every
+   // mousemove, not a lone line like this one.
+   plugins: {
+    legend: { display: false },
+    tooltip: { callbacks: { label: ctx => "Spread: " + fmtBeta(ctx.parsed.y) } },
+   },
+   scales: {
+    x: ndrXScale(),
+    y: ndrYScale({ title: "Max beta − min beta", min: 0 }),
+   },
+  },
  });
-});
+}
 
-function renderQualityScatter(data){
- const pairs = data.scatter || [];
- const ctx = document.getElementById("qualityScatter").getContext("2d");
- if(qualityScatter) qualityScatter.destroy();
- if(pairs.length < 8){
-  document.getElementById("qualityMethodTable").innerHTML = '<div class="method-note">Not enough constituents loaded yet for a regression.</div>';
-  qualityScatter = new Chart(ctx, { type: "scatter", data: { datasets: [] }, options: { responsive: true, maintainAspectRatio: false } });
+function renderBetaScatter(){
+ const pts = SECTOR_STATS.scatter;
+ const ctx = document.getElementById("betaScatter").getContext("2d");
+ if(betaScatter) betaScatter.destroy();
+ if(pts.length < 8){
+  document.getElementById("betaMethodTable").innerHTML = '<div class="method-note">Not enough non-overlapping quarters accumulated yet for a regression.</div>';
+  betaScatter = new Chart(ctx, { type: "scatter", data: { datasets: [] }, options: { responsive: true, maintainAspectRatio: false } });
   return;
  }
 
- const pearson = linearRegression(pairs.map(p => p.earningsYield), pairs.map(p => p.fcfYield));
- const spear = spearmanRegression(pairs.map(p => p.earningsYield), pairs.map(p => p.fcfYield));
-
- const xs = pairs.map(p => p.earningsYield);
+ const pearson = linearRegression(pts.map(p => p.x), pts.map(p => p.y));
+ const spear = spearmanRegression(pts.map(p => p.x), pts.map(p => p.y));
+ const xs = pts.map(p => p.x);
  const xMin = Math.min(...xs), xMax = Math.max(...xs);
- const fitPoints = [{ x: xMin, y: pearson.intercept + pearson.slope * xMin }, { x: xMax, y: pearson.intercept + pearson.slope * xMax }];
- const parityPoints = [{ x: xMin, y: xMin }, { x: xMax, y: xMax }];
+ const linePoints = [{ x: xMin, y: pearson.intercept + pearson.slope * xMin }, { x: xMax, y: pearson.intercept + pearson.slope * xMax }];
 
- qualityScatter = new Chart(ctx, {
+ betaScatter = new Chart(ctx, {
   type: "scatter",
   data: {
    datasets: [
-    { label: "Stocks", data: pairs.map(p => ({ x: p.earningsYield, y: p.fcfYield, symbol: p.symbol, sector: p.sector })), backgroundColor: ndr("navy"), pointRadius: 3, showLine: false },
-    { label: "Regression fit", type: "line", data: fitPoints, borderColor: ndr("red"), borderWidth: 1.5, borderDash: [4, 3], pointRadius: 0, fill: false },
-    { label: "45° (cash = earnings)", data: parityPoints, type: "line", borderColor: ndr("slate"), borderWidth: 1, borderDash: [2, 3], pointRadius: 0, fill: false },
+    { label: "Sector-quarters", data: pts, backgroundColor: ndr("navy"), pointRadius: 3, showLine: false },
+    { label: "Regression fit", type: "line", data: linePoints, borderColor: ndr("red"), borderWidth: 1.5, borderDash: [4, 3], pointRadius: 0, fill: false },
    ],
   },
   options: {
    responsive: true,
    maintainAspectRatio: false,
    plugins: {
-    legend: { display: true, position: "top", align: "start", labels: { boxWidth: 22, boxHeight: 2, color: ndr("axis"), font: { size: 11 } } },
-    tooltip: {
-     callbacks: {
-      label: ctx => ctx.dataset.label === "Stocks" ? (ctx.raw.symbol + " (" + ctx.raw.sector + "): earnings yield " + fmtPlainPct(ctx.raw.x) + ", FCF yield " + fmtPlainPct(ctx.raw.y)) : null,
-     },
-    },
+    legend: { display: false },
+    tooltip: { callbacks: { label: ctx => ctx.dataset.label === "Sector-quarters" ? (ctx.raw.sector + ": beta " + fmtBeta(ctx.raw.x) + " → fwd. rel. return " + fmtPct(ctx.raw.y)) : null } },
    },
    scales: {
-    x: { title: { display: true, text: "Earnings yield (%)", color: ndr("axis-soft"), font: { size: 10 } }, ticks: { color: ndr("axis"), font: { size: 10 } }, grid: { color: ndr("grid") } },
-    y: ndrYScale({ title: "FCF yield (%)" }),
+    x: { title: { display: true, text: "Rolling beta at start of quarter", color: ndr("axis-soft"), font: { size: 10 } }, ticks: { color: ndr("axis"), font: { size: 10 } }, grid: { color: ndr("grid") } },
+    y: ndrYScale({ title: "Fwd. quarterly relative return (%)" }),
    },
   },
  });
 
- document.getElementById("qualityMethodTable").innerHTML = methodTableHtml(pearson, spear,
-  "Slope is percentage points of FCF yield per 1 percentage point of earnings yield. A slope of 1.0 on the 45° line would mean cash and reported earnings agree exactly on average.");
+ document.getElementById("betaMethodTable").innerHTML = methodTableHtml(pearson, spear,
+  "Slope is percentage points of forward relative return per 1.0 of trailing beta. n=" + pearson.n + " sector-quarters across 11 sectors — a repeated-sector panel, not a fully independent sample (see the methodology section).");
 }
 
-function renderLeaderboard(elId, rows, mode){
- const el = document.getElementById(elId);
- if(!rows || !rows.length){
-  el.innerHTML = '<tr><td colspan="4" style="text-align:center; color:var(--muted); padding:24px;">No qualifying companies.</td></tr>';
-  return;
- }
- el.innerHTML = rows.map(r => {
-  if(mode === "yield"){
-   return "<tr><td>" + r.symbol + "</td><td>" + r.sector + "</td><td>" + fmtPlainPct(r.fcfYield, 2) + "</td><td>" + fmtPlainPct(r.earningsYield, 2) + "</td></tr>";
-  }
-  if(mode === "conversion"){
-   return "<tr><td>" + r.symbol + "</td><td>" + r.sector + "</td><td>" + fmtPlainPct(r.fcfConversion) + "</td><td>" + fmtPlainPct(r.earningsYield, 2) + "</td></tr>";
-  }
-  return "<tr><td>" + r.symbol + "</td><td>" + r.sector + "</td><td>" + fmtPlainPct(r.fcfYield, 2) + "</td><td>" + fmtPct(r.gap, 2) + "</td></tr>";
- }).join("");
+function renderLeaderboards(){
+ const withRange = SECTOR_STATS.sectorSummaries.filter(s => s.betaRange !== null).sort((a, b) => a.betaRange - b.betaRange);
+ const row = s => "<tr><td>" + s.name + "</td><td>" + fmtBeta(s.currentBeta) + "</td><td>" + fmtBeta(s.betaRange) + "</td><td>" + fmtPct(s.rel3M) + "</td></tr>";
+
+ const stableEl = document.getElementById("mostStableTable");
+ stableEl.innerHTML = withRange.length ? withRange.slice(0, 5).map(row).join("") : '<tr><td colspan="4" style="text-align:center; color:var(--muted); padding:24px;">No data.</td></tr>';
+
+ const shiftEl = document.getElementById("mostShiftingTable");
+ shiftEl.innerHTML = withRange.length ? [...withRange].reverse().slice(0, 5).map(row).join("") : '<tr><td colspan="4" style="text-align:center; color:var(--muted); padding:24px;">No data.</td></tr>';
 }
 
 function sortBy(key){
@@ -1269,15 +1378,16 @@ function sortBy(key){
   SORT_DIR = -SORT_DIR;
  }else{
   SORT_KEY = key;
-  SORT_DIR = key === "symbol" || key === "sector" ? 1 : -1;
+  SORT_DIR = key === "sector" ? 1 : -1;
  }
  renderTable();
 }
 
 function renderTable(){
- if(!RAW) return;
- const rows = [...RAW.companies].sort((a, b) => {
-  const av = a[SORT_KEY], bv = b[SORT_KEY];
+ if(!SECTOR_STATS) return;
+ const rows = [...SECTOR_STATS.sectorSummaries].sort((a, b) => {
+  const av = SORT_KEY === "sector" ? a.name : a[SORT_KEY];
+  const bv = SORT_KEY === "sector" ? b.name : b[SORT_KEY];
   if(av === null || av === undefined) return 1;
   if(bv === null || bv === undefined) return -1;
   if(typeof av === "string") return av.localeCompare(bv) * SORT_DIR;
@@ -1285,14 +1395,14 @@ function renderTable(){
  });
 
  const tbody = document.getElementById("tableBody");
- tbody.innerHTML = rows.map(r => {
+ tbody.innerHTML = rows.map(s => {
+  const relCls = s.rel3M === null ? "cell-na" : s.rel3M >= 0 ? "cell-pos" : "cell-neg";
   return `<tr>
-   <td><span class="sector-name">${r.symbol}</span></td>
-   <td><span class="sector-ticker">${r.sector || "n/a"}</span></td>
-   <td>${fmtPlainPct(r.fcfYield, 2)}</td>
-   <td>${fmtPlainPct(r.earningsYield, 2)}</td>
-   <td>${fmtPlainPct(r.capexIntensity)}</td>
-   <td>${fmtPlainPct(r.fcfConversion)}</td>
+   <td><span class="sector-name">${s.name}</span></td>
+   <td>${fmtBeta(s.currentBeta)}</td>
+   <td>${fmtBeta(s.avgBeta)}</td>
+   <td>${fmtBeta(s.betaRange)}</td>
+   <td class="${relCls}">${fmtPct(s.rel3M)}</td>
   </tr>`;
  }).join("");
 
