@@ -871,11 +871,11 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 
 <div class="explainer">
 <h2>Methodology</h2>
-<p><strong>Data.</strong> The universe is the S&amp;P 500. For each company, Alpha Vantage's <code>BALANCE_SHEET</code> endpoint returns <code>commonStockSharesOutstanding</code> for each of the last ~21 quarterly filings. Share count at 1/3/5-year lookbacks is read from the filings 4/12/20 quarters back. This captures the <i>net</i> effect of buybacks, new issuance and stock-based-compensation dilution together, which is what matters to an existing shareholder's ownership stake. A company can announce a large buyback and still show a rising share count if stock-based comp outruns it. This page shows that as net dilution.</p>
-<p>A company is classified "buyback" if its share count fell &gt;0.5% over the trailing year, "dilution" if it rose &gt;0.5%, and "flat" in between. The threshold is there because share counts move slightly from routine option exercises and rounding even with no capital-allocation story.</p>
-<p><strong>Persistence.</strong> The year-over-year check takes each company's two most recent non-overlapping annual share-count changes and runs the Pearson/Spearman regression from <a href="/factor-analysis.html">Factor Analysis</a>. A positive, significant relationship means a company's buyback (or dilution) pace tends to continue from year to year. Non-overlapping periods matter because overlapping windows share data points and inflate apparent persistence (see Factor Analysis).</p>
-<p>Refreshes weekly (Saturday morning), since a share count only changes when a company files a new 10-Q or 10-K. Sector and company name come from <a href="/sector-beeswarm.html">Sector Beeswarm</a>.</p>
-<div class="source">Source: <a href="https://www.alphavantage.co/" target="_blank" rel="noopener">Alpha Vantage: BALANCE_SHEET</a></div>
+<p>Share count change is measured over 1, 3 and 5 years using each company's quarterly shares outstanding. This captures buybacks, new share issuance and stock-based pay all together, which is what actually matters to an existing shareholder. A company can announce a big buyback and still show a rising share count if stock-based pay outruns it. This page shows that as net dilution.</p>
+<p>A company is labeled "buyback" if its share count fell more than 0.5% over the past year, "dilution" if it rose more than 0.5%, and "flat" in between. The 0.5% cushion is there because share counts drift slightly from routine option exercises and rounding.</p>
+<p>The persistence check takes each company's two most recent, non-overlapping one-year share count changes and runs a Pearson and Spearman regression. A positive, significant relationship means a company's buyback (or dilution) pace tends to carry over from one year to the next. Non-overlapping periods matter because overlapping windows share data and make persistence look stronger than it is.</p>
+
+
 </div>
 
 </div>

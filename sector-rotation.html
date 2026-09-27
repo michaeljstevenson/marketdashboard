@@ -822,10 +822,10 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 
 <div class="explainer">
 <h2>Methodology</h2>
-<p>Uses the same data as <a href="/sector-analysis.html">Sector Performance</a> and Sector Correlation Matrix: daily adjusted-close history for the 11 SPDR sector ETFs against SPY.</p>
-<p><strong>Rotation graph.</strong> It follows the standard Relative Rotation Graph (RRG) setup. A sector's <i>level</i> (x-axis) is its medium-term relative-strength trend, the 3-month change in its price-relative-to-SPY ratio. Its <i>momentum</i> (y-axis) is the 1-month change in that ratio. The four quadrants are <b>Leading</b> (positive level, positive momentum: outperforming and accelerating), <b>Weakening</b> (positive level, negative momentum: still outperforming but slowing), <b>Lagging</b> (negative level, negative momentum: underperforming and falling further behind) and <b>Improving</b> (negative level, positive momentum: underperforming but turning). Sectors tend to rotate through the quadrants clockwise over a full cycle, though not on a fixed schedule.</p>
-<p><strong>Persistence.</strong> The 11 sectors are ranked by trailing 1-month relative return at each month-end. Each sector's rank in one month is then correlated with its rank the next month (Spearman, since ranks are ordinal) across every sector-month pair. A near-zero or negative result would mean chasing last month's winners is no better than random, which matters before treating any one month's leaderboard as a signal.</p>
-<div class="source">Source: Yahoo Finance (via the existing /api/sector-performance dataset), TIME_SERIES_DAILY_ADJUSTED</div>
+<p>Daily prices for the 11 sector ETFs compared against SPY.</p>
+<p>The rotation graph follows the standard Relative Rotation Graph (RRG) setup. The x-axis is each sector's medium-term trend: the 3-month change in its price relative to SPY. The y-axis is its momentum: the 1-month change in that same ratio. The four quadrants are Leading (outperforming and accelerating), Weakening (still outperforming but slowing), Lagging (underperforming and falling further behind) and Improving (underperforming but turning up). Sectors tend to rotate through the quadrants clockwise over a full cycle, though not on any fixed schedule.</p>
+<p>At each month-end, the 11 sectors are ranked by their 1-month return relative to SPY. Each sector's rank one month is compared with its rank the next month using Spearman (rank) correlation across all sector-months. A result near zero or negative means chasing last month's winners is no better than random.</p>
+
 </div>
 
 </div>

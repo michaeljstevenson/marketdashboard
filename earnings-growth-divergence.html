@@ -897,11 +897,11 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 
 <div class="explainer">
 <h2>Methodology</h2>
-<p><strong>EPS growth.</strong> The universe is the S&amp;P 500. Alpha Vantage's <code>EARNINGS</code> endpoint provides quarterly reported EPS. Year-over-year growth compares the latest quarter with the same quarter a year earlier (4 quarters back), not the prior quarter, to avoid seasonal noise (a retailer's Q4 vs. Q3, for example). Companies with a loss (zero or negative EPS) in the year-ago quarter are excluded, because a swing from a loss to a profit isn't a meaningful growth rate.</p>
-<p><strong>Price performance.</strong> It is the 3-month return relative to SPY from <a href="/relative-strength-leaders.html">Relative Strength Leaders/Laggards</a>, from the same Saturday morning data run. A stock with no value on that page (recent IPO, data gap) has no price figure here either.</p>
-<p><strong>Divergence score.</strong> Every stock is ranked twice, by EPS growth (1 = fastest growing) and by 3-month relative price return (1 = best performing), and the score is the difference. A large positive score means price performance ranks far better than earnings growth: the market is paying up for something other than trailing fundamentals, or pricing in growth not yet reported. A large negative score means the reverse. Earnings are growing faster than the stock is moving, which is either an overlooked opportunity or the market correctly discounting something the trailing EPS number misses (rising costs, a slowing outlook, a one-off tax benefit). This page shows the divergence. It doesn't say which explanation applies to a given name.</p>
-<p>Refreshes weekly (Saturday, after Relative Strength Leaders/Laggards and Equity Risk Premium by Sector). A trailing-quarter EPS comparison only changes when a company reports, so a daily refresh would add nothing. Sector and company name come from <a href="/sector-beeswarm.html">Sector Beeswarm</a>.</p>
-<div class="source">Source: <a href="https://www.alphavantage.co/" target="_blank" rel="noopener">Alpha Vantage: EARNINGS</a> and Relative Strength Leaders/Laggards data.</div>
+<p>EPS growth compares each company's latest quarterly EPS to the same quarter a year earlier, not the prior quarter, so seasonal swings (like a retailer's Q4 vs. Q3) don't distort it. Companies that had a loss in the year-ago quarter are left out, since going from a loss to a profit doesn't produce a meaningful growth rate.</p>
+<p>Price performance is each stock's 3-month return relative to the S&amp;P 500.</p>
+<p>Every stock is ranked twice: once by EPS growth (1 = fastest growing) and once by 3-month relative price return (1 = best performing). The divergence score is the difference between the two ranks. A large positive score means the stock's price has done much better than its earnings growth, so the market is either paying for something other than past results or pricing in growth that hasn't been reported yet. A large negative score means the opposite: earnings are growing faster than the stock is moving. That can be an overlooked opportunity, or the market correctly discounting something the past EPS number doesn't show (rising costs, a slowing outlook, a one-time tax benefit). This page shows the divergence, but doesn't say which explanation applies.</p>
+
+
 </div>
 
 </div>

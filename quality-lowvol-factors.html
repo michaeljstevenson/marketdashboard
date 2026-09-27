@@ -1009,15 +1009,15 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 
 <div class="explainer">
 <h2>Methodology</h2>
-<p><b>Universe.</b> S&amp;P 500 companies with both a quality input and a realized volatility reading. Companies missing either (recent IPOs, data gaps) are excluded.</p>
-<p><b>Quality.</b> The z-score of operating margin minus the z-score of net-debt/EBITDA, both across the universe. Higher margin is better and higher leverage is worse. A company with a strong margin and low (or negative) leverage scores high, and a thin-margin, heavily indebted one scores low. This is a simple 2-input proxy, not a full quality model like MSCI's or AQR's QMJ, which also weigh earnings stability, payout policy and growth. Inputs are the latest-quarter figures from <a href="/margin-leverage.html">Margin &amp; Leverage Cycle</a>.</p>
-<p><b>Low volatility.</b> Trailing 63-trading-day (~3 month) realized volatility: the standard deviation of daily log returns, annualized (&times;&radic;252). It is z-scored across the universe and negated, so a higher score means lower volatility, the same "higher is better" direction as quality. Prices are Yahoo Finance daily adjusted closes for the last ~100 trading days.</p>
-<p><b>Combined score.</b> The simple average of the two z-scores. Companies are ranked into quintiles on it: Q1 is the highest-scoring fifth, Q5 the lowest.</p>
-<p><b>Versus <a href="/volatility.html">Implied vs. Realized Volatility</a>.</b> That page tracks one market-level series (VIX vs. S&amp;P 500 realized volatility). This page scores about 500 individual stocks at a 63-day lookback.</p>
-<p><b>Tests.</b> Two checks on whether the score predicts performance: average forward 3-month return relative to SPY by quintile, and a Pearson and Spearman regression of the score against the same return. Returns come from <a href="/relative-strength-leaders.html">Relative Strength Leaders/Laggards</a>. If that hasn't refreshed, everything else still shows and a banner says the two return tests are unavailable.</p>
-<p><b>Callout tables.</b> They list companies where the two z-scores point opposite ways, both beyond &plusmn;0.5 standard deviations. They appear only when the data produces such a group.</p>
-<p><b>Names and sectors</b> come from the weekly data behind <a href="/sector-beeswarm.html">Sector Beeswarm</a>.</p>
-<div class="source">Source: <a href="/margin-leverage.html">Margin &amp; Leverage Cycle</a> and <a href="/relative-strength-leaders.html">Relative Strength Leaders/Laggards</a> output, plus <a href="https://finance.yahoo.com/" target="_blank" rel="noopener">Yahoo Finance daily adjusted closes</a>.</div>
+<p>S&amp;P 500 companies with both a quality score and a volatility reading. Companies missing either (recent IPOs, for example) are left out.</p>
+<p>Quality is the z-score of operating margin minus the z-score of net debt/EBITDA, each measured across the index. Higher margin is better and more debt is worse, so a company with strong margins and little or no net debt scores high, and a thin-margin, heavily indebted company scores low. This is a simple two-input version, not a full quality model like MSCI's or AQR's, which also consider earnings stability, payouts and growth.</p>
+<p>Low volatility uses the last 63 trading days (about 3 months): the standard deviation of daily log returns, annualized (× √252). It's turned into a z-score and flipped, so a higher score means lower volatility, the same "higher is better" direction as quality.</p>
+<p>The combined score is the simple average of the two z-scores. Companies are split into fifths: Q1 is the highest-scoring fifth, Q5 the lowest.</p>
+<p>Implied vs. Realized Volatility tracks one market-wide number (VIX vs. the S&amp;P 500's realized volatility). This page scores about 500 individual stocks.</p>
+<p>Two checks on whether the score lines up with performance: the average 3-month return relative to the S&amp;P 500 for each fifth, and a Pearson and Spearman regression of the score against that same return.</p>
+<p>The callout tables list companies where the two scores point in opposite directions, each by more than half a standard deviation. They only show up when there are companies that fit.</p>
+
+
 </div>
 
 </div>

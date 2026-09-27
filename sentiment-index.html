@@ -2718,10 +2718,10 @@ function renderMethodology(data){
  document.getElementById("methodBody").innerHTML = `
   <h4>Construction</h4>
   <ul>
-   <li>Each factor is reduced to a stationary signal, then standardized as a rolling z-score against its trailing ${Math.round(m.zWindowDays / 252) === 1 ? "year" : Math.round(m.zWindowDays / 252) + " years"} (${m.zWindowDays} trading days). Only data up to each date is used, so historical readings are what the index would have shown live.</li>
-   <li>z-scores are capped at &plusmn;${m.zClamp} and mapped to 0&ndash;100 with the normal CDF. Fear-positive signals (volatility measures, tail-risk hedging demand) are inverted so 100 always means greed.</li>
+   <li>Each factor is turned into a steady signal, then compared with its own trailing year as a z-score (how many standard deviations it is from its recent average). Only data available as of each date is used, so past readings are what the index would have shown at the time.</li>
+   <li>z-scores are capped and converted to a 0–100 scale. Fear signals (volatility, demand for downside protection) are flipped so that 100 always means greed.</li>
    <li>Weighting is equal at two levels: factors within a pillar are averaged, then pillars are averaged. Grouping stops highly correlated factors (for example the breadth measures) from crowding out the rest of the index, and equal weights avoid coefficients fitted to past returns.</li>
-   <li>A date is published only when the available factors carry at least ${Math.round(m.minCoverage * 100)}% of full weight; each point records its coverage. Factors that launched later (for example HYG in 2007) enter when their history allows, and remaining weights are re-normalized within their pillars.</li>
+   <li>A date is only shown when enough factors are available to carry most of the index's weight. Factors that started later enter once they have enough history, and the other weights in their pillar are rescaled.</li>
    <li>Zones: 0&ndash;20 Extreme Fear, 20&ndash;40 Fear, 40&ndash;60 Neutral, 60&ndash;80 Optimism, 80&ndash;100 Extreme Optimism.</li>
    <li>The live reading and the history chart are one series: today&rsquo;s composite is the last history point.</li>
   </ul>
@@ -2735,7 +2735,7 @@ function renderMethodology(data){
    <li>The SKEW index tends to be highest in calm, rising markets (investors buy protection at highs), so it often moves against the other factors; it is scored as hedging demand (higher = more fear) and carries a small weight.</li>
    <li>Price-derived factors (momentum, proximity to highs, relative strength) partly reflect the market moves sentiment is meant to help explain.</li>
    <li>Breadth uses current S&amp;P 500 constituents, so early history carries survivorship bias.</li>
-   <li>History runs from 1990, when the CBOE VIX and SKEW begin. Not every factor exists that far back: the term-structure factor starts in 2006, breadth in 2000 and equal-weight participation in 2003, so early readings rest on fewer pillars (coverage is recorded per point and shown on hover). Where ETFs are newer than the period, index or fund proxies are used: the Russell 2000 index for small caps, the Vanguard Long-Term Treasury fund for Treasuries, and Vanguard high-yield and investment-grade funds for credit before 2007.</li>
+   <li>History runs from 1990, when the VIX and SKEW start. Not every factor goes back that far (term structure starts in 2006, breadth in 2000, equal-weight participation in 2003), so early readings rest on fewer pillars. Where an ETF didn't exist yet, a similar index or fund is used in its place.</li>
   </ul>`;
 }
 

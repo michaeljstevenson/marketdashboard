@@ -924,12 +924,12 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 
 <div class="explainer">
 <h2>Methodology</h2>
-<p><strong>Data.</strong> The universe is the S&amp;P 500. For each company, Alpha Vantage's <code>OVERVIEW</code> endpoint returns <code>TrailingPE</code> (price over the last twelve months' EPS) and <code>ForwardPE</code> (price over the next twelve months' consensus EPS). Both use today's share price, so their ratio gives the market's implied year-ahead EPS growth: <code>TrailingPE &divide; ForwardPE - 1 = EPS<sub>forward</sub> &divide; EPS<sub>trailing</sub> - 1</code>. A positive number means the forward P/E is lower than the trailing P/E, so the market is pricing in earnings growth. A negative number means the reverse.</p>
-<p>Companies with a trailing or forward P/E outside (0, 300] are excluded from every chart and average. A company with near-zero earnings produces a huge (or negative) P/E that says nothing about valuation.</p>
-<p><strong>History.</strong> <code>OVERVIEW</code> only reports the current P/E pair, so each weekly run adds that week's market-wide median to a running series. <a href="/earnings-revisions.html">Earnings Revisions</a> works the same way. The series is short at first and gets more informative with each run.</p>
-<p><strong>Implied vs. actual growth.</strong> This compares the implied forward growth rate with each company's trailing <code>QuarterlyEarningsGrowthYOY</code> (from the same <code>OVERVIEW</code> call), using the Pearson and Spearman regression from <a href="/factor-analysis.html">Factor Analysis</a>. A weak or negative relationship would mean analysts mostly expect mean reversion (a strong recent quarter doesn't repeat) instead of momentum.</p>
-<p>This page runs its own weekly Alpha Vantage pull instead of using <a href="/sector-beeswarm.html">Sector Beeswarm</a>'s <code>OVERVIEW</code> data, because that job doesn't store the P/E fields this page needs. <a href="/insider-buying-selling.html">Insider Buying/Selling</a> and a few other pages do the same.</p>
-<div class="source">Source: <a href="https://www.alphavantage.co/" target="_blank" rel="noopener">Alpha Vantage: OVERVIEW</a></div>
+<p>Trailing P/E is price over the last 12 months of EPS. Forward P/E is price over the next 12 months of expected EPS. Since both use the same share price, dividing one by the other gives the market's implied earnings growth for the year ahead: Trailing P/E ÷ Forward P/E − 1 = Forward EPS ÷ Trailing EPS − 1. A positive number means the forward P/E is lower than the trailing P/E, so the market expects earnings to grow. A negative number means the reverse.</p>
+<p>Companies with a trailing or forward P/E below 0 or above 300 are left out. A company with near-zero earnings produces a huge (or negative) P/E that says nothing about valuation.</p>
+<p>Only the current P/E pair is available, so each week the market-wide median is added to a running history. The line starts short and gets more useful over time.</p>
+<p>Implied vs. actual growth compares the implied forward growth rate with each company's most recent year-over-year quarterly earnings growth, using Pearson and Spearman correlation. A weak or negative relationship would mean analysts mostly expect a strong recent quarter not to repeat, rather than expecting momentum to continue.</p>
+
+
 </div>
 
 </div>

@@ -859,9 +859,9 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 
 <div class="explainer">
 <h2>Methodology</h2>
-<p><strong>Data.</strong> Dividend yield is the <code>DividendYield</code> field from Alpha Vantage's <code>COMPANY_OVERVIEW</code>, a trailing, price-normalized yield. Buyback yield is the negative of the trailing-12-month % change in shares outstanding, taken from <a href="/share-count-trends.html">Share Count Trends</a> (quarterly <code>BALANCE_SHEET</code> filings). A shrinking share count is a buyback. A growing one is net dilution, from new issuance, option exercises or stock-based comp outrunning repurchases, so a negative buyback yield below means the company diluted shareholders. Total shareholder yield is the two added together. Dividends and buybacks both return cash to shareholders, and a company that leans on one doesn't necessarily return less in total.</p>
-<p><strong>Scatter.</strong> The scatter tests a common claim: dividend payers and buyback-heavy companies are different populations. Mature, stable-cash-flow businesses favor dividends (investors punish a cut), while companies with more variable earnings favor buybacks (discretionary, easy to pause). If that's right, dividend yield and buyback yield should show a weak or negative correlation across the index. Pearson (OLS) and Spearman rank correlation are both shown, as on <a href="/factor-analysis.html">Factor Analysis</a>, so one or two extreme stocks can't carry the result.</p>
-<div class="source">Source: <a href="https://www.alphavantage.co/" target="_blank" rel="noopener">Alpha Vantage</a>: COMPANY_OVERVIEW, BALANCE_SHEET (via Share Count Trends)</div>
+<p>Dividend yield is the trailing dividend divided by share price. Buyback yield is the negative of the 12-month % change in shares outstanding, so a shrinking share count is a positive buyback yield and a growing one (from new issuance or stock-based pay) is negative. Total shareholder yield is the two added together. Dividends and buybacks both return cash to shareholders, and a company that leans on one doesn't necessarily return less overall.</p>
+<p>The scatter tests a common claim: dividend payers and buyback-heavy companies are different groups. Mature, steady businesses tend to favor dividends (investors punish a cut), while companies with less predictable earnings favor buybacks (easy to pause). If that's true, dividend yield and buyback yield should show a weak or negative correlation. Pearson (linear) and Spearman (rank) are both shown.</p>
+
 </div>
 
 </div>

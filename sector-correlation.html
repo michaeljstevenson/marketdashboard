@@ -834,10 +834,10 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 
 <div class="explainer">
 <h2>Methodology</h2>
-<p>Reuses the same daily adjusted-close history already fetched for <a href="/sector-analysis.html">Sector Performance</a> (the 11 SPDR sector ETFs plus SPY, ~2 years of daily bars) rather than pulling any new Alpha Vantage data. This page is pure client-side analysis of an existing dataset. Daily % returns are computed from those closes, and every pairwise Pearson correlation is computed directly from the aligned daily return series (no smoothing or resampling).</p>
-<p>The rolling correlation series takes a 63-trading-day (~one calendar quarter) trailing window, recomputes the average of all 55 sector-pair correlations at each day, and slides that window forward one day at a time. The scatter panel pairs that same rolling series against a rolling 63-day annualized realized volatility of SPY (standard deviation of daily returns &times; &radic;252), then runs the same Pearson/Spearman regression check used throughout <a href="/factor-analysis.html">Factor Analysis</a>. Note that adjacent days in a rolling-window series share almost all of their underlying data, so this regression's n overstates how many truly independent observations exist. Treat the r/p values as a rough gauge of direction and strength, not as a rigorous hypothesis test the way the non-overlapping-annual checks on other pages are.</p>
-<p>The heatmap intentionally excludes SPY itself (an average of the sectors, not a peer of them). The market-relationship table below the heatmap covers each sector's own correlation to SPY separately.</p>
-<div class="source">Source: Yahoo Finance (via the existing /api/sector-performance dataset), TIME_SERIES_DAILY_ADJUSTED</div>
+<p>Daily returns for the 11 sector ETFs and SPY over roughly the last 2 years. Every pair of sectors gets a Pearson correlation of their daily returns.</p>
+<p>The rolling correlation uses a 63-trading-day (about one quarter) window. For each day, it averages all 55 sector-pair correlations over the prior 63 days, then moves forward one day. The scatter plots that series against the S&amp;P 500's realized volatility over the same 63-day window (standard deviation of daily returns × √252), with Pearson and Spearman regression. Back-to-back days in a rolling window share almost all their data, so the number of truly independent observations is much smaller than it looks. Treat the r and p-values as a rough read on direction and strength, not a rigorous test.</p>
+<p>The heatmap leaves out SPY, since it's an average of the sectors rather than a peer. Each sector's correlation to SPY is shown in its own table below the heatmap.</p>
+
 </div>
 
 </div>

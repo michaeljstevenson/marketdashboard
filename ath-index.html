@@ -775,7 +775,7 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <h2></h2>
 
 
-<p>A name counts as being at an all-time high when its intraday high reaches its recorded all-time high for the day. A reading near zero doesn't necessarily mean a bear market. It can mean the market has pulled back from a recent peak across the board, which is normal even in an uptrend.</p>
+<p>A company counts as being at an all-time high when its high for the day reaches its highest price ever. A reading near zero doesn't necessarily mean a bear market. It can just mean the market has pulled back from a recent peak, which is normal even in an uptrend.</p>
 <div class="source">Sources: <a href="https://www.tradingview.com/screener/" rel="noopener" target="_blank">TradingView Screener</a> (current count &amp; list) · <a href="https://www.alphavantage.co/" rel="noopener" target="_blank">Alpha Vantage</a> (long-run chart)</div>
 </div>
 </div>
@@ -805,7 +805,7 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 </div>
 <div class="explainer">
 <h2>How this is computed</h2>
-<p>Same method as the all-time-high tab: a name counts as being at an all-time low when its intraday low reaches its recorded all-time low for the day, from TradingView's screener (<code>Low.All</code> field). There is no Alpha Vantage fallback or long-run chart here, because the flawed Alpha Vantage history behind the all-time-high fix never had a comparable all-time-low calculation, so this tab is TradingView-only.</p>
+<p>Same method as the all-time-high tab: a company counts as being at an all-time low when its low for the day reaches its lowest price ever.</p>
 <div class="source">Source: <a href="https://www.tradingview.com/screener/" rel="noopener" target="_blank">TradingView Screener</a></div>
 </div>
 </div>
@@ -821,8 +821,8 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 </div>
 <div class="explainer">
 <h2>Reading this chart</h2>
-<p>The bars show the count of S&amp;P 500 companies at a fresh all-time high minus the count at a fresh all-time low, each trading day, a classic breadth measure. Positive and rising means strength is broadening. Negative means more names are breaking down than breaking out, which can show up before the index rolls over. The line is the S&amp;P 500 level for context.</p>
-<p>The historical bars use the same Alpha Vantage daily history as the All-Time Highs tab's long-run chart, so they carry the same limit: history is capped at roughly 26 years per symbol, which understates the true all-time high or low for long-listed names and skews older counts on both sides. Today's bar uses the accurate TradingView count once it's available for the day.</p>
+<p>The bars show the number of S&amp;P 500 companies at a new all-time high minus the number at a new all-time low each day, a classic breadth measure. Positive and rising means strength is spreading. Negative means more companies are breaking down than breaking out, which can show up before the index itself turns. The line is the S&amp;P 500 for context.</p>
+
 <div class="source">Sources: <a href="https://www.alphavantage.co/" rel="noopener" target="_blank">Alpha Vantage</a> (historical bars &amp; S&amp;P 500 level) · <a href="https://www.tradingview.com/screener/" rel="noopener" target="_blank">TradingView Screener</a> (today's bar)</div>
 </div>
 </div>

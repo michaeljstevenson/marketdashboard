@@ -509,20 +509,8 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
  weight in the index (Annual). The dashed line marks SPY&rsquo;s return over the same window.
 </p>
 <h2>Method &amp; caveats</h2>
-<p>
- <strong>Daily</strong> sessions are captured after each close from Alpha Vantage 15-minute
- intraday bars (delayed data) and archived going forward. Each mark is that bar&rsquo;s price versus
- the prior session close; bubble size is shares outstanding &times; the closing price (fixed for
- the session), with sector and share counts refreshed weekly. Index membership is the current
- S&amp;P 500 constituent list applied to every archived day. A company added or removed
- later is not reconstructed point-in-time.
-</p>
-<p>
- <strong>Annual</strong> uses the 11 SPDR Select Sector ETFs (total return, split&nbsp;&amp;
- dividend&nbsp;adjusted) for calendar years over roughly the last 15 years. XLRE (Real Estate)
- begins in 2016 and XLC (Communication Services) in 2019. Earlier years omit those bubbles.
- Sector weights used for bubble size are approximate year-end figures.
-</p>
+<p>Each point is that 15-minute price compared with the prior day's close. Bubble size is shares outstanding × the closing price. Membership is the current S&amp;P 500 list applied to every past day, so a company added or removed later isn't reflected historically.</p>
+<p>Annual uses the 11 SPDR sector ETFs, with returns including dividends, for roughly the last 15 years. Real Estate (XLRE) starts in 2016 and Communication Services (XLC) in 2019, so earlier years don't have those bubbles. Bubble size is each sector's approximate weight in the index at year-end.</p>
 <div class="source">Source: <a href="https://www.alphavantage.co/" target="_blank" rel="noopener">Alpha Vantage</a>: SPDR Select Sector ETFs, SPY, and S&amp;P 500 constituent quotes. Visualization after Jan at <a href="https://www.chartfleau.com/" target="_blank" rel="noopener">Chartfleau</a>.</div>
 </div>
 

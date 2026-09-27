@@ -1014,11 +1014,11 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 
 <div class="explainer">
 <h2>Methodology</h2>
-<p><strong>Data.</strong> The universe is the S&amp;P 500. For each company, Alpha Vantage's <code>CONGRESS_TRADES</code> endpoint returns its full history of trades disclosed by sitting members of Congress and their families under the STOCK Act. This page keeps <code>BUY</code>/<code>SELL</code> transactions from the trailing 24 months. A 90-day window, like <a href="/insider-buying-selling.html">Insider Buying/Selling</a>'s Form 4 window, would leave most S&amp;P 500 names with no trades, since congressional activity in any one stock is sparse. Options, warrants and bonds reported under the same ticker are excluded.</p>
-<p>The STOCK Act discloses trade size as a range (e.g. $1,001&ndash;$15,000), not an exact amount. Every $ figure on this page is the midpoint of that range, the same convention as Capitol Trades and Unusual Whales. Treat every dollar total as an estimate.</p>
-<p><strong>Disclosure lag.</strong> The chart measures days between the trade date and the date the Periodic Transaction Report was filed. The STOCK Act requires filing within 45 days of becoming aware of the transaction. Rows with a missing or implausible filed date (filed before the trade, or no date at all) are excluded.</p>
-<p><strong>Regression.</strong> It uses Pearson and Spearman (as on <a href="/factor-analysis.html">Factor Analysis</a>) and takes each stock's 3-month return relative to SPY from <a href="/relative-strength-leaders.html">Relative Strength Leaders/Laggards</a>. Trades are disclosed well after the fact (up to 45 days, often longer per the lag chart above). Any relationship here is about revealed skill or information, not a signal an outside investor could have traded on before the disclosure.</p>
-<div class="source">Source: <a href="https://www.alphavantage.co/" target="_blank" rel="noopener">Alpha Vantage: CONGRESS_TRADES</a> and <a href="/relative-strength-leaders.html">Relative Strength Leaders/Laggards</a> data. Not investment advice.</div>
+<p>This page looks at stock trades disclosed by sitting members of Congress and their families under the STOCK Act, for S&amp;P 500 companies over the last 24 months. Only buys and sells of the stock itself are counted (no options, warrants or bonds). A longer window is used than on Insider Buying/Selling because congressional trading in any single stock is rare.</p>
+<p>The STOCK Act only requires trade size to be disclosed as a range (e.g. $1,001–$15,000), not an exact amount. Every dollar figure on this page uses the midpoint of that range, so all dollar totals are estimates.</p>
+<p>Disclosure lag is the number of days between the trade and when it was reported. The law requires reporting within 45 days. Trades with a missing report date, or one that falls before the trade itself, are left out.</p>
+<p>The regression compares congressional buying and selling with each stock's 3-month return relative to the S&amp;P 500, using Pearson (linear) and Spearman (rank) correlation. Since trades are disclosed well after they happen (up to 45 days or more), any relationship here says something about whether members had skill or information, not something an outside investor could have acted on in time.</p>
+
 </div>
 
 </div>

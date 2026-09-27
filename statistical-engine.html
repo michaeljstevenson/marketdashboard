@@ -232,14 +232,7 @@ table.fwd tbody td:first-child{font-family:"IBM Plex Mono",monospace; color:var(
   <div class="count" id="count"></div>
   <div class="rows" id="rows"></div>
 
-  <p class="foot">Live conditions are analysed at their current run length; the number and its
-  history update as the streak extends. Dormant conditions (the ones still short of their minimum
-  length) show what happened the last times they <em>did</em> reach it. Rarity, for a live streak,
-  is the share of this condition's past qualifying runs that never got this long, near 0% for
-  a fresh streak, climbing as it extends. Forward-return columns summarise the analog set: prior
-  runs that reached the same length, de-duplicated so one long streak counts once, tracked over the
-  next year (samples shrink at the longer horizons as recent analogs run out of runway). Regenerate
-  with <code>node scripts/oddstats-detect.js --dump</code>. Food for thought, not a signal.</p>
+  <p class="foot">Live conditions are measured at their current length, and their numbers update as the streak continues. Dormant conditions (not yet long enough to qualify) show what happened the last times they did. Rarity, for a live streak, is the share of past qualifying streaks that never got this long: near 0% for a fresh streak, climbing as it extends. The forward-return columns summarize past streaks that reached the same length, counting each long streak only once, tracked over the following year (fewer examples are available at the longer horizons). Food for thought, not a signal.</p>
   </div><!-- /scannerTab -->
 
   <div id="archiveTab" hidden>
