@@ -48,5 +48,7 @@
   "concentration-market": "Daily prices for SPY and RSP.",
   "momentum-history": "Daily prices for SPY.",
   "backtest-prices": "Daily prices for whatever symbol you enter.",
-  "options-positioning": "Put/call ratio for every S&P 500 stock, joined against the relative-strength history for the momentum test."
+  "options-positioning": "Put/call ratio for every S&P 500 stock, joined against the relative-strength history for the momentum test.",
+  "insider-ownership": "Company overviews for every S&P 500 stock, for insider and institutional ownership percentage, joined against the relative-strength history for the alignment-of-interest test.",
+  "golden-cross": "Company overviews for every S&P 500 stock, for 50-day and 200-day moving averages, joined against the relative-strength history for the trend-vs-return test."
 }
