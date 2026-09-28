@@ -225,6 +225,11 @@
   status = 200
 
 [[redirects]]
+  from = "/api/golden-cross"
+  to = "/.netlify/functions/golden-cross"
+  status = 200
+
+[[redirects]]
   from = "/api/congress-trades"
   to = "/.netlify/functions/congress-trades"
   status = 200
@@ -765,3 +770,12 @@
   # scheduled-relative-strength-background (for the alignment-of-interest
   # scatter) but degrades gracefully if that blob is stale or missing.
   # ~503 sequential OVERVIEW calls at 1050ms spacing plus a retry pass.
+
+[functions."scheduled-golden-cross-background"]
+  # One-time snapshot — no recurring schedule, same convention as every
+  # full-universe Equities page added since 2026-09-16. Run manually via
+  # the Netlify dashboard's "Run now"; benefits from running after
+  # scheduled-relative-strength-background (for the trend-vs-relative-
+  # return scatter) but degrades gracefully if that blob is stale or
+  # missing. ~503 sequential OVERVIEW calls at 1050ms spacing plus a
+  # retry pass.
