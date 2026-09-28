@@ -10,7 +10,6 @@
 </script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom@2"></script>
-<script src="date-format.js"></script>
 <script>
 // FRED-style zoom: drag horizontally on any chart to zoom into that range,
 // double-click to reset. Applied via Chart.defaults so every chart on the
@@ -153,7 +152,7 @@ document.addEventListener("DOMContentLoaded", function(){
 </script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Spin-Off Performance Tracker | Michael J. Stevenson</title>
+<title>Insider Ownership — Michael J. Stevenson</title>
 
 <style>
 
@@ -284,6 +283,7 @@ h1{
  border:1px solid var(--hair);
  border-radius:10px;
  padding:20px;
+ min-width:0;
 }
 
 .stat-label{
@@ -356,6 +356,26 @@ h1{
  padding:14px 14px 10px;
 }
 
+/* Two charts / method-tables side by side, same breakpoint as table-grid */
+.chart-grid{
+ display:grid;
+ grid-template-columns:1fr 1fr;
+ gap:16px;
+ margin-bottom:30px;
+}
+
+.chart-grid .chart-box{
+ margin-bottom:0;
+ min-width:0; /* grid items default to min-width:auto (their content's min-content
+                 size), which a wide method table would otherwise force past this
+                 column's track width — same "grid blowout" the site-wide
+                 table{min-width:600px} rule creates if left unchecked here */
+}
+
+@media (max-width:900px){
+ .chart-grid{ grid-template-columns:1fr; }
+}
+
 /* TABLE */
 
 .table-grid{
@@ -369,17 +389,19 @@ h1{
  .table-grid{ grid-template-columns:1fr; }
 }
 
-.leaderboard-grid{ grid-template-columns:1fr 1fr; }
-@media (max-width:640px){
- .leaderboard-grid{ grid-template-columns:1fr; }
-}
-
 .table-box{
  background:var(--card);
  border:1px solid var(--hair);
  border-radius:12px;
  overflow-x:auto;
  margin-bottom:30px;
+}
+
+.table-grid .table-box{
+ min-width:0; /* grid items default to min-width:auto (their content's min-content
+                 size), which the 600px table below would otherwise force past this
+                 column's track width — same "grid blowout" caught elsewhere on this
+                 site (see /rd-intensity's .chart-grid, /spin-off-performance) */
 }
 
 .table-grid .table-box{ margin-bottom:0; }
@@ -462,33 +484,30 @@ tbody td:nth-child(2){
 .cell-neg{ color:var(--ink); }
 .cell-na{ color:var(--muted); }
 
-.tag{
- display:inline-block;
- font-family:var(--sans);
- font-size:10px;
- letter-spacing:0.03em;
- padding:2px 7px;
- border-radius:20px;
- border:1px solid var(--hair);
- color:var(--muted);
-}
-.tag.spinco{ color:#d98a3d; border-color:#d98a3d; }
-.tag.parent{ color:#6f8fac; border-color:#6f8fac; }
+.growth-pos{ color:var(--greed); }
+.growth-neg{ color:var(--fear); }
 
 /* SCATTER / METHOD TABLE (mirrors /factor-analysis) */
 
 .scatter-canvas-wrap{
- height:320px;
+ height:300px;
  margin-bottom:12px;
  position:relative;
 }
 
 .method-table{
  width:100%;
+ min-width:0; /* overrides the site-wide table{min-width:600px} rule below — two of these
+                 side by side in .chart-grid would otherwise force the whole page wider
+                 than its container even though a 7-column method table never needs 600px */
  border-collapse:collapse;
  font-family:var(--mono);
  font-size:11px;
  margin-top:8px;
+}
+
+#insiderInstMethodTable, #insiderRel3mMethodTable{
+ overflow-x:auto;
 }
 
 .method-table th{
@@ -529,12 +548,6 @@ tbody td:nth-child(2){
  font-style:italic;
 }
 
-/* Unlike /share-count-trends and /factor-analysis, these method tables
-   sit directly in a .chart-box rather than a .table-box, so they need
-   their own overflow-x:auto — otherwise the global table{min-width:600px}
-   rule forces the whole page wider than a phone viewport. */
-#statsMethodTable, #scatterMethodTable{ overflow-x:auto; }
-
 /* EXPLAINER */
 
 .explainer{
@@ -568,17 +581,7 @@ tbody td:nth-child(2){
  white-space:nowrap;
 }
 
-.explainer ul{
- color:var(--muted);
- font-size:13px;
- line-height:1.7;
- margin:0 0 14px;
- padding-left:20px;
-}
-
-.explainer li{ margin-bottom:6px; }
-
-.explainer p:last-child, .explainer ul:last-child{ margin-bottom:0; }
+.explainer p:last-child{ margin-bottom:0; }
 
 .explainer .source{
  margin-top:16px;
@@ -648,6 +651,19 @@ tbody td:nth-child(2){
  border-color:#e9cf8a;
  color:#8a6a1f;
 }
+.full-list-details{ margin-top:4px; }
+.full-list-summary{
+  cursor:pointer;
+  font-weight:600;
+  padding:10px 0;
+  color:var(--ink);
+  list-style:none;
+  user-select:none;
+}
+.full-list-summary::-webkit-details-marker{ display:none; }
+.full-list-summary::before{ content:"▸ "; display:inline-block; width:1em; }
+.full-list-details[open] .full-list-summary::before{ content:"▾ "; }
+.full-list-details table{ margin-top:8px; }
 </style>
 <link rel="stylesheet" href="/site.css">
 </head>
@@ -741,7 +757,7 @@ tbody td:nth-child(2){
 </div>
 <div class="mcol"><h4>Issuance &amp; Corporate Actions</h4>
 <a href="/stock-split-tracker.html">Stock Split Tracker</a>
-<a href="/spin-off-performance.html" class="active">Spin-Off Performance Tracker</a>
+<a href="/spin-off-performance.html">Spin-Off Performance Tracker</a>
 <a href="/ipo-activity.html">IPO Activity</a>
 <a href="/ipo-pipeline.html">IPO Pipeline</a>
 </div>
@@ -750,7 +766,7 @@ tbody td:nth-child(2){
 <a href="/institutional-ownership.html">Institutional Ownership &amp; 13F Flow</a>
 <a href="/congressional-trading.html">Congressional Trading Activity</a>
 <a href="/small-cap-liquidity.html">Small-Cap Liquidity</a>
-<a href="/insider-ownership.html">Insider Ownership</a>
+<a href="/insider-ownership.html" class="active">Insider Ownership</a>
 </div>
 </div></div>
 </div>
@@ -768,7 +784,7 @@ tbody td:nth-child(2){
 </div></div>
 </div>
 </div>
-<button class="theme-toggle" id="themeToggle" type="button" aria-label="Toggle light/dark mode" title="Toggle light/dark mode">&#9789;</button>
+<button aria-label="Toggle light/dark mode" class="theme-toggle" id="themeToggle" title="Toggle light/dark mode" type="button">☽</button>
 </nav>
 <script>
 // Class-driven (not pure :hover) nav dropdowns: pure CSS :hover drops the
@@ -812,124 +828,40 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 
 <div class="header">
 <div>
-<h1>Spin-Off Performance Tracker</h1>
-<div class="subtitle">Does the "spin-off effect" show up in the data? Cumulative total return vs. SPY for 19 hand-compiled corporate spinoffs since 2015, for both the new spinco and the remaining parent, indexed to each company's own separation date.</div>
+<h1>Insider Ownership</h1>
+<div class="subtitle">How much of each S&amp;P 500 company its own officers, directors, and 10%+ owners collectively own — a stake, not a transaction. See <a href="/insider-buying-selling.html" style="color:var(--greed);">Insider Buying/Selling</a> for who's currently trading.</div>
 </div>
 <div class="updated" id="updated">Loading...</div>
 </div>
 
 <div class="stat-grid">
 <div class="stat-card">
-<div class="stat-label">Events Tracked</div>
-<div class="stat-value" id="statEventCount">…</div>
-<div class="stat-note" id="statEventCountNote">Spinoffs since 2015</div>
+<div class="stat-label">Median Insider Ownership</div>
+<div class="stat-value" id="statInsider">…</div>
+<div class="stat-note" id="statInsiderNote">Across the S&amp;P 500</div>
 </div>
 <div class="stat-card">
-<div class="stat-label">Avg. Spinco Excess Return (1Y)</div>
-<div class="stat-value" id="statSpincoExcess">…</div>
-<div class="stat-note" id="statSpincoExcessNote">vs. SPY over the same window</div>
+<div class="stat-label">Median Institutional Ownership</div>
+<div class="stat-value" id="statInstitutional" style="color:var(--ink);">…</div>
+<div class="stat-note">For context — see Institutional Ownership &amp; 13F Flow for the full picture</div>
 </div>
 <div class="stat-card">
-<div class="stat-label">Avg. Parent Excess Return (1Y)</div>
-<div class="stat-value" id="statParentExcess">…</div>
-<div class="stat-note" id="statParentExcessNote">vs. SPY over the same window</div>
+<div class="stat-label">Most Insider-Owned Sector</div>
+<div class="stat-value" id="statTopSector" style="font-size:18px;">…</div>
+<div class="stat-note" id="statTopSectorNote">Median insider ownership</div>
 </div>
 <div class="stat-card">
-<div class="stat-label">Spinco Effect Significant?</div>
-<div class="stat-value" id="statSignificance" style="font-size:18px;">…</div>
-<div class="stat-note" id="statSignificanceNote">t-test / sign test at the 1-year mark</div>
+<div class="stat-label">Least Insider-Owned Sector</div>
+<div class="stat-value" id="statBottomSector" style="font-size:18px;">…</div>
+<div class="stat-note" id="statBottomSectorNote">Median insider ownership</div>
 </div>
 </div>
 
 <div class="chart-box">
 <div class="chart-box-header">
 <div>
-<h2>Average cumulative excess return, indexed to the spinoff date</h2>
-<div class="chart-subhead">Every spinco and parent leg is aligned to trading day 0, its own separation date, then averaged at each elapsed trading day. Sample size (N, right axis) shrinks at longer horizons as younger events run out of history, so read the right tail with that in mind.</div>
-</div>
-</div>
-<div class="ndr-panel">
-<div class="chart-canvas-wrap">
-<canvas id="eventTimeChart"></canvas>
-</div>
-</div>
-</div>
-
-<div class="table-grid leaderboard-grid">
-<div class="table-box">
-<div class="table-box-header">
-<h2>Best-performing spincos</h2>
-<div class="chart-subhead">By cumulative excess return since separation</div>
-</div>
-<table id="bestSpincoTable">
-<thead><tr><th>Spinco</th><th>Sector</th><th>Since</th><th>Excess</th></tr></thead>
-<tbody id="bestSpincoBody"><tr><td colspan="4" style="text-align:center; color:var(--muted); padding:24px;">Loading&hellip;</td></tr></tbody>
-</table>
-</div>
-<div class="table-box">
-<div class="table-box-header">
-<h2>Worst-performing spincos</h2>
-<div class="chart-subhead">By cumulative excess return since separation</div>
-</div>
-<table id="worstSpincoTable">
-<thead><tr><th>Spinco</th><th>Sector</th><th>Since</th><th>Excess</th></tr></thead>
-<tbody id="worstSpincoBody"><tr><td colspan="4" style="text-align:center; color:var(--muted); padding:24px;">Loading&hellip;</td></tr></tbody>
-</table>
-</div>
-
-<div class="table-box">
-<div class="table-box-header">
-<h2>Best-performing parents</h2>
-<div class="chart-subhead">The remaining company, by cumulative excess return since separation</div>
-</div>
-<table id="bestParentTable">
-<thead><tr><th>Parent</th><th>Sector</th><th>Since</th><th>Excess</th></tr></thead>
-<tbody id="bestParentBody"><tr><td colspan="4" style="text-align:center; color:var(--muted); padding:24px;">Loading&hellip;</td></tr></tbody>
-</table>
-</div>
-<div class="table-box">
-<div class="table-box-header">
-<h2>Worst-performing parents</h2>
-<div class="chart-subhead">The remaining company, by cumulative excess return since separation</div>
-</div>
-<table id="worstParentTable">
-<thead><tr><th>Parent</th><th>Sector</th><th>Since</th><th>Excess</th></tr></thead>
-<tbody id="worstParentBody"><tr><td colspan="4" style="text-align:center; color:var(--muted); padding:24px;">Loading&hellip;</td></tr></tbody>
-</table>
-</div>
-</div>
-
-<div class="chart-box">
-<div class="chart-box-header">
-<div>
-<h2>Is the spin-off effect statistically real, or noise?</h2>
-<div class="chart-subhead">One-sample t-test and an exact two-sided sign test on excess return at the 1-year mark, run separately for spinco legs and parent legs. Same two-method check as Factor Analysis and Small Cap vs. Large Cap Spread.</div>
-</div>
-</div>
-<div id="statsMethodTable"></div>
-<div class="method-note">N here is legs, not companies. A few parent tickers (DD, DHR, GE) anchor more than one event, at different dates, so they contribute one observation per event.</div>
-</div>
-
-<div class="chart-box">
-<div class="chart-box-header">
-<div>
-<h2>Spinco excess return vs. parent excess return</h2>
-<div class="chart-subhead">Each point is one event with both legs available (excludes Otis/Carrier, which had no remaining-parent leg). Cumulative excess return since separation, to date.</div>
-</div>
-</div>
-<div class="ndr-panel">
-<div class="scatter-canvas-wrap">
-<canvas id="scatterChart"></canvas>
-</div>
-</div>
-<div id="scatterMethodTable"></div>
-</div>
-
-<div class="chart-box">
-<div class="chart-box-header">
-<div>
-<h2>Excess return by sector</h2>
-<div class="chart-subhead">Average cumulative excess return since separation, spinco and parent legs shown separately.</div>
+<h2>Insider ownership by sector</h2>
+<div class="chart-subhead">Median share of each company owned by its own officers, directors, and 10%+ holders, by SPDR sector.</div>
 </div>
 </div>
 <div class="ndr-panel">
@@ -939,53 +871,135 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 </div>
 </div>
 
+<div class="chart-box">
+<div class="chart-box-header">
+<div>
+<h2>Distribution of insider ownership</h2>
+<div class="chart-subhead">Every S&amp;P 500 constituent, bucketed by insider ownership %. Expect a heavy cluster near zero — most large, professionally-managed companies have little direct insider ownership — with a long tail of founder- or family-controlled names.</div>
+</div>
+</div>
+<div class="ndr-panel">
+<div class="chart-canvas-wrap" style="height:300px;">
+<canvas id="insiderHistogram"></canvas>
+</div>
+</div>
+</div>
+
+<div class="chart-grid">
+<div class="chart-box">
+<div class="chart-box-header">
+<div>
+<h2>Insider vs. institutional ownership</h2>
+<div class="chart-subhead">Does a bigger insider stake come with a smaller institutional stake, or are the two independent?</div>
+</div>
+</div>
+<div class="ndr-panel">
+<div class="scatter-canvas-wrap">
+<canvas id="insiderInstScatter"></canvas>
+</div>
+</div>
+<div id="insiderInstMethodTable"></div>
+</div>
+<div class="chart-box">
+<div class="chart-box-header">
+<div>
+<h2>Insider ownership vs. 3-month relative return</h2>
+<div class="chart-subhead">The alignment-of-interest hypothesis: does more "skin in the game" show up in better relative price performance right now?</div>
+</div>
+</div>
+<div class="ndr-panel">
+<div class="scatter-canvas-wrap">
+<canvas id="insiderRel3mScatter"></canvas>
+</div>
+</div>
+<div id="insiderRel3mMethodTable"></div>
+</div>
+</div>
+
+<div class="table-grid">
 <div class="table-box">
 <div class="table-box-header">
-<h2>Every event and leg</h2>
-<div class="chart-subhead">Full return and excess-return detail for every spinco and parent leg tracked.</div>
+<h2>Highest insider ownership</h2>
+<div class="chart-subhead">Founder- or family-controlled names, typically</div>
 </div>
-<table id="legsTable">
+<table id="highestTable">
+<thead><tr><th>Symbol</th><th>Sector</th><th>Insider %</th><th>Institutional %</th></tr></thead>
+<tbody id="highestBody"><tr><td colspan="4" style="text-align:center; color:var(--muted); padding:24px;">Loading&hellip;</td></tr></tbody>
+</table>
+</div>
+<div class="table-box">
+<div class="table-box-header">
+<h2>Lowest insider ownership</h2>
+<div class="chart-subhead">Most widely-held, professionally-managed names</div>
+</div>
+<table id="lowestTable">
+<thead><tr><th>Symbol</th><th>Sector</th><th>Insider %</th><th>Institutional %</th></tr></thead>
+<tbody id="lowestBody"><tr><td colspan="4" style="text-align:center; color:var(--muted); padding:24px;">Loading&hellip;</td></tr></tbody>
+</table>
+</div>
+</div>
+
+<div class="table-box">
+<div class="table-box-header">
+<h2>Full S&amp;P 500</h2>
+<div class="chart-subhead">Insider ownership, institutional ownership, and 3-month relative return for each S&amp;P 500 company.</div>
+</div>
+<details class="full-list-details">
+<summary class="full-list-summary">Show full list</summary>
+<table id="stockTable">
 <thead>
 <tr>
-<th data-key="label">Company</th>
-<th data-key="role">Leg</th>
+<th data-key="symbol">Symbol</th>
 <th data-key="sector">Sector</th>
-<th data-key="eventDate">Event Date</th>
-<th data-key="excess6M">6M Excess</th>
-<th data-key="excess1Y">1Y Excess</th>
-<th data-key="excess3Y">3Y Excess</th>
-<th data-key="returnToDate">To-Date Return</th>
-<th data-key="excessToDate">To-Date Excess</th>
+<th data-key="insiderPct">Insider %<span class="sort-arrow">▾</span></th>
+<th data-key="institutionalPct">Institutional %<span class="sort-arrow">▾</span></th>
+<th data-key="relPrice3M">3M Rel. Return<span class="sort-arrow">▾</span></th>
 </tr>
 </thead>
-<tbody id="legsBody">
-<tr><td colspan="9" style="text-align:center; color:var(--muted); padding:30px;">Loading spin-off data&hellip;</td></tr>
+<tbody id="tableBody">
+<tr><td colspan="5" style="text-align:center; color:var(--muted); padding:30px;">Loading insider ownership data&hellip;</td></tr>
 </tbody>
 </table>
+</details>
 </div>
 
 <div class="explainer">
 <h2>Methodology</h2>
-<p>The spin-off effect is one of the more durable findings in corporate finance. After a company separates a division into its own public stock, both the new company (the "spinco") and the parent have tended to outperform the market for a while. One common explanation is forced selling: index funds that owned the parent often have no mandate to hold an unfamiliar new small company, which can push its price down for reasons that have nothing to do with the business.</p>
-<p>The list of spin-offs is hand-compiled. Returns include dividends and start from the spinco's first day of regular trading. Both the spinco and the parent are measured against the S&amp;P 500 over the same dates so their excess returns can be compared.</p>
-<p>19 spin-offs are tracked, going back to eBay's 2015 spin-off of PayPal. United Technologies' 2020 spin-offs of Otis and Carrier have no parent leg, since UTC merged into Raytheon the same day. A few others have footnotes: Viatris (Pfizer's Upjohn unit combined with Mylan) isn't a pure spin-off; Kenvue starts from the exchange-offer date rather than its earlier IPO; Kellanova kept the old Kellogg ticker; and in the 2015 HP split, HPQ is treated as the parent since it kept the legacy ticker.</p>
-<p>The main chart lines every spin-off up on its own separation date (day 0), then averages the excess return across all of them for each day after. This is the standard way to ask whether an effect shows up around an event. The number of spin-offs in the average shrinks at longer horizons, since recent ones (GE Vernova, Solventum) haven't reached 3 years yet. N is shown alongside the average.</p>
-<p>At the 1-year mark, run separately for spincos and parents, there are two checks. A one-sample t-test asks whether the average excess return is different from zero. A sign test asks whether the spin-offs split roughly 50/50 between beating and trailing the market. With only 15–19 spin-offs, this is far smaller than academic studies, and several come from the same company (three Danaher, two GE, two DowDuPont), so they aren't fully independent. Treat the result as illustrative.</p>
-
-
+<p>Insider Ownership is the <code>PercentInsiders</code> figure Alpha Vantage reports for each company: the share of shares outstanding held by officers, directors, and holders of 10% or more of the company, as tracked from SEC ownership filings. It's a snapshot of a stake, not a flow — it doesn't say whether that stake grew or shrank recently. For that, see <a href="/insider-buying-selling.html" style="color:var(--greed);">Insider Buying/Selling</a>, which tracks Form 4 transactions directly. Institutional Ownership shown here is the companion <code>PercentInstitutions</code> figure from the same response — a coarser, faster number than <a href="/institutional-ownership.html" style="color:var(--greed);">Institutional Ownership &amp; 13F Flow</a>'s own dedicated 13F sweep, used here only as the other half of the insider/institutional scatter below.</p>
+<p>Both ownership figures update infrequently — proxy statements and 13D/13G amendments, not daily trading — so this page is a one-time snapshot as of the date above, not a continuously refreshed feed.</p>
+<p>Two regressions compare companies at one point in time. Insider vs. institutional ownership asks whether the two are substitutes across the index — a company with heavy insider control mechanically leaves less float for institutions to buy into, so some negative relationship is expected almost by construction; the test is how strong it actually is. Insider ownership vs. 3-month relative return tests the classic "skin in the game" hypothesis: that managers who own more of what they run make better decisions, or take less career risk, and that shows up in performance. It's a same-period association, not a prediction. Both Pearson (linear) and Spearman (rank) fits are shown since either one alone can mislead when the relationship isn't a straight line.</p>
 </div>
 
 </div>
 
 <script>
-const DATA_URL = "/api/spin-off-performance";
+const DATA_URL = "/api/insider-ownership";
+
+const SECTOR_COLORS = {
+ "Information Technology": "#d98a3d",
+ "Financials": "#6f8fac",
+ "Health Care": "#8e7cc3",
+ "Energy": "#c0564f",
+ "Industrials": "#5a9d6f",
+ "Consumer Discretionary": "#e0b04f",
+ "Consumer Staples": "#4fb0c0",
+ "Utilities": "#b56f2a",
+ "Materials": "#9a9a9a",
+ "Real Estate": "#c77dbd",
+ "Communication Services": "#4f7ae0",
+};
 
 let RAW = null;
-let SORT_KEY = "excessToDate";
+let SORT_KEY = "insiderPct";
 let SORT_DIR = -1;
 
 function fmtPct(v, digits){
- if(v === null || v === undefined || isNaN(v)) return "n/a";
+ if(v === null || v === undefined || isNaN(v)) return "—";
+ digits = digits === undefined ? 1 : digits;
+ return v.toFixed(digits) + "%";
+}
+function fmtSignedPct(v, digits){
+ if(v === null || v === undefined || isNaN(v)) return "—";
  digits = digits === undefined ? 1 : digits;
  return (v >= 0 ? "+" : "") + v.toFixed(digits) + "%";
 }
@@ -1001,31 +1015,7 @@ function showWarning(message){
  banner.style.display = "block";
 }
 
-function themeInkColor(){
- const v = getComputedStyle(document.documentElement).getPropertyValue("--ink").trim();
- return v || "#eae6da";
-}
-function themeMutedColor(){
- const v = getComputedStyle(document.documentElement).getPropertyValue("--muted").trim();
- return v || "#8b9199";
-}
-function themeHairColor(){
- const v = getComputedStyle(document.documentElement).getPropertyValue("--hair").trim();
- return v || "#2b3138";
-}
-function themeGreedColor(){
- const v = getComputedStyle(document.documentElement).getPropertyValue("--greed").trim();
- return v || "#d98a3d";
-}
-function themeFearColor(){
- const v = getComputedStyle(document.documentElement).getPropertyValue("--fear").trim();
- return v || "#6f8fac";
-}
-
-// ---- NDR chart styling helpers (matches /concentration) ----------------
-// Colours come from the --ndr-* custom properties (constant across themes)
-// so the charts keep their warm-paper look while still following the
-// site's "read chart colours from CSS, don't hardcode" rule.
+// ---- NDR chart styling helpers (matches /concentration, /rd-intensity) ----
 function ndr(name){
  return getComputedStyle(document.documentElement).getPropertyValue("--ndr-" + name).trim();
 }
@@ -1052,17 +1042,8 @@ function ndrYScale(opts){
  };
 }
 
-function ndrLegend(){
- return {
-  display: true, position: "top", align: "start",
-  labels: { boxWidth: 22, boxHeight: 2, color: ndr("axis"), font: { size: 11 } },
- };
-}
-
-// ---- Stats helpers — same methodology as /factor-analysis and
-// /share-count-trends, duplicated here since every page on this site is
-// self-contained (see CLAUDE.md), plus a one-sample t-test and an exact
-// sign test that those other pages didn't need. ----
+// ---- Stats helpers — same methodology as /factor-analysis, duplicated
+// here since every page on this site is self-contained (see CLAUDE.md). ----
 function linearRegression(xs, ys){
  const n = xs.length;
  const mx = xs.reduce((a, b) => a + b, 0) / n;
@@ -1105,43 +1086,26 @@ function rankArray(arr){
 }
 function spearmanRegression(xs, ys){ return linearRegression(rankArray(xs), rankArray(ys)); }
 
-// One-sample t-test against mu=0. Uses the same normal-approximation
-// p-value convention as linearRegression above (this site treats t as
-// approximately normal for these small-sample significance checks
-// throughout, rather than pulling in a full t-distribution table).
-function oneSampleTTest(values){
- const v = values.filter(x => x !== null && x !== undefined && !isNaN(x));
- const n = v.length;
- if(n < 2) return null;
- const mean = v.reduce((a, b) => a + b, 0) / n;
- const variance = v.reduce((s, x) => s + (x - mean) ** 2, 0) / (n - 1);
- const sd = Math.sqrt(variance);
- const se = sd / Math.sqrt(n);
- const t = se > 0 ? mean / se : 0;
- const dof = n - 1;
- const p = 2 * (1 - normalCdf(Math.abs(t)));
- return { n, mean, sd, se, t, dof, p };
+function methodTableHtml(pearson, spear, unitNote){
+ function row(label, stats){
+  const sig = stats.p < 0.05;
+  return "<tr>" +
+   "<td>" + label + "</td>" +
+   "<td>" + stats.n + "</td>" +
+   "<td>" + stats.r.toFixed(2) + "</td>" +
+   "<td>" + (stats.r2 * 100).toFixed(1) + "%</td>" +
+   "<td>" + (stats.slope >= 0 ? "+" : "") + stats.slope.toFixed(3) + "</td>" +
+   "<td>" + stats.t.toFixed(2) + "</td>" +
+   '<td class="' + (sig ? "sig" : "") + '">' + (stats.p < 0.001 ? "<0.001" : stats.p.toFixed(3)) + "</td>" +
+  "</tr>";
+ }
+ return '<table class="method-table">' +
+  "<thead><tr><th>Method</th><th>n</th><th>r</th><th>r&sup2;</th><th>slope</th><th>t</th><th>p</th></tr></thead>" +
+  "<tbody>" + row("Pearson (OLS)", pearson) + row("Spearman (&rho;)", spear) + "</tbody>" +
+ "</table>" + (unitNote ? '<div class="method-note">' + unitNote + "</div>" : "");
 }
 
-// Exact two-sided sign test against a 50/50 split (values exactly at zero
-// are dropped, standard sign-test convention). Computed exactly rather
-// than via a normal approximation — safe and simple at this page's sample
-// sizes (well under n=30).
-function signTest(values){
- const v = values.filter(x => x !== null && x !== undefined && !isNaN(x) && x !== 0);
- const n = v.length;
- if(n < 1) return null;
- const plus = v.filter(x => x > 0).length;
- const minus = n - plus;
- const k = Math.max(plus, minus);
- function choose(a, b){ let r = 1; for(let i = 0; i < b; i++) r = r * (a - i) / (i + 1); return r; }
- let tail = 0;
- for(let i = k; i <= n; i++) tail += choose(n, i) * Math.pow(0.5, n);
- const p = Math.min(1, tail * 2);
- return { n, plus, minus, p };
-}
-
-let eventTimeChart = null, scatterChart = null, sectorChart = null;
+let sectorChart = null, insiderHistogram = null, insiderInstScatter = null, insiderRel3mScatter = null;
 
 async function init(){
  try{
@@ -1150,269 +1114,204 @@ async function init(){
   if(!res.ok || data.error) throw new Error(data.error || "failed to load");
 
   RAW = data;
-  document.getElementById("updated").textContent = "As of " + new Date(data.generated_at_utc).toLocaleString("en-US", { month: "2-digit", day: "2-digit", year: "numeric", hour: "numeric", minute: "2-digit" });
+  document.getElementById("updated").textContent = "As of " + new Date(data.generated_at_utc).toLocaleString();
 
-  if(data.loadedTickerCount < data.universeTickerCount){
-   showWarning("Only " + data.loadedTickerCount + " of " + data.universeTickerCount + " tickers loaded. Some legs may be missing below.");
+  if(data.loadedCount < data.universeSize * 0.85){
+   showWarning("Only " + data.loadedCount + " of " + data.universeSize + " S&P 500 constituents loaded this run — some figures may be based on partial coverage.");
+  }
+  if(!data.hasRel3M){
+   showWarning("The Relative Strength Leaders/Laggards page's data hasn't populated yet, so the insider-ownership-vs-relative-return test below can't run.");
   }
 
   renderStats();
-  renderEventTimeChart();
-  renderLeaderTable(data.leaderboards.bestSpincos, "bestSpincoBody");
-  renderLeaderTable(data.leaderboards.worstSpincos, "worstSpincoBody");
-  renderLeaderTable(data.leaderboards.bestParents, "bestParentBody");
-  renderLeaderTable(data.leaderboards.worstParents, "worstParentBody");
-  renderStatsMethodTable();
-  renderScatter();
   renderSectorChart();
-  renderLegsTable();
+  renderInsiderHistogram();
+  renderInsiderInstScatter();
+  renderInsiderRel3mScatter();
+  renderLeaderTable(data.highestInsider, "highestBody");
+  renderLeaderTable(data.lowestInsider, "lowestBody");
+  renderTable();
 
  }catch(e){
-  showError("Couldn't load spin-off performance data (" + e.message + "). The /api/spin-off-performance function may not have run yet.");
-  document.getElementById("legsBody").innerHTML =
-   '<tr><td colspan="9" style="text-align:center; color:var(--muted); padding:30px;">No data available.</td></tr>';
+  showError("Couldn't load insider ownership data (" + e.message + "). The /api/insider-ownership function may not have run yet.");
+  document.getElementById("tableBody").innerHTML =
+   '<tr><td colspan="5" style="text-align:center; color:var(--muted); padding:30px;">No data available.</td></tr>';
  }
-}
-
-function spincoExcess(horizonKey){
- return RAW.legs.filter(l => l.role === "spinco" && l.excess[horizonKey] !== null).map(l => l.excess[horizonKey]);
-}
-function parentExcess(horizonKey){
- return RAW.legs.filter(l => l.role === "parent" && l.excess[horizonKey] !== null).map(l => l.excess[horizonKey]);
 }
 
 function renderStats(){
- document.getElementById("statEventCount").textContent = RAW.events.length;
- document.getElementById("statEventCountNote").textContent = RAW.legs.length + " legs (spinco + parent) tracked";
+ const m = RAW.market;
+ document.getElementById("statInsider").textContent = fmtPct(m.medianInsiderPct);
+ document.getElementById("statInsiderNote").textContent = m.companyCount + " companies";
+ document.getElementById("statInstitutional").textContent = fmtPct(m.medianInstitutionalPct);
 
- const spincoVals = spincoExcess("oneYear");
- const parentVals = parentExcess("oneYear");
-
- const spincoEl = document.getElementById("statSpincoExcess");
- if(spincoVals.length){
-  const avg = spincoVals.reduce((a, b) => a + b, 0) / spincoVals.length;
-  spincoEl.textContent = fmtPct(avg);
-  spincoEl.classList.toggle("cell-neg", avg < 0);
-  document.getElementById("statSpincoExcessNote").textContent = "n=" + spincoVals.length + " spinco legs, 1Y mark";
- }else{
-  spincoEl.textContent = "n/a";
+ const sorted = [...RAW.sectors].sort((a, b) => (b.medianInsiderPct ?? -Infinity) - (a.medianInsiderPct ?? -Infinity));
+ if(sorted.length){
+  const top = sorted[0], bottom = sorted[sorted.length - 1];
+  document.getElementById("statTopSector").textContent = top.sector;
+  document.getElementById("statTopSectorNote").textContent = fmtPct(top.medianInsiderPct);
+  document.getElementById("statBottomSector").textContent = bottom.sector;
+  document.getElementById("statBottomSectorNote").textContent = fmtPct(bottom.medianInsiderPct);
  }
-
- const parentEl = document.getElementById("statParentExcess");
- if(parentVals.length){
-  const avg = parentVals.reduce((a, b) => a + b, 0) / parentVals.length;
-  parentEl.textContent = fmtPct(avg);
-  parentEl.classList.toggle("cell-neg", avg < 0);
-  document.getElementById("statParentExcessNote").textContent = "n=" + parentVals.length + " parent legs, 1Y mark";
- }else{
-  parentEl.textContent = "n/a";
- }
-
- const tSpinco = oneSampleTTest(spincoVals);
- const sSpinco = signTest(spincoVals);
- const sigEl = document.getElementById("statSignificance");
- const sigNoteEl = document.getElementById("statSignificanceNote");
- if(tSpinco && sSpinco){
-  const bothSig = tSpinco.p < 0.05 && sSpinco.p < 0.05;
-  const eitherSig = tSpinco.p < 0.05 || sSpinco.p < 0.05;
-  sigEl.textContent = bothSig ? "Both tests, yes" : eitherSig ? "One test, mixed" : "No";
-  sigNoteEl.textContent = "t p=" + (tSpinco.p < 0.001 ? "<0.001" : tSpinco.p.toFixed(3)) + ", sign p=" + (sSpinco.p < 0.001 ? "<0.001" : sSpinco.p.toFixed(3)) + " (n=" + tSpinco.n + ")";
- }else{
-  sigEl.textContent = "n/a";
- }
-}
-
-function renderEventTimeChart(){
- const curve = RAW.eventTimeCurve;
- const ctx = document.getElementById("eventTimeChart").getContext("2d");
- if(eventTimeChart) eventTimeChart.destroy();
- eventTimeChart = new Chart(ctx, {
-  data: {
-   labels: curve.t,
-   datasets: [
-    {
-     type: "line", label: "Avg. cumulative excess return", data: curve.avgExcess,
-     borderColor: ndr("navy"), backgroundColor: "transparent", borderWidth: 1.75,
-     pointRadius: 0, tension: 0, yAxisID: "y",
-    },
-    {
-     type: "line", label: "N (legs with data)", data: curve.n,
-     borderColor: ndr("slate"), backgroundColor: "transparent", borderWidth: 1, borderDash: [3, 3],
-     pointRadius: 0, tension: 0, yAxisID: "y2",
-    },
-   ],
-  },
-  options: {
-   responsive: true,
-   maintainAspectRatio: false,
-   interaction: { mode: "index", intersect: false },
-   plugins: {
-    legend: ndrLegend(),
-    tooltip: {
-     callbacks: {
-      title: items => "Trading day " + items[0].label + " since separation",
-      label: ctx => ctx.dataset.label === "N (legs with data)" ? "N: " + ctx.raw : "Avg. excess return: " + fmtPct(ctx.raw),
-     },
-    },
-   },
-   scales: {
-    x: { ...ndrXScale(), maxTicksLimit: 10, title: { display: true, text: "Trading days since separation", color: ndr("axis-soft"), font: { size: 10 } } },
-    y: ndrYScale({ position: "left", fmt: v => v + "%", title: "Avg. cumulative excess return" }),
-    y2: { position: "right", ticks: { color: ndr("axis"), font: { size: 11 } }, grid: { display: false }, title: { display: true, text: "N", color: ndr("axis-soft"), font: { size: 10 } } },
-   },
-  },
- });
-}
-
-function renderLeaderTable(rows, tbodyId){
- const tbody = document.getElementById(tbodyId);
- if(!rows || !rows.length){
-  tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; color:var(--muted); padding:24px;">No qualifying legs.</td></tr>';
-  return;
- }
- tbody.innerHTML = rows.map(r => `<tr>
-  <td><span class="sector-name">${r.label}</span> <span class="sector-ticker">${r.ticker}</span></td>
-  <td><span class="sector-ticker">${r.sector || "n/a"}</span></td>
-  <td>${usDate(r.eventDate)}</td>
-  <td>${fmtPct(r.excessToDate)}</td>
- </tr>`).join("");
-}
-
-function renderStatsMethodTable(){
- const horizonLabel = "1-Year";
- function row(label, values){
-  const t = oneSampleTTest(values);
-  const s = signTest(values);
-  if(!t || !s){
-   return "<tr><td>" + label + "</td><td colspan='6' style='text-align:center; color:var(--muted);'>Not enough legs with 1-year data yet.</td></tr>";
-  }
-  const tSig = t.p < 0.05;
-  const sSig = s.p < 0.05;
-  return "<tr>" +
-   "<td>" + label + "</td>" +
-   "<td>" + t.n + "</td>" +
-   "<td>" + fmtPct(t.mean) + "</td>" +
-   "<td>" + t.t.toFixed(2) + "</td>" +
-   '<td class="' + (tSig ? "sig" : "") + '">' + (t.p < 0.001 ? "<0.001" : t.p.toFixed(3)) + "</td>" +
-   "<td>" + s.plus + "&ndash;" + s.minus + "</td>" +
-   '<td class="' + (sSig ? "sig" : "") + '">' + (s.p < 0.001 ? "<0.001" : s.p.toFixed(3)) + "</td>" +
-  "</tr>";
- }
- document.getElementById("statsMethodTable").innerHTML =
-  '<table class="method-table">' +
-   "<thead><tr><th>Leg (" + horizonLabel + ")</th><th>n</th><th>mean excess</th><th>t-stat</th><th>t-test p</th><th>+ / &minus; split</th><th>sign-test p</th></tr></thead>" +
-   "<tbody>" + row("Spinco legs", spincoExcess("oneYear")) + row("Parent legs", parentExcess("oneYear")) + "</tbody>" +
-  "</table>";
-}
-
-function renderScatter(){
- const pairs = RAW.scatter;
- const wrap = document.getElementById("scatterChart").closest(".chart-box");
- if(!pairs || pairs.length < 3){
-  document.getElementById("scatterMethodTable").innerHTML = '<div class="method-note">Not enough events with both legs available yet to fit a regression.</div>';
- }
- const ctx = document.getElementById("scatterChart").getContext("2d");
- if(scatterChart) scatterChart.destroy();
-
- const datasets = [
-  { label: "Events", data: pairs.map(p => ({ x: p.x, y: p.y, label: p.spincoLabel + " / " + p.parentLabel })), backgroundColor: ndr("gold"), pointRadius: 4, showLine: false },
- ];
-
- if(pairs.length >= 3){
-  const pearson = linearRegression(pairs.map(p => p.x), pairs.map(p => p.y));
-  const spear = spearmanRegression(pairs.map(p => p.x), pairs.map(p => p.y));
-  const xs = pairs.map(p => p.x);
-  const xMin = Math.min(...xs), xMax = Math.max(...xs);
-  datasets.push({
-   label: "Regression fit", type: "line",
-   data: [{ x: xMin, y: pearson.intercept + pearson.slope * xMin }, { x: xMax, y: pearson.intercept + pearson.slope * xMax }],
-   borderColor: ndr("navy"), borderWidth: 1.5, borderDash: [4, 3], pointRadius: 0, fill: false,
-  });
-
-  function row(label, stats){
-   const sig = stats.p < 0.05;
-   return "<tr>" +
-    "<td>" + label + "</td>" +
-    "<td>" + stats.n + "</td>" +
-    "<td>" + stats.r.toFixed(2) + "</td>" +
-    "<td>" + (stats.r2 * 100).toFixed(1) + "%</td>" +
-    "<td>" + (stats.slope >= 0 ? "+" : "") + stats.slope.toFixed(2) + "</td>" +
-    "<td>" + stats.t.toFixed(2) + "</td>" +
-    '<td class="' + (sig ? "sig" : "") + '">' + (stats.p < 0.001 ? "<0.001" : stats.p.toFixed(3)) + "</td>" +
-   "</tr>";
-  }
-  document.getElementById("scatterMethodTable").innerHTML =
-   '<table class="method-table">' +
-    "<thead><tr><th>Method</th><th>n</th><th>r</th><th>r&sup2;</th><th>slope</th><th>t</th><th>p</th></tr></thead>" +
-    "<tbody>" + row("Pearson (OLS)", pearson) + row("Spearman (&rho;)", spear) + "</tbody>" +
-   "</table>";
- }
-
- scatterChart = new Chart(ctx, {
-  type: "scatter",
-  data: { datasets },
-  options: {
-   responsive: true,
-   maintainAspectRatio: false,
-   plugins: {
-    legend: { display: false },
-    tooltip: { callbacks: { label: ctx => ctx.dataset.label === "Events" ? (ctx.raw.label + ": parent " + fmtPct(ctx.raw.x) + ", spinco " + fmtPct(ctx.raw.y)) : null } },
-   },
-   scales: {
-    x: ndrYScale({ position: "bottom", fmt: v => v + "%", title: "Parent excess return, to date (%)" }),
-    y: ndrYScale({ fmt: v => v + "%", title: "Spinco excess return, to date (%)" }),
-   },
-  },
- });
 }
 
 function renderSectorChart(){
- const rows = RAW.sectorBreakdown;
+ const sectors = [...RAW.sectors].sort((a, b) => b.medianInsiderPct - a.medianInsiderPct);
  const ctx = document.getElementById("sectorChart").getContext("2d");
  if(sectorChart) sectorChart.destroy();
  sectorChart = new Chart(ctx, {
   type: "bar",
   data: {
-   labels: rows.map(r => r.sector),
-   datasets: [
-    { label: "Spinco", data: rows.map(r => r.avgSpincoExcess), backgroundColor: ndr("gold"), borderRadius: 4 },
-    { label: "Parent", data: rows.map(r => r.avgParentExcess), backgroundColor: ndr("navy"), borderRadius: 4 },
-   ],
+   labels: sectors.map(s => s.sector),
+   datasets: [{ label: "Insider Ownership", data: sectors.map(s => s.medianInsiderPct), backgroundColor: sectors.map(s => SECTOR_COLORS[s.sector] || ndr("gold")), borderRadius: 3 }],
   },
   options: {
-   indexAxis: "y",
    responsive: true,
    maintainAspectRatio: false,
    plugins: {
-    legend: ndrLegend(),
-    tooltip: {
-     callbacks: {
-      label: ctx => {
-       const r = rows[ctx.dataIndex];
-       const n = ctx.dataset.label === "Spinco" ? r.spincoCount : r.parentCount;
-       return ctx.dataset.label + " avg. excess: " + fmtPct(ctx.raw) + " (n=" + n + ")";
-      },
-     },
-    },
+    legend: { display: false },
+    tooltip: { callbacks: { label: ctx => {
+     const s = sectors[ctx.dataIndex];
+     return ["Median insider ownership: " + fmtPct(s.medianInsiderPct), "n=" + s.companyCount + " companies"];
+    } } },
    },
    scales: {
-    // Horizontal bar: x is the value axis, y is the sector-name category
-    // axis — swapped from ndrXScale()/ndrYScale()'s usual line-chart roles,
-    // and the category axis skips ndrXScale()'s maxTicksLimit so a sector
-    // list longer than 9 doesn't get silently thinned.
-    x: ndrYScale({ position: "bottom", fmt: v => v + "%" }),
-    y: { ticks: { color: ndr("axis"), font: { size: 11 } }, grid: { color: "rgba(0,0,0,0)", borderColor: ndr("axis") } },
+    x: ndrXScale(),
+    y: ndrYScale({ fmt: v => v + "%" }),
    },
   },
  });
 }
 
-function legRowValues(l){
- return {
-  eventId: l.eventId, label: l.label, ticker: l.ticker, role: l.role, sector: l.sector, eventDate: l.eventDate,
-  excess6M: l.excess.sixMonth, excess1Y: l.excess.oneYear, excess3Y: l.excess.threeYear,
-  returnToDate: l.returns.toDate, excessToDate: l.excess.toDate,
- };
+function renderInsiderHistogram(){
+ const values = RAW.companies.map(c => c.insiderPct).filter(v => v !== null && v !== undefined && !isNaN(v));
+ const binWidth = 1; // percentage points
+ const minBin = 0;
+ const maxBin = Math.max(binWidth, Math.ceil(Math.max(...values) / binWidth) * binWidth);
+ const bins = [];
+ for(let b = minBin; b < maxBin; b += binWidth) bins.push({ lo: b, hi: b + binWidth, count: 0 });
+ for(const v of values){
+  let idx = Math.floor((v - minBin) / binWidth);
+  if(idx < 0) idx = 0;
+  if(idx >= bins.length) idx = bins.length - 1;
+  bins[idx].count++;
+ }
+
+ const ctx = document.getElementById("insiderHistogram").getContext("2d");
+ if(insiderHistogram) insiderHistogram.destroy();
+ insiderHistogram = new Chart(ctx, {
+  type: "bar",
+  data: {
+   labels: bins.map(b => b.lo + "-" + b.hi + "%"),
+   datasets: [{ data: bins.map(b => b.count), backgroundColor: ndr("navy"), borderRadius: 3, barPercentage: 1.0, categoryPercentage: 0.95 }],
+  },
+  options: {
+   responsive: true,
+   maintainAspectRatio: false,
+   plugins: {
+    legend: { display: false },
+    tooltip: { callbacks: { title: items => { const b = bins[items[0].dataIndex]; return b.lo + "% to " + b.hi + "%"; }, label: ctx => ctx.parsed.y + " companies" } },
+   },
+   scales: {
+    x: { ...ndrXScale(), title: { display: true, text: "Insider ownership (% of shares outstanding)", color: ndr("axis-soft"), font: { size: 10 } } },
+    y: ndrYScale({ title: "Companies" }),
+   },
+  },
+ });
+}
+
+function renderInsiderInstScatter(){
+ const pairs = RAW.insiderVsInstitutionalPairs || [];
+ if(pairs.length < 5){
+  document.getElementById("insiderInstMethodTable").innerHTML = '<div class="method-note">Not enough companies to test.</div>';
+  return;
+ }
+ const pearson = linearRegression(pairs.map(p => p.x), pairs.map(p => p.y));
+ const spear = spearmanRegression(pairs.map(p => p.x), pairs.map(p => p.y));
+ const xs = pairs.map(p => p.x);
+ const xMin = Math.min(...xs), xMax = Math.max(...xs);
+ const linePoints = [{ x: xMin, y: pearson.intercept + pearson.slope * xMin }, { x: xMax, y: pearson.intercept + pearson.slope * xMax }];
+
+ const ctx = document.getElementById("insiderInstScatter").getContext("2d");
+ if(insiderInstScatter) insiderInstScatter.destroy();
+ insiderInstScatter = new Chart(ctx, {
+  type: "scatter",
+  data: {
+   datasets: [
+    { label: "Companies", data: pairs, backgroundColor: ndr("navy"), pointRadius: 2.5, showLine: false },
+    { label: "Regression fit", type: "line", data: linePoints, borderColor: ndr("red"), borderWidth: 1.5, borderDash: [4, 3], pointRadius: 0, fill: false },
+   ],
+  },
+  options: {
+   responsive: true,
+   maintainAspectRatio: false,
+   plugins: {
+    legend: { display: false },
+    tooltip: { callbacks: { label: ctx => ctx.dataset.label === "Companies" ? (ctx.raw.symbol + ": insider " + fmtPct(ctx.raw.x) + ", institutional " + fmtPct(ctx.raw.y)) : null } },
+   },
+   scales: {
+    x: ndrYScale({ position: "bottom", fmt: v => v + "%", title: "Insider ownership (%)" }),
+    y: ndrYScale({ fmt: v => v + "%", title: "Institutional ownership (%)" }),
+   },
+  },
+ });
+
+ document.getElementById("insiderInstMethodTable").innerHTML = methodTableHtml(pearson, spear,
+  "Slope is institutional-ownership pp per 1pp of insider ownership. n=" + pearson.n + " companies. Some negative relationship is expected by construction — a bigger insider stake leaves less float for institutions.");
+}
+
+function renderInsiderRel3mScatter(){
+ const pairs = RAW.insiderVsRel3MPairs || [];
+ if(pairs.length < 5){
+  document.getElementById("insiderRel3mMethodTable").innerHTML = '<div class="method-note">Relative Strength Leaders/Laggards data isn’t available yet, so this test can’t run.</div>';
+  return;
+ }
+ const pearson = linearRegression(pairs.map(p => p.x), pairs.map(p => p.y));
+ const spear = spearmanRegression(pairs.map(p => p.x), pairs.map(p => p.y));
+ const xs = pairs.map(p => p.x);
+ const xMin = Math.min(...xs), xMax = Math.max(...xs);
+ const linePoints = [{ x: xMin, y: pearson.intercept + pearson.slope * xMin }, { x: xMax, y: pearson.intercept + pearson.slope * xMax }];
+
+ const ctx = document.getElementById("insiderRel3mScatter").getContext("2d");
+ if(insiderRel3mScatter) insiderRel3mScatter.destroy();
+ insiderRel3mScatter = new Chart(ctx, {
+  type: "scatter",
+  data: {
+   datasets: [
+    { label: "Companies", data: pairs, backgroundColor: ndr("gold"), pointRadius: 2.5, showLine: false },
+    { label: "Regression fit", type: "line", data: linePoints, borderColor: ndr("navy"), borderWidth: 1.5, borderDash: [4, 3], pointRadius: 0, fill: false },
+   ],
+  },
+  options: {
+   responsive: true,
+   maintainAspectRatio: false,
+   plugins: {
+    legend: { display: false },
+    tooltip: { callbacks: { label: ctx => ctx.dataset.label === "Companies" ? (ctx.raw.symbol + ": insider " + fmtPct(ctx.raw.x) + ", 3M rel. return " + fmtSignedPct(ctx.raw.y)) : null } },
+   },
+   scales: {
+    x: ndrYScale({ position: "bottom", fmt: v => v + "%", title: "Insider ownership (%)" }),
+    y: ndrYScale({ fmt: v => v + "%", title: "3-month return vs. SPY (pp)" }),
+   },
+  },
+ });
+
+ document.getElementById("insiderRel3mMethodTable").innerHTML = methodTableHtml(pearson, spear,
+  "Slope is relative-return pp per 1pp of insider ownership. n=" + pearson.n + " companies. A single snapshot in time, not a forward-return test.");
+}
+
+function renderLeaderTable(rows, tbodyId){
+ const tbody = document.getElementById(tbodyId);
+ if(!rows || !rows.length){
+  tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; color:var(--muted); padding:24px;">No qualifying companies.</td></tr>';
+  return;
+ }
+ tbody.innerHTML = rows.map(r => `<tr>
+  <td><span class="sector-name">${r.symbol}</span></td>
+  <td><span class="sector-ticker">${r.sector || "—"}</span></td>
+  <td>${fmtPct(r.insiderPct)}</td>
+  <td>${fmtPct(r.institutionalPct)}</td>
+ </tr>`).join("");
 }
 
 function sortBy(key){
@@ -1420,13 +1319,13 @@ function sortBy(key){
   SORT_DIR = -SORT_DIR;
  }else{
   SORT_KEY = key;
-  SORT_DIR = 1;
+  SORT_DIR = -1;
  }
- renderLegsTable();
+ renderTable();
 }
 
-function renderLegsTable(){
- const rows = RAW.legs.map(legRowValues).sort((a, b) => {
+function renderTable(){
+ const rows = [...RAW.companies].sort((a, b) => {
   const av = a[SORT_KEY], bv = b[SORT_KEY];
   if(av === null || av === undefined) return 1;
   if(bv === null || bv === undefined) return -1;
@@ -1434,20 +1333,16 @@ function renderLegsTable(){
   return (av - bv) * SORT_DIR;
  });
 
- const tbody = document.getElementById("legsBody");
+ const tbody = document.getElementById("tableBody");
  tbody.innerHTML = rows.map(r => `<tr>
-  <td><span class="sector-name">${r.label}</span> <span class="sector-ticker">${r.ticker}</span></td>
-  <td><span class="tag ${r.role}">${r.role}</span></td>
-  <td><span class="sector-ticker">${r.sector || "n/a"}</span></td>
-  <td>${usDate(r.eventDate)}</td>
-  <td>${fmtPct(r.excess6M)}</td>
-  <td>${fmtPct(r.excess1Y)}</td>
-  <td>${fmtPct(r.excess3Y)}</td>
-  <td>${fmtPct(r.returnToDate)}</td>
-  <td>${fmtPct(r.excessToDate)}</td>
+  <td><span class="sector-name">${r.symbol}</span></td>
+  <td><span class="sector-ticker">${r.sector || "—"}</span></td>
+  <td>${fmtPct(r.insiderPct)}</td>
+  <td>${fmtPct(r.institutionalPct)}</td>
+  <td class="${r.relPrice3M >= 0 ? "growth-pos" : "growth-neg"}">${fmtSignedPct(r.relPrice3M)}</td>
  </tr>`).join("");
 
- document.querySelectorAll("#legsTable thead th").forEach(th => {
+ document.querySelectorAll("#stockTable thead th").forEach(th => {
   const key = th.dataset.key;
   th.classList.toggle("sorted", key === SORT_KEY);
   const arrow = th.querySelector(".sort-arrow");
@@ -1455,15 +1350,9 @@ function renderLegsTable(){
  });
 }
 
-document.querySelectorAll("#legsTable thead th").forEach(th => {
+document.querySelectorAll("#stockTable thead th").forEach(th => {
  const key = th.dataset.key;
- if(key){
-  const arrow = document.createElement("span");
-  arrow.className = "sort-arrow";
-  arrow.textContent = "▾";
-  th.appendChild(arrow);
-  th.addEventListener("click", () => sortBy(key));
- }
+ if(key) th.addEventListener("click", () => sortBy(key));
 });
 
 init();
