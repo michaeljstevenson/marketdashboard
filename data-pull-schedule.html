@@ -21,7 +21,7 @@ small{opacity:.7}
 </head>
 <body>
 <h1>Data Schedule</h1>
-<p>(New York is UTC−4 until November 1, then UTC−5.) This page is regenerated from the site's configuration on every deploy (last updated 09-27-2026).</p>
+<p>(New York is UTC−4 until November 1, then UTC−5.) This page is regenerated from the site's configuration on every deploy (last updated 09-30-2026).</p>
 <div class="w">
 <table>
 <thead><tr><th>Page</th><th>Job</th><th>When</th><th>Pulled from</th><th>Notes</th></tr></thead>
@@ -40,6 +40,7 @@ small{opacity:.7}
 <tr><td><a href="/small-cap-liquidity.html">Small-Cap Liquidity &amp; Volume Trends | Michael J. Stevenson</a><br><a href="/small-cap-vs-large-cap.html">Small Cap vs. Large Cap Spread | Michael J. Stevenson</a></td><td class="m">smallcap</td><td>Mon–Fri 22:15 UTC</td><td>Alpha Vantage: TIME_SERIES_DAILY_ADJUSTED</td><td>Daily prices for IWM (small caps), MDY (mid caps) and SPY (large caps).</td></tr>
 <tr><td><a href="/sector-beeswarm.html">S&amp;P 500 Sector Beeswarm | Michael J. Stevenson</a></td><td class="m">beeswarm-daily</td><td>Mon–Fri 22:40 UTC</td><td>Yahoo Finance</td><td>15-minute price moves through the trading day for every S&amp;P 500 stock.</td></tr>
 <tr><td><a href="/international-vs-us.html">International vs. US Relative Performance | Michael J. Stevenson</a></td><td class="m">international</td><td>Every day 22:20 UTC</td><td>Yahoo Finance</td><td>Daily prices for EFA (developed markets), EEM (emerging markets) and SPY, plus the EUR/USD rate.</td></tr>
+<tr><td><a href="/earnings-calendar.html">Earnings Calendar &amp; Bar-Setting | Michael J. Stevenson</a></td><td class="m">earnings-calendar</td><td>Sunday 07:00 UTC</td><td>Alpha Vantage: EARNINGS, EARNINGS_CALENDAR</td><td>Upcoming earnings dates for S&amp;P 500 stocks, plus the earnings history of each company reporting in the next 45 days.<br>Reads: surprise</td></tr>
 <tr><td><a href="/sector-beeswarm.html">S&amp;P 500 Sector Beeswarm | Michael J. Stevenson</a></td><td class="m">beeswarm-meta</td><td>Saturday 07:00 UTC</td><td>Alpha Vantage: OVERVIEW</td><td>Name, sector and shares outstanding for every S&amp;P 500 stock. Company names and sectors reused by about 20 other jobs.</td></tr>
 <tr><td><a href="/earnings-revisions.html">Earnings Revisions | Michael J. Stevenson</a></td><td class="m">revisions</td><td>Saturday 07:20 UTC</td><td>Alpha Vantage: EARNINGS_ESTIMATES</td><td>Analyst EPS estimates for the current year and how they moved over 7, 30 and 90 days.</td></tr>
 <tr><td><a href="/sector-beeswarm.html">S&amp;P 500 Sector Beeswarm | Michael J. Stevenson</a></td><td class="m">beeswarm-annual</td><td>Saturday 08:30 UTC</td><td>Alpha Vantage: TIME_SERIES_DAILY_ADJUSTED</td><td>Year-by-year returns for the 11 sector ETFs and SPY, about 15 years.</td></tr>
