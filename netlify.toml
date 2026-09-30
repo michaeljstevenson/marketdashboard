@@ -180,6 +180,11 @@
   status = 200
 
 [[redirects]]
+  from = "/api/earnings-calendar"
+  to = "/.netlify/functions/earnings-calendar"
+  status = 200
+
+[[redirects]]
   from = "/api/smallcap-liquidity"
   to = "/.netlify/functions/smallcap-liquidity"
   status = 200
@@ -752,3 +757,11 @@
   # background (for the momentum join) but degrades gracefully if that
   # blob is stale or missing. ~503 sequential HISTORICAL_PUT_CALL_RATIO
   # calls at 1050ms spacing plus a retry pass.
+
+[functions."scheduled-earnings-calendar-background"]
+  # Weekly, Sunday 07:00 UTC — every other scheduled job on this site runs
+  # weekdays or Saturday, so Sunday has no contention. ~250-350 sequential
+  # EARNINGS calls (S&P 500 reporters in the next 45 days) at 1050ms spacing
+  # plus a retry pass. Weekly because the calendar's look-ahead window and
+  # consensus estimates only need refreshing about that often.
+  schedule = "0 7 * * 0"

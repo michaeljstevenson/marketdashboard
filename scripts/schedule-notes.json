@@ -48,5 +48,6 @@
   "concentration-market": "Daily prices for SPY and RSP.",
   "momentum-history": "Daily prices for SPY.",
   "backtest-prices": "Daily prices for whatever symbol you enter.",
-  "options-positioning": "Put/call ratio for every S&P 500 stock, joined against the relative-strength history for the momentum test."
+  "options-positioning": "Put/call ratio for every S&P 500 stock, joined against the relative-strength history for the momentum test.",
+  "earnings-calendar": "Upcoming earnings dates for S&P 500 stocks, plus the earnings history of each company reporting in the next 45 days."
 }
