@@ -125,6 +125,11 @@
   status = 200
 
 [[redirects]]
+  from = "/api/overnight"
+  to = "/.netlify/functions/overnight"
+  status = 200
+
+[[redirects]]
   from = "/api/smallcap-largecap"
   to = "/.netlify/functions/smallcap-largecap"
   status = 200
@@ -430,6 +435,13 @@
   # daily block's logs easy to read in order. Daily, not weekly, since
   # (unlike a sparse-event dataset) index levels move every trading day.
   schedule = "15 22 * * 1-5"
+
+[functions."scheduled-overnight-background"]
+  # Daily 22:25 UTC, in the free gap after scheduled-smallcap-background
+  # (22:15) and scheduled-international-background (22:20). Only 3 Alpha
+  # Vantage calls (full-history TIME_SERIES_DAILY_ADJUSTED for SPY/QQQ/IWM),
+  # so no contention risk.
+  schedule = "25 22 * * 1-5"
 
 [functions."scheduled-international-background"]
   # Daily 22:20 UTC, right after scheduled-smallcap-background (22:15). Index
