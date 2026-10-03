@@ -1,0 +1,528 @@
+{
+  "jobs": [
+    {
+      "name": "ticker",
+      "cron": "*/2 13-20 * * 1-5",
+      "apis": [
+        "/api/ticker"
+      ],
+      "pages": [
+        "index"
+      ]
+    },
+    {
+      "name": "daychange",
+      "cron": "30 13-19 * * 1-5",
+      "apis": [
+        "/api/daychange"
+      ],
+      "pages": [
+        "market-breadth"
+      ]
+    },
+    {
+      "name": "breadth",
+      "cron": "30 21 * * 1-5",
+      "apis": [
+        "/api/breadth-internals",
+        "/api/daychange"
+      ],
+      "pages": [
+        "ath-index",
+        "market-breadth"
+      ]
+    },
+    {
+      "name": "drawdown",
+      "cron": "30 21 * * 1-5",
+      "apis": [
+        "/api/drawdown-history"
+      ],
+      "pages": [
+        "ath-index"
+      ]
+    },
+    {
+      "name": "sectors",
+      "cron": "35 21 * * 1-5",
+      "apis": [
+        "/api/sector-performance"
+      ],
+      "pages": [
+        "country-sector-scorecard",
+        "sector-analysis",
+        "sector-correlation",
+        "sector-rotation"
+      ]
+    },
+    {
+      "name": "ath-tradingview",
+      "cron": "40 21 * * 1-5",
+      "apis": [
+        "/api/ath-tradingview"
+      ],
+      "pages": [
+        "ath-index"
+      ]
+    },
+    {
+      "name": "countries",
+      "cron": "45 21 * * 1-5",
+      "apis": [
+        "/api/country-performance"
+      ],
+      "pages": [
+        "country-sector-scorecard"
+      ]
+    },
+    {
+      "name": "seasonality",
+      "cron": "50 21 * * 1-5",
+      "apis": [
+        "/api/seasonality-history"
+      ],
+      "pages": [
+        "seasonality"
+      ]
+    },
+    {
+      "name": "putcall",
+      "cron": "55 21 * * 1-5",
+      "apis": [],
+      "pages": [
+        "sentiment-index"
+      ]
+    },
+    {
+      "name": "sentiment",
+      "cron": "0 22 * * 1-5",
+      "apis": [
+        "/api/data"
+      ],
+      "pages": [
+        "sentiment-index"
+      ]
+    },
+    {
+      "name": "oddstats",
+      "cron": "10 22 * * 1-5",
+      "apis": [
+        "/api/oddstats-curation",
+        "/api/oddstats"
+      ],
+      "pages": [
+        "statistical-engine"
+      ]
+    },
+    {
+      "name": "smallcap",
+      "cron": "15 22 * * 1-5",
+      "apis": [
+        "/api/smallcap-largecap"
+      ],
+      "pages": [
+        "small-cap-liquidity",
+        "small-cap-vs-large-cap"
+      ]
+    },
+    {
+      "name": "beeswarm-daily",
+      "cron": "40 22 * * 1-5",
+      "apis": [
+        "/api/beeswarm-annual",
+        "/api/beeswarm-daily"
+      ],
+      "pages": [
+        "sector-beeswarm"
+      ]
+    },
+    {
+      "name": "international",
+      "cron": "20 22 * * *",
+      "apis": [
+        "/api/international-us"
+      ],
+      "pages": [
+        "international-vs-us"
+      ]
+    },
+    {
+      "name": "beeswarm-meta",
+      "cron": "0 7 * * 6",
+      "apis": [
+        "/api/beeswarm-annual",
+        "/api/beeswarm-daily"
+      ],
+      "pages": [
+        "sector-beeswarm"
+      ]
+    },
+    {
+      "name": "revisions",
+      "cron": "20 7 * * 6",
+      "apis": [
+        "/api/earnings-revisions"
+      ],
+      "pages": [
+        "earnings-revisions"
+      ]
+    },
+    {
+      "name": "beeswarm-annual",
+      "cron": "30 8 * * 6",
+      "apis": [
+        "/api/beeswarm-annual",
+        "/api/beeswarm-daily"
+      ],
+      "pages": [
+        "sector-beeswarm"
+      ]
+    },
+    {
+      "name": "factors",
+      "cron": "0 9 * * 6",
+      "apis": [
+        "/api/factors"
+      ],
+      "pages": [
+        "factor-analysis"
+      ]
+    },
+    {
+      "name": "concentration",
+      "cron": "30 9 * * 6",
+      "apis": [
+        "/api/concentration-history",
+        "/api/concentration-mag7"
+      ],
+      "pages": [
+        "concentration"
+      ]
+    },
+    {
+      "name": "concentration-history",
+      "cron": "0 10 * * 6",
+      "apis": [
+        "/api/concentration-history",
+        "/api/concentration-mag7"
+      ],
+      "pages": [
+        "concentration"
+      ]
+    },
+    {
+      "name": "insider-transactions",
+      "cron": "30 10 * * 6",
+      "apis": [
+        "/api/insider-transactions"
+      ],
+      "pages": [
+        "insider-buying-selling"
+      ]
+    },
+    {
+      "name": "share-count",
+      "cron": "50 10 * * 6",
+      "apis": [
+        "/api/share-count-trends"
+      ],
+      "pages": [
+        "share-count-trends"
+      ]
+    },
+    {
+      "name": "institutional-ownership",
+      "cron": "10 11 * * 6",
+      "apis": [
+        "/api/institutional-ownership"
+      ],
+      "pages": [
+        "institutional-ownership"
+      ]
+    },
+    {
+      "name": "post-earnings-drift",
+      "cron": "30 11 * * 6",
+      "apis": [
+        "/api/post-earnings-drift"
+      ],
+      "pages": [
+        "post-earnings-drift"
+      ]
+    },
+    {
+      "name": "dividend-growth",
+      "cron": "0 12 * * 6",
+      "apis": [
+        "/api/dividend-growth"
+      ],
+      "pages": [
+        "dividend-growth-screener"
+      ]
+    },
+    {
+      "name": "splits",
+      "cron": "20 12 * * 6",
+      "apis": [
+        "/api/stock-splits"
+      ],
+      "pages": [
+        "stock-split-tracker"
+      ]
+    },
+    {
+      "name": "relative-strength",
+      "cron": "10 13 * * 6",
+      "apis": [
+        "/api/relative-strength"
+      ],
+      "pages": [
+        "relative-strength-leaders"
+      ]
+    },
+    {
+      "name": "quality-lowvol",
+      "cron": "40 13 * * 6",
+      "apis": [
+        "/api/quality-lowvol-factors"
+      ],
+      "pages": [
+        "quality-lowvol-factors"
+      ]
+    },
+    {
+      "name": "smallcap-liquidity",
+      "cron": "20 14 * * 6",
+      "apis": [
+        "/api/smallcap-liquidity"
+      ],
+      "pages": [
+        "small-cap-liquidity"
+      ]
+    },
+    {
+      "name": "short-sale-volume",
+      "cron": "50 14 * * 6",
+      "apis": [
+        "/api/short-sale-volume"
+      ],
+      "pages": [
+        "short-sale-volume"
+      ]
+    },
+    {
+      "name": "analyst-price-target",
+      "cron": null,
+      "apis": [
+        "/api/analyst-price-target"
+      ],
+      "pages": [
+        "analyst-price-target"
+      ]
+    },
+    {
+      "name": "buyback-effectiveness",
+      "cron": null,
+      "apis": [
+        "/api/buyback-effectiveness"
+      ],
+      "pages": [
+        "buyback-effectiveness"
+      ]
+    },
+    {
+      "name": "cash-conversion-cycle",
+      "cron": null,
+      "apis": [
+        "/api/cash-conversion-cycle"
+      ],
+      "pages": [
+        "cash-conversion-cycle"
+      ]
+    },
+    {
+      "name": "congress-trades",
+      "cron": null,
+      "apis": [
+        "/api/congress-trades"
+      ],
+      "pages": [
+        "congressional-trading"
+      ]
+    },
+    {
+      "name": "earnings-call-sentiment",
+      "cron": null,
+      "apis": [
+        "/api/earnings-call-sentiment"
+      ],
+      "pages": [
+        "earnings-call-sentiment"
+      ]
+    },
+    {
+      "name": "earnings-growth-divergence",
+      "cron": null,
+      "apis": [
+        "/api/earnings-growth-divergence"
+      ],
+      "pages": [
+        "earnings-growth-divergence"
+      ]
+    },
+    {
+      "name": "surprise",
+      "cron": null,
+      "apis": [
+        "/api/earnings-surprise"
+      ],
+      "pages": [
+        "earnings-surprise"
+      ]
+    },
+    {
+      "name": "equity-risk-premium",
+      "cron": null,
+      "apis": [
+        "/api/equity-risk-premium"
+      ],
+      "pages": [
+        "equity-risk-premium"
+      ]
+    },
+    {
+      "name": "quality-financials",
+      "cron": null,
+      "apis": [],
+      "pages": [
+        "quality-score"
+      ]
+    },
+    {
+      "name": "quality-score",
+      "cron": null,
+      "apis": [
+        "/api/quality-score"
+      ],
+      "pages": [
+        "quality-score"
+      ]
+    },
+    {
+      "name": "pe-divergence",
+      "cron": null,
+      "apis": [
+        "/api/pe-divergence"
+      ],
+      "pages": [
+        "pe-divergence"
+      ]
+    },
+    {
+      "name": "fcf-yield",
+      "cron": null,
+      "apis": [
+        "/api/fcf-yield"
+      ],
+      "pages": [
+        "fcf-yield"
+      ]
+    },
+    {
+      "name": "ipo-pipeline",
+      "cron": null,
+      "apis": [
+        "/api/ipo-pipeline"
+      ],
+      "pages": [
+        "ipo-pipeline"
+      ]
+    },
+    {
+      "name": "margin-leverage",
+      "cron": null,
+      "apis": [
+        "/api/margin-leverage"
+      ],
+      "pages": [
+        "margin-leverage"
+      ]
+    },
+    {
+      "name": "options-positioning",
+      "cron": null,
+      "apis": [
+        "/api/options-positioning"
+      ],
+      "pages": [
+        "options-positioning"
+      ]
+    },
+    {
+      "name": "rd-intensity",
+      "cron": null,
+      "apis": [
+        "/api/rd-intensity"
+      ],
+      "pages": [
+        "rd-intensity"
+      ]
+    },
+    {
+      "name": "roic-wacc",
+      "cron": null,
+      "apis": [
+        "/api/roic-wacc"
+      ],
+      "pages": [
+        "roic-wacc"
+      ]
+    },
+    {
+      "name": "shareholder-yield",
+      "cron": null,
+      "apis": [
+        "/api/shareholder-yield"
+      ],
+      "pages": [
+        "shareholder-yield"
+      ]
+    },
+    {
+      "name": "spinoff",
+      "cron": null,
+      "apis": [
+        "/api/spin-off-performance"
+      ],
+      "pages": [
+        "spin-off-performance"
+      ]
+    }
+  ],
+  "onRequest": [
+    {
+      "api": "/api/momentum-history",
+      "pages": [
+        "sentiment-index"
+      ]
+    },
+    {
+      "api": "/api/volatility",
+      "pages": [
+        "volatility"
+      ]
+    },
+    {
+      "api": "/api/backtest-prices",
+      "pages": [
+        "backtesting"
+      ]
+    },
+    {
+      "api": "/api/concentration-market",
+      "pages": [
+        "concentration"
+      ]
+    }
+  ]
+}

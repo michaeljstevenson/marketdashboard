@@ -89,5 +89,8 @@ visible error other than "only N of M loaded" on the page.
   rebuilds it from `netlify.toml` (schedules) and the job code (sources, pages), and Netlify runs it on
   every deploy via `[build] command`. Any change to a schedule or a job's data source must be followed by
   running the script before committing, so the committed page matches. Per-job notes live in
-  `scripts/schedule-notes.json`.
+  `scripts/schedule-notes.json`. The same script also writes `data-pull-schedule.json` (job → cron → /api
+  endpoints), which `node scripts/health-check.js` reads from the live site to flag endpoints that error,
+  go stale against their schedule, or load only part of their universe. A local scheduled task
+  (`site-health-check`, daily 7:30 PM ET) runs it read-only and reports.
 - Never commit or push without the user explicitly asking in that turn.

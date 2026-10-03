@@ -185,7 +185,7 @@ function main() {
     if (s.yahoo) sources.push("Yahoo Finance");
     for (const label of new Set(s.hosts.map((h) => HOST_LABELS[h] || h))) sources.push(label);
     const dependsOn = reads.map((m) => m.replace(/-blob-store$/, "")).filter((m) => m !== "beeswarm");
-    return { job, name: stem(job), cron: sched[job] || null, when: describeCron(sched[job]), sources, pages, writes, reads, dependsOn };
+    return { job, name: stem(job), cron: sched[job] || null, when: describeCron(sched[job]), sources, pages, apis: [...new Set(apis)], writes, reads, dependsOn };
   });
 
   // Jobs with no page of their own feed the page of a job that reads their data
@@ -267,6 +267,13 @@ ${body.join("\n")}
 </html>
 `;
   fs.writeFileSync(OUT, html);
+  // Machine-readable twin of the page, read by scripts/health-check.js from the live site
+  // so freshness is judged against the schedules that are actually deployed.
+  const manifest = {
+    jobs: rows.map((r) => ({ name: r.name, cron: r.cron, apis: r.apis, pages: r.pages })),
+    onRequest: onRequest.map((o) => ({ api: o.api, pages: o.pages })),
+  };
+  fs.writeFileSync(OUT.replace(/\.html$/, ".json"), JSON.stringify(manifest, null, 2) + "\n");
   const sched30 = rows.filter((r) => r.cron).length;
   console.log(`data-pull-schedule.html: ${rows.length} jobs (${sched30} scheduled, ${rows.length - sched30} manual) + ${onRequest.length} on-request endpoints`);
 }
