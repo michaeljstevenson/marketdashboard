@@ -174,7 +174,7 @@ document.addEventListener("DOMContentLoaded", function(){
   --mono:'SF Mono','JetBrains Mono',ui-monospace,Menlo,monospace;
   --sans:'Times New Roman',Times,serif;
 
-  /* NDR-style chart palette. Deliberately the SAME in light and dark —
+  /* NDR-style chart palette. Deliberately the SAME in light and dark -
      these charts keep a constant warm-paper look as a homage to the Ned
      Davis Research print charts that inspired /concentration. JS reads
      them via getComputedStyle (per the site convention) rather than
@@ -349,7 +349,7 @@ h1{
 
 .chart-canvas-wrap.short{ height:260px; }
 
-/* The warm-paper plot panel behind each canvas — the NDR homage
+/* The warm-paper plot panel behind each canvas - the NDR homage
    (matches /concentration). */
 .ndr-panel{
  background:var(--ndr-plot);
@@ -371,7 +371,7 @@ h1{
  margin-bottom:0;
  min-width:0; /* grid items default to min-width:auto (their content's min-content
                  size), which a wide method table would otherwise force past this
-                 column's track width — same "grid blowout" the site-wide
+                 column's track width - same "grid blowout" the site-wide
                  table{min-width:600px} rule creates if left unchecked here */
 }
 
@@ -423,10 +423,10 @@ table{
 }
 
 /* The narrower leaderboard/divergence tables don't need the 600px floor
-   above — it's sized for the many-column full table. Left at 600px in a
+   above - it's sized for the many-column full table. Left at 600px in a
    narrower box, the site-wide rule would push the value column(s) that
    matter out past the box's visible width, requiring a manual horizontal
-   scroll to see them — a real bug already found and fixed on
+   scroll to see them - a real bug already found and fixed on
    /institutional-ownership.html and /congressional-trading.html, applied
    proactively here from the start. */
 #highestCombinedTable, #lowestCombinedTable, #divergentHighQVolTable, #divergentLowQVolTable{ min-width:0; }
@@ -512,7 +512,7 @@ tbody td:nth-child(2){
 
 .method-table{
  width:100%;
- min-width:0; /* overrides the site-wide table{min-width:600px} rule below — a
+ min-width:0; /* overrides the site-wide table{min-width:600px} rule below - a
                  7-column method table never needs 600px */
  border-collapse:collapse;
  font-family:var(--mono);
@@ -805,7 +805,7 @@ tbody td:nth-child(2){
 <script>
 // Class-driven (not pure :hover) nav dropdowns: pure CSS :hover drops the
 // menu the instant the cursor leaves .navdrop, which includes the moment
-// it's crossing the gap between the label and the dropdown box below —
+// it's crossing the gap between the label and the dropdown box below -
 // exactly the "sometimes works, sometimes doesn't" flakiness reported.
 // A short close-delay after mouseleave gives the cursor room to travel
 // down into the dropdown without losing it.
@@ -1101,7 +1101,7 @@ function ndrNumericScale(opts){
  };
 }
 
-// ---- Stats helpers — same methodology as /factor-analysis, duplicated
+// ---- Stats helpers - same methodology as /factor-analysis, duplicated
 // here since every page on this site is self-contained (see CLAUDE.md). ----
 function linearRegression(xs, ys){
  const n = xs.length;

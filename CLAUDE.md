@@ -53,7 +53,16 @@ around that area first. Auto-formatting hooks may have touched the file since th
 **The user authors all site prose and copy themselves** — headlines, subtitles, explainer
 paragraphs, methodology write-ups, everything readable. Claude's job is data, charts, calculations,
 scaffolding, and bug fixes — not rewriting or "improving" the user's wording. Apply Edit Mode
-changes verbatim, never paraphrased.
+changes verbatim, never paraphrased. One exception (granted 2026-10-03): Claude may write dated
+data commentary on data pages (a summary block under the stat cards plus a short note under each
+chart) in the user's voice, static ("As of <date>"), rolled out a few pages at a time for review.
+
+Rules for any site text Claude writes or changes:
+- No em dashes anywhere on the live site, including placeholders ("…" for loading, "n/a" for missing).
+- No "X, not Y" constructions or similar AI-sounding contrasts.
+- Every new or changed piece of prose goes into `content-review.md` at the repo root (git-ignored via
+  `.git/info/exclude`) with page, location, before and after. Nothing with new prose is pushed until the
+  user approves that file.
 
 ## Data sources (per page)
 

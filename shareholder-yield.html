@@ -174,7 +174,7 @@ document.addEventListener("DOMContentLoaded", function(){
   --mono:'SF Mono','JetBrains Mono',ui-monospace,Menlo,monospace;
   --sans:'Times New Roman',Times,serif;
 
-  /* NDR-style chart palette. Deliberately the SAME in light and dark —
+  /* NDR-style chart palette. Deliberately the SAME in light and dark -
      these charts keep a constant warm-paper look as a homage to the Ned
      Davis Research print charts that inspired the page. JS reads them via
      getComputedStyle (per the site convention) rather than hardcoding. */
@@ -342,7 +342,7 @@ h1{
  margin-top:4px;
 }
 
-/* The warm-paper plot panel behind each canvas — the NDR homage. */
+/* The warm-paper plot panel behind each canvas - the NDR homage. */
 .ndr-panel{
  background:var(--ndr-plot);
  border:1px solid var(--ndr-grid);
@@ -719,7 +719,7 @@ tbody td:first-child{
 <script>
 // Class-driven (not pure :hover) nav dropdowns: pure CSS :hover drops the
 // menu the instant the cursor leaves .navdrop, which includes the moment
-// it's crossing the gap between the label and the dropdown box below —
+// it's crossing the gap between the label and the dropdown box below -
 // exactly the "sometimes works, sometimes doesn't" flakiness reported.
 // A short close-delay after mouseleave gives the cursor room to travel
 // down into the dropdown without losing it.
@@ -941,7 +941,7 @@ function ndrLegend(){
  };
 }
 
-// ---- Stats helpers — same methodology as /factor-analysis, duplicated
+// ---- Stats helpers - same methodology as /factor-analysis, duplicated
 // here since every page on this site is self-contained (see CLAUDE.md). ----
 
 function linearRegression(xs, ys){
@@ -967,7 +967,7 @@ function normalCdf(x){
  return 0.5 * (1 + erf(x / Math.SQRT2));
 }
 
-// Abramowitz & Stegun 7.1.26 approximation — accurate to ~1e-7.
+// Abramowitz & Stegun 7.1.26 approximation - accurate to ~1e-7.
 function erf(x){
  const sign = x < 0 ? -1 : 1;
  x = Math.abs(x);
@@ -1065,7 +1065,7 @@ function renderSectorChart(data){
     tooltip: { callbacks: { label: ctx => ctx.dataset.label + ": " + fmtPct(ctx.parsed.x) } },
    },
    // Horizontal bar: x is the value (percentage) axis, y is the category
-   // (sector name) axis — the opposite pairing from ndrXScale/ndrYScale's
+   // (sector name) axis - the opposite pairing from ndrXScale/ndrYScale's
    // usual x=category/y=value roles, so the helpers are swapped here.
    scales: {
     x: { ...ndrYScale({ fmt: v => v + "%" }), stacked: true },
@@ -1119,7 +1119,7 @@ function renderCorrScatter(data){
    },
    // Numeric x-axis (dividend yield %), not a date/category axis, so
    // ndrXScale's category-oriented tick options (maxTicksLimit,
-   // maxRotation) don't apply here — built inline instead, matching
+   // maxRotation) don't apply here - built inline instead, matching
    // ndrXScale's colours.
    scales: {
     x: { title: { display: true, text: "Dividend yield (%)", color: ndr("axis-soft"), font: { size: 10 } }, ticks: { color: ndr("axis"), font: { size: 10 } }, grid: { color: ndr("grid") } },

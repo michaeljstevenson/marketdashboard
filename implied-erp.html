@@ -126,12 +126,12 @@ document.addEventListener("DOMContentLoaded", function(){
   // The canvas wrapper normally has a fixed pixel height (set per-page
   // in each chart's own CSS) so it renders correctly inline, but Chart.js
   // also writes an inline pixel width/height directly onto the <canvas>
-  // itself every time it resizes — including mid-transition, if resize()
+  // itself every time it resizes - including mid-transition, if resize()
   // is ever called on a guessed timer before an animated fullscreen
   // exit has actually finished. That stale inline size then overrides
   // any CSS the container reverts to, which is what "chart stuck very
   // wide after exiting fullscreen" actually was: a race, not a one-time
-  // layout bug. ResizeObserver removes the guesswork — it fires with
+  // layout bug. ResizeObserver removes the guesswork - it fires with
   // the wrapper's real, settled size every time that size changes for
   // any reason (entering fullscreen, exiting it, a plain window resize),
   // so resize() always runs against the correct final dimensions.
@@ -633,7 +633,7 @@ h1{
 <script>
 // Class-driven (not pure :hover) nav dropdowns: pure CSS :hover drops the
 // menu the instant the cursor leaves .navdrop, which includes the moment
-// it's crossing the gap between the label and the dropdown box below —
+// it's crossing the gap between the label and the dropdown box below -
 // exactly the "sometimes works, sometimes doesn't" flakiness reported.
 // A short close-delay after mouseleave gives the cursor room to travel
 // down into the dropdown without losing it.
@@ -799,9 +799,9 @@ const ERP_DATA = [
   { year: 2025, erp: 4.23, tbondRate: 4.18, sp500: 6845.5 },
 ];
 
-// Realized return isn't in the source data directly — derived here as the
+// Realized return isn't in the source data directly - derived here as the
 // year-over-year change in Damodaran's year-end S&P 500 level column
-// (price return only, no dividends — see the explainer's caveat). The
+// (price return only, no dividends - see the explainer's caveat). The
 // first year has no prior year in this dataset to compare against, so it
 // gets null rather than a fabricated 0%.
 function realizedReturns(data){
@@ -815,7 +815,7 @@ function realizedReturns(data){
 // Ordinary least squares on paired (x,y) arrays, plus a t-test on the
 // slope (H0: slope = 0, i.e. "x has no linear relationship with y").
 // The p-value uses the normal-distribution approximation rather than the
-// exact Student's t-distribution — no stats library is loaded on this
+// exact Student's t-distribution - no stats library is loaded on this
 // page, and with the degrees of freedom this dataset produces (60+),
 // the two are close enough that the approximation doesn't change the
 // conclusion at conventional significance thresholds.
@@ -842,7 +842,7 @@ function normalCdf(x){
  return 0.5 * (1 + erf(x / Math.SQRT2));
 }
 
-// Abramowitz & Stegun 7.1.26 approximation — accurate to ~1e-7, plenty
+// Abramowitz & Stegun 7.1.26 approximation - accurate to ~1e-7, plenty
 // for a p-value display.
 function erf(x){
  const sign = x < 0 ? -1 : 1;
@@ -854,7 +854,7 @@ function erf(x){
 }
 
 // ---- Robustness checks: Spearman rank correlation and jackknife
-// (leave-one-out) trimming, same as used on the Factor Analysis page —
+// (leave-one-out) trimming, same as used on the Factor Analysis page -
 // run alongside the headline Pearson/OLS regression so a result can't be
 // quietly resting on rank-insensitive magnitude outliers or a single
 // influential data point. ----
@@ -874,7 +874,7 @@ function rankArray(arr){
  return ranks;
 }
 
-// Spearman is Pearson's regression run on ranks instead of raw values —
+// Spearman is Pearson's regression run on ranks instead of raw values -
 // much less sensitive to a handful of large-magnitude points.
 function spearmanRegression(xs, ys){
  return linearRegression(rankArray(xs), rankArray(ys));
@@ -902,7 +902,7 @@ function jackknifeTrim(points){
 
 // Renders one table per scatter panel with a row each for Pearson
 // (OLS), Spearman (rank correlation), and the jackknife-trimmed
-// regression — same n/r/r²/slope/t/p columns for all three.
+// regression - same n/r/r²/slope/t/p columns for all three.
 function renderMethodTable(containerElId, points){
  const xs = points.map(p => p.x), ys = points.map(p => p.y);
  const pearson = linearRegression(xs, ys);
@@ -936,7 +936,7 @@ function renderMethodTable(containerElId, points){
 
 // Reads the live --ink value rather than hardcoding it, since --ink
 // flips between a light color (dark mode) and a dark color (light mode)
-// — a hardcoded dark-mode value would render the regression line
+// - a hardcoded dark-mode value would render the regression line
 // invisible against a light-mode background.
 function themeInkColor(){
  const v = getComputedStyle(document.documentElement).getPropertyValue("--ink").trim();
@@ -1082,7 +1082,7 @@ function init(){
  renderScatter("scatterSameYear", sameYearPoints, sameYearStats, "rgba(217,138,61,0.75)");
  renderMethodTable("tableSameYear", sameYearPoints);
 
- // Predictive: ERP_t vs. return_{t+1} — pairs year i's ERP (i from 1 to
+ // Predictive: ERP_t vs. return_{t+1} - pairs year i's ERP (i from 1 to
  // n-2, since i=0 has no realized return to anchor the same-year set
  // against and the last year has no "next year" yet) with year i+1's
  // realized return.

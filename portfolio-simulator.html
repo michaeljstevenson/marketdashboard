@@ -125,12 +125,12 @@ document.addEventListener("DOMContentLoaded", function(){
   // The canvas wrapper normally has a fixed pixel height (set per-page
   // in each chart's own CSS) so it renders correctly inline, but Chart.js
   // also writes an inline pixel width/height directly onto the <canvas>
-  // itself every time it resizes — including mid-transition, if resize()
+  // itself every time it resizes - including mid-transition, if resize()
   // is ever called on a guessed timer before an animated fullscreen
   // exit has actually finished. That stale inline size then overrides
   // any CSS the container reverts to, which is what "chart stuck very
   // wide after exiting fullscreen" actually was: a race, not a one-time
-  // layout bug. ResizeObserver removes the guesswork — it fires with
+  // layout bug. ResizeObserver removes the guesswork - it fires with
   // the wrapper's real, settled size every time that size changes for
   // any reason (entering fullscreen, exiting it, a plain window resize),
   // so resize() always runs against the correct final dimensions.
@@ -692,7 +692,7 @@ h1{
 <script>
 // Class-driven (not pure :hover) nav dropdowns: pure CSS :hover drops the
 // menu the instant the cursor leaves .navdrop, which includes the moment
-// it's crossing the gap between the label and the dropdown box below —
+// it's crossing the gap between the label and the dropdown box below -
 // exactly the "sometimes works, sometimes doesn't" flakiness reported.
 // A short close-delay after mouseleave gives the cursor room to travel
 // down into the dropdown without losing it.
@@ -908,7 +908,7 @@ function percentile(sortedArr, p){
 }
 
 // Cap on individual paths actually drawn on the spaghetti chart, for
-// browser performance and legibility — stats (percentiles, success rate)
+// browser performance and legibility - stats (percentiles, success rate)
 // are still computed from the full simulation count regardless.
 const MAX_SPAGHETTI_LINES = 120;
 
@@ -1018,7 +1018,7 @@ function runSimulation(){
   ...sample(failIdx, Math.min(failIdx.length, halfCap)),
  ];
 
- // Percentile lines by year — each lets you read the full distribution's
+ // Percentile lines by year - each lets you read the full distribution's
  // spread at any point along the horizon, not just at the final balance.
  const pctLines = {};
  [10, 25, 50, 75, 90].forEach(p => {
@@ -1048,7 +1048,7 @@ function renderChart(years, currentYear, paths, drawIdx, succeeded, pctLines){
 
  const GREEN = "rgba(90,157,111,0.35)";
  const RED = "rgba(192,86,79,0.35)";
- // Reads the live --ink value rather than hardcoding it — --ink flips
+ // Reads the live --ink value rather than hardcoding it - --ink flips
  // between a light color (dark mode) and a dark color (light mode), so a
  // hardcoded dark-mode value would render this line invisible in light mode.
  const MEDIAN_COLOR = getComputedStyle(document.documentElement).getPropertyValue("--ink").trim() || "#eae6da";
@@ -1098,7 +1098,7 @@ function renderChart(years, currentYear, paths, drawIdx, succeeded, pctLines){
    responsive: true,
    maintainAspectRatio: false,
    animation: false,
-   // "point"/intersect:true instead of "nearest"/intersect:false — with
+   // "point"/intersect:true instead of "nearest"/intersect:false - with
    // 100+ overlapping line datasets, nearest-mode hit-testing scans every
    // dataset on every mousemove and was hanging the browser tab. Point
    // mode only hit-tests whatever's directly under the cursor. The
@@ -1124,7 +1124,7 @@ function renderChart(years, currentYear, paths, drawIdx, succeeded, pctLines){
 }
 
 // Toggling a percentile checkbox just re-renders from the last computed
-// paths — no need to re-run the simulation itself.
+// paths - no need to re-run the simulation itself.
 document.getElementById("pctToggles").addEventListener("change", function(e){
  const label = e.target.closest("label");
  if(label) label.classList.toggle("pct-off", !e.target.checked);

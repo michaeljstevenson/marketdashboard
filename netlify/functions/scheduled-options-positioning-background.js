@@ -42,6 +42,12 @@ const USER_AGENT =
   "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0 Safari/537.36";
 
 const NOTABLE_COUNT = 15;
+// A chain only qualifies for the most-bearish/most-bullish tables if puts and
+// calls both traded in at least this many expirations. Below it, the full-chain
+// ratio comes from a handful of stray contracts (e.g. 35.8 from one expiry with
+// no calls) or reads 0 because nothing but calls traded. Aggregates and the
+// regression keep every name, since medians already shrug these off.
+const MIN_TWO_SIDED_EXPIRATIONS = 3;
 const MAX_HISTORY_WEEKS = 104;
 const MIN_SECTOR_N = 3;
 
@@ -88,7 +94,9 @@ async function fetchPutCallRatio(apiKey, symbol) {
   }
   const ratio = num(payload.put_call_ratio_full_chain);
   if (ratio === null) throw new Error(`no put_call_ratio_full_chain for ${symbol}`);
-  return { ratio, date: payload.date };
+  const byExp = Array.isArray(payload.put_call_ratio_by_expiration) ? payload.put_call_ratio_by_expiration : [];
+  const twoSided = byExp.filter((e) => { const v = num(e.value); return v !== null && v > 0; }).length;
+  return { ratio, twoSided, date: payload.date };
 }
 
 // ---- Stats helpers — same methodology as /factor-analysis, duplicated
@@ -158,7 +166,7 @@ exports.handler = async () => {
       console.error(`scheduled-options-positioning-background: relative-strength blob unavailable (${err.message}), continuing without it`);
     }
 
-    const results = new Map(); // symbol -> { ratio, date }
+    const results = new Map(); // symbol -> { ratio, twoSided, date }
 
     async function fetchInto(symbol) {
       try {
@@ -191,11 +199,11 @@ exports.handler = async () => {
     if (results.size === 0) throw new Error("Every ticker failed. Refusing to write an empty snapshot");
 
     const companies = [];
-    for (const [symbol, { ratio }] of results.entries()) {
+    for (const [symbol, { ratio, twoSided }] of results.entries()) {
       const m = metaTickers[symbol];
       if (!m || !m.sector) continue;
       const rel3M = Object.prototype.hasOwnProperty.call(relStrengthBySymbol, symbol) ? relStrengthBySymbol[symbol] : null;
-      companies.push({ symbol, name: m.name || symbol, sector: m.sector, putCallRatio: ratio, rel3M });
+      companies.push({ symbol, name: m.name || symbol, sector: m.sector, putCallRatio: ratio, rel3M, twoSidedExpirations: twoSided });
     }
     if (!companies.length) throw new Error("No tickers resolved with a put/call ratio and sector metadata");
 
@@ -239,8 +247,9 @@ exports.handler = async () => {
 
     // ---- Leaderboards ----
     const row = (c) => ({ symbol: c.symbol, name: c.name, sector: c.sector, putCallRatio: c.putCallRatio, rel3M: c.rel3M });
-    const mostBearish = [...companies].sort((a, b) => b.putCallRatio - a.putCallRatio).slice(0, NOTABLE_COUNT).map(row);
-    const mostBullish = [...companies].sort((a, b) => a.putCallRatio - b.putCallRatio).slice(0, NOTABLE_COUNT).map(row);
+    const liquid = companies.filter((c) => c.twoSidedExpirations >= MIN_TWO_SIDED_EXPIRATIONS);
+    const mostBearish = [...liquid].sort((a, b) => b.putCallRatio - a.putCallRatio).slice(0, NOTABLE_COUNT).map(row);
+    const mostBullish = [...liquid].sort((a, b) => a.putCallRatio - b.putCallRatio).slice(0, NOTABLE_COUNT).map(row);
 
     // ---- Weekly-accumulating market-median history — the endpoint is a
     // current-state snapshot, not a queryable time series, same pattern as
@@ -267,7 +276,9 @@ exports.handler = async () => {
       momentumTest,
       mostBearish,
       mostBullish,
-      companies: companies.map((c) => ({ symbol: c.symbol, name: c.name, sector: c.sector, putCallRatio: c.putCallRatio, rel3M: c.rel3M })),
+      minTwoSidedExpirations: MIN_TWO_SIDED_EXPIRATIONS,
+      thinChainCount: companies.length - liquid.length,
+      companies: companies.map((c) => ({ symbol: c.symbol, name: c.name, sector: c.sector, putCallRatio: c.putCallRatio, rel3M: c.rel3M, twoSidedExpirations: c.twoSidedExpirations })),
     };
 
     await getOptionsPositioningStore().setJSON(BLOB_KEY, payload);

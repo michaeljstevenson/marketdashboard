@@ -174,7 +174,7 @@ document.addEventListener("DOMContentLoaded", function(){
   --mono:'SF Mono','JetBrains Mono',ui-monospace,Menlo,monospace;
   --sans:'Times New Roman',Times,serif;
 
-  /* NDR-style chart palette. Deliberately the SAME in light and dark —
+  /* NDR-style chart palette. Deliberately the SAME in light and dark -
      these charts keep a constant warm-paper look as a homage to the Ned
      Davis Research print charts that inspired the page. JS reads them via
      getComputedStyle (per the site convention) rather than hardcoding. */
@@ -342,7 +342,7 @@ h1{
  margin-top:4px;
 }
 
-/* The warm-paper plot panel behind each canvas — the NDR homage. */
+/* The warm-paper plot panel behind each canvas - the NDR homage. */
 .ndr-panel{
  background:var(--ndr-plot);
  border:1px solid var(--ndr-grid);
@@ -368,7 +368,7 @@ h1{
  margin-bottom:0;
  min-width:0; /* grid items default to min-width:auto (their content's min-content
                  size), which a wide method table would otherwise force past this
-                 column's track width — same "grid blowout" the site-wide
+                 column's track width - same "grid blowout" the site-wide
                  table{min-width:600px} rule creates if left unchecked here */
 }
 
@@ -485,7 +485,7 @@ tbody td:first-child{
 
 .method-table{
  width:100%;
- min-width:0; /* overrides the site-wide table{min-width:640px} rule below —
+ min-width:0; /* overrides the site-wide table{min-width:640px} rule below -
                  inside .chart-grid's 1fr columns that min-width forces a
                  grid blowout, same bug already fixed once on
                  /margin-leverage.html */
@@ -773,7 +773,7 @@ tbody td:first-child{
 <script>
 // Class-driven (not pure :hover) nav dropdowns: pure CSS :hover drops the
 // menu the instant the cursor leaves .navdrop, which includes the moment
-// it's crossing the gap between the label and the dropdown box below —
+// it's crossing the gap between the label and the dropdown box below -
 // exactly the "sometimes works, sometimes doesn't" flakiness reported.
 // A short close-delay after mouseleave gives the cursor room to travel
 // down into the dropdown without losing it.
@@ -1058,7 +1058,7 @@ function ndrLegend(){
  };
 }
 
-// ---- Stats helpers — same methodology as /factor-analysis, duplicated
+// ---- Stats helpers - same methodology as /factor-analysis, duplicated
 // here since every page on this site is self-contained (see CLAUDE.md). ----
 
 function linearRegression(xs, ys){
@@ -1084,7 +1084,7 @@ function normalCdf(x){
  return 0.5 * (1 + erf(x / Math.SQRT2));
 }
 
-// Abramowitz & Stegun 7.1.26 approximation — accurate to ~1e-7.
+// Abramowitz & Stegun 7.1.26 approximation - accurate to ~1e-7.
 function erf(x){
  const sign = x < 0 ? -1 : 1;
  x = Math.abs(x);

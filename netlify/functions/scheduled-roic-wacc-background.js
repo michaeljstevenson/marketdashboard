@@ -20,9 +20,8 @@
 // with a graceful fallback if the blob isn't populated yet, so this job
 // never hard-depends on another one-time-snapshot job having run first:
 //   - equity-risk-premium's latest.json, for each company's Beta (used in
-//     the CAPM cost-of-equity estimate) and the risk-free rate / market
-//     median earnings-yield-based ERP (used as the CAPM market-premium
-//     assumption, rather than introducing a third, unrelated ERP source).
+//     the CAPM cost-of-equity estimate). The market premium itself is
+//     MARKET_ERP below, not that page's earnings-yield ERP.
 //   - relative-strength's latest.json, for each company's 3-month relative
 //     price return, used only in this page's "does the market actually
 //     reward value creation" regression, not in the ROIC/WACC math itself.
@@ -47,7 +46,13 @@ const QUARTERS_NEEDED = 6;
 const NOTABLE_COUNT = 15;
 const MIN_SECTOR_N = 3;
 const STATUTORY_TAX_RATE = 0.21; // US federal statutory rate, used whenever a company's own effective TTM rate isn't usable (negative/zero pretax income, a one-time tax benefit, etc.)
-const FALLBACK_MARKET_ERP = 5.0; // used only if the equity-risk-premium blob isn't populated yet
+// Damodaran's implied ERP, the same figure as the latest ERP_DATA row in
+// implied-erp.html; update the two together. The equity-risk-premium page's
+// median earnings-yield ERP was used before, but it went negative in 2026
+// (earnings yield below the 10-year), which put most companies' WACC below
+// the risk-free rate.
+const MARKET_ERP = 4.23;
+const MARKET_ERP_SOURCE = "Damodaran implied ERP (FCFE basis), start of 2026";
 const FALLBACK_DEBT_SPREAD = 1.5; // pp over the risk-free rate, used only when a company reports debt but no usable interest expense across the trailing year
 
 // Same pacing tradeoff as scheduled-margin-leverage-background.js: two
@@ -212,19 +217,17 @@ exports.handler = async () => {
     if (riskFreeRate === null) throw new Error("Could not fetch TREASURY_YIELD after 3 attempts");
     await sleep(1050);
 
-    // Optional cross-page reads — beta/market-ERP and 3-month relative
+    // Optional cross-page reads — beta and 3-month relative
     // return. Both degrade gracefully rather than failing this job.
-    let betaBySymbol = {}, marketErp = FALLBACK_MARKET_ERP;
+    let betaBySymbol = {};
+    const marketErp = MARKET_ERP;
     try {
       const erpLatest = await getErpStore().get(ERP_LATEST_KEY, { type: "json" });
       if (erpLatest && Array.isArray(erpLatest.companies)) {
         for (const c of erpLatest.companies) if (c.beta !== null && c.beta !== undefined) betaBySymbol[c.symbol] = c.beta;
-        if (erpLatest.market && erpLatest.market.medianErp !== null && erpLatest.market.medianErp !== undefined) {
-          marketErp = erpLatest.market.medianErp;
-        }
       }
     } catch (err) {
-      console.error("scheduled-roic-wacc-background: could not read equity-risk-premium blob, using beta=1 and a fallback market ERP:", err.message);
+      console.error("scheduled-roic-wacc-background: could not read equity-risk-premium blob, using beta=1:", err.message);
     }
     const hasBetaData = Object.keys(betaBySymbol).length > 0;
 
@@ -352,7 +355,7 @@ exports.handler = async () => {
       companyCount: companies.length,
       riskFreeRate: round(riskFreeRate),
       marketErpAssumption: round(marketErp),
-      marketErpSource: hasBetaData ? "equity-risk-premium page (median earnings-yield-based ERP)" : "fallback constant (equity-risk-premium blob not yet populated)",
+      marketErpSource: MARKET_ERP_SOURCE,
       medianRoic: round(median(companies.map((c) => c.roic))),
       medianWacc: round(median(companies.map((c) => c.wacc))),
       medianSpread: round(median(companies.map((c) => c.spread))),

@@ -272,11 +272,11 @@ const store = (k,val) => {
   }catch(e){ return null; }
 };
 const el = id => document.getElementById(id);
-// Clear filter keys a previous build used to persist — a stuck value there
+// Clear filter keys a previous build used to persist - a stuck value there
 // silently hides most of the board.
 try { localStorage.removeItem("ss_group"); localStorage.removeItem("ss_liveonly"); } catch (e) {}
 
-// Group and "live only" are deliberately NOT persisted — a filter left on
+// Group and "live only" are deliberately NOT persisted - a filter left on
 // from a past visit silently hides most of the board (and makes a search look
 // broken). Sort and expand are cosmetic and safe to remember.
 let state = {
@@ -512,7 +512,7 @@ function wireFeedRows(container){
   });
 }
 
-// The "and here's every shorter length this run passed through" matrix —
+// The "and here's every shorter length this run passed through" matrix -
 // median forward return at each length from the floor up to today.
 function rungHTML(c){
   if(!c.rungs || c.rungs.length < 2) return "";
@@ -660,7 +660,7 @@ el("toggleall").addEventListener("click", () => {
     say('Checking\u2026', true);
     let res;
     try { res = await fetch('/api/oddstats', { headers: { 'x-streak-password': pw }, cache: 'no-store' }); }
-    catch(e){ say('Network error \u2014 try again.'); return; }
+    catch(e){ say('Network error. Try again.'); return; }
     if(res.status === 401){ try{ sessionStorage.removeItem('ss_pw'); }catch(e){} say('Wrong password.'); pwIn.select(); return; }
     if(!res.ok){ const j = await res.json().catch(function(){ return {}; }); say(j.error || ('Error ' + res.status)); return; }
     DATA = await res.json();

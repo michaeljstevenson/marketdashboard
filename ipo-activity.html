@@ -126,12 +126,12 @@ document.addEventListener("DOMContentLoaded", function(){
   // The canvas wrapper normally has a fixed pixel height (set per-page
   // in each chart's own CSS) so it renders correctly inline, but Chart.js
   // also writes an inline pixel width/height directly onto the <canvas>
-  // itself every time it resizes — including mid-transition, if resize()
+  // itself every time it resizes - including mid-transition, if resize()
   // is ever called on a guessed timer before an animated fullscreen
   // exit has actually finished. That stale inline size then overrides
   // any CSS the container reverts to, which is what "chart stuck very
   // wide after exiting fullscreen" actually was: a race, not a one-time
-  // layout bug. ResizeObserver removes the guesswork — it fires with
+  // layout bug. ResizeObserver removes the guesswork - it fires with
   // the wrapper's real, settled size every time that size changes for
   // any reason (entering fullscreen, exiting it, a plain window resize),
   // so resize() always runs against the correct final dimensions.
@@ -781,11 +781,11 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 </div>
 <script>
 // IPO count, avg first-day return (%), and gross proceeds ($ millions) by
-// year, 1995-2025 — Jay Ritter's Table 8 (Number of Offerings, Average
+// year, 1995-2025 - Jay Ritter's Table 8 (Number of Offerings, Average
 // First-day Returns, and Gross Proceeds of IPOs), pulled directly from his
 // July 2026 "Initial Public Offerings: Updated Statistics" PDF. This is his
 // headline, conservative-definition series (includes bank/S&L conversions,
-// excludes ADRs/SPACs/unit offers/closed-end funds/REITs/small deals) —
+// excludes ADRs/SPACs/unit offers/closed-end funds/REITs/small deals) -
 // chosen for cross-year consistency over the broadest possible IPO count.
 const IPO_DATA = [
   { year: 1995, count: 465, pop: 21.3, proceeds: 27993 },
@@ -822,7 +822,7 @@ const IPO_DATA = [
 ];
 
 // S&P 500 year-end price levels (Damodaran series, same source used on the
-// Implied ERP page) — used here only to derive annual price returns, price
+// Implied ERP page) - used here only to derive annual price returns, price
 // return only (no dividends), consistent with the convention elsewhere on
 // this site.
 const SP500_LEVELS = {
@@ -843,7 +843,7 @@ function sp500Return(year){
 
 // Ordinary least squares plus a t-test on the slope (H0: slope = 0). Uses
 // the normal-distribution approximation for the p-value rather than the
-// exact Student's t — no stats library is loaded, and with the small
+// exact Student's t - no stats library is loaded, and with the small
 // degrees of freedom here that approximation is looser than on the larger
 // ERP page sample, so treat p-values as indicative, not precise.
 function linearRegression(xs, ys){

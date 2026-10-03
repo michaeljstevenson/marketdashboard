@@ -214,7 +214,7 @@ h1{
  margin-bottom:0;
  /* Grid items default to min-width:auto, which uses the content's
     intrinsic minimum width (here, the table's min-width) instead of
-    shrinking to the track — without this override a wide table pushes
+    shrinking to the track - without this override a wide table pushes
     the whole grid cell wider rather than scrolling inside table-scroll. */
  min-width:0;
 }
@@ -245,7 +245,7 @@ h1{
  margin-bottom:16px;
 }
 
-/* DATA TABLES (filterable) — transposed: categories (Mon/Tue/..., 1-31,
+/* DATA TABLES (filterable) - transposed: categories (Mon/Tue/..., 1-31,
    Jan-Dec, Q1-Q4) run across columns, stats (Avg Return, Min, Median,
    Max, % Positive, N) run down rows. A day-of-month table has 31
    category columns, which is exactly the case table-scroll's horizontal
@@ -803,14 +803,14 @@ function renderStats(data){
 
 // One entry per table: current rows (replaced wholesale on every
 // range-switch), which row labels are excluded, and the active sort. Kept
-// outside renderDataTable so the header click handlers — wired once per
-// table, not re-wired on every re-render — always act on the latest data
+// outside renderDataTable so the header click handlers - wired once per
+// table, not re-wired on every re-render - always act on the latest data
 // instead of closing over whatever `rows` array was current when they
 // were first attached.
 const TABLE_STATE = {};
 
 // Which shared histogram bin edges (see histogramEdges in the payload)
-// apply to each table — dow and dom are both grouping the same underlying
+// apply to each table - dow and dom are both grouping the same underlying
 // daily returns, just by a different calendar key, so they share "daily".
 const HIST_EDGE_KEY = { dowTable: "daily", domTable: "daily", monthTable: "month", quarterTable: "quarter" };
 let HIST_EDGES = {};
@@ -840,8 +840,8 @@ function renderDataTable(tableId, rows, digits, nLabel){
  renderTable(tableId);
 }
 
-// Tables are transposed — day/month/quarter/year categories run across
-// columns, stats run down rows — so the whole table is rebuilt from a
+// Tables are transposed - day/month/quarter/year categories run across
+// columns, stats run down rows - so the whole table is rebuilt from a
 // template string on every render (like renderHeatmap) rather than
 // patched in place: with columns as the filterable/sortable axis now,
 // there's no stable per-row DOM to reuse the way the old row-per-category
@@ -928,13 +928,13 @@ function renderTable(tableId){
 }
 
 // Combines the histograms and per-row mean/stdev of every currently
-// included (non-excluded) row into one distribution — respecting
-// whatever filtering is active on the table — and draws it as a plain
+// included (non-excluded) row into one distribution - respecting
+// whatever filtering is active on the table - and draws it as a plain
 // inline SVG bar chart with a fitted normal curve overlay. No charting
 // library: this is the only chart-shaped thing left on the page after
 // the stat tables replaced Chart.js, so pulling the whole library back
 // in for one histogram wasn't worth it.
-// Lanczos approximation of ln(Γ(x)) — standard compact form (g=7, 9
+// Lanczos approximation of ln(Γ(x)) - standard compact form (g=7, 9
 // coefficients). Working in log space keeps Γ((ν+1)/2)/Γ(ν/2) well
 // behaved for any ν instead of overflowing for larger degrees of freedom.
 const LANCZOS_G = 7;
@@ -953,7 +953,7 @@ function logGamma(x){
 }
 
 // Student's t pdf, parameterized by degrees of freedom (nu), location
-// (mean) and scale (s, not the same as stdev — see fitStudentT).
+// (mean) and scale (s, not the same as stdev - see fitStudentT).
 function studentTPdf(x, nu, mean, s){
  const z = (x - mean) / s;
  const logC = logGamma((nu + 1) / 2) - logGamma(nu / 2) - 0.5 * Math.log(nu * Math.PI) - Math.log(s);
@@ -962,7 +962,7 @@ function studentTPdf(x, nu, mean, s){
 
 // Method-of-moments fit: a t-distribution's excess kurtosis is exactly
 // 6/(nu-4) for nu>4, so nu = 4 + 6/excessKurtosis. Real daily/monthly
-// returns are strongly leptokurtic (fat-tailed) — far more so than a
+// returns are strongly leptokurtic (fat-tailed) - far more so than a
 // normal curve, which is why a same-mean-and-stdev normal reference
 // understates real tail risk. Clamped to keep the curve numerically sane
 // at the extremes: very low nu (near 2) has such heavy tails the scale
@@ -984,7 +984,7 @@ function renderDistribution(tableId){
  const nBins = edges.length - 1;
  const counts = new Array(nBins).fill(0);
  let totalN = 0;
- // Raw power sums (Σx..Σx⁴) add linearly across rows — summing these
+ // Raw power sums (Σx..Σx⁴) add linearly across rows - summing these
  // over just the included rows gives EXACT combined mean/variance/
  // kurtosis for whatever subset is currently filtered in, not an
  // approximation, and without needing per-day values client-side.
@@ -1020,7 +1020,7 @@ function renderDistribution(tableId){
  const maxCount = Math.max(1, ...counts);
  const upColor = themeUpColor(), downColor = themeDownColor(), inkColor = themeInkColor();
 
- // Log-scaled bar heights, not linear — the whole point of this view is
+ // Log-scaled bar heights, not linear - the whole point of this view is
  // the tails, and a linear count axis buries them: a bin with 1-2
  // observations next to a central bin with several thousand renders as a
  // sliver a fraction of a pixel tall. log1p keeps zero-count bins at

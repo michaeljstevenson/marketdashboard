@@ -174,7 +174,7 @@ document.addEventListener("DOMContentLoaded", function(){
   --mono:'SF Mono','JetBrains Mono',ui-monospace,Menlo,monospace;
   --sans:'Times New Roman',Times,serif;
 
-  /* NDR-style chart palette. Deliberately the SAME in light and dark —
+  /* NDR-style chart palette. Deliberately the SAME in light and dark -
      these charts keep a constant warm-paper look as a homage to the Ned
      Davis Research print charts that inspired the page. JS reads them via
      getComputedStyle (per the site convention) rather than hardcoding. */
@@ -346,7 +346,7 @@ h1{
  height:380px;
 }
 
-/* The warm-paper plot panel behind each canvas — the NDR homage. */
+/* The warm-paper plot panel behind each canvas - the NDR homage. */
 .ndr-panel{
  background:var(--ndr-plot);
  border:1px solid var(--ndr-grid);
@@ -760,7 +760,7 @@ tbody td:nth-child(2){
 <script>
 // Class-driven (not pure :hover) nav dropdowns: pure CSS :hover drops the
 // menu the instant the cursor leaves .navdrop, which includes the moment
-// it's crossing the gap between the label and the dropdown box below —
+// it's crossing the gap between the label and the dropdown box below -
 // exactly the "sometimes works, sometimes doesn't" flakiness reported.
 // A short close-delay after mouseleave gives the cursor room to travel
 // down into the dropdown without losing it.
@@ -1008,7 +1008,7 @@ function themeFearColor(){
  return v || "#6f8fac";
 }
 
-// ---- Stats helpers — same methodology as /factor-analysis, duplicated
+// ---- Stats helpers - same methodology as /factor-analysis, duplicated
 // here since every page on this site is self-contained (see CLAUDE.md). ----
 function linearRegression(xs, ys){
  const n = xs.length;
@@ -1184,7 +1184,7 @@ function renderPersistence(){
      },
     },
    },
-   // Scatter's x-axis is numeric, not category — override ndrXScale's type.
+   // Scatter's x-axis is numeric, not category - override ndrXScale's type.
    scales: {
     x: ndrXScale({ type: "linear", title: "3-month relative-return rank (1 = strongest)" }),
     y: ndrYScale({ title: "Forward relative return to next snapshot (%)" }),

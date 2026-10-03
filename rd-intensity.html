@@ -152,7 +152,7 @@ document.addEventListener("DOMContentLoaded", function(){
 </script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>R&amp;D Intensity — Michael J. Stevenson</title>
+<title>R&amp;D Intensity | Michael J. Stevenson</title>
 
 <style>
 
@@ -173,7 +173,7 @@ document.addEventListener("DOMContentLoaded", function(){
   --mono:'SF Mono','JetBrains Mono',ui-monospace,Menlo,monospace;
   --sans:'Times New Roman',Times,serif;
 
-  /* NDR-style chart palette. Deliberately the SAME in light and dark —
+  /* NDR-style chart palette. Deliberately the SAME in light and dark -
      these charts keep a constant warm-paper look as a homage to the Ned
      Davis Research print charts that inspired /concentration. JS reads
      them via getComputedStyle (per the site convention) rather than
@@ -346,7 +346,7 @@ h1{
  height:380px;
 }
 
-/* The warm-paper plot panel behind each canvas — the NDR homage
+/* The warm-paper plot panel behind each canvas - the NDR homage
    (matches /concentration). */
 .ndr-panel{
  background:var(--ndr-plot);
@@ -367,7 +367,7 @@ h1{
  margin-bottom:0;
  min-width:0; /* grid items default to min-width:auto (their content's min-content
                  size), which a wide method table would otherwise force past this
-                 column's track width — same "grid blowout" the site-wide
+                 column's track width - same "grid blowout" the site-wide
                  table{min-width:600px} rule creates if left unchecked here */
 }
 
@@ -489,7 +489,7 @@ tbody td:nth-child(2){
 
 .method-table{
  width:100%;
- min-width:0; /* overrides the site-wide table{min-width:600px} rule below — two of these
+ min-width:0; /* overrides the site-wide table{min-width:600px} rule below - two of these
                  side by side in .chart-grid would otherwise force the whole page wider
                  than its container even though a 7-column method table never needs 600px */
  border-collapse:collapse;
@@ -800,7 +800,7 @@ tbody td:nth-child(2){
 <script>
 // Class-driven (not pure :hover) nav dropdowns: pure CSS :hover drops the
 // menu the instant the cursor leaves .navdrop, which includes the moment
-// it's crossing the gap between the label and the dropdown box below —
+// it's crossing the gap between the label and the dropdown box below -
 // exactly the "sometimes works, sometimes doesn't" flakiness reported.
 // A short close-delay after mouseleave gives the cursor room to travel
 // down into the dropdown without losing it.
@@ -848,22 +848,22 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <div class="stat-grid">
 <div class="stat-card">
 <div class="stat-label">Companies Reporting R&amp;D</div>
-<div class="stat-value" id="statCompanies" style="font-size:20px;">—</div>
+<div class="stat-value" id="statCompanies" style="font-size:20px;">…</div>
 <div class="stat-note" id="statCompaniesNote">Of full S&amp;P 500</div>
 </div>
 <div class="stat-card">
 <div class="stat-label">Median R&amp;D Intensity</div>
-<div class="stat-value" id="statIntensity">—</div>
+<div class="stat-value" id="statIntensity">…</div>
 <div class="stat-note">R&amp;D &divide; revenue, trailing twelve months, R&amp;D reporters only</div>
 </div>
 <div class="stat-card">
 <div class="stat-label">Median Revenue Growth</div>
-<div class="stat-value" id="statGrowth">—</div>
+<div class="stat-value" id="statGrowth">…</div>
 <div class="stat-note">Year-over-year, trailing twelve months, R&amp;D reporters only</div>
 </div>
 <div class="stat-card">
 <div class="stat-label">Most R&amp;D-Intensive Sector</div>
-<div class="stat-value" id="statTopSector" style="font-size:18px;">—</div>
+<div class="stat-value" id="statTopSector" style="font-size:18px;">…</div>
 <div class="stat-note" id="statTopSectorNote">Median R&amp;D as % of revenue</div>
 </div>
 </div>
@@ -872,7 +872,7 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <div class="chart-box-header">
 <div>
 <h2>R&amp;D intensity by sector</h2>
-<div class="chart-subhead">Median R&amp;D spend as a % of trailing-twelve-month revenue, by SPDR sector — sectors with too few R&amp;D-reporting constituents are omitted</div>
+<div class="chart-subhead">Median R&amp;D spend as a % of trailing-twelve-month revenue, by SPDR sector. Sectors with too few R&amp;D-reporting constituents are omitted</div>
 </div>
 </div>
 <div class="ndr-panel">
@@ -880,7 +880,7 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <canvas id="sectorChart"></canvas>
 </div>
 </div>
-<div class="method-note">Most Financials, Real Estate, Utilities, and many retailers don't break out a research &amp; development line at all — they're excluded from this page entirely rather than treated as zero R&amp;D spenders. See the methodology below.</div>
+<div class="method-note">Most Financials, Real Estate, Utilities, and many retailers don't break out a research &amp; development line at all, so they're excluded from this page entirely rather than treated as zero R&amp;D spenders. See the methodology below.</div>
 </div>
 
 <div class="chart-box">
@@ -1007,12 +1007,12 @@ let SORT_KEY = "rdIntensity";
 let SORT_DIR = -1;
 
 function fmtPct(v, digits){
- if(v === null || v === undefined || isNaN(v)) return "—";
+ if(v === null || v === undefined || isNaN(v)) return "n/a";
  digits = digits === undefined ? 1 : digits;
  return v.toFixed(digits) + "%";
 }
 function fmtSignedPct(v, digits){
- if(v === null || v === undefined || isNaN(v)) return "—";
+ if(v === null || v === undefined || isNaN(v)) return "n/a";
  digits = digits === undefined ? 1 : digits;
  return (v >= 0 ? "+" : "") + v.toFixed(digits) + "%";
 }
@@ -1055,7 +1055,7 @@ function ndrYScale(opts){
  };
 }
 
-// ---- Stats helpers — same methodology as /factor-analysis, duplicated
+// ---- Stats helpers - same methodology as /factor-analysis, duplicated
 // here since every page on this site is self-contained (see CLAUDE.md). ----
 function linearRegression(xs, ys){
  const n = xs.length;
@@ -1130,7 +1130,7 @@ async function init(){
   document.getElementById("updated").textContent = "As of " + new Date(data.generated_at_utc).toLocaleString();
 
   if(data.loadedCount < data.universeSize){
-   showWarning("Only " + data.loadedCount + " of " + data.universeSize + " S&P 500 constituents loaded this run — some data may be temporarily unavailable.");
+   showWarning("Only " + data.loadedCount + " of " + data.universeSize + " S&P 500 constituents loaded this run. Some data may be temporarily unavailable.");
   }
   if(!data.hasRel3M){
    showWarning("The Relative Strength Leaders/Laggards page's data hasn't populated yet, so the R&D-vs-relative-return test below can't run.");
@@ -1264,7 +1264,7 @@ function renderIntensityGrowthScatter(){
  });
 
  document.getElementById("intensityGrowthMethodTable").innerHTML = methodTableHtml(pearson, spear,
-  "Slope is revenue-growth pp per 1pp of R&D intensity. n=" + pearson.n + " companies. A contemporaneous association, not a forward-predictive test — R&D spending typically takes years to show up in revenue.");
+  "Slope is revenue-growth pp per 1pp of R&D intensity. n=" + pearson.n + " companies. A contemporaneous association, not a forward-predictive test: R&D spending typically takes years to show up in revenue.");
 }
 
 function renderIntensityRel3mScatter(){
@@ -1317,14 +1317,14 @@ function renderLeaderTable(rows, tbodyId, kind){
   if(kind === "spenders"){
    return `<tr>
     <td><span class="sector-name">${r.symbol}</span></td>
-    <td><span class="sector-ticker">${r.sector || "—"}</span></td>
+    <td><span class="sector-ticker">${r.sector || "n/a"}</span></td>
     <td>${fmtPct(r.rdIntensity)}</td>
     <td class="${r.revenueGrowthYoY >= 0 ? "growth-pos" : "growth-neg"}">${fmtSignedPct(r.revenueGrowthYoY)}</td>
    </tr>`;
   }
   return `<tr>
    <td><span class="sector-name">${r.symbol}</span></td>
-   <td><span class="sector-ticker">${r.sector || "—"}</span></td>
+   <td><span class="sector-ticker">${r.sector || "n/a"}</span></td>
    <td class="${r.revenueGrowthYoY >= 0 ? "growth-pos" : "growth-neg"}">${fmtSignedPct(r.revenueGrowthYoY)}</td>
    <td>${fmtPct(r.rdIntensity)}</td>
   </tr>`;
@@ -1353,7 +1353,7 @@ function renderTable(){
  const tbody = document.getElementById("tableBody");
  tbody.innerHTML = rows.map(r => `<tr>
   <td><span class="sector-name">${r.symbol}</span></td>
-  <td><span class="sector-ticker">${r.sector || "—"}</span></td>
+  <td><span class="sector-ticker">${r.sector || "n/a"}</span></td>
   <td>${fmtPct(r.rdIntensity)}</td>
   <td class="${r.revenueGrowthYoY >= 0 ? "growth-pos" : "growth-neg"}">${fmtSignedPct(r.revenueGrowthYoY)}</td>
  </tr>`).join("");

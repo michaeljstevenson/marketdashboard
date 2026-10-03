@@ -126,12 +126,12 @@ document.addEventListener("DOMContentLoaded", function(){
   // The canvas wrapper normally has a fixed pixel height (set per-page
   // in each chart's own CSS) so it renders correctly inline, but Chart.js
   // also writes an inline pixel width/height directly onto the <canvas>
-  // itself every time it resizes — including mid-transition, if resize()
+  // itself every time it resizes - including mid-transition, if resize()
   // is ever called on a guessed timer before an animated fullscreen
   // exit has actually finished. That stale inline size then overrides
   // any CSS the container reverts to, which is what "chart stuck very
   // wide after exiting fullscreen" actually was: a race, not a one-time
-  // layout bug. ResizeObserver removes the guesswork — it fires with
+  // layout bug. ResizeObserver removes the guesswork - it fires with
   // the wrapper's real, settled size every time that size changes for
   // any reason (entering fullscreen, exiting it, a plain window resize),
   // so resize() always runs against the correct final dimensions.
@@ -784,7 +784,7 @@ let adChart = null;
 function renderAdChart(rangeKey){
  const rows = rowsInRange(rangeKey);
  // Daily net advances-declines, not the running cumulative total (adLine
- // is still what the "A-D Line" stat card up top shows) — each row
+ // is still what the "A-D Line" stat card up top shows) - each row
  // already carries the raw advances/declines counts the cumulative sum
  // was built from. S&P 500 alongside it is daily % change for the same
  // reason: a like-for-like daily reading, not a price level plotted next
@@ -841,7 +841,7 @@ let adCumChart = null;
 function renderAdCumChart(rangeKey){
  const rows = rowsInRange(rangeKey);
  // Indexed to 100 at the start of whichever range is selected, not a
- // straight ratio (value/base*100) — the A-D line crosses zero in its
+ // straight ratio (value/base*100) - the A-D line crosses zero in its
  // early history (see 1999 in the raw data), so a ratio index would
  // divide by ~0 and blow up. Rebasing additively (same units as the
  // underlying net-advances count, just shifted so the range's first
@@ -1000,7 +1000,7 @@ async function init(){
   showError("Couldn't load market breadth data: " + err.message);
  }
 
- // Independent of the breadth fetch above — refreshed hourly ("1D") and
+ // Independent of the breadth fetch above - refreshed hourly ("1D") and
  // daily ("5D"/"MTD"/"QTD"/"YTD"/"5Y") by their own scheduled jobs, so a
  // failure here (or it not having run yet) shouldn't block the rest of
  // the page. Falls back to a static seed snapshot (built from downloaded
@@ -1033,7 +1033,7 @@ async function init(){
 
  if(dayChangeData) initDayChange(dayChangeData, dayChangeIsLive);
  // No live data and no seed to fall back on (e.g. first deploy before
- // either has run) — hide the box rather than leave it showing "—"
+ // either has run) - hide the box rather than leave it showing "-"
  // placeholders forever. The box is visible by default in the markup
  // (not toggled on after a delayed fetch) specifically so the rest of
  // the page doesn't visibly reflow/flash once this section resolves.
@@ -1096,7 +1096,7 @@ function renderDayChangeRange(data, rangeKey, isLive){
  // into one bar the way it would using the same tight buckets built for
  // a single day's moves. Boundaries below are sized to each range's
  // actual 1st-99th percentile spread in the S&P 500 (checked against the
- // Stooq seed data), not guessed — the initial version was far too
+ // Stooq seed data), not guessed - the initial version was far too
  // narrow at every horizon past 1D, dumping the bulk of stocks into a
  // single overflow bucket instead of showing their real spread. The
  // Infinity catch-alls still exist beyond that for genuine outliers
@@ -1109,7 +1109,7 @@ function renderDayChangeRange(data, rangeKey, isLive){
   return edges;
  };
 
- // 3Y and 5Y are annualized (CAGR), not cumulative — their moves land in
+ // 3Y and 5Y are annualized (CAGR), not cumulative - their moves land in
  // a much narrower band than 1Y's raw total return, so they get their
  // own tight buckets sized to that annualized spread rather than
  // inheriting anything close to 1Y's scale.

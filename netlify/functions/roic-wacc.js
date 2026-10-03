@@ -11,7 +11,7 @@ exports.handler = async () => {
     const payload = await store.get(BLOB_KEY, { type: "json" });
 
     if (!payload) {
-      throw new Error("ROIC vs. WACC data not yet populated — scheduled-roic-wacc-background hasn't run yet");
+      throw new Error("ROIC vs. WACC data not yet populated: scheduled-roic-wacc-background hasn't run yet");
     }
 
     return {

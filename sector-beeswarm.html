@@ -644,7 +644,7 @@ function buildRScale(){
 
 // Daily payload is one session at 15-min resolution:
 //   { date, times:["09:30",..], spy:[ret per mark], stocks:[{t,name,sector,mcap,r:[ret per mark]}] }
-// A "frame" is one mark index i — playing sweeps the bubbles through the
+// A "frame" is one mark index i - playing sweeps the bubbles through the
 // session the way they moved on the day.
 function fmtClock(hhmm){
  let [h, m] = hhmm.split(":").map(Number);
@@ -654,7 +654,7 @@ function fmtClock(hhmm){
 }
 // Annual payload is columnar: {dates, spy:[ytd%], series:{ETF:[ytd%]}, etf:{sector:ETF},
 // years:[{year,ytd,startIndex,endIndex,yLo,yHi,weights}]}. A "frame" is one
-// trading-day index i — the bubbles are each ETF's cumulative return so far
+// trading-day index i - the bubbles are each ETF's cumulative return so far
 // that calendar year, so scrubbing/playing drifts them fluidly through the
 // year instead of snapping between year-end dots.
 function annualYearBlock(i){
@@ -700,7 +700,7 @@ function clampForMode(v, y){
 }
 
 // Layer groups + a cache key so the axis/grid/legend (the expensive joins)
-// only rebuild when the geometry actually changes — not on every one of the
+// only rebuild when the geometry actually changes - not on every one of the
 // ~1600 frames an annual play sweep renders.
 let layers = null;
 let lastStaticKey = null;
@@ -767,7 +767,7 @@ function updateSpyLine(y, spyReturn, T){
  (T || (s => s))(tag).attr("y", spyY - 9);
 }
 
-// ANNUAL render: one lollipop per sector — a stem from 0% to the return, a dot
+// ANNUAL render: one lollipop per sector - a stem from 0% to the return, a dot
 // sized by index weight, and the return printed beyond the dot.
 function render(frame, animate){
  const L = ensureLayers();
@@ -833,7 +833,7 @@ function onLeave(){ tooltip.style("opacity", 0); }
 
 /* ----- framing / playback ------------------------------------------------ */
 
-// Annual only — daily interactions go through the daily engine below.
+// Annual only - daily interactions go through the daily engine below.
 function setFrame(i, animate){
  if(mode !== "annual" || !frames.length) return;
  frameIndex = Math.max(0, Math.min(frames.length - 1, Math.round(i)));
@@ -874,7 +874,7 @@ function stopDailyEngine(){
 
 // Precompute a converged beeswarm layout for every 15-minute mark (each
 // warm-started from the previous mark, so a bubble never leaps across its
-// column between marks), then playback is a pure position lerp — accurate
+// column between marks), then playback is a pure position lerp - accurate
 // heights and 60fps-smooth, with no live sim fighting the collision force.
 function startDailySession(p){
  stopDailyEngine();

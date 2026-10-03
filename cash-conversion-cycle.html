@@ -152,7 +152,7 @@ document.addEventListener("DOMContentLoaded", function(){
 </script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Cash Conversion Cycle — Michael J. Stevenson</title>
+<title>Cash Conversion Cycle | Michael J. Stevenson</title>
 
 <style>
 
@@ -173,7 +173,7 @@ document.addEventListener("DOMContentLoaded", function(){
   --mono:'SF Mono','JetBrains Mono',ui-monospace,Menlo,monospace;
   --sans:'Times New Roman',Times,serif;
 
-  /* NDR-style chart palette. Deliberately the SAME in light and dark —
+  /* NDR-style chart palette. Deliberately the SAME in light and dark -
      these charts keep a constant warm-paper look as a homage to the Ned
      Davis Research print charts that inspired /concentration. JS reads
      them via getComputedStyle (per the site convention) rather than
@@ -346,7 +346,7 @@ h1{
  height:380px;
 }
 
-/* The warm-paper plot panel behind each canvas — the NDR homage
+/* The warm-paper plot panel behind each canvas - the NDR homage
    (matches /concentration). */
 .ndr-panel{
  background:var(--ndr-plot);
@@ -367,7 +367,7 @@ h1{
  margin-bottom:0;
  min-width:0; /* grid items default to min-width:auto (their content's min-content
                  size), which a wide method table would otherwise force past this
-                 column's track width — same "grid blowout" the site-wide
+                 column's track width - same "grid blowout" the site-wide
                  table{min-width:600px} rule creates if left unchecked here */
 }
 
@@ -489,7 +489,7 @@ tbody td:nth-child(2){
 
 .method-table{
  width:100%;
- min-width:0; /* overrides the site-wide table{min-width:600px} rule below — two of these
+ min-width:0; /* overrides the site-wide table{min-width:600px} rule below - two of these
                  side by side in .chart-grid would otherwise force the whole page wider
                  than its container even though a 7-column method table never needs 600px */
  border-collapse:collapse;
@@ -800,7 +800,7 @@ tbody td:nth-child(2){
 <script>
 // Class-driven (not pure :hover) nav dropdowns: pure CSS :hover drops the
 // menu the instant the cursor leaves .navdrop, which includes the moment
-// it's crossing the gap between the label and the dropdown box below —
+// it's crossing the gap between the label and the dropdown box below -
 // exactly the "sometimes works, sometimes doesn't" flakiness reported.
 // A short close-delay after mouseleave gives the cursor room to travel
 // down into the dropdown without losing it.
@@ -840,7 +840,7 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <div class="header">
 <div>
 <h1>Cash Conversion Cycle</h1>
-<div class="subtitle">How many days of cash the average S&amp;P 500 company has tied up in its own operating cycle — collecting from customers, holding inventory, and paying suppliers — and which sectors and companies run the tightest (or loosest) working-capital operations.</div>
+<div class="subtitle">How many days of cash the average S&amp;P 500 company has tied up in its own operating cycle (collecting from customers, holding inventory, and paying suppliers), and which sectors and companies run the tightest (or loosest) working-capital operations.</div>
 </div>
 <div class="updated" id="updated">Loading...</div>
 </div>
@@ -848,22 +848,22 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <div class="stat-grid">
 <div class="stat-card">
 <div class="stat-label">Companies Loaded</div>
-<div class="stat-value" id="statCompanies" style="font-size:20px;">—</div>
+<div class="stat-value" id="statCompanies" style="font-size:20px;">…</div>
 <div class="stat-note" id="statCompaniesNote">Of full S&amp;P 500</div>
 </div>
 <div class="stat-card">
 <div class="stat-label">Median Cash Conversion Cycle</div>
-<div class="stat-value" id="statCcc">—</div>
+<div class="stat-value" id="statCcc">…</div>
 <div class="stat-note">Days, market-wide</div>
 </div>
 <div class="stat-card">
 <div class="stat-label">Median DSO / DIO / DPO</div>
-<div class="stat-value" id="statComponents" style="font-size:18px;">—</div>
+<div class="stat-value" id="statComponents" style="font-size:18px;">…</div>
 <div class="stat-note">Days sales / inventory outstanding, days payable outstanding</div>
 </div>
 <div class="stat-card">
 <div class="stat-label">Negative-CCC Companies</div>
-<div class="stat-value" id="statNegPct">—</div>
+<div class="stat-value" id="statNegPct">…</div>
 <div class="stat-note">Get paid before they pay their own suppliers</div>
 </div>
 </div>
@@ -880,7 +880,7 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <canvas id="sectorChart"></canvas>
 </div>
 </div>
-<div class="method-note">Financials, Real Estate, and Utilities are excluded from this page entirely — "inventory" and "cost of revenue" aren't meaningful concepts for a bank, a REIT, or a power utility, so those sectors rarely have all three components available. See the methodology below.</div>
+<div class="method-note">Financials, Real Estate, and Utilities are excluded from this page entirely: "inventory" and "cost of revenue" aren't meaningful concepts for a bank, a REIT, or a power utility. See the methodology below.</div>
 </div>
 
 <div class="chart-box">
@@ -932,7 +932,7 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <div class="table-box">
 <div class="table-box-header">
 <h2>Fastest (most efficient)</h2>
-<div class="chart-subhead">Lowest — or most negative — cash conversion cycle</div>
+<div class="chart-subhead">Lowest (or most negative) cash conversion cycle</div>
 </div>
 <table id="fastestTable">
 <thead><tr><th>Symbol</th><th>Sector</th><th>DSO</th><th>DIO</th><th>DPO</th><th>CCC</th></tr></thead>
@@ -954,7 +954,7 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <div class="table-box">
 <div class="table-box-header">
 <h2>All companies with usable statement history</h2>
-<div class="chart-subhead">Trailing-twelve-month working-capital days, full S&amp;P 500 (Financials, Real Estate, and Utilities largely excluded — see methodology)</div>
+<div class="chart-subhead">Trailing-twelve-month working-capital days, full S&amp;P 500 (Financials, Real Estate, and Utilities excluded; see methodology)</div>
 </div>
 <details class="full-list-details">
 <summary class="full-list-summary">Show full list</summary>
@@ -979,7 +979,7 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <div class="explainer">
 <h2>Methodology</h2>
 <p>Days Sales Outstanding (DSO) = receivables ÷ trailing-12-month revenue × 365. Days Inventory Outstanding (DIO) = inventory ÷ trailing-12-month cost of revenue × 365. Days Payable Outstanding (DPO) = payables ÷ trailing-12-month cost of revenue × 365. The Cash Conversion Cycle (CCC) = DSO + DIO − DPO. Roughly, it's the number of days between paying for inputs and collecting cash from the sale, after accounting for how long the company takes to pay its own suppliers. A negative CCC (common for large retailers, restaurants and subscription software) means the company collects from customers before it pays its suppliers, so its day-to-day operations effectively fund themselves.</p>
-<p>A company is only included if all three pieces (DSO, DIO and DPO) can be calculated. That leaves out most banks, REITs and utilities, since "inventory" and "cost of revenue" don't really mean anything for those businesses. The page leans toward sectors that actually make and sell goods or services, which is a limit of the metric itself.</p>
+<p>A company is only included if all three pieces (DSO, DIO and DPO) can be calculated. Banks, REITs and utilities are left out entirely, since "inventory" and "cost of revenue" don't really mean anything for those businesses. The page leans toward sectors that actually make and sell goods or services, which is a limit of the metric itself.</p>
 <p>Two regressions are run across companies. DSO vs. DPO asks whether companies that are slow to collect from customers are also slow to pay their suppliers. CCC vs. ROIC asks whether tighter working-capital management shows up as a higher return on invested capital. Both use Pearson (linear) and Spearman (rank) correlation.</p>
 
 
@@ -1009,17 +1009,17 @@ let SORT_KEY = "ccc";
 let SORT_DIR = 1;
 
 function fmtDays(v, digits){
- if(v === null || v === undefined || isNaN(v)) return "—";
+ if(v === null || v === undefined || isNaN(v)) return "n/a";
  digits = digits === undefined ? 1 : digits;
  return (v >= 0 ? "+" : "") + v.toFixed(digits) + "d";
 }
 function fmtPlainDays(v, digits){
- if(v === null || v === undefined || isNaN(v)) return "—";
+ if(v === null || v === undefined || isNaN(v)) return "n/a";
  digits = digits === undefined ? 1 : digits;
  return v.toFixed(digits) + "d";
 }
 function fmtPct(v, digits){
- if(v === null || v === undefined || isNaN(v)) return "—";
+ if(v === null || v === undefined || isNaN(v)) return "n/a";
  digits = digits === undefined ? 1 : digits;
  return v.toFixed(digits) + "%";
 }
@@ -1062,7 +1062,7 @@ function ndrYScale(opts){
  };
 }
 
-// ---- Stats helpers — same methodology as /factor-analysis, duplicated
+// ---- Stats helpers - same methodology as /factor-analysis, duplicated
 // here since every page on this site is self-contained (see CLAUDE.md). ----
 function linearRegression(xs, ys){
  const n = xs.length;
@@ -1137,7 +1137,7 @@ async function init(){
   document.getElementById("updated").textContent = "As of " + new Date(data.generated_at_utc).toLocaleString();
 
   if(data.loadedCount < data.universeSize){
-   showWarning("Only " + data.loadedCount + " of " + data.universeSize + " S&P 500 constituents loaded this run — some data may be temporarily unavailable.");
+   showWarning("Only " + data.loadedCount + " of " + data.universeSize + " S&P 500 constituents loaded this run. Some data may be temporarily unavailable.");
   }
   if(!data.hasRoicData){
    showWarning("The ROIC vs. Cost of Capital page's data hasn't populated yet, so the CCC-vs-ROIC test below can't run.");
@@ -1321,7 +1321,7 @@ function renderLeaderTable(rows, tbodyId){
  }
  tbody.innerHTML = rows.map(r => `<tr>
   <td><span class="sector-name">${r.symbol}</span></td>
-  <td><span class="sector-ticker">${r.sector || "—"}</span></td>
+  <td><span class="sector-ticker">${r.sector || "n/a"}</span></td>
   <td>${fmtPlainDays(r.dso)}</td>
   <td>${fmtPlainDays(r.dio)}</td>
   <td>${fmtPlainDays(r.dpo)}</td>
@@ -1351,7 +1351,7 @@ function renderTable(){
  const tbody = document.getElementById("tableBody");
  tbody.innerHTML = rows.map(r => `<tr>
   <td><span class="sector-name">${r.symbol}</span></td>
-  <td><span class="sector-ticker">${r.sector || "—"}</span></td>
+  <td><span class="sector-ticker">${r.sector || "n/a"}</span></td>
   <td>${fmtPlainDays(r.dso)}</td>
   <td>${fmtPlainDays(r.dio)}</td>
   <td>${fmtPlainDays(r.dpo)}</td>

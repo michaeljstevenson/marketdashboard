@@ -700,7 +700,7 @@ table.datatable tbody td:first-child{
 <script>
 // Class-driven (not pure :hover) nav dropdowns: pure CSS :hover drops the
 // menu the instant the cursor leaves .navdrop, which includes the moment
-// it's crossing the gap between the label and the dropdown box below —
+// it's crossing the gap between the label and the dropdown box below -
 // exactly the "sometimes works, sometimes doesn't" flakiness reported.
 // A short close-delay after mouseleave gives the cursor room to travel
 // down into the dropdown without losing it.
@@ -868,7 +868,7 @@ function themeFearColor(){
  return v || "#6f8fac";
 }
 
-// ---- Stats helpers — same methodology as /factor-analysis, duplicated
+// ---- Stats helpers - same methodology as /factor-analysis, duplicated
 // here since every page on this site is self-contained (see CLAUDE.md). ----
 function linearRegression(xs, ys){
  const n = xs.length;
@@ -1000,7 +1000,7 @@ function renderRrgChart(sectorSeries){
    ctx.textBaseline = "middle";
    meta.data.forEach((el, i) => {
     // Flip the label to the point's left, right-aligned, when there isn't
-    // room to the right — otherwise a point near the chart's right edge
+    // room to the right - otherwise a point near the chart's right edge
     // (a strong "Leading" sector, the most interesting case) draws its
     // label straight off the canvas.
     const label = points[i].name;

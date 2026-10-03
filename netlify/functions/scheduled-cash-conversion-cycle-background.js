@@ -24,6 +24,9 @@ const { getBeeswarmStore, META_KEY } = require("./beeswarm-blob-store");
 const { getRoicWaccStore, BLOB_KEY: ROIC_BLOB_KEY } = require("./roic-wacc-blob-store");
 const { BREADTH_CONSTITUENTS } = require("./breadth-constituents");
 const { SECTOR_ORDER } = require("./beeswarm-sectors");
+// Dropped outright: relying on missing inventory lines alone let 31 utilities
+// and exchanges like ICE (11,960 "inventory days") through.
+const EXCLUDED_SECTORS = new Set(["Financials", "Real Estate", "Utilities"]);
 const { recordAvCall } = require("./av-call-counter");
 
 const ALPHA_VANTAGE_URL = "https://www.alphavantage.co/query";
@@ -100,11 +103,9 @@ async function fetchStatement(apiKey, fn, symbol) {
 // working-capital snapshot for one company. Returns null when there isn't
 // a clean 4-consecutive-quarter TTM window with both statements present,
 // or when any of the three day-count components (DSO/DIO/DPO) can't be
-// computed — which, deliberately, excludes most Financials, Real Estate
-// and Utilities names entirely, since "inventory" and "cost of revenue"
-// aren't meaningful concepts for a bank, a REIT, or a power utility. That
-// exclusion is a real scope limitation of this page, not a bug — flagged
-// explicitly in the methodology section rather than left implicit.
+// computed. Financials, Real Estate and Utilities are dropped by sector
+// before this runs (EXCLUDED_SECTORS), since "inventory" and "cost of
+// revenue" aren't meaningful for a bank, a REIT, or a power utility.
 function computeCompanyMetrics(incomeRows, balanceRows) {
   const balByDate = new Map(balanceRows.map((r) => [r.fiscalDateEnding, r]));
   const matched = incomeRows.filter((inc) => balByDate.has(inc.fiscalDateEnding)).slice(0, 4);
@@ -188,7 +189,8 @@ exports.handler = async () => {
       }
     }
 
-    let todo = BREADTH_CONSTITUENTS.filter((s) => !results.has(s));
+    const inScope = (s) => !(metaTickers[s] && EXCLUDED_SECTORS.has(metaTickers[s].sector));
+    let todo = BREADTH_CONSTITUENTS.filter((s) => inScope(s) && !results.has(s));
     let stoppedForTime = false;
     let sinceCheckpoint = 0;
     for (let pass = 0; pass < 2 && todo.length && !stoppedForTime; pass++) {
@@ -215,7 +217,7 @@ exports.handler = async () => {
     const companies = [];
     for (const [symbol, { income, balance }] of results.entries()) {
       const m = metaTickers[symbol];
-      if (!m || !m.sector) continue;
+      if (!m || !m.sector || EXCLUDED_SECTORS.has(m.sector)) continue;
       const metrics = computeCompanyMetrics(income, balance);
       if (!metrics) continue;
 
@@ -272,7 +274,7 @@ exports.handler = async () => {
 
     const payload = {
       generated_at_utc: new Date().toISOString(),
-      universeSize: BREADTH_CONSTITUENTS.length,
+      universeSize: BREADTH_CONSTITUENTS.filter(inScope).length,
       loadedCount: results.size,
       partial: stoppedForTime,
       hasRoicData,

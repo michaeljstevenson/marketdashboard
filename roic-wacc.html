@@ -152,7 +152,7 @@ document.addEventListener("DOMContentLoaded", function(){
 </script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>ROIC vs. Cost of Capital — Michael J. Stevenson</title>
+<title>ROIC vs. Cost of Capital | Michael J. Stevenson</title>
 
 <style>
 
@@ -173,7 +173,7 @@ document.addEventListener("DOMContentLoaded", function(){
   --mono:'SF Mono','JetBrains Mono',ui-monospace,Menlo,monospace;
   --sans:'Times New Roman',Times,serif;
 
-  /* NDR-style chart palette. Deliberately the SAME in light and dark —
+  /* NDR-style chart palette. Deliberately the SAME in light and dark -
      these charts keep a constant warm-paper look as a homage to the Ned
      Davis Research print charts that inspired /concentration. JS reads
      them via getComputedStyle (per the site convention) rather than
@@ -346,7 +346,7 @@ h1{
  height:380px;
 }
 
-/* The warm-paper plot panel behind each canvas — the NDR homage
+/* The warm-paper plot panel behind each canvas - the NDR homage
    (matches /concentration). */
 .ndr-panel{
  background:var(--ndr-plot);
@@ -367,7 +367,7 @@ h1{
  margin-bottom:0;
  min-width:0; /* grid items default to min-width:auto (their content's min-content
                  size), which a wide method table would otherwise force past this
-                 column's track width — same "grid blowout" the site-wide
+                 column's track width - same "grid blowout" the site-wide
                  table{min-width:600px} rule creates if left unchecked here */
 }
 
@@ -489,7 +489,7 @@ tbody td:nth-child(2){
 
 .method-table{
  width:100%;
- min-width:0; /* overrides the site-wide table{min-width:600px} rule below — two of these
+ min-width:0; /* overrides the site-wide table{min-width:600px} rule below - two of these
                  side by side in .chart-grid would otherwise force the whole page wider
                  than its container even though a 7-column method table never needs 600px */
  border-collapse:collapse;
@@ -800,7 +800,7 @@ tbody td:nth-child(2){
 <script>
 // Class-driven (not pure :hover) nav dropdowns: pure CSS :hover drops the
 // menu the instant the cursor leaves .navdrop, which includes the moment
-// it's crossing the gap between the label and the dropdown box below —
+// it's crossing the gap between the label and the dropdown box below -
 // exactly the "sometimes works, sometimes doesn't" flakiness reported.
 // A short close-delay after mouseleave gives the cursor room to travel
 // down into the dropdown without losing it.
@@ -840,7 +840,7 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <div class="header">
 <div>
 <h1>ROIC vs. Cost of Capital</h1>
-<div class="subtitle">Is the S&amp;P 500 actually creating economic value? Return on invested capital vs. a CAPM-based weighted average cost of capital, company by company — the spread between the two is a rough "economic profit" screen, not just another profitability ratio.</div>
+<div class="subtitle">Is the S&amp;P 500 actually creating economic value? Return on invested capital vs. a CAPM-based weighted average cost of capital, company by company. The spread between the two is a rough "economic profit" screen, not just another profitability ratio.</div>
 </div>
 <div class="updated" id="updated">Loading...</div>
 </div>
@@ -848,22 +848,22 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <div class="stat-grid">
 <div class="stat-card">
 <div class="stat-label">Companies Loaded</div>
-<div class="stat-value" id="statCompanies" style="font-size:20px;">—</div>
+<div class="stat-value" id="statCompanies" style="font-size:20px;">…</div>
 <div class="stat-note" id="statCompaniesNote">Of full S&amp;P 500</div>
 </div>
 <div class="stat-card">
 <div class="stat-label">Median ROIC</div>
-<div class="stat-value" id="statRoic">—</div>
+<div class="stat-value" id="statRoic">…</div>
 <div class="stat-note">Trailing twelve months, market-wide</div>
 </div>
 <div class="stat-card">
 <div class="stat-label">Median WACC</div>
-<div class="stat-value" id="statWacc">—</div>
+<div class="stat-value" id="statWacc">…</div>
 <div class="stat-note" id="statWaccNote">CAPM cost of equity + after-tax cost of debt</div>
 </div>
 <div class="stat-card">
 <div class="stat-label">Value Creators</div>
-<div class="stat-value" id="statCreatorPct">—</div>
+<div class="stat-value" id="statCreatorPct">…</div>
 <div class="stat-note">Share of companies with ROIC &gt; WACC</div>
 </div>
 </div>
@@ -872,7 +872,7 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <div class="chart-box-header">
 <div>
 <h2>ROIC vs. WACC by sector</h2>
-<div class="chart-subhead">Median return on invested capital and median cost of capital across each SPDR sector's S&amp;P 500 constituents — where the orange bar clears the blue bar, the sector is earning more than its capital costs</div>
+<div class="chart-subhead">Median return on invested capital and median cost of capital across each SPDR sector's S&amp;P 500 constituents. Where the orange bar clears the blue bar, the sector is earning more than its capital costs</div>
 </div>
 </div>
 <div class="ndr-panel">
@@ -980,7 +980,7 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <div class="explainer">
 <h2>Methodology</h2>
 <p>ROIC = NOPAT ÷ invested capital. NOPAT (net operating profit after tax) is trailing-12-month operating profit (EBIT) × (1 − effective tax rate). The effective tax rate is income tax ÷ pre-tax income, kept between 0% and 50%, and set to the 21% US statutory rate when a company's own rate is negative, zero or missing (a one-time tax benefit can otherwise produce a nonsensical rate). Invested capital is total debt plus shareholder equity, minus cash.</p>
-<p>WACC blends the cost of equity and the cost of debt. Cost of equity uses CAPM: the 10-year Treasury yield plus the company's beta × a market equity risk premium (a company with no beta is given a beta of 1). Cost of debt is interest expense ÷ total debt, after tax. A company with debt but no reported interest expense is given the Treasury yield plus 1.5 percentage points rather than implying its debt is free. The two costs are weighted by the book value of debt and equity (not market value, as a simplification). Spread = ROIC − WACC. A positive spread means the company earns more on its capital than that capital costs.</p>
+<p>WACC blends the cost of equity and the cost of debt. Cost of equity uses CAPM: the 10-year Treasury yield plus the company's beta × a market equity risk premium (a company with no beta is given a beta of 1). The premium is Aswath Damodaran's implied ERP, the same figure shown on the <a href="/implied-erp.html">Implied Equity Risk Premium</a> page. Cost of debt is interest expense ÷ total debt, after tax. A company with debt but no reported interest expense is given the Treasury yield plus 1.5 percentage points rather than implying its debt is free. The two costs are weighted by the book value of debt and equity (not market value, as a simplification). Spread = ROIC − WACC. A positive spread means the company earns more on its capital than that capital costs.</p>
 <p>Companies with zero or negative shareholder equity are left out. Heavy, sustained buybacks (McDonald's, Starbucks and others) can push book equity below zero, which breaks both the invested capital calculation and the WACC weighting.</p>
 <p>Two regressions compare companies at one point in time. Spread vs. beta asks whether riskier companies actually earn more above their cost of capital. Spread vs. 3-month relative return asks whether the market is currently rewarding companies that create value. Both use Pearson (linear) and Spearman (rank) correlation.</p>
 
@@ -1011,17 +1011,17 @@ let SORT_KEY = "spread";
 let SORT_DIR = -1;
 
 function fmtPct(v, digits){
- if(v === null || v === undefined || isNaN(v)) return "—";
+ if(v === null || v === undefined || isNaN(v)) return "n/a";
  digits = digits === undefined ? 1 : digits;
  return v.toFixed(digits) + "%";
 }
 function fmtPp(v, digits){
- if(v === null || v === undefined || isNaN(v)) return "—";
+ if(v === null || v === undefined || isNaN(v)) return "n/a";
  digits = digits === undefined ? 1 : digits;
  return (v >= 0 ? "+" : "") + v.toFixed(digits) + "pp";
 }
 function fmtBeta(v){
- if(v === null || v === undefined || isNaN(v)) return "—";
+ if(v === null || v === undefined || isNaN(v)) return "n/a";
  return v.toFixed(2);
 }
 
@@ -1063,7 +1063,7 @@ function ndrYScale(opts){
  };
 }
 
-// ---- Stats helpers — same methodology as /factor-analysis, duplicated
+// ---- Stats helpers - same methodology as /factor-analysis, duplicated
 // here since every page on this site is self-contained (see CLAUDE.md). ----
 function linearRegression(xs, ys){
  const n = xs.length;
@@ -1138,10 +1138,10 @@ async function init(){
   document.getElementById("updated").textContent = "As of " + new Date(data.generated_at_utc).toLocaleString();
 
   if(data.loadedCount < data.universeSize){
-   showWarning("Only " + data.loadedCount + " of " + data.universeSize + " S&P 500 constituents loaded this run — some data may be temporarily unavailable.");
+   showWarning("Only " + data.loadedCount + " of " + data.universeSize + " S&P 500 constituents loaded this run. Some data may be temporarily unavailable.");
   }
   if(!data.hasBetaData){
-   showWarning("The Equity Risk Premium page's data hasn't populated yet, so every company's beta is assumed to be 1 and the market ERP assumption uses a fallback constant rather than this site's own computed figure.");
+   showWarning("The Equity Risk Premium page's data hasn't populated yet, so every company's beta is assumed to be 1.");
   }
 
   renderStats();
@@ -1311,7 +1311,7 @@ function renderRel3mSpreadScatter(){
  });
 
  document.getElementById("rel3mSpreadMethodTable").innerHTML = methodTableHtml(pearson, spear,
-  "Slope is relative-return pp per 1pp of spread. n=" + pearson.n + " companies. A single snapshot in time, not a forward-return test — a significant result here says the market's current pricing lines up with current economic profitability, not that spread predicts future returns.");
+  "Slope is relative-return pp per 1pp of spread. n=" + pearson.n + " companies. A single snapshot in time, not a forward-return test: a significant result here says the market's current pricing lines up with current economic profitability, not that spread predicts future returns.");
 }
 
 function renderLeaderTable(rows, tbodyId){
@@ -1322,7 +1322,7 @@ function renderLeaderTable(rows, tbodyId){
  }
  tbody.innerHTML = rows.map(r => `<tr>
   <td><span class="sector-name">${r.symbol}</span></td>
-  <td><span class="sector-ticker">${r.sector || "—"}</span></td>
+  <td><span class="sector-ticker">${r.sector || "n/a"}</span></td>
   <td>${fmtPct(r.roic)}</td>
   <td>${fmtPct(r.wacc)}</td>
   <td class="${r.spread >= 0 ? "spread-pos" : "spread-neg"}">${fmtPp(r.spread)}</td>
@@ -1351,7 +1351,7 @@ function renderTable(){
  const tbody = document.getElementById("tableBody");
  tbody.innerHTML = rows.map(r => `<tr>
   <td><span class="sector-name">${r.symbol}</span></td>
-  <td><span class="sector-ticker">${r.sector || "—"}</span></td>
+  <td><span class="sector-ticker">${r.sector || "n/a"}</span></td>
   <td>${fmtPct(r.roic)}</td>
   <td>${fmtPct(r.wacc)}</td>
   <td class="${r.spread >= 0 ? "spread-pos" : "spread-neg"}">${fmtPp(r.spread)}</td>

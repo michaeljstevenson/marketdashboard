@@ -174,7 +174,7 @@ document.addEventListener("DOMContentLoaded", function(){
   --mono:'SF Mono','JetBrains Mono',ui-monospace,Menlo,monospace;
   --sans:'Times New Roman',Times,serif;
 
-  /* NDR-style chart palette. Deliberately the SAME in light and dark —
+  /* NDR-style chart palette. Deliberately the SAME in light and dark -
      these charts keep a constant warm-paper look as a homage to the Ned
      Davis Research print charts that inspired /concentration. JS reads
      them via getComputedStyle (per the site convention) rather than
@@ -347,7 +347,7 @@ h1{
  height:380px;
 }
 
-/* The warm-paper plot panel behind each canvas — the NDR homage
+/* The warm-paper plot panel behind each canvas - the NDR homage
    (matches /concentration). */
 .ndr-panel{
  background:var(--ndr-plot);
@@ -503,7 +503,7 @@ tbody td:nth-child(2){
 
 .method-table{
  width:100%;
- min-width:0; /* overrides the site-wide table{min-width:600px} rule below —
+ min-width:0; /* overrides the site-wide table{min-width:600px} rule below -
                  two of these side by side in .chart-grid would otherwise
                  force the whole page wider than its container */
  border-collapse:collapse;
@@ -551,7 +551,7 @@ tbody td:nth-child(2){
 }
 
 /* Method tables sit directly in a .chart-box rather than a .table-box, so
-   they need their own overflow-x:auto — otherwise the site-wide
+   they need their own overflow-x:auto - otherwise the site-wide
    table{min-width:600px} rule forces the whole page wider than a phone
    viewport (same fix /spin-off-performance and /margin-leverage needed). */
 #regressionMethodTable, #groupMethodTable{ overflow-x:auto; }
@@ -590,7 +590,7 @@ tbody td:nth-child(2){
 }
 
 /* Unlike the short field/endpoint-name identifiers the rule above is meant
-   for, this page's formulas are full expressions with spaces — kept as
+   for, this page's formulas are full expressions with spaces - kept as
    nowrap they'd be wide enough to force horizontal overflow on a phone
    viewport (the exact bug institutional-ownership.html's own build found
    and fixed for the same kind of code span; guarded proactively here). */
@@ -802,7 +802,7 @@ tbody td:nth-child(2){
 <script>
 // Class-driven (not pure :hover) nav dropdowns: pure CSS :hover drops the
 // menu the instant the cursor leaves .navdrop, which includes the moment
-// it's crossing the gap between the label and the dropdown box below —
+// it's crossing the gap between the label and the dropdown box below -
 // exactly the "sometimes works, sometimes doesn't" flakiness reported.
 // A short close-delay after mouseleave gives the cursor room to travel
 // down into the dropdown without losing it.
@@ -1067,7 +1067,7 @@ function ndrLegend(){
  };
 }
 
-// ---- Stats helpers — duplicated per this site's "every page is
+// ---- Stats helpers - duplicated per this site's "every page is
 // self-contained" convention (see /spin-off-performance.html). ----
 function linearRegression(xs, ys){
  const n = xs.length;
@@ -1123,7 +1123,7 @@ function median(values){
 }
 
 // Welch's two-sample t-test (unequal variances assumed, the safer default
-// when the two groups — beats and misses — have no reason to share a
+// when the two groups - beats and misses - have no reason to share a
 // variance). Uses this site's usual normal-approximation p-value
 // convention (see /spin-off-performance.html's oneSampleTTest) rather than
 // a full Welch-Satterthwaite t-distribution table.

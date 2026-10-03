@@ -126,12 +126,12 @@ document.addEventListener("DOMContentLoaded", function(){
   // The canvas wrapper normally has a fixed pixel height (set per-page
   // in each chart's own CSS) so it renders correctly inline, but Chart.js
   // also writes an inline pixel width/height directly onto the <canvas>
-  // itself every time it resizes — including mid-transition, if resize()
+  // itself every time it resizes - including mid-transition, if resize()
   // is ever called on a guessed timer before an animated fullscreen
   // exit has actually finished. That stale inline size then overrides
   // any CSS the container reverts to, which is what "chart stuck very
   // wide after exiting fullscreen" actually was: a race, not a one-time
-  // layout bug. ResizeObserver removes the guesswork — it fires with
+  // layout bug. ResizeObserver removes the guesswork - it fires with
   // the wrapper's real, settled size every time that size changes for
   // any reason (entering fullscreen, exiting it, a plain window resize),
   // so resize() always runs against the correct final dimensions.
@@ -789,12 +789,12 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 // exact panel size and methodology differs by year and publisher
 // (Bloomberg, BusinessWeek, CNNMoney, Barron's, CNBC, Yahoo Finance)
 // since no single outlet has run a consistent, identically-methodologized
-// annual survey across this whole period — see the Source column per row.
+// annual survey across this whole period - see the Source column per row.
 //
 // 2000 and 2002-2007 come from a Bloomberg-sourced scatter chart
 // published by 6meridian.com (in turn crediting Bespoke Investment
 // Group's methodology) plotting each year's strategist-forecast return
-// against its actual return — read directly off that chart rather than
+// against its actual return - read directly off that chart rather than
 // from a press-reported consensus figure, since no individually-sourced
 // number could be found for those specific years. The implied target
 // price is back-calculated from the forecast return and that year's
@@ -830,7 +830,7 @@ const DATA = [
 
 function pct(a, b){ return (a / b - 1) * 100; }
 
-// Reads the live --ink value rather than hardcoding it — --ink flips
+// Reads the live --ink value rather than hardcoding it - --ink flips
 // between a light color (dark mode) and a dark color (light mode), so a
 // hardcoded dark-mode value renders invisible against a light background.
 function themeInkColor(){
@@ -954,7 +954,7 @@ function init(){
 
 // Individual named-bank/strategist year-end S&P 500 targets, as published
 // (original Dec/Jan call, not mid-year revisions). Compiled from press
-// archives per year — coverage varies a lot: some years (2020, 2023) have
+// archives per year - coverage varies a lot: some years (2020, 2023) have
 // 20+ named firms, others (2013, 2014, 2021) have under 10, and several
 // years (2000-2007, 2009, 2011, 2012, 2015) have no verifiable
 // individual-firm breakdown at all, only the aggregate consensus already
@@ -1096,7 +1096,7 @@ const INDIVIDUAL_TARGETS = {
  ],
 };
 
-// 2026 is in progress — priced from the 2025 close, no actual close yet.
+// 2026 is in progress - priced from the 2025 close, no actual close yet.
 const PRIOR_CLOSE_2026 = 6845.50;
 
 const HERD_BIN_WIDTH = 2; // percentage points
@@ -1144,7 +1144,7 @@ function renderHerdCharts(rows){
 
   const bins = herdBins(firms, priorClose);
 
-  // Fitted normal curve overlaid on the actual bin counts — mean/stdev
+  // Fitted normal curve overlaid on the actual bin counts - mean/stdev
   // come from the real implied-return values (not the binned counts),
   // then converted to an expected count per bin (density × bin width ×
   // n) so it's on the same y-axis as the bars, letting you see at a
@@ -1241,7 +1241,7 @@ function renderHerdCharts(rows){
     const minWidth = Math.max(280, n * barWidth);
     detail.innerHTML = `<div class="herd-detail-canvas-wrap" style="min-width:${minWidth}px;"><canvas></canvas></div>`;
 
-    // Smallest to largest implied return, left to right — with enough
+    // Smallest to largest implied return, left to right - with enough
     // firms clustered near consensus, this reads as a rough
     // normal-distribution shape (a gentle rise into the packed middle,
     // then a drop-off), not just a sorted staircase.

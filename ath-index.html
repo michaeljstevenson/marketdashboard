@@ -126,12 +126,12 @@ document.addEventListener("DOMContentLoaded", function(){
   // The canvas wrapper normally has a fixed pixel height (set per-page
   // in each chart's own CSS) so it renders correctly inline, but Chart.js
   // also writes an inline pixel width/height directly onto the <canvas>
-  // itself every time it resizes — including mid-transition, if resize()
+  // itself every time it resizes - including mid-transition, if resize()
   // is ever called on a guessed timer before an animated fullscreen
   // exit has actually finished. That stale inline size then overrides
   // any CSS the container reverts to, which is what "chart stuck very
   // wide after exiting fullscreen" actually was: a race, not a one-time
-  // layout bug. ResizeObserver removes the guesswork — it fires with
+  // layout bug. ResizeObserver removes the guesswork - it fires with
   // the wrapper's real, settled size every time that size changes for
   // any reason (entering fullscreen, exiting it, a plain window resize),
   // so resize() always runs against the correct final dimensions.
@@ -679,7 +679,7 @@ h1{
 <script>
 // Class-driven (not pure :hover) nav dropdowns: pure CSS :hover drops the
 // menu the instant the cursor leaves .navdrop, which includes the moment
-// it's crossing the gap between the label and the dropdown box below —
+// it's crossing the gap between the label and the dropdown box below -
 // exactly the "sometimes works, sometimes doesn't" flakiness reported.
 // A short close-delay after mouseleave gives the cursor room to travel
 // down into the dropdown without losing it.
@@ -859,7 +859,7 @@ async function init(){
  initTabs();
 
  // Two independent sources: breadth-internals.js (Alpha Vantage) supplies
- // the long-run ATH chart, since it has years of history to draw from —
+ // the long-run ATH chart, since it has years of history to draw from -
  // ath-tradingview.js (TradingView) supplies today's ATH/ATL count/list
  // plus the running ATH-ATL/SPX history, since it's the accurate one
  // (see explainer below for why ATH figures disagree between sources).
@@ -920,7 +920,7 @@ async function init(){
  document.getElementById("updated").textContent = updatedText;
 
  // Long-run chart: still from Alpha Vantage (years of history), even
- // though its all-time-high flag isn't reliable — the daily %-at-ATH
+ // though its all-time-high flag isn't reliable - the daily %-at-ATH
  // trend shape is still informative even if individual-day counts skew
  // high for long-listed names. See the explainer for the full caveat.
  if(breadthResult.status === "fulfilled" && breadthResult.value.ok){
@@ -949,7 +949,7 @@ function computeNetRows(){
  if(NET_ROWS) return NET_ROWS;
 
  // Long-run history from breadth-internals.js (Alpha Vantage), same
- // years-deep series that backs the ATH tab's long-run chart — subject
+ // years-deep series that backs the ATH tab's long-run chart - subject
  // to the same "capped ~26 years, upper-bound estimate" caveat as the
  // ATH tab's chart, since atHighs/atLows here are computed the same way.
  // Today's most recent bar is overwritten below with the accurate
@@ -989,7 +989,7 @@ function renderNetRangeButtons(){
  });
 }
 
-// Reads the live --ink value rather than hardcoding it — --ink flips
+// Reads the live --ink value rather than hardcoding it - --ink flips
 // between a light color (dark mode) and a dark color (light mode), so a
 // hardcoded dark-mode value would render this line invisible in light mode.
 function themeInkColor(){

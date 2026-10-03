@@ -11,7 +11,7 @@ exports.handler = async () => {
     const payload = await store.get(BLOB_KEY, { type: "json" });
 
     if (!payload) {
-      throw new Error("Cash conversion cycle data not yet populated — scheduled-cash-conversion-cycle-background hasn't run yet");
+      throw new Error("Cash conversion cycle data not yet populated: scheduled-cash-conversion-cycle-background hasn't run yet");
     }
 
     return {

@@ -11,7 +11,7 @@ exports.handler = async () => {
     const payload = await store.get(BLOB_KEY, { type: "json" });
 
     if (!payload) {
-      throw new Error("R&D intensity data not yet populated — scheduled-rd-intensity-background hasn't run yet");
+      throw new Error("R&D intensity data not yet populated: scheduled-rd-intensity-background hasn't run yet");
     }
 
     return {

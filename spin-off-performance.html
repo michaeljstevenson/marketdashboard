@@ -174,7 +174,7 @@ document.addEventListener("DOMContentLoaded", function(){
   --mono:'SF Mono','JetBrains Mono',ui-monospace,Menlo,monospace;
   --sans:'Times New Roman',Times,serif;
 
-  /* NDR-style chart palette. Deliberately the SAME in light and dark —
+  /* NDR-style chart palette. Deliberately the SAME in light and dark -
      these charts keep a constant warm-paper look as a homage to the Ned
      Davis Research print charts that inspired /concentration. JS reads
      them via getComputedStyle (per the site convention) rather than
@@ -347,7 +347,7 @@ h1{
  height:380px;
 }
 
-/* The warm-paper plot panel behind each canvas — the NDR homage
+/* The warm-paper plot panel behind each canvas - the NDR homage
    (matches /concentration). */
 .ndr-panel{
  background:var(--ndr-plot);
@@ -531,7 +531,7 @@ tbody td:nth-child(2){
 
 /* Unlike /share-count-trends and /factor-analysis, these method tables
    sit directly in a .chart-box rather than a .table-box, so they need
-   their own overflow-x:auto — otherwise the global table{min-width:600px}
+   their own overflow-x:auto - otherwise the global table{min-width:600px}
    rule forces the whole page wider than a phone viewport. */
 #statsMethodTable, #scatterMethodTable{ overflow-x:auto; }
 
@@ -772,7 +772,7 @@ tbody td:nth-child(2){
 <script>
 // Class-driven (not pure :hover) nav dropdowns: pure CSS :hover drops the
 // menu the instant the cursor leaves .navdrop, which includes the moment
-// it's crossing the gap between the label and the dropdown box below —
+// it's crossing the gap between the label and the dropdown box below -
 // exactly the "sometimes works, sometimes doesn't" flakiness reported.
 // A short close-delay after mouseleave gives the cursor room to travel
 // down into the dropdown without losing it.
@@ -1058,7 +1058,7 @@ function ndrLegend(){
  };
 }
 
-// ---- Stats helpers — same methodology as /factor-analysis and
+// ---- Stats helpers - same methodology as /factor-analysis and
 // /share-count-trends, duplicated here since every page on this site is
 // self-contained (see CLAUDE.md), plus a one-sample t-test and an exact
 // sign test that those other pages didn't need. ----
@@ -1124,7 +1124,7 @@ function oneSampleTTest(values){
 
 // Exact two-sided sign test against a 50/50 split (values exactly at zero
 // are dropped, standard sign-test convention). Computed exactly rather
-// than via a normal approximation — safe and simple at this page's sample
+// than via a normal approximation - safe and simple at this page's sample
 // sizes (well under n=30).
 function signTest(values){
  const v = values.filter(x => x !== null && x !== undefined && !isNaN(x) && x !== 0);
@@ -1396,7 +1396,7 @@ function renderSectorChart(){
    },
    scales: {
     // Horizontal bar: x is the value axis, y is the sector-name category
-    // axis — swapped from ndrXScale()/ndrYScale()'s usual line-chart roles,
+    // axis - swapped from ndrXScale()/ndrYScale()'s usual line-chart roles,
     // and the category axis skips ndrXScale()'s maxTicksLimit so a sector
     // list longer than 9 doesn't get silently thinned.
     x: ndrYScale({ position: "bottom", fmt: v => v + "%" }),

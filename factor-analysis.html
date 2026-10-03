@@ -125,12 +125,12 @@ document.addEventListener("DOMContentLoaded", function(){
   // The canvas wrapper normally has a fixed pixel height (set per-page
   // in each chart's own CSS) so it renders correctly inline, but Chart.js
   // also writes an inline pixel width/height directly onto the <canvas>
-  // itself every time it resizes — including mid-transition, if resize()
+  // itself every time it resizes - including mid-transition, if resize()
   // is ever called on a guessed timer before an animated fullscreen
   // exit has actually finished. That stale inline size then overrides
   // any CSS the container reverts to, which is what "chart stuck very
   // wide after exiting fullscreen" actually was: a race, not a one-time
-  // layout bug. ResizeObserver removes the guesswork — it fires with
+  // layout bug. ResizeObserver removes the guesswork - it fires with
   // the wrapper's real, settled size every time that size changes for
   // any reason (entering fullscreen, exiting it, a plain window resize),
   // so resize() always runs against the correct final dimensions.
@@ -752,7 +752,7 @@ h1{
 <script>
 // Class-driven (not pure :hover) nav dropdowns: pure CSS :hover drops the
 // menu the instant the cursor leaves .navdrop, which includes the moment
-// it's crossing the gap between the label and the dropdown box below —
+// it's crossing the gap between the label and the dropdown box below -
 // exactly the "sometimes works, sometimes doesn't" flakiness reported.
 // A short close-delay after mouseleave gives the cursor room to travel
 // down into the dropdown without losing it.
@@ -998,8 +998,8 @@ function renderRangeButtons(){
 }
 
 // Growth of $1: cumulative product of (1 + daily% / 100), rebased to 1.0
-// at the start of whichever range is currently selected — not from 1926
-// every time — so a "1Y" view shows the last year's actual growth curve,
+// at the start of whichever range is currently selected - not from 1926
+// every time - so a "1Y" view shows the last year's actual growth curve,
 // not a curve that's already compounded to some huge or tiny number over
 // the prior century.
 function growthSeries(rows, field){
@@ -1027,7 +1027,7 @@ function renderChartRange(rangeKey){
  if(factorChart) factorChart.destroy();
 
  // Thin the x-axis labels for very long ranges so Chart.js doesn't choke
- // rendering tens of thousands of ticks — maxTicksLimit already caps
+ // rendering tens of thousands of ticks - maxTicksLimit already caps
  // what's drawn, but the raw label array itself stays full-length so
  // tooltips still show the exact date.
  factorChart = new Chart(ctx, {
@@ -1065,7 +1065,7 @@ function renderChartRange(rangeKey){
 //
 // Non-overlapping by construction: each year's return is compounded from
 // that year's own daily returns only, so year t and year t+1 share zero
-// underlying trading days. That matters — a *rolling* trailing-return
+// underlying trading days. That matters - a *rolling* trailing-return
 // version (e.g. trailing-12-months measured weekly) would have adjacent
 // observations share nearly all their underlying days, which mechanically
 // produces serial correlation that has nothing to do with real momentum
@@ -1095,7 +1095,7 @@ function normalCdf(x){
  return 0.5 * (1 + erf(x / Math.SQRT2));
 }
 
-// Abramowitz & Stegun 7.1.26 approximation — accurate to ~1e-7.
+// Abramowitz & Stegun 7.1.26 approximation - accurate to ~1e-7.
 function erf(x){
  const sign = x < 0 ? -1 : 1;
  x = Math.abs(x);
@@ -1106,7 +1106,7 @@ function erf(x){
 }
 
 // Compounds daily % returns within each calendar year into one annual %
-// return per factor field, from full calendar years only — the first
+// return per factor field, from full calendar years only - the first
 // year in the dataset (1926, which only starts in July) and the current
 // year (partial, still accumulating) are dropped rather than treated as
 // full years, since a partial year isn't comparable to the others and
@@ -1156,7 +1156,7 @@ function samePairYearOverYear(annualReturns){
 // regression so a result can't be quietly resting on rank-insensitive
 // magnitude outliers or a single influential data point. ----
 
-// Average-rank ranking (ties share the mean of their ranks) — standard
+// Average-rank ranking (ties share the mean of their ranks) - standard
 // for Spearman when, as here, exact ties are rare but not guaranteed.
 function rankArray(arr){
  const idx = arr.map((v, i) => i).sort((a, b) => arr[a] - arr[b]);
@@ -1173,7 +1173,7 @@ function rankArray(arr){
 }
 
 // Spearman is just Pearson's regression run on ranks instead of raw
-// values — much less sensitive to a handful of large-magnitude points,
+// values - much less sensitive to a handful of large-magnitude points,
 // since a rank can only move so far regardless of how extreme the
 // underlying value is.
 function spearmanRegression(xs, ys){
@@ -1204,7 +1204,7 @@ function jackknifeTrim(pairs){
 
 // Renders one table per scatter panel with a row each for Pearson
 // (OLS), Spearman (rank correlation), and the jackknife-trimmed
-// regression — same n/r/r²/slope/t/p columns for all three, so they're
+// regression - same n/r/r²/slope/t/p columns for all three, so they're
 // directly comparable at a glance.
 function renderMethodTable(containerElId, pairs){
  const xs = pairs.map(p => p.x), ys = pairs.map(p => p.y);
@@ -1243,7 +1243,7 @@ function renderMethodTable(containerElId, pairs){
 
 // Reads the live --ink value rather than hardcoding it, since --ink
 // flips between a light color (dark mode) and a dark color (light mode)
-// — a hardcoded dark-mode value would render the regression line
+// - a hardcoded dark-mode value would render the regression line
 // invisible against a light-mode background.
 function themeInkColor(){
  const v = getComputedStyle(document.documentElement).getPropertyValue("--ink").trim();
@@ -1293,12 +1293,12 @@ function renderScatter(canvasId, points, stats, pointColor, opts){
 }
 
 // ---- Generic non-overlapping period aggregation (quarterly, and later
-// monthly/weekly reuse this — annual keeps its own simpler implementation
+// monthly/weekly reuse this - annual keeps its own simpler implementation
 // above since month-based boundary checks are simplest for that case). ----
 //
 // keyFn(dateStr) groups rows into a period key (e.g. "2024-Q1").
 // boundsFn(key) returns { start, end } as UTC Dates for that period's
-// full calendar range — used to detect and drop partial periods (the
+// full calendar range - used to detect and drop partial periods (the
 // dataset's first period and the still-in-progress current period) the
 // same way the annual aggregation does, just via date-distance instead
 // of a hardcoded month check, since quarter/month/week boundaries don't
@@ -1323,7 +1323,7 @@ function periodReturnsByField(rows, field, keyFn, boundsFn){
   const lastDate = new Date(entry.lastDate + "T00:00:00Z");
   const startGap = Math.abs(firstDate - start) / DAY_MS;
   const endGap = Math.abs(lastDate - end) / DAY_MS;
-  if(startGap > TOLERANCE_DAYS || endGap > TOLERANCE_DAYS) continue; // partial period — drop
+  if(startGap > TOLERANCE_DAYS || endGap > TOLERANCE_DAYS) continue; // partial period - drop
   results.push({ key, value: Math.round((entry.product - 1) * 1000) / 10 });
  }
  results.sort((a, b) => a.key < b.key ? -1 : 1);
@@ -1471,7 +1471,7 @@ function renderFactorMomentumMonthly(rows){
 // (motivated by the rise of algorithmic/quantitative trading) ----
 //
 // Uses two equal-length, non-overlapping 40-year windows (1945-1984 and
-// 1985-2025) rather than splitting at 1985 directly — an unequal split
+// 1985-2025) rather than splitting at 1985 directly - an unequal split
 // (e.g. 1927-1984 vs. 1985-2024, n=58 vs. n=40) gives the smaller side
 // less statistical power, which can manufacture the appearance of a
 // "weaker" relationship that's really just a noisier estimate from
@@ -1480,7 +1480,7 @@ function renderFactorMomentumMonthly(rows){
 //
 // The Chow test formally answers "are these two periods' regressions
 // different," rather than just eyeballing two r-values next to each
-// other — it compares the fit of one shared regression across the full
+// other - it compares the fit of one shared regression across the full
 // window against two separate regressions (one per period), and asks
 // whether letting the relationship differ by period explains
 // meaningfully more than you'd expect from the extra free parameters

@@ -108,7 +108,7 @@ function main() {
     const html = read(path.join(ROOT, f));
     const slug = f.slice(0, -5);
     const t = html.match(/<title>([\s\S]*?)<\/title>/);
-    titleOf[slug] = slug === "index" ? "Homepage" : (t ? t[1].replace(/\s+/g, " ").replace(/\s*[—-]\s*Michael J\. Stevenson.*$/, "").trim() : slug)
+    titleOf[slug] = slug === "index" ? "Homepage" : (t ? t[1].replace(/\s+/g, " ").replace(/\s*[|—-]\s*Michael J\. Stevenson.*$/, "").trim() : slug)
       .replace(/&amp;/g, "&");
     for (const a of new Set(html.match(/\/api\/[A-Za-z0-9_-]+/g) || [])) (pagesOfApi[a] = pagesOfApi[a] || []).push(slug);
   }
@@ -219,14 +219,14 @@ function main() {
   rows.sort((a, b) => a.when.sort[0] - b.when.sort[0] || a.when.sort[1] - b.when.sort[1] || (titleOf[a.pages[0]] || a.name).localeCompare(titleOf[b.pages[0]] || b.name));
 
   const pageLinks = (slugs, via) =>
-    (slugs.length ? slugs.map((s) => `<a href="${s === "index" ? "/" : "/" + esc(s) + ".html"}">${esc(titleOf[s] || s)}</a>`).join("<br>") : "—") +
+    (slugs.length ? slugs.map((s) => `<a href="${s === "index" ? "/" : "/" + esc(s) + ".html"}">${esc(titleOf[s] || s)}</a>`).join("<br>") : "n/a") +
     (via ? " <small>(via another job)</small>" : "");
   const cell = (r) => {
     const n = NOTES[r.name] || "";
     const dep = r.dependsOn.length && !r.sources.some((x) => x.startsWith("Stored data")) ? `Reads: ${r.dependsOn.join(", ")}` : "";
     return esc(n) + (n && dep ? "<br>" : "") + esc(dep);
   };
-  const body = rows.map((r) => `<tr><td>${pageLinks(r.pages, r.via)}</td><td class="m">${esc(r.name)}</td><td>${esc(r.when.text)}</td><td>${r.sources.map(esc).join("<br>") || "—"}</td><td>${cell(r)}</td></tr>`)
+  const body = rows.map((r) => `<tr><td>${pageLinks(r.pages, r.via)}</td><td class="m">${esc(r.name)}</td><td>${esc(r.when.text)}</td><td>${r.sources.map(esc).join("<br>") || "n/a"}</td><td>${cell(r)}</td></tr>`)
     .concat(onRequest.map((o) => `<tr><td>${pageLinks(o.pages, false)}</td><td class="m">${esc(o.name)}</td><td>${esc(o.when)}</td><td>${o.sources.map(esc).join("<br>")}</td><td>${esc(o.notes)}</td></tr>`));
 
   const now = new Date();

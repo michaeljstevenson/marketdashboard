@@ -174,7 +174,7 @@ document.addEventListener("DOMContentLoaded", function(){
   --mono:'SF Mono','JetBrains Mono',ui-monospace,Menlo,monospace;
   --sans:'Times New Roman',Times,serif;
 
-  /* NDR-style chart palette. Deliberately the SAME in light and dark —
+  /* NDR-style chart palette. Deliberately the SAME in light and dark -
      these charts keep a constant warm-paper look as a homage to the Ned
      Davis Research print charts that inspired the treatment. JS reads them
      via getComputedStyle (per the site convention) rather than hardcoding. */
@@ -358,7 +358,7 @@ h1{
 
 .chart-canvas-wrap.short{ height:280px; }
 
-/* The warm-paper plot panel behind each canvas — the NDR homage. */
+/* The warm-paper plot panel behind each canvas - the NDR homage. */
 .ndr-panel{
  background:var(--ndr-plot);
  border:1px solid var(--ndr-grid);
@@ -719,7 +719,7 @@ tbody td:first-child{
 <script>
 // Class-driven (not pure :hover) nav dropdowns: pure CSS :hover drops the
 // menu the instant the cursor leaves .navdrop, which includes the moment
-// it's crossing the gap between the label and the dropdown box below —
+// it's crossing the gap between the label and the dropdown box below -
 // exactly the "sometimes works, sometimes doesn't" flakiness reported.
 // A short close-delay after mouseleave gives the cursor room to travel
 // down into the dropdown without losing it.
@@ -820,7 +820,7 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <div class="chart-box-header">
 <div>
 <h2>US vs. developed markets ex-US, year by year</h2>
-<div class="chart-subhead">SPY vs. EFA calendar-year total return. Full calendar years only — the first (partial, since EEM inception) and current (still in progress) years are excluded.</div>
+<div class="chart-subhead">SPY vs. EFA calendar-year total return. Full calendar years only: the first (partial, since EEM inception) and current (still in progress) years are excluded.</div>
 </div>
 </div>
 <div class="ndr-panel">
@@ -933,7 +933,7 @@ Chart.defaults.font.family = "'Iowan Old Style','Palatino Linotype',Georgia,seri
 Chart.defaults.color = ndr("axis-soft");
 
 // `opts.title` is a deviation from concentration.html's ndrXScale (which
-// never needed an x-axis title) — this page's scatter panel has a numeric
+// never needed an x-axis title) - this page's scatter panel has a numeric
 // x-axis that needs one, so it's supported here directly.
 function ndrXScale(opts){
  opts = opts || {};
@@ -963,7 +963,7 @@ function ndrLegend(){
  };
 }
 
-// ---- Stats helpers — same methodology as /factor-analysis, duplicated
+// ---- Stats helpers - same methodology as /factor-analysis, duplicated
 // here since every page on this site is self-contained (see CLAUDE.md). ----
 
 function linearRegression(xs, ys){
@@ -989,7 +989,7 @@ function normalCdf(x){
  return 0.5 * (1 + erf(x / Math.SQRT2));
 }
 
-// Abramowitz & Stegun 7.1.26 approximation — accurate to ~1e-7.
+// Abramowitz & Stegun 7.1.26 approximation - accurate to ~1e-7.
 function erf(x){
  const sign = x < 0 ? -1 : 1;
  x = Math.abs(x);
@@ -1205,7 +1205,7 @@ function renderRatioCharts(data){
 // Calendar-year start/end indices into the shared dates array. Drops a
 // partial first year (dataset starts mid-year, at EEM's inception) and a
 // partial current year, same convention as Factor Analysis's
-// annualReturnsByField — a partial year isn't comparable to a full one.
+// annualReturnsByField - a partial year isn't comparable to a full one.
 // Each year's base is the prior year's last trading day, so the return
 // captures the Dec 31 -> Jan close too, not just first-trading-day-to-last.
 function buildCalendarYearBoundaries(dates){

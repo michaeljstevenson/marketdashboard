@@ -174,7 +174,7 @@ document.addEventListener("DOMContentLoaded", function(){
   --mono:'SF Mono','JetBrains Mono',ui-monospace,Menlo,monospace;
   --sans:'Times New Roman',Times,serif;
 
-  /* NDR-style chart palette. Deliberately the SAME in light and dark —
+  /* NDR-style chart palette. Deliberately the SAME in light and dark -
      these charts keep a constant warm-paper look as a homage to the Ned
      Davis Research print charts that inspired the page. JS reads them via
      getComputedStyle (per the site convention) rather than hardcoding. */
@@ -299,7 +299,7 @@ h1{
  color:var(--greed);
 }
 
-/* Two of this page's stat-values hold a sector name, not a number — too
+/* Two of this page's stat-values hold a sector name, not a number - too
    wide at the numeric 24px size and it blows out the stat-grid's column on
    a phone viewport (CSS Grid's default min-width:auto on grid items). */
 .stat-value.stat-value-text{
@@ -352,7 +352,7 @@ h1{
  margin-top:4px;
 }
 
-/* The warm-paper plot panel behind each canvas — the NDR homage. */
+/* The warm-paper plot panel behind each canvas - the NDR homage. */
 .ndr-panel{
  background:var(--ndr-plot);
  border:1px solid var(--ndr-grid);
@@ -543,7 +543,7 @@ tbody td:first-child{
 }
 
 /* A wide method-table's cells can force the whole page wider on a phone
-   viewport if this div doesn't scroll on its own — same class of bug
+   viewport if this div doesn't scroll on its own - same class of bug
    noted in /spin-off-performance.html and /margin-leverage.html's own
    methodology comments. */
 #momentumMethodTable{
@@ -666,6 +666,46 @@ tbody td:first-child{
 .full-list-summary::before{ content:"▸ "; display:inline-block; width:1em; }
 .full-list-details[open] .full-list-summary::before{ content:"▾ "; }
 .full-list-details table{ margin-top:8px; }
+/* COMMENTARY: dated, static read of the data; rewritten by hand, not generated. */
+.commentary{
+ background:var(--card);
+ border:1px solid var(--hair);
+ border-left:3px solid var(--greed);
+ border-radius:10px;
+ padding:18px 22px 20px;
+ margin-bottom:30px;
+}
+.commentary-head{
+ display:flex;
+ justify-content:space-between;
+ align-items:baseline;
+ flex-wrap:wrap;
+ gap:6px 16px;
+}
+.commentary h2{
+ font-family:var(--serif);
+ font-weight:400;
+ font-size:18px;
+ margin:0;
+}
+.commentary-date{
+ color:var(--muted);
+ font-size:12px;
+}
+.commentary p{
+ font-size:14px;
+ line-height:1.6;
+ margin:10px 0 0;
+ max-width:780px;
+}
+.chart-note{
+ font-size:13px;
+ line-height:1.55;
+ margin-top:8px;
+ padding-left:10px;
+ border-left:2px solid var(--greed);
+ max-width:780px;
+}
 </style>
 <link rel="stylesheet" href="/site.css">
 </head>
@@ -790,7 +830,7 @@ tbody td:first-child{
 <script>
 // Class-driven (not pure :hover) nav dropdowns: pure CSS :hover drops the
 // menu the instant the cursor leaves .navdrop, which includes the moment
-// it's crossing the gap between the label and the dropdown box below —
+// it's crossing the gap between the label and the dropdown box below -
 // exactly the "sometimes works, sometimes doesn't" flakiness reported.
 // A short close-delay after mouseleave gives the cursor room to travel
 // down into the dropdown without losing it.
@@ -858,11 +898,23 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 </div>
 </div>
 
+<section class="commentary" aria-labelledby="commentaryTitle">
+<div class="commentary-head">
+<h2 id="commentaryTitle">What the data says</h2>
+<div class="commentary-date">As of the October 2, 2026 session &middot; first snapshot</div>
+</div>
+<p>The typical S&amp;P 500 option chain leans bullish. The median put/call ratio is 0.59, about 1.7 calls traded for every put, and only a quarter of the index has more put volume than call volume. The mean of 1.16 points the other way because of a handful of thinly traded chains: 18 names print above 5.0 on a few stray put trades against almost no call volume.</p>
+<p>Financials stand out. At a 0.79 median, the sector sits well above the other ten, which range from 0.44 (Utilities) to 0.62 (Technology). Whether it&rsquo;s hedging or outright bearish bets, the options market is more defensive on banks, insurers and asset managers than anywhere else in the index.</p>
+<p>Positioning also doesn&rsquo;t line up with recent price action. Across all 498 names, a stock&rsquo;s put/call ratio has no measurable relationship with its 3-month return against SPY (r = 0.02, p = 0.59). Bearish activity is spread across recent winners and losers alike.</p>
+<p>This is the first snapshot, so there&rsquo;s nothing to compare it to yet. Each run adds a point to the history chart, and it starts to say something after a few months of them.</p>
+</section>
+
 <div class="chart-box">
 <div class="chart-box-header">
 <div>
 <h2>Market-median put/call ratio over time</h2>
-<div class="chart-subhead">One point per run, not a queryable historical series &mdash; each run adds this week's cross-sectional median. Builds up real history one snapshot at a time, like <a href="/earnings-revisions.html">Earnings Revisions</a> and <a href="/pe-divergence.html">Forward vs. Trailing P/E Divergence</a>.</div>
+<div class="chart-subhead">One point per run, not a queryable historical series. Each run adds this week's cross-sectional median. Builds up real history one snapshot at a time, like <a href="/earnings-revisions.html">Earnings Revisions</a> and <a href="/pe-divergence.html">Forward vs. Trailing P/E Divergence</a>.</div>
+<div class="chart-note">One point so far: 0.59 on October 2, 2026. Nothing to read into until more runs accumulate.</div>
 </div>
 </div>
 <div class="ndr-panel">
@@ -876,7 +928,8 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <div class="chart-box-header">
 <div>
 <h2>Put/call ratio by sector</h2>
-<div class="chart-subhead">Median across each sector's constituents. Above 1.0, more put volume than call volume across the sector's option chains &mdash; more hedging or bearish speculation than bullish.</div>
+<div class="chart-subhead">Median across each sector's constituents. Above 1.0, more put volume than call volume across the sector's option chains, meaning more hedging or bearish speculation than bullish.</div>
+<div class="chart-note">Financials (0.79) is the outlier. Set it aside and the other ten sectors span just 0.44 to 0.62, with Utilities and Communication Services the most call-heavy.</div>
 </div>
 </div>
 <div class="ndr-panel">
@@ -891,6 +944,7 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <div>
 <h2>Put/call ratio vs. 3-month relative return</h2>
 <div class="chart-subhead">Each point is one S&amp;P 500 company: its options market's put/call ratio against its trailing 3-month price performance relative to SPY (from <a href="/relative-strength-leaders.html">Relative Strength Leaders/Laggards</a>). Is bearish options positioning concentrated in names that have already lagged, or spread evenly across winners and losers?</div>
+<div class="chart-note">Flat. Pearson r = 0.02 (p = 0.59) and Spearman &rho; = 0.07 (p = 0.13), so there&rsquo;s no tilt toward recent laggards or recent winners.</div>
 </div>
 </div>
 <div class="ndr-panel">
@@ -905,7 +959,7 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <div class="table-box">
 <div class="table-box-header">
 <h2>Most bearish positioning</h2>
-<div class="chart-subhead">Highest put/call ratio &mdash; heaviest put volume relative to calls.</div>
+<div class="chart-subhead">Highest put/call ratio: heaviest put volume relative to calls. Excludes thinly traded chains (see Methodology).</div>
 </div>
 <table>
 <thead><tr><th>Ticker</th><th>Sector</th><th>Put/Call</th><th>3M Rel. Return</th></tr></thead>
@@ -918,7 +972,7 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <div class="table-box">
 <div class="table-box-header">
 <h2>Most bullish positioning</h2>
-<div class="chart-subhead">Lowest put/call ratio &mdash; heaviest call volume relative to puts.</div>
+<div class="chart-subhead">Lowest put/call ratio: heaviest call volume relative to puts. Excludes thinly traded chains (see Methodology).</div>
 </div>
 <table>
 <thead><tr><th>Ticker</th><th>Sector</th><th>Put/Call</th><th>3M Rel. Return</th></tr></thead>
@@ -957,6 +1011,7 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <h2>Methodology</h2>
 <p>The put/call ratio is the volume of put options traded divided by the volume of call options traded, across all of a stock's options on the latest trading day. Above 1.0 means more puts traded than calls. Below 1.0 means more calls than puts.</p>
 <p>Put/call ratios are skewed. A few thinly traded stocks can print a ratio of 3 or 4 on a single low-volume day, while most liquid stocks sit in a narrow range. The market and sector figures use the median for that reason, with the mean shown alongside so the gap is visible.</p>
+<p>The most-bearish and most-bullish tables only include stocks where puts and calls both traded in at least three expiration dates. Below that, the ratio comes from a handful of stray contracts: one expiration with a few puts and no calls can print 35 or more, and a chain where only calls traded reads exactly zero. The market, sector and momentum figures still use every stock.</p>
 <p>The momentum test uses Pearson and Spearman correlation between each stock's put/call ratio and its 3-month return relative to the S&amp;P 500. A positive, significant relationship would mean bearish options positioning is concentrated in stocks that have already lagged, which fits put buying as insurance on recent losers rather than a forward-looking signal. A weak or flat relationship would mean positioning isn't just following where the stock has already been.</p>
 <p>A single day's put/call ratio is noisy and reflects hedging as much as conviction. A high ratio ahead of a big event (earnings, an FDA decision) can just mean someone is protecting a bullish position. This page shows positioning as it stood on the date shown, and doesn't claim the ratio predicts future returns.</p>
 
@@ -1019,7 +1074,7 @@ function ndrYScale(opts){
  };
 }
 
-// ---- Stats helpers — same methodology as /factor-analysis, duplicated
+// ---- Stats helpers - same methodology as /factor-analysis, duplicated
 // here since every page on this site is self-contained (see CLAUDE.md). ----
 
 function linearRegression(xs, ys){
@@ -1045,7 +1100,7 @@ function normalCdf(x){
  return 0.5 * (1 + erf(x / Math.SQRT2));
 }
 
-// Abramowitz & Stegun 7.1.26 approximation — accurate to ~1e-7.
+// Abramowitz & Stegun 7.1.26 approximation - accurate to ~1e-7.
 function erf(x){
  const sign = x < 0 ? -1 : 1;
  x = Math.abs(x);
