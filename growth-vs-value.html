@@ -153,7 +153,7 @@ document.addEventListener("DOMContentLoaded", function(){
 </script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Forward vs. Trailing P/E Divergence | Michael J. Stevenson</title>
+<title>Growth vs. Value: Interest-Rate Sensitivity</title>
 
 <style>
 
@@ -173,20 +173,6 @@ document.addEventListener("DOMContentLoaded", function(){
   --serif:'Times New Roman',Times,serif;
   --mono:'SF Mono','JetBrains Mono',ui-monospace,Menlo,monospace;
   --sans:'Times New Roman',Times,serif;
-
-  /* NDR-style chart palette. Deliberately the SAME in light and dark —
-     these charts keep a constant warm-paper look as a homage to the Ned
-     Davis Research print charts that inspired the page. JS reads them via
-     getComputedStyle (per the site convention) rather than hardcoding. */
-  --ndr-plot:#f5f1e6;
-  --ndr-axis:#3c3a33;
-  --ndr-axis-soft:#6f6a5c;
-  --ndr-grid:#ddd6c2;
-  --ndr-red:#a83c36;
-  --ndr-green:#4f6f3f;
-  --ndr-gold:#c1902f;
-  --ndr-navy:#2f4b6e;
-  --ndr-slate:#7d8a99;
 }
 
 :root[data-theme="light"]{
@@ -346,26 +332,9 @@ h1{
  height:380px;
 }
 
-/* The warm-paper plot panel behind each canvas — the NDR homage. */
-.ndr-panel{
- background:var(--ndr-plot);
- border:1px solid var(--ndr-grid);
- border-radius:8px;
- padding:14px 14px 10px;
-}
+.chart-canvas-wrap.short{ height:280px; }
 
 /* TABLE */
-
-.table-grid{
- display:grid;
- grid-template-columns:1fr 1fr;
- gap:16px;
- margin-bottom:30px;
-}
-
-@media (max-width:900px){
- .table-grid{ grid-template-columns:1fr; }
-}
 
 .table-box{
  background:var(--card);
@@ -374,8 +343,6 @@ h1{
  overflow-x:auto;
  margin-bottom:30px;
 }
-
-.table-grid .table-box{ margin-bottom:0; }
 
 .table-box-header{
  padding:18px 20px 4px;
@@ -394,7 +361,7 @@ table{
  width:100%;
  border-collapse:collapse;
  font-size:13px;
- min-width:600px;
+ min-width:640px;
 }
 
 thead th{
@@ -404,27 +371,13 @@ thead th{
  font-size:11px;
  letter-spacing:0.04em;
  font-weight:600;
- cursor:pointer;
- user-select:none;
  white-space:nowrap;
  border-bottom:1px solid var(--hair);
 }
 
-thead th:first-child, thead th:nth-child(2){
+thead th:first-child{
  text-align:left;
 }
-
-thead th:hover{ color:var(--ink); }
-
-thead th .sort-arrow{
- opacity:0.4;
- margin-left:3px;
- font-size:10px;
-}
-
-thead th.sorted .sort-arrow{ opacity:1; color:var(--greed); }
-
-thead th:not([data-key]){ cursor:default; }
 
 tbody td{
  padding:11px 12px;
@@ -443,22 +396,20 @@ tbody td:first-child{
  font-family:var(--sans);
 }
 
-tbody td:nth-child(2){
- text-align:left;
- color:var(--muted);
-}
-
-.sector-name{ color:var(--ink); }
-.sector-ticker{ color:var(--muted); font-size:11px; }
-
 .cell-pos{ color:var(--ink); }
 .cell-neg{ color:var(--ink); }
 .cell-na{ color:var(--muted); }
 
+.table-footnote{
+ padding:2px 20px 16px;
+ color:var(--muted);
+ font-size:11px;
+}
+
 /* SCATTER / METHOD TABLE (mirrors /factor-analysis) */
 
 .scatter-canvas-wrap{
- height:300px;
+ height:260px;
  margin-bottom:12px;
  position:relative;
 }
@@ -612,19 +563,6 @@ tbody td:nth-child(2){
  border-color:#e9cf8a;
  color:#8a6a1f;
 }
-.full-list-details{ margin-top:4px; }
-.full-list-summary{
-  cursor:pointer;
-  font-weight:600;
-  padding:10px 0;
-  color:var(--ink);
-  list-style:none;
-  user-select:none;
-}
-.full-list-summary::-webkit-details-marker{ display:none; }
-.full-list-summary::before{ content:"▸ "; display:inline-block; width:1em; }
-.full-list-details[open] .full-list-summary::before{ content:"▾ "; }
-.full-list-details table{ margin-top:8px; }
 </style>
 <link rel="stylesheet" href="/site.css">
 </head>
@@ -661,14 +599,14 @@ tbody td:nth-child(2){
 </div>
 </div></div>
 </div>
-<div class="navdrop has-active">
+<div class="navdrop">
 <span class="navlabel">Valuation &amp; Earnings ▾</span>
 <div class="dropdown"><div class="mega">
 <div class="mcol"><h4>Valuation</h4>
 <a href="/valuations.html">Valuations</a>
 <a href="/implied-erp.html">Implied Equity Risk Premium</a>
 <a href="/equity-risk-premium.html">Equity Risk Premium by Sector</a>
-<a href="/pe-divergence.html" class="active">Forward vs. Trailing P/E Divergence</a>
+<a href="/pe-divergence.html">Forward vs. Trailing P/E Divergence</a>
 <a href="/expectations-vs-reality.html">Expectations vs. Reality</a>
 </div>
 <div class="mcol"><h4>Estimates &amp; Surprises</h4>
@@ -688,7 +626,7 @@ tbody td:nth-child(2){
 </div>
 </div></div>
 </div>
-<div class="navdrop">
+<div class="navdrop has-active">
 <span class="navlabel">Sectors &amp; Factors ▾</span>
 <div class="dropdown"><div class="mega">
 <div class="mcol"><h4>Sectors</h4>
@@ -703,7 +641,7 @@ tbody td:nth-child(2){
 <a href="/quality-lowvol-factors.html">Quality &amp; Low-Volatility Factor Screen</a>
 <a href="/small-cap-vs-large-cap.html">Small Cap vs. Large Cap Spread</a>
 <a href="/international-vs-us.html">International vs. US Relative Performance</a>
-<a href="/growth-vs-value.html">Growth vs. Value: Interest-Rate Sensitivity</a>
+<a href="/growth-vs-value.html" class="active">Growth vs. Value: Interest-Rate Sensitivity</a>
 <a href="/relative-strength-leaders.html">Relative Strength Leaders/Laggards</a>
 </div>
 </div></div>
@@ -789,218 +727,139 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 
 <div class="header">
 <div>
-<h1>Forward vs. Trailing P/E Divergence</h1>
-<div class="subtitle">The market's implied year-ahead EPS growth rate, read from the gap between forward and trailing P/E. No separate earnings-estimate data is needed, since both ratios use the same price.</div>
+<h1>Growth vs. Value: Interest-Rate Sensitivity</h1>
+<div class="subtitle">Relative strength of growth (IWF) against value (IWD) stocks since May 2000, and how much of that spread has really been a bet on the 10-year Treasury yield.</div>
 </div>
 <div class="updated" id="updated">Loading...</div>
 </div>
 
 <div class="stat-grid">
 <div class="stat-card">
-<div class="stat-label">Median implied EPS growth</div>
-<div class="stat-value" id="statMedianGrowth">…</div>
-<div class="stat-note" id="statMedianGrowthNote">Full S&amp;P 500, companies with a meaningful P/E</div>
+<div class="stat-label">Growth/Value Ratio</div>
+<div class="stat-value" id="statRatio">…</div>
+<div class="stat-note" id="statRatioNote">Indexed to 100 at May 2000</div>
 </div>
 <div class="stat-card">
-<div class="stat-label">Avg. trailing P/E vs. forward P/E</div>
-<div class="stat-value" id="statPePair" style="font-size:20px;">…</div>
-<div class="stat-note" id="statPePairNote">Simple average across companies</div>
+<div class="stat-label">12-Month Relative Return</div>
+<div class="stat-value" id="statRel12m">…</div>
+<div class="stat-note">IWF vs. IWD, trailing 252 trading days</div>
 </div>
 <div class="stat-card">
-<div class="stat-label">Implied vs. actual growth</div>
-<div class="stat-value" id="statGrowthCorr" style="font-size:20px;">…</div>
-<div class="stat-note" id="statGrowthCorrNote">Pearson r: trailing YoY growth vs. market's implied forward growth</div>
+<div class="stat-label">Current 10Y Yield Trend</div>
+<div class="stat-value" id="statRegime" style="font-size:20px;">…</div>
+<div class="stat-note" id="statRegimeNote">Avg. monthly spread return, this regime</div>
 </div>
 <div class="stat-card">
-<div class="stat-label">Highest implied growth sector</div>
-<div class="stat-value" id="statTopSector" style="font-size:18px;">…</div>
-<div class="stat-note" id="statTopSectorNote">By median implied EPS growth</div>
+<div class="stat-label">Rate Beta (Full Sample)</div>
+<div class="stat-value" id="statCorr" style="font-size:20px;">…</div>
+<div class="stat-note" id="statCorrNote">Spread return per +1pp 10Y move</div>
 </div>
 </div>
 
 <div class="chart-box">
 <div class="chart-box-header">
 <div>
-<h2>Market-wide implied EPS growth, over time</h2>
-<div class="chart-subhead">Median across the S&amp;P 500, saved weekly. The line gets more useful with each week's run.</div>
+<h2>Growth / value ratio, since 2000</h2>
+<div class="chart-subhead">IWF adjusted close ÷ IWD adjusted close, both indexed to 100 in May 2000. Rising means growth is outperforming.</div>
 </div>
 </div>
-<div class="ndr-panel">
 <div class="chart-canvas-wrap">
-<canvas id="historyChart"></canvas>
-</div>
-</div>
-</div>
-
-<div class="chart-box">
-<div class="chart-box-header">
-<div>
-<h2>Median implied EPS growth by sector</h2>
-<div class="chart-subhead">Positive means forward P/E is below trailing P/E (the market expects earnings to grow). Negative means the reverse.</div>
-</div>
-</div>
-<div class="ndr-panel">
-<div class="chart-canvas-wrap">
-<canvas id="sectorChart"></canvas>
-</div>
-</div>
-</div>
-
-<div class="chart-box">
-<div class="chart-box-header">
-<div>
-<h2>Distribution of implied EPS growth</h2>
-<div class="chart-subhead">All S&amp;P 500 companies with a usable trailing and forward P/E.</div>
-</div>
-</div>
-<div class="ndr-panel">
-<div class="chart-canvas-wrap">
-<canvas id="histogramChart"></canvas>
-</div>
-</div>
-</div>
-
-<div class="chart-box">
-<div class="chart-box-header">
-<div>
-<h2>Does last quarter's actual growth predict the market's implied forward growth?</h2>
-<div class="chart-subhead">Each point is one company. X is trailing quarterly EPS growth YoY, Y is the P/E-implied forward growth rate.</div>
-</div>
-</div>
-<div class="ndr-panel">
-<div class="scatter-canvas-wrap">
-<canvas id="growthScatter"></canvas>
-</div>
-</div>
-<div id="growthMethodTable"></div>
-</div>
-
-<div class="table-grid">
-<div class="table-box">
-<div class="table-box-header">
-<h2>Highest implied growth</h2>
-<div class="chart-subhead">Cheapest forward P/E relative to trailing</div>
-</div>
-<table id="growthTable">
-<thead><tr><th>Symbol</th><th>Sector</th><th>Trailing</th><th>Forward</th><th>Implied growth</th></tr></thead>
-<tbody id="growthBody"><tr><td colspan="5" style="text-align:center; color:var(--muted); padding:24px;">Loading&hellip;</td></tr></tbody>
-</table>
-</div>
-<div class="table-box">
-<div class="table-box-header">
-<h2>Implied decline</h2>
-<div class="chart-subhead">Forward P/E above trailing: market expects earnings to shrink</div>
-</div>
-<table id="declineTable">
-<thead><tr><th>Symbol</th><th>Sector</th><th>Trailing</th><th>Forward</th><th>Implied growth</th></tr></thead>
-<tbody id="declineBody"><tr><td colspan="5" style="text-align:center; color:var(--muted); padding:24px;">Loading&hellip;</td></tr></tbody>
-</table>
+<canvas id="ratioChart"></canvas>
 </div>
 </div>
 
 <div class="table-box">
 <div class="table-box-header">
-<h2>All companies with a meaningful P/E</h2>
-<div class="chart-subhead">Full S&amp;P 500: click a column to sort</div>
+<h2>Trailing return ladder</h2>
+<div class="chart-subhead">Total return (dividends reinvested) by style, as of the last close.</div>
 </div>
-<details class="full-list-details">
-<summary class="full-list-summary">Show full list</summary>
-<table id="stockTable">
-<thead>
-<tr>
-<th data-key="symbol">Symbol</th>
-<th data-key="sector">Sector</th>
-<th data-key="trailingPE">Trailing P/E<span class="sort-arrow">▾</span></th>
-<th data-key="forwardPE">Forward P/E<span class="sort-arrow">▾</span></th>
-<th data-key="impliedEpsGrowth">Implied growth<span class="sort-arrow">▾</span></th>
-<th data-key="quarterlyEarningsGrowthYoY">Trailing growth<span class="sort-arrow">▾</span></th>
-</tr>
-</thead>
-<tbody id="tableBody">
-<tr><td colspan="6" style="text-align:center; color:var(--muted); padding:30px;">Loading P/E data&hellip;</td></tr>
+<table id="ladderTable">
+<thead><tr id="ladderHead"></tr></thead>
+<tbody id="ladderBody">
+<tr><td colspan="8" style="text-align:center; color:var(--muted); padding:24px;">Loading&hellip;</td></tr>
 </tbody>
 </table>
-</details>
+<div class="table-footnote">1M–1Y are cumulative returns; 3Y/5Y/10Y are annualized. Growth = IWF (Russell 1000 Growth), Value = IWD (Russell 1000 Value), Blend = SPY (S&amp;P 500).</div>
+</div>
+
+<div class="chart-box">
+<div class="chart-box-header">
+<div>
+<h2>Rolling 12-month relative return</h2>
+<div class="chart-subhead">Growth/value ratio's trailing 252-trading-day return. Positive stretches are growth-leadership regimes, negative stretches are value-leadership regimes.</div>
+</div>
+</div>
+<div class="chart-canvas-wrap">
+<canvas id="rollingChart"></canvas>
+</div>
+</div>
+
+<div class="chart-box">
+<div class="chart-box-header">
+<div>
+<h2>Rolling 36-month rate beta</h2>
+<div class="chart-subhead">For each month, the slope from regressing the prior 36 monthly growth-minus-value returns on the matching monthly changes in the 10-year yield. Below zero means growth lagged value when yields rose; the further below, the stronger the link.</div>
+</div>
+</div>
+<div class="chart-canvas-wrap">
+<canvas id="betaChart"></canvas>
+</div>
+</div>
+
+<div class="chart-box">
+<div class="chart-box-header">
+<div>
+<h2>Average monthly spread return by 10-year yield trend</h2>
+<div class="chart-subhead">Months classified by the trailing 3-month change in the 10-year yield (rising: above +0.25pp, falling: below −0.25pp). Bars show the average growth-vs-value monthly return within each group.</div>
+</div>
+</div>
+<div class="chart-canvas-wrap short">
+<canvas id="regimeChart"></canvas>
+</div>
+</div>
+
+<div class="chart-box">
+<div class="chart-box-header">
+<div>
+<h2>Monthly spread return vs. change in the 10-year Treasury yield</h2>
+<div class="chart-subhead">Each point is one month. X is the month's change in the 10-year yield (percentage points), Y is that month's growth-vs-value return.</div>
+</div>
+</div>
+<div class="scatter-canvas-wrap">
+<canvas id="corrScatter"></canvas>
+</div>
+<div id="corrMethodTable"></div>
 </div>
 
 <div class="explainer">
 <h2>Methodology</h2>
-<p>Trailing P/E is price over the last 12 months of EPS. Forward P/E is price over the next 12 months of expected EPS. Since both use the same share price, dividing one by the other gives the market's implied earnings growth for the year ahead: Trailing P/E ÷ Forward P/E − 1 = Forward EPS ÷ Trailing EPS − 1. A positive number means the forward P/E is lower than the trailing P/E, so the market expects earnings to grow. A negative number means the reverse.</p>
-<p>Companies with a trailing or forward P/E below 0 or above 300 are left out. A company with near-zero earnings produces a huge (or negative) P/E that says nothing about valuation.</p>
-<p>Only the current P/E pair is available, so each week the market-wide median is added to a running history. The line starts short and gets more useful over time.</p>
-<p>Implied vs. actual growth compares the implied forward growth rate with each company's most recent year-over-year quarterly earnings growth, using Pearson and Spearman correlation. A weak or negative relationship would mean analysts mostly expect a strong recent quarter not to repeat, rather than expecting momentum to continue.</p>
-
-
+<p>Growth and value are represented by two ETFs: IWF (Russell 1000 Growth) and IWD (Russell 1000 Value), with SPY (S&amp;P 500) as the blended benchmark in the return table. Returns include dividends. Both funds launched in May 2000, which is where the ratio starts at 100. Prices come from Alpha Vantage daily adjusted data, and the 10-year Treasury yield comes from Alpha Vantage's monthly Treasury series.</p>
+<p>The idea being tested is that growth stocks behave like long-duration assets, since more of their value sits in earnings far in the future, so a rising yield should hurt them more than value stocks. Each month's growth-minus-value return is regressed on that month's change in the 10-year yield. The slope is the "rate beta": how many percentage points of monthly spread return come with a 1-point rise in the yield.</p>
+<p>Because the relationship may not hold steady, the page checks it three ways: the rolling 36-month slope over time, the full sample split into an earlier and a later half (the table under the scatter), and Pearson (linear) plus Spearman (rank) correlation so a few extreme months can't drive the result. Months are also grouped by the trailing 3-month yield trend. Monthly data gives only a few hundred observations in total and a few dozen in each yield-trend group, so treat the results as suggestive, not conclusive. Not investment advice.</p>
 </div>
 
 </div>
-
 <script>
-// ---- NDR chart styling helpers -----------------------------------------
-// Colours come from the --ndr-* custom properties (constant across themes)
-// so the charts keep their warm-paper look while still following the
-// site's "read chart colours from CSS, don't hardcode" rule.
-function ndr(name){
- return getComputedStyle(document.documentElement).getPropertyValue("--ndr-" + name).trim();
-}
-
-Chart.defaults.font.family = "'Iowan Old Style','Palatino Linotype',Georgia,serif";
-Chart.defaults.color = ndr("axis-soft");
-
-function ndrXScale(opts){
- opts = opts || {};
- return {
-  type: opts.type || "category",
-  ticks: { color: ndr("axis"), maxTicksLimit: 9, maxRotation: 0, autoSkip: true, font: { size: 11 } },
-  grid: { color: "rgba(0,0,0,0)", borderColor: ndr("axis") },
-  title: opts.title ? { display: true, text: opts.title, color: ndr("axis-soft"), font: { size: 10 } } : { display: false },
- };
-}
-
-function ndrYScale(opts){
- opts = opts || {};
- return {
-  type: opts.log ? "logarithmic" : "linear",
-  position: opts.position || "left",
-  grid: { color: ndr("grid"), drawBorder: false },
-  ticks: { color: ndr("axis"), font: { size: 11 }, callback: opts.fmt || undefined },
-  title: opts.title ? { display: true, text: opts.title, color: ndr("axis-soft"), font: { size: 10 } } : { display: false },
-  min: opts.min, max: opts.max,
- };
-}
-
-function ndrLegend(){
- return {
-  display: true, position: "top", align: "start",
-  labels: { boxWidth: 22, boxHeight: 2, color: ndr("axis"), font: { size: 11 } },
- };
-}
-
-const DATA_URL = "/api/pe-divergence";
+const DATA_URL = "/api/growth-value";
 
 let RAW = null;
-let SORT_KEY = "impliedEpsGrowth";
-let SORT_DIR = -1;
-
-function fmtPct(v, digits){
- if(v === null || v === undefined || isNaN(v)) return "n/a";
- digits = digits === undefined ? 1 : digits;
- return (v >= 0 ? "+" : "") + v.toFixed(digits) + "%";
-}
-function fmtPE(v){
- if(v === null || v === undefined || isNaN(v)) return "n/a";
- return v.toFixed(1) + "x";
-}
 
 function showError(message){
  const banner = document.getElementById("errorBanner");
  banner.textContent = message;
  banner.style.display = "block";
 }
+
 function showWarning(message){
  const banner = document.getElementById("warningBanner");
  banner.textContent = message;
  banner.style.display = "block";
+}
+
+function fmtPct(v, digits){
+ if(v === null || v === undefined || isNaN(v)) return "n/a";
+ digits = digits === undefined ? 2 : digits;
+ return (v >= 0 ? "+" : "") + v.toFixed(digits) + "%";
 }
 
 function themeInkColor(){
@@ -1026,6 +885,7 @@ function themeFearColor(){
 
 // ---- Stats helpers — same methodology as /factor-analysis, duplicated
 // here since every page on this site is self-contained (see CLAUDE.md). ----
+
 function linearRegression(xs, ys){
  const n = xs.length;
  const mx = xs.reduce((a, b) => a + b, 0) / n;
@@ -1044,7 +904,12 @@ function linearRegression(xs, ys){
  const p = 2 * (1 - normalCdf(Math.abs(t)));
  return { n, slope, intercept, r, r2, t, dof, p, sse };
 }
-function normalCdf(x){ return 0.5 * (1 + erf(x / Math.SQRT2)); }
+
+function normalCdf(x){
+ return 0.5 * (1 + erf(x / Math.SQRT2));
+}
+
+// Abramowitz & Stegun 7.1.26 approximation — accurate to ~1e-7.
 function erf(x){
  const sign = x < 0 ? -1 : 1;
  x = Math.abs(x);
@@ -1053,6 +918,7 @@ function erf(x){
  const y = 1 - (((((a5 * t + a4) * t) + a3) * t + a2) * t + a1) * t * Math.exp(-x * x);
  return sign * y;
 }
+
 function rankArray(arr){
  const idx = arr.map((v, i) => i).sort((a, b) => arr[a] - arr[b]);
  const ranks = new Array(arr.length);
@@ -1066,9 +932,74 @@ function rankArray(arr){
  }
  return ranks;
 }
-function spearmanRegression(xs, ys){ return linearRegression(rankArray(xs), rankArray(ys)); }
 
-let historyChart = null, sectorChart = null, histogramChart = null, growthScatter = null;
+function spearmanRegression(xs, ys){
+ return linearRegression(rankArray(xs), rankArray(ys));
+}
+
+function percentileRank(arr, value){
+ let below = 0;
+ for(const v of arr) if(v <= value) below++;
+ return (below / arr.length) * 100;
+}
+
+// ---- Monthly aggregation: yield-trend classification, month-end ratio
+// resampling, and the monthly growth-vs-value / rate-change pairing used by
+// the regime bar chart and the correlation scatter. ----
+
+function prevMonthKey(ym){
+ let [y, m] = ym.split("-").map(Number);
+ m -= 1;
+ if(m < 1){ m = 12; y -= 1; }
+ return y + "-" + String(m).padStart(2, "0");
+}
+
+function monthEndMap(dates, values){
+ const map = new Map();
+ for(let i = 0; i < dates.length; i++) map.set(dates[i].slice(0, 7), values[i]); // last write per key wins = month-end
+ return map;
+}
+
+function buildMonthly(data){
+ const ratioByMonth = monthEndMap(data.dates, data.ratioGrowthValue);
+ const y = data.treasury10yMonthly; // ascending
+
+ const records = [];
+ let currentRegime = null;
+ for(let i = 3; i < y.length; i++){
+  const ym = y[i].date.slice(0, 7);
+  const trend = y[i].value - y[i - 3].value;
+  const regime = trend > 0.25 ? "Rising" : trend < -0.25 ? "Falling" : "Flat";
+  currentRegime = regime;
+  const ratioNow = ratioByMonth.get(ym);
+  const ratioPrev = ratioByMonth.get(prevMonthKey(ym));
+  const relReturn = (ratioNow !== undefined && ratioPrev !== undefined)
+   ? Math.round((ratioNow / ratioPrev - 1) * 10000) / 100
+   : null;
+  const d10y = Math.round((y[i].value - y[i - 1].value) * 1000) / 1000;
+  records.push({ ym, regime, relReturn, d10y });
+ }
+
+ const regimeGroups = { Rising: [], Flat: [], Falling: [] };
+ for(const r of records){
+  if(r.relReturn === null) continue;
+  regimeGroups[r.regime].push(r.relReturn);
+ }
+ const regimeStats = {};
+ for(const key of Object.keys(regimeGroups)){
+  const vals = regimeGroups[key];
+  const n = vals.length;
+  regimeStats[key] = { n, mean: n ? vals.reduce((a, b) => a + b, 0) / n : null };
+ }
+
+ const corrPairs = records
+  .filter(r => r.relReturn !== null)
+  .map(r => ({ x: r.d10y, y: r.relReturn, ym: r.ym }));
+
+ return { records, regimeStats, currentRegime, corrPairs };
+}
+
+let ratioChart = null, rollingChart = null, betaChart = null, regimeChart = null, corrScatter = null;
 
 async function init(){
  try{
@@ -1077,102 +1008,210 @@ async function init(){
   if(!res.ok || data.error) throw new Error(data.error || "failed to load");
 
   RAW = data;
-  document.getElementById("updated").textContent = "As of " + new Date(data.generated_at_utc).toLocaleString("en-US", { month: "2-digit", day: "2-digit", year: "numeric", hour: "numeric", minute: "2-digit" });
+  document.getElementById("updated").textContent =
+   "As of " + usDate(data.asOfDate) + " · " + new Date(data.generated_at_utc).toLocaleString("en-US", { month: "2-digit", day: "2-digit", year: "numeric", hour: "numeric", minute: "2-digit" });
 
-  if(data.loadedCount < data.universeSize){
-   showWarning("Only " + data.loadedCount + " of " + data.universeSize + " S&P 500 constituents loaded. Some data may be missing.");
-  }
-
-  renderStats();
-  renderHistoryChart();
-  renderSectorChart();
-  renderHistogram();
-  renderGrowthScatter();
-  renderLeaderTable(data.growthLeaders, "growthBody");
-  renderLeaderTable(data.declineLeaders, "declineBody");
-  renderTable();
+  const monthly = buildMonthly(data);
+  renderStats(data, monthly);
+  renderRatioChart(data);
+  renderLadderTable(data);
+  renderRollingChart(data);
+  renderBetaChart(monthly);
+  renderRegimeChart(monthly);
+  renderCorrScatter(monthly);
 
  }catch(e){
-  showError("Couldn't load P/E divergence data (" + e.message + "). The /api/pe-divergence function may not have run yet.");
-  document.getElementById("tableBody").innerHTML =
-   '<tr><td colspan="6" style="text-align:center; color:var(--muted); padding:30px;">No data available.</td></tr>';
+  showError("Couldn't load growth/value data (" + e.message + "). The /api/growth-value function may not have run yet.");
  }
 }
 
-function renderStats(){
- const m = RAW.market;
- const growthEl = document.getElementById("statMedianGrowth");
- growthEl.textContent = fmtPct(m.medianImpliedEpsGrowth);
- growthEl.classList.toggle("cell-neg", m.medianImpliedEpsGrowth !== null && m.medianImpliedEpsGrowth < 0);
- document.getElementById("statMedianGrowthNote").textContent = "n=" + m.meaningfulPeCount + " of " + m.companyCount + " companies";
-
- document.getElementById("statPePair").textContent = fmtPE(m.meanTrailingPE) + " → " + fmtPE(m.meanForwardPE);
-
- const pairs = RAW.growthPairs;
- const corrEl = document.getElementById("statGrowthCorr");
- const corrNoteEl = document.getElementById("statGrowthCorrNote");
- if(pairs.length >= 10){
-  const reg = linearRegression(pairs.map(p => p.x), pairs.map(p => p.y));
-  corrEl.textContent = (reg.r >= 0 ? "+" : "") + reg.r.toFixed(2);
-  corrNoteEl.textContent = "n=" + reg.n + ", p=" + (reg.p < 0.001 ? "<0.001" : reg.p.toFixed(3));
- }else{
-  corrEl.textContent = "n/a";
-  corrNoteEl.textContent = "Not enough companies with both figures this run";
+function ordinal(n){
+ const rem100 = n % 100;
+ if(rem100 >= 11 && rem100 <= 13) return n + "th";
+ switch(n % 10){
+  case 1: return n + "st";
+  case 2: return n + "nd";
+  case 3: return n + "rd";
+  default: return n + "th";
  }
-
- const sectors = [...RAW.sectors].sort((a, b) => b.medianImpliedEpsGrowth - a.medianImpliedEpsGrowth);
- document.getElementById("statTopSector").textContent = sectors.length ? sectors[0].sector : "n/a";
- document.getElementById("statTopSectorNote").textContent = sectors.length ? fmtPct(sectors[0].medianImpliedEpsGrowth) + ", n=" + sectors[0].companyCount : "";
 }
 
-function renderHistoryChart(){
- const rows = RAW.history;
- const ctx = document.getElementById("historyChart").getContext("2d");
- if(historyChart) historyChart.destroy();
- if(!rows.length){
-  ctx.canvas.parentElement.insertAdjacentHTML("beforeend",
-   '<div style="text-align:center; color:var(--muted); padding-top:140px;">No history yet: check back after next week\'s run.</div>');
-  return;
+function renderStats(data, monthly){
+ const ratio = data.ratioGrowthValue;
+ const current = ratio[ratio.length - 1];
+ const pct = percentileRank(ratio, current);
+ document.getElementById("statRatio").textContent = current.toFixed(1);
+ document.getElementById("statRatioNote").textContent =
+  ordinal(Math.round(pct)) + " percentile of full history (since " + data.commonStartDate.slice(0, 4) + ")";
+
+ const window252 = 252;
+ let rel12m = null;
+ if(ratio.length > window252) rel12m = (ratio[ratio.length - 1] / ratio[ratio.length - 1 - window252] - 1) * 100;
+ const rel12mEl = document.getElementById("statRel12m");
+ rel12mEl.textContent = fmtPct(rel12m);
+ rel12mEl.classList.toggle("cell-neg", rel12m !== null && rel12m < 0);
+
+ const regime = monthly.currentRegime;
+ const stats = regime ? monthly.regimeStats[regime] : null;
+ document.getElementById("statRegime").textContent = regime ? regime + " yields" : "n/a";
+ if(stats && stats.n){
+  document.getElementById("statRegimeNote").textContent =
+   "Avg. " + fmtPct(stats.mean) + "/mo when yields were " + regime.toLowerCase() + " (n=" + stats.n + " mo.)";
  }
- historyChart = new Chart(ctx, {
+
+ const corrEl = document.getElementById("statCorr");
+ const corrNoteEl = document.getElementById("statCorrNote");
+ if(monthly.corrPairs.length >= 24){
+  const reg = linearRegression(monthly.corrPairs.map(p => p.x), monthly.corrPairs.map(p => p.y));
+  corrEl.textContent = (reg.slope >= 0 ? "+" : "") + reg.slope.toFixed(2) + "pp";
+  corrEl.classList.toggle("cell-neg", reg.slope < 0);
+  corrNoteEl.textContent = "Spread return per +1pp 10Y move (r = " + (reg.r >= 0 ? "+" : "") + reg.r.toFixed(2) + ", p " + (reg.p < 0.001 ? "<0.001" : "= " + reg.p.toFixed(3)) + ", n=" + reg.n + " mo.)";
+ }
+}
+
+function renderRatioChart(data){
+ const ctx = document.getElementById("ratioChart").getContext("2d");
+ if(ratioChart) ratioChart.destroy();
+ ratioChart = new Chart(ctx, {
   type: "line",
   data: {
-   labels: rows.map(r => r.week),
-   datasets: [{
-    label: "Median implied EPS growth",
-    data: rows.map(r => r.medianImpliedEpsGrowth),
-    borderColor: ndr("navy"),
-    backgroundColor: "transparent",
-    borderWidth: 2,
-    pointRadius: rows.length === 1 ? 4 : 1,
-    tension: 0.15,
-   }],
+   labels: data.dates,
+   datasets: [
+    { label: "Growth/Value ratio", data: data.ratioGrowthValue, borderColor: themeGreedColor(), backgroundColor: themeGreedColor(), borderWidth: 1.3, pointRadius: 0, fill: false },
+   ],
   },
   options: {
    responsive: true,
    maintainAspectRatio: false,
-   plugins: { legend: { display: false } },
+   interaction: { mode: "index", intersect: false },
+   plugins: {
+    legend: { display: false },
+    tooltip: { callbacks: { label: ctx => "Ratio: " + ctx.parsed.y.toFixed(1) } },
+   },
    scales: {
-    x: ndrXScale(),
-    y: ndrYScale({ fmt: (v) => v + "%" }),
+    x: { ticks: { color: themeMutedColor(), maxTicksLimit: 8 }, grid: { color: themeHairColor() } },
+    y: { ticks: { color: themeMutedColor() }, grid: { color: themeHairColor() } },
    },
   },
  });
 }
 
-function renderSectorChart(){
- const sorted = [...RAW.sectors].sort((a, b) => a.medianImpliedEpsGrowth - b.medianImpliedEpsGrowth);
- const colors = sorted.map(s => s.medianImpliedEpsGrowth >= 0 ? ndr("green") : ndr("red"));
- const ctx = document.getElementById("sectorChart").getContext("2d");
- if(sectorChart) sectorChart.destroy();
- sectorChart = new Chart(ctx, {
-  type: "bar",
+function fmtLadderCell(cell){
+ if(!cell) return '<span class="cell-na">: </span>';
+ return fmtPct(cell.cumPct);
+}
+
+function renderLadderTable(data){
+ const periods = data.ladder.periods;
+ const headEl = document.getElementById("ladderHead");
+ headEl.innerHTML = "<th>Style</th>" + periods.map((p, i) => "<th>" + p + (i >= 4 ? "*" : "") + "</th>").join("");
+
+ const rows = [
+  { label: "Growth (IWF)", key: "growth" },
+  { label: "Value (IWD)", key: "value" },
+  { label: "Blend (SPY)", key: "blend" },
+ ];
+ document.getElementById("ladderBody").innerHTML = rows.map(r => {
+  const cells = data.ladder[r.key].map(fmtLadderCell).join("</td><td>");
+  return "<tr><td>" + r.label + "</td><td>" + cells + "</td></tr>";
+ }).join("");
+}
+
+function rollingRelReturn(ratio, window){
+ const out = new Array(ratio.length).fill(null);
+ for(let i = window; i < ratio.length; i++){
+  out[i] = Math.round((ratio[i] / ratio[i - window] - 1) * 10000) / 100;
+ }
+ return out;
+}
+
+function renderRollingChart(data){
+ const rolling = rollingRelReturn(data.ratioGrowthValue, 252);
+ const firstValid = rolling.findIndex(v => v !== null);
+ const dates = data.dates.slice(firstValid);
+ const values = rolling.slice(firstValid);
+
+ const ctx = document.getElementById("rollingChart").getContext("2d");
+ if(rollingChart) rollingChart.destroy();
+ rollingChart = new Chart(ctx, {
+  type: "line",
   data: {
-   labels: sorted.map(s => s.sector),
-   datasets: [{ label: "Median implied growth", data: sorted.map(s => s.medianImpliedEpsGrowth), backgroundColor: colors, borderRadius: 4 }],
+   labels: dates,
+   datasets: [
+    { label: "12-mo. relative return", data: values, borderColor: themeInkColor(), backgroundColor: themeInkColor(), borderWidth: 1.2, pointRadius: 0, fill: false },
+    { label: "Zero", data: dates.map(() => 0), borderColor: themeMutedColor(), borderWidth: 1, borderDash: [4, 3], pointRadius: 0, fill: false },
+   ],
   },
   options: {
-   indexAxis: "y",
+   responsive: true,
+   maintainAspectRatio: false,
+   interaction: { mode: "index", intersect: false },
+   plugins: {
+    legend: { display: false },
+    tooltip: {
+     callbacks: {
+      label: ctx => ctx.dataset.label === "Zero" ? null : "12-mo. rel. return: " + fmtPct(ctx.parsed.y),
+     },
+    },
+   },
+   scales: {
+    x: { ticks: { color: themeMutedColor(), maxTicksLimit: 8 }, grid: { color: themeHairColor() } },
+    y: { ticks: { color: themeMutedColor(), callback: v => (Math.round(v * 100) / 100) + "%" }, grid: { color: themeHairColor() } },
+   },
+  },
+ });
+}
+
+function renderBetaChart(monthly){
+ const pairs = monthly.corrPairs;
+ const win = 36;
+ const labels = [], vals = [];
+ for(let i = win - 1; i < pairs.length; i++){
+  const w = pairs.slice(i - win + 1, i + 1);
+  labels.push(pairs[i].ym);
+  vals.push(Math.round(linearRegression(w.map(p => p.x), w.map(p => p.y)).slope * 100) / 100);
+ }
+ const ctx = document.getElementById("betaChart").getContext("2d");
+ if(betaChart) betaChart.destroy();
+ betaChart = new Chart(ctx, {
+  type: "line",
+  data: {
+   labels,
+   datasets: [
+    { label: "Rolling 36-mo. rate beta", data: vals, borderColor: themeGreedColor(), backgroundColor: themeGreedColor(), borderWidth: 1.3, pointRadius: 0, fill: false },
+    { label: "Zero", data: labels.map(() => 0), borderColor: themeMutedColor(), borderWidth: 1, borderDash: [4, 3], pointRadius: 0, fill: false },
+   ],
+  },
+  options: {
+   responsive: true,
+   maintainAspectRatio: false,
+   interaction: { mode: "index", intersect: false },
+   plugins: {
+    legend: { display: false },
+    tooltip: { callbacks: { label: c => c.dataset.label === "Zero" ? null : "Rate beta: " + (c.parsed.y >= 0 ? "+" : "") + c.parsed.y.toFixed(2) + "pp per +1pp 10Y" } },
+   },
+   scales: {
+    x: { ticks: { color: themeMutedColor(), maxTicksLimit: 8 }, grid: { color: themeHairColor() } },
+    y: { title: { display: true, text: "pp of spread return per +1pp 10Y", color: themeMutedColor(), font: { size: 10 } }, ticks: { color: themeMutedColor(), callback: v => (Math.round(v * 100) / 100) }, grid: { color: themeHairColor() } },
+   },
+  },
+ });
+}
+
+function renderRegimeChart(monthly){
+ const order = ["Falling", "Flat", "Rising"];
+ const stats = order.map(k => monthly.regimeStats[k]);
+ const colors = stats.map(s => (s.mean === null ? themeMutedColor() : s.mean >= 0 ? themeGreedColor() : themeFearColor()));
+
+ const ctx = document.getElementById("regimeChart").getContext("2d");
+ if(regimeChart) regimeChart.destroy();
+ regimeChart = new Chart(ctx, {
+  type: "bar",
+  data: {
+   labels: order,
+   datasets: [{ label: "Avg. monthly spread return", data: stats.map(s => s.mean), backgroundColor: colors, borderRadius: 4, maxBarThickness: 64 }],
+  },
+  options: {
    responsive: true,
    maintainAspectRatio: false,
    plugins: {
@@ -1180,61 +1219,22 @@ function renderSectorChart(){
     tooltip: {
      callbacks: {
       label: ctx => {
-       const s = sorted[ctx.dataIndex];
-       return ["Median implied growth: " + fmtPct(s.medianImpliedEpsGrowth), "Avg. P/E: " + fmtPE(s.meanTrailingPE) + " → " + fmtPE(s.meanForwardPE), "n=" + s.companyCount];
+       const s = stats[ctx.dataIndex];
+       return ["Avg: " + fmtPct(s.mean), "n=" + s.n + " months"];
       },
      },
     },
    },
-   // Horizontal bar: x is the value axis (needs the numeric formatter
-   // ndrYScale supports), y is the category axis (ndrXScale's job).
    scales: {
-    x: ndrYScale({ fmt: (v) => v + "%" }),
-    y: ndrXScale(),
+    x: { ticks: { color: themeMutedColor() }, grid: { display: false } },
+    y: { ticks: { color: themeMutedColor(), callback: v => (Math.round(v * 100) / 100) + "%" }, grid: { color: themeHairColor() } },
    },
   },
  });
 }
 
-function renderHistogram(){
- const buckets = [
-  { max: -20, label: "<-20%" }, { max: -10, label: "-20 to -10%" }, { max: 0, label: "-10 to 0%" },
-  { max: 10, label: "0 to 10%" }, { max: 20, label: "10 to 20%" }, { max: 30, label: "20 to 30%" },
-  { max: 50, label: "30 to 50%" }, { max: Infinity, label: ">50%" },
- ];
- const counts = buckets.map(() => 0);
- RAW.companies.forEach(c => {
-  if(c.impliedEpsGrowth === null) return;
-  const idx = buckets.findIndex(b => c.impliedEpsGrowth < b.max);
-  counts[idx === -1 ? buckets.length - 1 : idx]++;
- });
-
- const ctx = document.getElementById("histogramChart").getContext("2d");
- if(histogramChart) histogramChart.destroy();
- histogramChart = new Chart(ctx, {
-  type: "bar",
-  data: { labels: buckets.map(b => b.label), datasets: [{ label: "Companies", data: counts, backgroundColor: ndr("gold"), borderRadius: 4, maxBarThickness: 64 }] },
-  options: {
-   responsive: true,
-   maintainAspectRatio: false,
-   plugins: { legend: { display: false } },
-   scales: {
-    x: ndrXScale(),
-    y: ndrYScale({ fmt: (v) => Number(v).toFixed(0) }),
-   },
-  },
- });
-}
-
-function renderGrowthScatter(){
- const pairs = RAW.growthPairs;
- const box = document.getElementById("growthScatter").parentElement;
- if(pairs.length < 10){
-  document.getElementById("growthMethodTable").innerHTML =
-   '<div class="method-note">Not enough companies with both a trailing growth figure and a usable P/E pair (n=' + pairs.length + ', need at least 10) to run this regression.</div>';
-  return;
- }
-
+function renderCorrScatter(monthly){
+ const pairs = monthly.corrPairs;
  const pearson = linearRegression(pairs.map(p => p.x), pairs.map(p => p.y));
  const spear = spearmanRegression(pairs.map(p => p.x), pairs.map(p => p.y));
 
@@ -1245,14 +1245,14 @@ function renderGrowthScatter(){
   { x: xMax, y: pearson.intercept + pearson.slope * xMax },
  ];
 
- const ctx = document.getElementById("growthScatter").getContext("2d");
- if(growthScatter) growthScatter.destroy();
- growthScatter = new Chart(ctx, {
+ const ctx = document.getElementById("corrScatter").getContext("2d");
+ if(corrScatter) corrScatter.destroy();
+ corrScatter = new Chart(ctx, {
   type: "scatter",
   data: {
    datasets: [
-    { label: "Companies", data: pairs, backgroundColor: ndr("slate"), pointRadius: 3, showLine: false },
-    { label: "Regression fit", type: "line", data: linePoints, borderColor: ndr("red"), borderWidth: 1.5, borderDash: [4, 3], pointRadius: 0, fill: false },
+    { label: "Months", data: pairs, backgroundColor: themeGreedColor(), pointRadius: 3.5, showLine: false },
+    { label: "Regression fit", type: "line", data: linePoints, borderColor: themeInkColor(), borderWidth: 1.5, borderDash: [4, 3], pointRadius: 0, fill: false },
    ],
   },
   options: {
@@ -1262,14 +1262,13 @@ function renderGrowthScatter(){
     legend: { display: false },
     tooltip: {
      callbacks: {
-      label: ctx => ctx.dataset.label === "Companies" ? (ctx.raw.symbol + ": " + fmtPct(ctx.raw.x) + " → " + fmtPct(ctx.raw.y)) : null,
+      label: ctx => ctx.dataset.label === "Months" ? (ctx.raw.ym + ": Δ10Y " + fmtPct(ctx.raw.x) + "pp → " + fmtPct(ctx.raw.y)) : null,
      },
     },
    },
-   // Scatter's x-axis is numeric, not category — override ndrXScale's type.
    scales: {
-    x: ndrXScale({ type: "linear", title: "Trailing quarterly EPS growth YoY (%)" }),
-    y: ndrYScale({ title: "P/E-implied forward growth (%)" }),
+    x: { title: { display: true, text: "Δ 10Y yield (pp)", color: themeMutedColor(), font: { size: 10 } }, ticks: { color: themeMutedColor(), font: { size: 10 } }, grid: { color: themeHairColor() } },
+    y: { title: { display: true, text: "Monthly growth-minus-value return (%)", color: themeMutedColor(), font: { size: 10 } }, ticks: { color: themeMutedColor(), font: { size: 10 } }, grid: { color: themeHairColor() } },
    },
   },
  });
@@ -1286,69 +1285,22 @@ function renderGrowthScatter(){
    '<td class="' + (sig ? "sig" : "") + '">' + (stats.p < 0.001 ? "<0.001" : stats.p.toFixed(3)) + "</td>" +
   "</tr>";
  }
- document.getElementById("growthMethodTable").innerHTML =
+
+ const mid = Math.floor(pairs.length / 2);
+ const first = pairs.slice(0, mid), second = pairs.slice(mid);
+ const half = (arr, label) => arr.length >= 12
+  ? row(label + " (" + arr[0].ym + " to " + arr[arr.length - 1].ym + ")", linearRegression(arr.map(p => p.x), arr.map(p => p.y)))
+  : "";
+
+ document.getElementById("corrMethodTable").innerHTML =
+  '<div style="overflow-x:auto;">' +
   '<table class="method-table">' +
-   "<thead><tr><th>Method</th><th>n</th><th>r</th><th>r&sup2;</th><th>slope</th><th>t</th><th>p</th></tr></thead>" +
-   "<tbody>" + row("Pearson (OLS)", pearson) + row("Spearman (&rho;)", spear) + "</tbody>" +
-  "</table>";
+   "<thead><tr><th>Sample / method</th><th>n</th><th>r</th><th>r&sup2;</th><th>slope</th><th>t</th><th>p</th></tr></thead>" +
+   "<tbody>" + row("Full sample, Pearson (OLS)", pearson) + row("Full sample, Spearman (&rho;)", spear) +
+   half(first, "First half, Pearson") + half(second, "Second half, Pearson") + "</tbody>" +
+  "</table></div>" +
+  '<div class="method-note">Slope is percentage points of monthly growth-minus-value return per 1pp move in the 10-year yield that month. The split compares the earlier and later half of the sample to check the relationship is stable.</div>';
 }
-
-function renderLeaderTable(rows, tbodyId){
- const tbody = document.getElementById(tbodyId);
- if(!rows || !rows.length){
-  tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; color:var(--muted); padding:24px;">No qualifying companies.</td></tr>';
-  return;
- }
- tbody.innerHTML = rows.map(r => `<tr>
-  <td><span class="sector-name">${r.symbol}</span></td>
-  <td><span class="sector-ticker">${r.sector || "n/a"}</span></td>
-  <td>${fmtPE(r.trailingPE)}</td>
-  <td>${fmtPE(r.forwardPE)}</td>
-  <td>${fmtPct(r.impliedEpsGrowth)}</td>
- </tr>`).join("");
-}
-
-function sortBy(key){
- if(SORT_KEY === key){
-  SORT_DIR = -SORT_DIR;
- }else{
-  SORT_KEY = key;
-  SORT_DIR = 1;
- }
- renderTable();
-}
-
-function renderTable(){
- const rows = [...RAW.companies].sort((a, b) => {
-  const av = a[SORT_KEY], bv = b[SORT_KEY];
-  if(av === null || av === undefined) return 1;
-  if(bv === null || bv === undefined) return -1;
-  if(typeof av === "string") return av.localeCompare(bv) * SORT_DIR;
-  return (av - bv) * SORT_DIR;
- });
-
- const tbody = document.getElementById("tableBody");
- tbody.innerHTML = rows.map(r => `<tr>
-  <td><span class="sector-name">${r.symbol}</span></td>
-  <td><span class="sector-ticker">${r.sector || "n/a"}</span></td>
-  <td>${fmtPE(r.trailingPE)}</td>
-  <td>${fmtPE(r.forwardPE)}</td>
-  <td>${fmtPct(r.impliedEpsGrowth)}</td>
-  <td>${fmtPct(r.quarterlyEarningsGrowthYoY)}</td>
- </tr>`).join("");
-
- document.querySelectorAll("#stockTable thead th").forEach(th => {
-  const key = th.dataset.key;
-  th.classList.toggle("sorted", key === SORT_KEY);
-  const arrow = th.querySelector(".sort-arrow");
-  if(arrow) arrow.textContent = (key === SORT_KEY && SORT_DIR === 1) ? "▴" : "▾";
- });
-}
-
-document.querySelectorAll("#stockTable thead th").forEach(th => {
- const key = th.dataset.key;
- if(key) th.addEventListener("click", () => sortBy(key));
-});
 
 init();
 </script>

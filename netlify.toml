@@ -145,6 +145,11 @@
   status = 200
 
 [[redirects]]
+  from = "/api/growth-value"
+  to = "/.netlify/functions/growth-value"
+  status = 200
+
+[[redirects]]
   from = "/api/international-us"
   to = "/.netlify/functions/international-us"
   status = 200
@@ -436,6 +441,12 @@
   # levels move every trading day; a handful of Yahoo calls, no contention
   # risk.
   schedule = "20 22 * * *"
+
+[functions."scheduled-growth-value-background"]
+  # Daily 22:25 UTC, right after scheduled-international-background (22:20).
+  # Only 4 Alpha Vantage calls (3 full-history TIME_SERIES_DAILY_ADJUSTED +
+  # monthly TREASURY_YIELD), so no rate-limit contention risk.
+  schedule = "25 22 * * 1-5"
 
 [functions."scheduled-share-count-background"]
   # Weekly, Saturday 10:50 UTC — after scheduled-insider-transactions-
