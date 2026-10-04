@@ -1120,8 +1120,8 @@ function renderChartRange(rangeKey){
     },
    },
    scales: {
-    x: { ticks: { color: "#8b9199", maxTicksLimit: 8 }, grid: { color: "#2b3138" } },
-    y: { ticks: { color: "#8b9199" }, grid: { color: "#2b3138" } },
+    x: { ticks: { color: "#8b9199", maxTicksLimit: 8 }, grid: { color: (getComputedStyle(document.documentElement).getPropertyValue("--hair").trim() || "#2b3138") } },
+    y: { ticks: { color: "#8b9199" }, grid: { color: (getComputedStyle(document.documentElement).getPropertyValue("--hair").trim() || "#2b3138") } },
    },
   },
  });

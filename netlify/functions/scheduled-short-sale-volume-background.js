@@ -75,6 +75,16 @@ function mean(values) {
   const v = values.filter((x) => x !== null && x !== undefined && Number.isFinite(x));
   return v.length ? v.reduce((a, b) => a + b, 0) / v.length : null;
 }
+// Linear-interpolated percentile, so the history can carry an
+// interquartile band around each snapshot's median.
+function quantile(values, q) {
+  const v = values.filter((x) => x !== null && x !== undefined && !isNaN(x)).sort((a, b) => a - b);
+  if (!v.length) return null;
+  const pos = (v.length - 1) * q;
+  const lo = Math.floor(pos), hi = Math.ceil(pos);
+  return v[lo] + (v[hi] - v[lo]) * (pos - lo);
+}
+
 function median(values) {
   const v = values.filter((x) => x !== null && x !== undefined && Number.isFinite(x)).sort((a, b) => a - b);
   if (!v.length) return null;
@@ -233,7 +243,7 @@ exports.handler = async () => {
     // Market-median SVR trend, one point per FINRA trading day.
     const trend = dates.map((d, i) => {
       const dayValues = [...svrByOurSymbol.values()].map((series) => series[i]).filter((v) => v !== null);
-      return { date: d, medianSvr: round(median(dayValues), 4) };
+      return { date: d, medianSvr: round(median(dayValues), 4), p25Svr: round(quantile(dayValues, 0.25), 4), p75Svr: round(quantile(dayValues, 0.75), 4) };
     });
 
     // "Current" snapshot: average SVR over the most recent RECENT_SNAPSHOT_DAYS.

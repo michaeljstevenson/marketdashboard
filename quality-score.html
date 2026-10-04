@@ -630,6 +630,7 @@ tbody td:nth-child(2){
 .full-list-summary::before{ content:"▸ "; display:inline-block; width:1em; }
 .full-list-details[open] .full-list-summary::before{ content:"▾ "; }
 .full-list-details table{ margin-top:8px; }
+
 </style>
 <link rel="stylesheet" href="/site.css">
 </head>
@@ -844,7 +845,7 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 </div>
 </div>
 <div class="ndr-panel">
-<div class="chart-canvas-wrap">
+<div class="chart-canvas-wrap" style="height:460px;">
 <canvas id="sectorChart"></canvas>
 </div>
 </div>
@@ -1161,25 +1162,57 @@ function renderDistributionChart(){
  });
 }
 
+// F-Scores are integers from 0 to 9, so each sector is shown as its mix of
+// scores: red for the page's Low Quality band (0 to 2), green for High
+// Quality (8 to 9), grays in between, darker toward each end.
+const FSCORE_COLORS = ["#8f2f2a", "#a83c36", "#c4746e", "#e6dfcf", "#dcd4c2", "#d1c9b5", "#c6bda8", "#bbb19b", "#7e9a6c", "#4f6f3f"];
 function renderSectorChart(){
- const sorted = [...RAW.sectors].sort((a, b) => (b.medianScore ?? -Infinity) - (a.medianScore ?? -Infinity));
- const colors = sorted.map(s => SECTOR_COLORS[s.sector] || "#8b9199");
+ const bySector = {};
+ for(const c of RAW.companies){
+  if(c.score === null || c.score === undefined || !c.sector) continue;
+  (bySector[c.sector] = bySector[c.sector] || []).push(c.score);
+ }
+ const rows = RAW.sectors.filter(s => bySector[s.sector]).map(s => {
+  const scores = bySector[s.sector];
+  const counts = Array.from({ length: 10 }, (_, k) => scores.filter(v => v === k).length);
+  const sorted = scores.slice().sort((x, y) => x - y);
+  const mid = Math.floor(sorted.length / 2);
+  const median = sorted.length % 2 ? sorted[mid] : (sorted[mid - 1] + sorted[mid]) / 2;
+  const high = (counts[8] + counts[9]) / scores.length;
+  return { sector: s.sector, n: scores.length, counts, median, high };
+ }).sort((x, y) => (y.median - x.median) || (y.high - x.high));
  const ctx = document.getElementById("sectorChart").getContext("2d");
  if(sectorChart) sectorChart.destroy();
  sectorChart = new Chart(ctx, {
   type: "bar",
-  data: { labels: sorted.map(s => s.sector), datasets: [{ label: "Median F-Score", data: sorted.map(s => s.medianScore), backgroundColor: colors, borderRadius: 4 }] },
+  data: {
+   labels: rows.map(r => r.sector + " (median " + (Number.isInteger(r.median) ? r.median : r.median.toFixed(1)) + ")"),
+   datasets: FSCORE_COLORS.map((color, k) => ({
+    label: String(k),
+    data: rows.map(r => r.counts[k] / r.n * 100),
+    backgroundColor: color,
+    borderColor: ndr("plot"),
+    borderWidth: { left: 1, right: 1 },
+    borderSkipped: false,
+    stack: "mix",
+    barPercentage: 0.75,
+   })),
+  },
   options: {
    indexAxis: "y",
    responsive: true,
    maintainAspectRatio: false,
    plugins: {
-    legend: { display: false },
-    tooltip: { callbacks: { label: ctx => { const s = sorted[ctx.dataIndex]; return ["Median: " + s.medianScore + "/9", "n=" + s.companyCount + " companies", fmtPlainPct(s.highQualityPct) + " score 8-9"]; } } },
+    legend: { display: true, position: "top", align: "start", labels: { boxWidth: 12, boxHeight: 10, color: ndr("axis"), font: { size: 11 }, generateLabels: chart => chart.data.datasets.map((d, k) => ({ text: k === 0 ? "Score 0" : String(k), fillStyle: d.backgroundColor, strokeStyle: d.backgroundColor, lineWidth: 0, datasetIndex: k, hidden: false, fontColor: ndr("axis") })) } },
+    zoom: false,
+    tooltip: { callbacks: {
+     title: items => rows[items[0].dataIndex].sector,
+     label: ctx => { const r = rows[ctx.dataIndex]; const k = ctx.datasetIndex; return "Score " + k + ": " + r.counts[k] + " of " + r.n + " (" + ctx.parsed.x.toFixed(0) + "%)"; },
+    } },
    },
    scales: {
-    x: ndrYScale({ position: "bottom", min: 0, max: 9 }),
-    y: ndrCategoryScale(),
+    x: { ...ndrYScale({ position: "bottom", min: 0, max: 100, fmt: v => v + "%" }), stacked: true },
+    y: { stacked: true, ticks: { color: ndr("axis"), font: { size: 11 } }, grid: { display: false }, border: { color: ndr("axis") } },
    },
   },
  });

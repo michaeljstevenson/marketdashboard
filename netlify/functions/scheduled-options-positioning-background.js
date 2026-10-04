@@ -73,6 +73,16 @@ function mean(values) {
   return v.reduce((a, b) => a + b, 0) / v.length;
 }
 
+// Linear-interpolated percentile, so the history can carry an
+// interquartile band around each snapshot's median.
+function quantile(values, q) {
+  const v = values.filter((x) => x !== null && x !== undefined && !isNaN(x)).sort((a, b) => a - b);
+  if (!v.length) return null;
+  const pos = (v.length - 1) * q;
+  const lo = Math.floor(pos), hi = Math.ceil(pos);
+  return v[lo] + (v[hi] - v[lo]) * (pos - lo);
+}
+
 function median(values) {
   const v = values.filter((x) => x !== null && x !== undefined && !isNaN(x)).sort((a, b) => a - b);
   if (!v.length) return null;
@@ -257,7 +267,11 @@ exports.handler = async () => {
     const previous = (await getOptionsPositioningStore().get(BLOB_KEY, { type: "json" })) || { history: [] };
     const history = Array.isArray(previous.history) ? previous.history : [];
     const weekKey = new Date().toISOString().slice(0, 10);
-    const point = { week: weekKey, medianPutCallRatio: market.medianPutCallRatio, companyCount: market.companyCount };
+    const point = {
+      week: weekKey, medianPutCallRatio: market.medianPutCallRatio, companyCount: market.companyCount,
+      p25PutCallRatio: round(quantile(companies.map((c) => c.putCallRatio), 0.25), 3),
+      p75PutCallRatio: round(quantile(companies.map((c) => c.putCallRatio), 0.75), 3),
+    };
     if (!history.length || history[history.length - 1].week !== weekKey) {
       history.push(point);
     } else {

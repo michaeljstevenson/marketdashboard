@@ -706,6 +706,21 @@ tbody td:first-child{
  border-left:2px solid var(--greed);
  max-width:780px;
 }
+
+/* Distribution strip charts: key under the plot */
+.strip-key-row{
+ display:flex;
+ flex-wrap:wrap;
+ gap:6px 16px;
+ margin-top:10px;
+ font-size:11px;
+ color:var(--muted);
+}
+.strip-key{ display:inline-flex; align-items:center; gap:6px; }
+.strip-key .sk-dot{ width:7px; height:7px; border-radius:50%; background:var(--muted); opacity:0.8; }
+.strip-key .sk-box{ width:16px; height:9px; border:1px solid var(--muted); background:rgba(125,138,153,0.18); border-radius:2px; }
+.strip-key .sk-line{ width:3px; height:12px; background:var(--ink); border-radius:2px; }
+.strip-key .sk-tri{ width:0; height:0; border-left:4px solid transparent; border-right:4px solid transparent; border-bottom:7px solid var(--muted); }
 </style>
 <link rel="stylesheet" href="/site.css">
 </head>
@@ -922,6 +937,7 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <canvas id="historyChart"></canvas>
 </div>
 </div>
+<div id="historyBandNote" style="font-size:11px; color:var(--muted); margin-top:8px;"></div>
 </div>
 
 <div class="chart-box">
@@ -933,10 +949,11 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 </div>
 </div>
 <div class="ndr-panel">
-<div class="chart-canvas-wrap">
+<div class="chart-canvas-wrap" style="height:460px;">
 <canvas id="sectorChart"></canvas>
 </div>
 </div>
+<div class="strip-key-row" id="sectorKey"></div>
 </div>
 
 <div class="chart-box">
@@ -1077,6 +1094,111 @@ function ndrYScale(opts){
 // ---- Stats helpers - same methodology as /factor-analysis, duplicated
 // here since every page on this site is self-contained (see CLAUDE.md). ----
 
+// ---- Outlier-robust scatter axes ----------------------------------------
+// A few extreme companies (a 13,000% EPS jump, a $44M congressional sale)
+// would otherwise set the axis range and squash everyone else into a corner.
+// The axis covers the 1st-99th percentile instead; anything beyond is drawn
+// as a hollow arrow on the edge it fell off, with a count in the corner, so
+// nothing disappears silently. Fit lines are still computed on every point.
+function robustNiceStep(range){
+ const raw = range / 6;
+ const mag = Math.pow(10, Math.floor(Math.log10(raw)));
+ const f = raw / mag;
+ return (f < 1.5 ? 1 : f < 3.5 ? 2 : f < 7.5 ? 5 : 10) * mag;
+}
+function robustScatterAxes(chart, axes, opts){
+ if(!chart) return;
+ const pts = [];
+ chart.data.datasets.forEach((ds, di) => {
+  if(ds.showLine || ds.type === "line" || ds.borderDash) return;
+  (ds.data || []).forEach(p => { if(p && isFinite(p.x) && isFinite(p.y)) pts.push({ p, di }); });
+ });
+ if(pts.length < 20) return;
+ const cand = {};
+ let flagged = false;
+ for(const ax of axes){
+  const v = pts.map(o => o.p[ax]).sort((a, b) => a - b);
+  const q = f => v[Math.round((v.length - 1) * f)];
+  const lo = q(0.01), hi = q(0.99);
+  const full = v[v.length - 1] - v[0], core = hi - lo;
+  if(!(core > 0)) continue;
+  const step = robustNiceStep(core);
+  let min = Math.floor((lo - core * 0.04) / step) * step;
+  let max = Math.ceil((hi + core * 0.04) / step) * step;
+  if(v[0] >= 0 && min < 0) min = 0;
+  cand[ax] = { min, max, flag: full / core >= 1.6 };
+  if(cand[ax].flag) flagged = true;
+ }
+ if(!flagged) return;
+ const bounds = {};
+ if(opts && opts.square){
+  // Charts with a 45-degree reference line need the same range on both axes.
+  const min = Math.min(...Object.values(cand).map(c => c.min));
+  const max = Math.max(...Object.values(cand).map(c => c.max));
+  for(const ax of Object.keys(cand)) bounds[ax] = { min, max };
+ }else{
+  for(const ax of Object.keys(cand)) if(cand[ax].flag) bounds[ax] = { min: cand[ax].min, max: cand[ax].max };
+ }
+ // Raw config, not chart.options: that's a resolver proxy, and writing
+ // through it recurses.
+ const raw = chart.config.options.scales = chart.config.options.scales || {};
+ for(const ax of Object.keys(bounds)){
+  const sc = raw[ax] = raw[ax] || {};
+  sc.min = bounds[ax].min; sc.max = bounds[ax].max;
+ }
+ const off = [];
+ for(const o of pts){
+  const flags = {};
+  let out = false;
+  for(const ax of Object.keys(bounds)){
+   if(o.p[ax] < bounds[ax].min){ flags[ax] = -1; out = true; }
+   else if(o.p[ax] > bounds[ax].max){ flags[ax] = 1; out = true; }
+  }
+  if(out) off.push({ p: o.p, di: o.di, flags });
+ }
+ chart.$robustOff = off;
+ // Stop the initial draw-in animation first, or it keeps easing points
+ // toward their positions on the old, outlier-stretched scale.
+ chart.stop();
+ chart.update("none");
+}
+const robustOffscalePlugin = {
+ id: "robustOffscale",
+ afterDatasetsDraw(chart){
+  const off = chart.$robustOff;
+  if(!off || !off.length) return;
+  const { ctx, chartArea: a, scales } = chart;
+  const color = (getComputedStyle(document.documentElement).getPropertyValue("--ndr-axis-soft").trim()) || (getComputedStyle(document.documentElement).getPropertyValue("--muted").trim()) || "#8b9199";
+  ctx.save();
+  ctx.strokeStyle = color;
+  ctx.fillStyle = color;
+  ctx.lineWidth = 1.2;
+  for(const o of off){
+   const dsColor = chart.data.datasets[o.di].backgroundColor;
+   ctx.strokeStyle = typeof dsColor === "string" ? dsColor : color;
+   let x = scales.x.getPixelForValue(o.p.x), y = scales.y.getPixelForValue(o.p.y);
+   x = Math.min(a.right - 4, Math.max(a.left + 4, x));
+   y = Math.min(a.bottom - 4, Math.max(a.top + 4, y));
+   const dx = o.flags.x || 0, dy = -(o.flags.y || 0);
+   const len = Math.hypot(dx, dy) || 1, ux = dx / len, uy = dy / len;
+   const s = 4.5;
+   ctx.beginPath();
+   ctx.moveTo(x + ux * s, y + uy * s);
+   ctx.lineTo(x - ux * s - uy * s * 0.8, y - uy * s + ux * s * 0.8);
+   ctx.lineTo(x - ux * s + uy * s * 0.8, y - uy * s - ux * s * 0.8);
+   ctx.closePath();
+   ctx.stroke();
+  }
+  ctx.fillStyle = color;
+  ctx.font = "10px " + (Chart.defaults.font.family || "sans-serif");
+  ctx.textAlign = "right";
+  ctx.textBaseline = "bottom";
+  ctx.fillText(off.length + (off.length === 1 ? " point" : " points") + " beyond the axis range (arrows on the edge)", a.right - 6, a.bottom - 4);
+  ctx.restore();
+ },
+};
+Chart.register(robustOffscalePlugin);
+
 function linearRegression(xs, ys){
  const n = xs.length;
  const mx = xs.reduce((a, b) => a + b, 0) / n;
@@ -1187,6 +1309,40 @@ function renderStats(data){
  }
 }
 
+// ---- Interquartile band behind a median-over-time line ------------------
+// A market median on its own can't say whether the whole market moved or
+// just its middle. The shaded band is the 25th to 75th percentile across
+// companies for each snapshot. Older snapshots were saved before the
+// percentiles were, so the band starts partway along the line.
+function addIqrBand(chart, lows, highs, fmt, color){
+ if(!chart || !lows.some(v => v !== null && v !== undefined)) return;
+ const raw = chart.config.data.datasets;
+ const fill = color || "rgba(125,138,153,0.22)";
+ raw.unshift(
+  { label: "25th percentile", data: lows.map(v => v === undefined ? null : v), borderColor: "transparent", backgroundColor: "transparent", pointRadius: 0, pointHitRadius: 0, fill: false, spanGaps: false, _band: true },
+  { label: "Middle 50% of companies", data: highs.map(v => v === undefined ? null : v), borderColor: "transparent", backgroundColor: fill, pointRadius: 0, pointHitRadius: 0, fill: "-1", spanGaps: false, _band: true },
+ );
+ const opts = chart.config.options;
+ opts.plugins = opts.plugins || {};
+ const tip = opts.plugins.tooltip = opts.plugins.tooltip || {};
+ tip.filter = item => !item.dataset._band;
+ tip.callbacks = tip.callbacks || {};
+ tip.callbacks.afterLabel = ctx => {
+  const lo = lows[ctx.dataIndex], hi = highs[ctx.dataIndex];
+  return (lo === null || lo === undefined || hi === null || hi === undefined) ? "" : "Middle 50%: " + fmt(lo) + " to " + fmt(hi);
+ };
+ const legend = opts.plugins.legend = opts.plugins.legend || {};
+ legend.labels = legend.labels || {};
+ legend.labels.filter = (item, data) => !data.datasets[item.datasetIndex]._band;
+ chart.update("none");
+}
+function iqrBandNote(elId, dates, lows){
+ const el = document.getElementById(elId);
+ if(!el) return;
+ const first = lows.findIndex(v => v !== null && v !== undefined);
+ el.textContent = first < 0 ? "" : "Shaded band: middle 50% of companies (25th to 75th percentile)" + (first > 0 ? ", recorded from " + usDate(dates[first]) + " on." : ".");
+}
+
 function renderHistoryChart(data){
  const history = data.history || [];
  const ctx = document.getElementById("historyChart").getContext("2d");
@@ -1211,35 +1367,227 @@ function renderHistoryChart(data){
    },
   },
  });
+ addIqrBand(historyChart, history.map(r => r.p25PutCallRatio), history.map(r => r.p75PutCallRatio), v => fmtRatio(v));
+ iqrBandNote("historyBandNote", history.map(r => r.week), history.map(r => r.p25PutCallRatio));
 }
 
-function renderSectorChart(data){
- const sectors = [...(data.sectors || [])].sort((a, b) => b.medianPutCallRatio - a.medianPutCallRatio);
- const ctx = document.getElementById("sectorChart").getContext("2d");
- if(sectorChart) sectorChart.destroy();
- sectorChart = new Chart(ctx, {
-  type: "bar",
-  data: {
-   labels: sectors.map(s => s.sector),
-   datasets: [{ label: "Median put/call ratio", data: sectors.map(s => s.medianPutCallRatio), backgroundColor: ndr("navy") }],
+// ---- Distribution strip chart -------------------------------------------
+// A bar of each group's average or median hides how spread out the group
+// is, so a gap between two bars can look meaningful when the groups almost
+// entirely overlap. This draws every observation as a dot, the middle 50%
+// as a box, and the group's center (median or mean, whichever the chart's
+// headline statistic is) as a heavy line across the box.
+function stripQuantile(sorted, q){
+ if(!sorted.length) return null;
+ const pos = (sorted.length - 1) * q;
+ const lo = Math.floor(pos), hi = Math.ceil(pos);
+ return sorted[lo] + (sorted[hi] - sorted[lo]) * (pos - lo);
+}
+function stripRgba(color, alpha){
+ if(color.startsWith("rgb")) return color.replace(/rgba?\(([^)]+)\)/, (m, inner) => "rgba(" + inner.split(",").slice(0, 3).join(",") + "," + alpha + ")");
+ const h = color.replace("#", "");
+ const n = parseInt(h.length === 3 ? h.split("").map(c => c + c).join("") : h, 16);
+ return "rgba(" + ((n >> 16) & 255) + "," + ((n >> 8) & 255) + "," + (n & 255) + "," + alpha + ")";
+}
+function stripStats(values, center){
+ const sorted = values.slice().sort((a, b) => a - b);
+ const n = sorted.length;
+ return {
+  n,
+  p25: stripQuantile(sorted, 0.25),
+  median: stripQuantile(sorted, 0.5),
+  p75: stripQuantile(sorted, 0.75),
+  mean: n ? sorted.reduce((a, b) => a + b, 0) / n : null,
+  center: center === "mean" ? (n ? sorted.reduce((a, b) => a + b, 0) / n : null) : stripQuantile(sorted, 0.5),
+ };
+}
+
+// opts: {
+//  groups: [{ label, color?, points: [{ v, name }] , center? (override) }],
+//  horizontal: bool (groups down the y-axis, values along x),
+//  center: "median" | "mean",
+//  fmt: value -> string, tickFmt: value -> string,
+//  clipQuantiles: [lo, hi] (optional, default [0.01, 0.99]); values outside
+//   are pinned to the edge and drawn hollow, tooltip still shows the real value,
+//  colors: { axis, axisSoft, grid, dot, box, center, surface },
+//  groupTick: (group, stats) -> string (optional),
+//  refLine: number (optional, default 0)
+// }
+function renderStripChart(canvas, existing, opts){
+ if(existing) existing.destroy();
+ const c = opts.colors;
+ const horizontal = !!opts.horizontal;
+ const groups = opts.groups.map((g, gi) => ({ ...g, gi, stats: stripStats(g.points.map(p => p.v), g.center || opts.center) }));
+ const all = groups.flatMap(g => g.points.map(p => p.v)).sort((a, b) => a - b);
+ const [qlo, qhi] = opts.clipQuantiles || [0.01, 0.99];
+ let lo = stripQuantile(all, qlo), hi = stripQuantile(all, qhi);
+ groups.forEach(g => { if(g.stats.center !== null){ lo = Math.min(lo, g.stats.center); hi = Math.max(hi, g.stats.center); } });
+ const ref = opts.refLine === undefined ? 0 : opts.refLine;
+ if(ref !== null && ref >= stripQuantile(all, 0) && ref <= stripQuantile(all, 1)){ lo = Math.min(lo, ref); hi = Math.max(hi, ref); }
+ const pad = (hi - lo) * 0.04 || 1;
+ lo -= pad; hi += pad;
+
+ const maxN = Math.max(...groups.map(g => g.points.length));
+ const radius = maxN > 120 ? 2.4 : maxN > 40 ? 2.8 : maxN > 12 ? 3.4 : 4.5;
+ const spread = maxN > 12 ? 0.34 : 0.22;
+ const datasets = groups.map(g => {
+  const sorted = g.points.slice().sort((a, b) => a.v - b.v);
+  const color = g.color || c.dot;
+  return {
+   label: g.label,
+   data: sorted.map((p, k) => {
+    // Golden-ratio sequence spreads neighbors in value across the band.
+    const off = (((k * 0.6180339887) % 1) - 0.5) * 2 * spread;
+    const clipped = p.v < lo || p.v > hi;
+    const v = Math.min(hi, Math.max(lo, p.v));
+    return horizontal ? { x: v, y: g.gi + off, raw: p, clipped } : { x: g.gi + off, y: v, raw: p, clipped };
+   }),
+   pointRadius: radius,
+   pointHoverRadius: radius + 2,
+   pointHitRadius: Math.max(4, radius + 2),
+   pointStyle: sorted.map(p => (p.v < lo || p.v > hi) ? "triangle" : "circle"),
+   pointBackgroundColor: sorted.map(p => (p.v < lo || p.v > hi) ? "rgba(0,0,0,0)" : stripRgba(color, maxN > 40 ? 0.7 : 0.9)),
+   pointBorderColor: sorted.map(p => (p.v < lo || p.v > hi) ? color : stripRgba(c.surface, 0.9)),
+   pointBorderWidth: sorted.map(p => (p.v < lo || p.v > hi) ? 1.2 : 0.6),
+  };
+ });
+
+ const boxPlugin = {
+  id: "stripBoxes",
+  beforeDatasetsDraw(chart){
+   const { ctx, chartArea } = chart;
+   const valScale = horizontal ? chart.scales.x : chart.scales.y;
+   const grpScale = horizontal ? chart.scales.y : chart.scales.x;
+   ctx.save();
+   if(ref !== null){
+    const p = valScale.getPixelForValue(ref);
+    const inside = horizontal ? (p >= chartArea.left && p <= chartArea.right) : (p >= chartArea.top && p <= chartArea.bottom);
+    if(inside){
+     ctx.strokeStyle = c.axisSoft;
+     ctx.lineWidth = 1;
+     ctx.beginPath();
+     if(horizontal){ ctx.moveTo(p, chartArea.top); ctx.lineTo(p, chartArea.bottom); }
+     else { ctx.moveTo(chartArea.left, p); ctx.lineTo(chartArea.right, p); }
+     ctx.stroke();
+    }
+   }
+   const bandPx = Math.abs(grpScale.getPixelForValue(spread) - grpScale.getPixelForValue(-spread)) / 2 + radius + 3;
+   for(const g of groups){
+    if(!g.stats.n) continue;
+    const mid = grpScale.getPixelForValue(g.gi);
+    const a = valScale.getPixelForValue(g.stats.p25), b = valScale.getPixelForValue(g.stats.p75);
+    ctx.fillStyle = stripRgba(c.box, 0.14);
+    ctx.strokeStyle = stripRgba(c.box, 0.6);
+    ctx.lineWidth = 1;
+    if(horizontal){
+     ctx.fillRect(Math.min(a, b), mid - bandPx, Math.abs(b - a), bandPx * 2);
+     ctx.strokeRect(Math.min(a, b), mid - bandPx, Math.abs(b - a), bandPx * 2);
+    }else{
+     ctx.fillRect(mid - bandPx, Math.min(a, b), bandPx * 2, Math.abs(b - a));
+     ctx.strokeRect(mid - bandPx, Math.min(a, b), bandPx * 2, Math.abs(b - a));
+    }
+   }
+   ctx.restore();
   },
+  afterDatasetsDraw(chart){
+   const { ctx } = chart;
+   const valScale = horizontal ? chart.scales.x : chart.scales.y;
+   const grpScale = horizontal ? chart.scales.y : chart.scales.x;
+   const bandPx = Math.abs(grpScale.getPixelForValue(spread) - grpScale.getPixelForValue(-spread)) / 2 + radius + 5;
+   ctx.save();
+   for(const g of groups){
+    if(g.stats.center === null) continue;
+    const mid = grpScale.getPixelForValue(g.gi);
+    const p = valScale.getPixelForValue(g.stats.center);
+    ctx.lineCap = "round";
+    ctx.strokeStyle = c.surface;
+    ctx.lineWidth = 5.5;
+    ctx.beginPath();
+    if(horizontal){ ctx.moveTo(p, mid - bandPx); ctx.lineTo(p, mid + bandPx); } else { ctx.moveTo(mid - bandPx, p); ctx.lineTo(mid + bandPx, p); }
+    ctx.stroke();
+    ctx.strokeStyle = c.center;
+    ctx.lineWidth = 3;
+    ctx.stroke();
+   }
+   ctx.restore();
+  },
+ };
+
+ const grpAxis = {
+  type: "linear",
+  min: -0.6, max: groups.length - 0.4,
+  reverse: horizontal,
+  grid: { display: false },
+  border: { color: c.axis },
+  afterBuildTicks: axis => { axis.ticks = groups.map(g => ({ value: g.gi })); },
+  ticks: {
+   color: c.axis, font: { size: 11 }, autoSkip: false, maxRotation: 0,
+   callback: v => { const g = groups[v]; if(!g) return ""; return opts.groupTick ? opts.groupTick(g, g.stats) : g.label; },
+  },
+ };
+ const valAxis = {
+  type: "linear", min: lo, max: hi,
+  grid: { color: c.grid },
+  border: { display: false },
+  ticks: { color: c.axis, font: { size: 11 }, callback: opts.tickFmt || opts.fmt, maxTicksLimit: 8, includeBounds: false },
+  title: opts.valueTitle ? { display: true, text: opts.valueTitle, color: c.axisSoft, font: { size: 10 } } : { display: false },
+ };
+
+ return new Chart(canvas.getContext("2d"), {
+  type: "scatter",
+  data: { datasets },
+  plugins: [boxPlugin],
   options: {
    responsive: true,
    maintainAspectRatio: false,
-   indexAxis: "y",
+   animation: false,
+   interaction: { mode: "point", intersect: true },
    plugins: {
     legend: { display: false },
-    tooltip: { callbacks: { label: ctx => {
-     const s = sectors[ctx.dataIndex];
-     return ["Median put/call: " + fmtRatio(s.medianPutCallRatio), "n=" + s.count];
-    } } },
+    zoom: false,
+    tooltip: { callbacks: {
+     title: items => { const g = groups[items[0].datasetIndex]; return items[0].raw.raw.name ? items[0].raw.raw.name + " (" + g.label + ")" : g.label; },
+     label: item => opts.fmt(item.raw.raw.v),
+     afterLabel: item => {
+      const s = groups[item.datasetIndex].stats;
+      return (opts.center === "mean" ? "Group mean " + opts.fmt(s.mean) + ", median " : "Group median ") + opts.fmt(s.median) + "\nMiddle 50%: " + opts.fmt(s.p25) + " to " + opts.fmt(s.p75) + ", n=" + s.n;
+     },
+    } },
    },
-   scales: {
-    x: ndrYScale({ title: "Put/call ratio" }),
-    y: { ticks: { color: ndr("axis"), font: { size: 11 } }, grid: { color: "rgba(0,0,0,0)", borderColor: ndr("axis") } },
-   },
+   scales: horizontal ? { x: valAxis, y: grpAxis } : { x: grpAxis, y: valAxis },
   },
  });
+}
+
+function stripKeyHtml(center, unit){
+ return '<span class="strip-key"><span class="sk-dot"></span>Each dot is one ' + unit + '</span>' +
+  '<span class="strip-key"><span class="sk-box"></span>Middle 50% (25th to 75th percentile)</span>' +
+  '<span class="strip-key"><span class="sk-line"></span>' + (center === "mean" ? "Average" : "Median") + '</span>' +
+  '<span class="strip-key"><span class="sk-tri"></span>Off-scale value, pinned to the edge</span>';
+}
+
+function renderSectorChart(data){
+ const bySector = {};
+ for(const c of (data.companies || [])){
+  const v = c.putCallRatio;
+  if(v === null || v === undefined || !isFinite(v) || !c.sector) continue;
+  (bySector[c.sector] = bySector[c.sector] || []).push({ v, name: c.symbol });
+ }
+ // Sectors the job published (it applies its own minimum-count rules),
+ // ordered by the same statistic the heavy line marks.
+ const center = s => { const st = stripStats((bySector[s] || []).map(p => p.v), "median"); return st.center === null ? -Infinity * -1 : st.center; };
+ const order = [...new Set(((data.sectors || [])).map(s => s.sector))].filter(s => bySector[s]).sort((a, b) => -1 * (center(b) - center(a)));
+ sectorChart = renderStripChart(document.getElementById("sectorChart"), sectorChart, {
+  horizontal: true,
+  center: "median",
+  groups: order.map(s => ({ label: s, points: bySector[s] })),
+  fmt: v => fmtRatio(v),
+  tickFmt: v => Number(v).toFixed(1),
+  clipQuantiles: [0, 0.97],
+  refLine: 1,
+  colors: { axis: ndr("axis"), axisSoft: ndr("axis-soft"), grid: ndr("grid"), dot: ndr("navy"), box: ndr("slate"), center: ndr("axis"), surface: ndr("plot") },
+ });
+ document.getElementById("sectorKey").innerHTML = stripKeyHtml("median", "company");
 }
 
 function renderMomentumScatter(data){
@@ -1282,6 +1630,7 @@ function renderMomentumScatter(data){
    },
   },
  });
+ robustScatterAxes(momentumScatter, ["x","y"]);
 
  document.getElementById("momentumMethodTable").innerHTML = methodTableHtml(data.momentumTest.pearson, data.momentumTest.spearman,
   "Slope is put/call ratio per 1 percentage point of 3-month relative return. A negative slope means a weaker trailing return goes with a higher (more bearish) put/call ratio.");

@@ -718,7 +718,7 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <div class="chart-box">
 <div class="chart-box-header">
 <div>
-<h2>January consensus target vs. actual year-end close</h2>
+<h2>January consensus target vs. actual year-end return</h2>
 </div>
 </div>
 <div class="chart-canvas-wrap">
@@ -837,6 +837,10 @@ function themeInkColor(){
  const v = getComputedStyle(document.documentElement).getPropertyValue("--ink").trim();
  return v || "#eae6da";
 }
+function themeVar(name, fallback){
+ const v = getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+ return v || fallback;
+}
 function fmtPct(v){ return (v >= 0 ? "+" : "") + v.toFixed(1) + "%"; }
 function fmtNum(v){ return v.toLocaleString(undefined, { maximumFractionDigits: 0 }); }
 
@@ -876,31 +880,78 @@ function init(){
   </tr>
  `).join("");
 
+ // Plotted in return space, not index levels: a 150-point miss meant
+ // something very different at 900 than at 6,000, and levels hide that the
+ // consensus call barely changes from year to year. The shaded bar is the
+ // spread of individual strategists' calls where enough firms are on record.
+ const muted = themeVar("--muted", "#8b9199");
+ const hair = themeVar("--hair", "#2b3138");
+ const ink = themeInkColor();
+ const actualColor = "#d98a3d";
+ const beatColor = "rgba(90,157,111,0.85)", missColor = "rgba(192,86,79,0.85)";
+ const ranges = rows.map(r => {
+  const firms = INDIVIDUAL_TARGETS[r.year];
+  if(!firms || firms.length < 5) return null;
+  const rets = firms.map(f => pct(f.target, r.priorClose));
+  return { lo: Math.min(...rets), hi: Math.max(...rets), n: rets.length };
+ });
  const ctx1 = document.getElementById("targetVsActualChart").getContext("2d");
  new Chart(ctx1, {
   data: {
    labels: rows.map(r => String(r.year)),
    datasets: [
     {
-     type: "line",
-     label: "Consensus Target",
-     data: rows.map(r => r.target),
-     borderColor: "#8b9199",
-     backgroundColor: "#8b9199",
-     borderWidth: 2,
-     borderDash: [5, 4],
-     pointRadius: 3,
-     fill: false,
+     type: "bar",
+     label: "Range of individual strategist calls",
+     data: ranges.map(g => g ? [g.lo, g.hi] : null),
+     backgroundColor: "rgba(139,145,153,0.22)",
+     borderColor: "rgba(139,145,153,0.45)",
+     borderWidth: 1,
+     borderSkipped: false,
+     borderRadius: 3,
+     barPercentage: 0.7,
+     categoryPercentage: 1,
+     grouped: false,
+     order: 3,
+    },
+    {
+     type: "bar",
+     label: "Miss",
+     data: rows.map(r => [r.targetReturn, r.actualReturn]),
+     backgroundColor: rows.map(r => r.missReturnPts >= 0 ? beatColor : missColor),
+     borderSkipped: false,
+     barPercentage: 0.12,
+     categoryPercentage: 1,
+     grouped: false,
+     order: 2,
     },
     {
      type: "line",
-     label: "Actual Close",
-     data: rows.map(r => r.actual),
-     borderColor: "#d98a3d",
-     backgroundColor: "#d98a3d",
-     borderWidth: 2.5,
-     pointRadius: 3,
-     fill: false,
+     label: "Consensus target-implied return",
+     data: rows.map(r => r.targetReturn),
+     showLine: false,
+     pointStyle: "circle",
+     pointRadius: 5,
+     pointHoverRadius: 7,
+     pointBorderWidth: 2,
+     pointBackgroundColor: themeVar("--card", "#1c2127"),
+     pointBorderColor: muted,
+     borderColor: muted,
+     backgroundColor: muted,
+     order: 1,
+    },
+    {
+     type: "line",
+     label: "Actual return",
+     data: rows.map(r => r.actualReturn),
+     showLine: false,
+     pointRadius: 5,
+     pointHoverRadius: 7,
+     pointBackgroundColor: actualColor,
+     pointBorderColor: actualColor,
+     borderColor: actualColor,
+     backgroundColor: actualColor,
+     order: 0,
     },
    ],
   },
@@ -909,16 +960,30 @@ function init(){
    maintainAspectRatio: false,
    interaction: { mode: "index", intersect: false },
    plugins: {
-    legend: { labels: { color: "#8b9199" } },
+    legend: { labels: { color: muted, usePointStyle: true, filter: item => item.text !== "Miss" } },
     tooltip: {
+     filter: item => item.dataset.label !== "Miss" && item.raw !== null,
      callbacks: {
-      label: ctx => ctx.dataset.label + ": " + fmtNum(ctx.parsed.y),
+      label: ctx => {
+       const r = rows[ctx.dataIndex];
+       if(ctx.dataset.type === "bar"){
+        const g = ranges[ctx.dataIndex];
+        return "Strategist range: " + fmtPct(g.lo) + " to " + fmtPct(g.hi) + " (" + g.n + " firms)";
+       }
+       if(ctx.dataset.label === "Actual return") return "Actual: " + fmtPct(r.actualReturn) + " (close " + fmtNum(r.actual) + ")";
+       return "Consensus: " + fmtPct(r.targetReturn) + " (target " + fmtNum(r.target) + ")";
+      },
+      footer: items => { const r = rows[items[0].dataIndex]; return "Miss: " + (r.missReturnPts >= 0 ? "+" : "") + r.missReturnPts.toFixed(1) + " pts"; },
      },
     },
    },
    scales: {
-    x: { ticks: { color: "#8b9199" }, grid: { color: "#2b3138" } },
-    y: { ticks: { color: "#8b9199", callback: v => fmtNum(v) }, grid: { color: "#2b3138" } },
+    x: { ticks: { color: muted }, grid: { display: false } },
+    y: {
+     ticks: { color: muted, callback: v => (v > 0 ? "+" : "") + v + "%" },
+     grid: { color: c => c.tick.value === 0 ? muted : hair, lineWidth: c => c.tick.value === 0 ? 1.25 : 1 },
+     title: { display: true, text: "Calendar-year price return", color: muted },
+    },
    },
   },
  });
@@ -942,8 +1007,8 @@ function init(){
     tooltip: { callbacks: { label: ctx => fmtPct(ctx.parsed.y) + " vs. target-implied return" } },
    },
    scales: {
-    x: { ticks: { color: "#8b9199" }, grid: { color: "#2b3138" } },
-    y: { ticks: { color: "#8b9199", callback: v => v + " pts" }, grid: { color: "#2b3138" } },
+    x: { ticks: { color: themeVar("--muted", "#8b9199") }, grid: { display: false } },
+    y: { ticks: { color: themeVar("--muted", "#8b9199"), callback: v => v + " pts" }, grid: { color: themeVar("--hair", "#2b3138") } },
    },
   },
  });
@@ -1208,8 +1273,8 @@ function renderHerdCharts(rows){
      },
     },
     scales: {
-     x: { ticks: { color: "#8b9199", font: { size: 9 }, autoSkip: true, maxTicksLimit: 8 }, grid: { display: false }, title: { display: true, text: "Expected return", color: "#8b9199", font: { size: 10 } } },
-     y: { ticks: { color: "#8b9199", stepSize: 1, precision: 0 }, grid: { color: "#2b3138" }, beginAtZero: true, title: { display: true, text: "# of firms", color: "#8b9199", font: { size: 10 } } },
+     x: { ticks: { color: themeVar("--muted", "#8b9199"), font: { size: 9 }, autoSkip: true, maxTicksLimit: 8 }, grid: { display: false }, title: { display: true, text: "Expected return", color: themeVar("--muted", "#8b9199"), font: { size: 10 } } },
+     y: { ticks: { color: themeVar("--muted", "#8b9199"), stepSize: 1, precision: 0 }, grid: { color: themeVar("--hair", "#2b3138") }, beginAtZero: true, title: { display: true, text: "# of firms", color: themeVar("--muted", "#8b9199"), font: { size: 10 } } },
     },
    },
    plugins: hasActual ? [{
@@ -1272,8 +1337,8 @@ function renderHerdCharts(rows){
        },
       },
       scales: {
-       x: { ticks: { color: "#8b9199", font: { size: 10 }, maxRotation: 60, minRotation: 60 }, grid: { display: false } },
-       y: { ticks: { color: "#8b9199", callback: v => v + "%" }, grid: { color: "#2b3138" }, title: { display: true, text: "Expected return", color: "#8b9199" } },
+       x: { ticks: { color: themeVar("--muted", "#8b9199"), font: { size: 10 }, maxRotation: 60, minRotation: 60 }, grid: { display: false } },
+       y: { ticks: { color: themeVar("--muted", "#8b9199"), callback: v => v + "%" }, grid: { color: themeVar("--hair", "#2b3138") }, title: { display: true, text: "Expected return", color: themeVar("--muted", "#8b9199") } },
       },
      },
      plugins: hasActual ? [{
@@ -1347,8 +1412,8 @@ function renderZScoreChart(rows){
     },
    },
    scales: {
-    x: { ticks: { color: "#8b9199" }, grid: { color: "#2b3138" } },
-    y: { ticks: { color: "#8b9199", callback: v => v + "σ" }, grid: { color: "#2b3138" }, title: { display: true, text: "Standard deviations from mean forecast", color: "#8b9199" } },
+    x: { ticks: { color: themeVar("--muted", "#8b9199") }, grid: { display: false } },
+    y: { ticks: { color: themeVar("--muted", "#8b9199"), callback: v => v + "σ" }, grid: { color: themeVar("--hair", "#2b3138") }, title: { display: true, text: "Standard deviations from mean forecast", color: themeVar("--muted", "#8b9199") } },
    },
   },
   plugins: [{

@@ -510,6 +510,24 @@ h1{
 
 .theme-toggle:hover{ color:var(--ink); border-color:var(--hair); }
 
+
+/* Stacked panels sharing one x-axis (replaces dual-axis charts) */
+.chart-canvas-wrap.stacked{
+ display:flex;
+ flex-direction:column;
+ gap:2px;
+}
+.chart-canvas-wrap.stacked .stack-panel{
+ position:relative;
+ min-height:0;
+ width:100%;
+ align-self:stretch;
+}
+.chart-canvas-wrap.stacked .stack-panel.top{ flex:55 1 0; }
+.chart-canvas-wrap.stacked .stack-panel.bottom{ flex:45 1 0; }
+.chart-canvas-wrap.stacked .stack-panel.thin{ flex:22 1 0; }
+.chart-canvas-wrap.stacked .stack-panel.tall{ flex:78 1 0; }
+.is-chart-fullscreen .chart-canvas-wrap.stacked{ height:auto !important; flex:1 1 auto; min-height:0; }
 </style>
 <link rel="stylesheet" href="/site.css">
 </head>
@@ -695,8 +713,9 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <span><i class="swatch swatch-return"></i>S&amp;P 500 Realized Return</span>
 <span><i class="swatch swatch-expected"></i>Implied Expected Equity Return</span>
 </div>
-<div class="chart-canvas-wrap">
-<canvas id="erpChart"></canvas>
+<div class="chart-canvas-wrap stacked" style="height:480px;">
+<div class="stack-panel top"><canvas id="erpChart"></canvas></div>
+<div class="stack-panel bottom"><canvas id="erpReturnChart"></canvas></div>
 </div>
 </div>
 <div class="scatter-grid">
@@ -938,6 +957,52 @@ function renderMethodTable(containerElId, points){
 // flips between a light color (dark mode) and a dark color (light mode)
 // - a hardcoded dark-mode value would render the regression line
 // invisible against a light-mode background.
+// ---- Stacked panels with a shared x-axis ---------------------------------
+// Two measures with unrelated units (an index level and a breadth count)
+// used to share one plot on left and right y-axes, where the apparent
+// crossings and divergences depend entirely on how each axis happens to be
+// scaled. Each now gets its own panel, one above the other, on the same
+// dates: plot areas line up, zooming either zooms both, and hovering
+// either shows that date in both.
+const STACK_Y_WIDTH = 64;
+function stackYAxis(extra){
+ return Object.assign({ afterFit: scale => { scale.width = STACK_Y_WIDTH; } }, extra || {});
+}
+function linkedZoom(group){
+ const d = Chart.defaults.plugins.zoom || {};
+ const sync = ({ chart }) => {
+  const { min, max } = chart.scales.x;
+  group.forEach(c => { if(c !== chart) c.zoomScale("x", { min, max }, "none"); });
+ };
+ return { zoom: { ...(d.zoom || {}), onZoomComplete: sync }, pan: { ...(d.pan || {}), onPanComplete: sync } };
+}
+function linkPanels(group){
+ group.forEach(c => {
+  // Properties rather than addEventListener: the canvases outlive each
+  // re-render (range buttons), and listeners would pile up.
+  c.canvas.ondblclick = () => group.forEach(o => o.resetZoom());
+  c.canvas.onmousemove = e => {
+   const els = c.getElementsAtEventForMode(e, "index", { intersect: false }, false);
+   if(!els.length) return;
+   const idx = els[0].index;
+   group.forEach(o => {
+    if(o === c) return;
+    const active = o.data.datasets
+     .map((d, di) => ({ datasetIndex: di, index: idx }))
+     .filter(a => o.isDatasetVisible(a.datasetIndex) && o.getDatasetMeta(a.datasetIndex).data[idx] && o.data.datasets[a.datasetIndex].data[idx] !== null);
+    if(!active.length) return;
+    const el = o.getDatasetMeta(active[0].datasetIndex).data[idx];
+    o.setActiveElements(active);
+    o.tooltip.setActiveElements(active, { x: el.x, y: el.y });
+    o.update("none");
+   });
+  };
+  c.canvas.onmouseleave = () => {
+   group.forEach(o => { if(o !== c){ o.setActiveElements([]); o.tooltip.setActiveElements([], { x: 0, y: 0 }); o.update("none"); } });
+  };
+ });
+}
+
 function themeInkColor(){
  const v = getComputedStyle(document.documentElement).getPropertyValue("--ink").trim();
  return v || "#eae6da";
@@ -989,8 +1054,8 @@ function renderScatter(canvasId, points, stats, pointColor){
     },
    },
    scales: {
-    x: { title: { display: true, text: "Implied ERP (%)", color: "#8b9199" }, ticks: { color: "#8b9199" }, grid: { color: "#2b3138" } },
-    y: { title: { display: true, text: "Realized return (%)", color: "#8b9199" }, ticks: { color: "#8b9199" }, grid: { color: "#2b3138" } },
+    x: { title: { display: true, text: "Implied ERP (%)", color: "#8b9199" }, ticks: { color: "#8b9199" }, grid: { color: (getComputedStyle(document.documentElement).getPropertyValue("--hair").trim() || "#2b3138") } },
+    y: { title: { display: true, text: "Realized return (%)", color: "#8b9199" }, ticks: { color: "#8b9199" }, grid: { color: (getComputedStyle(document.documentElement).getPropertyValue("--hair").trim() || "#2b3138") } },
    },
   },
  });
@@ -1008,50 +1073,22 @@ function init(){
  document.getElementById("statBond").textContent = latest.tbondRate.toFixed(2) + "%";
  document.getElementById("statExpected").textContent = (latest.erp + latest.tbondRate).toFixed(2) + "%";
 
- const ctx = document.getElementById("erpChart").getContext("2d");
- new Chart(ctx, {
+ // The realized-return bars swing +/-40% and used to share this axis with
+ // rates that move between 2% and 15%, which flattened the ERP (the
+ // subject of the page) into a ribbon. Same years, two panels.
+ const muted = getComputedStyle(document.documentElement).getPropertyValue("--muted").trim() || "#8b9199";
+ const hair = getComputedStyle(document.documentElement).getPropertyValue("--hair").trim() || "#2b3138";
+ const labels = ERP_DATA.map(r => String(r.year));
+ const group = [];
+ const panelTitle = text => ({ display: true, text, color: muted, align: "start", font: { size: 11, weight: "normal" }, padding: { bottom: 4 } });
+ group.push(new Chart(document.getElementById("erpChart").getContext("2d"), {
   type: "line",
   data: {
-   labels: ERP_DATA.map(r => String(r.year)),
+   labels,
    datasets: [
-    {
-     type: "bar",
-     label: "S&P 500 Realized Return (that year)",
-     data: returns,
-     backgroundColor: returns.map(v => v === null ? "transparent" : (v >= 0 ? "rgba(63,185,80,0.35)" : "rgba(248,81,73,0.35)")),
-     order: 2,
-    },
-    {
-     label: "Implied ERP",
-     data: ERP_DATA.map(r => r.erp),
-     borderColor: "#d98a3d",
-     backgroundColor: "#d98a3d",
-     borderWidth: 2,
-     pointRadius: 0,
-     fill: false,
-     order: 1,
-    },
-    {
-     label: "10-Year T.Bond Rate",
-     data: ERP_DATA.map(r => r.tbondRate),
-     borderColor: "#6f8fac",
-     backgroundColor: "#6f8fac",
-     borderWidth: 2,
-     pointRadius: 0,
-     fill: false,
-     order: 1,
-    },
-    {
-     label: "Implied Expected Equity Return",
-     data: ERP_DATA.map(r => r.erp + r.tbondRate),
-     borderColor: "#8b6fac",
-     backgroundColor: "#8b6fac",
-     borderWidth: 2,
-     borderDash: [5, 3],
-     pointRadius: 0,
-     fill: false,
-     order: 1,
-    },
+    { label: "Implied ERP", data: ERP_DATA.map(r => r.erp), borderColor: "#d98a3d", backgroundColor: "#d98a3d", borderWidth: 2, pointRadius: 0, fill: false },
+    { label: "10-Year T.Bond Rate", data: ERP_DATA.map(r => r.tbondRate), borderColor: "#6f8fac", backgroundColor: "#6f8fac", borderWidth: 2, pointRadius: 0, fill: false },
+    { label: "Implied Expected Equity Return", data: ERP_DATA.map(r => r.erp + r.tbondRate), borderColor: "#8b6fac", backgroundColor: "#8b6fac", borderWidth: 2, borderDash: [5, 3], pointRadius: 0, fill: false },
    ],
   },
   options: {
@@ -1060,18 +1097,44 @@ function init(){
    interaction: { mode: "index", intersect: false },
    plugins: {
     legend: { display: false },
-    tooltip: {
-     callbacks: {
-      label: ctx => ctx.dataset.label + ": " + (ctx.parsed.y === null ? "n/a" : ctx.parsed.y + "%"),
-     },
-    },
+    zoom: linkedZoom(group),
+    title: panelTitle("Implied ERP, 10-year Treasury rate and implied expected return"),
+    tooltip: { callbacks: { label: ctx => ctx.dataset.label + ": " + (ctx.parsed.y === null ? "n/a" : ctx.parsed.y.toFixed(2) + "%") } },
    },
    scales: {
-    x: { ticks: { color: "#8b9199", maxTicksLimit: 10 }, grid: { color: "#2b3138" } },
-    y: { ticks: { color: "#8b9199", callback: v => v + "%" }, grid: { color: "#2b3138" } },
+    x: { ticks: { display: false }, grid: { color: hair } },
+    y: stackYAxis({ beginAtZero: true, ticks: { color: muted, callback: v => v + "%" }, grid: { color: hair } }),
    },
   },
- });
+ }));
+ group.push(new Chart(document.getElementById("erpReturnChart").getContext("2d"), {
+  type: "bar",
+  data: {
+   labels,
+   datasets: [{
+    label: "S&P 500 Realized Return (that year)",
+    data: returns,
+    backgroundColor: returns.map(v => v === null ? "transparent" : (v >= 0 ? "rgba(63,185,80,0.55)" : "rgba(248,81,73,0.55)")),
+   }],
+  },
+  options: {
+   responsive: true,
+   maintainAspectRatio: false,
+   interaction: { mode: "index", intersect: false },
+   plugins: {
+    legend: { display: false },
+    zoom: linkedZoom(group),
+    title: panelTitle("S&P 500 realized return, that calendar year"),
+    tooltip: { callbacks: { label: ctx => ctx.dataset.label + ": " + (ctx.parsed.y === null ? "n/a" : ctx.parsed.y.toFixed(1) + "%") } },
+   },
+   scales: {
+    x: { ticks: { color: muted, maxTicksLimit: 10 }, grid: { display: false } },
+    y: stackYAxis({ ticks: { color: muted, callback: v => v + "%" }, grid: { color: c => c.tick.value === 0 ? muted : hair } }),
+   },
+  },
+ }));
+ linkPanels(group);
+
 
  // Same-year: ERP_t vs. return_t (skip the first row, which has no
  // realized return since there's no prior year in this dataset).

@@ -789,6 +789,7 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <canvas id="trendChart"></canvas>
 </div>
 </div>
+<div id="trendBandNote" style="font-size:11px; color:var(--muted); margin-top:8px;"></div>
 </div>
 
 <div class="chart-box">
@@ -990,6 +991,40 @@ function renderStats(){
  document.getElementById("statCoverage").textContent = RAW.universe_size + " / " + RAW.universe_total;
 }
 
+// ---- Interquartile band behind a median-over-time line ------------------
+// A market median on its own can't say whether the whole market moved or
+// just its middle. The shaded band is the 25th to 75th percentile across
+// companies for each snapshot. Older snapshots were saved before the
+// percentiles were, so the band starts partway along the line.
+function addIqrBand(chart, lows, highs, fmt, color){
+ if(!chart || !lows.some(v => v !== null && v !== undefined)) return;
+ const raw = chart.config.data.datasets;
+ const fill = color || "rgba(125,138,153,0.22)";
+ raw.unshift(
+  { label: "25th percentile", data: lows.map(v => v === undefined ? null : v), borderColor: "transparent", backgroundColor: "transparent", pointRadius: 0, pointHitRadius: 0, fill: false, spanGaps: false, _band: true },
+  { label: "Middle 50% of companies", data: highs.map(v => v === undefined ? null : v), borderColor: "transparent", backgroundColor: fill, pointRadius: 0, pointHitRadius: 0, fill: "-1", spanGaps: false, _band: true },
+ );
+ const opts = chart.config.options;
+ opts.plugins = opts.plugins || {};
+ const tip = opts.plugins.tooltip = opts.plugins.tooltip || {};
+ tip.filter = item => !item.dataset._band;
+ tip.callbacks = tip.callbacks || {};
+ tip.callbacks.afterLabel = ctx => {
+  const lo = lows[ctx.dataIndex], hi = highs[ctx.dataIndex];
+  return (lo === null || lo === undefined || hi === null || hi === undefined) ? "" : "Middle 50%: " + fmt(lo) + " to " + fmt(hi);
+ };
+ const legend = opts.plugins.legend = opts.plugins.legend || {};
+ legend.labels = legend.labels || {};
+ legend.labels.filter = (item, data) => !data.datasets[item.datasetIndex]._band;
+ chart.update("none");
+}
+function iqrBandNote(elId, dates, lows){
+ const el = document.getElementById(elId);
+ if(!el) return;
+ const first = lows.findIndex(v => v !== null && v !== undefined);
+ el.textContent = first < 0 ? "" : "Shaded band: middle 50% of companies (25th to 75th percentile)" + (first > 0 ? ", recorded from " + usDate(dates[first]) + " on." : ".");
+}
+
 function renderTrendChart(){
  const points = RAW.trend || [];
  const ctx = document.getElementById("trendChart").getContext("2d");
@@ -1026,6 +1061,8 @@ function renderTrendChart(){
    },
   },
  });
+ addIqrBand(trendChart, points.map(r => r.p25Growth), points.map(r => r.p75Growth), v => fmtPct(v));
+ iqrBandNote("trendBandNote", points.map(r => String(r.year)), points.map(r => r.p25Growth));
 }
 
 function renderSectorChart(){

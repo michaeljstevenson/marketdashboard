@@ -546,6 +546,24 @@ h1{
  border-color:#e9cf8a;
  color:#8a6a1f;
 }
+
+/* Stacked panels sharing one x-axis (replaces dual-axis charts) */
+.chart-canvas-wrap.stacked{
+ display:flex;
+ flex-direction:column;
+ gap:2px;
+}
+.chart-canvas-wrap.stacked .stack-panel{
+ position:relative;
+ min-height:0;
+ width:100%;
+ align-self:stretch;
+}
+.chart-canvas-wrap.stacked .stack-panel.top{ flex:55 1 0; }
+.chart-canvas-wrap.stacked .stack-panel.bottom{ flex:45 1 0; }
+.chart-canvas-wrap.stacked .stack-panel.thin{ flex:22 1 0; }
+.chart-canvas-wrap.stacked .stack-panel.tall{ flex:78 1 0; }
+.is-chart-fullscreen .chart-canvas-wrap.stacked{ height:auto !important; flex:1 1 auto; min-height:0; }
 </style>
 <style>
 .dd-section{margin-bottom:28px;}
@@ -815,8 +833,9 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <h2>Number at ATH minus number at ATL, vs. S&amp;P 500</h2>
 <div class="range-controls" id="netRangeControls"></div>
 </div>
-<div class="chart-canvas-wrap">
-<canvas id="netChart"></canvas>
+<div class="chart-canvas-wrap stacked" style="height:420px;">
+<div class="stack-panel top"><canvas id="netSpxChart"></canvas></div>
+<div class="stack-panel bottom"><canvas id="netChart"></canvas></div>
 </div>
 </div>
 <div class="explainer">
@@ -933,7 +952,7 @@ async function init(){
 
 let TV_ROWS = [];
 let BREADTH_ROWS = [];
-let netChart = null;
+let netChart = null, netSpxChart = null;
 let NET_ROWS = null;
 
 const NET_RANGES = [
@@ -992,6 +1011,56 @@ function renderNetRangeButtons(){
 // Reads the live --ink value rather than hardcoding it - --ink flips
 // between a light color (dark mode) and a dark color (light mode), so a
 // hardcoded dark-mode value would render this line invisible in light mode.
+// ---- Stacked panels with a shared x-axis ---------------------------------
+// Two measures with unrelated units (an index level and a breadth count)
+// used to share one plot on left and right y-axes, where the apparent
+// crossings and divergences depend entirely on how each axis happens to be
+// scaled. Each now gets its own panel, one above the other, on the same
+// dates: plot areas line up, zooming either zooms both, and hovering
+// either shows that date in both.
+const STACK_Y_WIDTH = 64;
+function stackYAxis(extra){
+ return Object.assign({ afterFit: scale => { scale.width = STACK_Y_WIDTH; } }, extra || {});
+}
+function linkedZoom(group){
+ const d = Chart.defaults.plugins.zoom || {};
+ const sync = ({ chart }) => {
+  const { min, max } = chart.scales.x;
+  group.forEach(c => { if(c !== chart) c.zoomScale("x", { min, max }, "none"); });
+ };
+ return { zoom: { ...(d.zoom || {}), onZoomComplete: sync }, pan: { ...(d.pan || {}), onPanComplete: sync } };
+}
+function linkPanels(group){
+ group.forEach(c => {
+  // Properties rather than addEventListener: the canvases outlive each
+  // re-render (range buttons), and listeners would pile up.
+  c.canvas.ondblclick = () => group.forEach(o => o.resetZoom());
+  c.canvas.onmousemove = e => {
+   const els = c.getElementsAtEventForMode(e, "index", { intersect: false }, false);
+   if(!els.length) return;
+   const idx = els[0].index;
+   group.forEach(o => {
+    if(o === c) return;
+    const active = o.data.datasets
+     .map((d, di) => ({ datasetIndex: di, index: idx }))
+     .filter(a => o.isDatasetVisible(a.datasetIndex) && o.getDatasetMeta(a.datasetIndex).data[idx] && o.data.datasets[a.datasetIndex].data[idx] !== null);
+    if(!active.length) return;
+    const el = o.getDatasetMeta(active[0].datasetIndex).data[idx];
+    o.setActiveElements(active);
+    o.tooltip.setActiveElements(active, { x: el.x, y: el.y });
+    o.update("none");
+   });
+  };
+  c.canvas.onmouseleave = () => {
+   group.forEach(o => { if(o !== c){ o.setActiveElements([]); o.tooltip.setActiveElements([], { x: 0, y: 0 }); o.update("none"); } });
+  };
+ });
+}
+
+function themeVarColor(name, fallback){
+ return getComputedStyle(document.documentElement).getPropertyValue(name).trim() || fallback;
+}
+
 function themeInkColor(){
  const v = getComputedStyle(document.documentElement).getPropertyValue("--ink").trim();
  return v || "#eae6da";
@@ -1010,49 +1079,48 @@ function renderNetChartRange(rangeKey){
   rows = startIndex === -1 ? allRows : allRows.slice(startIndex);
  }
 
- const ctx = document.getElementById("netChart").getContext("2d");
+ const muted = themeVarColor("--muted", "#8b9199"), hair = themeVarColor("--hair", "#2b3138");
+ const labels = rows.map(r => r.date);
+ const group = [];
+ if(netSpxChart) netSpxChart.destroy();
  if(netChart) netChart.destroy();
- netChart = new Chart(ctx, {
-  data: {
-   labels: rows.map(r => r.date),
-   datasets: [
-    {
-     type: "bar",
-     label: "ATH − ATL",
-     data: rows.map(r => r.net),
-     backgroundColor: rows.map(r => r.net >= 0 ? "rgba(63,185,80,0.65)" : "rgba(248,81,73,0.65)"),
-     yAxisID: "y",
-     order: 2,
-    },
-    {
-     type: "line",
-     label: "S&P 500",
-     data: rows.map(r => r.spxClose),
-     borderColor: themeInkColor(),
-     backgroundColor: themeInkColor(),
-     borderWidth: 2,
-     pointRadius: 0,
-     spanGaps: true,
-     fill: false,
-     yAxisID: "y1",
-     order: 1,
-    },
-   ],
-  },
+ netSpxChart = new Chart(document.getElementById("netSpxChart").getContext("2d"), {
+  type: "line",
+  data: { labels, datasets: [{
+   label: "S&P 500", data: rows.map(r => r.spxClose),
+   borderColor: themeInkColor(), backgroundColor: themeInkColor(), borderWidth: 1.75, pointRadius: 0, spanGaps: true, fill: false,
+  }] },
   options: {
    responsive: true,
    maintainAspectRatio: false,
    interaction: { mode: "index", intersect: false },
-   plugins: {
-    legend: { labels: { color: "#8b9199" } },
-   },
+   plugins: { legend: { display: false }, zoom: linkedZoom(group), title: { display: true, text: "S&P 500", color: muted, align: "start", font: { size: 11, weight: "normal" }, padding: { bottom: 4 } } },
    scales: {
-    x: { ticks: { color: "#8b9199", maxTicksLimit: 8 }, grid: { color: "#2b3138" } },
-    y: { position: "left", ticks: { color: "#8b9199" }, grid: { color: "#2b3138" }, title: { display: true, text: "ATH − ATL", color: "#8b9199" } },
-    y1: { position: "right", ticks: { color: "#8b9199" }, grid: { display: false }, title: { display: true, text: "S&P 500", color: "#8b9199" } },
+    x: { ticks: { display: false }, grid: { color: hair } },
+    y: stackYAxis({ ticks: { color: muted }, grid: { color: hair } }),
    },
   },
  });
+ netChart = new Chart(document.getElementById("netChart").getContext("2d"), {
+  type: "bar",
+  data: { labels, datasets: [{
+   label: "ATH − ATL",
+   data: rows.map(r => r.net),
+   backgroundColor: rows.map(r => r.net >= 0 ? "rgba(63,185,80,0.65)" : "rgba(248,81,73,0.65)"),
+  }] },
+  options: {
+   responsive: true,
+   maintainAspectRatio: false,
+   interaction: { mode: "index", intersect: false },
+   plugins: { legend: { display: false }, zoom: linkedZoom(group), title: { display: true, text: "Number at all-time highs minus number at all-time lows", color: muted, align: "start", font: { size: 11, weight: "normal" }, padding: { bottom: 4 } } },
+   scales: {
+    x: { ticks: { color: muted, maxTicksLimit: 8 }, grid: { color: hair } },
+    y: stackYAxis({ ticks: { color: muted }, grid: { color: c => c.tick.value === 0 ? muted : hair } }),
+   },
+  },
+ });
+ group.push(netSpxChart, netChart);
+ linkPanels(group);
 }
 
 function renderNetChart(){
@@ -1132,8 +1200,8 @@ function renderChartRange(rangeKey){
     },
    },
    scales: {
-    x: { ticks: { color: "#8b9199", maxTicksLimit: 8 }, grid: { color: "#2b3138" } },
-    y: { ticks: { color: "#8b9199", callback: v => v + "%" }, grid: { color: "#2b3138" }, beginAtZero: true },
+    x: { ticks: { color: "#8b9199", maxTicksLimit: 8 }, grid: { color: (getComputedStyle(document.documentElement).getPropertyValue("--hair").trim() || "#2b3138") } },
+    y: { ticks: { color: "#8b9199", callback: v => v + "%" }, grid: { color: (getComputedStyle(document.documentElement).getPropertyValue("--hair").trim() || "#2b3138") }, beginAtZero: true },
    },
   },
  });
@@ -1204,7 +1272,7 @@ function renderDrawdownChart(sym){
     tooltip: { callbacks: { label: c => "% off ATH: " + c.parsed.y.toFixed(1) + "%" } },
    },
    scales: {
-    x: { ticks: { color: "#8b9199", maxTicksLimit: 8 }, grid: { color: "#2b3138" } },
+    x: { ticks: { color: "#8b9199", maxTicksLimit: 8 }, grid: { color: (getComputedStyle(document.documentElement).getPropertyValue("--hair").trim() || "#2b3138") } },
     y: {
      max: 0,
      ticks: { color: "#8b9199", callback: v => v + "%" },

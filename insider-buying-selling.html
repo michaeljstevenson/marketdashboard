@@ -984,7 +984,7 @@ function renderSectorChart(){
     },
    },
    scales: {
-    x: { ticks: { color: "#8b9199", callback: v => fmtUsd(v) }, grid: { color: "#2b3138" } },
+    x: { ticks: { color: "#8b9199", callback: v => fmtUsd(v) }, grid: { color: (getComputedStyle(document.documentElement).getPropertyValue("--hair").trim() || "#2b3138") } },
     y: { ticks: { color: "#8b9199" }, grid: { display: false } },
    },
   },

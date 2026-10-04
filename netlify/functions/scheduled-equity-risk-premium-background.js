@@ -54,6 +54,16 @@ function mean(values) {
   return v.length ? v.reduce((a, b) => a + b, 0) / v.length : null;
 }
 
+// Linear-interpolated percentile, so the history can carry an
+// interquartile band around each snapshot's median.
+function quantile(values, q) {
+  const v = values.filter((x) => x !== null && x !== undefined && !isNaN(x)).sort((a, b) => a - b);
+  if (!v.length) return null;
+  const pos = (v.length - 1) * q;
+  const lo = Math.floor(pos), hi = Math.ceil(pos);
+  return v[lo] + (v[hi] - v[lo]) * (pos - lo);
+}
+
 function median(values) {
   const v = values.filter((x) => x !== null && x !== undefined && Number.isFinite(x)).sort((a, b) => a - b);
   if (!v.length) return null;
@@ -209,7 +219,11 @@ exports.handler = async () => {
     const history = (await store.get(HISTORY_KEY, { type: "json" })) || { points: [] };
     const points = Array.isArray(history.points) ? history.points : [];
     const filtered = points.filter((p) => p.date !== todayDate);
-    filtered.push({ date: todayDate, medianErp: market.medianErp, avgErp: market.avgErp, riskFreeRate: market.riskFreeRate });
+    filtered.push({
+      date: todayDate, medianErp: market.medianErp, avgErp: market.avgErp, riskFreeRate: market.riskFreeRate,
+      p25Erp: round(quantile(ranked.map((c) => c.erp), 0.25)),
+      p75Erp: round(quantile(ranked.map((c) => c.erp), 0.75)),
+    });
     const trimmedPoints = filtered.slice(-MAX_HISTORY_POINTS);
     await store.setJSON(HISTORY_KEY, { points: trimmedPoints });
 

@@ -325,6 +325,7 @@ h1{ font-family:var(--serif); font-size:28px; font-weight:400; margin:0; }
 .swatch-3m10y{ background:#6f8fac; }
 .swatch-tp{ background:#8b6fac; }
 .swatch-exp{ background:#6f8fac; }
+.swatch-10y{ background:var(--ink); }
 .swatch-recession{ background:rgba(139,111,172,0.35); }
 
 .chart-canvas-wrap{ height:380px; }
@@ -663,6 +664,7 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <div class="chart-box">
 <h2>10-year Treasury yield decomposed: rate expectations vs. term premium, 1994–2025</h2>
 <div class="chart-legend-custom">
+<span><i class="swatch swatch-10y"></i>10-Year Yield</span>
 <span><i class="swatch swatch-exp"></i>Rate-Expectations Component</span>
 <span><i class="swatch swatch-tp"></i>Term Premium</span>
 </div>
@@ -906,8 +908,8 @@ function renderScatter(canvasId, points, stats, pointColor, xLabel){
     },
    },
    scales: {
-    x: { title: { display: true, text: xLabel, color: "#8b9199" }, ticks: { color: "#8b9199" }, grid: { color: "#2b3138" } },
-    y: { title: { display: true, text: "Next-year S&P 500 return (%)", color: "#8b9199" }, ticks: { color: "#8b9199" }, grid: { color: "#2b3138" } },
+    x: { title: { display: true, text: xLabel, color: "#8b9199" }, ticks: { color: "#8b9199" }, grid: { color: (getComputedStyle(document.documentElement).getPropertyValue("--hair").trim() || "#2b3138") } },
+    y: { title: { display: true, text: "Next-year S&P 500 return (%)", color: "#8b9199" }, ticks: { color: "#8b9199" }, grid: { color: (getComputedStyle(document.documentElement).getPropertyValue("--hair").trim() || "#2b3138") } },
    },
   },
  });
@@ -997,8 +999,8 @@ function init(){
     },
    },
    scales: {
-    x: { ticks: { color: "#8b9199", maxTicksLimit: 12, callback: (v, i) => labels[i] ? labels[i].slice(0, 4) : "" }, grid: { color: "#2b3138" } },
-    y: { ticks: { color: "#8b9199", callback: v => v + "%" }, grid: { color: "#2b3138" } },
+    x: { ticks: { color: "#8b9199", maxTicksLimit: 12, callback: (v, i) => labels[i] ? labels[i].slice(0, 4) : "" }, grid: { color: (getComputedStyle(document.documentElement).getPropertyValue("--hair").trim() || "#2b3138") } },
+    y: { ticks: { color: "#8b9199", callback: v => v + "%" }, grid: { color: (getComputedStyle(document.documentElement).getPropertyValue("--hair").trim() || "#2b3138") } },
    },
   },
   plugins: [recessionShading],
@@ -1006,14 +1008,21 @@ function init(){
 
  // Term premium decomposition chart (annual, year-end).
  const tpLabels = TERM_PREMIUM.map(r => String(r[0]));
+ // Lines rather than stacked bars: the term premium is negative from 2017
+ // to 2023, and a negative segment stacks down from zero instead of
+ // subtracting from the expectations bar, so the stacked version never
+ // showed the yield it was decomposing.
  const ctx2 = document.getElementById("tpChart").getContext("2d");
+ const muted = getComputedStyle(document.documentElement).getPropertyValue("--muted").trim() || "#8b9199";
+ const hair = getComputedStyle(document.documentElement).getPropertyValue("--hair").trim() || "#2b3138";
  new Chart(ctx2, {
-  type: "bar",
+  type: "line",
   data: {
    labels: tpLabels,
    datasets: [
-    { type: "bar", label: "Rate-Expectations Component", data: TERM_PREMIUM.map(r => Math.round((r[2] - r[1]) * 100) / 100), backgroundColor: "rgba(111,143,172,0.65)", stack: "s" },
-    { type: "bar", label: "Term Premium", data: TERM_PREMIUM.map(r => r[1]), backgroundColor: "rgba(139,111,172,0.75)", stack: "s" },
+    { label: "10-Year Yield", data: TERM_PREMIUM.map(r => r[2]), borderColor: themeInkColor(), backgroundColor: themeInkColor(), borderWidth: 2, pointRadius: 2.5, tension: 0 },
+    { label: "Rate-Expectations Component", data: TERM_PREMIUM.map(r => Math.round((r[2] - r[1]) * 100) / 100), borderColor: "#6f8fac", backgroundColor: "#6f8fac", borderWidth: 2, pointRadius: 2.5, tension: 0 },
+    { label: "Term Premium", data: TERM_PREMIUM.map(r => r[1]), borderColor: "#8b6fac", backgroundColor: "rgba(139,111,172,0.18)", borderWidth: 2, pointRadius: 2.5, tension: 0, fill: "origin" },
    ],
   },
   options: {
@@ -1025,11 +1034,12 @@ function init(){
     tooltip: { callbacks: { label: ctx => ctx.dataset.label + ": " + ctx.parsed.y.toFixed(2) + "%" } },
    },
    scales: {
-    x: { stacked: true, ticks: { color: "#8b9199", maxTicksLimit: 12 }, grid: { color: "#2b3138" } },
-    y: { stacked: true, ticks: { color: "#8b9199", callback: v => v + "%" }, grid: { color: "#2b3138" } },
+    x: { ticks: { color: muted, maxTicksLimit: 12 }, grid: { display: false } },
+    y: { ticks: { color: muted, callback: v => v + "%" }, grid: { color: c => c.tick.value === 0 ? muted : hair } },
    },
   },
  });
+
 
  // Scatter 1: year-end 2s10s spread vs. next year's S&P 500 return.
  const spreadPoints = [];

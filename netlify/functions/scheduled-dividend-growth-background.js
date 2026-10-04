@@ -57,6 +57,16 @@ function round(v, d = 3) {
   return Math.round(v * f) / f;
 }
 
+// Linear-interpolated percentile, so the trend can carry an interquartile
+// band around each year's median.
+function quantile(values, q) {
+  const v = values.filter((x) => x !== null && x !== undefined && !isNaN(x)).sort((a, b) => a - b);
+  if (!v.length) return null;
+  const pos = (v.length - 1) * q;
+  const lo = Math.floor(pos), hi = Math.ceil(pos);
+  return v[lo] + (v[hi] - v[lo]) * (pos - lo);
+}
+
 function median(values) {
   const v = values.filter((x) => x !== null && x !== undefined && !isNaN(x)).sort((a, b) => a - b);
   if (!v.length) return null;
@@ -224,7 +234,7 @@ exports.handler = async () => {
         if (curr && prev && prev.total > 0) growthRates.push(((curr.total - prev.total) / prev.total) * 100);
       }
       if (growthRates.length >= 30) {
-        trend.push({ year: y, medianGrowth: round(median(growthRates), 2), count: growthRates.length });
+        trend.push({ year: y, medianGrowth: round(median(growthRates), 2), p25Growth: round(quantile(growthRates, 0.25), 2), p75Growth: round(quantile(growthRates, 0.75), 2), count: growthRates.length });
       }
     }
 

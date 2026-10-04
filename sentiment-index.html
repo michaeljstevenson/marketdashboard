@@ -1070,6 +1070,24 @@ h1{
 .cal-legend span i{ display:inline-block; width:10px; height:10px; border-radius:2px; margin-right:5px; vertical-align:-1px; }
 .cal-wrap{ overflow-x:auto; }
 .cal-wrap .cal{ min-width:640px; }
+
+/* Stacked panels sharing one x-axis (replaces dual-axis charts) */
+.chart-canvas-wrap.stacked{
+ display:flex;
+ flex-direction:column;
+ gap:2px;
+}
+.chart-canvas-wrap.stacked .stack-panel{
+ position:relative;
+ min-height:0;
+ width:100%;
+ align-self:stretch;
+}
+.chart-canvas-wrap.stacked .stack-panel.top{ flex:55 1 0; }
+.chart-canvas-wrap.stacked .stack-panel.bottom{ flex:45 1 0; }
+.chart-canvas-wrap.stacked .stack-panel.thin{ flex:22 1 0; }
+.chart-canvas-wrap.stacked .stack-panel.tall{ flex:78 1 0; }
+.is-chart-fullscreen .chart-canvas-wrap.stacked{ height:auto !important; flex:1 1 auto; min-height:0; }
 </style>
 <link rel="stylesheet" href="/site.css">
 </head>
@@ -1333,8 +1351,9 @@ Waiting for data...
 <div class="chart-box-header">
 <div class="history-controls" id="historyRangeControls"></div>
 </div>
-<div class="chart history-chart">
-<canvas id="historyChart"></canvas>
+<div class="chart history-chart chart-canvas-wrap stacked">
+<div class="stack-panel top"><canvas id="historyChart"></canvas></div>
+<div class="stack-panel bottom"><canvas id="historySpxChart"></canvas></div>
 </div>
 </div>
 
@@ -2322,7 +2341,7 @@ const HISTORY_RANGES = [
 ];
 
 const HISTORY_DEFAULT_RANGE = "1Y";
-let historyChart = null;
+let historyChart = null, historySpxChart = null;
 let CURRENT_HISTORY_RANGE = HISTORY_DEFAULT_RANGE;
 
 
@@ -2404,6 +2423,52 @@ const ZONES = [
 function zoneOf(score){ return ZONES.find(z => score < z.hi) || ZONES[ZONES.length - 1]; }
 function zoneColor(score, alpha){ const z = zoneOf(score); return withAlpha(cssVar(z.v), alpha === undefined ? z.a : alpha); }
 
+// ---- Stacked panels with a shared x-axis ---------------------------------
+// Two measures with unrelated units (an index level and a breadth count)
+// used to share one plot on left and right y-axes, where the apparent
+// crossings and divergences depend entirely on how each axis happens to be
+// scaled. Each now gets its own panel, one above the other, on the same
+// dates: plot areas line up, zooming either zooms both, and hovering
+// either shows that date in both.
+const STACK_Y_WIDTH = 64;
+function stackYAxis(extra){
+ return Object.assign({ afterFit: scale => { scale.width = STACK_Y_WIDTH; } }, extra || {});
+}
+function linkedZoom(group){
+ const d = Chart.defaults.plugins.zoom || {};
+ const sync = ({ chart }) => {
+  const { min, max } = chart.scales.x;
+  group.forEach(c => { if(c !== chart) c.zoomScale("x", { min, max }, "none"); });
+ };
+ return { zoom: { ...(d.zoom || {}), onZoomComplete: sync }, pan: { ...(d.pan || {}), onPanComplete: sync } };
+}
+function linkPanels(group){
+ group.forEach(c => {
+  // Properties rather than addEventListener: the canvases outlive each
+  // re-render (range buttons), and listeners would pile up.
+  c.canvas.ondblclick = () => group.forEach(o => o.resetZoom());
+  c.canvas.onmousemove = e => {
+   const els = c.getElementsAtEventForMode(e, "index", { intersect: false }, false);
+   if(!els.length) return;
+   const idx = els[0].index;
+   group.forEach(o => {
+    if(o === c) return;
+    const active = o.data.datasets
+     .map((d, di) => ({ datasetIndex: di, index: idx }))
+     .filter(a => o.isDatasetVisible(a.datasetIndex) && o.getDatasetMeta(a.datasetIndex).data[idx] && o.data.datasets[a.datasetIndex].data[idx] !== null);
+    if(!active.length) return;
+    const el = o.getDatasetMeta(active[0].datasetIndex).data[idx];
+    o.setActiveElements(active);
+    o.tooltip.setActiveElements(active, { x: el.x, y: el.y });
+    o.update("none");
+   });
+  };
+  c.canvas.onmouseleave = () => {
+   group.forEach(o => { if(o !== c){ o.setActiveElements([]); o.tooltip.setActiveElements([], { x: 0, y: 0 }); o.update("none"); } });
+  };
+ });
+}
+
 const ZONE_BANDS_PLUGIN = {
  id: "zoneBands",
  beforeDatasetsDraw(chart){
@@ -2469,161 +2534,60 @@ function renderHistoryChart(historyData){
 
 
  if(historyChart){ historyChart.destroy(); historyChart = null; }
-
-
-const ctx =
-document
-.getElementById("historyChart")
-.getContext("2d");
-
-
-
-historyChart = new Chart(ctx, {
-
-plugins:[ZONE_BANDS_PLUGIN],
-
-
-type:"line",
-
-
-data:{
-
-
-labels:
-historyData.map(x=>x.date),
-
-
-
-datasets:[
-
-
-{
-
-label:"Sentiment Index",
-
-data:
-historyData.map(x=>x.optimism),
-
-
-borderColor: LINE_COLOR,
-
-backgroundColor: LINE_COLOR,
-
-borderWidth:2,
-
-pointRadius: ctx => markers[ctx.dataIndex] ? markers[ctx.dataIndex].r : 0,
-
-pointHoverRadius: 4,
-
-pointBackgroundColor: ctx => markers[ctx.dataIndex] ? markers[ctx.dataIndex].fill : "transparent",
-
-pointBorderColor: cssVar("--card"),
-
-pointBorderWidth: 2,
-
-yAxisID:"sentiment"
-
-
-},
-
-
-
-{
-
-label:"S&P 500",
-
-data:
-historyData.map(x=>x.spy),
-
-
-borderColor: SP500_LINE_COLOR,
-
-backgroundColor: SP500_LINE_COLOR,
-
-borderWidth:2,
-
-pointRadius:0,
-
-yAxisID:"price"
-
-
-}
-
-
-]
-
-
-},
-
-
-
-options:{
- maintainAspectRatio:false,
-
-
-responsive:true,
-
-
-interaction:{
-mode:"index",
-intersect:false
-},
-
-
-plugins:{
-
-legend:{ labels:{ color: mutedColor() } }
-
-},
-
-
-scales:{
-
-
-sentiment:{
-
-position:"left",
-
-min:0,
-
-max:100,
-
-ticks:{ color: mutedColor() },
-
-grid:{ color: gridColor() }
-
-},
-
-
-price:{
-
-position:"right",
-
-ticks:{ color: mutedColor() },
-
-grid:{ drawOnChartArea:false }
-
-},
-
-
-x:{
-
-ticks:{ color: mutedColor(), maxRotation:0, autoSkip:true, maxTicksLimit:8 },
-
-grid:{ color: gridColor() }
-
-}
-
-
-}
-
-
-
-}
-
-
-
-});
+ if(historySpxChart){ historySpxChart.destroy(); historySpxChart = null; }
+ const labels = historyData.map(x => x.date);
+ const group = [];
+ const panelTitle = text => ({ display: true, text, color: mutedColor(), align: "start", font: { size: 11, weight: "normal" }, padding: { bottom: 4 } });
+ historyChart = new Chart(document.getElementById("historyChart").getContext("2d"), {
+  plugins: [ZONE_BANDS_PLUGIN],
+  type: "line",
+  data: { labels, datasets: [{
+   label: "Sentiment Index",
+   data: historyData.map(x => x.optimism),
+   borderColor: LINE_COLOR,
+   backgroundColor: LINE_COLOR,
+   borderWidth: 2,
+   pointRadius: ctx => markers[ctx.dataIndex] ? markers[ctx.dataIndex].r : 0,
+   pointHoverRadius: 4,
+   pointBackgroundColor: ctx => markers[ctx.dataIndex] ? markers[ctx.dataIndex].fill : "transparent",
+   pointBorderColor: cssVar("--card"),
+   pointBorderWidth: 2,
+   yAxisID: "sentiment",
+  }] },
+  options: {
+   maintainAspectRatio: false,
+   responsive: true,
+   interaction: { mode: "index", intersect: false },
+   plugins: { legend: { display: false }, zoom: linkedZoom(group), title: panelTitle("Sentiment Index (0 to 100)") },
+   scales: {
+    sentiment: stackYAxis({ position: "left", min: 0, max: 100, ticks: { color: mutedColor() }, grid: { color: gridColor() } }),
+    x: { ticks: { display: false }, grid: { color: gridColor() } },
+   },
+  },
+ });
+ historySpxChart = new Chart(document.getElementById("historySpxChart").getContext("2d"), {
+  type: "line",
+  data: { labels, datasets: [{
+   label: "S&P 500",
+   data: historyData.map(x => x.spy),
+   borderColor: SP500_LINE_COLOR,
+   backgroundColor: SP500_LINE_COLOR,
+   borderWidth: 2,
+   pointRadius: 0,
+  }] },
+  options: {
+   maintainAspectRatio: false,
+   responsive: true,
+   interaction: { mode: "index", intersect: false },
+   plugins: { legend: { display: false }, zoom: linkedZoom(group), title: panelTitle("S&P 500") },
+   scales: {
+    y: stackYAxis({ ticks: { color: mutedColor() }, grid: { color: gridColor() } }),
+    x: { ticks: { color: mutedColor(), maxRotation: 0, autoSkip: true, maxTicksLimit: 8 }, grid: { color: gridColor() } },
+   },
+  },
+ });
+ group.push(historyChart, historySpxChart);
+ linkPanels(group);
 
 
 }

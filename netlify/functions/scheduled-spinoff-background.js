@@ -320,12 +320,26 @@ exports.handler = async () => {
     const curveT = [];
     const curveAvg = [];
     const curveN = [];
+    // 95% confidence band on the average, so the page can show how much of
+    // the curve's drift is distinguishable from zero as N shrinks.
+    const curveCiLow = [];
+    const curveCiHigh = [];
     for (let t = 0; t <= CURVE_MAX_TRADING_DAYS; t++) {
       const vals = legs.map((l) => l.excessSeries[t]).filter((v) => v !== undefined && v !== null);
       if (!vals.length) break;
+      const mean = vals.reduce((a, b) => a + b, 0) / vals.length;
       curveT.push(t);
-      curveAvg.push(round(vals.reduce((a, b) => a + b, 0) / vals.length));
+      curveAvg.push(round(mean));
       curveN.push(vals.length);
+      if (vals.length >= 2) {
+        const sd = Math.sqrt(vals.reduce((s, v) => s + (v - mean) ** 2, 0) / (vals.length - 1));
+        const half = 1.96 * sd / Math.sqrt(vals.length);
+        curveCiLow.push(round(mean - half));
+        curveCiHigh.push(round(mean + half));
+      } else {
+        curveCiLow.push(null);
+        curveCiHigh.push(null);
+      }
     }
 
     const scatter = EVENTS.filter((e) => e.hasParentLeg)
@@ -394,7 +408,7 @@ exports.handler = async () => {
         eventId: l.eventId, role: l.role, ticker: l.ticker, sector: l.sector, label: l.label, eventDate: l.eventDate,
         returns: l.returns, spyReturns: l.spyReturns, excess: l.excess, tradingDaysElapsed: l.tradingDaysElapsed,
       })),
-      eventTimeCurve: { t: curveT, avgExcess: curveAvg, n: curveN },
+      eventTimeCurve: { t: curveT, avgExcess: curveAvg, n: curveN, ciLow: curveCiLow, ciHigh: curveCiHigh },
       scatter,
       leaderboards: { bestSpincos: spincoBoard.best, worstSpincos: spincoBoard.worst, bestParents: parentBoard.best, worstParents: parentBoard.worst },
       sectorBreakdown,

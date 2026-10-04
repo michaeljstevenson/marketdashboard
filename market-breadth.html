@@ -491,6 +491,24 @@ h1{
  border-color:#f0b8b0;
  color:#a83a30;
 }
+
+/* Stacked panels sharing one x-axis (replaces dual-axis charts) */
+.chart-canvas-wrap.stacked{
+ display:flex;
+ flex-direction:column;
+ gap:2px;
+}
+.chart-canvas-wrap.stacked .stack-panel{
+ position:relative;
+ min-height:0;
+ width:100%;
+ align-self:stretch;
+}
+.chart-canvas-wrap.stacked .stack-panel.top{ flex:55 1 0; }
+.chart-canvas-wrap.stacked .stack-panel.bottom{ flex:45 1 0; }
+.chart-canvas-wrap.stacked .stack-panel.thin{ flex:22 1 0; }
+.chart-canvas-wrap.stacked .stack-panel.tall{ flex:78 1 0; }
+.is-chart-fullscreen .chart-canvas-wrap.stacked{ height:auto !important; flex:1 1 auto; min-height:0; }
 </style>
 <link rel="stylesheet" href="/site.css">
 </head>
@@ -691,8 +709,9 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <h2>Daily advance-decline vs. S&amp;P 500</h2>
 <div class="range-controls" id="adRangeControls"></div>
 </div>
-<div class="chart-canvas-wrap">
-<canvas id="adChart"></canvas>
+<div class="chart-canvas-wrap stacked" style="height:400px;">
+<div class="stack-panel top"><canvas id="adSpxChart"></canvas></div>
+<div class="stack-panel bottom"><canvas id="adChart"></canvas></div>
 </div>
 </div>
 <div class="chart-box">
@@ -700,8 +719,9 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <h2>Cumulative advance-decline line vs. S&amp;P 500</h2>
 <div class="range-controls" id="adCumRangeControls"></div>
 </div>
-<div class="chart-canvas-wrap">
-<canvas id="adCumChart"></canvas>
+<div class="chart-canvas-wrap stacked" style="height:420px;">
+<div class="stack-panel top"><canvas id="adCumSpxChart"></canvas></div>
+<div class="stack-panel bottom"><canvas id="adCumChart"></canvas></div>
 </div>
 </div>
 <div class="chart-box">
@@ -736,6 +756,56 @@ function showError(message){
  const banner = document.getElementById("errorBanner");
  banner.textContent = message;
  banner.style.display = "block";
+}
+
+// ---- Stacked panels with a shared x-axis ---------------------------------
+// Two measures with unrelated units (an index level and a breadth count)
+// used to share one plot on left and right y-axes, where the apparent
+// crossings and divergences depend entirely on how each axis happens to be
+// scaled. Each now gets its own panel, one above the other, on the same
+// dates: plot areas line up, zooming either zooms both, and hovering
+// either shows that date in both.
+const STACK_Y_WIDTH = 64;
+function stackYAxis(extra){
+ return Object.assign({ afterFit: scale => { scale.width = STACK_Y_WIDTH; } }, extra || {});
+}
+function linkedZoom(group){
+ const d = Chart.defaults.plugins.zoom || {};
+ const sync = ({ chart }) => {
+  const { min, max } = chart.scales.x;
+  group.forEach(c => { if(c !== chart) c.zoomScale("x", { min, max }, "none"); });
+ };
+ return { zoom: { ...(d.zoom || {}), onZoomComplete: sync }, pan: { ...(d.pan || {}), onPanComplete: sync } };
+}
+function linkPanels(group){
+ group.forEach(c => {
+  // Properties rather than addEventListener: the canvases outlive each
+  // re-render (range buttons), and listeners would pile up.
+  c.canvas.ondblclick = () => group.forEach(o => o.resetZoom());
+  c.canvas.onmousemove = e => {
+   const els = c.getElementsAtEventForMode(e, "index", { intersect: false }, false);
+   if(!els.length) return;
+   const idx = els[0].index;
+   group.forEach(o => {
+    if(o === c) return;
+    const active = o.data.datasets
+     .map((d, di) => ({ datasetIndex: di, index: idx }))
+     .filter(a => o.isDatasetVisible(a.datasetIndex) && o.getDatasetMeta(a.datasetIndex).data[idx] && o.data.datasets[a.datasetIndex].data[idx] !== null);
+    if(!active.length) return;
+    const el = o.getDatasetMeta(active[0].datasetIndex).data[idx];
+    o.setActiveElements(active);
+    o.tooltip.setActiveElements(active, { x: el.x, y: el.y });
+    o.update("none");
+   });
+  };
+  c.canvas.onmouseleave = () => {
+   group.forEach(o => { if(o !== c){ o.setActiveElements([]); o.tooltip.setActiveElements([], { x: 0, y: 0 }); o.update("none"); } });
+  };
+ });
+}
+
+function themeVarColor(name, fallback){
+ return getComputedStyle(document.documentElement).getPropertyValue(name).trim() || fallback;
 }
 
 function themeInkColor(){
@@ -780,7 +850,7 @@ function renderRangeButtons(containerId, onSelect){
  });
 }
 
-let adChart = null;
+let adChart = null, adSpxChart = null;
 function renderAdChart(rangeKey){
  const rows = rowsInRange(rangeKey);
  // Daily net advances-declines, not the running cumulative total (adLine
@@ -794,50 +864,53 @@ function renderAdChart(rangeKey){
   const prev = i > 0 ? rows[i - 1].spxClose : null;
   return (r.spxClose != null && prev != null) ? ((r.spxClose / prev - 1) * 100) : null;
  });
- const ctx = document.getElementById("adChart").getContext("2d");
+ const muted = themeVarColor("--muted", "#8b9199"), hair = themeVarColor("--hair", "#2b3138");
+ const labels = rows.map(r => r.date);
+ const group = [];
+ if(adSpxChart) adSpxChart.destroy();
  if(adChart) adChart.destroy();
- adChart = new Chart(ctx, {
-  data: {
-   labels: rows.map(r => r.date),
-   datasets: [
-    {
-     type: "bar",
-     label: "Net advances (adv - decl)",
-     data: netAd,
-     backgroundColor: netAd.map(v => v >= 0 ? "rgba(63,185,80,0.75)" : "rgba(248,81,73,0.75)"),
-     yAxisID: "y",
-     order: 2,
-    },
-    {
-     type: "line",
-     label: "S&P 500 daily change %",
-     data: spxDailyPct,
-     borderColor: themeInkColor(),
-     backgroundColor: themeInkColor(),
-     borderWidth: 1.5,
-     pointRadius: 0,
-     spanGaps: true,
-     fill: false,
-     yAxisID: "y1",
-     order: 1,
-    },
-   ],
-  },
+ adSpxChart = new Chart(document.getElementById("adSpxChart").getContext("2d"), {
+  type: "bar",
+  data: { labels, datasets: [{
+   label: "S&P 500 daily change %",
+   data: spxDailyPct,
+   backgroundColor: spxDailyPct.map(v => v === null ? "transparent" : v >= 0 ? "rgba(63,185,80,0.75)" : "rgba(248,81,73,0.75)"),
+  }] },
   options: {
    responsive: true,
    maintainAspectRatio: false,
    interaction: { mode: "index", intersect: false },
-   plugins: { legend: { labels: { color: "#8b9199" } } },
+   plugins: { legend: { display: false }, zoom: linkedZoom(group), title: { display: true, text: "S&P 500 daily change %", color: muted, align: "start", font: { size: 11, weight: "normal" }, padding: { bottom: 4 } },
+    tooltip: { callbacks: { label: ctx => "S&P 500: " + (ctx.parsed.y >= 0 ? "+" : "") + ctx.parsed.y.toFixed(2) + "%" } } },
    scales: {
-    x: { ticks: { color: "#8b9199", maxTicksLimit: 8 }, grid: { color: "#2b3138" } },
-    y: { position: "left", ticks: { color: "#8b9199" }, grid: { color: "#2b3138" }, title: { display: true, text: "Net advances", color: "#8b9199" } },
-    y1: { position: "right", ticks: { color: "#8b9199" }, grid: { display: false }, title: { display: true, text: "S&P 500 daily change %", color: "#8b9199" } },
+    x: { ticks: { display: false }, grid: { display: false } },
+    y: stackYAxis({ ticks: { color: muted, callback: v => v + "%" }, grid: { color: c => c.tick.value === 0 ? muted : hair } }),
    },
   },
  });
+ adChart = new Chart(document.getElementById("adChart").getContext("2d"), {
+  type: "bar",
+  data: { labels, datasets: [{
+   label: "Net advances (adv - decl)",
+   data: netAd,
+   backgroundColor: netAd.map(v => v >= 0 ? "rgba(63,185,80,0.75)" : "rgba(248,81,73,0.75)"),
+  }] },
+  options: {
+   responsive: true,
+   maintainAspectRatio: false,
+   interaction: { mode: "index", intersect: false },
+   plugins: { legend: { display: false }, zoom: linkedZoom(group), title: { display: true, text: "Net advances (advancers minus decliners)", color: muted, align: "start", font: { size: 11, weight: "normal" }, padding: { bottom: 4 } } },
+   scales: {
+    x: { ticks: { color: muted, maxTicksLimit: 8 }, grid: { display: false } },
+    y: stackYAxis({ ticks: { color: muted }, grid: { color: c => c.tick.value === 0 ? muted : hair } }),
+   },
+  },
+ });
+ group.push(adSpxChart, adChart);
+ linkPanels(group);
 }
 
-let adCumChart = null;
+let adCumChart = null, adCumSpxChart = null;
 function renderAdCumChart(rangeKey){
  const rows = rowsInRange(rangeKey);
  // Indexed to 100 at the start of whichever range is selected, not a
@@ -849,51 +922,47 @@ function renderAdCumChart(rangeKey){
  // mode.
  const adBase = rows.length ? rows[0].adLine : 0;
  const adIndexed = rows.map(r => 100 + (r.adLine - adBase));
- const ctx = document.getElementById("adCumChart").getContext("2d");
+ const muted = themeVarColor("--muted", "#8b9199"), hair = themeVarColor("--hair", "#2b3138");
+ const labels = rows.map(r => r.date);
+ const group = [];
+ if(adCumSpxChart) adCumSpxChart.destroy();
  if(adCumChart) adCumChart.destroy();
- adCumChart = new Chart(ctx, {
-  data: {
-   labels: rows.map(r => r.date),
-   datasets: [
-    {
-     type: "line",
-     label: "A-D Line (indexed to 100)",
-     data: adIndexed,
-     borderColor: "#d98a3d",
-     backgroundColor: "#d98a3d",
-     borderWidth: 2,
-     pointRadius: 0,
-     fill: false,
-     yAxisID: "y",
-     order: 2,
-    },
-    {
-     type: "line",
-     label: "S&P 500",
-     data: rows.map(r => r.spxClose),
-     borderColor: themeInkColor(),
-     backgroundColor: themeInkColor(),
-     borderWidth: 2,
-     pointRadius: 0,
-     spanGaps: true,
-     fill: false,
-     yAxisID: "y1",
-     order: 1,
-    },
-   ],
-  },
+ adCumSpxChart = new Chart(document.getElementById("adCumSpxChart").getContext("2d"), {
+  type: "line",
+  data: { labels, datasets: [{
+   label: "S&P 500", data: rows.map(r => r.spxClose),
+   borderColor: themeInkColor(), backgroundColor: themeInkColor(), borderWidth: 1.75, pointRadius: 0, spanGaps: true, fill: false,
+  }] },
   options: {
    responsive: true,
    maintainAspectRatio: false,
    interaction: { mode: "index", intersect: false },
-   plugins: { legend: { labels: { color: "#8b9199" } } },
+   plugins: { legend: { display: false }, zoom: linkedZoom(group), title: { display: true, text: "S&P 500", color: muted, align: "start", font: { size: 11, weight: "normal" }, padding: { bottom: 4 } } },
    scales: {
-    x: { ticks: { color: "#8b9199", maxTicksLimit: 8 }, grid: { color: "#2b3138" } },
-    y: { position: "left", ticks: { color: "#8b9199" }, grid: { color: "#2b3138" }, title: { display: true, text: "A-D Line (indexed to 100)", color: "#8b9199" } },
-    y1: { position: "right", ticks: { color: "#8b9199" }, grid: { display: false }, title: { display: true, text: "S&P 500", color: "#8b9199" } },
+    x: { ticks: { display: false }, grid: { color: hair } },
+    y: stackYAxis({ ticks: { color: muted }, grid: { color: hair } }),
    },
   },
  });
+ adCumChart = new Chart(document.getElementById("adCumChart").getContext("2d"), {
+  type: "line",
+  data: { labels, datasets: [{
+   label: "A-D Line (indexed to 100)", data: adIndexed,
+   borderColor: "#d98a3d", backgroundColor: "#d98a3d", borderWidth: 1.75, pointRadius: 0, fill: false,
+  }] },
+  options: {
+   responsive: true,
+   maintainAspectRatio: false,
+   interaction: { mode: "index", intersect: false },
+   plugins: { legend: { display: false }, zoom: linkedZoom(group), title: { display: true, text: "A-D Line (indexed to 100 at the start of the range)", color: muted, align: "start", font: { size: 11, weight: "normal" }, padding: { bottom: 4 } } },
+   scales: {
+    x: { ticks: { color: muted, maxTicksLimit: 8 }, grid: { color: hair } },
+    y: stackYAxis({ ticks: { color: muted }, grid: { color: hair } }),
+   },
+  },
+ });
+ group.push(adCumSpxChart, adCumChart);
+ linkPanels(group);
 }
 
 let smaChart = null;
@@ -924,8 +993,8 @@ function renderSmaChart(rangeKey){
     tooltip: { callbacks: { label: ctx => "% above 200-day SMA: " + (ctx.parsed.y === null ? "n/a" : ctx.parsed.y + "%") } },
    },
    scales: {
-    x: { ticks: { color: "#8b9199", maxTicksLimit: 8 }, grid: { color: "#2b3138" } },
-    y: { ticks: { color: "#8b9199", callback: v => v + "%" }, grid: { color: "#2b3138" }, min: 0, max: 100 },
+    x: { ticks: { color: "#8b9199", maxTicksLimit: 8 }, grid: { color: (getComputedStyle(document.documentElement).getPropertyValue("--hair").trim() || "#2b3138") } },
+    y: { ticks: { color: "#8b9199", callback: v => v + "%" }, grid: { color: (getComputedStyle(document.documentElement).getPropertyValue("--hair").trim() || "#2b3138") }, min: 0, max: 100 },
    },
   },
  });
@@ -962,8 +1031,8 @@ function renderHlChart(rangeKey){
     tooltip: { callbacks: { label: ctx => ctx.dataset.label + ": " + Math.abs(ctx.parsed.y) } },
    },
    scales: {
-    x: { ticks: { color: "#8b9199", maxTicksLimit: 8 }, grid: { color: "#2b3138" }, stacked: true },
-    y: { ticks: { color: "#8b9199", callback: v => Math.abs(v) }, grid: { color: "#2b3138" }, stacked: true },
+    x: { ticks: { color: "#8b9199", maxTicksLimit: 8 }, grid: { color: (getComputedStyle(document.documentElement).getPropertyValue("--hair").trim() || "#2b3138") }, stacked: true },
+    y: { ticks: { color: "#8b9199", callback: v => Math.abs(v) }, grid: { color: (getComputedStyle(document.documentElement).getPropertyValue("--hair").trim() || "#2b3138") }, stacked: true },
    },
   },
  });
@@ -1152,7 +1221,7 @@ function renderDayChangeRange(data, rangeKey, isLive){
    },
    scales: {
     x: { ticks: { color: "#8b9199" }, grid: { display: false }, title: { display: true, text: axisLabel, color: "#8b9199" } },
-    y: { ticks: { color: "#8b9199" }, grid: { color: "#2b3138" }, beginAtZero: true },
+    y: { ticks: { color: "#8b9199" }, grid: { color: (getComputedStyle(document.documentElement).getPropertyValue("--hair").trim() || "#2b3138") }, beginAtZero: true },
    },
   },
  });

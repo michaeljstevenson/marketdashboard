@@ -1100,6 +1100,111 @@ function ndrYScale(opts){
 
 // ---- Stats helpers - same methodology as /factor-analysis, duplicated
 // here since every page on this site is self-contained (see CLAUDE.md). ----
+// ---- Outlier-robust scatter axes ----------------------------------------
+// A few extreme companies (a 13,000% EPS jump, a $44M congressional sale)
+// would otherwise set the axis range and squash everyone else into a corner.
+// The axis covers the 1st-99th percentile instead; anything beyond is drawn
+// as a hollow arrow on the edge it fell off, with a count in the corner, so
+// nothing disappears silently. Fit lines are still computed on every point.
+function robustNiceStep(range){
+ const raw = range / 6;
+ const mag = Math.pow(10, Math.floor(Math.log10(raw)));
+ const f = raw / mag;
+ return (f < 1.5 ? 1 : f < 3.5 ? 2 : f < 7.5 ? 5 : 10) * mag;
+}
+function robustScatterAxes(chart, axes, opts){
+ if(!chart) return;
+ const pts = [];
+ chart.data.datasets.forEach((ds, di) => {
+  if(ds.showLine || ds.type === "line" || ds.borderDash) return;
+  (ds.data || []).forEach(p => { if(p && isFinite(p.x) && isFinite(p.y)) pts.push({ p, di }); });
+ });
+ if(pts.length < 20) return;
+ const cand = {};
+ let flagged = false;
+ for(const ax of axes){
+  const v = pts.map(o => o.p[ax]).sort((a, b) => a - b);
+  const q = f => v[Math.round((v.length - 1) * f)];
+  const lo = q(0.01), hi = q(0.99);
+  const full = v[v.length - 1] - v[0], core = hi - lo;
+  if(!(core > 0)) continue;
+  const step = robustNiceStep(core);
+  let min = Math.floor((lo - core * 0.04) / step) * step;
+  let max = Math.ceil((hi + core * 0.04) / step) * step;
+  if(v[0] >= 0 && min < 0) min = 0;
+  cand[ax] = { min, max, flag: full / core >= 1.6 };
+  if(cand[ax].flag) flagged = true;
+ }
+ if(!flagged) return;
+ const bounds = {};
+ if(opts && opts.square){
+  // Charts with a 45-degree reference line need the same range on both axes.
+  const min = Math.min(...Object.values(cand).map(c => c.min));
+  const max = Math.max(...Object.values(cand).map(c => c.max));
+  for(const ax of Object.keys(cand)) bounds[ax] = { min, max };
+ }else{
+  for(const ax of Object.keys(cand)) if(cand[ax].flag) bounds[ax] = { min: cand[ax].min, max: cand[ax].max };
+ }
+ // Raw config, not chart.options: that's a resolver proxy, and writing
+ // through it recurses.
+ const raw = chart.config.options.scales = chart.config.options.scales || {};
+ for(const ax of Object.keys(bounds)){
+  const sc = raw[ax] = raw[ax] || {};
+  sc.min = bounds[ax].min; sc.max = bounds[ax].max;
+ }
+ const off = [];
+ for(const o of pts){
+  const flags = {};
+  let out = false;
+  for(const ax of Object.keys(bounds)){
+   if(o.p[ax] < bounds[ax].min){ flags[ax] = -1; out = true; }
+   else if(o.p[ax] > bounds[ax].max){ flags[ax] = 1; out = true; }
+  }
+  if(out) off.push({ p: o.p, di: o.di, flags });
+ }
+ chart.$robustOff = off;
+ // Stop the initial draw-in animation first, or it keeps easing points
+ // toward their positions on the old, outlier-stretched scale.
+ chart.stop();
+ chart.update("none");
+}
+const robustOffscalePlugin = {
+ id: "robustOffscale",
+ afterDatasetsDraw(chart){
+  const off = chart.$robustOff;
+  if(!off || !off.length) return;
+  const { ctx, chartArea: a, scales } = chart;
+  const color = (getComputedStyle(document.documentElement).getPropertyValue("--ndr-axis-soft").trim()) || (getComputedStyle(document.documentElement).getPropertyValue("--muted").trim()) || "#8b9199";
+  ctx.save();
+  ctx.strokeStyle = color;
+  ctx.fillStyle = color;
+  ctx.lineWidth = 1.2;
+  for(const o of off){
+   const dsColor = chart.data.datasets[o.di].backgroundColor;
+   ctx.strokeStyle = typeof dsColor === "string" ? dsColor : color;
+   let x = scales.x.getPixelForValue(o.p.x), y = scales.y.getPixelForValue(o.p.y);
+   x = Math.min(a.right - 4, Math.max(a.left + 4, x));
+   y = Math.min(a.bottom - 4, Math.max(a.top + 4, y));
+   const dx = o.flags.x || 0, dy = -(o.flags.y || 0);
+   const len = Math.hypot(dx, dy) || 1, ux = dx / len, uy = dy / len;
+   const s = 4.5;
+   ctx.beginPath();
+   ctx.moveTo(x + ux * s, y + uy * s);
+   ctx.lineTo(x - ux * s - uy * s * 0.8, y - uy * s + ux * s * 0.8);
+   ctx.lineTo(x - ux * s + uy * s * 0.8, y - uy * s - ux * s * 0.8);
+   ctx.closePath();
+   ctx.stroke();
+  }
+  ctx.fillStyle = color;
+  ctx.font = "10px " + (Chart.defaults.font.family || "sans-serif");
+  ctx.textAlign = "right";
+  ctx.textBaseline = "bottom";
+  ctx.fillText(off.length + (off.length === 1 ? " point" : " points") + " beyond the axis range (arrows on the edge)", a.right - 6, a.bottom - 4);
+  ctx.restore();
+ },
+};
+Chart.register(robustOffscalePlugin);
+
 function linearRegression(xs, ys){
  const n = xs.length;
  const mx = xs.reduce((a, b) => a + b, 0) / n;
@@ -1293,9 +1398,17 @@ function renderLagChart(){
  });
 }
 
+// Net dollar flow runs from a few thousand dollars to tens of millions, so
+// on a linear axis nearly every stock sits in one vertical stripe at zero.
+// The x-axis is a signed log scale instead (sign kept, magnitude in powers
+// of ten above $1K); the regression and its statistics still use raw dollars.
+const SYMLOG_UNIT = 1000;
+function symlog(v){ return Math.sign(v) * Math.log10(1 + Math.abs(v) / SYMLOG_UNIT); }
+function symlogInv(t){ return Math.sign(t) * (Math.pow(10, Math.abs(t)) - 1) * SYMLOG_UNIT; }
+
 function renderScatter(){
  const test = RAW.netValueVsPerformance;
- const pts = RAW.stocks.filter(s => s.rel3M !== null && s.netValue !== null).map(s => ({ x: s.netValue, y: s.rel3M, symbol: s.symbol }));
+ const pts = RAW.stocks.filter(s => s.rel3M !== null && s.netValue !== null).map(s => ({ x: symlog(s.netValue), y: s.rel3M, symbol: s.symbol, netValue: s.netValue }));
 
  if(!test || pts.length < 10){
   document.getElementById("netVsPerformanceMethodTable").innerHTML = '<div class="method-note">Not enough stocks with both disclosed activity and price data to test.</div>';
@@ -1304,9 +1417,13 @@ function renderScatter(){
  }
 
  const pearson = test.pearson, spear = test.spearman;
- const xs = pts.map(p => p.x);
- const xMin = Math.min(...xs), xMax = Math.max(...xs);
- const linePoints = [{ x: xMin, y: pearson.intercept + pearson.slope * xMin }, { x: xMax, y: pearson.intercept + pearson.slope * xMax }];
+ const ts = pts.map(p => p.x);
+ const tMin = Math.min(...ts), tMax = Math.max(...ts);
+ const linePoints = Array.from({ length: 81 }, (_, i) => {
+  const t = tMin + (tMax - tMin) * i / 80;
+  return { x: t, y: pearson.intercept + pearson.slope * symlogInv(t) };
+ });
+ const tickDollars = [-1e8, -1e7, -1e6, -1e5, -1e4, 0, 1e4, 1e5, 1e6, 1e7, 1e8];
 
  const ctx = document.getElementById("netVsPerformanceScatter").getContext("2d");
  if(netVsPerformanceScatter) netVsPerformanceScatter.destroy();
@@ -1323,14 +1440,20 @@ function renderScatter(){
    maintainAspectRatio: false,
    plugins: {
     legend: { display: false },
-    tooltip: { callbacks: { label: ctx => ctx.dataset.label === "Stocks" ? (ctx.raw.symbol + ": " + fmtUsd(ctx.raw.x) + " net → " + fmtPct(ctx.raw.y) + " rel. 3M") : null } },
+    tooltip: { callbacks: { label: ctx => ctx.dataset.label === "Stocks" ? (ctx.raw.symbol + ": " + fmtUsd(ctx.raw.netValue) + " net → " + fmtPct(ctx.raw.y) + " rel. 3M") : null } },
    },
    scales: {
-    x: ndrYScale({ position: "bottom", fmt: v => fmtUsd(v), title: "Net disclosed $ flow" }),
+    x: {
+     ...ndrYScale({ position: "bottom", title: "Net disclosed $ flow (signed log scale)" }),
+     min: tMin - 0.2, max: tMax + 0.2,
+     afterBuildTicks: axis => { axis.ticks = tickDollars.map(d => ({ value: symlog(d) })).filter(t => t.value >= axis.min && t.value <= axis.max); },
+     ticks: { color: ndr("axis"), font: { size: 11 }, callback: v => { const d = Math.round(symlogInv(v)), a = Math.abs(d); return (d < 0 ? "-" : "") + "$" + (a >= 1e6 ? a / 1e6 + "M" : a >= 1e3 ? a / 1e3 + "K" : a); } },
+    },
     y: ndrYScale({ fmt: v => v + "%", title: "3-month return vs. SPY" }),
    },
   },
  });
+ robustScatterAxes(netVsPerformanceScatter, ["y"]);
 
  document.getElementById("netVsPerformanceMethodTable").innerHTML = methodTableHtml(pearson, spear,
   "A positive slope would mean stocks with more net congressional buying went on to relatively outperform. n=" + pearson.n + " S&P 500 stocks with both a disclosed trade and current price data.");

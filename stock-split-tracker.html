@@ -1171,15 +1171,23 @@ function renderEventStudyChart(){
   type: "line",
   data: {
    labels: path.map(p => p.offset),
-   datasets: [{
-    label: "Avg. relative return vs. SPY",
-    data: path.map(p => p.avgRelative),
-    borderColor: ndr("navy"),
-    backgroundColor: "transparent",
-    borderWidth: 2,
-    pointRadius: 0,
-    tension: 0.1,
-   }],
+   // 95% confidence band from the job (absent on snapshots saved before
+   // it was added), so day-to-day wiggles can be read against the noise.
+   datasets: [
+    ...(path.some(p => p.ciLow !== undefined && p.ciLow !== null) ? [
+     { label: "95% CI low", data: path.map(p => p.ciLow ?? null), borderColor: "transparent", pointRadius: 0, pointHitRadius: 0, fill: false, tension: 0.1, _band: true },
+     { label: "95% confidence interval", data: path.map(p => p.ciHigh ?? null), borderColor: "transparent", backgroundColor: "rgba(47,75,110,0.14)", pointRadius: 0, pointHitRadius: 0, fill: "-1", tension: 0.1, _band: true },
+    ] : []),
+    {
+     label: "Avg. relative return vs. SPY",
+     data: path.map(p => p.avgRelative),
+     borderColor: ndr("navy"),
+     backgroundColor: "transparent",
+     borderWidth: 2,
+     pointRadius: 0,
+     tension: 0.1,
+    },
+   ],
   },
   options: {
    responsive: true,
@@ -1188,12 +1196,14 @@ function renderEventStudyChart(){
    plugins: {
     legend: { display: false },
     tooltip: {
+     filter: item => !item.dataset._band,
      callbacks: {
       title: items => "Trading day " + (items[0].label >= 0 ? "+" : "") + items[0].label + " vs. split date",
       label: ctx => {
        const p = path[ctx.dataIndex];
        return "Avg. relative return: " + fmtPct(p.avgRelative, 2) + " (n=" + p.n + ")";
       },
+      afterLabel: ctx => { const p = path[ctx.dataIndex]; return p.ciLow === undefined || p.ciLow === null ? "" : "95% CI: " + fmtPct(p.ciLow, 2) + " to " + fmtPct(p.ciHigh, 2); },
      },
     },
    },

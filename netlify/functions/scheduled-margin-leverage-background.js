@@ -161,6 +161,15 @@ function median(values) {
   return v.length % 2 ? v[mid] : (v[mid - 1] + v[mid]) / 2;
 }
 
+// Linear-interpolated percentile, same convention as numpy's default.
+function quantile(values, q) {
+  const v = values.filter((x) => x !== null && x !== undefined && !isNaN(x)).sort((a, b) => a - b);
+  if (!v.length) return null;
+  const pos = (v.length - 1) * q;
+  const lo = Math.floor(pos), hi = Math.ceil(pos);
+  return v[lo] + (v[hi] - v[lo]) * (pos - lo);
+}
+
 // Merges one company's INCOME_STATEMENT and BALANCE_SHEET rows on
 // fiscalDateEnding, computes per-quarter margins and net-debt, then a
 // trailing-twelve-month EBITDA and net-debt/EBITDA ratio once 4 consecutive
@@ -343,6 +352,16 @@ exports.handler = async () => {
           medianOperatingMargin: oper.length >= MIN_SECTOR_N ? round(median(oper)) : null,
           medianNetMargin: net.length >= MIN_SECTOR_N ? round(median(net)) : null,
           medianNetDebtEbitda: lev.length >= MIN_SECTOR_N ? round(median(lev)) : null,
+          // Interquartile range, so the page can show how spread out the
+          // sector is around its median rather than the median alone.
+          p25GrossMargin: gross.length >= MIN_SECTOR_N ? round(quantile(gross, 0.25)) : null,
+          p75GrossMargin: gross.length >= MIN_SECTOR_N ? round(quantile(gross, 0.75)) : null,
+          p25OperatingMargin: oper.length >= MIN_SECTOR_N ? round(quantile(oper, 0.25)) : null,
+          p75OperatingMargin: oper.length >= MIN_SECTOR_N ? round(quantile(oper, 0.75)) : null,
+          p25NetMargin: net.length >= MIN_SECTOR_N ? round(quantile(net, 0.25)) : null,
+          p75NetMargin: net.length >= MIN_SECTOR_N ? round(quantile(net, 0.75)) : null,
+          p25NetDebtEbitda: lev.length >= MIN_SECTOR_N ? round(quantile(lev, 0.25)) : null,
+          p75NetDebtEbitda: lev.length >= MIN_SECTOR_N ? round(quantile(lev, 0.75)) : null,
         };
       });
     }

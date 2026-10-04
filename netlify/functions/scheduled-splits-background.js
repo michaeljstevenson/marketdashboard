@@ -187,6 +187,7 @@ exports.handler = async () => {
     // among current S&P 500 names, are excluded from the averaged path).
     const offsetSum = new Map(); // offset -> sum of relative-return percentage points
     const offsetN = new Map();
+    const offsetSumSq = new Map(); // offset -> sum of squares, for the confidence band
     const regressionPoints = []; // { symbol, logFactor, forwardReturn }
 
     const tableRows = [];
@@ -235,6 +236,7 @@ exports.handler = async () => {
           const rel = (stockRet - spyRet) * 100;
           offsetSum.set(offset, (offsetSum.get(offset) || 0) + rel);
           offsetN.set(offset, (offsetN.get(offset) || 0) + 1);
+          offsetSumSq.set(offset, (offsetSumSq.get(offset) || 0) + rel * rel);
         }
 
         // Full +120 trading day horizon reached -> usable for the
@@ -255,7 +257,14 @@ exports.handler = async () => {
 
     const carPath = [...offsetSum.keys()]
       .sort((a, b) => a - b)
-      .map((offset) => ({ offset, avgRelative: round(offsetSum.get(offset) / offsetN.get(offset), 3), n: offsetN.get(offset) }))
+      .map((offset) => {
+        // 95% confidence band on the average path, so the page can show how
+        // much of the post-split drift is distinguishable from zero.
+        const n = offsetN.get(offset), mean = offsetSum.get(offset) / n;
+        const variance = n > 1 ? Math.max(0, (offsetSumSq.get(offset) - n * mean * mean) / (n - 1)) : null;
+        const half = variance === null ? null : 1.96 * Math.sqrt(variance / n);
+        return { offset, avgRelative: round(mean, 3), n, ciLow: half === null ? null : round(mean - half, 3), ciHigh: half === null ? null : round(mean + half, 3) };
+      })
       .filter((p) => p.n >= MIN_N_FOR_CAR_POINT);
 
     // Sector activity, recent window, all directions.

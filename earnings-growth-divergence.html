@@ -823,7 +823,7 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <div class="chart-box-header">
 <div>
 <h2>Median YoY EPS growth vs. median 3-month relative return, by sector</h2>
-<div class="chart-subhead">Two bars per sector. Do they broadly agree, or diverge?</div>
+<div class="chart-subhead">One point per sector. Blue points sit where growth and price agree in direction, gold where they diverge. Do they broadly agree, or diverge?</div>
 </div>
 </div>
 <div class="ndr-panel">
@@ -1018,6 +1018,111 @@ function ndrNumericScale(opts){
 
 // ---- Stats helpers - same methodology as /factor-analysis, duplicated
 // here since every page on this site is self-contained (see CLAUDE.md). ----
+// ---- Outlier-robust scatter axes ----------------------------------------
+// A few extreme companies (a 13,000% EPS jump, a $44M congressional sale)
+// would otherwise set the axis range and squash everyone else into a corner.
+// The axis covers the 1st-99th percentile instead; anything beyond is drawn
+// as a hollow arrow on the edge it fell off, with a count in the corner, so
+// nothing disappears silently. Fit lines are still computed on every point.
+function robustNiceStep(range){
+ const raw = range / 6;
+ const mag = Math.pow(10, Math.floor(Math.log10(raw)));
+ const f = raw / mag;
+ return (f < 1.5 ? 1 : f < 3.5 ? 2 : f < 7.5 ? 5 : 10) * mag;
+}
+function robustScatterAxes(chart, axes, opts){
+ if(!chart) return;
+ const pts = [];
+ chart.data.datasets.forEach((ds, di) => {
+  if(ds.showLine || ds.type === "line" || ds.borderDash) return;
+  (ds.data || []).forEach(p => { if(p && isFinite(p.x) && isFinite(p.y)) pts.push({ p, di }); });
+ });
+ if(pts.length < 20) return;
+ const cand = {};
+ let flagged = false;
+ for(const ax of axes){
+  const v = pts.map(o => o.p[ax]).sort((a, b) => a - b);
+  const q = f => v[Math.round((v.length - 1) * f)];
+  const lo = q(0.01), hi = q(0.99);
+  const full = v[v.length - 1] - v[0], core = hi - lo;
+  if(!(core > 0)) continue;
+  const step = robustNiceStep(core);
+  let min = Math.floor((lo - core * 0.04) / step) * step;
+  let max = Math.ceil((hi + core * 0.04) / step) * step;
+  if(v[0] >= 0 && min < 0) min = 0;
+  cand[ax] = { min, max, flag: full / core >= 1.6 };
+  if(cand[ax].flag) flagged = true;
+ }
+ if(!flagged) return;
+ const bounds = {};
+ if(opts && opts.square){
+  // Charts with a 45-degree reference line need the same range on both axes.
+  const min = Math.min(...Object.values(cand).map(c => c.min));
+  const max = Math.max(...Object.values(cand).map(c => c.max));
+  for(const ax of Object.keys(cand)) bounds[ax] = { min, max };
+ }else{
+  for(const ax of Object.keys(cand)) if(cand[ax].flag) bounds[ax] = { min: cand[ax].min, max: cand[ax].max };
+ }
+ // Raw config, not chart.options: that's a resolver proxy, and writing
+ // through it recurses.
+ const raw = chart.config.options.scales = chart.config.options.scales || {};
+ for(const ax of Object.keys(bounds)){
+  const sc = raw[ax] = raw[ax] || {};
+  sc.min = bounds[ax].min; sc.max = bounds[ax].max;
+ }
+ const off = [];
+ for(const o of pts){
+  const flags = {};
+  let out = false;
+  for(const ax of Object.keys(bounds)){
+   if(o.p[ax] < bounds[ax].min){ flags[ax] = -1; out = true; }
+   else if(o.p[ax] > bounds[ax].max){ flags[ax] = 1; out = true; }
+  }
+  if(out) off.push({ p: o.p, di: o.di, flags });
+ }
+ chart.$robustOff = off;
+ // Stop the initial draw-in animation first, or it keeps easing points
+ // toward their positions on the old, outlier-stretched scale.
+ chart.stop();
+ chart.update("none");
+}
+const robustOffscalePlugin = {
+ id: "robustOffscale",
+ afterDatasetsDraw(chart){
+  const off = chart.$robustOff;
+  if(!off || !off.length) return;
+  const { ctx, chartArea: a, scales } = chart;
+  const color = (getComputedStyle(document.documentElement).getPropertyValue("--ndr-axis-soft").trim()) || (getComputedStyle(document.documentElement).getPropertyValue("--muted").trim()) || "#8b9199";
+  ctx.save();
+  ctx.strokeStyle = color;
+  ctx.fillStyle = color;
+  ctx.lineWidth = 1.2;
+  for(const o of off){
+   const dsColor = chart.data.datasets[o.di].backgroundColor;
+   ctx.strokeStyle = typeof dsColor === "string" ? dsColor : color;
+   let x = scales.x.getPixelForValue(o.p.x), y = scales.y.getPixelForValue(o.p.y);
+   x = Math.min(a.right - 4, Math.max(a.left + 4, x));
+   y = Math.min(a.bottom - 4, Math.max(a.top + 4, y));
+   const dx = o.flags.x || 0, dy = -(o.flags.y || 0);
+   const len = Math.hypot(dx, dy) || 1, ux = dx / len, uy = dy / len;
+   const s = 4.5;
+   ctx.beginPath();
+   ctx.moveTo(x + ux * s, y + uy * s);
+   ctx.lineTo(x - ux * s - uy * s * 0.8, y - uy * s + ux * s * 0.8);
+   ctx.lineTo(x - ux * s + uy * s * 0.8, y - uy * s - ux * s * 0.8);
+   ctx.closePath();
+   ctx.stroke();
+  }
+  ctx.fillStyle = color;
+  ctx.font = "10px " + (Chart.defaults.font.family || "sans-serif");
+  ctx.textAlign = "right";
+  ctx.textBaseline = "bottom";
+  ctx.fillText(off.length + (off.length === 1 ? " point" : " points") + " beyond the axis range (arrows on the edge)", a.right - 6, a.bottom - 4);
+  ctx.restore();
+ },
+};
+Chart.register(robustOffscalePlugin);
+
 function linearRegression(xs, ys){
  const n = xs.length;
  const mx = xs.reduce((a, b) => a + b, 0) / n;
@@ -1115,32 +1220,81 @@ function renderStats(){
  }
 }
 
+// Growth and price return live on very different scales (a 140% EPS jump
+// next to a 3% relative return), so side-by-side bars make the return bar
+// unreadable. One labeled point per sector puts each measure on its own
+// axis; sectors in the upper-right and lower-left quadrants agree, the
+// other two quadrants are where price and earnings have diverged.
 function renderSectorChart(){
- const sorted = [...RAW.sectors].sort((a, b) => (b.medianEpsGrowth ?? -Infinity) - (a.medianEpsGrowth ?? -Infinity));
+ const rows = RAW.sectors.filter(s => s.medianEpsGrowth !== null && s.medianEpsGrowth !== undefined && s.medianRelPrice3M !== null && s.medianRelPrice3M !== undefined);
  const ctx = document.getElementById("sectorChart").getContext("2d");
  if(sectorChart) sectorChart.destroy();
- sectorChart = new Chart(ctx, {
-  type: "bar",
-  data: {
-   labels: sorted.map(s => s.sector),
-   datasets: [
-    { label: "Median EPS growth YoY", data: sorted.map(s => s.medianEpsGrowth), backgroundColor: ndr("green"), borderRadius: 4 },
-    { label: "Median 3M relative price", data: sorted.map(s => s.medianRelPrice3M), backgroundColor: ndr("navy"), borderRadius: 4 },
-   ],
+ const labelPlugin = {
+  id: "sectorLabels",
+  afterDatasetsDraw(chart){
+   const { ctx: c, chartArea: area } = chart;
+   const meta = chart.getDatasetMeta(0);
+   c.save();
+   c.font = "11px " + Chart.defaults.font.family;
+   c.fillStyle = ndr("axis");
+   c.textBaseline = "middle";
+   // Try a few spots around each point and take the first that doesn't
+   // collide with a label already placed.
+   const placed = [];
+   const overlaps = r => placed.some(o => r.x < o.x + o.w && r.x + r.w > o.x && r.y < o.y + o.h && r.y + r.h > o.y);
+   meta.data.forEach((pt, i) => {
+    const label = rows[i].sector;
+    const w = c.measureText(label).width, h = 12;
+    const spots = [[9, 0, "left"], [-9, 0, "right"], [9, -11, "left"], [9, 11, "left"], [-9, -11, "right"], [-9, 11, "right"]];
+    let pick = null;
+    for(const [dx, dy, align] of spots){
+     const x0 = align === "left" ? pt.x + dx : pt.x + dx - w;
+     const r = { x: x0, y: pt.y + dy - h / 2, w, h };
+     if(r.x < area.left || r.x + w > area.right) continue;
+     if(!overlaps(r)){ pick = { r, align, x: pt.x + dx, y: pt.y + dy }; break; }
+    }
+    if(!pick){ const x0 = pt.x + 9; pick = { r: { x: x0, y: pt.y - h / 2, w, h }, align: "left", x: x0, y: pt.y }; }
+    placed.push(pick.r);
+    c.textAlign = pick.align;
+    c.fillText(label, pick.x, pick.y);
+   });
+   const zx = chart.scales.x.getPixelForValue(0), zy = chart.scales.y.getPixelForValue(0);
+   c.strokeStyle = ndr("axis-soft");
+   c.lineWidth = 1;
+   c.beginPath();
+   if(zx >= area.left && zx <= area.right){ c.moveTo(zx, area.top); c.lineTo(zx, area.bottom); }
+   if(zy >= area.top && zy <= area.bottom){ c.moveTo(area.left, zy); c.lineTo(area.right, zy); }
+   c.stroke();
+   c.restore();
   },
+ };
+ sectorChart = new Chart(ctx, {
+  type: "scatter",
+  data: {
+   datasets: [{
+    label: "Sectors",
+    data: rows.map(s => ({ x: s.medianEpsGrowth, y: s.medianRelPrice3M })),
+    pointRadius: 6, pointHoverRadius: 8,
+    pointBackgroundColor: rows.map(s => (s.medianEpsGrowth >= 0) === (s.medianRelPrice3M >= 0) ? ndr("navy") : ndr("gold")),
+    pointBorderColor: ndr("plot"), pointBorderWidth: 1.5,
+   }],
+  },
+  plugins: [labelPlugin],
   options: {
-   indexAxis: "y",
    responsive: true,
    maintainAspectRatio: false,
+   layout: { padding: { right: 12 } },
    plugins: {
-    legend: ndrLegend(),
-    tooltip: { callbacks: { label: ctx => ctx.dataset.label + ": " + fmtPct(ctx.parsed.x) } },
+    legend: { display: false },
+    zoom: false,
+    tooltip: { callbacks: {
+     title: items => rows[items[0].dataIndex].sector,
+     label: ctx => ["Median EPS growth YoY: " + fmtPct(ctx.parsed.x), "Median 3M relative price: " + fmtPct(ctx.parsed.y)],
+    } },
    },
-   // indexAxis:"y" flips the usual roles: x is the value scale here, y
-   // is the sector-name category axis.
    scales: {
-    x: ndrYScale({ fmt: (v) => (Math.round(v * 100) / 100) + "%" }),
-    y: ndrCategoryScale(),
+    x: { ...ndrYScale({ position: "bottom", fmt: v => (Math.round(v * 100) / 100) + "%", title: "Median EPS growth YoY" }), grace: "8%" },
+    y: { ...ndrYScale({ fmt: v => (Math.round(v * 100) / 100) + "%", title: "Median 3-month return vs. SPY" }), grace: "12%" },
    },
   },
  });
@@ -1192,6 +1346,7 @@ function renderScatter(){
    },
   },
  });
+ robustScatterAxes(growthScatter, ["x","y"]);
 
  function row(label, stats){
   const sig = stats.p < 0.05;

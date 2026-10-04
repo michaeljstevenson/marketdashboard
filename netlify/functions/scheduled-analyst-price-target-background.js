@@ -74,6 +74,16 @@ function mean(values) {
   return v.length ? v.reduce((a, b) => a + b, 0) / v.length : null;
 }
 
+// Linear-interpolated percentile, so the history can carry an
+// interquartile band around each snapshot's median.
+function quantile(values, q) {
+  const v = values.filter((x) => x !== null && x !== undefined && !isNaN(x)).sort((a, b) => a - b);
+  if (!v.length) return null;
+  const pos = (v.length - 1) * q;
+  const lo = Math.floor(pos), hi = Math.ceil(pos);
+  return v[lo] + (v[hi] - v[lo]) * (pos - lo);
+}
+
 function median(values) {
   const v = values.filter((x) => x !== null && x !== undefined && Number.isFinite(x)).sort((a, b) => a - b);
   if (!v.length) return null;
@@ -246,6 +256,10 @@ exports.handler = async () => {
       date: todayDate,
       medianUpsidePct: market.medianUpsidePct,
       medianBuyRatio: market.medianBuyRatio,
+      p25UpsidePct: round(quantile(companies.map((c) => c.upsidePct), 0.25)),
+      p75UpsidePct: round(quantile(companies.map((c) => c.upsidePct), 0.75)),
+      p25BuyRatio: round(quantile(companies.map((c) => c.buyRatio), 0.25), 1),
+      p75BuyRatio: round(quantile(companies.map((c) => c.buyRatio), 0.75), 1),
     });
     const trimmed = filtered.slice(-MAX_HISTORY_POINTS);
     await store.setJSON(HISTORY_KEY, { points: trimmed });

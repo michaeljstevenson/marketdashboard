@@ -915,7 +915,11 @@ function rankArray(arr){
 function spearmanRegression(xs, ys){ return linearRegression(rankArray(xs), rankArray(ys)); }
 
 function pearson(xs, ys){
+ // Pairwise-complete: drop days where either series has no return.
+ const keep = xs.map((x, i) => isFinite(x) && isFinite(ys[i]));
+ xs = xs.filter((x, i) => keep[i]); ys = ys.filter((y, i) => keep[i]);
  const n = xs.length;
+ if(n < 3) return NaN;
  const mx = xs.reduce((a,b) => a+b, 0) / n;
  const my = ys.reduce((a,b) => a+b, 0) / n;
  const sxx = xs.reduce((s,x) => s + (x-mx)**2, 0);
@@ -925,14 +929,24 @@ function pearson(xs, ys){
  return denom === 0 ? 0 : sxy / denom;
 }
 
-function dailyReturns(history){
- const closes = history.map(h => h.close);
+// SPY's dates from the point the feed turns daily (no gap over 4 calendar
+// days from there to the end).
+function dailyCalendar(history){
  const dates = history.map(h => h.date);
+ let start = 0;
+ for(let i = dates.length - 1; i > 0; i--){
+  if((new Date(dates[i]) - new Date(dates[i - 1])) / 864e5 > 4){ start = i; break; }
+ }
+ return dates.slice(start);
+}
+function alignedReturns(history, calendar){
+ const close = new Map(history.map(h => [h.date, h.close]));
  const rets = [];
  const retDates = [];
- for(let i = 1; i < closes.length; i++){
-  rets.push((closes[i] / closes[i-1]) - 1);
-  retDates.push(dates[i]);
+ for(let i = 1; i < calendar.length; i++){
+  const a = close.get(calendar[i - 1]), b = close.get(calendar[i]);
+  rets.push(a && b ? (b / a) - 1 : NaN);
+  retDates.push(calendar[i]);
  }
  return { dates: retDates, returns: rets };
 }
@@ -949,10 +963,13 @@ async function init(){
   document.getElementById("updated").textContent =
    "As of " + usDate(data.benchmark.asOfDate) + " · " + new Date(data.generated_at_utc).toLocaleString("en-US", { month: "2-digit", day: "2-digit", year: "numeric", hour: "numeric", minute: "2-digit" });
 
-  // Align every series to the common set of dates (SPY's calendar, which
-  // this dataset already builds every sector's history around).
-  const spyReturns = dailyReturns(data.benchmark.history);
-  const sectorReturns = data.sectors.map(s => ({ name: s.name, ticker: s.ticker, ...dailyReturns(s.history) }));
+  // Join every series on date over the daily stretch of the history. The
+  // feed is weekly before late 2024 (it was extended back to 1993 for the
+  // long-run sector charts), and SPY, XLRE and XLC each start on different
+  // dates, so pairing by array position matched returns from different days.
+  const calendar = dailyCalendar(data.benchmark.history);
+  const spyReturns = alignedReturns(data.benchmark.history, calendar);
+  const sectorReturns = data.sectors.map(s => ({ name: s.name, ticker: s.ticker, ...alignedReturns(s.history, calendar) }));
 
   const n = spyReturns.returns.length;
   const dates = spyReturns.dates;
@@ -969,10 +986,11 @@ async function init(){
    let sum = 0, count = 0;
    for(let i = 0; i < sectorReturns.length; i++){
     for(let j = i + 1; j < sectorReturns.length; j++){
-     sum += pearson(sectorReturns[i].returns.slice(start, end), sectorReturns[j].returns.slice(start, end));
-     count++;
+     const r = pearson(sectorReturns[i].returns.slice(start, end), sectorReturns[j].returns.slice(start, end));
+     if(isFinite(r)){ sum += r; count++; }
     }
    }
+   if(!count) continue;
    rollingAvgCorr.push(sum / count);
    const spySlice = spyReturns.returns.slice(start, end);
    const mean = spySlice.reduce((a,b) => a+b, 0) / spySlice.length;

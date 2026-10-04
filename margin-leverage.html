@@ -559,6 +559,40 @@ tbody td:nth-child(2){
  font-style:italic;
 }
 
+/* SMALL MULTIPLES: one panel per sector on a shared y-scale */
+
+.sm-grid{
+ display:grid;
+ grid-template-columns:repeat(4, minmax(0, 1fr));
+ gap:14px 16px;
+}
+@media (max-width:1100px){ .sm-grid{ grid-template-columns:repeat(3, minmax(0, 1fr)); } }
+@media (max-width:760px){ .sm-grid{ grid-template-columns:repeat(2, minmax(0, 1fr)); } }
+@media (max-width:460px){ .sm-grid{ grid-template-columns:1fr; } }
+.sm-panel-title{
+ font-size:11.5px;
+ font-weight:600;
+ color:var(--ndr-axis);
+ margin:0 0 2px 2px;
+ display:flex;
+ justify-content:space-between;
+ gap:8px;
+}
+.sm-panel-title .sm-latest{ font-weight:400; color:var(--ndr-axis-soft); font-variant-numeric:tabular-nums; }
+.sm-canvas-wrap{ height:130px; position:relative; }
+.sm-key{
+ display:flex;
+ flex-wrap:wrap;
+ gap:8px 18px;
+ margin-top:12px;
+ font-size:11px;
+ color:var(--muted);
+}
+.sm-key .swatch{ display:inline-block; vertical-align:middle; margin-right:6px; }
+.sm-key .swatch.line{ width:18px; height:2px; background:var(--ink); }
+.sm-key .swatch.band{ width:18px; height:9px; background:var(--muted); opacity:0.35; border-radius:2px; }
+.sm-key .swatch.ghost{ width:18px; height:1px; background:var(--muted); opacity:0.6; }
+
 /* SECTOR LEGEND (scatter / spaghetti charts) */
 
 .sector-legend{
@@ -887,11 +921,9 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 </div>
 </div>
 <div class="ndr-panel">
-<div class="chart-canvas-wrap">
-<canvas id="sectorMarginChart"></canvas>
+<div class="sm-grid" id="sectorMarginGrid"></div>
 </div>
-</div>
-<div class="sector-legend" id="marginLegend"></div>
+<div class="sm-key" id="marginKey"></div>
 </div>
 
 <div class="chart-box">
@@ -902,11 +934,9 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 </div>
 </div>
 <div class="ndr-panel">
-<div class="chart-canvas-wrap">
-<canvas id="sectorLeverageChart"></canvas>
+<div class="sm-grid" id="sectorLeverageGrid"></div>
 </div>
-</div>
-<div class="sector-legend" id="leverageLegend"></div>
+<div class="sm-key" id="leverageKey"></div>
 </div>
 
 <div class="chart-grid">
@@ -933,6 +963,7 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <div class="ndr-panel">
 <div class="chart-canvas-wrap" style="height:300px;">
 <canvas id="regimeLeverageChart"></canvas>
+</div>
 </div>
 </div>
 </div>
@@ -1156,6 +1187,111 @@ function ndrLegend(){
 
 // ---- Stats helpers - same methodology as /factor-analysis, duplicated
 // here since every page on this site is self-contained (see CLAUDE.md). ----
+// ---- Outlier-robust scatter axes ----------------------------------------
+// A few extreme companies (a 13,000% EPS jump, a $44M congressional sale)
+// would otherwise set the axis range and squash everyone else into a corner.
+// The axis covers the 1st-99th percentile instead; anything beyond is drawn
+// as a hollow arrow on the edge it fell off, with a count in the corner, so
+// nothing disappears silently. Fit lines are still computed on every point.
+function robustNiceStep(range){
+ const raw = range / 6;
+ const mag = Math.pow(10, Math.floor(Math.log10(raw)));
+ const f = raw / mag;
+ return (f < 1.5 ? 1 : f < 3.5 ? 2 : f < 7.5 ? 5 : 10) * mag;
+}
+function robustScatterAxes(chart, axes, opts){
+ if(!chart) return;
+ const pts = [];
+ chart.data.datasets.forEach((ds, di) => {
+  if(ds.showLine || ds.type === "line" || ds.borderDash) return;
+  (ds.data || []).forEach(p => { if(p && isFinite(p.x) && isFinite(p.y)) pts.push({ p, di }); });
+ });
+ if(pts.length < 20) return;
+ const cand = {};
+ let flagged = false;
+ for(const ax of axes){
+  const v = pts.map(o => o.p[ax]).sort((a, b) => a - b);
+  const q = f => v[Math.round((v.length - 1) * f)];
+  const lo = q(0.01), hi = q(0.99);
+  const full = v[v.length - 1] - v[0], core = hi - lo;
+  if(!(core > 0)) continue;
+  const step = robustNiceStep(core);
+  let min = Math.floor((lo - core * 0.04) / step) * step;
+  let max = Math.ceil((hi + core * 0.04) / step) * step;
+  if(v[0] >= 0 && min < 0) min = 0;
+  cand[ax] = { min, max, flag: full / core >= 1.6 };
+  if(cand[ax].flag) flagged = true;
+ }
+ if(!flagged) return;
+ const bounds = {};
+ if(opts && opts.square){
+  // Charts with a 45-degree reference line need the same range on both axes.
+  const min = Math.min(...Object.values(cand).map(c => c.min));
+  const max = Math.max(...Object.values(cand).map(c => c.max));
+  for(const ax of Object.keys(cand)) bounds[ax] = { min, max };
+ }else{
+  for(const ax of Object.keys(cand)) if(cand[ax].flag) bounds[ax] = { min: cand[ax].min, max: cand[ax].max };
+ }
+ // Raw config, not chart.options: that's a resolver proxy, and writing
+ // through it recurses.
+ const raw = chart.config.options.scales = chart.config.options.scales || {};
+ for(const ax of Object.keys(bounds)){
+  const sc = raw[ax] = raw[ax] || {};
+  sc.min = bounds[ax].min; sc.max = bounds[ax].max;
+ }
+ const off = [];
+ for(const o of pts){
+  const flags = {};
+  let out = false;
+  for(const ax of Object.keys(bounds)){
+   if(o.p[ax] < bounds[ax].min){ flags[ax] = -1; out = true; }
+   else if(o.p[ax] > bounds[ax].max){ flags[ax] = 1; out = true; }
+  }
+  if(out) off.push({ p: o.p, di: o.di, flags });
+ }
+ chart.$robustOff = off;
+ // Stop the initial draw-in animation first, or it keeps easing points
+ // toward their positions on the old, outlier-stretched scale.
+ chart.stop();
+ chart.update("none");
+}
+const robustOffscalePlugin = {
+ id: "robustOffscale",
+ afterDatasetsDraw(chart){
+  const off = chart.$robustOff;
+  if(!off || !off.length) return;
+  const { ctx, chartArea: a, scales } = chart;
+  const color = (getComputedStyle(document.documentElement).getPropertyValue("--ndr-axis-soft").trim()) || (getComputedStyle(document.documentElement).getPropertyValue("--muted").trim()) || "#8b9199";
+  ctx.save();
+  ctx.strokeStyle = color;
+  ctx.fillStyle = color;
+  ctx.lineWidth = 1.2;
+  for(const o of off){
+   const dsColor = chart.data.datasets[o.di].backgroundColor;
+   ctx.strokeStyle = typeof dsColor === "string" ? dsColor : color;
+   let x = scales.x.getPixelForValue(o.p.x), y = scales.y.getPixelForValue(o.p.y);
+   x = Math.min(a.right - 4, Math.max(a.left + 4, x));
+   y = Math.min(a.bottom - 4, Math.max(a.top + 4, y));
+   const dx = o.flags.x || 0, dy = -(o.flags.y || 0);
+   const len = Math.hypot(dx, dy) || 1, ux = dx / len, uy = dy / len;
+   const s = 4.5;
+   ctx.beginPath();
+   ctx.moveTo(x + ux * s, y + uy * s);
+   ctx.lineTo(x - ux * s - uy * s * 0.8, y - uy * s + ux * s * 0.8);
+   ctx.lineTo(x - ux * s + uy * s * 0.8, y - uy * s - ux * s * 0.8);
+   ctx.closePath();
+   ctx.stroke();
+  }
+  ctx.fillStyle = color;
+  ctx.font = "10px " + (Chart.defaults.font.family || "sans-serif");
+  ctx.textAlign = "right";
+  ctx.textBaseline = "bottom";
+  ctx.fillText(off.length + (off.length === 1 ? " point" : " points") + " beyond the axis range (arrows on the edge)", a.right - 6, a.bottom - 4);
+  ctx.restore();
+ },
+};
+Chart.register(robustOffscalePlugin);
+
 function linearRegression(xs, ys){
  const n = xs.length;
  const mx = xs.reduce((a, b) => a + b, 0) / n;
@@ -1217,7 +1353,7 @@ function methodTableHtml(pearson, spear, unitNote){
  "</table>" + (unitNote ? '<div class="method-note">' + unitNote + "</div>" : "");
 }
 
-let sectorMarginChart = null, sectorLeverageChart = null, regimeMarginChart = null, regimeLeverageChart = null;
+let regimeMarginChart = null, regimeLeverageChart = null;
 let marginRateScatter = null, leverageRateScatter = null, marginLeverageScatter = null;
 
 async function init(){
@@ -1288,88 +1424,114 @@ function alignedSeries(sector, field){
  const byQuarter = new Map(series.map(r => [r.quarter, r]));
  return RAW.quarters.map(q => {
   const r = byQuarter.get(q);
-  return r ? r[field] : null;
+  return r && r[field] !== undefined ? r[field] : null;
  });
+}
+
+function hexToRgba(hex, alpha){
+ const h = hex.replace("#", "");
+ const n = parseInt(h.length === 3 ? h.split("").map(c => c + c).join("") : h, 16);
+ return "rgba(" + ((n >> 16) & 255) + "," + ((n >> 8) & 255) + "," + (n & 255) + "," + alpha + ")";
+}
+
+// Eleven overlapping sector lines can't be read against each other, and a
+// median alone hides how dispersed each sector is. One small panel per
+// sector on a shared y-scale fixes both: the sector's median, its
+// interquartile band, and every other sector's median as faint context.
+const smallMultipleCharts = { sectorMarginGrid: [], sectorLeverageGrid: [] };
+
+function renderSmallMultiples(gridId, keyId, field, fmt, tickFmt){
+ const p25Field = field.replace("median", "p25");
+ const p75Field = field.replace("median", "p75");
+ const sectors = Object.keys(RAW.sectorSeries).sort();
+ const series = {};
+ let hasBand = false;
+ const medVals = [], bandVals = [];
+ for(const sector of sectors){
+  const med = alignedSeries(sector, field);
+  const lo = alignedSeries(sector, p25Field);
+  const hi = alignedSeries(sector, p75Field);
+  if(lo.some(v => v !== null)) hasBand = true;
+  series[sector] = { med, lo, hi };
+  med.forEach(v => { if(v !== null && !isNaN(v)) medVals.push(v); });
+  lo.concat(hi).forEach(v => { if(v !== null && !isNaN(v)) bandVals.push(v); });
+ }
+ // Every median stays on-scale; the bands are clipped at their 2nd-98th
+ // percentile so one sector's blowout quarter doesn't flatten the other ten.
+ bandVals.sort((a, b) => a - b);
+ const pick = q => bandVals.length ? bandVals[Math.round((bandVals.length - 1) * q)] : null;
+ const lows = medVals.concat(bandVals.length ? [pick(0.02)] : []);
+ const highs = medVals.concat(bandVals.length ? [pick(0.98)] : []);
+ const yMin = Math.floor(Math.min(...lows)), yMax = Math.ceil(Math.max(...highs));
+
+ smallMultipleCharts[gridId].forEach(c => c.destroy());
+ smallMultipleCharts[gridId] = [];
+ const grid = document.getElementById(gridId);
+ grid.innerHTML = sectors.map((sector, i) =>
+  '<div class="sm-panel"><div class="sm-panel-title"><span>' + sector + '</span><span class="sm-latest" id="' + gridId + '-latest-' + i + '"></span></div>' +
+  '<div class="sm-canvas-wrap"><canvas id="' + gridId + '-c' + i + '"></canvas></div></div>'
+ ).join("");
+
+ sectors.forEach((sector, i) => {
+  const color = SECTOR_COLORS[sector] || ndr("slate");
+  const own = series[sector];
+  const lastIdx = own.med.map((v, j) => v === null ? -1 : j).filter(j => j >= 0).pop();
+  document.getElementById(gridId + "-latest-" + i).textContent = lastIdx === undefined ? "" : fmt(own.med[lastIdx]);
+
+  const ghosts = sectors.filter(s => s !== sector).map(s => ({
+   data: series[s].med, borderColor: hexToRgba(ndr("slate"), 0.28), borderWidth: 1,
+   pointRadius: 0, pointHitRadius: 0, tension: 0.15, spanGaps: true, fill: false, _ghost: true,
+  }));
+  const datasets = ghosts.concat([
+   { label: "25th pct", data: own.lo, borderColor: "transparent", pointRadius: 0, pointHitRadius: 0, tension: 0.15, spanGaps: true, fill: false },
+   { label: "75th pct", data: own.hi, borderColor: "transparent", backgroundColor: hexToRgba(color, 0.22), pointRadius: 0, pointHitRadius: 0, tension: 0.15, spanGaps: true, fill: "-1" },
+   { label: "Median", data: own.med, borderColor: color, borderWidth: 2, pointRadius: 0, pointHoverRadius: 3, tension: 0.15, spanGaps: true, fill: false },
+  ]);
+
+  const ctx = document.getElementById(gridId + "-c" + i).getContext("2d");
+  smallMultipleCharts[gridId].push(new Chart(ctx, {
+   type: "line",
+   data: { labels: RAW.quarters, datasets },
+   options: {
+    responsive: true,
+    maintainAspectRatio: false,
+    animation: false,
+    interaction: { mode: "index", intersect: false },
+    plugins: {
+     legend: { display: false },
+     zoom: false,
+     tooltip: {
+      filter: item => !item.dataset._ghost,
+      itemSort: (a, b) => b.datasetIndex - a.datasetIndex,
+      callbacks: {
+       title: items => sector + ", " + items[0].label,
+       label: item => item.parsed.y === null ? null : item.dataset.label + ": " + fmt(item.parsed.y),
+      },
+     },
+    },
+    scales: {
+     x: { ticks: { display: false }, grid: { display: false }, border: { color: ndr("axis-soft") } },
+     y: { min: yMin, max: yMax, grid: { color: ndr("grid") }, border: { display: false }, ticks: { color: ndr("axis-soft"), font: { size: 9 }, maxTicksLimit: 4, includeBounds: false, callback: tickFmt } },
+    },
+   },
+  }));
+ });
+
+ const first = RAW.quarters[0], last = RAW.quarters[RAW.quarters.length - 1];
+ document.getElementById(keyId).innerHTML =
+  '<span><span class="swatch line"></span>Sector median</span>' +
+  (hasBand ? '<span><span class="swatch band"></span>Middle 50% of the sector\'s companies (25th to 75th percentile)</span>' : '') +
+  '<span><span class="swatch ghost"></span>Other sectors\' medians</span>' +
+  '<span>' + first + ' to ' + last + ', shared scale</span>';
 }
 
 function renderSectorMarginChart(){
  const field = MARGIN_METRIC === "gross" ? "medianGrossMargin" : MARGIN_METRIC === "net" ? "medianNetMargin" : "medianOperatingMargin";
- const sectors = Object.keys(RAW.sectorSeries).sort();
- const datasets = sectors.map(sector => ({
-  label: sector,
-  data: alignedSeries(sector, field),
-  borderColor: SECTOR_COLORS[sector] || "#8b9199",
-  backgroundColor: "transparent",
-  borderWidth: 1.75,
-  pointRadius: 0,
-  tension: 0.15,
-  spanGaps: true,
- }));
-
- const ctx = document.getElementById("sectorMarginChart").getContext("2d");
- if(sectorMarginChart) sectorMarginChart.destroy();
- sectorMarginChart = new Chart(ctx, {
-  type: "line",
-  data: { labels: RAW.quarters, datasets },
-  options: {
-   responsive: true,
-   maintainAspectRatio: false,
-   // Many overlapping sector lines - "nearest" hit-tests every dataset on
-   // every mousemove and has hung this site's tab before at this kind of
-   // spaghetti-plot scale (see CLAUDE.md).
-   interaction: { mode: "point", intersect: true },
-   plugins: {
-    legend: { display: false },
-    tooltip: { callbacks: { label: ctx => ctx.dataset.label + ": " + fmtPlainPct(ctx.parsed.y) } },
-   },
-   scales: {
-    x: { ...ndrXScale(), maxTicksLimit: 10 },
-    y: ndrYScale({ fmt: v => v + "%" }),
-   },
-  },
- });
-
- document.getElementById("marginLegend").innerHTML = sectors.map(sector =>
-  '<span><span class="dot" style="background:' + (SECTOR_COLORS[sector] || "#8b9199") + '"></span>' + sector + '</span>'
- ).join("");
+ renderSmallMultiples("sectorMarginGrid", "marginKey", field, fmtPlainPct, v => v + "%");
 }
 
 function renderSectorLeverageChart(){
- const sectors = Object.keys(RAW.sectorSeries).sort();
- const datasets = sectors.map(sector => ({
-  label: sector,
-  data: alignedSeries(sector, "medianNetDebtEbitda"),
-  borderColor: SECTOR_COLORS[sector] || "#8b9199",
-  backgroundColor: "transparent",
-  borderWidth: 1.75,
-  pointRadius: 0,
-  tension: 0.15,
-  spanGaps: true,
- }));
-
- const ctx = document.getElementById("sectorLeverageChart").getContext("2d");
- if(sectorLeverageChart) sectorLeverageChart.destroy();
- sectorLeverageChart = new Chart(ctx, {
-  type: "line",
-  data: { labels: RAW.quarters, datasets },
-  options: {
-   responsive: true,
-   maintainAspectRatio: false,
-   interaction: { mode: "point", intersect: true },
-   plugins: {
-    legend: { display: false },
-    tooltip: { callbacks: { label: ctx => ctx.dataset.label + ": " + fmtX(ctx.parsed.y) } },
-   },
-   scales: {
-    x: { ...ndrXScale(), maxTicksLimit: 10 },
-    y: ndrYScale({ fmt: v => v + "x" }),
-   },
-  },
- });
-
- document.getElementById("leverageLegend").innerHTML = sectors.map(sector =>
-  '<span><span class="dot" style="background:' + (SECTOR_COLORS[sector] || "#8b9199") + '"></span>' + sector + '</span>'
- ).join("");
+ renderSmallMultiples("sectorLeverageGrid", "leverageKey", "medianNetDebtEbitda", fmtX, v => v + "x");
 }
 
 document.querySelectorAll("#marginMetricToggle button").forEach(btn => {
@@ -1380,49 +1542,113 @@ document.querySelectorAll("#marginMetricToggle button").forEach(btn => {
  });
 });
 
-function buildRegimeStats(field){
- const order = ["Cutting", "Holding", "Hiking"];
- const groups = { Cutting: [], Holding: [], Hiking: [] };
- for(const r of RAW.marketQuarterly){
-  if(r[field] === null || !groups[r.regime]) continue;
-  groups[r.regime].push(r[field]);
- }
- return order.map(k => {
-  const vals = groups[k];
-  const n = vals.length;
-  const mean = n ? vals.reduce((a, b) => a + b, 0) / n : null;
-  return { regime: k, n, mean };
+function quantileOf(sorted, q){
+ if(!sorted.length) return null;
+ const pos = (sorted.length - 1) * q;
+ const lo = Math.floor(pos), hi = Math.ceil(pos);
+ return sorted[lo] + (sorted[hi] - sorted[lo]) * (pos - lo);
+}
+
+const REGIME_ORDER = ["Cutting", "Holding", "Hiking"];
+
+function buildRegimeGroups(field){
+ return REGIME_ORDER.map((regime, gi) => {
+  const rows = RAW.marketQuarterly.filter(r => r.regime === regime && r[field] !== null);
+  const sorted = rows.map(r => r[field]).sort((a, b) => a - b);
+  const n = sorted.length;
+  return {
+   regime, gi, n, rows,
+   mean: n ? sorted.reduce((a, b) => a + b, 0) / n : null,
+   p25: quantileOf(sorted, 0.25), p50: quantileOf(sorted, 0.5), p75: quantileOf(sorted, 0.75),
+  };
  });
 }
 
-function renderRegimeCharts(){
- const marginStats = buildRegimeStats("medianMarginDelta");
- const leverageStats = buildRegimeStats("medianLeverageDelta");
+// Draws each group's interquartile box and median line behind the dots.
+const regimeBoxPlugin = {
+ id: "regimeBoxes",
+ beforeDatasetsDraw(chart){
+  const groups = chart.options.plugins.regimeBoxes && chart.options.plugins.regimeBoxes.groups;
+  if(!groups) return;
+  const { ctx, scales: { x, y }, chartArea } = chart;
+  ctx.save();
+  const zero = y.getPixelForValue(0);
+  if(zero >= chartArea.top && zero <= chartArea.bottom){
+   ctx.strokeStyle = ndr("axis-soft");
+   ctx.lineWidth = 1;
+   ctx.beginPath(); ctx.moveTo(chartArea.left, zero); ctx.lineTo(chartArea.right, zero); ctx.stroke();
+  }
+  const halfW = Math.min(46, (x.getPixelForValue(1) - x.getPixelForValue(0)) * 0.32);
+  for(const g of groups){
+   if(g.n === 0) continue;
+   const cx = x.getPixelForValue(g.gi);
+   const top = y.getPixelForValue(g.p75), bot = y.getPixelForValue(g.p25);
+   ctx.fillStyle = hexToRgba(ndr("slate"), 0.16);
+   ctx.strokeStyle = hexToRgba(ndr("slate"), 0.7);
+   ctx.lineWidth = 1;
+   ctx.fillRect(cx - halfW, top, halfW * 2, bot - top);
+   ctx.strokeRect(cx - halfW, top, halfW * 2, bot - top);
+   const med = y.getPixelForValue(g.p50);
+   ctx.strokeStyle = ndr("axis");
+   ctx.lineWidth = 2.5;
+   ctx.beginPath(); ctx.moveTo(cx - halfW, med); ctx.lineTo(cx + halfW, med); ctx.stroke();
+  }
+  ctx.restore();
+ },
+};
 
- function draw(canvasId, stats, unitFmt, existing){
-  const colors = stats.map(s => s.mean === null ? ndr("slate") : s.mean >= 0 ? ndr("green") : ndr("red"));
+function renderRegimeCharts(){
+ function draw(canvasId, field, unitFmt, existing){
+  const groups = buildRegimeGroups(field);
+  // Deterministic horizontal offsets within each column so quarters with
+  // similar values don't stack on top of each other.
+  const datasets = groups.map(g => ({
+   label: g.regime,
+   data: g.rows
+    .slice().sort((a, b) => a[field] - b[field])
+    .map((r, k) => ({ x: g.gi + ((k % 5) - 2) * 0.07, y: r[field], quarter: r.quarter, regime: g.regime })),
+   backgroundColor: g.regime === "Cutting" ? ndr("green") : g.regime === "Hiking" ? ndr("red") : ndr("navy"),
+   borderColor: ndr("plot"),
+   borderWidth: 1,
+   pointRadius: 4.5,
+   pointHoverRadius: 6,
+   pointHitRadius: 8,
+  }));
   const ctx = document.getElementById(canvasId).getContext("2d");
   if(existing) existing.destroy();
   return new Chart(ctx, {
-   type: "bar",
-   data: { labels: stats.map(s => s.regime), datasets: [{ data: stats.map(s => s.mean), backgroundColor: colors, borderRadius: 4, maxBarThickness: 64 }] },
+   type: "scatter",
+   data: { datasets },
+   plugins: [regimeBoxPlugin],
    options: {
     responsive: true,
     maintainAspectRatio: false,
+    interaction: { mode: "point", intersect: true },
     plugins: {
      legend: { display: false },
-     tooltip: { callbacks: { label: ctx => { const s = stats[ctx.dataIndex]; return ["Avg: " + unitFmt(s.mean), "n=" + s.n + " qtrs"]; } } },
+     zoom: false,
+     regimeBoxes: { groups },
+     tooltip: { callbacks: {
+      title: items => items[0].raw.quarter + " (" + items[0].raw.regime + ")",
+      label: item => unitFmt(item.raw.y),
+      afterLabel: item => { const g = groups.find(gr => gr.regime === item.raw.regime); return "Regime median " + unitFmt(g.p50) + ", mean " + unitFmt(g.mean) + ", n=" + g.n + " qtrs"; },
+     } },
     },
     scales: {
-     x: ndrXScale(),
+     x: {
+      type: "linear", min: -0.6, max: 2.6,
+      grid: { display: false }, border: { color: ndr("axis") },
+      afterBuildTicks: axis => { axis.ticks = [0, 1, 2].map(v => ({ value: v })); },
+      ticks: { color: ndr("axis"), font: { size: 11 }, callback: v => { const g = groups[v]; return g ? g.regime + " (n=" + g.n + ")" : ""; } },
+     },
      y: ndrYScale({ fmt: v => unitFmt(v) }),
     },
    },
   });
  }
 
- regimeMarginChart = draw("regimeMarginChart", marginStats, fmtPpt, regimeMarginChart);
- regimeLeverageChart = draw("regimeLeverageChart", leverageStats, v => fmtDeltaX(v), regimeLeverageChart);
+ regimeMarginChart = draw("regimeMarginChart", "medianMarginDelta", fmtPpt, regimeMarginChart);
+ regimeLeverageChart = draw("regimeLeverageChart", "medianLeverageDelta", v => fmtDeltaX(v), regimeLeverageChart);
 }
 
 function renderRateScatters(){
@@ -1519,6 +1745,7 @@ function renderMarginLeverageScatter(){
    },
   },
  });
+ robustScatterAxes(marginLeverageScatter, ["x","y"]);
 
  document.getElementById("marginLeverageMethodTable").innerHTML = methodTableHtml(pearson, spear,
   "Negative slope would mean thinner margins go with more leverage; positive would mean the opposite. n=" + pearson.n + " companies, most recent quarter each.");

@@ -75,6 +75,16 @@ function round(v, d = 2) {
   const f = 10 ** d;
   return Math.round(v * f) / f;
 }
+// Linear-interpolated percentile, so the history can carry an
+// interquartile band around each snapshot's median.
+function quantile(values, q) {
+  const v = values.filter((x) => x !== null && x !== undefined && !isNaN(x)).sort((a, b) => a - b);
+  if (!v.length) return null;
+  const pos = (v.length - 1) * q;
+  const lo = Math.floor(pos), hi = Math.ceil(pos);
+  return v[lo] + (v[hi] - v[lo]) * (pos - lo);
+}
+
 function median(values) {
   const v = values.filter((x) => Number.isFinite(x)).sort((a, b) => a - b);
   if (!v.length) return null;
@@ -255,7 +265,11 @@ exports.handler = async () => {
     const previous = (await store.get(BLOB_KEY, { type: "json" })) || { history: [] };
     const history = Array.isArray(previous.history) ? previous.history : [];
     const weekKey = new Date().toISOString().slice(0, 10);
-    const historyEntry = { week: weekKey, medianOwnershipPct: market.medianOwnershipPct, medianNetShareFlowPct: market.medianNetShareFlowPct };
+    const historyEntry = {
+      week: weekKey, medianOwnershipPct: market.medianOwnershipPct, medianNetShareFlowPct: market.medianNetShareFlowPct,
+      p25OwnershipPct: round(quantile(ownershipVals, 0.25)), p75OwnershipPct: round(quantile(ownershipVals, 0.75)),
+      p25NetShareFlowPct: round(quantile(flowVals, 0.25)), p75NetShareFlowPct: round(quantile(flowVals, 0.75)),
+    };
     if (!history.length || history[history.length - 1].week !== weekKey) {
       history.push(historyEntry);
     } else {

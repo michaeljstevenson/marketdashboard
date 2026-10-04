@@ -648,6 +648,24 @@ tbody td:nth-child(2){
  border-color:#e9cf8a;
  color:#8a6a1f;
 }
+
+/* Stacked panels sharing one x-axis (replaces dual-axis charts) */
+.chart-canvas-wrap.stacked{
+ display:flex;
+ flex-direction:column;
+ gap:2px;
+}
+.chart-canvas-wrap.stacked .stack-panel{
+ position:relative;
+ min-height:0;
+ width:100%;
+ align-self:stretch;
+}
+.chart-canvas-wrap.stacked .stack-panel.top{ flex:55 1 0; }
+.chart-canvas-wrap.stacked .stack-panel.bottom{ flex:45 1 0; }
+.chart-canvas-wrap.stacked .stack-panel.thin{ flex:22 1 0; }
+.chart-canvas-wrap.stacked .stack-panel.tall{ flex:78 1 0; }
+.is-chart-fullscreen .chart-canvas-wrap.stacked{ height:auto !important; flex:1 1 auto; min-height:0; }
 </style>
 <link rel="stylesheet" href="/site.css">
 </head>
@@ -844,12 +862,13 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <div class="chart-box-header">
 <div>
 <h2>Average cumulative excess return, indexed to the spinoff date</h2>
-<div class="chart-subhead">Every spinco and parent leg is aligned to trading day 0, its own separation date, then averaged at each elapsed trading day. Sample size (N, right axis) shrinks at longer horizons as younger events run out of history, so read the right tail with that in mind.</div>
+<div class="chart-subhead">Every spinco and parent leg is aligned to trading day 0, its own separation date, then averaged at each elapsed trading day. Sample size (N, lower panel) shrinks at longer horizons as younger events run out of history, so read the right tail with that in mind.</div>
 </div>
 </div>
 <div class="ndr-panel">
-<div class="chart-canvas-wrap">
-<canvas id="eventTimeChart"></canvas>
+<div class="chart-canvas-wrap stacked" style="height:440px;">
+<div class="stack-panel tall"><canvas id="eventTimeChart"></canvas></div>
+<div class="stack-panel thin"><canvas id="eventTimeNChart"></canvas></div>
 </div>
 </div>
 </div>
@@ -998,6 +1017,52 @@ function showWarning(message){
  const banner = document.getElementById("warningBanner");
  banner.textContent = message;
  banner.style.display = "block";
+}
+
+// ---- Stacked panels with a shared x-axis ---------------------------------
+// Two measures with unrelated units (an index level and a breadth count)
+// used to share one plot on left and right y-axes, where the apparent
+// crossings and divergences depend entirely on how each axis happens to be
+// scaled. Each now gets its own panel, one above the other, on the same
+// dates: plot areas line up, zooming either zooms both, and hovering
+// either shows that date in both.
+const STACK_Y_WIDTH = 64;
+function stackYAxis(extra){
+ return Object.assign({ afterFit: scale => { scale.width = STACK_Y_WIDTH; } }, extra || {});
+}
+function linkedZoom(group){
+ const d = Chart.defaults.plugins.zoom || {};
+ const sync = ({ chart }) => {
+  const { min, max } = chart.scales.x;
+  group.forEach(c => { if(c !== chart) c.zoomScale("x", { min, max }, "none"); });
+ };
+ return { zoom: { ...(d.zoom || {}), onZoomComplete: sync }, pan: { ...(d.pan || {}), onPanComplete: sync } };
+}
+function linkPanels(group){
+ group.forEach(c => {
+  // Properties rather than addEventListener: the canvases outlive each
+  // re-render (range buttons), and listeners would pile up.
+  c.canvas.ondblclick = () => group.forEach(o => o.resetZoom());
+  c.canvas.onmousemove = e => {
+   const els = c.getElementsAtEventForMode(e, "index", { intersect: false }, false);
+   if(!els.length) return;
+   const idx = els[0].index;
+   group.forEach(o => {
+    if(o === c) return;
+    const active = o.data.datasets
+     .map((d, di) => ({ datasetIndex: di, index: idx }))
+     .filter(a => o.isDatasetVisible(a.datasetIndex) && o.getDatasetMeta(a.datasetIndex).data[idx] && o.data.datasets[a.datasetIndex].data[idx] !== null);
+    if(!active.length) return;
+    const el = o.getDatasetMeta(active[0].datasetIndex).data[idx];
+    o.setActiveElements(active);
+    o.tooltip.setActiveElements(active, { x: el.x, y: el.y });
+    o.update("none");
+   });
+  };
+  c.canvas.onmouseleave = () => {
+   group.forEach(o => { if(o !== c){ o.setActiveElements([]); o.tooltip.setActiveElements([], { x: 0, y: 0 }); o.update("none"); } });
+  };
+ });
 }
 
 function themeInkColor(){
@@ -1221,46 +1286,70 @@ function renderStats(){
  }
 }
 
+let eventTimeNChart = null;
 function renderEventTimeChart(){
  const curve = RAW.eventTimeCurve;
- const ctx = document.getElementById("eventTimeChart").getContext("2d");
+ const hasCi = Array.isArray(curve.ciLow) && curve.ciLow.some(v => v !== null);
+ const group = [];
+ const panelTitle = text => ({ display: true, text, color: ndr("axis-soft"), align: "start", font: { size: 11, weight: "normal" }, padding: { bottom: 4 } });
  if(eventTimeChart) eventTimeChart.destroy();
- eventTimeChart = new Chart(ctx, {
-  data: {
-   labels: curve.t,
-   datasets: [
-    {
-     type: "line", label: "Avg. cumulative excess return", data: curve.avgExcess,
-     borderColor: ndr("navy"), backgroundColor: "transparent", borderWidth: 1.75,
-     pointRadius: 0, tension: 0, yAxisID: "y",
-    },
-    {
-     type: "line", label: "N (legs with data)", data: curve.n,
-     borderColor: ndr("slate"), backgroundColor: "transparent", borderWidth: 1, borderDash: [3, 3],
-     pointRadius: 0, tension: 0, yAxisID: "y2",
-    },
-   ],
-  },
+ if(eventTimeNChart) eventTimeNChart.destroy();
+ const datasets = [];
+ if(hasCi){
+  datasets.push(
+   { type: "line", label: "95% CI low", data: curve.ciLow, borderColor: "transparent", pointRadius: 0, tension: 0, fill: false },
+   { type: "line", label: "95% confidence interval", data: curve.ciHigh, borderColor: "transparent", backgroundColor: "rgba(47,75,110,0.14)", pointRadius: 0, tension: 0, fill: "-1" },
+  );
+ }
+ datasets.push({
+  type: "line", label: "Avg. cumulative excess return", data: curve.avgExcess,
+  borderColor: ndr("navy"), backgroundColor: ndr("navy"), borderWidth: 1.75, pointRadius: 0, tension: 0,
+ });
+ eventTimeChart = new Chart(document.getElementById("eventTimeChart").getContext("2d"), {
+  data: { labels: curve.t, datasets },
   options: {
    responsive: true,
    maintainAspectRatio: false,
    interaction: { mode: "index", intersect: false },
    plugins: {
-    legend: ndrLegend(),
+    legend: { ...ndrLegend(), labels: { ...ndrLegend().labels, filter: item => item.text !== "95% CI low" } },
+    zoom: linkedZoom(group),
     tooltip: {
+     filter: item => item.dataset.label !== "95% CI low",
      callbacks: {
       title: items => "Trading day " + items[0].label + " since separation",
-      label: ctx => ctx.dataset.label === "N (legs with data)" ? "N: " + ctx.raw : "Avg. excess return: " + fmtPct(ctx.raw),
+      label: ctx => ctx.dataset.label === "95% confidence interval"
+       ? "95% CI: " + fmtPct(curve.ciLow[ctx.dataIndex]) + " to " + fmtPct(curve.ciHigh[ctx.dataIndex])
+       : "Avg. excess return: " + fmtPct(ctx.raw),
      },
     },
    },
    scales: {
-    x: { ...ndrXScale(), maxTicksLimit: 10, title: { display: true, text: "Trading days since separation", color: ndr("axis-soft"), font: { size: 10 } } },
-    y: ndrYScale({ position: "left", fmt: v => v + "%", title: "Avg. cumulative excess return" }),
-    y2: { position: "right", ticks: { color: ndr("axis"), font: { size: 11 } }, grid: { display: false }, title: { display: true, text: "N", color: ndr("axis-soft"), font: { size: 10 } } },
+    x: { ...ndrXScale(), ticks: { display: false }, grid: { display: false } },
+    y: stackYAxis({ ...ndrYScale({ position: "left", fmt: v => v + "%", title: "Avg. cumulative excess return" }), grid: { color: c => c.tick.value === 0 ? ndr("axis") : ndr("grid") } }),
    },
   },
  });
+ eventTimeNChart = new Chart(document.getElementById("eventTimeNChart").getContext("2d"), {
+  type: "line",
+  data: { labels: curve.t, datasets: [{
+   label: "N (legs with data)", data: curve.n,
+   borderColor: ndr("slate"), backgroundColor: "rgba(125,138,153,0.25)", borderWidth: 1, pointRadius: 0, tension: 0, fill: "origin", stepped: true,
+  }] },
+  options: {
+   responsive: true,
+   maintainAspectRatio: false,
+   interaction: { mode: "index", intersect: false },
+   plugins: { legend: { display: false }, zoom: linkedZoom(group), title: panelTitle("N (legs with data)"),
+    tooltip: { callbacks: { title: items => "Trading day " + items[0].label + " since separation", label: ctx => "N: " + ctx.raw } } },
+   scales: {
+    x: { ...ndrXScale(), maxTicksLimit: 10, title: { display: true, text: "Trading days since separation", color: ndr("axis-soft"), font: { size: 10 } } },
+    y: stackYAxis({ ...ndrYScale({ position: "left" }), beginAtZero: true, ticks: { color: ndr("axis"), font: { size: 10 }, maxTicksLimit: 3 } }),
+   },
+  },
+ });
+ group.push(eventTimeChart, eventTimeNChart);
+ linkPanels(group);
 }
 
 function renderLeaderTable(rows, tbodyId){

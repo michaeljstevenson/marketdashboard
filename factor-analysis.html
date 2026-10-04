@@ -1054,8 +1054,8 @@ function renderChartRange(rangeKey){
     },
    },
    scales: {
-    x: { ticks: { color: "#8b9199", maxTicksLimit: 8 }, grid: { color: "#2b3138" } },
-    y: { type: "logarithmic", ticks: { color: "#8b9199", callback: v => "$" + v }, grid: { color: "#2b3138" } },
+    x: { ticks: { color: "#8b9199", maxTicksLimit: 8 }, grid: { color: (getComputedStyle(document.documentElement).getPropertyValue("--hair").trim() || "#2b3138") } },
+    y: { type: "logarithmic", ticks: { color: "#8b9199", callback: v => "$" + v }, grid: { color: (getComputedStyle(document.documentElement).getPropertyValue("--hair").trim() || "#2b3138") } },
    },
   },
  });
@@ -1285,8 +1285,8 @@ function renderScatter(canvasId, points, stats, pointColor, opts){
     },
    },
    scales: {
-    x: { title: { display: true, text: xLabel, color: "#8b9199", font: { size: 10 } }, ticks: { color: "#8b9199", font: { size: 10 } }, grid: { color: "#2b3138" } },
-    y: { title: { display: true, text: yLabel, color: "#8b9199", font: { size: 10 } }, ticks: { color: "#8b9199", font: { size: 10 } }, grid: { color: "#2b3138" } },
+    x: { title: { display: true, text: xLabel, color: "#8b9199", font: { size: 10 } }, ticks: { color: "#8b9199", font: { size: 10 } }, grid: { color: (getComputedStyle(document.documentElement).getPropertyValue("--hair").trim() || "#2b3138") } },
+    y: { title: { display: true, text: yLabel, color: "#8b9199", font: { size: 10 } }, ticks: { color: "#8b9199", font: { size: 10 } }, grid: { color: (getComputedStyle(document.documentElement).getPropertyValue("--hair").trim() || "#2b3138") } },
    },
   },
  });

@@ -676,6 +676,21 @@ tbody td:nth-child(2){
 .full-list-summary::before{ content:"▸ "; display:inline-block; width:1em; }
 .full-list-details[open] .full-list-summary::before{ content:"▾ "; }
 .full-list-details table{ margin-top:8px; }
+
+/* Distribution strip charts: key under the plot */
+.strip-key-row{
+ display:flex;
+ flex-wrap:wrap;
+ gap:6px 16px;
+ margin-top:10px;
+ font-size:11px;
+ color:var(--muted);
+}
+.strip-key{ display:inline-flex; align-items:center; gap:6px; }
+.strip-key .sk-dot{ width:7px; height:7px; border-radius:50%; background:var(--muted); opacity:0.8; }
+.strip-key .sk-box{ width:16px; height:9px; border:1px solid var(--muted); background:rgba(125,138,153,0.18); border-radius:2px; }
+.strip-key .sk-line{ width:3px; height:12px; background:var(--ink); border-radius:2px; }
+.strip-key .sk-tri{ width:0; height:0; border-left:4px solid transparent; border-right:4px solid transparent; border-bottom:7px solid var(--muted); }
 </style>
 <link rel="stylesheet" href="/site.css">
 </head>
@@ -876,10 +891,11 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 </div>
 </div>
 <div class="ndr-panel">
-<div class="chart-canvas-wrap">
+<div class="chart-canvas-wrap" style="height:460px;">
 <canvas id="sectorChart"></canvas>
 </div>
 </div>
+<div class="strip-key-row" id="sectorKey"></div>
 <div class="method-note">Most Financials, Real Estate, Utilities, and many retailers don't break out a research &amp; development line at all, so they're excluded from this page entirely rather than treated as zero R&amp;D spenders. See the methodology below.</div>
 </div>
 
@@ -1165,51 +1181,257 @@ function renderStats(){
  }
 }
 
-function renderSectorChart(){
- const sectors = [...RAW.sectors].sort((a, b) => b.medianRdIntensity - a.medianRdIntensity);
- const ctx = document.getElementById("sectorChart").getContext("2d");
- if(sectorChart) sectorChart.destroy();
- sectorChart = new Chart(ctx, {
-  type: "bar",
-  data: {
-   labels: sectors.map(s => s.sector),
-   datasets: [{ label: "R&D Intensity", data: sectors.map(s => s.medianRdIntensity), backgroundColor: sectors.map(s => SECTOR_COLORS[s.sector] || ndr("gold")), borderRadius: 3 }],
+// ---- Distribution strip chart -------------------------------------------
+// A bar of each group's average or median hides how spread out the group
+// is, so a gap between two bars can look meaningful when the groups almost
+// entirely overlap. This draws every observation as a dot, the middle 50%
+// as a box, and the group's center (median or mean, whichever the chart's
+// headline statistic is) as a heavy line across the box.
+function stripQuantile(sorted, q){
+ if(!sorted.length) return null;
+ const pos = (sorted.length - 1) * q;
+ const lo = Math.floor(pos), hi = Math.ceil(pos);
+ return sorted[lo] + (sorted[hi] - sorted[lo]) * (pos - lo);
+}
+function stripRgba(color, alpha){
+ if(color.startsWith("rgb")) return color.replace(/rgba?\(([^)]+)\)/, (m, inner) => "rgba(" + inner.split(",").slice(0, 3).join(",") + "," + alpha + ")");
+ const h = color.replace("#", "");
+ const n = parseInt(h.length === 3 ? h.split("").map(c => c + c).join("") : h, 16);
+ return "rgba(" + ((n >> 16) & 255) + "," + ((n >> 8) & 255) + "," + (n & 255) + "," + alpha + ")";
+}
+function stripStats(values, center){
+ const sorted = values.slice().sort((a, b) => a - b);
+ const n = sorted.length;
+ return {
+  n,
+  p25: stripQuantile(sorted, 0.25),
+  median: stripQuantile(sorted, 0.5),
+  p75: stripQuantile(sorted, 0.75),
+  mean: n ? sorted.reduce((a, b) => a + b, 0) / n : null,
+  center: center === "mean" ? (n ? sorted.reduce((a, b) => a + b, 0) / n : null) : stripQuantile(sorted, 0.5),
+ };
+}
+
+// opts: {
+//  groups: [{ label, color?, points: [{ v, name }] , center? (override) }],
+//  horizontal: bool (groups down the y-axis, values along x),
+//  center: "median" | "mean",
+//  fmt: value -> string, tickFmt: value -> string,
+//  clipQuantiles: [lo, hi] (optional, default [0.01, 0.99]); values outside
+//   are pinned to the edge and drawn hollow, tooltip still shows the real value,
+//  colors: { axis, axisSoft, grid, dot, box, center, surface },
+//  groupTick: (group, stats) -> string (optional),
+//  refLine: number (optional, default 0)
+// }
+function renderStripChart(canvas, existing, opts){
+ if(existing) existing.destroy();
+ const c = opts.colors;
+ const horizontal = !!opts.horizontal;
+ const groups = opts.groups.map((g, gi) => ({ ...g, gi, stats: stripStats(g.points.map(p => p.v), g.center || opts.center) }));
+ const all = groups.flatMap(g => g.points.map(p => p.v)).sort((a, b) => a - b);
+ const [qlo, qhi] = opts.clipQuantiles || [0.01, 0.99];
+ let lo = stripQuantile(all, qlo), hi = stripQuantile(all, qhi);
+ groups.forEach(g => { if(g.stats.center !== null){ lo = Math.min(lo, g.stats.center); hi = Math.max(hi, g.stats.center); } });
+ const ref = opts.refLine === undefined ? 0 : opts.refLine;
+ if(ref !== null && ref >= stripQuantile(all, 0) && ref <= stripQuantile(all, 1)){ lo = Math.min(lo, ref); hi = Math.max(hi, ref); }
+ const pad = (hi - lo) * 0.04 || 1;
+ lo -= pad; hi += pad;
+
+ const maxN = Math.max(...groups.map(g => g.points.length));
+ const radius = maxN > 120 ? 2.4 : maxN > 40 ? 2.8 : maxN > 12 ? 3.4 : 4.5;
+ const spread = maxN > 12 ? 0.34 : 0.22;
+ const datasets = groups.map(g => {
+  const sorted = g.points.slice().sort((a, b) => a.v - b.v);
+  const color = g.color || c.dot;
+  return {
+   label: g.label,
+   data: sorted.map((p, k) => {
+    // Golden-ratio sequence spreads neighbors in value across the band.
+    const off = (((k * 0.6180339887) % 1) - 0.5) * 2 * spread;
+    const clipped = p.v < lo || p.v > hi;
+    const v = Math.min(hi, Math.max(lo, p.v));
+    return horizontal ? { x: v, y: g.gi + off, raw: p, clipped } : { x: g.gi + off, y: v, raw: p, clipped };
+   }),
+   pointRadius: radius,
+   pointHoverRadius: radius + 2,
+   pointHitRadius: Math.max(4, radius + 2),
+   pointStyle: sorted.map(p => (p.v < lo || p.v > hi) ? "triangle" : "circle"),
+   pointBackgroundColor: sorted.map(p => (p.v < lo || p.v > hi) ? "rgba(0,0,0,0)" : stripRgba(color, maxN > 40 ? 0.7 : 0.9)),
+   pointBorderColor: sorted.map(p => (p.v < lo || p.v > hi) ? color : stripRgba(c.surface, 0.9)),
+   pointBorderWidth: sorted.map(p => (p.v < lo || p.v > hi) ? 1.2 : 0.6),
+  };
+ });
+
+ const boxPlugin = {
+  id: "stripBoxes",
+  beforeDatasetsDraw(chart){
+   const { ctx, chartArea } = chart;
+   const valScale = horizontal ? chart.scales.x : chart.scales.y;
+   const grpScale = horizontal ? chart.scales.y : chart.scales.x;
+   ctx.save();
+   if(ref !== null){
+    const p = valScale.getPixelForValue(ref);
+    const inside = horizontal ? (p >= chartArea.left && p <= chartArea.right) : (p >= chartArea.top && p <= chartArea.bottom);
+    if(inside){
+     ctx.strokeStyle = c.axisSoft;
+     ctx.lineWidth = 1;
+     ctx.beginPath();
+     if(horizontal){ ctx.moveTo(p, chartArea.top); ctx.lineTo(p, chartArea.bottom); }
+     else { ctx.moveTo(chartArea.left, p); ctx.lineTo(chartArea.right, p); }
+     ctx.stroke();
+    }
+   }
+   const bandPx = Math.abs(grpScale.getPixelForValue(spread) - grpScale.getPixelForValue(-spread)) / 2 + radius + 3;
+   for(const g of groups){
+    if(!g.stats.n) continue;
+    const mid = grpScale.getPixelForValue(g.gi);
+    const a = valScale.getPixelForValue(g.stats.p25), b = valScale.getPixelForValue(g.stats.p75);
+    ctx.fillStyle = stripRgba(c.box, 0.14);
+    ctx.strokeStyle = stripRgba(c.box, 0.6);
+    ctx.lineWidth = 1;
+    if(horizontal){
+     ctx.fillRect(Math.min(a, b), mid - bandPx, Math.abs(b - a), bandPx * 2);
+     ctx.strokeRect(Math.min(a, b), mid - bandPx, Math.abs(b - a), bandPx * 2);
+    }else{
+     ctx.fillRect(mid - bandPx, Math.min(a, b), bandPx * 2, Math.abs(b - a));
+     ctx.strokeRect(mid - bandPx, Math.min(a, b), bandPx * 2, Math.abs(b - a));
+    }
+   }
+   ctx.restore();
   },
+  afterDatasetsDraw(chart){
+   const { ctx } = chart;
+   const valScale = horizontal ? chart.scales.x : chart.scales.y;
+   const grpScale = horizontal ? chart.scales.y : chart.scales.x;
+   const bandPx = Math.abs(grpScale.getPixelForValue(spread) - grpScale.getPixelForValue(-spread)) / 2 + radius + 5;
+   ctx.save();
+   for(const g of groups){
+    if(g.stats.center === null) continue;
+    const mid = grpScale.getPixelForValue(g.gi);
+    const p = valScale.getPixelForValue(g.stats.center);
+    ctx.lineCap = "round";
+    ctx.strokeStyle = c.surface;
+    ctx.lineWidth = 5.5;
+    ctx.beginPath();
+    if(horizontal){ ctx.moveTo(p, mid - bandPx); ctx.lineTo(p, mid + bandPx); } else { ctx.moveTo(mid - bandPx, p); ctx.lineTo(mid + bandPx, p); }
+    ctx.stroke();
+    ctx.strokeStyle = c.center;
+    ctx.lineWidth = 3;
+    ctx.stroke();
+   }
+   ctx.restore();
+  },
+ };
+
+ const grpAxis = {
+  type: "linear",
+  min: -0.6, max: groups.length - 0.4,
+  reverse: horizontal,
+  grid: { display: false },
+  border: { color: c.axis },
+  afterBuildTicks: axis => { axis.ticks = groups.map(g => ({ value: g.gi })); },
+  ticks: {
+   color: c.axis, font: { size: 11 }, autoSkip: false, maxRotation: 0,
+   callback: v => { const g = groups[v]; if(!g) return ""; return opts.groupTick ? opts.groupTick(g, g.stats) : g.label; },
+  },
+ };
+ const valAxis = {
+  type: "linear", min: lo, max: hi,
+  grid: { color: c.grid },
+  border: { display: false },
+  ticks: { color: c.axis, font: { size: 11 }, callback: opts.tickFmt || opts.fmt, maxTicksLimit: 8, includeBounds: false },
+  title: opts.valueTitle ? { display: true, text: opts.valueTitle, color: c.axisSoft, font: { size: 10 } } : { display: false },
+ };
+
+ return new Chart(canvas.getContext("2d"), {
+  type: "scatter",
+  data: { datasets },
+  plugins: [boxPlugin],
   options: {
    responsive: true,
    maintainAspectRatio: false,
+   animation: false,
+   interaction: { mode: "point", intersect: true },
    plugins: {
     legend: { display: false },
-    tooltip: { callbacks: { label: ctx => "R&D intensity: " + fmtPct(ctx.parsed.y) } },
+    zoom: false,
+    tooltip: { callbacks: {
+     title: items => { const g = groups[items[0].datasetIndex]; return items[0].raw.raw.name ? items[0].raw.raw.name + " (" + g.label + ")" : g.label; },
+     label: item => opts.fmt(item.raw.raw.v),
+     afterLabel: item => {
+      const s = groups[item.datasetIndex].stats;
+      return (opts.center === "mean" ? "Group mean " + opts.fmt(s.mean) + ", median " : "Group median ") + opts.fmt(s.median) + "\nMiddle 50%: " + opts.fmt(s.p25) + " to " + opts.fmt(s.p75) + ", n=" + s.n;
+     },
+    } },
    },
-   scales: {
-    x: ndrXScale(),
-    y: ndrYScale({ fmt: v => v + "%" }),
-   },
+   scales: horizontal ? { x: valAxis, y: grpAxis } : { x: grpAxis, y: valAxis },
   },
  });
+}
+
+function stripKeyHtml(center, unit){
+ return '<span class="strip-key"><span class="sk-dot"></span>Each dot is one ' + unit + '</span>' +
+  '<span class="strip-key"><span class="sk-box"></span>Middle 50% (25th to 75th percentile)</span>' +
+  '<span class="strip-key"><span class="sk-line"></span>' + (center === "mean" ? "Average" : "Median") + '</span>' +
+  '<span class="strip-key"><span class="sk-tri"></span>Off-scale value, pinned to the edge</span>';
+}
+
+function renderSectorChart(){
+ const bySector = {};
+ for(const c of RAW.companies){
+  const v = c.rdIntensity;
+  if(v === null || v === undefined || !isFinite(v) || !c.sector) continue;
+  (bySector[c.sector] = bySector[c.sector] || []).push({ v, name: c.symbol });
+ }
+ // Sectors the job published (it applies its own minimum-count rules),
+ // ordered by the same statistic the heavy line marks.
+ const center = s => { const st = stripStats((bySector[s] || []).map(p => p.v), "median"); return st.center === null ? -Infinity * -1 : st.center; };
+ const order = [...new Set((RAW.sectors).map(s => s.sector))].filter(s => bySector[s]).sort((a, b) => -1 * (center(b) - center(a)));
+ sectorChart = renderStripChart(document.getElementById("sectorChart"), sectorChart, {
+  horizontal: true,
+  center: "median",
+  groups: order.map(s => ({ label: s, points: bySector[s] })),
+  fmt: v => v.toFixed(1) + "%",
+  tickFmt: v => v + "%",
+  clipQuantiles: [0, 0.98],
+  refLine: null,
+  colors: { axis: ndr("axis"), axisSoft: ndr("axis-soft"), grid: ndr("grid"), dot: ndr("navy"), box: ndr("slate"), center: ndr("axis"), surface: ndr("plot") },
+ });
+ document.getElementById("sectorKey").innerHTML = stripKeyHtml("median", "company");
+}
+
+// Bins between the 1st and 99th percentile, with one catch-all bin at
+// each end. Without this, a handful of extreme values (a 12,000-day cycle,
+// a 300% ROIC) stretch the axis until the rest of the distribution
+// collapses into one or two bars.
+function robustBins(values, binWidth, fmtEdge, floorAtZero){
+ const v = values.slice().sort((a, b) => a - b);
+ const q = p => v[Math.min(v.length - 1, Math.max(0, Math.round((v.length - 1) * p)))];
+ let lo = Math.floor(q(0.01) / binWidth) * binWidth;
+ const hi = Math.ceil(q(0.99) / binWidth) * binWidth || lo + binWidth;
+ if(floorAtZero) lo = Math.max(0, lo);
+ const bins = [];
+ if(v[0] < lo) bins.push({ lo: -Infinity, hi: lo, count: 0, label: "< " + fmtEdge(lo), title: "Below " + fmtEdge(lo) });
+ for(let b = lo; b < hi; b += binWidth) bins.push({ lo: b, hi: b + binWidth, count: 0, label: fmtEdge(b) + " to " + fmtEdge(b + binWidth), title: fmtEdge(b) + " to " + fmtEdge(b + binWidth) });
+ if(v[v.length - 1] >= hi) bins.push({ lo: hi, hi: Infinity, count: 0, label: "≥ " + fmtEdge(hi), title: fmtEdge(hi) + " and above" });
+ for(const x of v){
+  const b = bins.find(bin => x >= bin.lo && x < bin.hi) || (x < lo ? bins[0] : bins[bins.length - 1]);
+  b.count++;
+ }
+ return bins;
 }
 
 function renderIntensityHistogram(){
  const values = RAW.companies.map(c => c.rdIntensity).filter(v => v !== null && v !== undefined && !isNaN(v));
  const binWidth = 2; // percentage points
- const minBin = 0;
- const maxBin = Math.ceil(Math.max(...values) / binWidth) * binWidth;
- const bins = [];
- for(let b = minBin; b < maxBin; b += binWidth) bins.push({ lo: b, hi: b + binWidth, count: 0 });
- for(const v of values){
-  let idx = Math.floor((v - minBin) / binWidth);
-  if(idx < 0) idx = 0;
-  if(idx >= bins.length) idx = bins.length - 1;
-  bins[idx].count++;
- }
+ const bins = robustBins(values, binWidth, e => e + "%", true);
 
  const ctx = document.getElementById("intensityHistogram").getContext("2d");
  if(intensityHistogram) intensityHistogram.destroy();
  intensityHistogram = new Chart(ctx, {
   type: "bar",
   data: {
-   labels: bins.map(b => b.lo + "-" + b.hi + "%"),
+   labels: bins.map(b => b.label),
    datasets: [{ data: bins.map(b => b.count), backgroundColor: ndr("gold"), borderRadius: 3, barPercentage: 1.0, categoryPercentage: 0.95 }],
   },
   options: {
@@ -1217,7 +1439,7 @@ function renderIntensityHistogram(){
    maintainAspectRatio: false,
    plugins: {
     legend: { display: false },
-    tooltip: { callbacks: { title: items => { const b = bins[items[0].dataIndex]; return b.lo + "% to " + b.hi + "%"; }, label: ctx => ctx.parsed.y + " companies" } },
+    tooltip: { callbacks: { title: items => bins[items[0].dataIndex].title, label: ctx => ctx.parsed.y + " companies" } },
    },
    scales: {
     x: { ...ndrXScale(), title: { display: true, text: "R&D intensity (% of revenue)", color: ndr("axis-soft"), font: { size: 10 } } },

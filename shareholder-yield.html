@@ -944,6 +944,111 @@ function ndrLegend(){
 // ---- Stats helpers - same methodology as /factor-analysis, duplicated
 // here since every page on this site is self-contained (see CLAUDE.md). ----
 
+// ---- Outlier-robust scatter axes ----------------------------------------
+// A few extreme companies (a 13,000% EPS jump, a $44M congressional sale)
+// would otherwise set the axis range and squash everyone else into a corner.
+// The axis covers the 1st-99th percentile instead; anything beyond is drawn
+// as a hollow arrow on the edge it fell off, with a count in the corner, so
+// nothing disappears silently. Fit lines are still computed on every point.
+function robustNiceStep(range){
+ const raw = range / 6;
+ const mag = Math.pow(10, Math.floor(Math.log10(raw)));
+ const f = raw / mag;
+ return (f < 1.5 ? 1 : f < 3.5 ? 2 : f < 7.5 ? 5 : 10) * mag;
+}
+function robustScatterAxes(chart, axes, opts){
+ if(!chart) return;
+ const pts = [];
+ chart.data.datasets.forEach((ds, di) => {
+  if(ds.showLine || ds.type === "line" || ds.borderDash) return;
+  (ds.data || []).forEach(p => { if(p && isFinite(p.x) && isFinite(p.y)) pts.push({ p, di }); });
+ });
+ if(pts.length < 20) return;
+ const cand = {};
+ let flagged = false;
+ for(const ax of axes){
+  const v = pts.map(o => o.p[ax]).sort((a, b) => a - b);
+  const q = f => v[Math.round((v.length - 1) * f)];
+  const lo = q(0.01), hi = q(0.99);
+  const full = v[v.length - 1] - v[0], core = hi - lo;
+  if(!(core > 0)) continue;
+  const step = robustNiceStep(core);
+  let min = Math.floor((lo - core * 0.04) / step) * step;
+  let max = Math.ceil((hi + core * 0.04) / step) * step;
+  if(v[0] >= 0 && min < 0) min = 0;
+  cand[ax] = { min, max, flag: full / core >= 1.6 };
+  if(cand[ax].flag) flagged = true;
+ }
+ if(!flagged) return;
+ const bounds = {};
+ if(opts && opts.square){
+  // Charts with a 45-degree reference line need the same range on both axes.
+  const min = Math.min(...Object.values(cand).map(c => c.min));
+  const max = Math.max(...Object.values(cand).map(c => c.max));
+  for(const ax of Object.keys(cand)) bounds[ax] = { min, max };
+ }else{
+  for(const ax of Object.keys(cand)) if(cand[ax].flag) bounds[ax] = { min: cand[ax].min, max: cand[ax].max };
+ }
+ // Raw config, not chart.options: that's a resolver proxy, and writing
+ // through it recurses.
+ const raw = chart.config.options.scales = chart.config.options.scales || {};
+ for(const ax of Object.keys(bounds)){
+  const sc = raw[ax] = raw[ax] || {};
+  sc.min = bounds[ax].min; sc.max = bounds[ax].max;
+ }
+ const off = [];
+ for(const o of pts){
+  const flags = {};
+  let out = false;
+  for(const ax of Object.keys(bounds)){
+   if(o.p[ax] < bounds[ax].min){ flags[ax] = -1; out = true; }
+   else if(o.p[ax] > bounds[ax].max){ flags[ax] = 1; out = true; }
+  }
+  if(out) off.push({ p: o.p, di: o.di, flags });
+ }
+ chart.$robustOff = off;
+ // Stop the initial draw-in animation first, or it keeps easing points
+ // toward their positions on the old, outlier-stretched scale.
+ chart.stop();
+ chart.update("none");
+}
+const robustOffscalePlugin = {
+ id: "robustOffscale",
+ afterDatasetsDraw(chart){
+  const off = chart.$robustOff;
+  if(!off || !off.length) return;
+  const { ctx, chartArea: a, scales } = chart;
+  const color = (getComputedStyle(document.documentElement).getPropertyValue("--ndr-axis-soft").trim()) || (getComputedStyle(document.documentElement).getPropertyValue("--muted").trim()) || "#8b9199";
+  ctx.save();
+  ctx.strokeStyle = color;
+  ctx.fillStyle = color;
+  ctx.lineWidth = 1.2;
+  for(const o of off){
+   const dsColor = chart.data.datasets[o.di].backgroundColor;
+   ctx.strokeStyle = typeof dsColor === "string" ? dsColor : color;
+   let x = scales.x.getPixelForValue(o.p.x), y = scales.y.getPixelForValue(o.p.y);
+   x = Math.min(a.right - 4, Math.max(a.left + 4, x));
+   y = Math.min(a.bottom - 4, Math.max(a.top + 4, y));
+   const dx = o.flags.x || 0, dy = -(o.flags.y || 0);
+   const len = Math.hypot(dx, dy) || 1, ux = dx / len, uy = dy / len;
+   const s = 4.5;
+   ctx.beginPath();
+   ctx.moveTo(x + ux * s, y + uy * s);
+   ctx.lineTo(x - ux * s - uy * s * 0.8, y - uy * s + ux * s * 0.8);
+   ctx.lineTo(x - ux * s + uy * s * 0.8, y - uy * s - ux * s * 0.8);
+   ctx.closePath();
+   ctx.stroke();
+  }
+  ctx.fillStyle = color;
+  ctx.font = "10px " + (Chart.defaults.font.family || "sans-serif");
+  ctx.textAlign = "right";
+  ctx.textBaseline = "bottom";
+  ctx.fillText(off.length + (off.length === 1 ? " point" : " points") + " beyond the axis range (arrows on the edge)", a.right - 6, a.bottom - 4);
+  ctx.restore();
+ },
+};
+Chart.register(robustOffscalePlugin);
+
 function linearRegression(xs, ys){
  const n = xs.length;
  const mx = xs.reduce((a, b) => a + b, 0) / n;
@@ -1127,6 +1232,7 @@ function renderCorrScatter(data){
    },
   },
  });
+ robustScatterAxes(corrScatter, ["x","y"]);
 
  function row(label, stats){
   const sig = stats.p < 0.05;

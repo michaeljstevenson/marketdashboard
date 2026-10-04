@@ -546,6 +546,24 @@ h1{
 
 .theme-toggle:hover{ color:var(--ink); border-color:var(--hair); }
 
+
+/* Stacked panels sharing one x-axis (replaces dual-axis charts) */
+.chart-canvas-wrap.stacked{
+ display:flex;
+ flex-direction:column;
+ gap:2px;
+}
+.chart-canvas-wrap.stacked .stack-panel{
+ position:relative;
+ min-height:0;
+ width:100%;
+ align-self:stretch;
+}
+.chart-canvas-wrap.stacked .stack-panel.top{ flex:55 1 0; }
+.chart-canvas-wrap.stacked .stack-panel.bottom{ flex:45 1 0; }
+.chart-canvas-wrap.stacked .stack-panel.thin{ flex:22 1 0; }
+.chart-canvas-wrap.stacked .stack-panel.tall{ flex:78 1 0; }
+.is-chart-fullscreen .chart-canvas-wrap.stacked{ height:auto !important; flex:1 1 auto; min-height:0; }
 </style>
 <link rel="stylesheet" href="/site.css">
 </head>
@@ -729,8 +747,9 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <span><i class="swatch swatch-pop"></i>Avg. First-Day Return</span>
 <span><i class="swatch swatch-sp"></i>S&amp;P 500 Return (that year)</span>
 </div>
-<div class="chart-canvas-wrap">
-<canvas id="ipoChart"></canvas>
+<div class="chart-canvas-wrap stacked" style="height:460px;">
+<div class="stack-panel top"><canvas id="ipoChart"></canvas></div>
+<div class="stack-panel bottom"><canvas id="ipoReturnChart"></canvas></div>
 </div>
 </div>
 <div class="scatter-grid">
@@ -944,6 +963,56 @@ function renderMethodTable(containerElId, points){
   `<div class="method-note">Jackknife removed: ${trimmed.removedPoint.sourceYear}&rarr;${trimmed.removedPoint.sourceYear + 1} (x=${trimmed.removedPoint.x.toFixed(1)}, next-yr return ${trimmed.removedPoint.y >= 0 ? "+" : ""}${trimmed.removedPoint.y.toFixed(1)}%)</div>`;
 }
 
+// ---- Stacked panels with a shared x-axis ---------------------------------
+// Two measures with unrelated units (an index level and a breadth count)
+// used to share one plot on left and right y-axes, where the apparent
+// crossings and divergences depend entirely on how each axis happens to be
+// scaled. Each now gets its own panel, one above the other, on the same
+// dates: plot areas line up, zooming either zooms both, and hovering
+// either shows that date in both.
+const STACK_Y_WIDTH = 64;
+function stackYAxis(extra){
+ return Object.assign({ afterFit: scale => { scale.width = STACK_Y_WIDTH; } }, extra || {});
+}
+function linkedZoom(group){
+ const d = Chart.defaults.plugins.zoom || {};
+ const sync = ({ chart }) => {
+  const { min, max } = chart.scales.x;
+  group.forEach(c => { if(c !== chart) c.zoomScale("x", { min, max }, "none"); });
+ };
+ return { zoom: { ...(d.zoom || {}), onZoomComplete: sync }, pan: { ...(d.pan || {}), onPanComplete: sync } };
+}
+function linkPanels(group){
+ group.forEach(c => {
+  // Properties rather than addEventListener: the canvases outlive each
+  // re-render (range buttons), and listeners would pile up.
+  c.canvas.ondblclick = () => group.forEach(o => o.resetZoom());
+  c.canvas.onmousemove = e => {
+   const els = c.getElementsAtEventForMode(e, "index", { intersect: false }, false);
+   if(!els.length) return;
+   const idx = els[0].index;
+   group.forEach(o => {
+    if(o === c) return;
+    const active = o.data.datasets
+     .map((d, di) => ({ datasetIndex: di, index: idx }))
+     .filter(a => o.isDatasetVisible(a.datasetIndex) && o.getDatasetMeta(a.datasetIndex).data[idx] && o.data.datasets[a.datasetIndex].data[idx] !== null);
+    if(!active.length) return;
+    const el = o.getDatasetMeta(active[0].datasetIndex).data[idx];
+    o.setActiveElements(active);
+    o.tooltip.setActiveElements(active, { x: el.x, y: el.y });
+    o.update("none");
+   });
+  };
+  c.canvas.onmouseleave = () => {
+   group.forEach(o => { if(o !== c){ o.setActiveElements([]); o.tooltip.setActiveElements([], { x: 0, y: 0 }); o.update("none"); } });
+  };
+ });
+}
+
+function themeVarColor(name, fallback){
+ return getComputedStyle(document.documentElement).getPropertyValue(name).trim() || fallback;
+}
+
 function themeInkColor(){
  const v = getComputedStyle(document.documentElement).getPropertyValue("--ink").trim();
  return v || "#eae6da";
@@ -995,8 +1064,8 @@ function renderScatter(canvasId, points, stats, pointColor, xLabel){
     },
    },
    scales: {
-    x: { title: { display: true, text: xLabel, color: "#8b9199" }, ticks: { color: "#8b9199" }, grid: { color: "#2b3138" } },
-    y: { title: { display: true, text: "Next-year S&P 500 return (%)", color: "#8b9199" }, ticks: { color: "#8b9199" }, grid: { color: "#2b3138" } },
+    x: { title: { display: true, text: xLabel, color: "#8b9199" }, ticks: { color: "#8b9199" }, grid: { color: (getComputedStyle(document.documentElement).getPropertyValue("--hair").trim() || "#2b3138") } },
+    y: { title: { display: true, text: "Next-year S&P 500 return (%)", color: "#8b9199" }, ticks: { color: "#8b9199" }, grid: { color: (getComputedStyle(document.documentElement).getPropertyValue("--hair").trim() || "#2b3138") } },
    },
   },
  });
@@ -1016,67 +1085,44 @@ function init(){
  const latestSP = spReturns[spReturns.length - 1];
  document.getElementById("statSP").textContent = (latestSP >= 0 ? "+" : "") + latestSP.toFixed(1) + "%";
 
- const ctx = document.getElementById("ipoChart").getContext("2d");
- new Chart(ctx, {
+ const muted = themeVarColor("--muted", "#8b9199"), hair = themeVarColor("--hair", "#2b3138");
+ const labels = IPO_DATA.map(r => String(r.year));
+ const group = [];
+ const panelTitle = text => ({ display: true, text, color: muted, align: "start", font: { size: 11, weight: "normal" }, padding: { bottom: 4 } });
+ group.push(new Chart(document.getElementById("ipoChart").getContext("2d"), {
   type: "bar",
-  data: {
-   labels: IPO_DATA.map(r => String(r.year)),
-   datasets: [
-    {
-     type: "bar",
-     label: "Number of IPOs",
-     data: IPO_DATA.map(r => r.count),
-     backgroundColor: "rgba(217,138,61,0.55)",
-     yAxisID: "yCount",
-     order: 2,
-    },
-    {
-     type: "line",
-     label: "Avg. First-Day Return",
-     data: IPO_DATA.map(r => r.pop),
-     borderColor: "#8b6fac",
-     backgroundColor: "#8b6fac",
-     borderWidth: 2,
-     pointRadius: 0,
-     fill: false,
-     yAxisID: "yPct",
-     order: 1,
-    },
-    {
-     type: "line",
-     label: "S&P 500 Return (that year)",
-     data: spReturns,
-     borderColor: "#6f8fac",
-     backgroundColor: "#6f8fac",
-     borderWidth: 2,
-     pointRadius: 0,
-     fill: false,
-     yAxisID: "yPct",
-     order: 1,
-    },
-   ],
-  },
+  data: { labels, datasets: [{ label: "Number of IPOs", data: IPO_DATA.map(r => r.count), backgroundColor: "rgba(217,138,61,0.55)" }] },
   options: {
    responsive: true,
    maintainAspectRatio: false,
    interaction: { mode: "index", intersect: false },
-   plugins: {
-    legend: { display: false },
-    tooltip: {
-     callbacks: {
-      label: ctx => ctx.dataset.label === "Number of IPOs"
-       ? ctx.dataset.label + ": " + ctx.parsed.y
-       : ctx.dataset.label + ": " + (ctx.parsed.y === null ? "n/a" : ctx.parsed.y + "%"),
-     },
-    },
-   },
+   plugins: { legend: { display: false }, zoom: linkedZoom(group), title: panelTitle("Number of IPOs"),
+    tooltip: { callbacks: { label: ctx => "Number of IPOs: " + ctx.parsed.y } } },
    scales: {
-    x: { ticks: { color: "#8b9199", maxTicksLimit: 12 }, grid: { color: "#2b3138" } },
-    yCount: { position: "left", ticks: { color: "#8b9199" }, grid: { color: "#2b3138" }, title: { display: true, text: "Number of IPOs", color: "#8b9199" } },
-    yPct: { position: "right", ticks: { color: "#8b9199", callback: v => v + "%" }, grid: { display: false }, title: { display: true, text: "Return (%)", color: "#8b9199" } },
+    x: { ticks: { display: false }, grid: { display: false } },
+    y: stackYAxis({ ticks: { color: muted }, grid: { color: hair } }),
    },
   },
- });
+ }));
+ group.push(new Chart(document.getElementById("ipoReturnChart").getContext("2d"), {
+  type: "line",
+  data: { labels, datasets: [
+   { label: "Avg. First-Day Return", data: IPO_DATA.map(r => r.pop), borderColor: "#8b6fac", backgroundColor: "#8b6fac", borderWidth: 2, pointRadius: 0, fill: false },
+   { label: "S&P 500 Return (that year)", data: spReturns, borderColor: "#6f8fac", backgroundColor: "#6f8fac", borderWidth: 2, pointRadius: 0, fill: false },
+  ] },
+  options: {
+   responsive: true,
+   maintainAspectRatio: false,
+   interaction: { mode: "index", intersect: false },
+   plugins: { legend: { display: false }, zoom: linkedZoom(group), title: panelTitle("Return (%)"),
+    tooltip: { callbacks: { label: ctx => ctx.dataset.label + ": " + (ctx.parsed.y === null ? "n/a" : ctx.parsed.y + "%") } } },
+   scales: {
+    x: { ticks: { color: muted, maxTicksLimit: 12 }, grid: { display: false } },
+    y: stackYAxis({ ticks: { color: muted, callback: v => v + "%" }, grid: { color: c => c.tick.value === 0 ? muted : hair } }),
+   },
+  },
+ }));
+ linkPanels(group);
 
  // Predictive: this year's IPO count / avg pop vs. NEXT calendar year's
  // S&P 500 return. The last row (2025) has no "next year" yet, so it's

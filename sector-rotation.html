@@ -800,7 +800,7 @@ document.querySelectorAll(".navdrop").forEach(function(navdrop){
 <div class="chart-box-header">
 <div>
 <h2>Does this month's sector leadership predict next month's?</h2>
-<div class="chart-subhead">Each point is one sector-month. X is that sector's relative-return rank that month (1 = best), Y is its rank the following month. Does chasing recent sector leadership work?</div>
+<div class="chart-subhead">Each circle is one pair of ranks, sized by how many sector-months landed there. X is that sector's relative-return rank that month (1 = best), Y is its rank the following month. Does chasing recent sector leadership work?</div>
 </div>
 </div>
 <div class="scatter-canvas-wrap">
@@ -912,17 +912,15 @@ function rankArray(arr){
 }
 function spearmanRegression(xs, ys){ return linearRegression(rankArray(xs), rankArray(ys)); }
 
-function dailyRatioSeries(sectorHistory, spyHistory){
- // Both histories share SPY's calendar already (see scheduled-sectors-
- // background.js), so a straight index-by-index ratio is safe.
- const n = Math.min(sectorHistory.length, spyHistory.length);
- const dates = [];
- const ratio = [];
- for(let i = 0; i < n; i++){
-  dates.push(sectorHistory[i].date);
-  ratio.push(sectorHistory[i].close / spyHistory[i].close);
- }
- return { dates, ratio };
+// Joined on date against SPY's calendar. SPY's history starts in 1993 and
+// XLRE/XLC only in 2015/2018, so pairing closes by array position divided
+// each sector by SPY from a different day. Dates before a sector existed
+// get NaN.
+function dailyRatioSeries(sectorHistory, spyHistory, calendar){
+ const close = new Map(sectorHistory.map(h => [h.date, h.close]));
+ const spy = new Map(spyHistory.map(h => [h.date, h.close]));
+ const ratio = calendar.map(d => (close.has(d) && spy.get(d)) ? close.get(d) / spy.get(d) : NaN);
+ return { dates: calendar, ratio };
 }
 
 let rrgChart = null, periodChart = null, persistenceScatter = null;
@@ -938,7 +936,9 @@ async function init(){
    "As of " + usDate(data.benchmark.asOfDate) + " · " + new Date(data.generated_at_utc).toLocaleString("en-US", { month: "2-digit", day: "2-digit", year: "numeric", hour: "numeric", minute: "2-digit" });
 
   const spyHistory = data.benchmark.history;
-  const sectorSeries = data.sectors.map(s => ({ ticker: s.ticker, name: s.name, relative: s.relative, ...dailyRatioSeries(s.history, spyHistory) }));
+  const firstSectorDate = data.sectors.map(s => s.history[0].date).sort()[0];
+  const calendar = spyHistory.map(h => h.date).filter(d => d >= firstSectorDate);
+  const sectorSeries = data.sectors.map(s => ({ ticker: s.ticker, name: s.name, relative: s.relative, ...dailyRatioSeries(s.history, spyHistory, calendar) }));
 
   renderStats(sectorSeries);
   renderRrgChart(sectorSeries);
@@ -1041,35 +1041,49 @@ function renderRrgChart(sectorSeries){
  });
 }
 
+// The four windows are ordered (1M inside 3M inside 6M inside 1Y), so they
+// get one hue stepped by length rather than four unrelated colors, and dots
+// on a shared axis rather than 44 bars, so each sector reads as one row.
 function renderPeriodChart(){
  const sorted = [...RAW.sectors].sort((a, b) => (b.relative.m3 ?? -Infinity) - (a.relative.m3 ?? -Infinity));
  const periods = [
   { key: "m1", label: "1M" }, { key: "m3", label: "3M" }, { key: "m6", label: "6M" }, { key: "y1", label: "1Y" },
  ];
- const colors = ["#d98a3d", "#b56f2a", "#8e7cc3", "#6f8fac"];
+ const light = document.documentElement.getAttribute("data-theme") === "light";
+ const ramp = light ? ["#a9bdd2", "#7f9bb8", "#4f6f8c", "#2c4763"] : ["#58718d", "#7b97b5", "#a3bdd8", "#d6e3f0"];
+ const radii = [4, 5, 6, 7];
  const ctx = document.getElementById("periodChart").getContext("2d");
  if(periodChart) periodChart.destroy();
  periodChart = new Chart(ctx, {
-  type: "bar",
+  type: "line",
   data: {
    labels: sorted.map(s => s.name),
    datasets: periods.map((p, i) => ({
     label: p.label,
     data: sorted.map(s => s.relative[p.key]),
-    backgroundColor: colors[i],
-    borderRadius: 3,
+    showLine: false,
+    pointRadius: radii[i],
+    pointHoverRadius: radii[i] + 2,
+    pointBackgroundColor: ramp[i],
+    pointBorderColor: getComputedStyle(document.documentElement).getPropertyValue("--card").trim() || "#1c2127",
+    pointBorderWidth: 1.5,
+    backgroundColor: ramp[i],
+    borderColor: ramp[i],
    })),
   },
   options: {
    responsive: true,
    maintainAspectRatio: false,
+   indexAxis: "y",
+   interaction: { mode: "index", intersect: false, axis: "y" },
    plugins: {
-    legend: { labels: { color: themeMutedColor() } },
-    tooltip: { callbacks: { label: ctx => ctx.dataset.label + ": " + fmtPct(ctx.parsed.y) } },
+    legend: { position: "top", align: "start", labels: { color: themeMutedColor(), usePointStyle: true, boxWidth: 8, boxHeight: 8 } },
+    zoom: false,
+    tooltip: { callbacks: { label: ctx => ctx.dataset.label + ": " + fmtPct(ctx.parsed.x) } },
    },
    scales: {
-    x: { ticks: { color: themeMutedColor(), maxRotation: 45, minRotation: 45 }, grid: { display: false } },
-    y: { ticks: { color: themeMutedColor(), callback: v => v + "%" }, grid: { color: themeHairColor() } },
+    x: { ticks: { color: themeMutedColor(), callback: v => v + "%" }, grid: { color: c => c.tick.value === 0 ? themeMutedColor() : themeHairColor() } },
+    y: { ticks: { color: themeMutedColor(), autoSkip: false }, grid: { color: themeHairColor() } },
    },
   },
  });
@@ -1092,25 +1106,26 @@ function renderRotationTable(sectorSeries){
 }
 
 function renderPersistence(sectorSeries){
- // Month-end snapshots across the available history: at each trading day
- // that starts a new calendar month, rank all 11 sectors by their
- // trailing-21-trading-day ratio change, then pair each sector's rank
- // that month against its rank the following month.
+ // Calendar-month returns, month-end to month-end. The history is weekly
+ // before late 2024 and daily after, so a fixed "21 observations back"
+ // window would span ~21 weeks in the older data and overlap heavily from
+ // one month to the next, which manufactures persistence.
  const n = sectorSeries[0].dates.length;
- const monthStarts = [];
- for(let i = 21; i < n; i++){
-  const prevMonth = sectorSeries[0].dates[i - 1].slice(0, 7);
-  const curMonth = sectorSeries[0].dates[i].slice(0, 7);
-  if(curMonth !== prevMonth) monthStarts.push(i);
+ const monthEnds = [];
+ for(let i = 0; i < n - 1; i++){
+  if(sectorSeries[0].dates[i].slice(0, 7) !== sectorSeries[0].dates[i + 1].slice(0, 7)) monthEnds.push(i);
  }
 
- const monthlyRanks = []; // one array of {name, rank} per month boundary
- for(const idx of monthStarts){
+ const monthlyRanks = []; // one array of {name, rank} per calendar month
+ for(let k = 1; k < monthEnds.length; k++){
+  const idx = monthEnds[k], prevIdx = monthEnds[k - 1];
   const changes = sectorSeries.map(s => ({
    name: s.name,
-   change: ((s.ratio[idx] / s.ratio[idx - 21]) - 1) * 100,
+   change: ((s.ratio[idx] / s.ratio[prevIdx]) - 1) * 100,
   }));
-  const sorted = [...changes].sort((a, b) => b.change - a.change);
+  // Sectors without a listed ETF yet that month (Real Estate, Communication
+  // Services) have no return and sit out rather than being ranked as NaN.
+  const sorted = changes.filter(c => isFinite(c.change)).sort((a, b) => b.change - a.change);
   const ranks = {};
   sorted.forEach((c, i) => { ranks[c.name] = i + 1; });
   monthlyRanks.push(ranks);
@@ -1119,7 +1134,8 @@ function renderPersistence(sectorSeries){
  const pairs = [];
  for(let m = 0; m + 1 < monthlyRanks.length; m++){
   for(const s of sectorSeries){
-   pairs.push({ x: monthlyRanks[m][s.name], y: monthlyRanks[m + 1][s.name] });
+   const x = monthlyRanks[m][s.name], y = monthlyRanks[m + 1][s.name];
+   if(x !== undefined && y !== undefined) pairs.push({ x, y });
   }
  }
 
@@ -1147,13 +1163,24 @@ function renderPersistenceScatter(pairs){
   { x: xMax, y: pearsonReg.intercept + pearsonReg.slope * xMax },
  ];
 
+ const counts = new Map();
+ for(const p of pairs){ const k = p.x + "," + p.y; counts.set(k, (counts.get(k) || 0) + 1); }
+ const maxCount = Math.max(...counts.values());
+ const cellCounts = [...counts.entries()].map(([k, n]) => {
+  const [x, y] = k.split(",").map(Number);
+  return { x, y, r: 2 + 11 * Math.sqrt(n / maxCount), n };
+ });
  const ctx = document.getElementById("persistenceScatter").getContext("2d");
  if(persistenceScatter) persistenceScatter.destroy();
  persistenceScatter = new Chart(ctx, {
   type: "scatter",
   data: {
    datasets: [
-    { label: "Sector-months", data: pairs, backgroundColor: "rgba(217,138,61,0.5)", pointRadius: 4, showLine: false },
+    // Ranks are integers, so raw points stack exactly on top of each other
+    // and every cell looks the same. Each rank pair is drawn once, sized by
+    // how many sector-months landed there; persistence shows up as larger
+    // circles along the diagonal.
+    { label: "Sector-months", type: "bubble", data: cellCounts, backgroundColor: "rgba(217,138,61,0.55)", borderColor: "rgba(217,138,61,0.9)", borderWidth: 1 },
     { label: "Regression fit", type: "line", data: linePoints, borderColor: themeInkColor(), borderWidth: 1.5, borderDash: [4, 3], pointRadius: 0, fill: false },
    ],
   },
@@ -1164,7 +1191,7 @@ function renderPersistenceScatter(pairs){
     legend: { display: false },
     tooltip: {
      callbacks: {
-      label: ctx => ctx.dataset.label === "Sector-months" ? ("Rank " + ctx.raw.x + " → " + ctx.raw.y) : null,
+      label: ctx => ctx.dataset.label === "Sector-months" ? ("Rank " + ctx.raw.x + " → " + ctx.raw.y + ": " + ctx.raw.n + " sector-month" + (ctx.raw.n === 1 ? "" : "s")) : null,
      },
     },
    },

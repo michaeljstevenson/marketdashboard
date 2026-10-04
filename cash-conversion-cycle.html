@@ -1064,6 +1064,111 @@ function ndrYScale(opts){
 
 // ---- Stats helpers - same methodology as /factor-analysis, duplicated
 // here since every page on this site is self-contained (see CLAUDE.md). ----
+// ---- Outlier-robust scatter axes ----------------------------------------
+// A few extreme companies (a 13,000% EPS jump, a $44M congressional sale)
+// would otherwise set the axis range and squash everyone else into a corner.
+// The axis covers the 1st-99th percentile instead; anything beyond is drawn
+// as a hollow arrow on the edge it fell off, with a count in the corner, so
+// nothing disappears silently. Fit lines are still computed on every point.
+function robustNiceStep(range){
+ const raw = range / 6;
+ const mag = Math.pow(10, Math.floor(Math.log10(raw)));
+ const f = raw / mag;
+ return (f < 1.5 ? 1 : f < 3.5 ? 2 : f < 7.5 ? 5 : 10) * mag;
+}
+function robustScatterAxes(chart, axes, opts){
+ if(!chart) return;
+ const pts = [];
+ chart.data.datasets.forEach((ds, di) => {
+  if(ds.showLine || ds.type === "line" || ds.borderDash) return;
+  (ds.data || []).forEach(p => { if(p && isFinite(p.x) && isFinite(p.y)) pts.push({ p, di }); });
+ });
+ if(pts.length < 20) return;
+ const cand = {};
+ let flagged = false;
+ for(const ax of axes){
+  const v = pts.map(o => o.p[ax]).sort((a, b) => a - b);
+  const q = f => v[Math.round((v.length - 1) * f)];
+  const lo = q(0.01), hi = q(0.99);
+  const full = v[v.length - 1] - v[0], core = hi - lo;
+  if(!(core > 0)) continue;
+  const step = robustNiceStep(core);
+  let min = Math.floor((lo - core * 0.04) / step) * step;
+  let max = Math.ceil((hi + core * 0.04) / step) * step;
+  if(v[0] >= 0 && min < 0) min = 0;
+  cand[ax] = { min, max, flag: full / core >= 1.6 };
+  if(cand[ax].flag) flagged = true;
+ }
+ if(!flagged) return;
+ const bounds = {};
+ if(opts && opts.square){
+  // Charts with a 45-degree reference line need the same range on both axes.
+  const min = Math.min(...Object.values(cand).map(c => c.min));
+  const max = Math.max(...Object.values(cand).map(c => c.max));
+  for(const ax of Object.keys(cand)) bounds[ax] = { min, max };
+ }else{
+  for(const ax of Object.keys(cand)) if(cand[ax].flag) bounds[ax] = { min: cand[ax].min, max: cand[ax].max };
+ }
+ // Raw config, not chart.options: that's a resolver proxy, and writing
+ // through it recurses.
+ const raw = chart.config.options.scales = chart.config.options.scales || {};
+ for(const ax of Object.keys(bounds)){
+  const sc = raw[ax] = raw[ax] || {};
+  sc.min = bounds[ax].min; sc.max = bounds[ax].max;
+ }
+ const off = [];
+ for(const o of pts){
+  const flags = {};
+  let out = false;
+  for(const ax of Object.keys(bounds)){
+   if(o.p[ax] < bounds[ax].min){ flags[ax] = -1; out = true; }
+   else if(o.p[ax] > bounds[ax].max){ flags[ax] = 1; out = true; }
+  }
+  if(out) off.push({ p: o.p, di: o.di, flags });
+ }
+ chart.$robustOff = off;
+ // Stop the initial draw-in animation first, or it keeps easing points
+ // toward their positions on the old, outlier-stretched scale.
+ chart.stop();
+ chart.update("none");
+}
+const robustOffscalePlugin = {
+ id: "robustOffscale",
+ afterDatasetsDraw(chart){
+  const off = chart.$robustOff;
+  if(!off || !off.length) return;
+  const { ctx, chartArea: a, scales } = chart;
+  const color = (getComputedStyle(document.documentElement).getPropertyValue("--ndr-axis-soft").trim()) || (getComputedStyle(document.documentElement).getPropertyValue("--muted").trim()) || "#8b9199";
+  ctx.save();
+  ctx.strokeStyle = color;
+  ctx.fillStyle = color;
+  ctx.lineWidth = 1.2;
+  for(const o of off){
+   const dsColor = chart.data.datasets[o.di].backgroundColor;
+   ctx.strokeStyle = typeof dsColor === "string" ? dsColor : color;
+   let x = scales.x.getPixelForValue(o.p.x), y = scales.y.getPixelForValue(o.p.y);
+   x = Math.min(a.right - 4, Math.max(a.left + 4, x));
+   y = Math.min(a.bottom - 4, Math.max(a.top + 4, y));
+   const dx = o.flags.x || 0, dy = -(o.flags.y || 0);
+   const len = Math.hypot(dx, dy) || 1, ux = dx / len, uy = dy / len;
+   const s = 4.5;
+   ctx.beginPath();
+   ctx.moveTo(x + ux * s, y + uy * s);
+   ctx.lineTo(x - ux * s - uy * s * 0.8, y - uy * s + ux * s * 0.8);
+   ctx.lineTo(x - ux * s + uy * s * 0.8, y - uy * s - ux * s * 0.8);
+   ctx.closePath();
+   ctx.stroke();
+  }
+  ctx.fillStyle = color;
+  ctx.font = "10px " + (Chart.defaults.font.family || "sans-serif");
+  ctx.textAlign = "right";
+  ctx.textBaseline = "bottom";
+  ctx.fillText(off.length + (off.length === 1 ? " point" : " points") + " beyond the axis range (arrows on the edge)", a.right - 6, a.bottom - 4);
+  ctx.restore();
+ },
+};
+Chart.register(robustOffscalePlugin);
+
 function linearRegression(xs, ys){
  const n = xs.length;
  const mx = xs.reduce((a, b) => a + b, 0) / n;
@@ -1167,56 +1272,86 @@ function renderStats(){
  document.getElementById("statNegPct").textContent = fmtPct(RAW.market.negativeCccPct, 0);
 }
 
+// The cycle is DSO + DIO − DPO, so the components are stacked that way:
+// days cash is tied up (receivables, inventory) to the right of zero, days
+// of supplier financing (payables) to the left, and the sector's median
+// net cycle as a diamond. Each figure is its own cross-company median, so
+// the diamond won't land exactly at the net of the bars.
 function renderSectorChart(){
- const sectors = RAW.sectors.map(s => s.sector);
+ const rows = RAW.sectors.filter(s => s.medianCcc !== null).slice().sort((a, b) => b.medianCcc - a.medianCcc);
  const ctx = document.getElementById("sectorChart").getContext("2d");
  if(sectorChart) sectorChart.destroy();
+ const seg = (label, key, color, sign) => ({
+  type: "bar", label, stack: "wc",
+  data: rows.map(s => s[key] === null ? null : sign * s[key]),
+  backgroundColor: color, borderColor: ndr("plot"), borderWidth: { left: 1, right: 1 }, borderSkipped: false,
+  barPercentage: 0.7, categoryPercentage: 0.9, order: 1,
+ });
  sectorChart = new Chart(ctx, {
-  type: "bar",
   data: {
-   labels: sectors,
+   labels: rows.map(s => s.sector),
    datasets: [
-    { label: "DSO", data: RAW.sectors.map(s => s.medianDso), backgroundColor: ndr("navy"), borderRadius: 3 },
-    { label: "DIO", data: RAW.sectors.map(s => s.medianDio), backgroundColor: ndr("slate"), borderRadius: 3 },
-    { label: "DPO", data: RAW.sectors.map(s => s.medianDpo), backgroundColor: ndr("gold"), borderRadius: 3 },
-    { label: "CCC (net)", data: RAW.sectors.map(s => s.medianCcc), backgroundColor: ndr("red"), borderRadius: 3 },
+    seg("DSO (receivables)", "medianDso", ndr("navy"), 1),
+    seg("DIO (inventory)", "medianDio", ndr("slate"), 1),
+    seg("DPO (payables, subtracted)", "medianDpo", ndr("gold"), -1),
+    {
+     type: "line", label: "Net cash conversion cycle", data: rows.map(s => s.medianCcc), showLine: false,
+     pointStyle: "rectRot", pointRadius: 6, pointHoverRadius: 8,
+     pointBackgroundColor: ndr("axis"), pointBorderColor: ndr("plot"), pointBorderWidth: 1.5,
+     backgroundColor: ndr("axis"), borderColor: ndr("axis"), order: 0,
+    },
    ],
   },
   options: {
    responsive: true,
    maintainAspectRatio: false,
+   indexAxis: "y",
+   interaction: { mode: "index", intersect: false, axis: "y" },
    plugins: {
-    legend: { display: true, position: "top", align: "start", labels: { boxWidth: 12, boxHeight: 12, color: ndr("axis"), font: { size: 11 } } },
-    tooltip: { callbacks: { label: ctx => ctx.dataset.label + ": " + fmtPlainDays(ctx.parsed.y) } },
+    legend: { display: true, position: "top", align: "start", labels: { usePointStyle: true, boxWidth: 9, boxHeight: 9, color: ndr("axis"), font: { size: 11 } } },
+    zoom: false,
+    tooltip: { callbacks: { label: ctx => ctx.dataset.label + ": " + fmtPlainDays(Math.abs(ctx.parsed.x)) } },
    },
    scales: {
-    x: ndrXScale(),
-    y: ndrYScale({ fmt: v => v + "d" }),
+    x: { ...ndrYScale({ position: "bottom", fmt: v => v + "d" }), stacked: true, grid: { color: c => c.tick.value === 0 ? ndr("axis") : ndr("grid") } },
+    y: { stacked: true, ticks: { color: ndr("axis"), font: { size: 11 } }, grid: { display: false }, border: { color: ndr("axis") } },
    },
   },
  });
 }
 
+// Bins between the 1st and 99th percentile, with one catch-all bin at
+// each end. Without this, a handful of extreme values (a 12,000-day cycle,
+// a 300% ROIC) stretch the axis until the rest of the distribution
+// collapses into one or two bars.
+function robustBins(values, binWidth, fmtEdge, floorAtZero){
+ const v = values.slice().sort((a, b) => a - b);
+ const q = p => v[Math.min(v.length - 1, Math.max(0, Math.round((v.length - 1) * p)))];
+ let lo = Math.floor(q(0.01) / binWidth) * binWidth;
+ const hi = Math.ceil(q(0.99) / binWidth) * binWidth || lo + binWidth;
+ if(floorAtZero) lo = Math.max(0, lo);
+ const bins = [];
+ if(v[0] < lo) bins.push({ lo: -Infinity, hi: lo, count: 0, label: "< " + fmtEdge(lo), title: "Below " + fmtEdge(lo) });
+ for(let b = lo; b < hi; b += binWidth) bins.push({ lo: b, hi: b + binWidth, count: 0, label: fmtEdge(b) + " to " + fmtEdge(b + binWidth), title: fmtEdge(b) + " to " + fmtEdge(b + binWidth) });
+ if(v[v.length - 1] >= hi) bins.push({ lo: hi, hi: Infinity, count: 0, label: "≥ " + fmtEdge(hi), title: fmtEdge(hi) + " and above" });
+ for(const x of v){
+  const b = bins.find(bin => x >= bin.lo && x < bin.hi) || (x < lo ? bins[0] : bins[bins.length - 1]);
+  b.count++;
+ }
+ return bins;
+}
+
 function renderCccHistogram(){
  const values = RAW.companies.map(c => c.ccc).filter(v => v !== null && v !== undefined && !isNaN(v));
  const binWidth = 15; // days
- const minBin = Math.floor(Math.min(...values) / binWidth) * binWidth;
- const maxBin = Math.ceil(Math.max(...values) / binWidth) * binWidth;
- const bins = [];
- for(let b = minBin; b < maxBin; b += binWidth) bins.push({ lo: b, hi: b + binWidth, count: 0 });
- for(const v of values){
-  let idx = Math.floor((v - minBin) / binWidth);
-  if(idx < 0) idx = 0;
-  if(idx >= bins.length) idx = bins.length - 1;
-  bins[idx].count++;
- }
+ const bins = robustBins(values, binWidth, e => (e > 0 ? "+" : "") + e, false);
 
  const ctx = document.getElementById("cccHistogram").getContext("2d");
  if(cccHistogram) cccHistogram.destroy();
  cccHistogram = new Chart(ctx, {
   type: "bar",
   data: {
-   labels: bins.map(b => (b.lo >= 0 ? "+" : "") + b.lo + "to" + (b.hi >= 0 ? "+" : "") + b.hi),
+   labels: bins.map(b => b.label),
    datasets: [{ data: bins.map(b => b.count), backgroundColor: bins.map(b => (b.lo + b.hi) / 2 <= 0 ? ndr("green") : ndr("slate")), borderRadius: 3, barPercentage: 1.0, categoryPercentage: 0.95 }],
   },
   options: {
@@ -1224,7 +1359,7 @@ function renderCccHistogram(){
    maintainAspectRatio: false,
    plugins: {
     legend: { display: false },
-    tooltip: { callbacks: { title: items => { const b = bins[items[0].dataIndex]; return (b.lo >= 0 ? "+" : "") + b.lo + "d to " + (b.hi >= 0 ? "+" : "") + b.hi + "d"; }, label: ctx => ctx.parsed.y + " companies" } },
+    tooltip: { callbacks: { title: items => bins[items[0].dataIndex].title + " days", label: ctx => ctx.parsed.y + " companies" } },
    },
    scales: {
     x: { ...ndrXScale(), title: { display: true, text: "Cash conversion cycle (days)", color: ndr("axis-soft"), font: { size: 10 } } },
@@ -1268,6 +1403,7 @@ function renderDsoDpoScatter(){
    },
   },
  });
+ robustScatterAxes(dsoDpoScatter, ["x","y"], { square: true });
 
  document.getElementById("dsoDpoMethodTable").innerHTML = methodTableHtml(pearson, spear,
   "Slope is DPO days per 1 day of DSO. n=" + pearson.n + " companies.");
@@ -1308,6 +1444,7 @@ function renderCccRoicScatter(){
    },
   },
  });
+ robustScatterAxes(cccRoicScatter, ["x","y"]);
 
  document.getElementById("cccRoicMethodTable").innerHTML = methodTableHtml(pearson, spear,
   "Slope is ROIC percentage points per 1 day of CCC. n=" + pearson.n + " companies with both figures available. A negative slope would mean tighter working capital (a lower CCC) goes with a higher return on invested capital.");

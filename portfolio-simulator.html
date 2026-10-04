@@ -1088,6 +1088,13 @@ function renderChart(years, currentYear, paths, drawIdx, succeeded, pctLines){
   };
  });
 
+ // Cap the axis just above the 90th-percentile path. Compounding gives the
+ // luckiest few simulated paths values many times the rest, and letting
+ // them set the scale flattened the median and every percentile line into
+ // the bottom of the chart; those few paths now run off the top instead.
+ const p90 = (pctLines[90] || []).filter(v => isFinite(v));
+ const yMax = p90.length ? Math.max(...p90) * 1.15 : undefined;
+
  simChart = new Chart(ctx, {
   type: "line",
   data: {
@@ -1116,8 +1123,8 @@ function renderChart(years, currentYear, paths, drawIdx, succeeded, pctLines){
     },
    },
    scales: {
-    x: { ticks: { color: "#8b9199", maxTicksLimit: 10 }, grid: { color: "#2b3138" } },
-    y: { ticks: { color: "#8b9199", callback: v => "$" + fmtMoney(v) }, grid: { color: "#2b3138" } },
+    x: { ticks: { color: "#8b9199", maxTicksLimit: 10 }, grid: { color: (getComputedStyle(document.documentElement).getPropertyValue("--hair").trim() || "#2b3138") } },
+    y: { min: 0, max: yMax, ticks: { color: "#8b9199", callback: v => "$" + fmtMoney(v) }, grid: { color: (getComputedStyle(document.documentElement).getPropertyValue("--hair").trim() || "#2b3138") } },
    },
   },
  });
