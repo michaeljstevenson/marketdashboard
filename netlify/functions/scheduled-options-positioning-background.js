@@ -272,11 +272,16 @@ exports.handler = async () => {
       p25PutCallRatio: round(quantile(companies.map((c) => c.putCallRatio), 0.25), 3),
       p75PutCallRatio: round(quantile(companies.map((c) => c.putCallRatio), 0.75), 3),
     };
-    if (!history.length || history[history.length - 1].week !== weekKey) {
-      history.push(point);
-    } else {
-      history[history.length - 1] = point;
-    }
+    // One point per Monday-to-Sunday week: a second run in the same week
+    // replaces that week's point (a re-run the next day used to add a twin).
+    const mondayOf = (d) => {
+      const t = new Date(d + "T00:00:00Z");
+      t.setUTCDate(t.getUTCDate() - ((t.getUTCDay() + 6) % 7));
+      return t.toISOString().slice(0, 10);
+    };
+    const kept = history.filter((h) => mondayOf(h.week) !== mondayOf(weekKey));
+    history.length = 0;
+    history.push(...kept, point);
     while (history.length > MAX_HISTORY_WEEKS) history.shift();
 
     const payload = {

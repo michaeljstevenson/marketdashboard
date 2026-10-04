@@ -102,4 +102,7 @@ visible error other than "only N of M loaded" on the page.
   endpoints), which `node scripts/health-check.js` reads from the live site to flag endpoints that error,
   go stale against their schedule, or load only part of their universe. A local scheduled task
   (`site-health-check`, daily 7:30 PM ET) runs it read-only and reports.
+- Manual (unscheduled) background jobs can be started with a POST to
+  `/.netlify/functions/<name>`. Jobs with a `schedule` in `netlify.toml` return 403 to that; only the
+  Netlify dashboard's "Run now" starts them off-schedule.
 - Never commit or push without the user explicitly asking in that turn.
