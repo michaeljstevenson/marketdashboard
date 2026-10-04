@@ -761,26 +761,10 @@ tbody td:nth-child(2){
 </div></div>
 </div>
 </div>
+<button class="nav-toggle" id="navToggle" type="button" aria-label="Open menu" aria-expanded="false">&#9776;</button>
 <button class="theme-toggle" id="themeToggle" type="button" aria-label="Toggle light/dark mode" title="Toggle light/dark mode">&#9789;</button>
 </nav>
-<script>
-// Class-driven (not pure :hover) nav dropdowns: pure CSS :hover drops the
-// menu the instant the cursor leaves .navdrop, which includes the moment
-// it's crossing the gap between the label and the dropdown box below -
-// exactly the "sometimes works, sometimes doesn't" flakiness reported.
-// A short close-delay after mouseleave gives the cursor room to travel
-// down into the dropdown without losing it.
-document.querySelectorAll(".navdrop").forEach(function(navdrop){
- var closeTimer = null;
- navdrop.addEventListener("mouseenter", function(){
-  clearTimeout(closeTimer);
-  navdrop.classList.add("open");
- });
- navdrop.addEventListener("mouseleave", function(){
-  closeTimer = setTimeout(function(){ navdrop.classList.remove("open"); }, 300);
- });
-});
-</script>
+<script src="/nav.js"></script>
 <script>
 (function(){
  var btn = document.getElementById("themeToggle");

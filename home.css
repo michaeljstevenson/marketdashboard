@@ -37,7 +37,7 @@
   -webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);
   -webkit-mask-composite:xor;mask-composite:exclude;
 }
-.snap-grid{display:grid;grid-template-columns:1fr 1fr;min-height:228px}
+.snap-grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);min-height:228px}
 .snap{padding:16px 18px;display:flex;flex-direction:column;gap:4px;border-radius:16px}
 .snap:nth-child(odd){border-right:1px solid var(--hair)}
 .snap:nth-child(-n+4){border-bottom:1px solid var(--hair)}
@@ -70,7 +70,7 @@ footer{border-top:1px solid var(--hair)}
 
 /* Index rows: each category is one full-width glass row, title left, groups laid out across. */
 .hero{padding-bottom:40px}
-.snap-grid{grid-template-columns:1fr;min-height:0}
+.snap-grid{grid-template-columns:minmax(0,1fr);min-height:0}
 .snap{flex-direction:row;align-items:baseline;justify-content:space-between;border:0!important;padding:11px 18px}
 .snap + .snap{border-top:1px solid var(--hair)!important;border-radius:0}
 .snap .s-label{flex:1}
@@ -92,7 +92,9 @@ footer{border-top:1px solid var(--hair)}
 .snap-head{padding-top:12px;padding-bottom:4px}
 .snap-head .s-chg{font-family:var(--sans);font-size:10px;letter-spacing:.08em;color:var(--muted)}
 .snap-head + .snap{border-top:0!important}
-.hero{grid-template-columns:minmax(0,1fr) minmax(0,520px)}
+/* Two columns only where there's room; this used to apply at every width and
+   overrode the single-column rule above, stacking the snapshot on the headline. */
+@media (min-width:861px){.hero{grid-template-columns:minmax(0,1fr) minmax(0,520px)}}
 .snap .s-label{min-width:0}
 .snap .s-value{flex:0 0 auto}
 

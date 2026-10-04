@@ -576,20 +576,10 @@ h1{ font-family:var(--serif); font-size:28px; font-weight:400; margin:0; }
 </div></div>
 </div>
 </div>
+<button class="nav-toggle" id="navToggle" type="button" aria-label="Open menu" aria-expanded="false">&#9776;</button>
 <button aria-label="Toggle light/dark mode" class="theme-toggle" id="themeToggle" title="Toggle light/dark mode" type="button">☽</button>
 </nav>
-<script>
-document.querySelectorAll(".navdrop").forEach(function(navdrop){
- var closeTimer = null;
- navdrop.addEventListener("mouseenter", function(){
-  clearTimeout(closeTimer);
-  navdrop.classList.add("open");
- });
- navdrop.addEventListener("mouseleave", function(){
-  closeTimer = setTimeout(function(){ navdrop.classList.remove("open"); }, 300);
- });
-});
-</script>
+<script src="/nav.js"></script>
 <script>
 (function(){
  var btn = document.getElementById("themeToggle");
