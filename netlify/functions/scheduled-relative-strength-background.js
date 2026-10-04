@@ -30,7 +30,7 @@
 const { getRelativeStrengthStore, LATEST_KEY, HISTORY_KEY } = require("./relative-strength-blob-store");
 const { getBeeswarmStore, META_KEY } = require("./beeswarm-blob-store");
 const { BREADTH_CONSTITUENTS } = require("./breadth-constituents");
-const { fetchDailyHistory } = require("./yahoo-client");
+const { fetchDailyHistory, spinoffFactor } = require("./yahoo-client");
 const COMPACT_DAYS = 100;
 
 
@@ -229,7 +229,14 @@ exports.handler = async () => {
     const rel3mRank = {};
     ranked.forEach((c) => { prices[c.symbol] = c.price; rel3mRank[c.symbol] = c.rank3M; });
 
-    const filtered = points.filter((p) => p.date !== todayDate);
+    // One point per Monday-to-Sunday week, so an off-schedule re-run replaces
+    // that week's snapshot instead of adding a one-day "week" to the test.
+    const weekOf = (d) => {
+      const t = new Date(d + "T00:00:00Z");
+      t.setUTCDate(t.getUTCDate() - ((t.getUTCDay() + 6) % 7));
+      return t.toISOString().slice(0, 10);
+    };
+    const filtered = points.filter((p) => weekOf(p.date) !== weekOf(todayDate));
     filtered.push({ date: todayDate, spyPrice: round(spyPrice), prices, rel3mRank });
     const trimmedPoints = filtered.slice(-MAX_HISTORY_WEEKS);
 
@@ -241,8 +248,10 @@ exports.handler = async () => {
       const forwardSpyRet = cur.spyPrice / prev.spyPrice - 1;
       for (const symbol of Object.keys(prev.rel3mRank || {})) {
         const rank = prev.rel3mRank[symbol];
-        const prevPrice = prev.prices[symbol];
-        const curPrice = cur.prices[symbol];
+        // Stored prices are that day's raw close, so a spin-off between two
+        // snapshots needs the same adjustment fetchDailyHistory applies.
+        const prevPrice = prev.prices[symbol] && prev.prices[symbol] * spinoffFactor(symbol, prev.date);
+        const curPrice = cur.prices[symbol] && cur.prices[symbol] * spinoffFactor(symbol, cur.date);
         if (!rank || !prevPrice || !curPrice) continue;
         const forwardStockRet = curPrice / prevPrice - 1;
         const y = relativeReturn(forwardStockRet, forwardSpyRet);

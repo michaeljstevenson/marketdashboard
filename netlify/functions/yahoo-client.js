@@ -210,6 +210,7 @@ async function fetchIntradayBatch(symbols, { range = "5d", interval = "15m" } = 
 }
 
 module.exports = {
+  spinoffFactor,
   fetchDailyHistory,
   fetchDailyBars,
   fetchDividendEvents,
