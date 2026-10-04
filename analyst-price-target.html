@@ -985,7 +985,7 @@ tbody td:nth-child(2){
 <div class="explainer">
 <h2>Methodology</h2>
 <p>Target Upside is the consensus 12-month analyst price target divided by the last closing price, minus 1. Buy Ratio is the share of covering analysts who rate the stock Strong Buy or Buy. A Consensus Score (1 = Strong Sell to 5 = Strong Buy, weighted by the number of analysts at each rating) is in the full table, but it mostly moves with Buy Ratio so it isn't a headline number.</p>
-<p>The scatter tests whether analysts assign more upside to stocks that have already sold off (targets being slower to adjust than prices), or whether upside follows recent winners. Each stock's target upside is plotted against its 3-month return relative to the S&amp;P 500. It's a same-period comparison, not a prediction. Both Pearson (linear) and Spearman (rank) fits are shown since either one alone can mislead when the relationship isn't a straight line.</p>
+<p>The scatter tests whether analysts assign more upside to stocks that have already sold off (targets being slower to adjust than prices), or whether upside follows recent winners. Each stock's target upside is plotted against its 3-month return relative to the S&amp;P 500. It's a same-period comparison and makes no prediction. Both Pearson (linear) and Spearman (rank) fits are shown since either one alone can mislead when the relationship isn't a straight line.</p>
 <p>Leaderboards require at least 3 covering analysts, since a target from only one or two analysts can easily be an outlier.</p>
 
 </div>
@@ -1538,7 +1538,7 @@ function renderUpsideScatter(){
    "<thead><tr><th>Method</th><th>n</th><th>r</th><th>r&sup2;</th><th>slope</th><th>t</th><th>p</th></tr></thead>" +
    "<tbody>" + row("Pearson (OLS)", pearson) + row("Spearman (&rho;)", spear) + "</tbody>" +
   "</table>" +
-  '<div class="method-note">A negative slope means analysts have assigned more upside to stocks that already underperformed, consistent with price targets lagging price moves. A positive slope would mean the opposite: upside tracks recent winners, not laggards.</div>';
+  '<div class="method-note">A negative slope means analysts have assigned more upside to stocks that already underperformed, consistent with price targets lagging price moves. A positive slope would mean the opposite: upside tracks recent winners.</div>';
 }
 
 function renderLeaderTable(rows, tbodyId, mode){

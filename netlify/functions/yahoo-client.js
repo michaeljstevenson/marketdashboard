@@ -13,6 +13,19 @@ const SPARK_BATCH_SIZE = 20; // spark returns HTTP 400 above 20 symbols per call
 // Yahoo only serves under the new one (BNY Mellon rebrand, Marsh McLennan
 // rename). Results are keyed back to the original symbol.
 const YAHOO_ALIASES = { BK: "BNY", MMC: "MRSH" };
+// Yahoo's adjusted close covers splits and dividends but not spin-offs, so a
+// spin shows up as a one-day crash. Closes before `exDate` are multiplied by
+// `factor` = parent close / (parent close + distributed shares' value), both
+// on the ex-date. Add a row whenever an S&P 500 name completes a spin-off.
+const SPINOFF_ADJUSTMENTS = {
+  // Vylor (VYLR) seed business, 1:1, Oct 1 2026: CTVA 12.57, VYLR 68.26.
+  CTVA: [{ exDate: "2026-10-01", factor: 12.57 / (12.57 + 68.26) }],
+};
+function spinoffFactor(symbol, date) {
+  let f = 1;
+  for (const a of SPINOFF_ADJUSTMENTS[symbol] || []) if (date < a.exDate) f *= a.factor;
+  return f;
+}
 
 function sleep(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
@@ -52,7 +65,8 @@ async function fetchDailyHistory(symbol, { adjusted = true } = {}) {
   const out = [];
   ts.forEach((t, i) => {
     if (closes[i] == null) return;
-    out.push({ date: new Date(t * 1000).toISOString().slice(0, 10), close: closes[i] });
+    const date = new Date(t * 1000).toISOString().slice(0, 10);
+    out.push({ date, close: adjusted ? closes[i] * spinoffFactor(symbol, date) : closes[i] });
   });
   if (!out.length) throw new Error(`Yahoo returned no closes for ${symbol}`);
   return out;
@@ -96,7 +110,7 @@ async function fetchPriorYearEndCloses(symbols, year) {
       if (!e || !e.timestamp || !e.close) continue;
       let base = null;
       e.timestamp.forEach((t, k) => {
-        if (e.close[k] != null && new Date(t * 1000).getUTCFullYear() < year) base = e.close[k];
+        if (e.close[k] != null && new Date(t * 1000).getUTCFullYear() < year) base = e.close[k] * spinoffFactor(symbol, isoDate(t));
       });
       if (base != null) out.set(symbol, base);
     }
@@ -125,7 +139,7 @@ async function fetchDailyBars(symbol) {
   const out = [];
   (result.timestamp || []).forEach((t, i) => {
     if (q.close[i] == null || adj[i] == null) return;
-    out.push({ date: isoDate(t), high: q.high[i], low: q.low[i], close: q.close[i], adjClose: adj[i], volume: q.volume[i] });
+    out.push({ date: isoDate(t), high: q.high[i], low: q.low[i], close: q.close[i], adjClose: adj[i] * spinoffFactor(symbol, isoDate(t)), volume: q.volume[i] });
   });
   if (!out.length) throw new Error(`Yahoo returned no closes for ${symbol}`);
   return out;

@@ -853,7 +853,7 @@ tbody td:nth-child(2){
 <div class="chart-box-header">
 <div>
 <h2>Quality vs. recent price performance</h2>
-<div class="chart-subhead">Each point is one company. X is its F-Score, Y is trailing 3-month price return relative to SPY (from Relative Strength Leaders/Laggards). This is a same-period snapshot, not a claim that today's F-Score predicts tomorrow's return.</div>
+<div class="chart-subhead">Each point is one company. X is its F-Score, Y is trailing 3-month price return relative to SPY (from Relative Strength Leaders/Laggards). This is a same-period snapshot and makes no claim that today's F-Score predicts tomorrow's return.</div>
 </div>
 </div>
 <div class="ndr-panel">
@@ -1261,7 +1261,7 @@ function renderMomentumScatter(){
  });
 
  document.getElementById("momentumMethodTable").innerHTML = methodTableHtml(pearson, spear,
-  "A same-period association, not a forward-return prediction. See the methodology below. n=" + pearson.n + " companies with both a computable F-Score and recent relative-return data.");
+  "A same-period association with no forward-return prediction. See the methodology below. n=" + pearson.n + " companies with both a computable F-Score and recent relative-return data.");
 }
 
 function renderLeaderTable(rows, tbodyId){

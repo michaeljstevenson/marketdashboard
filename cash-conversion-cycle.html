@@ -676,6 +676,46 @@ tbody td:nth-child(2){
 .full-list-summary::before{ content:"▸ "; display:inline-block; width:1em; }
 .full-list-details[open] .full-list-summary::before{ content:"▾ "; }
 .full-list-details table{ margin-top:8px; }
+/* COMMENTARY: dated, static read of the data; rewritten by hand, not generated. */
+.commentary{
+ background:var(--card);
+ border:1px solid var(--hair);
+ border-left:3px solid var(--greed);
+ border-radius:10px;
+ padding:18px 22px 20px;
+ margin-bottom:30px;
+}
+.commentary-head{
+ display:flex;
+ justify-content:space-between;
+ align-items:baseline;
+ flex-wrap:wrap;
+ gap:6px 16px;
+}
+.commentary h2{
+ font-family:var(--serif);
+ font-weight:400;
+ font-size:18px;
+ margin:0;
+}
+.commentary-date{
+ color:var(--muted);
+ font-size:12px;
+}
+.commentary p{
+ font-size:14px;
+ line-height:1.6;
+ margin:10px 0 0;
+ max-width:780px;
+}
+.chart-note{
+ font-size:13px;
+ line-height:1.55;
+ margin-top:8px;
+ padding-left:10px;
+ border-left:2px solid var(--greed);
+ max-width:780px;
+}
 </style>
 <link rel="stylesheet" href="/site.css">
 </head>
@@ -852,11 +892,23 @@ tbody td:nth-child(2){
 </div>
 </div>
 
+<section class="commentary" aria-labelledby="commentaryTitle">
+<div class="commentary-head">
+<h2 id="commentaryTitle">What the data says</h2>
+<div class="commentary-date">As of October 3, 2026 &middot; trailing twelve months through each company&rsquo;s latest quarter</div>
+</div>
+<p>The typical S&amp;P 500 company outside Financials, Real Estate and Utilities has about two months of cash tied up in its operating cycle. The median cash conversion cycle is 64 days: customers pay in 58 days and inventory sits for 77, while suppliers get paid in 60.</p>
+<p>The gap between sectors is wide. Health Care runs the longest median cycle at 115 days, followed by Technology (98) and Industrials (86). Energy (12), Consumer Staples (20), Consumer Discretionary (21) and Communication Services (22) all turn their cash in about three weeks or less.</p>
+<p>About one company in six (16%) runs a negative cycle and gets paid before it pays its own suppliers. Amazon, Coca-Cola and PepsiCo are the familiar examples. The most extreme negatives belong to AbbVie and Amgen, drugmakers whose small cost-of-revenue line makes payable days balloon.</p>
+<p>Tight working capital doesn&rsquo;t show up in returns. The cash conversion cycle has no relationship with ROIC across 274 companies (Pearson r = 0.06, p = 0.30; Spearman &rho; = 0.04, p = 0.56). Companies that collect slowly do tend to pay slowly too (Spearman &rho; = 0.30, p &lt; 0.001).</p>
+</section>
+
 <div class="chart-box">
 <div class="chart-box-header">
 <div>
 <h2>Working-capital days by sector</h2>
 <div class="chart-subhead">Median days sales outstanding, days inventory outstanding, days payable outstanding, and the net cash conversion cycle, by SPDR sector</div>
+<div class="chart-note">Health Care&rsquo;s 115-day median comes mostly from inventory, at 109 days. Consumer Discretionary collects fastest (16 days), and Consumer Staples takes the longest to pay its suppliers (84 days).</div>
 </div>
 </div>
 <div class="ndr-panel">
@@ -872,6 +924,7 @@ tbody td:nth-child(2){
 <div>
 <h2>Distribution of the cash conversion cycle</h2>
 <div class="chart-subhead">Every S&amp;P 500 constituent with usable statement history, bucketed by CCC (days)</div>
+<div class="chart-note">The middle half of companies runs between 15 and 116 days. The tails go both ways, from about &minus;480 days (AbbVie) to 650 (Brown-Forman).</div>
 </div>
 </div>
 <div class="ndr-panel">
@@ -887,6 +940,7 @@ tbody td:nth-child(2){
 <div>
 <h2>Days sales outstanding vs. days payable outstanding</h2>
 <div class="chart-subhead">Points above the diagonal collect from customers faster than they pay their own suppliers; points below collect slower than they pay</div>
+<div class="chart-note">A clear positive link: companies that are slow to collect also tend to be slow to pay (Pearson r = 0.23, Spearman &rho; = 0.30, both p &lt; 0.001). 171 of the 298 pay their suppliers more slowly than they collect from customers.</div>
 </div>
 </div>
 <div class="ndr-panel">
@@ -901,6 +955,7 @@ tbody td:nth-child(2){
 <div>
 <h2>Cash conversion cycle vs. ROIC</h2>
 <div class="chart-subhead">Does tighter working-capital management actually show up as a higher return on invested capital?</div>
+<div class="chart-note">Flat. A shorter cycle comes with no higher return on capital here (Pearson r = 0.06, p = 0.30; Spearman &rho; = 0.04, p = 0.56).</div>
 </div>
 </div>
 <div class="ndr-panel">
@@ -917,6 +972,7 @@ tbody td:nth-child(2){
 <div class="table-box-header">
 <h2>Fastest (most efficient)</h2>
 <div class="chart-subhead">Lowest (or most negative) cash conversion cycle</div>
+<div class="chart-note">AbbVie, Universal Health Services and Amgen top the list with payables of 530 to 700 days of cost of revenue. Numbers that large usually point to a small or unusually defined cost-of-revenue line, so treat those three as outliers. Below them are the familiar supplier-financed names: AT&amp;T, Coca-Cola, PepsiCo and Amazon.</div>
 </div>
 <table id="fastestTable">
 <thead><tr><th>Symbol</th><th>Sector</th><th>DSO</th><th>DIO</th><th>DPO</th><th>CCC</th></tr></thead>
@@ -927,6 +983,7 @@ tbody td:nth-child(2){
 <div class="table-box-header">
 <h2>Slowest (most cash tied up)</h2>
 <div class="chart-subhead">Highest cash conversion cycle</div>
+<div class="chart-note">Mostly long production cycles by design. Brown-Forman ages its whiskey for years (610 days of inventory), the drugmakers (Regeneron, Lilly, Vertex, Biogen) and Boeing build slowly, and D.R. Horton&rsquo;s 377 days is land and homes under construction.</div>
 </div>
 <table id="slowestTable">
 <thead><tr><th>Symbol</th><th>Sector</th><th>DSO</th><th>DIO</th><th>DPO</th><th>CCC</th></tr></thead>

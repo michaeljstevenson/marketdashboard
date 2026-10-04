@@ -819,7 +819,7 @@ table.datatable tbody td:first-child{
 <div class="explainer">
 <h2>Methodology</h2>
 <p>Daily returns for the 11 sector ETFs and SPY over roughly the last 2 years. Every pair of sectors gets a Pearson correlation of their daily returns.</p>
-<p>The rolling correlation uses a 63-trading-day (about one quarter) window. For each day, it averages all 55 sector-pair correlations over the prior 63 days, then moves forward one day. The scatter plots that series against the S&amp;P 500's realized volatility over the same 63-day window (standard deviation of daily returns × √252), with Pearson and Spearman regression. Back-to-back days in a rolling window share almost all their data, so the number of truly independent observations is much smaller than it looks. Treat the r and p-values as a rough read on direction and strength, not a rigorous test.</p>
+<p>The rolling correlation uses a 63-trading-day (about one quarter) window. For each day, it averages all 55 sector-pair correlations over the prior 63 days, then moves forward one day. The scatter plots that series against the S&amp;P 500's realized volatility over the same 63-day window (standard deviation of daily returns × √252), with Pearson and Spearman regression. Back-to-back days in a rolling window share almost all their data, so the number of truly independent observations is much smaller than it looks. Treat the r and p-values as a rough read on direction and strength.</p>
 <p>The heatmap leaves out SPY, since it's an average of the sectors rather than a peer. Each sector's correlation to SPY is shown in its own table below the heatmap.</p>
 
 </div>
@@ -1161,7 +1161,7 @@ function renderCorrVolScatter(xs, ys, dates){
    "<thead><tr><th>Method</th><th>n</th><th>r</th><th>r&sup2;</th><th>slope</th><th>t</th><th>p</th></tr></thead>" +
    "<tbody>" + row("Pearson (OLS)", pearsonReg) + row("Spearman (&rho;)", spear) + "</tbody>" +
   "</table>" +
-  '<div class="method-note">n counts overlapping rolling-window days, not independent observations. See the methodology note below.</div>';
+  '<div class="method-note">n counts overlapping rolling-window days, which share most of their data. See the methodology note below.</div>';
 }
 
 init();

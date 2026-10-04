@@ -676,6 +676,46 @@ tbody td:nth-child(2){
 .full-list-summary::before{ content:"▸ "; display:inline-block; width:1em; }
 .full-list-details[open] .full-list-summary::before{ content:"▾ "; }
 .full-list-details table{ margin-top:8px; }
+/* COMMENTARY: dated, static read of the data; rewritten by hand, not generated. */
+.commentary{
+ background:var(--card);
+ border:1px solid var(--hair);
+ border-left:3px solid var(--greed);
+ border-radius:10px;
+ padding:18px 22px 20px;
+ margin-bottom:30px;
+}
+.commentary-head{
+ display:flex;
+ justify-content:space-between;
+ align-items:baseline;
+ flex-wrap:wrap;
+ gap:6px 16px;
+}
+.commentary h2{
+ font-family:var(--serif);
+ font-weight:400;
+ font-size:18px;
+ margin:0;
+}
+.commentary-date{
+ color:var(--muted);
+ font-size:12px;
+}
+.commentary p{
+ font-size:14px;
+ line-height:1.6;
+ margin:10px 0 0;
+ max-width:780px;
+}
+.chart-note{
+ font-size:13px;
+ line-height:1.55;
+ margin-top:8px;
+ padding-left:10px;
+ border-left:2px solid var(--greed);
+ max-width:780px;
+}
 </style>
 <link rel="stylesheet" href="/site.css">
 </head>
@@ -824,7 +864,7 @@ tbody td:nth-child(2){
 <div class="header">
 <div>
 <h1>ROIC vs. Cost of Capital</h1>
-<div class="subtitle">Is the S&amp;P 500 actually creating economic value? Return on invested capital vs. a CAPM-based weighted average cost of capital, company by company. The spread between the two is a rough "economic profit" screen, not just another profitability ratio.</div>
+<div class="subtitle">Is the S&amp;P 500 actually creating economic value? Return on invested capital vs. a CAPM-based weighted average cost of capital, company by company. The spread between the two works as a rough "economic profit" screen.</div>
 </div>
 <div class="updated" id="updated">Loading...</div>
 </div>
@@ -852,11 +892,23 @@ tbody td:nth-child(2){
 </div>
 </div>
 
+<section class="commentary" aria-labelledby="commentaryTitle">
+<div class="commentary-head">
+<h2 id="commentaryTitle">What the data says</h2>
+<div class="commentary-date">As of October 3, 2026 &middot; trailing twelve months through each company&rsquo;s latest quarter</div>
+</div>
+<p>Most of the S&amp;P 500 outside Financials earns more than its capital costs. The median company returns 11.0% on invested capital against an estimated 6.1% cost of capital, a spread of 4.5 points, and 79% of the 394 companies with usable data clear the bar.</p>
+<p>The margin is wide at the top and thin in the middle. A quarter of companies earn less than a point over their cost of capital or fall short of it, and one in ten misses by more than 3.7 points. The top tenth clears it by 27 points or more.</p>
+<p>By sector, Consumer Discretionary (9.9 points) and Technology (9.5) have the widest median spreads. Real Estate is the only sector below zero (&minus;0.5), and Materials (2.0) and Utilities (1.0) barely clear it. Utilities still show 97% of companies as value creators because cheap, tax-deductible debt pulls their cost of capital down to 4.9%.</p>
+<p>Neither risk nor recent returns line up much with the spread. Higher-beta companies earn no meaningfully wider spread (Pearson r = 0.08, p = 0.12). The rank correlation with 3-month relative returns is significant at the 5% level (Spearman &rho; = 0.10, p = 0.04), but it explains about 1% of the variation.</p>
+</section>
+
 <div class="chart-box">
 <div class="chart-box-header">
 <div>
 <h2>ROIC vs. WACC by sector</h2>
 <div class="chart-subhead">Median return on invested capital and median cost of capital across each SPDR sector's S&amp;P 500 constituents. Where the orange ROIC dot sits right of the blue WACC dot, the sector is earning more than its capital costs</div>
+<div class="chart-note">Consumer Discretionary and Technology lead on median spread (9.9 and 9.5 points). Real Estate is the only sector where the median company earns less than its cost of capital.</div>
 </div>
 </div>
 <div class="ndr-panel">
@@ -871,6 +923,7 @@ tbody td:nth-child(2){
 <div>
 <h2>Distribution of the ROIC&minus;WACC spread</h2>
 <div class="chart-subhead">Every S&amp;P 500 constituent with usable statement history, bucketed by spread (percentage points)</div>
+<div class="chart-note">The middle half of companies sits between +0.6 and +13.8 points, with a long right tail: the top tenth clears 27 points.</div>
 </div>
 </div>
 <div class="ndr-panel">
@@ -886,6 +939,7 @@ tbody td:nth-child(2){
 <div>
 <h2>Spread vs. beta</h2>
 <div class="chart-subhead">Does the market actually pay higher-beta (riskier) companies a wider economic-value spread, or is there no such relationship?</div>
+<div class="chart-note">No meaningful relationship. Riskier companies earn about the same spread as everyone else (Pearson r = 0.08, p = 0.12; Spearman &rho; = 0.08, p = 0.11).</div>
 </div>
 </div>
 <div class="ndr-panel">
@@ -900,6 +954,7 @@ tbody td:nth-child(2){
 <div>
 <h2>Spread vs. 3-month relative return</h2>
 <div class="chart-subhead">Does the market currently reward companies that are creating the most economic value with better relative price performance?</div>
+<div class="chart-note">Faint at best. The rank correlation is positive and significant (Spearman &rho; = 0.10, p = 0.04), the linear fit is flat (Pearson r = &minus;0.03, p = 0.52), and either way the spread explains about 1% of recent relative performance.</div>
 </div>
 </div>
 <div class="ndr-panel">
@@ -916,6 +971,7 @@ tbody td:nth-child(2){
 <div class="table-box-header">
 <h2>Top value creators</h2>
 <div class="chart-subhead">Widest ROIC&minus;WACC spread</div>
+<div class="chart-note">Expedia&rsquo;s 1,084-point spread comes from a very small invested-capital base ($212 million), so its ratio runs off the chart. Below it, the list mixes asset-light businesses like Apple, AppLovin, Airbnb and ADP with the memory and storage names: Micron, Western Digital, Seagate and SanDisk.</div>
 </div>
 <table id="creatorsTable">
 <thead><tr><th>Symbol</th><th>Sector</th><th>ROIC</th><th>WACC</th><th>Spread</th></tr></thead>
@@ -926,6 +982,7 @@ tbody td:nth-child(2){
 <div class="table-box-header">
 <h2>Value destroyers</h2>
 <div class="chart-subhead">Narrowest (most negative) ROIC&minus;WACC spread</div>
+<div class="chart-note">Lumentum (&minus;141 points) sits far below the rest. Most of the others had operating losses over the past year, including Moderna, Centene, Intel and Molson Coors.</div>
 </div>
 <table id="destroyersTable">
 <thead><tr><th>Symbol</th><th>Sector</th><th>ROIC</th><th>WACC</th><th>Spread</th></tr></thead>
@@ -937,7 +994,7 @@ tbody td:nth-child(2){
 <div class="table-box">
 <div class="table-box-header">
 <h2>All companies with usable statement history</h2>
-<div class="chart-subhead">Trailing-twelve-month ROIC, estimated WACC, and the spread between them, full S&amp;P 500</div>
+<div class="chart-subhead">Trailing-twelve-month ROIC, estimated WACC, and the spread between them, S&amp;P 500 excluding Financials</div>
 </div>
 <details class="full-list-details">
 <summary class="full-list-summary">Show full list</summary>
@@ -965,7 +1022,7 @@ tbody td:nth-child(2){
 <h2>Methodology</h2>
 <p>ROIC = NOPAT ÷ invested capital. NOPAT (net operating profit after tax) is trailing-12-month operating profit (EBIT) × (1 − effective tax rate). The effective tax rate is income tax ÷ pre-tax income, kept between 0% and 50%, and set to the 21% US statutory rate when a company's own rate is negative, zero or missing (a one-time tax benefit can otherwise produce a nonsensical rate). Invested capital is total debt plus shareholder equity, minus cash.</p>
 <p>WACC blends the cost of equity and the cost of debt. Cost of equity uses CAPM: the 10-year Treasury yield plus the company's beta × a market equity risk premium (a company with no beta is given a beta of 1). The premium is Aswath Damodaran's implied ERP, the same figure shown on the <a href="/implied-erp.html">Implied Equity Risk Premium</a> page. Cost of debt is interest expense ÷ total debt, after tax. A company with debt but no reported interest expense is given the Treasury yield plus 1.5 percentage points rather than implying its debt is free. The two costs are weighted by the book value of debt and equity (not market value, as a simplification). Spread = ROIC − WACC. A positive spread means the company earns more on its capital than that capital costs.</p>
-<p>Companies with zero or negative shareholder equity are left out. Heavy, sustained buybacks (McDonald's, Starbucks and others) can push book equity below zero, which breaks both the invested capital calculation and the WACC weighting.</p>
+<p>Financials are left out entirely: a bank's interest on deposits would count as its cost of debt, and invested capital means something different for a lender. Companies with zero or negative shareholder equity are left out too. Heavy, sustained buybacks (McDonald's, Starbucks and others) can push book equity below zero, which breaks both the invested capital calculation and the WACC weighting.</p>
 <p>Two regressions compare companies at one point in time. Spread vs. beta asks whether riskier companies actually earn more above their cost of capital. Spread vs. 3-month relative return asks whether the market is currently rewarding companies that create value. Both use Pearson (linear) and Spearman (rank) correlation.</p>
 
 
@@ -1441,7 +1498,7 @@ function renderRel3mSpreadScatter(){
  robustScatterAxes(rel3mSpreadScatter, ["x","y"]);
 
  document.getElementById("rel3mSpreadMethodTable").innerHTML = methodTableHtml(pearson, spear,
-  "Slope is relative-return pp per 1pp of spread. n=" + pearson.n + " companies. A single snapshot in time, not a forward-return test: a significant result here says the market's current pricing lines up with current economic profitability, not that spread predicts future returns.");
+  "Slope is relative-return pp per 1pp of spread. n=" + pearson.n + " companies. A single snapshot in time: a significant result here says the market's current pricing lines up with current economic profitability. It says nothing about whether spread predicts future returns.");
 }
 
 function renderLeaderTable(rows, tbodyId){

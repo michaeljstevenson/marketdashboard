@@ -1010,7 +1010,7 @@ tbody td:nth-child(2){
 <div class="explainer">
 <h2>Methodology</h2>
 <p>S&amp;P 500 companies with both a quality score and a volatility reading. Companies missing either (recent IPOs, for example) are left out.</p>
-<p>Quality is the z-score of operating margin minus the z-score of net debt/EBITDA, each measured across the index. Higher margin is better and more debt is worse, so a company with strong margins and little or no net debt scores high, and a thin-margin, heavily indebted company scores low. This is a simple two-input version, not a full quality model like MSCI's or AQR's, which also consider earnings stability, payouts and growth.</p>
+<p>Quality is the z-score of operating margin minus the z-score of net debt/EBITDA, each measured across the index. Higher margin is better and more debt is worse, so a company with strong margins and little or no net debt scores high, and a thin-margin, heavily indebted company scores low. This is a simple two-input version. Full quality models like MSCI's or AQR's also consider earnings stability, payouts and growth.</p>
 <p>Low volatility uses the last 63 trading days (about 3 months): the standard deviation of daily log returns, annualized (× √252). It's turned into a z-score and flipped, so a higher score means lower volatility, the same "higher is better" direction as quality.</p>
 <p>The combined score is the simple average of the two z-scores. Companies are split into fifths: Q1 is the highest-scoring fifth, Q5 the lowest.</p>
 <p>Implied vs. Realized Volatility tracks one market-wide number (VIX vs. the S&amp;P 500's realized volatility). This page scores about 500 individual stocks.</p>
@@ -1636,7 +1636,7 @@ function renderQualityVolScatter(){
  const relStrength = Math.abs(pearson.r) < 0.15 ? "essentially independent dimensions in this snapshot"
   : Math.abs(pearson.r) < 0.35 ? "weakly related in this snapshot"
   : pearson.r > 0 ? "meaningfully positively correlated in this snapshot. Higher-quality names also tended to be calmer"
-  : "meaningfully negatively correlated in this snapshot. Higher-quality names tended to be more volatile, not less";
+  : "meaningfully negatively correlated in this snapshot. Higher-quality names tended to be more volatile";
  document.getElementById("qualityVolMethodTable").innerHTML = methodTableHtml(pearson, spear,
   "Quality and low-vol are " + relStrength + " (Pearson r=" + pearson.r.toFixed(2) + ").");
 }

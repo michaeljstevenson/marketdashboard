@@ -939,7 +939,7 @@ tbody td:nth-child(2){
 <div class="chart-box-header">
 <div>
 <h2>Market-median net share flow over time</h2>
-<div class="chart-subhead">One point per weekly run. <code>INSTITUTIONAL_HOLDINGS</code> is a current-state snapshot, not a time series, so the trend builds over successive runs.</div>
+<div class="chart-subhead">One point per weekly run. <code>INSTITUTIONAL_HOLDINGS</code> only returns a current-state snapshot, so the trend builds over successive runs.</div>
 </div>
 </div>
 <div class="ndr-panel">
@@ -1054,7 +1054,7 @@ tbody td:nth-child(2){
 <h2>Methodology</h2>
 <p>This page uses the summary totals from institutional 13F filings for each S&amp;P 500 company: the number of institutional holders, how many increased, decreased or held their position, and institutional ownership as a % of shares outstanding.</p>
 <p>Two flow measures are shown because they answer different questions. Holder breadth = holders increased ÷ (holders increased + holders decreased) × 100. It's a headcount: of the institutions that changed their position, what share added? Above 50% means more added than trimmed. Net share flow = (shares added − shares sold) ÷ total institutional shares × 100. It measures size, so a few big funds moving a lot of stock show up even if most holders didn't move. A stock can have positive breadth (most holders adding) and negative net flow (the sellers sold a lot more) at the same time, which is why both are shown.</p>
-<p>The flow vs. momentum test compares each stock's net share flow with its 3-month return relative to the S&amp;P 500, using Pearson (linear) and Spearman (rank) correlation. It's a comparison across companies at one point in time, not a prediction.</p>
+<p>The flow vs. momentum test compares each stock's net share flow with its 3-month return relative to the S&amp;P 500, using Pearson (linear) and Spearman (rank) correlation. It's a comparison across companies at one point in time and makes no prediction.</p>
 <p>13F filings are quarterly and can come out up to 45 days after quarter-end, so this is a slow, backward-looking picture. They only cover US institutional managers with at least $100M, and only their long positions (no shorts, options, retail or non-US institutions). A rising ownership % can also just come from buybacks shrinking the share count. Leaderboards require at least 5 institutional holders to cut down on noise.</p>
 <p>Sector medians are only shown when at least 3 companies in the sector have a value.</p>
 
@@ -1764,7 +1764,7 @@ function renderFlowMomentumScatter(){
  robustScatterAxes(flowMomentumScatter, ["x","y"]);
 
  methodEl.innerHTML = methodTableHtml(pearson, spear,
-  "Positive means institutions favor recent winners (momentum-chasing). Negative means recent laggards (contrarian). n=" + pearson.n + " companies, single snapshot, not a forward-looking test. See methodology below.");
+  "Positive means institutions favor recent winners (momentum-chasing). Negative means recent laggards (contrarian). n=" + pearson.n + " companies, single snapshot with no forward-return test. See methodology below.");
 }
 
 function trendArrow(dir){

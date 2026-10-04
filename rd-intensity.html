@@ -978,7 +978,7 @@ tbody td:nth-child(2){
 <h2>Methodology</h2>
 <p>R&amp;D Intensity = trailing-12-month R&amp;D spending ÷ trailing-12-month revenue × 100. Revenue Growth = (this year's trailing-12-month revenue − last year's) ÷ last year's × 100. Using full trailing years instead of a single quarter smooths out the noise.</p>
 <p>A company is only included if it reports R&amp;D spending in each of the last four quarters. Most banks, REITs, utilities, and many retailers and industrials don't report R&amp;D at all, since it isn't how those businesses compete. The page leans toward Technology, Health Care (especially pharma and biotech) and Communication Services, and that tilt is part of the finding.</p>
-<p>Two regressions compare companies at one point in time. R&amp;D intensity vs. revenue growth asks whether heavier R&amp;D spenders are growing revenue faster right now. That's an association, not a claim that today's R&amp;D causes future growth, since R&amp;D usually takes years to pay off. R&amp;D intensity vs. 3-month relative return asks whether the market is currently rewarding heavier spenders. Both use Pearson (linear) and Spearman (rank) correlation.</p>
+<p>Two regressions compare companies at one point in time. R&amp;D intensity vs. revenue growth asks whether heavier R&amp;D spenders are growing revenue faster right now. That's an association only, with no claim that today's R&amp;D causes future growth, since R&amp;D usually takes years to pay off. R&amp;D intensity vs. 3-month relative return asks whether the market is currently rewarding heavier spenders. Both use Pearson (linear) and Spearman (rank) correlation.</p>
 
 
 </div>
@@ -1470,7 +1470,7 @@ function renderIntensityGrowthScatter(){
  });
 
  document.getElementById("intensityGrowthMethodTable").innerHTML = methodTableHtml(pearson, spear,
-  "Slope is revenue-growth pp per 1pp of R&D intensity. n=" + pearson.n + " companies. A contemporaneous association, not a forward-predictive test: R&D spending typically takes years to show up in revenue.");
+  "Slope is revenue-growth pp per 1pp of R&D intensity. n=" + pearson.n + " companies. A contemporaneous association only: R&D spending typically takes years to show up in revenue.");
 }
 
 function renderIntensityRel3mScatter(){
@@ -1510,7 +1510,7 @@ function renderIntensityRel3mScatter(){
  });
 
  document.getElementById("intensityRel3mMethodTable").innerHTML = methodTableHtml(pearson, spear,
-  "Slope is relative-return pp per 1pp of R&D intensity. n=" + pearson.n + " companies. A single snapshot in time, not a forward-return test.");
+  "Slope is relative-return pp per 1pp of R&D intensity. n=" + pearson.n + " companies. A single snapshot in time with no forward-return test.");
 }
 
 function renderLeaderTable(rows, tbodyId, kind){

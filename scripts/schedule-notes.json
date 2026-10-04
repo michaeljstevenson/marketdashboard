@@ -41,7 +41,7 @@
   "pe-divergence": "Trailing and forward P/E for every S&P 500 stock.",
   "quality-financials": "Annual balance sheet and income figures for every S&P 500 stock. Makes no API calls: reads the annual reports margin-leverage already saved.",
   "quality-score": "Cash flow for every S&P 500 stock, added to the financials for a quality score. Second stage of the Quality Score page. Needs quality-financials first.",
-  "shareholder-yield": "Dividend yield for every S&P 500 stock. Buyback yield is read from the share-count-trends data, not fetched again.",
+  "shareholder-yield": "Dividend yield for every S&P 500 stock. Buyback yield reuses the share-count-trends data.",
   "spinoff": "Prices for spun-off companies, their parents and SPY, around each spinoff.",
   "surprise": "Reported versus estimated earnings for every S&P 500 stock. Manual snapshot; post-earnings-drift depends on it.",
   "volatility": "Daily closes for the S&P 500 index and the VIX.",
