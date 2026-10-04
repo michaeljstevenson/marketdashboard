@@ -32,6 +32,9 @@ const { getErpStore, LATEST_KEY: ERP_LATEST_KEY } = require("./equity-risk-premi
 const { getRelativeStrengthStore, LATEST_KEY: RS_LATEST_KEY } = require("./relative-strength-blob-store");
 const { BREADTH_CONSTITUENTS } = require("./breadth-constituents");
 const { SECTOR_ORDER } = require("./beeswarm-sectors");
+// Banks' interest on deposits lands in "cost of debt" (BNY came out at a 24%
+// WACC), and invested capital doesn't mean the same thing for a lender.
+const EXCLUDED_SECTORS = new Set(["Financials"]);
 const { recordAvCall } = require("./av-call-counter");
 
 const ALPHA_VANTAGE_URL = "https://www.alphavantage.co/query";
@@ -271,7 +274,8 @@ exports.handler = async () => {
       }
     }
 
-    let todo = BREADTH_CONSTITUENTS.filter((s) => !results.has(s));
+    const inScope = (s) => !(metaTickers[s] && EXCLUDED_SECTORS.has(metaTickers[s].sector));
+    let todo = BREADTH_CONSTITUENTS.filter((s) => inScope(s) && !results.has(s));
     let stoppedForTime = false;
     let sinceCheckpoint = 0;
     for (let pass = 0; pass < 2 && todo.length && !stoppedForTime; pass++) {
@@ -298,7 +302,7 @@ exports.handler = async () => {
     const companies = [];
     for (const [symbol, { income, balance }] of results.entries()) {
       const m = metaTickers[symbol];
-      if (!m || !m.sector) continue;
+      if (!m || !m.sector || EXCLUDED_SECTORS.has(m.sector)) continue;
       const metrics = computeCompanyMetrics(income, balance);
       if (!metrics) continue;
 
@@ -374,7 +378,7 @@ exports.handler = async () => {
 
     const payload = {
       generated_at_utc: new Date().toISOString(),
-      universeSize: BREADTH_CONSTITUENTS.length,
+      universeSize: BREADTH_CONSTITUENTS.filter(inScope).length,
       loadedCount: results.size,
       partial: stoppedForTime,
       hasBetaData,

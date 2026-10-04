@@ -131,6 +131,9 @@ function computeCompanyMetrics(incomeRows, balanceRows) {
   const dio = (hasAllCogs && ttmCogs > 0 && inventory !== null) ? (inventory / ttmCogs) * 365 : null;
   const dpo = (hasAllCogs && ttmCogs > 0 && payables !== null) ? (payables / ttmCogs) * 365 : null;
   if (dso === null || dio === null || dpo === null) return null;
+  // A negative balance (Airbnb, CrowdStrike, Medtronic and ServiceNow reported
+  // negative inventory in 2026) is a data error, and one bad leg skews the cycle.
+  if (dso < 0 || dio < 0 || dpo < 0) return null;
 
   return {
     fiscalQuarter: matched[0].fiscalDateEnding,
