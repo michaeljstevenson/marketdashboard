@@ -1,0 +1,1612 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta name="robots" content="noindex">
+<script>
+// Applied before first paint to avoid a flash of the wrong theme.
+(function(){
+ var saved = localStorage.getItem("theme");
+ if(saved === "light") document.documentElement.setAttribute("data-theme", "light");
+})();
+</script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom@2"></script>
+<script>
+// FRED-style zoom: drag horizontally on any chart to zoom into that range,
+// double-click to reset. Applied via Chart.defaults so every chart on the
+// page gets it without touching each individual new Chart(...) call.
+Chart.defaults.plugins.zoom = {
+ zoom: {
+  wheel: { enabled: false },
+  pinch: { enabled: false },
+  drag: { enabled: true, backgroundColor: "rgba(217,138,61,0.15)", borderColor: "rgba(217,138,61,0.4)", borderWidth: 1 },
+  mode: "x",
+ },
+ pan: { enabled: true, mode: "x", modifierKey: "shift" },
+};
+document.addEventListener("dblclick", function(e){
+ if(e.target.tagName === "CANVAS"){
+  var chart = Chart.getChart(e.target);
+  if(chart) chart.resetZoom();
+ }
+});
+document.addEventListener("DOMContentLoaded", function(){
+ document.querySelectorAll(".chart-canvas-wrap canvas").forEach(function(c){
+  c.title = "Drag to zoom · shift-drag to pan · double-click to reset";
+ });
+});
+</script>
+<style>
+.chart-fullscreen-btn{
+ position:absolute;
+ top:8px;
+ right:8px;
+ z-index:5;
+ background:var(--card, #1c2127);
+ border:1px solid var(--hair, #2b3138);
+ color:var(--muted, #8b9199);
+ border-radius:6px;
+ width:28px;
+ height:28px;
+ display:flex;
+ align-items:center;
+ justify-content:center;
+ cursor:pointer;
+ padding:0;
+ opacity:0.85;
+}
+.chart-fullscreen-btn:hover{ color:var(--ink, #eae6da); border-color:#3a424b; opacity:1; }
+.is-chart-fullscreen{
+ background:var(--bg, #14181c) !important;
+ padding:24px !important;
+ display:flex !important;
+ flex-direction:column !important;
+ overflow:auto !important;
+}
+.is-chart-fullscreen canvas{
+ max-height:none !important;
+}
+</style>
+<script>
+// Expand-to-fullscreen button on every chart, matching the pattern from
+// sites like GuruFocus: a small corner button on each chart's canvas
+// area that fullscreens the whole chart card (title, legend, controls
+// included) via the Fullscreen API. Finds every <canvas> generically
+// rather than relying on one wrapper class name, since different pages
+// on this site use different card markup (.chart-box, .scatter-box,
+// .chart, herd-mentality tiles, etc.).
+document.addEventListener("DOMContentLoaded", function(){
+ function requestFs(el){
+  var fn = el.requestFullscreen || el.webkitRequestFullscreen || el.mozRequestFullScreen || el.msRequestFullscreen;
+  if(fn) fn.call(el);
+ }
+ function exitFs(){
+  var fn = document.exitFullscreen || document.webkitExitFullscreen || document.mozCancelFullScreen || document.msExitFullscreen;
+  if(fn) fn.call(document);
+ }
+ function currentFsEl(){
+  return document.fullscreenElement || document.webkitFullscreenElement || document.mozFullScreenElement || document.msFullscreenElement;
+ }
+ function resolveCard(canvas){
+  return canvas.closest(".chart-box, .scatter-box, .herd-cell, .modal-chart")
+   || canvas.parentElement.closest("div")
+   || canvas.parentElement;
+ }
+ function resizeChartIn(wrap){
+  var canvas = wrap.querySelector("canvas");
+  var chart = canvas && window.Chart && Chart.getChart(canvas);
+  if(chart) chart.resize();
+ }
+
+ var entries = []; // { card, wrap }
+
+ document.querySelectorAll("canvas").forEach(function(canvas){
+  if(canvas.closest(".chart-fullscreen-btn")) return;
+  var card = resolveCard(canvas);
+  if(!card || card.querySelector(".chart-fullscreen-btn")) return; // one button per card, not per canvas
+
+  var wrap = canvas.parentElement;
+  var wrapStyle = getComputedStyle(wrap);
+  if(wrapStyle.position === "static") wrap.style.position = "relative";
+
+  var btn = document.createElement("button");
+  btn.type = "button";
+  btn.className = "chart-fullscreen-btn";
+  btn.title = "Expand chart";
+  btn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3H5a2 2 0 0 0-2 2v3"/><path d="M16 3h3a2 2 0 0 1 2 2v3"/><path d="M8 21H5a2 2 0 0 1-2-2v-3"/><path d="M16 21h3a2 2 0 0 0 2-2v-3"/></svg>';
+  btn.addEventListener("click", function(e){
+   e.stopPropagation();
+   if(currentFsEl() === card) exitFs();
+   else requestFs(card);
+  });
+  wrap.appendChild(btn);
+  entries.push({ card: card, wrap: wrap });
+
+  if(window.ResizeObserver){
+   new ResizeObserver(function(){ resizeChartIn(wrap); }).observe(wrap);
+  }
+ });
+
+ function onFsChange(){
+  var fsEl = currentFsEl();
+  entries.forEach(function(entry){
+   var isFs = fsEl === entry.card;
+   entry.card.classList.toggle("is-chart-fullscreen", isFs);
+   if(isFs){
+    entry.wrap.dataset.fsPrevHeight = entry.wrap.style.height || "";
+    entry.wrap.dataset.fsPrevFlex = entry.wrap.style.flex || "";
+    entry.wrap.style.flex = "1 1 auto";
+    entry.wrap.style.minHeight = "0";
+    entry.wrap.style.height = "auto";
+   }else if(entry.wrap.dataset.fsPrevHeight !== undefined){
+    entry.wrap.style.height = entry.wrap.dataset.fsPrevHeight;
+    entry.wrap.style.flex = entry.wrap.dataset.fsPrevFlex;
+    entry.wrap.style.minHeight = "";
+   }
+  });
+  entries.forEach(function(entry){ resizeChartIn(entry.wrap); });
+ }
+ ["fullscreenchange", "webkitfullscreenchange", "mozfullscreenchange", "MSFullscreenChange"].forEach(function(evt){
+  document.addEventListener(evt, onFsChange);
+ });
+});
+</script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ROE Decomposition (DuPont Analysis) — Michael J. Stevenson</title>
+
+<style>
+
+:root{
+  --bg:#14181c;
+  --card:#1c2127;
+  --card-hover:#20262d;
+  --ink:#eae6da;
+  --muted:#8b9199;
+  --hair:#2b3138;
+
+  --fear:#6f8fac;
+  --neutral:#7c828a;
+  --greed:#d98a3d;
+  --extreme:#b56f2a;
+
+  --serif:'Iowan Old Style','Palatino Linotype',Georgia,serif;
+  --mono:'SF Mono','JetBrains Mono',ui-monospace,Menlo,monospace;
+  --sans:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+
+  /* NDR-style chart palette. Deliberately the SAME in light and dark —
+     these charts keep a constant warm-paper look as a homage to the Ned
+     Davis Research print charts that inspired /concentration. JS reads
+     them via getComputedStyle (per the site convention) rather than
+     hardcoding. */
+  --ndr-plot:#f5f1e6;
+  --ndr-axis:#3c3a33;
+  --ndr-axis-soft:#6f6a5c;
+  --ndr-grid:#ddd6c2;
+  --ndr-red:#a83c36;
+  --ndr-green:#4f6f3f;
+  --ndr-gold:#c1902f;
+  --ndr-navy:#2f4b6e;
+  --ndr-slate:#7d8a99;
+}
+
+:root[data-theme="light"]{
+  --bg:#f7f5f0;
+  --card:#ffffff;
+  --card-hover:#f2efe6;
+  --ink:#1c1f24;
+  --muted:#6b6f76;
+  --hair:#e1dbcd;
+  --fear:#4f6f8c;
+  --neutral:#6c7178;
+  --greed:#b9701f;
+  --extreme:#96591c;
+}
+
+*{ box-sizing:border-box; }
+
+body{
+ margin:0;
+ background:var(--bg);
+ color:var(--ink);
+ font-family:var(--sans);
+}
+
+a{ color:inherit; }
+
+/* SITE NAV (shared with homepage) */
+
+.sitenav{
+ display:grid;
+ grid-template-columns:1fr auto 1fr;
+ align-items:center;
+ padding:16px 24px;
+ border-bottom:1px solid var(--hair);
+ position:relative;
+ z-index:50;
+}
+
+.sitenav .brand{
+ justify-self:start;
+}
+
+.sitenav .brand{
+ font-family:var(--serif);
+ font-size:17px;
+ color:var(--ink);
+ text-decoration:none;
+ letter-spacing:0.3px;
+}
+
+.navlinks{
+ display:flex;
+ gap:26px;
+ align-items:center;
+}
+
+.navlinks > a{
+ color:var(--muted);
+ font-size:13px;
+ text-decoration:none;
+ padding:6px 0;
+}
+
+.navlinks > a:hover, .navlinks > a.active{ color:var(--ink); }
+
+.navdrop{ position:relative; }
+
+
+.navdrop > .navlabel{
+ color:var(--muted);
+ font-size:13px;
+ cursor:default;
+ padding:6px 0;
+ user-select:none;
+}
+
+.navdrop:hover > .navlabel, .navdrop.open > .navlabel{ color:var(--ink); }
+
+.navdrop .dropdown{
+ display:none;
+ position:absolute;
+ top:100%;
+ left:0;
+ background:var(--card);
+ border:1px solid var(--hair);
+ border-radius:8px;
+ padding:8px 0;
+ min-width:230px;
+ margin-top:12px;
+ box-shadow:0 10px 30px rgba(0,0,0,0.45);
+}
+
+/* Driven by the .open class (see the script right after </nav>), not
+   pure :hover — see that script for why. */
+.navdrop.open .dropdown{ display:block; }
+
+.dropdown a{
+ display:block;
+ padding:9px 16px;
+ color:var(--muted);
+ text-decoration:none;
+ font-size:13px;
+}
+
+.dropdown a:hover{
+ background:var(--card-hover);
+ color:var(--ink);
+}
+
+.dropdown a.active{ color:var(--greed); }
+
+@media (max-width:720px){
+ .navlinks{ display:none; }
+}
+
+.container{
+ max-width:1100px;
+ margin:auto;
+ padding:30px 20px 60px;
+}
+
+/* HEADER */
+
+.header{
+ display:flex;
+ justify-content:space-between;
+ align-items:flex-end;
+ border-bottom:1px solid var(--hair);
+ padding-bottom:18px;
+ margin-bottom:25px;
+ flex-wrap:wrap;
+ gap:12px;
+}
+
+h1{
+ font-family:var(--serif);
+ font-size:28px;
+ font-weight:400;
+ margin:0;
+}
+
+.subtitle{
+ color:var(--muted);
+ font-size:13px;
+ margin-top:6px;
+ max-width:640px;
+}
+
+.updated{
+ color:var(--muted);
+ font-size:12px;
+}
+
+/* STAT ROW */
+
+.stat-grid{
+ display:grid;
+ grid-template-columns:repeat(4,1fr);
+ gap:16px;
+ margin-bottom:30px;
+}
+
+.stat-card{
+ background:var(--card);
+ border:1px solid var(--hair);
+ border-radius:10px;
+ padding:20px;
+ min-width:0;
+}
+
+.stat-label{
+ color:var(--muted);
+ font-size:12px;
+ letter-spacing:0.04em;
+ margin-bottom:8px;
+}
+
+.stat-value{
+ font-family:var(--mono);
+ font-size:24px;
+ color:var(--greed);
+}
+
+.stat-value.cell-neg{ color:var(--fear); }
+
+.stat-note{
+ color:var(--muted);
+ font-size:12px;
+ margin-top:6px;
+}
+
+@media (max-width:900px){
+ .stat-grid{ grid-template-columns:repeat(2,1fr); }
+}
+
+/* CHART */
+
+.chart-box{
+ background:var(--card);
+ border:1px solid var(--hair);
+ border-radius:12px;
+ padding:20px;
+ margin-bottom:30px;
+}
+
+.chart-box-header{
+ display:flex;
+ justify-content:space-between;
+ align-items:center;
+ flex-wrap:wrap;
+ gap:10px;
+ margin-bottom:16px;
+}
+
+.chart-box h2{
+ font-family:var(--serif);
+ font-weight:400;
+ font-size:18px;
+ margin:0;
+}
+
+.chart-subhead{
+ color:var(--muted);
+ font-size:12px;
+ margin-top:4px;
+}
+
+.chart-canvas-wrap{
+ height:380px;
+}
+
+/* The warm-paper plot panel behind each canvas — the NDR homage
+   (matches /concentration). */
+.ndr-panel{
+ background:var(--ndr-plot);
+ border:1px solid var(--ndr-grid);
+ border-radius:8px;
+ padding:14px 14px 10px;
+}
+
+/* Two charts / method-tables side by side, same breakpoint as table-grid */
+.chart-grid{
+ display:grid;
+ grid-template-columns:1fr 1fr;
+ gap:16px;
+ margin-bottom:30px;
+}
+
+.chart-grid .chart-box{
+ margin-bottom:0;
+ min-width:0; /* grid items default to min-width:auto (their content's min-content
+                 size), which a wide method table would otherwise force past this
+                 column's track width — same "grid blowout" the site-wide
+                 table{min-width:600px} rule creates if left unchecked here */
+}
+
+@media (max-width:900px){
+ .chart-grid{ grid-template-columns:1fr; }
+}
+
+/* TABLE */
+
+.table-grid{
+ display:grid;
+ grid-template-columns:1fr 1fr;
+ gap:16px;
+ margin-bottom:30px;
+}
+
+@media (max-width:900px){
+ .table-grid{ grid-template-columns:1fr; }
+}
+
+.table-box{
+ background:var(--card);
+ border:1px solid var(--hair);
+ border-radius:12px;
+ overflow-x:auto;
+ margin-bottom:30px;
+}
+
+.table-grid .table-box{ margin-bottom:0; }
+
+.table-box-header{
+ padding:18px 20px 4px;
+}
+
+.table-box-header h2{
+ font-family:var(--serif);
+ font-weight:400;
+ font-size:18px;
+ margin:0;
+}
+
+.table-box-header .chart-subhead{ margin-bottom:6px; }
+
+table{
+ width:100%;
+ border-collapse:collapse;
+ font-size:13px;
+ min-width:600px;
+}
+
+thead th{
+ text-align:right;
+ padding:14px 12px;
+ color:var(--muted);
+ font-size:11px;
+ letter-spacing:0.04em;
+ font-weight:600;
+ cursor:pointer;
+ user-select:none;
+ white-space:nowrap;
+ border-bottom:1px solid var(--hair);
+}
+
+thead th:first-child, thead th:nth-child(2){
+ text-align:left;
+}
+
+thead th:hover{ color:var(--ink); }
+
+thead th .sort-arrow{
+ opacity:0.4;
+ margin-left:3px;
+ font-size:10px;
+}
+
+thead th.sorted .sort-arrow{ opacity:1; color:var(--greed); }
+
+thead th:not([data-key]){ cursor:default; }
+
+tbody td{
+ padding:11px 12px;
+ text-align:right;
+ font-family:var(--mono);
+ white-space:nowrap;
+ border-bottom:1px solid var(--hair);
+}
+
+tbody tr:last-child td{ border-bottom:none; }
+
+tbody tr:hover{ background:var(--card-hover); }
+
+tbody td:first-child{
+ text-align:left;
+ font-family:var(--sans);
+}
+
+tbody td:nth-child(2){
+ text-align:left;
+ color:var(--muted);
+}
+
+.sector-name{ color:var(--ink); }
+.sector-ticker{ color:var(--muted); font-size:11px; }
+
+.cell-pos{ color:var(--ink); }
+.cell-neg{ color:var(--ink); }
+.cell-na{ color:var(--muted); }
+
+.driver-margin{ color:var(--greed); }
+.driver-turnover{ color:var(--fear); }
+.driver-leverage{ color:#c0564f; }
+
+/* SCATTER / METHOD TABLE (mirrors /factor-analysis) */
+
+.scatter-canvas-wrap{
+ height:300px;
+ margin-bottom:12px;
+ position:relative;
+}
+
+.method-table{
+ width:100%;
+ min-width:0; /* overrides the site-wide table{min-width:600px} rule below — two of these
+                 side by side in .chart-grid would otherwise force the whole page wider
+                 than its container even though a 7-column method table never needs 600px */
+ border-collapse:collapse;
+ font-family:var(--mono);
+ font-size:11px;
+ margin-top:8px;
+}
+
+#leverageScatterMethodTable, #factorTable, #trendBreakTable{
+ overflow-x:auto;
+}
+
+.method-table th{
+ text-align:right;
+ padding:6px 5px;
+ color:var(--muted);
+ font-size:10px;
+ letter-spacing:0.03em;
+ font-weight:600;
+ border-bottom:1px solid var(--hair);
+ white-space:nowrap;
+}
+
+.method-table th:first-child{ text-align:left; }
+
+.method-table td{
+ padding:7px 5px;
+ text-align:right;
+ border-bottom:1px solid var(--hair);
+ white-space:nowrap;
+ color:var(--ink);
+}
+
+.method-table td:first-child{
+ text-align:left;
+ font-family:var(--sans);
+ color:var(--muted);
+}
+
+.method-table tr:last-child td{ border-bottom:none; }
+
+.method-table .sig{ color:var(--greed); }
+
+.method-note{
+ font-size:11px;
+ color:var(--muted);
+ margin-top:8px;
+ font-style:italic;
+}
+
+/* EXPLAINER */
+
+.explainer{
+ background:var(--card);
+ border:1px solid var(--hair);
+ border-radius:12px;
+ padding:24px 26px;
+ margin-bottom:30px;
+}
+
+.explainer h2{
+ font-family:var(--serif);
+ font-weight:400;
+ font-size:18px;
+ margin:0 0 12px;
+}
+
+.explainer p{
+ color:var(--muted);
+ font-size:14px;
+ line-height:1.7;
+ margin:0 0 14px;
+}
+
+.explainer code{
+ font-family:var(--mono);
+ background:var(--card-hover);
+ padding:2px 6px;
+ border-radius:4px;
+ font-size:0.92em;
+ white-space:nowrap;
+}
+
+.explainer p:last-child{ margin-bottom:0; }
+
+.explainer .source{
+ margin-top:16px;
+ font-size:11px;
+}
+
+.explainer .source a{
+ color:var(--muted);
+ text-decoration:none;
+ border-bottom:1px dotted var(--muted);
+}
+
+.explainer .source a:hover{ color:var(--ink); }
+
+.error-banner{
+ background:#2a1c1c;
+ border:1px solid #5a3030;
+ color:#e0a0a0;
+ border-radius:8px;
+ padding:12px 15px;
+ margin-bottom:20px;
+ font-size:13px;
+ display:none;
+}
+
+.warning-banner{
+ background:#2a2419;
+ border:1px solid #5a4f30;
+ color:#d9b877;
+ border-radius:8px;
+ padding:12px 15px;
+ margin-bottom:20px;
+ font-size:13px;
+ display:none;
+}
+
+
+.theme-toggle{
+ justify-self:end;
+ background:none;
+ border:1px solid var(--hair);
+ color:var(--muted);
+ border-radius:6px;
+ width:32px;
+ height:32px;
+ display:flex;
+ align-items:center;
+ justify-content:center;
+ cursor:pointer;
+ font-size:15px;
+ line-height:1;
+}
+
+.theme-toggle:hover{ color:var(--ink); border-color:var(--hair); }
+
+
+/* Light-theme overrides for hardcoded (non-var) dark colors */
+
+[data-theme="light"] .error-banner{
+ background:#fdecea;
+ border-color:#f0b8b0;
+ color:#a83a30;
+}
+
+[data-theme="light"] .warning-banner{
+ background:#fdf3d9;
+ border-color:#e9cf8a;
+ color:#8a6a1f;
+}
+</style>
+</head>
+<body>
+<div style="position:sticky;top:0;z-index:9999;display:flex;gap:14px;justify-content:center;flex-wrap:wrap;padding:6px 16px;background:#b8860b;color:#fff;font:600 12px/1.4 system-ui,sans-serif"><span>Preview &middot; PR #35</span><a href="https://github.com/michaeljstevenson/marketdashboard/pull/35" style="color:#fff" target="_blank" rel="noopener">View PR</a><a href="/preview/" style="color:#fff">All previews</a></div>
+
+<nav class="sitenav">
+<a class="brand" href="/">Michael J. Stevenson, CAIA<span style="font-size:0.6em; vertical-align:super;">&reg;</span></a>
+<div class="navlinks">
+<div class="navdrop">
+<span class="navlabel">Sentiment ▾</span>
+<div class="dropdown">
+<a href="/sentiment-index.html">Sentiment Index</a>
+<a href="/volatility.html">Implied vs. Realized Volatility</a>
+<a href="/market-breadth.html">Market Breadth</a>
+<a href="/ath-index.html">All-Time Highs and Lows</a>
+<a href="/margin-leverage.html">Margin &amp; Leverage Cycle</a>
+<a href="/short-sale-volume.html">Short Sale Volume</a>
+<a href="/news-sentiment.html">News Sentiment Momentum</a>
+<a href="/seasonality.html">Seasonality</a>
+</div>
+</div>
+
+<div class="navdrop">
+<span class="navlabel">Valuation ▾</span>
+<div class="dropdown">
+<a href="/valuations.html">Valuations</a>
+<a href="/implied-erp.html">Implied Equity Risk Premium</a>
+<a href="/equity-risk-premium.html">Equity Risk Premium by Sector</a>
+<a href="/pe-divergence.html">Forward vs. Trailing P/E Divergence</a>
+<a href="/expectations-vs-reality.html">Expectations vs. Reality</a>
+<a href="/analyst-price-target.html">Analyst Price Target Upside</a>
+<a href="/analyst-estimate-dispersion.html">Analyst Estimate Dispersion</a>
+<a href="/earnings-growth-divergence.html">Earnings Growth vs. Price Performance</a>
+</div>
+</div>
+
+<div class="navdrop">
+<span class="navlabel">Earnings ▾</span>
+<div class="dropdown">
+<a href="/earnings-revisions.html">Earnings Revisions</a>
+<a href="/earnings-surprise.html">Earnings Surprise History</a>
+<a href="/post-earnings-drift.html">Post-Earnings Announcement Drift</a>
+<a href="/earnings-call-sentiment.html">Earnings Call Sentiment</a>
+<a href="/fcf-yield.html">Free Cash Flow Yield</a>
+<a href="/quality-score.html">Financial Quality Screener (Piotroski)</a>
+<a href="/ai-capex-tracker.html">AI Capex Tracker</a>
+<a href="/roic-wacc.html">ROIC vs. Cost of Capital</a>
+<a href="/preview/roe-decomposition.html" class="active">ROE Decomposition (DuPont)</a>
+<a href="/cash-conversion-cycle.html">Cash Conversion Cycle</a>
+<a href="/rd-intensity.html">R&amp;D Intensity</a>
+</div>
+</div>
+
+<div class="navdrop">
+<span class="navlabel">Sectors &amp; Style ▾</span>
+<div class="dropdown">
+<a href="/sector-analysis.html">Sector Performance</a>
+<a href="/sector-beeswarm.html">Sector Beeswarm</a>
+<a href="/sector-correlation.html">Sector Correlation Matrix</a>
+<a href="/sector-rotation.html">Sector Rotation Model</a>
+<a href="/factor-analysis.html">Factor Analysis</a>
+<a href="/quality-lowvol-factors.html">Quality &amp; Low-Volatility Factor Screen</a>
+<a href="/small-cap-vs-large-cap.html">Small Cap vs. Large Cap Spread</a>
+<a href="/international-vs-us.html">International vs. US Relative Performance</a>
+<a href="/country-sector-scorecard.html">Country / Sector Scorecard</a>
+<a href="/relative-strength-leaders.html">Relative Strength Leaders/Laggards</a>
+<a href="/concentration.html">Concentration</a>
+</div>
+</div>
+
+<div class="navdrop">
+<span class="navlabel">Capital Returns ▾</span>
+<div class="dropdown">
+<a href="/dividend-growth-screener.html">Dividend Growth Screener</a>
+<a href="/shareholder-yield.html">Shareholder Yield</a>
+<a href="/buyback-effectiveness.html">Buyback Effectiveness</a>
+<a href="/share-count-trends.html">Share Count Trends</a>
+<a href="/stock-split-tracker.html">Stock Split Tracker</a>
+<a href="/spin-off-performance.html">Spin-Off Performance Tracker</a>
+<a href="/ipo-activity.html">IPO Activity</a>
+<a href="/ipo-pipeline.html">IPO Pipeline</a>
+</div>
+</div>
+
+<div class="navdrop">
+<span class="navlabel">Ownership &amp; Flows ▾</span>
+<div class="dropdown">
+<a href="/insider-buying-selling.html">Insider Buying/Selling</a>
+<a href="/institutional-ownership.html">Institutional Ownership &amp; 13F Flow</a>
+<a href="/congressional-trading.html">Congressional Trading Activity</a>
+<a href="/small-cap-liquidity.html">Small-Cap Liquidity</a>
+<a href="/options-positioning.html">Options Positioning</a>
+</div>
+</div>
+
+<div class="navdrop">
+<span class="navlabel">Rates &amp; Macro ▾</span>
+<div class="dropdown">
+<a href="/yield-curves.html">Yield Curves</a>
+</div>
+</div>
+
+<div class="navdrop">
+<span class="navlabel">Tools ▾</span>
+<div class="dropdown">
+<a href="/portfolio-simulator.html">Portfolio Simulator</a>
+<a href="/backtesting.html">Backtesting</a>
+<a href="/statistical-engine">Statistical Engine</a>
+</div>
+</div>
+
+</div>
+<button aria-label="Toggle light/dark mode" class="theme-toggle" id="themeToggle" title="Toggle light/dark mode" type="button">☽</button>
+</nav>
+<script>
+// Class-driven (not pure :hover) nav dropdowns: pure CSS :hover drops the
+// menu the instant the cursor leaves .navdrop, which includes the moment
+// it's crossing the gap between the label and the dropdown box below —
+// exactly the "sometimes works, sometimes doesn't" flakiness reported.
+// A short close-delay after mouseleave gives the cursor room to travel
+// down into the dropdown without losing it.
+document.querySelectorAll(".navdrop").forEach(function(navdrop){
+ var closeTimer = null;
+ navdrop.addEventListener("mouseenter", function(){
+  clearTimeout(closeTimer);
+  navdrop.classList.add("open");
+ });
+ navdrop.addEventListener("mouseleave", function(){
+  closeTimer = setTimeout(function(){ navdrop.classList.remove("open"); }, 300);
+ });
+});
+</script>
+<script>
+(function(){
+ var btn = document.getElementById("themeToggle");
+ if(!btn) return;
+ var theme = document.documentElement.getAttribute("data-theme") === "light" ? "light" : "dark";
+ btn.textContent = theme === "light" ? "☀" : "☽";
+ btn.addEventListener("click", function(){
+  var current = document.documentElement.getAttribute("data-theme") === "light" ? "light" : "dark";
+  var next = current === "light" ? "dark" : "light";
+  localStorage.setItem("theme", next);
+  location.reload();
+ });
+})();
+</script>
+
+
+
+<div class="container">
+
+<div class="error-banner" id="errorBanner"></div>
+<div class="warning-banner" id="warningBanner"></div>
+
+<div class="header">
+<div>
+<h1>ROE Decomposition (DuPont Analysis)</h1>
+<div class="subtitle">Two companies can post the same return on equity for very different reasons. The DuPont identity splits ROE into net margin &times; asset turnover &times; leverage &mdash; so a high number can mean a genuinely efficient, profitable business, or just a thinner equity base under the same assets.</div>
+</div>
+<div class="updated" id="updated">Loading...</div>
+</div>
+
+<div class="stat-grid">
+<div class="stat-card">
+<div class="stat-label">Companies Loaded</div>
+<div class="stat-value" id="statCompanies" style="font-size:20px;">—</div>
+<div class="stat-note" id="statCompaniesNote">Of full S&amp;P 500</div>
+</div>
+<div class="stat-card">
+<div class="stat-label">Median ROE</div>
+<div class="stat-value" id="statRoe">—</div>
+<div class="stat-note">Trailing twelve months, market-wide</div>
+</div>
+<div class="stat-card">
+<div class="stat-label">Median Leverage</div>
+<div class="stat-value" id="statLeverage">—</div>
+<div class="stat-note">Assets &divide; equity (equity multiplier)</div>
+</div>
+<div class="stat-card">
+<div class="stat-label">Leverage-Driven</div>
+<div class="stat-value" id="statLeverageDriven">—</div>
+<div class="stat-note">Share of companies whose ROE leans most on leverage, not margin or turnover</div>
+</div>
+</div>
+
+<div class="chart-grid">
+<div class="chart-box">
+<div class="chart-box-header">
+<div>
+<h2>Median ROE by sector</h2>
+<div class="chart-subhead">Trailing-twelve-month return on equity, median across each SPDR sector's S&amp;P 500 constituents</div>
+</div>
+</div>
+<div class="ndr-panel">
+<div class="chart-canvas-wrap">
+<canvas id="sectorRoeChart"></canvas>
+</div>
+</div>
+</div>
+<div class="chart-box">
+<div class="chart-box-header">
+<div>
+<h2>How each sector gets to its ROE</h2>
+<div class="chart-subhead">Sector median margin, turnover, and leverage, each indexed to the market median (=100). A sector's tallest bar is the component doing the most work to produce its ROE.</div>
+</div>
+</div>
+<div class="ndr-panel">
+<div class="chart-canvas-wrap">
+<canvas id="sectorMixChart"></canvas>
+</div>
+</div>
+</div>
+</div>
+
+<div class="chart-grid">
+<div class="chart-box">
+<div class="chart-box-header">
+<div>
+<h2>Distribution of ROE</h2>
+<div class="chart-subhead">Every S&amp;P 500 constituent with usable statement history and positive book equity, bucketed by ROE</div>
+</div>
+</div>
+<div class="ndr-panel">
+<div class="chart-canvas-wrap" style="height:300px;">
+<canvas id="roeHistogram"></canvas>
+</div>
+</div>
+</div>
+<div class="chart-box">
+<div class="chart-box-header">
+<div>
+<h2>Dominant driver by sector</h2>
+<div class="chart-subhead">Each company is tagged by whichever DuPont component (margin, turnover, or leverage) sits furthest above its own market median. Count of companies per sector by dominant driver.</div>
+</div>
+</div>
+<div class="ndr-panel">
+<div class="chart-canvas-wrap" style="height:300px;">
+<canvas id="driverChart"></canvas>
+</div>
+</div>
+</div>
+</div>
+
+<div class="chart-grid">
+<div class="chart-box">
+<div class="chart-box-header">
+<div>
+<h2>Market ROE, quarter by quarter</h2>
+<div class="chart-subhead">Aggregate quarterly net income &divide; aggregate quarterly equity (annualized), summed across every constituent with data that quarter &mdash; not an average of ratios</div>
+</div>
+</div>
+<div class="ndr-panel">
+<div class="chart-canvas-wrap" style="height:300px;">
+<canvas id="roeTrendChart"></canvas>
+</div>
+</div>
+</div>
+<div class="chart-box">
+<div class="chart-box-header">
+<div>
+<h2>Market leverage, quarter by quarter</h2>
+<div class="chart-subhead">Aggregate assets &divide; aggregate equity, same quarters &mdash; the "has ROE been leverage-fueled" trend</div>
+</div>
+</div>
+<div class="ndr-panel">
+<div class="chart-canvas-wrap" style="height:300px;">
+<canvas id="leverageTrendChart"></canvas>
+</div>
+</div>
+</div>
+</div>
+
+<div class="chart-box">
+<div class="chart-box-header">
+<div>
+<h2>Has the trend actually broken?</h2>
+<div class="chart-subhead">Each series above is split into two equal-length halves (oldest vs. most recent) and a Chow test asks whether the trend's slope genuinely differs between them, not just whether the line looks steeper lately.</div>
+</div>
+</div>
+<div id="trendBreakTable"></div>
+</div>
+
+<div class="chart-box">
+<div class="chart-box-header">
+<div>
+<h2>Leverage vs. ROE</h2>
+<div class="chart-subhead">The headline cross-sectional test: does the market's ROE spread trace mostly to leverage differences, or to real differences in margin and efficiency?</div>
+</div>
+</div>
+<div class="ndr-panel">
+<div class="scatter-canvas-wrap">
+<canvas id="leverageScatter"></canvas>
+</div>
+</div>
+<div id="leverageScatterMethodTable"></div>
+</div>
+
+<div class="chart-box">
+<div class="chart-box-header">
+<div>
+<h2>Which factor explains ROE the most?</h2>
+<div class="chart-subhead">Margin, turnover, and leverage each regressed against ROE separately, full S&amp;P 500, TTM snapshot. The factor with the highest r&sup2; is doing the most work in explaining why ROE differs across companies.</div>
+</div>
+</div>
+<div id="factorTable"></div>
+</div>
+
+<div class="table-grid">
+<div class="table-box">
+<div class="table-box-header">
+<h2>Highest ROE</h2>
+<div class="chart-subhead">Full S&amp;P 500, trailing twelve months</div>
+</div>
+<table id="highestRoeTable">
+<thead><tr><th>Symbol</th><th>Sector</th><th>ROE</th><th>Margin</th><th>Turnover</th><th>Leverage</th></tr></thead>
+<tbody id="highestRoeBody"><tr><td colspan="6" style="text-align:center; color:var(--muted); padding:24px;">Loading&hellip;</td></tr></tbody>
+</table>
+</div>
+<div class="table-box">
+<div class="table-box-header">
+<h2>Quality ROE leaders</h2>
+<div class="chart-subhead">Highest ROE among companies at or below market-median leverage &mdash; earned without leaning on the balance sheet</div>
+</div>
+<table id="qualityRoeTable">
+<thead><tr><th>Symbol</th><th>Sector</th><th>ROE</th><th>Margin</th><th>Turnover</th><th>Leverage</th></tr></thead>
+<tbody id="qualityRoeBody"><tr><td colspan="6" style="text-align:center; color:var(--muted); padding:24px;">Loading&hellip;</td></tr></tbody>
+</table>
+</div>
+</div>
+
+<div class="table-box">
+<div class="table-box-header">
+<h2>All companies with usable statement history</h2>
+<div class="chart-subhead">Trailing-twelve-month ROE and its three DuPont components, full S&amp;P 500</div>
+</div>
+<table id="stockTable">
+<thead>
+<tr>
+<th data-key="symbol">Symbol</th>
+<th data-key="sector">Sector</th>
+<th data-key="roe">ROE<span class="sort-arrow">▾</span></th>
+<th data-key="margin">Margin<span class="sort-arrow">▾</span></th>
+<th data-key="turnover">Turnover<span class="sort-arrow">▾</span></th>
+<th data-key="leverage">Leverage<span class="sort-arrow">▾</span></th>
+<th data-key="dominantDriver">Driver<span class="sort-arrow">▾</span></th>
+<th data-key="fiscalQuarter">Fiscal Qtr<span class="sort-arrow">▾</span></th>
+</tr>
+</thead>
+<tbody id="tableBody">
+<tr><td colspan="8" style="text-align:center; color:var(--muted); padding:30px;">Loading ROE decomposition data&hellip;</td></tr>
+</tbody>
+</table>
+</div>
+
+<div class="explainer">
+<h2>Methodology</h2>
+<p>The DuPont identity splits return on equity into three multiplicative pieces: <code style="white-space:normal;">ROE = Net Margin &times; Asset Turnover &times; Leverage</code>, where Net Margin is net income &divide; revenue, Asset Turnover is revenue &divide; total assets, and Leverage (the "equity multiplier") is total assets &divide; total shareholder equity. Multiply the three together and the assets and revenue terms cancel, leaving net income &divide; equity &mdash; ROE itself. The point of decomposing it is that two companies can post an identical ROE while getting there in opposite ways: a grocery chain typically earns a high turnover on razor-thin margins, a bank or utility typically earns a modest margin and turnover but layers on far more leverage, and a software company typically earns most of its ROE from margin alone.</p>
+<p>Universe is the full S&amp;P 500. For every constituent, Alpha Vantage's <code>INCOME_STATEMENT</code> and <code>BALANCE_SHEET</code> endpoints (quarterly, up to 28 quarters back) supply the trailing four quarters needed for TTM net income and TTM revenue, matched by fiscal quarter-end date against the corresponding balance-sheet report. <b>Margin</b> and <b>Turnover</b> use the TTM (trailing four quarters) flow figures over the latest single quarter's asset base &mdash; the same "TTM flow, latest-quarter stock" convention as <a href="/roic-wacc.html">ROIC vs. Cost of Capital</a>. <b>Leverage</b> and <b>ROE</b> use the latest quarter's equity. Companies with non-positive latest-quarter book shareholder equity are excluded entirely, not shown with a distorted ratio &mdash; the same real limitation flagged on the ROIC/WACC page: aggressive, sustained buyback programs (McDonald's, Starbucks, and a number of other well-known names) can drive book equity negative, which breaks both the leverage and ROE math here. A company is also excluded if fewer than four consecutive matched quarters are available, or if TTM revenue or the latest quarter's total assets aren't positive.</p>
+<p><b>Dominant driver.</b> Each company's margin, turnover, and leverage are each divided by that component's own market-wide median (an index where 100 = market-typical), rather than a z-score &mdash; the three components live on very different scales (margin in percent, turnover and leverage as small multiples), so a raw z-score would let whichever has the smallest cross-sectional spread dominate by arithmetic accident rather than economic meaning. The component with the highest index value is tagged as that company's dominant driver. "Quality ROE leaders" filters to companies at or below market-median leverage (leverage index &le; 100) before ranking by ROE &mdash; a screen for ROE earned through margin and efficiency rather than balance-sheet leverage.</p>
+<p><b>The trend charts and structural-break test.</b> Aggregate quarterly figures (sum of net income, revenue, assets, and equity across every constituent with data that quarter, not an average of per-company ratios) build a market-wide quarterly series back roughly seven years, trimmed to the longest run of consecutive calendar quarters. Turnover and ROE on this series are annualized (&times;4) from a single quarter's flow rather than a rolling TTM, so they're a noisier, single-quarter read &mdash; useful for a multi-year trend, not meant to match the TTM cross-sectional snapshot used everywhere else on the page. Each series is regressed against a plain quarter index, split into two equal-length halves (oldest vs. most recent, the same equal-sample-size convention <a href="/factor-analysis.html">Factor Analysis</a> uses for its own subsample checks), and a Chow test asks whether the trend's slope genuinely differs between the two halves &mdash; the same test <a href="/ai-capex-tracker.html">AI Capex Tracker</a> runs on capex intensity.</p>
+<p>The cross-sectional tests (leverage vs. ROE scatter, and the margin/turnover/leverage factor table) are single-snapshot regressions using the same Pearson-and-Spearman two-method check as Factor Analysis &mdash; they describe the current cross-section, not a forward-return prediction.</p>
+<p>One-time snapshot &mdash; no recurring schedule, matching every other full-universe fundamentals sweep added to this site since mid-September 2026. Re-run manually for a fresh pass; quarterly fundamentals don't move day to day. Sector and company name come from the same weekly metadata sweep that backs <a href="/sector-beeswarm.html">Sector Beeswarm</a>.</p>
+<div class="source">Source: <a href="https://www.alphavantage.co/" target="_blank" rel="noopener">Alpha Vantage — INCOME_STATEMENT, BALANCE_SHEET</a></div>
+</div>
+
+</div>
+
+<script>
+const DATA_URL = "/api/roe-decomposition";
+
+const SECTOR_COLORS = {
+ "Information Technology": "#d98a3d",
+ "Financials": "#6f8fac",
+ "Health Care": "#8e7cc3",
+ "Energy": "#c0564f",
+ "Industrials": "#5a9d6f",
+ "Consumer Discretionary": "#e0b04f",
+ "Consumer Staples": "#4fb0c0",
+ "Utilities": "#b56f2a",
+ "Materials": "#9a9a9a",
+ "Real Estate": "#c77dbd",
+ "Communication Services": "#4f7ae0",
+};
+
+const DRIVER_LABEL = { margin: "Margin", turnover: "Turnover", leverage: "Leverage" };
+const DRIVER_CLASS = { margin: "driver-margin", turnover: "driver-turnover", leverage: "driver-leverage" };
+
+let RAW = null;
+let SORT_KEY = "roe";
+let SORT_DIR = -1;
+
+function fmtPct(v, digits){
+ if(v === null || v === undefined || isNaN(v)) return "—";
+ digits = digits === undefined ? 1 : digits;
+ return v.toFixed(digits) + "%";
+}
+function fmtX(v, digits){
+ if(v === null || v === undefined || isNaN(v)) return "—";
+ digits = digits === undefined ? 2 : digits;
+ return v.toFixed(digits) + "x";
+}
+function fmtDriver(v){
+ if(!v) return "—";
+ return '<span class="' + (DRIVER_CLASS[v] || "") + '">' + (DRIVER_LABEL[v] || v) + "</span>";
+}
+
+function showError(message){
+ const banner = document.getElementById("errorBanner");
+ banner.textContent = message;
+ banner.style.display = "block";
+}
+function showWarning(message){
+ const banner = document.getElementById("warningBanner");
+ banner.textContent = message;
+ banner.style.display = "block";
+}
+
+// ---- NDR chart styling helpers (matches /concentration, /margin-leverage, /roic-wacc) ----
+function ndr(name){
+ return getComputedStyle(document.documentElement).getPropertyValue("--ndr-" + name).trim();
+}
+
+Chart.defaults.font.family = "'Iowan Old Style','Palatino Linotype',Georgia,serif";
+Chart.defaults.color = ndr("axis-soft");
+
+function ndrXScale(){
+ return {
+  ticks: { color: ndr("axis"), maxTicksLimit: 9, maxRotation: 0, autoSkip: true, font: { size: 11 } },
+  grid: { color: "rgba(0,0,0,0)", borderColor: ndr("axis") },
+ };
+}
+
+function ndrYScale(opts){
+ opts = opts || {};
+ return {
+  type: opts.log ? "logarithmic" : "linear",
+  position: opts.position || "left",
+  grid: { color: ndr("grid"), drawBorder: false },
+  ticks: { color: ndr("axis"), font: { size: 11 }, callback: opts.fmt || undefined },
+  title: opts.title ? { display: true, text: opts.title, color: ndr("axis-soft"), font: { size: 10 } } : { display: false },
+  min: opts.min, max: opts.max,
+ };
+}
+
+// ---- Stats helpers — same methodology as /factor-analysis, duplicated
+// here since every page on this site is self-contained (see CLAUDE.md). ----
+function linearRegression(xs, ys){
+ const n = xs.length;
+ const mx = xs.reduce((a, b) => a + b, 0) / n;
+ const my = ys.reduce((a, b) => a + b, 0) / n;
+ const sxx = xs.reduce((s, x) => s + (x - mx) ** 2, 0);
+ const sxy = xs.reduce((s, x, i) => s + (x - mx) * (ys[i] - my), 0);
+ const syy = ys.reduce((s, y) => s + (y - my) ** 2, 0);
+ const slope = sxy / sxx;
+ const intercept = my - slope * mx;
+ const r = sxy / Math.sqrt(sxx * syy);
+ const r2 = r * r;
+ const dof = n - 2;
+ const sse = ys.reduce((s, y, i) => s + (y - (intercept + slope * xs[i])) ** 2, 0);
+ const seSlope = Math.sqrt((sse / dof) / sxx);
+ const t = slope / seSlope;
+ const p = 2 * (1 - normalCdf(Math.abs(t)));
+ return { n, slope, intercept, r, r2, t, dof, p, sse };
+}
+function normalCdf(x){ return 0.5 * (1 + erf(x / Math.SQRT2)); }
+function erf(x){
+ const sign = x < 0 ? -1 : 1;
+ x = Math.abs(x);
+ const a1 = 0.254829592, a2 = -0.284496736, a3 = 1.421413741, a4 = -1.453152027, a5 = 1.061405429, p = 0.3275911;
+ const t = 1 / (1 + p * x);
+ const y = 1 - (((((a5 * t + a4) * t) + a3) * t + a2) * t + a1) * t * Math.exp(-x * x);
+ return sign * y;
+}
+function rankArray(arr){
+ const idx = arr.map((v, i) => i).sort((a, b) => arr[a] - arr[b]);
+ const ranks = new Array(arr.length);
+ let i = 0;
+ while(i < idx.length){
+  let j = i;
+  while(j + 1 < idx.length && arr[idx[j + 1]] === arr[idx[i]]) j++;
+  const avgRank = (i + j) / 2 + 1;
+  for(let k = i; k <= j; k++) ranks[idx[k]] = avgRank;
+  i = j + 1;
+ }
+ return ranks;
+}
+function spearmanRegression(xs, ys){ return linearRegression(rankArray(xs), rankArray(ys)); }
+
+function methodTableHtml(pearson, spear, unitNote){
+ function row(label, stats){
+  const sig = stats.p < 0.05;
+  return "<tr>" +
+   "<td>" + label + "</td>" +
+   "<td>" + stats.n + "</td>" +
+   "<td>" + stats.r.toFixed(2) + "</td>" +
+   "<td>" + (stats.r2 * 100).toFixed(1) + "%</td>" +
+   "<td>" + (stats.slope >= 0 ? "+" : "") + stats.slope.toFixed(3) + "</td>" +
+   "<td>" + stats.t.toFixed(2) + "</td>" +
+   '<td class="' + (sig ? "sig" : "") + '">' + (stats.p < 0.001 ? "<0.001" : stats.p.toFixed(3)) + "</td>" +
+  "</tr>";
+ }
+ return '<table class="method-table">' +
+  "<thead><tr><th>Method</th><th>n</th><th>r</th><th>r&sup2;</th><th>slope</th><th>t</th><th>p</th></tr></thead>" +
+  "<tbody>" + row("Pearson (OLS)", pearson) + row("Spearman (&rho;)", spear) + "</tbody>" +
+ "</table>" + (unitNote ? '<div class="method-note">' + unitNote + "</div>" : "");
+}
+
+let sectorRoeChart = null, sectorMixChart = null, roeHistogram = null, driverChart = null,
+ roeTrendChart = null, leverageTrendChart = null, leverageScatter = null;
+
+async function init(){
+ try{
+  const res = await fetch(DATA_URL, { cache: "no-store" });
+  const data = await res.json();
+  if(!res.ok || data.error) throw new Error(data.error || "failed to load");
+
+  RAW = data;
+  document.getElementById("updated").textContent = "As of " + new Date(data.generated_at_utc).toLocaleString();
+
+  if(data.loadedCount < data.universeSize){
+   showWarning("Only " + data.loadedCount + " of " + data.universeSize + " S&P 500 constituents loaded this run — some data may be temporarily unavailable.");
+  }
+
+  renderStats();
+  renderSectorRoeChart();
+  renderSectorMixChart();
+  renderRoeHistogram();
+  renderDriverChart();
+  renderRoeTrendChart();
+  renderLeverageTrendChart();
+  renderTrendBreakTable();
+  renderLeverageScatter();
+  renderFactorTable();
+  renderLeaderTable(data.highestRoe, "highestRoeBody");
+  renderLeaderTable(data.qualityRoeLeaders, "qualityRoeBody");
+  renderTable();
+
+ }catch(e){
+  showError("Couldn't load ROE decomposition data (" + e.message + "). The /api/roe-decomposition function may not have run yet.");
+  document.getElementById("tableBody").innerHTML =
+   '<tr><td colspan="8" style="text-align:center; color:var(--muted); padding:30px;">No data available.</td></tr>';
+ }
+}
+
+function renderStats(){
+ document.getElementById("statCompanies").textContent = RAW.market.companyCount;
+ document.getElementById("statCompaniesNote").textContent = RAW.loadedCount + " of " + RAW.universeSize + " loaded, " + RAW.market.companyCount + " with usable statement history";
+ document.getElementById("statRoe").textContent = fmtPct(RAW.market.medianRoe);
+ document.getElementById("statLeverage").textContent = fmtX(RAW.market.medianLeverage);
+ document.getElementById("statLeverageDriven").textContent = fmtPct(RAW.market.leverageDrivenPct, 0);
+}
+
+function renderSectorRoeChart(){
+ const sectors = RAW.sectors.map(s => s.sector);
+ const ctx = document.getElementById("sectorRoeChart").getContext("2d");
+ if(sectorRoeChart) sectorRoeChart.destroy();
+ sectorRoeChart = new Chart(ctx, {
+  type: "bar",
+  data: {
+   labels: sectors,
+   datasets: [
+    { label: "Median ROE", data: RAW.sectors.map(s => s.medianRoe), backgroundColor: RAW.sectors.map(s => SECTOR_COLORS[s.sector] || ndr("gold")), borderRadius: 3 },
+   ],
+  },
+  options: {
+   responsive: true,
+   maintainAspectRatio: false,
+   plugins: {
+    legend: { display: false },
+    tooltip: { callbacks: { label: ctx => "Median ROE: " + fmtPct(ctx.parsed.y) } },
+   },
+   scales: {
+    x: ndrXScale(),
+    y: ndrYScale({ fmt: v => v + "%" }),
+   },
+  },
+ });
+}
+
+function renderSectorMixChart(){
+ const sectors = RAW.sectors.map(s => s.sector);
+ const ctx = document.getElementById("sectorMixChart").getContext("2d");
+ if(sectorMixChart) sectorMixChart.destroy();
+ sectorMixChart = new Chart(ctx, {
+  data: {
+   labels: sectors,
+   datasets: [
+    { type: "bar", label: "Margin index", data: RAW.sectors.map(s => s.marginIndex), backgroundColor: ndr("gold"), borderRadius: 3 },
+    { type: "bar", label: "Turnover index", data: RAW.sectors.map(s => s.turnoverIndex), backgroundColor: ndr("green"), borderRadius: 3 },
+    { type: "bar", label: "Leverage index", data: RAW.sectors.map(s => s.leverageIndex), backgroundColor: ndr("red"), borderRadius: 3 },
+    { type: "line", label: "Market median (100)", data: sectors.map(() => 100), borderColor: ndr("navy"), borderWidth: 1.5, borderDash: [4, 3], pointRadius: 0, fill: false },
+   ],
+  },
+  options: {
+   responsive: true,
+   maintainAspectRatio: false,
+   plugins: {
+    legend: { display: true, position: "top", align: "start", labels: { boxWidth: 12, boxHeight: 12, color: ndr("axis"), font: { size: 10 } } },
+    tooltip: { callbacks: { label: ctx => ctx.dataset.label + ": " + (ctx.parsed.y === null ? "—" : ctx.parsed.y.toFixed(1)) } },
+   },
+   scales: {
+    x: ndrXScale(),
+    y: ndrYScale({ title: "Index (market median = 100)" }),
+   },
+  },
+ });
+}
+
+function renderRoeHistogram(){
+ const values = RAW.companies.map(c => c.roe).filter(v => v !== null && v !== undefined && !isNaN(v));
+ const binWidth = 5; // percentage points
+ const minBin = Math.floor(Math.min(...values) / binWidth) * binWidth;
+ const maxBin = Math.ceil(Math.max(...values) / binWidth) * binWidth;
+ const bins = [];
+ for(let b = minBin; b < maxBin; b += binWidth) bins.push({ lo: b, hi: b + binWidth, count: 0 });
+ for(const v of values){
+  let idx = Math.floor((v - minBin) / binWidth);
+  if(idx < 0) idx = 0;
+  if(idx >= bins.length) idx = bins.length - 1;
+  bins[idx].count++;
+ }
+
+ const ctx = document.getElementById("roeHistogram").getContext("2d");
+ if(roeHistogram) roeHistogram.destroy();
+ roeHistogram = new Chart(ctx, {
+  type: "bar",
+  data: {
+   labels: bins.map(b => (b.lo >= 0 ? "+" : "") + b.lo + "to" + (b.hi >= 0 ? "+" : "") + b.hi),
+   datasets: [{ data: bins.map(b => b.count), backgroundColor: bins.map(b => (b.lo + b.hi) / 2 >= 0 ? ndr("green") : ndr("red")), borderRadius: 3, barPercentage: 1.0, categoryPercentage: 0.95 }],
+  },
+  options: {
+   responsive: true,
+   maintainAspectRatio: false,
+   plugins: {
+    legend: { display: false },
+    tooltip: { callbacks: { title: items => { const b = bins[items[0].dataIndex]; return (b.lo >= 0 ? "+" : "") + b.lo + "% to " + (b.hi >= 0 ? "+" : "") + b.hi + "%"; }, label: ctx => ctx.parsed.y + " companies" } },
+   },
+   scales: {
+    x: { ...ndrXScale(), title: { display: true, text: "ROE (%)", color: ndr("axis-soft"), font: { size: 10 } } },
+    y: ndrYScale({ title: "Companies" }),
+   },
+  },
+ });
+}
+
+function renderDriverChart(){
+ const sectors = RAW.sectors.map(s => s.sector);
+ const ctx = document.getElementById("driverChart").getContext("2d");
+ if(driverChart) driverChart.destroy();
+ driverChart = new Chart(ctx, {
+  type: "bar",
+  data: {
+   labels: sectors,
+   datasets: [
+    { label: "Margin-driven", data: RAW.sectors.map(s => s.marginDriven), backgroundColor: ndr("gold"), stack: "drivers" },
+    { label: "Turnover-driven", data: RAW.sectors.map(s => s.turnoverDriven), backgroundColor: ndr("green"), stack: "drivers" },
+    { label: "Leverage-driven", data: RAW.sectors.map(s => s.leverageDriven), backgroundColor: ndr("red"), stack: "drivers" },
+   ],
+  },
+  options: {
+   responsive: true,
+   maintainAspectRatio: false,
+   plugins: {
+    legend: { display: true, position: "top", align: "start", labels: { boxWidth: 12, boxHeight: 12, color: ndr("axis"), font: { size: 10 } } },
+    tooltip: { callbacks: { label: ctx => ctx.dataset.label + ": " + ctx.parsed.y + " companies" } },
+   },
+   scales: {
+    x: { ...ndrXScale(), stacked: true },
+    y: { ...ndrYScale({ title: "Companies" }), stacked: true },
+   },
+  },
+ });
+}
+
+function renderRoeTrendChart(){
+ const series = RAW.marketSeries || [];
+ const ctx = document.getElementById("roeTrendChart").getContext("2d");
+ if(roeTrendChart) roeTrendChart.destroy();
+ roeTrendChart = new Chart(ctx, {
+  type: "line",
+  data: {
+   labels: series.map(s => s.q),
+   datasets: [{ label: "Market ROE (annualized)", data: series.map(s => s.roe), borderColor: ndr("navy"), backgroundColor: ndr("navy"), borderWidth: 2, pointRadius: 1.5, tension: 0.15 }],
+  },
+  options: {
+   responsive: true,
+   maintainAspectRatio: false,
+   plugins: {
+    legend: { display: false },
+    tooltip: { callbacks: { label: ctx => "ROE: " + fmtPct(ctx.parsed.y) } },
+   },
+   scales: {
+    x: ndrXScale(),
+    y: ndrYScale({ fmt: v => v + "%" }),
+   },
+  },
+ });
+}
+
+function renderLeverageTrendChart(){
+ const series = RAW.marketSeries || [];
+ const ctx = document.getElementById("leverageTrendChart").getContext("2d");
+ if(leverageTrendChart) leverageTrendChart.destroy();
+ leverageTrendChart = new Chart(ctx, {
+  type: "line",
+  data: {
+   labels: series.map(s => s.q),
+   datasets: [{ label: "Market leverage", data: series.map(s => s.leverage), borderColor: ndr("red"), backgroundColor: ndr("red"), borderWidth: 2, pointRadius: 1.5, tension: 0.15 }],
+  },
+  options: {
+   responsive: true,
+   maintainAspectRatio: false,
+   plugins: {
+    legend: { display: false },
+    tooltip: { callbacks: { label: ctx => "Leverage: " + fmtX(ctx.parsed.y) } },
+   },
+   scales: {
+    x: ndrXScale(),
+    y: ndrYScale({ fmt: v => v.toFixed(1) + "x" }),
+   },
+  },
+ });
+}
+
+function renderTrendBreakTable(){
+ const rows = [
+  { label: "Market ROE", brk: RAW.roeTrendBreak, unit: "ppt/q" },
+  { label: "Market leverage", brk: RAW.leverageTrendBreak, unit: "x/q" },
+ ].filter(r => r.brk);
+
+ if(!rows.length){
+  document.getElementById("trendBreakTable").innerHTML = '<div class="method-note">Not enough quarterly history yet for a structural-break test.</div>';
+  return;
+ }
+
+ const fmtHalf = (h, unit) => "slope " + (h.slope >= 0 ? "+" : "") + h.slope.toFixed(3) + unit + ", r=" + h.r.toFixed(2) + ", p=" + (h.p < 0.001 ? "<0.001" : h.p.toFixed(3)) + " (n=" + h.n + ")";
+
+ const table = '<table class="method-table">' +
+  "<thead><tr><th>Series</th><th>Earlier half</th><th>Recent half</th><th>Chow test (slope break)</th></tr></thead>" +
+  "<tbody>" + rows.map(r => {
+   const sig = r.brk.chow.p < 0.05;
+   return "<tr>" +
+    "<td>" + r.label + "</td>" +
+    "<td>" + fmtHalf(r.brk.pre, r.unit) + "</td>" +
+    "<td>" + fmtHalf(r.brk.post, r.unit) + "</td>" +
+    '<td class="' + (sig ? "sig" : "") + '">F=' + r.brk.chow.F.toFixed(2) + ", p=" + (r.brk.chow.p < 0.001 ? "<0.001" : r.brk.chow.p.toFixed(3)) + "</td>" +
+   "</tr>";
+  }).join("") + "</tbody></table>" +
+  '<div class="method-note">Earlier half: ' + rows[0].brk.preQuarters[0] + " to " + rows[0].brk.preQuarters[1] + ". Recent half: " + rows[0].brk.postQuarters[0] + " to " + rows[0].brk.postQuarters[1] + ". A significant (p&lt;0.05) Chow test means the two halves&rsquo; trend slopes are formally different, not just visually different.</div>";
+
+ document.getElementById("trendBreakTable").innerHTML = table;
+}
+
+function renderLeverageScatter(){
+ const pairs = RAW.leverageScatterPairs || [];
+ if(pairs.length < 8 || !RAW.leverageVsRoe){
+  document.getElementById("leverageScatterMethodTable").innerHTML = '<div class="method-note">Not enough companies to test.</div>';
+  return;
+ }
+ const pearson = RAW.leverageVsRoe.pearson;
+ const xs = pairs.map(p => p.x);
+ const xMin = Math.min(...xs), xMax = Math.max(...xs);
+ // Recompute the fitted line's intercept locally (payload keeps only slope for the summary table).
+ const my = pairs.reduce((s, p) => s + p.y, 0) / pairs.length;
+ const mx = pairs.reduce((s, p) => s + p.x, 0) / pairs.length;
+ const intercept = my - pearson.slope * mx;
+ const fitPoints = [{ x: xMin, y: intercept + pearson.slope * xMin }, { x: xMax, y: intercept + pearson.slope * xMax }];
+
+ const ctx = document.getElementById("leverageScatter").getContext("2d");
+ if(leverageScatter) leverageScatter.destroy();
+ leverageScatter = new Chart(ctx, {
+  type: "scatter",
+  data: {
+   datasets: [
+    { label: "Companies", data: pairs, backgroundColor: ndr("gold"), pointRadius: 2.5, showLine: false },
+    { label: "Regression fit", type: "line", data: fitPoints, borderColor: ndr("navy"), borderWidth: 1.5, borderDash: [4, 3], pointRadius: 0, fill: false },
+   ],
+  },
+  options: {
+   responsive: true,
+   maintainAspectRatio: false,
+   plugins: {
+    legend: { display: false },
+    tooltip: { callbacks: { label: ctx => ctx.dataset.label === "Companies" ? (ctx.raw.symbol + ": leverage " + fmtX(ctx.raw.x) + ", ROE " + fmtPct(ctx.raw.y)) : null } },
+   },
+   scales: {
+    x: ndrYScale({ position: "bottom", fmt: v => v.toFixed(1) + "x", title: "Leverage (assets ÷ equity)" }),
+    y: ndrYScale({ fmt: v => v + "%", title: "ROE (%)" }),
+   },
+  },
+ });
+
+ const spear = RAW.leverageVsRoe.spearman;
+ document.getElementById("leverageScatterMethodTable").innerHTML = methodTableHtml(pearson, spear,
+  "Slope is ROE (pp) per 1.0x of leverage. n=" + pearson.n + " companies. A single cross-sectional snapshot, not a forward-return test.");
+}
+
+function renderFactorTable(){
+ const rows = [
+  { label: "Margin", test: RAW.marginVsRoe },
+  { label: "Turnover", test: RAW.turnoverVsRoe },
+  { label: "Leverage", test: RAW.leverageVsRoe },
+ ].filter(r => r.test);
+
+ if(!rows.length){
+  document.getElementById("factorTable").innerHTML = '<div class="method-note">Not enough companies to test.</div>';
+  return;
+ }
+
+ const table = '<table class="method-table">' +
+  "<thead><tr><th>Factor</th><th>n</th><th>Pearson r</th><th>Pearson r&sup2;</th><th>Spearman &rho;</th><th>Spearman p</th></tr></thead>" +
+  "<tbody>" + rows.map(r => {
+   const p = r.test.pearson, s = r.test.spearman;
+   const sig = s.p < 0.05;
+   return "<tr>" +
+    "<td>" + r.label + "</td>" +
+    "<td>" + p.n + "</td>" +
+    "<td>" + p.r.toFixed(2) + "</td>" +
+    "<td>" + (p.r2 * 100).toFixed(1) + "%</td>" +
+    "<td>" + s.r.toFixed(2) + "</td>" +
+    '<td class="' + (sig ? "sig" : "") + '">' + (s.p < 0.001 ? "<0.001" : s.p.toFixed(3)) + "</td>" +
+   "</tr>";
+  }).join("") + "</tbody></table>" +
+  '<div class="method-note">Each row is its own separate regression of that one factor against ROE &mdash; not a multi-factor model, so the three r&sup2; values aren\'t additive and can overlap (the factors are correlated with each other too).</div>';
+
+ document.getElementById("factorTable").innerHTML = table;
+}
+
+function renderLeaderTable(rows, tbodyId){
+ const tbody = document.getElementById(tbodyId);
+ if(!rows || !rows.length){
+  tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; color:var(--muted); padding:24px;">No qualifying companies.</td></tr>';
+  return;
+ }
+ tbody.innerHTML = rows.map(r => `<tr>
+  <td><span class="sector-name">${r.symbol}</span></td>
+  <td><span class="sector-ticker">${r.sector || "—"}</span></td>
+  <td>${fmtPct(r.roe)}</td>
+  <td>${fmtPct(r.margin)}</td>
+  <td>${fmtX(r.turnover)}</td>
+  <td>${fmtX(r.leverage)}</td>
+ </tr>`).join("");
+}
+
+function sortBy(key){
+ if(SORT_KEY === key){
+  SORT_DIR = -SORT_DIR;
+ }else{
+  SORT_KEY = key;
+  SORT_DIR = 1;
+ }
+ renderTable();
+}
+
+function renderTable(){
+ const rows = [...RAW.companies].sort((a, b) => {
+  const av = a[SORT_KEY], bv = b[SORT_KEY];
+  if(av === null || av === undefined) return 1;
+  if(bv === null || bv === undefined) return -1;
+  if(typeof av === "string") return av.localeCompare(bv) * SORT_DIR;
+  return (av - bv) * SORT_DIR;
+ });
+
+ const tbody = document.getElementById("tableBody");
+ tbody.innerHTML = rows.map(r => `<tr>
+  <td><span class="sector-name">${r.symbol}</span></td>
+  <td><span class="sector-ticker">${r.sector || "—"}</span></td>
+  <td>${fmtPct(r.roe)}</td>
+  <td>${fmtPct(r.margin)}</td>
+  <td>${fmtX(r.turnover)}</td>
+  <td>${fmtX(r.leverage)}</td>
+  <td>${fmtDriver(r.dominantDriver)}</td>
+  <td>${r.fiscalQuarter || "—"}</td>
+ </tr>`).join("");
+
+ document.querySelectorAll("#stockTable thead th").forEach(th => {
+  const key = th.dataset.key;
+  th.classList.toggle("sorted", key === SORT_KEY);
+  const arrow = th.querySelector(".sort-arrow");
+  if(arrow) arrow.textContent = (key === SORT_KEY && SORT_DIR === 1) ? "▴" : "▾";
+ });
+}
+
+document.querySelectorAll("#stockTable thead th").forEach(th => {
+ const key = th.dataset.key;
+ if(key) th.addEventListener("click", () => sortBy(key));
+});
+
+init();
+</script>
+
+</body>
+</html>

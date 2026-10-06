@@ -87,7 +87,15 @@ function describeCron(cron) {
 function main() {
   const NOTES = JSON.parse(read(path.join(__dirname, "schedule-notes.json")));
   const { sched, redirects } = parseToml();
-  const files = fs.readdirSync(FN_DIR).filter((f) => f.endsWith(".js")).map((f) => f.slice(0, -3));
+  // Functions staged for unmerged PRs (scripts/build-previews.js) stay off
+  // the public schedule and out of the health check until they're promoted.
+  const previewFns = new Set();
+  try {
+    for (const e of JSON.parse(read(path.join(ROOT, "preview", "manifest.json")))) {
+      for (const f of e.functions) previewFns.add(f.replace(/\.js$/, ""));
+    }
+  } catch (e) { /* no previews staged */ }
+  const files = fs.readdirSync(FN_DIR).filter((f) => f.endsWith(".js")).map((f) => f.slice(0, -3)).filter((f) => !previewFns.has(f));
   const jobs = files.filter((f) => f.startsWith("scheduled-"));
   const src = (n) => read(path.join(FN_DIR, n + ".js"));
 

@@ -1,0 +1,1217 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta name="robots" content="noindex">
+<script>
+// Applied before first paint to avoid a flash of the wrong theme.
+(function(){
+ var saved = localStorage.getItem("theme");
+ if(saved === "light") document.documentElement.setAttribute("data-theme", "light");
+})();
+</script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom@2"></script>
+<script src="/date-format.js"></script>
+<script>
+// FRED-style zoom: drag horizontally on any chart to zoom into that range,
+// double-click to reset. Applied via Chart.defaults so every chart on the
+// page gets it without touching each individual new Chart(...) call.
+Chart.defaults.plugins.zoom = {
+ zoom: {
+  wheel: { enabled: false },
+  pinch: { enabled: false },
+  drag: { enabled: true, backgroundColor: "rgba(217,138,61,0.15)", borderColor: "rgba(217,138,61,0.4)", borderWidth: 1 },
+  mode: "x",
+ },
+ pan: { enabled: true, mode: "x", modifierKey: "shift" },
+};
+document.addEventListener("dblclick", function(e){
+ if(e.target.tagName === "CANVAS"){
+  var chart = Chart.getChart(e.target);
+  if(chart) chart.resetZoom();
+ }
+});
+document.addEventListener("DOMContentLoaded", function(){
+ document.querySelectorAll(".chart-canvas-wrap canvas").forEach(function(c){
+  c.title = "Drag to zoom · shift-drag to pan · double-click to reset";
+ });
+});
+</script>
+<style>
+.chart-fullscreen-btn{
+ position:absolute;
+ top:8px;
+ right:8px;
+ z-index:5;
+ background:var(--card, #1c2127);
+ border:1px solid var(--hair, #2b3138);
+ color:var(--muted, #8b9199);
+ border-radius:6px;
+ width:28px;
+ height:28px;
+ display:flex;
+ align-items:center;
+ justify-content:center;
+ cursor:pointer;
+ padding:0;
+ opacity:0.85;
+}
+.chart-fullscreen-btn:hover{ color:var(--ink, #eae6da); border-color:#3a424b; opacity:1; }
+.is-chart-fullscreen{
+ background:var(--bg, #14181c) !important;
+ padding:24px !important;
+ display:flex !important;
+ flex-direction:column !important;
+ overflow:auto !important;
+}
+.is-chart-fullscreen canvas{
+ max-height:none !important;
+}
+</style>
+<script>
+// Expand-to-fullscreen button on every chart, matching the pattern from
+// sites like GuruFocus: a small corner button on each chart's canvas
+// area that fullscreens the whole chart card (title, legend, controls
+// included) via the Fullscreen API. Finds every <canvas> generically
+// rather than relying on one wrapper class name, since different pages
+// on this site use different card markup (.chart-box, .scatter-box,
+// .chart, herd-mentality tiles, etc.).
+document.addEventListener("DOMContentLoaded", function(){
+ function requestFs(el){
+  var fn = el.requestFullscreen || el.webkitRequestFullscreen || el.mozRequestFullScreen || el.msRequestFullscreen;
+  if(fn) fn.call(el);
+ }
+ function exitFs(){
+  var fn = document.exitFullscreen || document.webkitExitFullscreen || document.mozCancelFullScreen || document.msExitFullscreen;
+  if(fn) fn.call(document);
+ }
+ function currentFsEl(){
+  return document.fullscreenElement || document.webkitFullscreenElement || document.mozFullScreenElement || document.msFullscreenElement;
+ }
+ function resolveCard(canvas){
+  return canvas.closest(".chart-box, .scatter-box, .herd-cell, .modal-chart")
+   || canvas.parentElement.closest("div")
+   || canvas.parentElement;
+ }
+ function resizeChartIn(wrap){
+  var canvas = wrap.querySelector("canvas");
+  var chart = canvas && window.Chart && Chart.getChart(canvas);
+  if(chart) chart.resize();
+ }
+
+ var entries = []; // { card, wrap }
+
+ document.querySelectorAll("canvas").forEach(function(canvas){
+  if(canvas.closest(".chart-fullscreen-btn")) return;
+  var card = resolveCard(canvas);
+  if(!card || card.querySelector(".chart-fullscreen-btn")) return; // one button per card, not per canvas
+
+  var wrap = canvas.parentElement;
+  var wrapStyle = getComputedStyle(wrap);
+  if(wrapStyle.position === "static") wrap.style.position = "relative";
+
+  var btn = document.createElement("button");
+  btn.type = "button";
+  btn.className = "chart-fullscreen-btn";
+  btn.title = "Expand chart";
+  btn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3H5a2 2 0 0 0-2 2v3"/><path d="M16 3h3a2 2 0 0 1 2 2v3"/><path d="M8 21H5a2 2 0 0 1-2-2v-3"/><path d="M16 21h3a2 2 0 0 0 2-2v-3"/></svg>';
+  btn.addEventListener("click", function(e){
+   e.stopPropagation();
+   if(currentFsEl() === card) exitFs();
+   else requestFs(card);
+  });
+  wrap.appendChild(btn);
+  entries.push({ card: card, wrap: wrap });
+
+  if(window.ResizeObserver){
+   new ResizeObserver(function(){ resizeChartIn(wrap); }).observe(wrap);
+  }
+ });
+
+ function onFsChange(){
+  var fsEl = currentFsEl();
+  entries.forEach(function(entry){
+   var isFs = fsEl === entry.card;
+   entry.card.classList.toggle("is-chart-fullscreen", isFs);
+   if(isFs){
+    entry.wrap.dataset.fsPrevHeight = entry.wrap.style.height || "";
+    entry.wrap.dataset.fsPrevFlex = entry.wrap.style.flex || "";
+    entry.wrap.style.flex = "1 1 auto";
+    entry.wrap.style.minHeight = "0";
+    entry.wrap.style.height = "auto";
+   }else if(entry.wrap.dataset.fsPrevHeight !== undefined){
+    entry.wrap.style.height = entry.wrap.dataset.fsPrevHeight;
+    entry.wrap.style.flex = entry.wrap.dataset.fsPrevFlex;
+    entry.wrap.style.minHeight = "";
+   }
+  });
+  entries.forEach(function(entry){ resizeChartIn(entry.wrap); });
+ }
+ ["fullscreenchange", "webkitfullscreenchange", "mozfullscreenchange", "MSFullscreenChange"].forEach(function(evt){
+  document.addEventListener(evt, onFsChange);
+ });
+});
+</script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Overnight vs. Intraday Returns | Michael J. Stevenson</title>
+
+<style>
+
+:root{
+  --bg:#14181c;
+  --card:#1c2127;
+  --card-hover:#20262d;
+  --ink:#eae6da;
+  --muted:#8b9199;
+  --hair:#2b3138;
+
+  --fear:#6f8fac;
+  --neutral:#7c828a;
+  --greed:#d98a3d;
+  --extreme:#b56f2a;
+
+  --serif:'Times New Roman',Times,serif;
+  --mono:'SF Mono','JetBrains Mono',ui-monospace,Menlo,monospace;
+  --sans:'Times New Roman',Times,serif;
+}
+
+:root[data-theme="light"]{
+  --bg:#f7f5f0;
+  --card:#ffffff;
+  --card-hover:#f2efe6;
+  --ink:#1c1f24;
+  --muted:#6b6f76;
+  --hair:#e1dbcd;
+  --fear:#4f6f8c;
+  --neutral:#6c7178;
+  --greed:#b9701f;
+  --extreme:#96591c;
+}
+
+*{ box-sizing:border-box; }
+
+body{
+ margin:0;
+ background:var(--bg);
+ color:var(--ink);
+ font-family:var(--sans);
+}
+
+a{ color:inherit; }
+
+/* SITE NAV (mega-menu, shared with homepage) */
+.sitenav{ display:grid; grid-template-columns:auto 1fr auto; align-items:center; padding:16px 24px; border-bottom:1px solid var(--hair); position:relative; z-index:50; }
+.sitenav .brand{ justify-self:start; white-space:nowrap; font-family:var(--serif); font-size:16px; color:var(--ink); text-decoration:none; letter-spacing:0.3px; }
+.navlinks{ display:flex; gap:2px; align-items:center; justify-self:center; }
+.navdrop{ position:static; }
+.navdrop > .navlabel{ display:block; white-space:nowrap; color:var(--muted); font-size:13px; cursor:default; padding:8px 14px; border-radius:6px; user-select:none; }
+.navdrop:hover > .navlabel, .navdrop.open > .navlabel, .navdrop.has-active > .navlabel{ color:var(--ink); }
+.navdrop.open > .navlabel{ background:var(--card-hover); }
+.navdrop .dropdown{ display:none; position:absolute; top:100%; left:0; right:0; min-width:0; margin-top:0; background:var(--card); border:0; border-top:1px solid var(--hair); border-bottom:1px solid var(--hair); border-radius:0; padding:22px 24px 26px; box-shadow:0 18px 40px rgba(0,0,0,0.35); }
+.navdrop.open .dropdown{ display:block; }
+.mega{ max-width:1000px; margin:0 auto; display:grid; grid-template-columns:repeat(auto-fit,minmax(210px,1fr)); gap:8px 40px; }
+.mcol h4{ margin:0 0 8px; padding-bottom:7px; border-bottom:1px solid var(--hair); font-size:12px; font-weight:600; color:var(--muted); letter-spacing:0.02em; }
+.dropdown .mcol a{ display:block; padding:6px 0; color:var(--ink); text-decoration:none; font-size:13.5px; line-height:1.35; }
+.dropdown .mcol a:hover{ color:var(--greed, #d98a3d); background:none; }
+.dropdown .mcol a.active{ color:var(--greed, #d98a3d); }
+@media (max-width:1100px){ .sitenav{ padding:14px 16px; } .sitenav .brand{ font-size:15px; } .navdrop > .navlabel{ padding:8px 8px; font-size:12.5px; } }
+@media (max-width:720px){ .navlinks{ display:none; } }
+
+.container{
+ max-width:1360px;
+ margin:auto;
+ padding:30px 20px 60px;
+}
+
+/* HEADER */
+
+.header{
+ display:flex;
+ justify-content:space-between;
+ align-items:flex-end;
+ border-bottom:1px solid var(--hair);
+ padding-bottom:18px;
+ margin-bottom:25px;
+ flex-wrap:wrap;
+ gap:12px;
+}
+
+h1{
+ font-family:var(--serif);
+ font-size:28px;
+ font-weight:400;
+ margin:0;
+}
+
+.subtitle{
+ color:var(--muted);
+ font-size:13px;
+ margin-top:6px;
+ max-width:640px;
+}
+
+.updated{
+ color:var(--muted);
+ font-size:12px;
+}
+
+/* STAT ROW */
+
+.stat-grid{
+ display:grid;
+ grid-template-columns:repeat(4,1fr);
+ gap:16px;
+ margin-bottom:30px;
+}
+
+.stat-card{
+ background:var(--card);
+ border:1px solid var(--hair);
+ border-radius:10px;
+ padding:20px;
+}
+
+.stat-label{
+ color:var(--muted);
+ font-size:12px;
+ letter-spacing:0.04em;
+ margin-bottom:8px;
+}
+
+.stat-value{
+ font-family:var(--mono);
+ font-size:24px;
+ color:var(--greed);
+}
+
+.stat-value.cell-neg{ color:var(--fear); }
+
+.stat-note{
+ color:var(--muted);
+ font-size:12px;
+ margin-top:6px;
+}
+
+@media (max-width:900px){
+ .stat-grid{ grid-template-columns:repeat(2,1fr); }
+}
+
+/* CHART */
+
+.chart-box{
+ background:var(--card);
+ border:1px solid var(--hair);
+ border-radius:12px;
+ padding:20px;
+ margin-bottom:30px;
+}
+
+.chart-box-header{
+ display:flex;
+ justify-content:space-between;
+ align-items:center;
+ flex-wrap:wrap;
+ gap:10px;
+ margin-bottom:16px;
+}
+
+.chart-box h2{
+ font-family:var(--serif);
+ font-weight:400;
+ font-size:18px;
+ margin:0;
+}
+
+.chart-subhead{
+ color:var(--muted);
+ font-size:12px;
+ margin-top:4px;
+}
+
+.chart-canvas-wrap{
+ height:380px;
+}
+
+.chart-canvas-wrap.short{ height:280px; }
+
+/* TABLE */
+
+.table-box{
+ background:var(--card);
+ border:1px solid var(--hair);
+ border-radius:12px;
+ overflow-x:auto;
+ margin-bottom:30px;
+}
+
+.table-box-header{
+ padding:18px 20px 4px;
+}
+
+.table-box-header h2{
+ font-family:var(--serif);
+ font-weight:400;
+ font-size:18px;
+ margin:0;
+}
+
+.table-box-header .chart-subhead{ margin-bottom:6px; }
+
+table{
+ width:100%;
+ border-collapse:collapse;
+ font-size:13px;
+ min-width:640px;
+}
+
+thead th{
+ text-align:right;
+ padding:14px 12px;
+ color:var(--muted);
+ font-size:11px;
+ letter-spacing:0.04em;
+ font-weight:600;
+ white-space:nowrap;
+ border-bottom:1px solid var(--hair);
+}
+
+thead th:first-child{
+ text-align:left;
+}
+
+tbody td{
+ padding:11px 12px;
+ text-align:right;
+ font-family:var(--mono);
+ white-space:nowrap;
+ border-bottom:1px solid var(--hair);
+}
+
+tbody tr:last-child td{ border-bottom:none; }
+
+tbody tr:hover{ background:var(--card-hover); }
+
+tbody td:first-child{
+ text-align:left;
+ font-family:var(--sans);
+}
+
+.cell-pos{ color:var(--ink); }
+.cell-neg{ color:var(--ink); }
+.cell-na{ color:var(--muted); }
+
+.table-footnote{
+ padding:2px 20px 16px;
+ color:var(--muted);
+ font-size:11px;
+}
+
+/* SCATTER / METHOD TABLE (mirrors /factor-analysis) */
+
+.scatter-canvas-wrap{
+ height:260px;
+ margin-bottom:12px;
+ position:relative;
+}
+
+.method-table{
+ width:100%;
+ border-collapse:collapse;
+ font-family:var(--mono);
+ font-size:11px;
+ margin-top:8px;
+}
+
+.method-table th{
+ text-align:right;
+ padding:6px 5px;
+ color:var(--muted);
+ font-size:10px;
+ letter-spacing:0.03em;
+ font-weight:600;
+ border-bottom:1px solid var(--hair);
+ white-space:nowrap;
+}
+
+.method-table th:first-child{ text-align:left; }
+
+.method-table td{
+ padding:7px 5px;
+ text-align:right;
+ border-bottom:1px solid var(--hair);
+ white-space:nowrap;
+ color:var(--ink);
+}
+
+.method-table td:first-child{
+ text-align:left;
+ font-family:var(--sans);
+ color:var(--muted);
+}
+
+.method-table tr:last-child td{ border-bottom:none; }
+
+.method-table .sig{ color:var(--greed); }
+
+.method-note{
+ font-size:11px;
+ color:var(--muted);
+ margin-top:8px;
+ font-style:italic;
+}
+
+/* EXPLAINER */
+
+.explainer{
+ background:var(--card);
+ border:1px solid var(--hair);
+ border-radius:12px;
+ padding:24px 26px;
+ margin-bottom:30px;
+}
+
+.explainer h2{
+ font-family:var(--serif);
+ font-weight:400;
+ font-size:18px;
+ margin:0 0 12px;
+}
+
+.explainer p{
+ color:var(--muted);
+ font-size:14px;
+ line-height:1.7;
+ margin:0 0 14px;
+}
+
+.explainer code{
+ font-family:var(--mono);
+ background:var(--card-hover);
+ padding:2px 6px;
+ border-radius:4px;
+ font-size:0.92em;
+ white-space:nowrap;
+}
+
+.explainer p:last-child{ margin-bottom:0; }
+
+.explainer .source{
+ margin-top:16px;
+ font-size:11px;
+}
+
+.explainer .source a{
+ color:var(--muted);
+ text-decoration:none;
+ border-bottom:1px dotted var(--muted);
+}
+
+.explainer .source a:hover{ color:var(--ink); }
+
+.error-banner{
+ background:#2a1c1c;
+ border:1px solid #5a3030;
+ color:#e0a0a0;
+ border-radius:8px;
+ padding:12px 15px;
+ margin-bottom:20px;
+ font-size:13px;
+ display:none;
+}
+
+.warning-banner{
+ background:#2a2419;
+ border:1px solid #5a4f30;
+ color:#d9b877;
+ border-radius:8px;
+ padding:12px 15px;
+ margin-bottom:20px;
+ font-size:13px;
+ display:none;
+}
+
+
+.theme-toggle{
+ justify-self:end;
+ background:none;
+ border:1px solid var(--hair);
+ color:var(--muted);
+ border-radius:6px;
+ width:32px;
+ height:32px;
+ display:flex;
+ align-items:center;
+ justify-content:center;
+ cursor:pointer;
+ font-size:15px;
+ line-height:1;
+}
+
+.theme-toggle:hover{ color:var(--ink); border-color:var(--hair); }
+
+
+/* Light-theme overrides for hardcoded (non-var) dark colors */
+
+[data-theme="light"] .error-banner{
+ background:#fdecea;
+ border-color:#f0b8b0;
+ color:#a83a30;
+}
+
+[data-theme="light"] .warning-banner{
+ background:#fdf3d9;
+ border-color:#e9cf8a;
+ color:#8a6a1f;
+}
+
+.toggle-row{ display:flex; gap:6px; flex-wrap:wrap; margin-bottom:20px; }
+.toggle-row button{ background:var(--card); color:var(--muted); border:1px solid var(--hair); border-radius:6px; padding:7px 14px; font-family:var(--mono); font-size:12px; cursor:pointer; }
+.toggle-row button:hover{ color:var(--ink); }
+.toggle-row button.active{ color:var(--ink); border-color:var(--greed); }
+.chart-grid{ display:grid; grid-template-columns:1fr 1fr; gap:20px; }
+.chart-grid > .chart-box{ min-width:0; }
+@media (max-width:900px){ .chart-grid{ grid-template-columns:1fr; } }
+.method-wrap{ overflow-x:auto; }
+.method-wrap .method-table{ min-width:0; }
+</style>
+<link rel="stylesheet" href="/site.css">
+</head>
+<body>
+<div style="position:sticky;top:0;z-index:9999;display:flex;gap:14px;justify-content:center;flex-wrap:wrap;padding:6px 16px;background:#b8860b;color:#fff;font:600 12px/1.4 system-ui,sans-serif"><span>Preview &middot; PR #41</span><a href="https://github.com/michaeljstevenson/marketdashboard/pull/41" style="color:#fff" target="_blank" rel="noopener">View PR</a><a href="/preview/" style="color:#fff">All previews</a></div>
+
+<nav class="sitenav">
+<a class="brand" href="/">Michael J. Stevenson, CAIA<span style="font-size:0.6em; vertical-align:super;">&reg;</span></a>
+<div class="navlinks">
+<div class="navdrop">
+<span class="navlabel">Research Reports ▾</span>
+<div class="dropdown"><div class="mega">
+<div class="mcol">
+<a href="/research/beneath-the-index.pdf" target="_blank" rel="noopener">Beneath the Index</a>
+</div>
+</div></div>
+</div>
+<div class="navdrop has-active">
+<span class="navlabel">Market Internals ▾</span>
+<div class="dropdown"><div class="mega">
+<div class="mcol"><h4>Sentiment</h4>
+<a href="/sentiment-index.html">Sentiment Index</a>
+<a href="/volatility.html">Implied vs. Realized Volatility</a>
+<a href="/seasonality.html">Seasonality</a>
+</div>
+<div class="mcol"><h4>Breadth &amp; Positioning</h4>
+<a href="/market-breadth.html">Market Breadth</a>
+<a href="/ath-index.html">All-Time Highs and Lows</a>
+<a href="/margin-leverage.html">Margin &amp; Leverage Cycle</a>
+<a href="/short-sale-volume.html">Short Sale Volume</a>
+<a href="/options-positioning.html">Options Positioning</a>
+</div>
+<div class="mcol"><h4>Market Structure</h4>
+<a href="/concentration.html">Concentration</a>
+<a href="/preview/overnight-vs-intraday.html" class="active">Overnight vs. Intraday Returns</a>
+</div>
+</div></div>
+</div>
+<div class="navdrop">
+<span class="navlabel">Valuation &amp; Earnings ▾</span>
+<div class="dropdown"><div class="mega">
+<div class="mcol"><h4>Valuation</h4>
+<a href="/valuations.html">Valuations</a>
+<a href="/implied-erp.html">Implied Equity Risk Premium</a>
+<a href="/equity-risk-premium.html">Equity Risk Premium by Sector</a>
+<a href="/pe-divergence.html">Forward vs. Trailing P/E Divergence</a>
+<a href="/expectations-vs-reality.html">Expectations vs. Reality</a>
+</div>
+<div class="mcol"><h4>Estimates &amp; Surprises</h4>
+<a href="/analyst-price-target.html">Analyst Price Target Upside</a>
+<a href="/earnings-revisions.html">Earnings Revisions</a>
+<a href="/earnings-surprise.html">Earnings Surprise History</a>
+<a href="/post-earnings-drift.html">Post-Earnings Announcement Drift</a>
+<a href="/earnings-call-sentiment.html">Earnings Call Sentiment</a>
+<a href="/earnings-growth-divergence.html">Earnings Growth vs. Price Performance</a>
+</div>
+<div class="mcol"><h4>Fundamentals &amp; Quality</h4>
+<a href="/fcf-yield.html">Free Cash Flow Yield</a>
+<a href="/quality-score.html">Financial Quality Screener (Piotroski)</a>
+<a href="/roic-wacc.html">ROIC vs. Cost of Capital</a>
+<a href="/cash-conversion-cycle.html">Cash Conversion Cycle</a>
+<a href="/rd-intensity.html">R&amp;D Intensity</a>
+</div>
+</div></div>
+</div>
+<div class="navdrop">
+<span class="navlabel">Sectors &amp; Factors ▾</span>
+<div class="dropdown"><div class="mega">
+<div class="mcol"><h4>Sectors</h4>
+<a href="/sector-analysis.html">Sector Performance</a>
+<a href="/sector-beeswarm.html">Sector Beeswarm</a>
+<a href="/sector-correlation.html">Sector Correlation Matrix</a>
+<a href="/sector-rotation.html">Sector Rotation Model</a>
+<a href="/country-sector-scorecard.html">Country / Sector Scorecard</a>
+</div>
+<div class="mcol"><h4>Style &amp; Relative Performance</h4>
+<a href="/factor-analysis.html">Factor Analysis</a>
+<a href="/quality-lowvol-factors.html">Quality &amp; Low-Volatility Factor Screen</a>
+<a href="/small-cap-vs-large-cap.html">Small Cap vs. Large Cap Spread</a>
+<a href="/international-vs-us.html">International vs. US Relative Performance</a>
+<a href="/relative-strength-leaders.html">Relative Strength Leaders/Laggards</a>
+</div>
+</div></div>
+</div>
+<div class="navdrop">
+<span class="navlabel">Capital &amp; Ownership ▾</span>
+<div class="dropdown"><div class="mega">
+<div class="mcol"><h4>Shareholder Returns</h4>
+<a href="/dividend-growth-screener.html">Dividend Growth Screener</a>
+<a href="/shareholder-yield.html">Shareholder Yield</a>
+<a href="/buyback-effectiveness.html">Buyback Effectiveness</a>
+<a href="/share-count-trends.html">Share Count Trends</a>
+</div>
+<div class="mcol"><h4>Issuance &amp; Corporate Actions</h4>
+<a href="/stock-split-tracker.html">Stock Split Tracker</a>
+<a href="/spin-off-performance.html">Spin-Off Performance Tracker</a>
+<a href="/ipo-activity.html">IPO Activity</a>
+<a href="/ipo-pipeline.html">IPO Pipeline</a>
+</div>
+<div class="mcol"><h4>Ownership &amp; Flows</h4>
+<a href="/insider-buying-selling.html">Insider Buying/Selling</a>
+<a href="/institutional-ownership.html">Institutional Ownership &amp; 13F Flow</a>
+<a href="/congressional-trading.html">Congressional Trading Activity</a>
+<a href="/small-cap-liquidity.html">Small-Cap Liquidity</a>
+</div>
+</div></div>
+</div>
+<div class="navdrop">
+<span class="navlabel">Macro &amp; Tools ▾</span>
+<div class="dropdown"><div class="mega">
+<div class="mcol"><h4>Rates &amp; Macro</h4>
+<a href="/yield-curves.html">Yield Curves</a>
+</div>
+<div class="mcol"><h4>Tools</h4>
+<a href="/portfolio-simulator.html">Portfolio Simulator</a>
+<a href="/backtesting.html">Backtesting</a>
+<a href="/statistical-engine">Statistical Engine</a>
+</div>
+</div></div>
+</div>
+</div>
+<button class="theme-toggle" id="themeToggle" type="button" aria-label="Toggle light/dark mode" title="Toggle light/dark mode">&#9789;</button>
+</nav>
+<script>
+// Class-driven (not pure :hover) nav dropdowns: pure CSS :hover drops the
+// menu the instant the cursor leaves .navdrop, which includes the moment
+// it's crossing the gap between the label and the dropdown box below —
+// exactly the "sometimes works, sometimes doesn't" flakiness reported.
+// A short close-delay after mouseleave gives the cursor room to travel
+// down into the dropdown without losing it.
+document.querySelectorAll(".navdrop").forEach(function(navdrop){
+ var closeTimer = null;
+ navdrop.addEventListener("mouseenter", function(){
+  clearTimeout(closeTimer);
+  navdrop.classList.add("open");
+ });
+ navdrop.addEventListener("mouseleave", function(){
+  closeTimer = setTimeout(function(){ navdrop.classList.remove("open"); }, 300);
+ });
+});
+</script>
+<script>
+(function(){
+ var btn = document.getElementById("themeToggle");
+ if(!btn) return;
+ var theme = document.documentElement.getAttribute("data-theme") === "light" ? "light" : "dark";
+ btn.textContent = theme === "light" ? "☀" : "☽";
+ btn.addEventListener("click", function(){
+  var current = document.documentElement.getAttribute("data-theme") === "light" ? "light" : "dark";
+  var next = current === "light" ? "dark" : "light";
+  localStorage.setItem("theme", next);
+  location.reload();
+ });
+})();
+</script>
+
+
+
+<div class="container">
+
+<div class="error-banner" id="errorBanner"></div>
+
+<div class="header">
+<div>
+<h1>Overnight vs. Intraday Returns</h1>
+<div class="subtitle">Splits the total return of SPY, QQQ and IWM into the part earned while the market is closed (prior close to open) and the part earned during the session (open to close), and tests whether the two differ
+</div>
+<div class="updated" id="updated">Loading...</div>
+</div>
+</div>
+
+<div class="toggle-row" id="symbolToggle" role="group" aria-label="ETF selector"></div>
+
+<div class="stat-grid">
+<div class="stat-card">
+<div class="stat-label">Overnight Return</div>
+<div class="stat-value" id="statOvernight">…</div>
+<div class="stat-note" id="statOvernightNote">Annualized, close to open</div>
+</div>
+<div class="stat-card">
+<div class="stat-label">Intraday Return</div>
+<div class="stat-value" id="statIntraday">…</div>
+<div class="stat-note" id="statIntradayNote">Annualized, open to close</div>
+</div>
+<div class="stat-card">
+<div class="stat-label">Overnight Share of Total</div>
+<div class="stat-value" id="statShare">…</div>
+<div class="stat-note" id="statShareNote">Of cumulative log return</div>
+</div>
+<div class="stat-card">
+<div class="stat-label">Overnight &minus; Intraday</div>
+<div class="stat-value" id="statDiff" style="font-size:20px;">…</div>
+<div class="stat-note" id="statDiffNote">Paired t-test on daily returns</div>
+</div>
+</div>
+
+<div class="chart-box">
+<div class="chart-box-header">
+<div>
+<h2>Growth of 100: overnight only vs. intraday only vs. buy-and-hold</h2>
+<div class="chart-subhead">Each line compounds only that leg's daily returns (dividends included). Holding through both legs gives the buy-and-hold line. Log scale.</div>
+</div>
+</div>
+<div class="chart-canvas-wrap">
+<canvas id="cumChart"></canvas>
+</div>
+</div>
+
+<div class="chart-box">
+<div class="chart-box-header">
+<div>
+<h2>Calendar-year return by leg</h2>
+<div class="chart-subhead">Compounded overnight and intraday return within each calendar year.</div>
+</div>
+</div>
+<div class="chart-canvas-wrap">
+<canvas id="annualChart"></canvas>
+</div>
+</div>
+
+<div class="chart-box">
+<div class="chart-box-header">
+<div>
+<h2>Rolling 12-month return by leg</h2>
+<div class="chart-subhead">Trailing 252-trading-day compounded return of each leg, sampled at month-ends.</div>
+</div>
+</div>
+<div class="chart-canvas-wrap">
+<canvas id="rollingChart"></canvas>
+</div>
+</div>
+
+<div class="table-box">
+<div class="table-box-header">
+<h2>Is the gap stable? Results by sub-period</h2>
+<div class="chart-subhead">Same test on the full sample, each decade, and the two halves of the sample. A real effect should show up in most of them, not just one.</div>
+</div>
+<table id="periodTable">
+<thead><tr><th>Period</th><th>Days</th><th>Overnight (ann.)</th><th>Intraday (ann.)</th><th>Buy &amp; hold (ann.)</th><th>Avg. gap (bp/day)</th><th>t-stat</th></tr></thead>
+<tbody id="periodBody"></tbody>
+</table>
+<div class="table-footnote">Avg. gap = mean daily overnight return minus mean daily intraday return, in basis points. |t| above ~2 is conventionally significant at the 5% level.</div>
+</div>
+
+<div class="table-box">
+<div class="table-box-header">
+<h2>Across the three ETFs, full sample</h2>
+<div class="chart-subhead">Annualized volatility is shown for each leg, so the return can be read against the risk taken to earn it.</div>
+</div>
+<table id="compareTable">
+<thead><tr><th>ETF</th><th>Since</th><th>Overnight (ann.)</th><th>Intraday (ann.)</th><th>Overnight vol</th><th>Intraday vol</th><th>Avg. gap (bp/day)</th><th>t-stat</th></tr></thead>
+<tbody id="compareBody"></tbody>
+</table>
+<div class="table-footnote" id="compareFootnote"></div>
+</div>
+
+<div class="chart-grid">
+<div class="chart-box">
+<div class="chart-box-header">
+<div>
+<h2>Do overnight gaps fade or extend? (SPY)</h2>
+<div class="chart-subhead">Days sorted into five groups by overnight return (left = biggest gap-downs, right = biggest gap-ups). Bars show the average same-day intraday return of each group.</div>
+</div>
+</div>
+<div class="chart-canvas-wrap short">
+<canvas id="gapChart"></canvas>
+</div>
+</div>
+
+<div class="chart-box">
+<div class="chart-box-header">
+<div>
+<h2>Gap vs. same-day follow-through (SPY)</h2>
+<div class="chart-subhead">Regression of each day's intraday return (basis points) on that day's overnight return, all trading days.</div>
+</div>
+</div>
+<div class="method-wrap" id="gapMethodTable"></div>
+</div>
+</div>
+
+<div class="explainer">
+<h2>Methodology</h2>
+<p>Every trading day's return has two parts. The overnight part runs from yesterday's close to today's open, which is when the market is closed and prices move on news, futures trading and the opening auction. The intraday part runs from today's open to today's close. Chained together they equal the ordinary daily return, so the two legs are a clean split of the same total.</p>
+<p>The split uses Alpha Vantage's daily <code>TIME_SERIES_DAILY_ADJUSTED</code> history, which carries open, close and a dividend- and split-adjusted close. Each day's raw open is rescaled by that day's adjusted-to-raw close ratio and compared with the prior day's adjusted close. Without that step every ex-dividend morning would look like a small overnight loss. Any day where either leg moved more than 20% is dropped as a bad print, and the count dropped is kept in the data. Returns are log returns; the annualized figures compound the daily returns over 252 trading days.</p>
+<p>The headline test is a paired t-test on the daily difference between the overnight and intraday return, run on the full sample, on each decade, and on the first versus second half of the sample, so one unusual stretch can't carry the result. Its p-values treat daily returns as independent, which is a fair approximation for index returns but not exact. The gap-fade check sorts days by overnight return and looks at what the market did next that same day, then runs a Pearson (linear) and Spearman (rank) regression of intraday on overnight return, the same two-method check used on <a href="/factor-analysis.html" style="color:inherit;">Factor Analysis</a>.</p>
+<p>A gap between the legs is a statistical description, not a trading strategy. Capturing only the overnight leg means buying every close and selling every open, which would face real-world trading costs and, for most investors, no practical way to hold at the exact auction prices. See Lou, Polk and Skouras (2019), "A Tug of War: Overnight Versus Intraday Expected Returns," <em>Journal of Financial Economics</em>, for the academic treatment. Not investment advice.</p>
+<div class="source">Source: Alpha Vantage <code>TIME_SERIES_DAILY_ADJUSTED</code> (full daily history for SPY, QQQ and IWM), refreshed each weekday after the close.</div>
+</div>
+
+</div>
+
+<script>
+const DATA_URL = "/api/overnight";
+
+let RAW = null;
+let selected = "SPY";
+let cumChart = null, annualChart = null, rollingChart = null, gapChart = null;
+
+function showError(message){
+ const banner = document.getElementById("errorBanner");
+ banner.textContent = message;
+ banner.style.display = "block";
+}
+
+function fmtPct(v, digits){
+ if(v === null || v === undefined || isNaN(v)) return "n/a";
+ digits = digits === undefined ? 2 : digits;
+ return (v >= 0 ? "+" : "") + v.toFixed(digits) + "%";
+}
+
+function fmtNum(v, digits){
+ if(v === null || v === undefined || isNaN(v)) return "n/a";
+ return (v >= 0 ? "+" : "") + v.toFixed(digits);
+}
+
+function cssVar(name, fallback){
+ const v = getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+ return v || fallback;
+}
+const themeInkColor = () => cssVar("--ink", "#eae6da");
+const themeMutedColor = () => cssVar("--muted", "#8b9199");
+const themeHairColor = () => cssVar("--hair", "#2b3138");
+const themeGreedColor = () => cssVar("--greed", "#d98a3d");
+const themeFearColor = () => cssVar("--fear", "#6f8fac");
+
+// ---- Stats helpers — same methodology as /factor-analysis, duplicated
+// here since every page on this site is self-contained (see CLAUDE.md). ----
+
+function normalCdf(x){
+ return 0.5 * (1 + erf(x / Math.SQRT2));
+}
+
+// Abramowitz & Stegun 7.1.26 approximation — accurate to ~1e-7.
+function erf(x){
+ const sign = x < 0 ? -1 : 1;
+ x = Math.abs(x);
+ const a1 = 0.254829592, a2 = -0.284496736, a3 = 1.421413741, a4 = -1.453152027, a5 = 1.061405429, p = 0.3275911;
+ const t = 1 / (1 + p * x);
+ const y = 1 - (((((a5 * t + a4) * t) + a3) * t + a2) * t + a1) * t * Math.exp(-x * x);
+ return sign * y;
+}
+
+function linearRegression(xs, ys){
+ const n = xs.length;
+ let sx = 0, sy = 0;
+ for(let i = 0; i < n; i++){ sx += xs[i]; sy += ys[i]; }
+ const mx = sx / n, my = sy / n;
+ let sxx = 0, sxy = 0, syy = 0;
+ for(let i = 0; i < n; i++){
+  const dx = xs[i] - mx, dy = ys[i] - my;
+  sxx += dx * dx; sxy += dx * dy; syy += dy * dy;
+ }
+ const slope = sxy / sxx;
+ const intercept = my - slope * mx;
+ const r = sxy / Math.sqrt(sxx * syy);
+ let sse = 0;
+ for(let i = 0; i < n; i++) sse += (ys[i] - (intercept + slope * xs[i])) ** 2;
+ const t = slope / Math.sqrt((sse / (n - 2)) / sxx);
+ const p = 2 * (1 - normalCdf(Math.abs(t)));
+ return { n, slope, intercept, r, r2: r * r, t, p };
+}
+
+function rankArray(arr){
+ const idx = arr.map((v, i) => i).sort((a, b) => arr[a] - arr[b]);
+ const ranks = new Array(arr.length);
+ let i = 0;
+ while(i < idx.length){
+  let j = i;
+  while(j + 1 < idx.length && arr[idx[j + 1]] === arr[idx[i]]) j++;
+  const avgRank = (i + j) / 2 + 1;
+  for(let k = i; k <= j; k++) ranks[idx[k]] = avgRank;
+  i = j + 1;
+ }
+ return ranks;
+}
+
+function spearmanRegression(xs, ys){
+ return linearRegression(rankArray(xs), rankArray(ys));
+}
+
+function fmtP(p){
+ return p < 0.001 ? "<0.001" : p.toFixed(3);
+}
+
+function baseScales(yCallback){
+ return {
+  x: { ticks: { color: themeMutedColor(), maxTicksLimit: 8 }, grid: { color: themeHairColor() } },
+  y: { ticks: { color: themeMutedColor(), callback: yCallback }, grid: { color: themeHairColor() } },
+ };
+}
+
+async function init(){
+ try{
+  const res = await fetch(DATA_URL, { cache: "no-store" });
+  const data = await res.json();
+  if(!res.ok || data.error) throw new Error(data.error || "failed to load");
+  RAW = data;
+  document.getElementById("updated").textContent =
+   "As of " + usDate(data.asOfDate) + " · " + new Date(data.generated_at_utc).toLocaleString("en-US", { month: "2-digit", day: "2-digit", year: "numeric", hour: "numeric", minute: "2-digit" });
+
+  const toggle = document.getElementById("symbolToggle");
+  toggle.innerHTML = Object.keys(data.symbols).map(k =>
+   '<button type="button" data-sym="' + k + '"' + (k === selected ? ' class="active"' : "") + ">" + data.symbols[k].label + "</button>"
+  ).join("");
+  toggle.addEventListener("click", function(e){
+   const btn = e.target.closest("button[data-sym]");
+   if(!btn) return;
+   selected = btn.dataset.sym;
+   toggle.querySelectorAll("button").forEach(b => b.classList.toggle("active", b === btn));
+   renderSelected();
+  });
+
+  renderSelected();
+  renderCompareTable();
+  renderGap();
+ }catch(e){
+  showError("Couldn't load overnight/intraday data (" + e.message + "). The /api/overnight function may not have run yet.");
+ }
+}
+
+function renderSelected(){
+ const s = RAW.symbols[selected];
+ renderStats(s);
+ renderCumChart(s);
+ renderAnnualChart(s);
+ renderRollingChart(s);
+ renderPeriodTable(s);
+}
+
+function renderStats(s){
+ const f = s.full;
+ const o = document.getElementById("statOvernight");
+ o.textContent = fmtPct(f.annOvernight);
+ o.classList.toggle("cell-neg", f.annOvernight < 0);
+ document.getElementById("statOvernightNote").textContent = "Annualized, close to open, since " + f.start.slice(0, 4);
+ const i = document.getElementById("statIntraday");
+ i.textContent = fmtPct(f.annIntraday);
+ i.classList.toggle("cell-neg", f.annIntraday < 0);
+ document.getElementById("statIntradayNote").textContent = "Annualized, open to close · buy & hold " + fmtPct(f.annTotal);
+
+ const share = document.getElementById("statShare");
+ if(f.overnightShare === null){
+  share.textContent = "n/a";
+  document.getElementById("statShareNote").textContent = "Legs have opposite signs or the total is near zero";
+ }else{
+  share.textContent = Math.round(f.overnightShare * 100) + "%";
+  document.getElementById("statShareNote").textContent = f.overnightShare > 1
+   ? "Over 100%: the intraday leg lost money over the full sample"
+   : "Of cumulative log return, full sample";
+ }
+
+ const sig = Math.abs(f.tDiff) >= 2;
+ const d = document.getElementById("statDiff");
+ d.textContent = fmtNum(f.meanDiffBp, 1) + " bp/day";
+ d.classList.toggle("cell-neg", f.meanDiffBp < 0);
+ document.getElementById("statDiffNote").textContent =
+  "t = " + f.tDiff.toFixed(2) + (sig ? " (significant at 5%)" : " (not significant at 5%)") + ", n=" + f.n.toLocaleString();
+}
+
+function renderCumChart(s){
+ const c = s.cumulative;
+ const ctx = document.getElementById("cumChart").getContext("2d");
+ if(cumChart) cumChart.destroy();
+ cumChart = new Chart(ctx, {
+  type: "line",
+  data: {
+   labels: c.dates,
+   datasets: [
+    { label: "Overnight only", data: c.overnight, borderColor: themeGreedColor(), backgroundColor: themeGreedColor(), borderWidth: 1.6, pointRadius: 0, fill: false },
+    { label: "Intraday only", data: c.intraday, borderColor: themeFearColor(), backgroundColor: themeFearColor(), borderWidth: 1.6, pointRadius: 0, fill: false },
+    { label: "Buy & hold", data: c.total, borderColor: themeInkColor(), backgroundColor: themeInkColor(), borderWidth: 1.2, borderDash: [4, 3], pointRadius: 0, fill: false },
+   ],
+  },
+  options: {
+   responsive: true,
+   maintainAspectRatio: false,
+   interaction: { mode: "index", intersect: false },
+   plugins: {
+    legend: { display: true, labels: { color: themeMutedColor(), boxWidth: 12, font: { size: 11 } } },
+    tooltip: { callbacks: { label: ctx => ctx.dataset.label + ": " + ctx.parsed.y.toFixed(1) } },
+   },
+   scales: {
+    x: { ticks: { color: themeMutedColor(), maxTicksLimit: 8 }, grid: { color: themeHairColor() } },
+    y: { type: "logarithmic", ticks: { color: themeMutedColor(), callback: v => (Math.round(v * 100) / 100).toString() }, grid: { color: themeHairColor() } },
+   },
+  },
+ });
+}
+
+function renderAnnualChart(s){
+ const a = s.annual;
+ const ctx = document.getElementById("annualChart").getContext("2d");
+ if(annualChart) annualChart.destroy();
+ annualChart = new Chart(ctx, {
+  type: "bar",
+  data: {
+   labels: a.map(r => r.ytd ? r.year + " YTD" : r.year),
+   datasets: [
+    { label: "Overnight", data: a.map(r => r.overnight), backgroundColor: themeGreedColor(), borderRadius: 2 },
+    { label: "Intraday", data: a.map(r => r.intraday), backgroundColor: themeFearColor(), borderRadius: 2 },
+   ],
+  },
+  options: {
+   responsive: true,
+   maintainAspectRatio: false,
+   plugins: {
+    legend: { display: true, labels: { color: themeMutedColor(), boxWidth: 12, font: { size: 11 } } },
+    tooltip: { callbacks: { label: ctx => ctx.dataset.label + ": " + fmtPct(ctx.parsed.y) } },
+   },
+   scales: {
+    x: { ticks: { color: themeMutedColor(), maxRotation: 60, autoSkip: true }, grid: { display: false } },
+    y: { ticks: { color: themeMutedColor(), callback: v => (Math.round(v * 100) / 100) + "%" }, grid: { color: themeHairColor() } },
+   },
+  },
+ });
+}
+
+function renderRollingChart(s){
+ const r = s.rolling;
+ const ctx = document.getElementById("rollingChart").getContext("2d");
+ if(rollingChart) rollingChart.destroy();
+ rollingChart = new Chart(ctx, {
+  type: "line",
+  data: {
+   labels: r.dates,
+   datasets: [
+    { label: "Overnight", data: r.overnight, borderColor: themeGreedColor(), backgroundColor: themeGreedColor(), borderWidth: 1.4, pointRadius: 0, fill: false },
+    { label: "Intraday", data: r.intraday, borderColor: themeFearColor(), backgroundColor: themeFearColor(), borderWidth: 1.4, pointRadius: 0, fill: false },
+   ],
+  },
+  options: {
+   responsive: true,
+   maintainAspectRatio: false,
+   interaction: { mode: "index", intersect: false },
+   plugins: {
+    legend: { display: true, labels: { color: themeMutedColor(), boxWidth: 12, font: { size: 11 } } },
+    tooltip: { callbacks: { label: ctx => ctx.dataset.label + ": " + fmtPct(ctx.parsed.y) } },
+   },
+   scales: baseScales(v => (Math.round(v * 100) / 100) + "%"),
+  },
+ });
+}
+
+function periodRow(label, p){
+ const sig = Math.abs(p.tDiff) >= 2;
+ return "<tr><td>" + label + "</td><td>" + p.n.toLocaleString() + "</td>" +
+  "<td>" + fmtPct(p.annOvernight) + "</td><td>" + fmtPct(p.annIntraday) + "</td><td>" + fmtPct(p.annTotal) + "</td>" +
+  "<td>" + fmtNum(p.meanDiffBp, 1) + "</td>" +
+  '<td class="' + (sig ? "sig" : "") + '">' + fmtNum(p.tDiff, 2) + "</td></tr>";
+}
+
+function renderPeriodTable(s){
+ const rows = [periodRow("Full sample (" + s.full.start.slice(0, 4) + "–" + s.full.end.slice(0, 4) + ")", s.full)]
+  .concat(s.periods.map(p => periodRow(p.label + " (" + p.start.slice(0, 4) + "–" + p.end.slice(0, 4) + ")", p)))
+  .concat(s.halves.map(p => periodRow(p.label + " (" + p.start.slice(0, 4) + "–" + p.end.slice(0, 4) + ")", p)));
+ document.getElementById("periodBody").innerHTML = rows.join("");
+}
+
+function renderCompareTable(){
+ const keys = Object.keys(RAW.symbols);
+ document.getElementById("compareBody").innerHTML = keys.map(k => {
+  const s = RAW.symbols[k], f = s.full;
+  const sig = Math.abs(f.tDiff) >= 2;
+  return "<tr><td>" + s.label + "</td><td>" + f.start.slice(0, 4) + "</td>" +
+   "<td>" + fmtPct(f.annOvernight) + "</td><td>" + fmtPct(f.annIntraday) + "</td>" +
+   "<td>" + f.volOvernight.toFixed(1) + "%</td><td>" + f.volIntraday.toFixed(1) + "%</td>" +
+   "<td>" + fmtNum(f.meanDiffBp, 1) + "</td>" +
+   '<td class="' + (sig ? "sig" : "") + '">' + fmtNum(f.tDiff, 2) + "</td></tr>";
+ }).join("");
+ const dropped = keys.reduce((n, k) => n + RAW.symbols[k].droppedBadPrints, 0);
+ document.getElementById("compareFootnote").textContent =
+  "Overnight vol and intraday vol are annualized standard deviations of each leg's daily returns. " +
+  dropped + " bad-print day" + (dropped === 1 ? "" : "s") + " dropped across the three ETFs.";
+}
+
+function renderGap(){
+ const g = RAW.symbols.SPY.gapFade;
+ const labels = ["Biggest gap-downs", "Gap-downs", "Middle", "Gap-ups", "Biggest gap-ups"];
+ const ctx = document.getElementById("gapChart").getContext("2d");
+ if(gapChart) gapChart.destroy();
+ gapChart = new Chart(ctx, {
+  type: "bar",
+  data: {
+   labels,
+   datasets: [{
+    label: "Avg. same-day intraday return (bp)",
+    data: g.buckets.map(b => b.avgIntradayBp),
+    backgroundColor: g.buckets.map(b => b.avgIntradayBp >= 0 ? themeGreedColor() : themeFearColor()),
+    borderRadius: 4,
+    maxBarThickness: 56,
+   }],
+  },
+  options: {
+   responsive: true,
+   maintainAspectRatio: false,
+   plugins: {
+    legend: { display: false },
+    tooltip: {
+     callbacks: {
+      label: ctx => {
+       const b = g.buckets[ctx.dataIndex];
+       return ["Intraday: " + fmtNum(b.avgIntradayBp, 1) + " bp", "Avg. overnight gap: " + fmtNum(b.avgOvernightBp, 1) + " bp", "n=" + b.n.toLocaleString() + " days"];
+      },
+     },
+    },
+   },
+   scales: {
+    x: { ticks: { color: themeMutedColor(), font: { size: 10 } }, grid: { display: false } },
+    y: { title: { display: true, text: "Avg. intraday return (bp)", color: themeMutedColor(), font: { size: 10 } }, ticks: { color: themeMutedColor() }, grid: { color: themeHairColor() } },
+   },
+  },
+ });
+
+ const pearson = linearRegression(g.overnightBp, g.intradayBp);
+ const spear = spearmanRegression(g.overnightBp, g.intradayBp);
+ function row(label, st){
+  return "<tr><td>" + label + "</td><td>" + st.n.toLocaleString() + "</td><td>" + st.r.toFixed(3) + "</td><td>" + (st.r2 * 100).toFixed(2) + "%</td>" +
+   "<td>" + fmtNum(st.slope, 3) + "</td><td>" + st.t.toFixed(2) + "</td>" +
+   '<td class="' + (st.p < 0.05 ? "sig" : "") + '">' + fmtP(st.p) + "</td></tr>";
+ }
+ let reading = "";
+ if(pearson.p < 0.05){
+  reading = pearson.slope < 0
+   ? "Negative and statistically significant: on average part of an overnight gap is reversed during the same session."
+   : "Positive and statistically significant: on average an overnight gap is extended during the same session.";
+ }else{
+  reading = "Not statistically significant at 5%: no reliable same-day tendency for gaps to fade or extend in this sample.";
+ }
+ document.getElementById("gapMethodTable").innerHTML =
+  '<table class="method-table">' +
+   "<thead><tr><th>Method</th><th>n</th><th>r</th><th>r&sup2;</th><th>slope</th><th>t</th><th>p</th></tr></thead>" +
+   "<tbody>" + row("Pearson (OLS)", pearson) + row("Spearman (&rho;)", spear) + "</tbody>" +
+  "</table>" +
+  '<div class="method-note">Slope is basis points of intraday return per 1bp of overnight return. ' + reading + "</div>";
+}
+
+init();
+</script>
+
+</body>
+</html>

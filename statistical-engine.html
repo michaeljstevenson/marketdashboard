@@ -73,6 +73,7 @@ input:focus-visible,select:focus-visible{outline:2px solid var(--accent); outlin
 .tab{font:inherit; font-size:0.9rem; cursor:pointer; background:none; border:0;
   color:var(--ink-dim); padding:8px 14px; border-bottom:2px solid transparent; margin-bottom:-1px}
 .tab[aria-selected="true"]{color:var(--ink); border-bottom-color:var(--accent); font-weight:600}
+a.tab{text-decoration:none}
 .tab:focus-visible{outline:2px solid var(--accent); outline-offset:2px}
 .tabcount{font-family:"IBM Plex Mono",monospace; font-size:0.72rem; color:var(--ink-dim); font-weight:400}
 .feed{margin:26px 0}
@@ -192,6 +193,7 @@ table.fwd tbody td:first-child{font-family:"IBM Plex Mono",monospace; color:var(
   <div class="tabs" id="tabs">
     <button class="tab" data-tab="scanner" aria-selected="true">Scanner</button>
     <button class="tab" data-tab="archive" aria-selected="false">Archive <span class="tabcount" id="archiveTabCount"></span></button>
+    <a class="tab" href="/preview/">Previews</a>
   </div>
 
   <div id="scannerTab">
@@ -316,7 +318,7 @@ function init(){
 }
 
 function wireTabs(){
-  el("tabs").querySelectorAll(".tab").forEach(b => {
+  el("tabs").querySelectorAll(".tab[data-tab]").forEach(b => {
     b.addEventListener("click", () => switchTab(b.dataset.tab));
   });
   document.querySelectorAll("[data-tab-link]").forEach(b => {
@@ -325,7 +327,7 @@ function wireTabs(){
 }
 
 function switchTab(name){
-  el("tabs").querySelectorAll(".tab").forEach(b =>
+  el("tabs").querySelectorAll(".tab[data-tab]").forEach(b =>
     b.setAttribute("aria-selected", String(b.dataset.tab === name)));
   el("scannerTab").hidden = name !== "scanner";
   el("archiveTab").hidden = name !== "archive";
@@ -665,6 +667,8 @@ el("toggleall").addEventListener("click", () => {
     if(!res.ok){ const j = await res.json().catch(function(){ return {}; }); say(j.error || ('Error ' + res.status)); return; }
     DATA = await res.json();
     try{ sessionStorage.setItem('ss_pw', pw); }catch(e){}
+    // Sets the /preview/ cookie too (netlify/edge-functions/preview-gate.js), so the Previews tab opens without a second password.
+    fetch('/preview/login', { method: 'POST', body: new URLSearchParams({ password: pw }), redirect: 'manual' }).catch(function(){});
     say('');
     gate.hidden = true; gate.style.display = 'none';
     el('app').hidden = false;

@@ -1,0 +1,1263 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta name="robots" content="noindex">
+<script>
+// Applied before first paint to avoid a flash of the wrong theme.
+(function(){
+ var saved = localStorage.getItem("theme");
+ if(saved === "light") document.documentElement.setAttribute("data-theme", "light");
+})();
+</script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom@2"></script>
+<script>
+// FRED-style zoom: drag horizontally on any chart to zoom into that range,
+// double-click to reset. Applied via Chart.defaults so every chart on the
+// page gets it without touching each individual new Chart(...) call.
+Chart.defaults.plugins.zoom = {
+ zoom: {
+  wheel: { enabled: false },
+  pinch: { enabled: false },
+  drag: { enabled: true, backgroundColor: "rgba(217,138,61,0.15)", borderColor: "rgba(217,138,61,0.4)", borderWidth: 1 },
+  mode: "x",
+ },
+ pan: { enabled: true, mode: "x", modifierKey: "shift" },
+};
+document.addEventListener("dblclick", function(e){
+ if(e.target.tagName === "CANVAS"){
+  var chart = Chart.getChart(e.target);
+  if(chart) chart.resetZoom();
+ }
+});
+document.addEventListener("DOMContentLoaded", function(){
+ document.querySelectorAll(".chart-canvas-wrap canvas").forEach(function(c){
+  c.title = "Drag to zoom · shift-drag to pan · double-click to reset";
+ });
+});
+</script>
+<style>
+.chart-fullscreen-btn{
+ position:absolute;
+ top:8px;
+ right:8px;
+ z-index:5;
+ background:var(--card, #1c2127);
+ border:1px solid var(--hair, #2b3138);
+ color:var(--muted, #8b9199);
+ border-radius:6px;
+ width:28px;
+ height:28px;
+ display:flex;
+ align-items:center;
+ justify-content:center;
+ cursor:pointer;
+ padding:0;
+ opacity:0.85;
+}
+.chart-fullscreen-btn:hover{ color:var(--ink, #eae6da); border-color:#3a424b; opacity:1; }
+.is-chart-fullscreen{
+ background:var(--bg, #14181c) !important;
+ padding:24px !important;
+ display:flex !important;
+ flex-direction:column !important;
+ overflow:auto !important;
+}
+.is-chart-fullscreen canvas{
+ max-height:none !important;
+}
+</style>
+<script>
+// Expand-to-fullscreen button on every chart, matching the pattern from
+// sites like GuruFocus: a small corner button on each chart's canvas
+// area that fullscreens the whole chart card (title, legend, controls
+// included) via the Fullscreen API. Finds every <canvas> generically
+// rather than relying on one wrapper class name, since different pages
+// on this site use different card markup (.chart-box, .scatter-box,
+// .chart, herd-mentality tiles, etc.).
+document.addEventListener("DOMContentLoaded", function(){
+ function requestFs(el){
+  var fn = el.requestFullscreen || el.webkitRequestFullscreen || el.mozRequestFullScreen || el.msRequestFullscreen;
+  if(fn) fn.call(el);
+ }
+ function exitFs(){
+  var fn = document.exitFullscreen || document.webkitExitFullscreen || document.mozCancelFullScreen || document.msExitFullscreen;
+  if(fn) fn.call(document);
+ }
+ function currentFsEl(){
+  return document.fullscreenElement || document.webkitFullscreenElement || document.mozFullScreenElement || document.msFullscreenElement;
+ }
+ function resolveCard(canvas){
+  return canvas.closest(".chart-box, .scatter-box, .herd-cell, .modal-chart")
+   || canvas.parentElement.closest("div")
+   || canvas.parentElement;
+ }
+ function resizeChartIn(wrap){
+  var canvas = wrap.querySelector("canvas");
+  var chart = canvas && window.Chart && Chart.getChart(canvas);
+  if(chart) chart.resize();
+ }
+
+ var entries = []; // { card, wrap }
+
+ document.querySelectorAll("canvas").forEach(function(canvas){
+  if(canvas.closest(".chart-fullscreen-btn")) return;
+  var card = resolveCard(canvas);
+  if(!card || card.querySelector(".chart-fullscreen-btn")) return; // one button per card, not per canvas
+
+  var wrap = canvas.parentElement;
+  var wrapStyle = getComputedStyle(wrap);
+  if(wrapStyle.position === "static") wrap.style.position = "relative";
+
+  var btn = document.createElement("button");
+  btn.type = "button";
+  btn.className = "chart-fullscreen-btn";
+  btn.title = "Expand chart";
+  btn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3H5a2 2 0 0 0-2 2v3"/><path d="M16 3h3a2 2 0 0 1 2 2v3"/><path d="M8 21H5a2 2 0 0 1-2-2v-3"/><path d="M16 21h3a2 2 0 0 0 2-2v-3"/></svg>';
+  btn.addEventListener("click", function(e){
+   e.stopPropagation();
+   if(currentFsEl() === card) exitFs();
+   else requestFs(card);
+  });
+  wrap.appendChild(btn);
+  entries.push({ card: card, wrap: wrap });
+
+  if(window.ResizeObserver){
+   new ResizeObserver(function(){ resizeChartIn(wrap); }).observe(wrap);
+  }
+ });
+
+ function onFsChange(){
+  var fsEl = currentFsEl();
+  entries.forEach(function(entry){
+   var isFs = fsEl === entry.card;
+   entry.card.classList.toggle("is-chart-fullscreen", isFs);
+   if(isFs){
+    entry.wrap.dataset.fsPrevHeight = entry.wrap.style.height || "";
+    entry.wrap.dataset.fsPrevFlex = entry.wrap.style.flex || "";
+    entry.wrap.style.flex = "1 1 auto";
+    entry.wrap.style.minHeight = "0";
+    entry.wrap.style.height = "auto";
+   }else if(entry.wrap.dataset.fsPrevHeight !== undefined){
+    entry.wrap.style.height = entry.wrap.dataset.fsPrevHeight;
+    entry.wrap.style.flex = entry.wrap.dataset.fsPrevFlex;
+    entry.wrap.style.minHeight = "";
+   }
+  });
+  entries.forEach(function(entry){ resizeChartIn(entry.wrap); });
+ }
+ ["fullscreenchange", "webkitfullscreenchange", "mozfullscreenchange", "MSFullscreenChange"].forEach(function(evt){
+  document.addEventListener(evt, onFsChange);
+ });
+});
+</script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Magic Formula Screen — Michael J. Stevenson</title>
+
+<style>
+
+:root{
+  --bg:#14181c;
+  --card:#1c2127;
+  --card-hover:#20262d;
+  --ink:#eae6da;
+  --muted:#8b9199;
+  --hair:#2b3138;
+
+  --fear:#6f8fac;
+  --neutral:#7c828a;
+  --greed:#d98a3d;
+  --extreme:#b56f2a;
+
+  --serif:'Iowan Old Style','Palatino Linotype',Georgia,serif;
+  --mono:'SF Mono','JetBrains Mono',ui-monospace,Menlo,monospace;
+  --sans:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+
+  /* NDR-style chart palette. Deliberately the SAME in light and dark —
+     these charts keep a constant warm-paper look as a homage to the Ned
+     Davis Research print charts that inspired /concentration. JS reads
+     them via getComputedStyle (per the site convention) rather than
+     hardcoding. */
+  --ndr-plot:#f5f1e6;
+  --ndr-axis:#3c3a33;
+  --ndr-axis-soft:#6f6a5c;
+  --ndr-grid:#ddd6c2;
+  --ndr-red:#a83c36;
+  --ndr-green:#4f6f3f;
+  --ndr-gold:#c1902f;
+  --ndr-navy:#2f4b6e;
+  --ndr-slate:#7d8a99;
+}
+
+:root[data-theme="light"]{
+  --bg:#f7f5f0;
+  --card:#ffffff;
+  --card-hover:#f2efe6;
+  --ink:#1c1f24;
+  --muted:#6b6f76;
+  --hair:#e1dbcd;
+  --fear:#4f6f8c;
+  --neutral:#6c7178;
+  --greed:#b9701f;
+  --extreme:#96591c;
+}
+
+*{ box-sizing:border-box; }
+
+body{
+ margin:0;
+ background:var(--bg);
+ color:var(--ink);
+ font-family:var(--sans);
+}
+
+a{ color:inherit; }
+
+/* SITE NAV (mega-menu, shared with homepage) */
+.sitenav{ display:grid; grid-template-columns:auto 1fr auto; align-items:center; padding:16px 24px; border-bottom:1px solid var(--hair); position:relative; z-index:50; }
+.sitenav .brand{ justify-self:start; white-space:nowrap; font-family:var(--serif); font-size:16px; color:var(--ink); text-decoration:none; letter-spacing:0.3px; }
+.navlinks{ display:flex; gap:2px; align-items:center; justify-self:center; }
+.navdrop{ position:static; }
+.navdrop > .navlabel{ display:block; white-space:nowrap; color:var(--muted); font-size:13px; cursor:default; padding:8px 14px; border-radius:6px; user-select:none; }
+.navdrop:hover > .navlabel, .navdrop.open > .navlabel, .navdrop.has-active > .navlabel{ color:var(--ink); }
+.navdrop.open > .navlabel{ background:var(--card-hover); }
+.navdrop .dropdown{ display:none; position:absolute; top:100%; left:0; right:0; min-width:0; margin-top:0; background:var(--card); border:0; border-top:1px solid var(--hair); border-bottom:1px solid var(--hair); border-radius:0; padding:22px 24px 26px; box-shadow:0 18px 40px rgba(0,0,0,0.35); }
+.navdrop.open .dropdown{ display:block; }
+.mega{ max-width:1000px; margin:0 auto; display:grid; grid-template-columns:repeat(auto-fit,minmax(210px,1fr)); gap:8px 40px; }
+.mcol h4{ margin:0 0 8px; padding-bottom:7px; border-bottom:1px solid var(--hair); font-size:12px; font-weight:600; color:var(--muted); letter-spacing:0.02em; }
+.dropdown .mcol a{ display:block; padding:6px 0; color:var(--ink); text-decoration:none; font-size:13.5px; line-height:1.35; }
+.dropdown .mcol a:hover{ color:var(--greed, #d98a3d); background:none; }
+.dropdown .mcol a.active{ color:var(--greed, #d98a3d); }
+@media (max-width:1100px){ .sitenav{ padding:14px 16px; } .sitenav .brand{ font-size:15px; } .navdrop > .navlabel{ padding:8px 8px; font-size:12.5px; } }
+@media (max-width:720px){ .navlinks{ display:none; } }
+
+.container{
+ max-width:1100px;
+ margin:auto;
+ padding:30px 20px 60px;
+}
+
+/* HEADER */
+
+.header{
+ display:flex;
+ justify-content:space-between;
+ align-items:flex-end;
+ border-bottom:1px solid var(--hair);
+ padding-bottom:18px;
+ margin-bottom:25px;
+ flex-wrap:wrap;
+ gap:12px;
+}
+
+h1{
+ font-family:var(--serif);
+ font-size:28px;
+ font-weight:400;
+ margin:0;
+}
+
+.subtitle{
+ color:var(--muted);
+ font-size:13px;
+ margin-top:6px;
+ max-width:640px;
+}
+
+.updated{
+ color:var(--muted);
+ font-size:12px;
+}
+
+/* STAT ROW */
+
+.stat-grid{
+ display:grid;
+ grid-template-columns:repeat(4,1fr);
+ gap:16px;
+ margin-bottom:30px;
+}
+
+.stat-card{
+ background:var(--card);
+ border:1px solid var(--hair);
+ border-radius:10px;
+ padding:20px;
+ min-width:0;
+}
+
+.stat-label{
+ color:var(--muted);
+ font-size:12px;
+ letter-spacing:0.04em;
+ margin-bottom:8px;
+}
+
+.stat-value{
+ font-family:var(--mono);
+ font-size:24px;
+ color:var(--greed);
+}
+
+.stat-value.cell-neg{ color:var(--fear); }
+
+.stat-note{
+ color:var(--muted);
+ font-size:12px;
+ margin-top:6px;
+}
+
+@media (max-width:900px){
+ .stat-grid{ grid-template-columns:repeat(2,1fr); }
+}
+
+/* CHART */
+
+.chart-box{
+ background:var(--card);
+ border:1px solid var(--hair);
+ border-radius:12px;
+ padding:20px;
+ margin-bottom:30px;
+}
+
+.chart-box-header{
+ display:flex;
+ justify-content:space-between;
+ align-items:center;
+ flex-wrap:wrap;
+ gap:10px;
+ margin-bottom:16px;
+}
+
+.chart-box h2{
+ font-family:var(--serif);
+ font-weight:400;
+ font-size:18px;
+ margin:0;
+}
+
+.chart-subhead{
+ color:var(--muted);
+ font-size:12px;
+ margin-top:4px;
+}
+
+.chart-canvas-wrap{
+ height:380px;
+}
+
+/* The warm-paper plot panel behind each canvas — the NDR homage
+   (matches /concentration). */
+.ndr-panel{
+ background:var(--ndr-plot);
+ border:1px solid var(--ndr-grid);
+ border-radius:8px;
+ padding:14px 14px 10px;
+}
+
+/* Two charts / method-tables side by side, same breakpoint as table-grid */
+.chart-grid{
+ display:grid;
+ grid-template-columns:1fr 1fr;
+ gap:16px;
+ margin-bottom:30px;
+}
+
+.chart-grid .chart-box{
+ margin-bottom:0;
+ min-width:0; /* grid items default to min-width:auto (their content's min-content
+                 size), which a wide method table would otherwise force past this
+                 column's track width — same "grid blowout" the site-wide
+                 table{min-width:600px} rule creates if left unchecked here */
+}
+
+@media (max-width:900px){
+ .chart-grid{ grid-template-columns:1fr; }
+}
+
+/* TABLE */
+
+.table-box{
+ background:var(--card);
+ border:1px solid var(--hair);
+ border-radius:12px;
+ overflow-x:auto;
+ margin-bottom:30px;
+}
+
+.table-box-header{
+ padding:18px 20px 4px;
+}
+
+.table-box-header h2{
+ font-family:var(--serif);
+ font-weight:400;
+ font-size:18px;
+ margin:0;
+}
+
+.table-box-header .chart-subhead{ margin-bottom:6px; }
+
+table{
+ width:100%;
+ border-collapse:collapse;
+ font-size:13px;
+ min-width:600px;
+}
+
+thead th{
+ text-align:right;
+ padding:14px 12px;
+ color:var(--muted);
+ font-size:11px;
+ letter-spacing:0.04em;
+ font-weight:600;
+ cursor:pointer;
+ user-select:none;
+ white-space:nowrap;
+ border-bottom:1px solid var(--hair);
+}
+
+thead th:first-child, thead th:nth-child(2){
+ text-align:left;
+}
+
+thead th:hover{ color:var(--ink); }
+
+thead th .sort-arrow{
+ opacity:0.4;
+ margin-left:3px;
+ font-size:10px;
+}
+
+thead th.sorted .sort-arrow{ opacity:1; color:var(--greed); }
+
+thead th:not([data-key]){ cursor:default; }
+
+tbody td{
+ padding:11px 12px;
+ text-align:right;
+ font-family:var(--mono);
+ white-space:nowrap;
+ border-bottom:1px solid var(--hair);
+}
+
+tbody tr:last-child td{ border-bottom:none; }
+
+tbody tr:hover{ background:var(--card-hover); }
+
+tbody td:first-child{
+ text-align:left;
+ font-family:var(--sans);
+}
+
+tbody td:nth-child(2){
+ text-align:left;
+ color:var(--muted);
+}
+
+.sector-name{ color:var(--ink); }
+.sector-ticker{ color:var(--muted); font-size:11px; }
+
+.rank-highlight{ color:var(--greed); }
+
+/* SCATTER / METHOD TABLE (mirrors /factor-analysis, /roic-wacc) */
+
+.scatter-canvas-wrap{
+ height:300px;
+ margin-bottom:12px;
+ position:relative;
+}
+
+.method-table{
+ width:100%;
+ min-width:0; /* overrides the site-wide table{min-width:600px} rule below — a method
+                 table never needs 600px */
+ border-collapse:collapse;
+ font-family:var(--mono);
+ font-size:11px;
+ margin-top:8px;
+}
+
+#rankRel3mMethodTable{
+ overflow-x:auto;
+}
+
+.method-table th{
+ text-align:right;
+ padding:6px 5px;
+ color:var(--muted);
+ font-size:10px;
+ letter-spacing:0.03em;
+ font-weight:600;
+ border-bottom:1px solid var(--hair);
+ white-space:nowrap;
+}
+
+.method-table th:first-child{ text-align:left; }
+
+.method-table td{
+ padding:7px 5px;
+ text-align:right;
+ border-bottom:1px solid var(--hair);
+ white-space:nowrap;
+ color:var(--ink);
+}
+
+.method-table td:first-child{
+ text-align:left;
+ font-family:var(--sans);
+ color:var(--muted);
+}
+
+.method-table tr:last-child td{ border-bottom:none; }
+
+.method-table .sig{ color:var(--greed); }
+
+.method-note{
+ font-size:11px;
+ color:var(--muted);
+ margin-top:8px;
+ font-style:italic;
+}
+
+/* EXPLAINER */
+
+.explainer{
+ background:var(--card);
+ border:1px solid var(--hair);
+ border-radius:12px;
+ padding:24px 26px;
+ margin-bottom:30px;
+}
+
+.explainer h2{
+ font-family:var(--serif);
+ font-weight:400;
+ font-size:18px;
+ margin:0 0 12px;
+}
+
+.explainer p{
+ color:var(--muted);
+ font-size:14px;
+ line-height:1.7;
+ margin:0 0 14px;
+}
+
+.explainer code{
+ font-family:var(--mono);
+ background:var(--card-hover);
+ padding:2px 6px;
+ border-radius:4px;
+ font-size:0.92em;
+ white-space:nowrap;
+}
+
+.explainer p:last-child{ margin-bottom:0; }
+
+.explainer .source{
+ margin-top:16px;
+ font-size:11px;
+}
+
+.explainer .source a{
+ color:var(--muted);
+ text-decoration:none;
+ border-bottom:1px dotted var(--muted);
+}
+
+.explainer .source a:hover{ color:var(--ink); }
+
+.error-banner{
+ background:#2a1c1c;
+ border:1px solid #5a3030;
+ color:#e0a0a0;
+ border-radius:8px;
+ padding:12px 15px;
+ margin-bottom:20px;
+ font-size:13px;
+ display:none;
+}
+
+.warning-banner{
+ background:#2a2419;
+ border:1px solid #5a4f30;
+ color:#d9b877;
+ border-radius:8px;
+ padding:12px 15px;
+ margin-bottom:20px;
+ font-size:13px;
+ display:none;
+}
+
+
+.theme-toggle{
+ justify-self:end;
+ background:none;
+ border:1px solid var(--hair);
+ color:var(--muted);
+ border-radius:6px;
+ width:32px;
+ height:32px;
+ display:flex;
+ align-items:center;
+ justify-content:center;
+ cursor:pointer;
+ font-size:15px;
+ line-height:1;
+}
+
+.theme-toggle:hover{ color:var(--ink); border-color:var(--hair); }
+
+
+/* Light-theme overrides for hardcoded (non-var) dark colors */
+
+[data-theme="light"] .error-banner{
+ background:#fdecea;
+ border-color:#f0b8b0;
+ color:#a83a30;
+}
+
+[data-theme="light"] .warning-banner{
+ background:#fdf3d9;
+ border-color:#e9cf8a;
+ color:#8a6a1f;
+}
+</style>
+</head>
+<body>
+<div style="position:sticky;top:0;z-index:9999;display:flex;gap:14px;justify-content:center;flex-wrap:wrap;padding:6px 16px;background:#b8860b;color:#fff;font:600 12px/1.4 system-ui,sans-serif"><span>Preview &middot; PR #37</span><a href="https://github.com/michaeljstevenson/marketdashboard/pull/37" style="color:#fff" target="_blank" rel="noopener">View PR</a><a href="/preview/" style="color:#fff">All previews</a></div>
+
+<nav class="sitenav">
+<a class="brand" href="/">Michael J. Stevenson, CAIA<span style="font-size:0.6em; vertical-align:super;">&reg;</span></a>
+<div class="navlinks">
+<div class="navdrop">
+<span class="navlabel">Market Internals ▾</span>
+<div class="dropdown"><div class="mega">
+<div class="mcol"><h4>Sentiment</h4>
+<a href="/sentiment-index.html">Sentiment Index</a>
+<a href="/volatility.html">Implied vs. Realized Volatility</a>
+<a href="/news-sentiment.html">News Sentiment Momentum</a>
+<a href="/seasonality.html">Seasonality</a>
+</div>
+<div class="mcol"><h4>Breadth &amp; Positioning</h4>
+<a href="/market-breadth.html">Market Breadth</a>
+<a href="/ath-index.html">All-Time Highs and Lows</a>
+<a href="/margin-leverage.html">Margin &amp; Leverage Cycle</a>
+<a href="/short-sale-volume.html">Short Sale Volume</a>
+<a href="/options-positioning.html">Options Positioning</a>
+</div>
+<div class="mcol"><h4>Market Structure</h4>
+<a href="/concentration.html">Concentration</a>
+</div>
+</div></div>
+</div>
+<div class="navdrop has-active">
+<span class="navlabel">Valuation &amp; Earnings ▾</span>
+<div class="dropdown"><div class="mega">
+<div class="mcol"><h4>Valuation</h4>
+<a href="/valuations.html">Valuations</a>
+<a href="/implied-erp.html">Implied Equity Risk Premium</a>
+<a href="/equity-risk-premium.html">Equity Risk Premium by Sector</a>
+<a href="/pe-divergence.html">Forward vs. Trailing P/E Divergence</a>
+<a href="/expectations-vs-reality.html">Expectations vs. Reality</a>
+</div>
+<div class="mcol"><h4>Estimates &amp; Surprises</h4>
+<a href="/analyst-price-target.html">Analyst Price Target Upside</a>
+<a href="/analyst-estimate-dispersion.html">Analyst Estimate Dispersion</a>
+<a href="/earnings-revisions.html">Earnings Revisions</a>
+<a href="/earnings-surprise.html">Earnings Surprise History</a>
+<a href="/post-earnings-drift.html">Post-Earnings Announcement Drift</a>
+<a href="/earnings-call-sentiment.html">Earnings Call Sentiment</a>
+<a href="/earnings-growth-divergence.html">Earnings Growth vs. Price Performance</a>
+</div>
+<div class="mcol"><h4>Fundamentals &amp; Quality</h4>
+<a href="/fcf-yield.html">Free Cash Flow Yield</a>
+<a href="/quality-score.html">Financial Quality Screener (Piotroski)</a>
+<a href="/roic-wacc.html">ROIC vs. Cost of Capital</a>
+<a href="/cash-conversion-cycle.html">Cash Conversion Cycle</a>
+<a href="/rd-intensity.html">R&amp;D Intensity</a>
+<a href="/ai-capex-tracker.html">AI Capex Tracker</a>
+<a href="/preview/altman-z-score.html">Altman Z-Score</a>
+<a href="/preview/magic-formula.html" class="active">Magic Formula Screen</a>
+</div>
+</div></div>
+</div>
+<div class="navdrop">
+<span class="navlabel">Sectors &amp; Factors ▾</span>
+<div class="dropdown"><div class="mega">
+<div class="mcol"><h4>Sectors</h4>
+<a href="/sector-analysis.html">Sector Performance</a>
+<a href="/sector-beeswarm.html">Sector Beeswarm</a>
+<a href="/sector-correlation.html">Sector Correlation Matrix</a>
+<a href="/sector-rotation.html">Sector Rotation Model</a>
+<a href="/country-sector-scorecard.html">Country / Sector Scorecard</a>
+</div>
+<div class="mcol"><h4>Style &amp; Relative Performance</h4>
+<a href="/factor-analysis.html">Factor Analysis</a>
+<a href="/quality-lowvol-factors.html">Quality &amp; Low-Volatility Factor Screen</a>
+<a href="/small-cap-vs-large-cap.html">Small Cap vs. Large Cap Spread</a>
+<a href="/international-vs-us.html">International vs. US Relative Performance</a>
+<a href="/relative-strength-leaders.html">Relative Strength Leaders/Laggards</a>
+</div>
+</div></div>
+</div>
+<div class="navdrop">
+<span class="navlabel">Capital &amp; Ownership ▾</span>
+<div class="dropdown"><div class="mega">
+<div class="mcol"><h4>Shareholder Returns</h4>
+<a href="/dividend-growth-screener.html">Dividend Growth Screener</a>
+<a href="/shareholder-yield.html">Shareholder Yield</a>
+<a href="/buyback-effectiveness.html">Buyback Effectiveness</a>
+<a href="/share-count-trends.html">Share Count Trends</a>
+</div>
+<div class="mcol"><h4>Issuance &amp; Corporate Actions</h4>
+<a href="/stock-split-tracker.html">Stock Split Tracker</a>
+<a href="/spin-off-performance.html">Spin-Off Performance Tracker</a>
+<a href="/ipo-activity.html">IPO Activity</a>
+<a href="/ipo-pipeline.html">IPO Pipeline</a>
+</div>
+<div class="mcol"><h4>Ownership &amp; Flows</h4>
+<a href="/insider-buying-selling.html">Insider Buying/Selling</a>
+<a href="/institutional-ownership.html">Institutional Ownership &amp; 13F Flow</a>
+<a href="/congressional-trading.html">Congressional Trading Activity</a>
+<a href="/small-cap-liquidity.html">Small-Cap Liquidity</a>
+</div>
+</div></div>
+</div>
+<div class="navdrop">
+<span class="navlabel">Macro &amp; Tools ▾</span>
+<div class="dropdown"><div class="mega">
+<div class="mcol"><h4>Rates &amp; Macro</h4>
+<a href="/yield-curves.html">Yield Curves</a>
+</div>
+<div class="mcol"><h4>Tools</h4>
+<a href="/portfolio-simulator.html">Portfolio Simulator</a>
+<a href="/backtesting.html">Backtesting</a>
+<a href="/statistical-engine">Statistical Engine</a>
+</div>
+</div></div>
+</div>
+<div class="navdrop">
+<span class="navlabel">Research ▾</span>
+<div class="dropdown"><div class="mega">
+<div class="mcol"><h4>Reports</h4>
+<a href="/research/beneath-the-index.pdf" target="_blank" rel="noopener">Beneath the Index</a>
+</div>
+</div></div>
+</div>
+</div>
+<button aria-label="Toggle light/dark mode" class="theme-toggle" id="themeToggle" title="Toggle light/dark mode" type="button">☽</button>
+</nav>
+<script>
+// Class-driven (not pure :hover) nav dropdowns: pure CSS :hover drops the
+// menu the instant the cursor leaves .navdrop, which includes the moment
+// it's crossing the gap between the label and the dropdown box below —
+// exactly the "sometimes works, sometimes doesn't" flakiness reported.
+// A short close-delay after mouseleave gives the cursor room to travel
+// down into the dropdown without losing it.
+document.querySelectorAll(".navdrop").forEach(function(navdrop){
+ var closeTimer = null;
+ navdrop.addEventListener("mouseenter", function(){
+  clearTimeout(closeTimer);
+  navdrop.classList.add("open");
+ });
+ navdrop.addEventListener("mouseleave", function(){
+  closeTimer = setTimeout(function(){ navdrop.classList.remove("open"); }, 300);
+ });
+});
+</script>
+<script>
+(function(){
+ var btn = document.getElementById("themeToggle");
+ if(!btn) return;
+ var theme = document.documentElement.getAttribute("data-theme") === "light" ? "light" : "dark";
+ btn.textContent = theme === "light" ? "☀" : "☽";
+ btn.addEventListener("click", function(){
+  var current = document.documentElement.getAttribute("data-theme") === "light" ? "light" : "dark";
+  var next = current === "light" ? "dark" : "light";
+  localStorage.setItem("theme", next);
+  location.reload();
+ });
+})();
+</script>
+
+
+
+<div class="container">
+
+<div class="error-banner" id="errorBanner"></div>
+<div class="warning-banner" id="warningBanner"></div>
+
+<div class="header">
+<div>
+<h1>Magic Formula Screen</h1>
+<div class="subtitle">Joel Greenblatt's "Magic Formula" (<i>The Little Book That Beats the Market</i>): rank the S&amp;P 500 by return on capital and by earnings yield, add the two ranks together, and see what the cheapest, highest-quality combination actually looks like right now.</div>
+</div>
+<div class="updated" id="updated">Loading...</div>
+</div>
+
+<div class="stat-grid">
+<div class="stat-card">
+<div class="stat-label">Companies Ranked</div>
+<div class="stat-value" id="statCompanies" style="font-size:20px;">—</div>
+<div class="stat-note">With both a ROIC and an earnings-yield figure on file</div>
+</div>
+<div class="stat-card">
+<div class="stat-label">Top 30 Median ROIC</div>
+<div class="stat-value" id="statTopRoic">—</div>
+<div class="stat-note">vs. market-wide median</div>
+</div>
+<div class="stat-card">
+<div class="stat-label">Top 30 Median Earnings Yield</div>
+<div class="stat-value" id="statTopEy">—</div>
+<div class="stat-note">vs. market-wide median</div>
+</div>
+<div class="stat-card">
+<div class="stat-label">Top 30 Sector Spread</div>
+<div class="stat-value" id="statTopSectors" style="font-size:20px;">—</div>
+<div class="stat-note">Distinct sectors represented in the top 30</div>
+</div>
+</div>
+
+<div class="chart-box">
+<div class="chart-box-header">
+<div>
+<h2>Return on capital vs. earnings yield</h2>
+<div class="chart-subhead">Every ranked S&amp;P 500 constituent — the top 30 combined-rank picks are highlighted; everything else is muted</div>
+</div>
+</div>
+<div class="ndr-panel">
+<div class="chart-canvas-wrap" style="height:420px;">
+<canvas id="scatterChart"></canvas>
+</div>
+</div>
+</div>
+
+<div class="chart-box">
+<div class="chart-box-header">
+<div>
+<h2>Top 30 by sector</h2>
+<div class="chart-subhead">Where the current Magic Formula picks concentrate — a screen built from two ratios can end up lopsided toward whichever sectors happen to combine high capital returns with a cheap multiple right now</div>
+</div>
+</div>
+<div class="ndr-panel">
+<div class="chart-canvas-wrap" style="height:300px;">
+<canvas id="sectorChart"></canvas>
+</div>
+</div>
+</div>
+
+<div class="chart-box">
+<div class="chart-box-header">
+<div>
+<h2>Combined rank vs. 3-month relative return</h2>
+<div class="chart-subhead">Does a better (lower) Magic Formula rank currently show up in better relative price performance?</div>
+</div>
+</div>
+<div class="ndr-panel">
+<div class="scatter-canvas-wrap" style="height:320px;">
+<canvas id="rankRel3mScatter"></canvas>
+</div>
+</div>
+<div id="rankRel3mMethodTable"></div>
+</div>
+
+<div class="table-box">
+<div class="table-box-header">
+<h2>Full ranking</h2>
+<div class="chart-subhead">Every scored S&amp;P 500 constituent, sorted by combined rank (lower is better) by default</div>
+</div>
+<table id="stockTable">
+<thead>
+<tr>
+<th data-key="combinedRank">Combined Rank<span class="sort-arrow">▾</span></th>
+<th data-key="symbol">Symbol</th>
+<th data-key="sector">Sector</th>
+<th data-key="roic">ROIC<span class="sort-arrow">▾</span></th>
+<th data-key="roicRank">ROIC Rank<span class="sort-arrow">▾</span></th>
+<th data-key="earningsYield">Earnings Yield<span class="sort-arrow">▾</span></th>
+<th data-key="eyRank">EY Rank<span class="sort-arrow">▾</span></th>
+<th data-key="rel3M">3M Rel. Return<span class="sort-arrow">▾</span></th>
+</tr>
+</thead>
+<tbody id="tableBody">
+<tr><td colspan="8" style="text-align:center; color:var(--muted); padding:30px;">Loading Magic Formula data&hellip;</td></tr>
+</tbody>
+</table>
+</div>
+
+<div class="explainer">
+<h2>Methodology</h2>
+<p>This page makes no Alpha Vantage calls of its own — it joins three snapshots this site already publishes: <a href="/roic-wacc.html">ROIC vs. Cost of Capital</a> for each company's return on invested capital, <a href="/equity-risk-premium.html">Equity Risk Premium by Sector</a> for each company's trailing earnings yield, and <a href="/relative-strength-leaders.html">Relative Strength Leaders/Laggards</a> for the 3-month relative-return test. Universe is every symbol with a usable figure on <i>both</i> of the first two pages (a company missing either one can't be ranked, since the Magic Formula needs both legs).</p>
+<p>This is a deliberate adaptation of Greenblatt's original formula, not an exact replication, and the deviations are worth being explicit about: Greenblatt's own "return on capital" is EBIT &divide; (net working capital + net fixed assets), and his "earnings yield" is EBIT &divide; enterprise value — both built to be capital-structure-neutral (pre-interest, pre-tax-shield). This page substitutes this site's own already-computed <b>ROIC</b> (NOPAT &divide; invested capital) and <b>trailing-P/E-based earnings yield</b> (100 &divide; P/E) as readily-available stand-ins, reusing two pages that already exist rather than standing up a third full-universe statement sweep for figures that would tell a very similar story. Each company is ranked twice — once by ROIC (highest first) and once by earnings yield (highest first) — and the two ranks are simply added together; the <b>combined rank</b> sorts ascending, so the single best possible outcome is rank 1 + rank 1 = 2. Ties are broken by ROIC.</p>
+<p>The regression test is a single-snapshot cross-section (no accumulated history needed): combined rank vs. 3-month relative return asks whether the market currently rewards this screen's picks with better relative price performance — not whether the screen predicts future returns, which is the actual historical claim behind the strategy and isn't something a single snapshot can test. Uses the same Pearson-and-Spearman two-method check as <a href="/factor-analysis.html">Factor Analysis</a>.</p>
+<p>No schedule of its own to run or maintain — this page simply reads whatever <a href="/roic-wacc.html">ROIC vs. Cost of Capital</a> and <a href="/equity-risk-premium.html">Equity Risk Premium by Sector</a>'s own snapshots currently say, live, on every page load, so it's automatically as fresh as the more recently-updated of those two.</p>
+<div class="source">Source: this site's own <a href="/roic-wacc.html">ROIC vs. Cost of Capital</a>, <a href="/equity-risk-premium.html">Equity Risk Premium by Sector</a>, and <a href="/relative-strength-leaders.html">Relative Strength Leaders/Laggards</a> data, all ultimately sourced from <a href="https://www.alphavantage.co/" target="_blank" rel="noopener">Alpha Vantage</a></div>
+</div>
+
+</div>
+
+<script>
+const TOP_N = 30;
+
+let RAW = null;
+let SORT_KEY = "combinedRank";
+let SORT_DIR = 1;
+
+function fmtPct(v, digits){
+ if(v === null || v === undefined || isNaN(v)) return "—";
+ digits = digits === undefined ? 1 : digits;
+ return v.toFixed(digits) + "%";
+}
+function fmtPp(v, digits){
+ if(v === null || v === undefined || isNaN(v)) return "—";
+ digits = digits === undefined ? 1 : digits;
+ return (v >= 0 ? "+" : "") + v.toFixed(digits) + "pp";
+}
+function fmtInt(v){
+ if(v === null || v === undefined || isNaN(v)) return "—";
+ return String(v);
+}
+
+function showError(message){
+ const banner = document.getElementById("errorBanner");
+ banner.textContent = message;
+ banner.style.display = "block";
+}
+function showWarning(message){
+ const banner = document.getElementById("warningBanner");
+ banner.textContent = message;
+ banner.style.display = "block";
+}
+
+// ---- NDR chart styling helpers (matches /concentration, /roic-wacc) ----
+function ndr(name){
+ return getComputedStyle(document.documentElement).getPropertyValue("--ndr-" + name).trim();
+}
+
+Chart.defaults.font.family = "'Iowan Old Style','Palatino Linotype',Georgia,serif";
+Chart.defaults.color = ndr("axis-soft");
+
+function ndrXScale(){
+ return {
+  ticks: { color: ndr("axis"), maxTicksLimit: 9, maxRotation: 0, autoSkip: true, font: { size: 11 } },
+  grid: { color: "rgba(0,0,0,0)", borderColor: ndr("axis") },
+ };
+}
+
+function ndrYScale(opts){
+ opts = opts || {};
+ return {
+  type: opts.log ? "logarithmic" : "linear",
+  position: opts.position || "left",
+  grid: { color: ndr("grid"), drawBorder: false },
+  ticks: { color: ndr("axis"), font: { size: 11 }, callback: opts.fmt || undefined },
+  title: opts.title ? { display: true, text: opts.title, color: ndr("axis-soft"), font: { size: 10 } } : { display: false },
+  min: opts.min, max: opts.max,
+ };
+}
+
+// ---- Stats helpers — same methodology as /factor-analysis, duplicated
+// here since every page on this site is self-contained (see CLAUDE.md). ----
+function linearRegression(xs, ys){
+ const n = xs.length;
+ const mx = xs.reduce((a, b) => a + b, 0) / n;
+ const my = ys.reduce((a, b) => a + b, 0) / n;
+ const sxx = xs.reduce((s, x) => s + (x - mx) ** 2, 0);
+ const sxy = xs.reduce((s, x, i) => s + (x - mx) * (ys[i] - my), 0);
+ const syy = ys.reduce((s, y) => s + (y - my) ** 2, 0);
+ const slope = sxy / sxx;
+ const intercept = my - slope * mx;
+ const r = sxy / Math.sqrt(sxx * syy);
+ const r2 = r * r;
+ const dof = n - 2;
+ const sse = ys.reduce((s, y, i) => s + (y - (intercept + slope * xs[i])) ** 2, 0);
+ const seSlope = Math.sqrt((sse / dof) / sxx);
+ const t = slope / seSlope;
+ const p = 2 * (1 - normalCdf(Math.abs(t)));
+ return { n, slope, intercept, r, r2, t, dof, p, sse };
+}
+function normalCdf(x){ return 0.5 * (1 + erf(x / Math.SQRT2)); }
+function erf(x){
+ const sign = x < 0 ? -1 : 1;
+ x = Math.abs(x);
+ const a1 = 0.254829592, a2 = -0.284496736, a3 = 1.421413741, a4 = -1.453152027, a5 = 1.061405429, p = 0.3275911;
+ const t = 1 / (1 + p * x);
+ const y = 1 - (((((a5 * t + a4) * t) + a3) * t + a2) * t + a1) * t * Math.exp(-x * x);
+ return sign * y;
+}
+function rankArray(arr){
+ const idx = arr.map((v, i) => i).sort((a, b) => arr[a] - arr[b]);
+ const ranks = new Array(arr.length);
+ let i = 0;
+ while(i < idx.length){
+  let j = i;
+  while(j + 1 < idx.length && arr[idx[j + 1]] === arr[idx[i]]) j++;
+  const avgRank = (i + j) / 2 + 1;
+  for(let k = i; k <= j; k++) ranks[idx[k]] = avgRank;
+  i = j + 1;
+ }
+ return ranks;
+}
+function spearmanRegression(xs, ys){ return linearRegression(rankArray(xs), rankArray(ys)); }
+
+function methodTableHtml(pearson, spear, unitNote){
+ function row(label, stats){
+  const sig = stats.p < 0.05;
+  return "<tr>" +
+   "<td>" + label + "</td>" +
+   "<td>" + stats.n + "</td>" +
+   "<td>" + stats.r.toFixed(2) + "</td>" +
+   "<td>" + (stats.r2 * 100).toFixed(1) + "%</td>" +
+   "<td>" + (stats.slope >= 0 ? "+" : "") + stats.slope.toFixed(3) + "</td>" +
+   "<td>" + stats.t.toFixed(2) + "</td>" +
+   '<td class="' + (sig ? "sig" : "") + '">' + (stats.p < 0.001 ? "<0.001" : stats.p.toFixed(3)) + "</td>" +
+  "</tr>";
+ }
+ return '<table class="method-table">' +
+  "<thead><tr><th>Method</th><th>n</th><th>r</th><th>r&sup2;</th><th>slope</th><th>t</th><th>p</th></tr></thead>" +
+  "<tbody>" + row("Pearson (OLS)", pearson) + row("Spearman (&rho;)", spear) + "</tbody>" +
+ "</table>" + (unitNote ? '<div class="method-note">' + unitNote + "</div>" : "");
+}
+
+function median(values){
+ const v = values.filter(x => x !== null && x !== undefined && !isNaN(x)).sort((a, b) => a - b);
+ if(!v.length) return null;
+ const mid = Math.floor(v.length / 2);
+ return v.length % 2 ? v[mid] : (v[mid - 1] + v[mid]) / 2;
+}
+
+let scatterChart = null, sectorChart = null, rankRel3mScatter = null;
+
+async function init(){
+ try{
+  const [roicRes, erpRes, rsRes] = await Promise.all([
+   fetch("/api/roic-wacc", { cache: "no-store" }),
+   fetch("/api/equity-risk-premium", { cache: "no-store" }),
+   fetch("/api/relative-strength", { cache: "no-store" }).catch(() => null),
+  ]);
+  const roicData = await roicRes.json();
+  const erpData = await erpRes.json();
+  if(!roicRes.ok || roicData.error) throw new Error("ROIC vs. Cost of Capital: " + (roicData.error || "failed to load"));
+  if(!erpRes.ok || erpData.error) throw new Error("Equity Risk Premium by Sector: " + (erpData.error || "failed to load"));
+
+  let rsBySymbol = {};
+  if(rsRes && rsRes.ok){
+   const rsData = await rsRes.json();
+   if(Array.isArray(rsData.companies)){
+    for(const c of rsData.companies) if(c.rel3M !== null && c.rel3M !== undefined) rsBySymbol[c.symbol] = c.rel3M;
+   }
+  }
+  const hasRel3M = Object.keys(rsBySymbol).length > 0;
+  if(!hasRel3M) showWarning("Relative Strength Leaders/Laggards data isn't available yet, so the combined-rank-vs-return test can't run.");
+
+  const erpBySymbol = {};
+  for(const c of (erpData.companies || [])){
+   if(c.earningsYield !== null && c.earningsYield !== undefined) erpBySymbol[c.symbol] = c.earningsYield;
+  }
+
+  const joined = [];
+  for(const c of (roicData.companies || [])){
+   if(c.roic === null || c.roic === undefined) continue;
+   const ey = erpBySymbol[c.symbol];
+   if(ey === undefined) continue;
+   joined.push({ symbol: c.symbol, sector: c.sector, roic: c.roic, earningsYield: ey, rel3M: rsBySymbol[c.symbol] ?? null });
+  }
+  if(!joined.length) throw new Error("No companies had both a ROIC and an earnings-yield figure to join");
+
+  const byRoicDesc = [...joined].sort((a, b) => b.roic - a.roic);
+  const roicRankOf = new Map();
+  byRoicDesc.forEach((c, i) => roicRankOf.set(c.symbol, i + 1));
+
+  const byEyDesc = [...joined].sort((a, b) => b.earningsYield - a.earningsYield);
+  const eyRankOf = new Map();
+  byEyDesc.forEach((c, i) => eyRankOf.set(c.symbol, i + 1));
+
+  for(const c of joined){
+   c.roicRank = roicRankOf.get(c.symbol);
+   c.eyRank = eyRankOf.get(c.symbol);
+   c.combinedRank = c.roicRank + c.eyRank;
+  }
+  joined.sort((a, b) => a.combinedRank - b.combinedRank || b.roic - a.roic);
+  joined.forEach((c, i) => { c.overallRank = i + 1; c.isTop = i < TOP_N; });
+
+  RAW = { generatedAt: new Date().toISOString(), companies: joined, hasRel3M, roicAsOf: roicData.generated_at_utc, erpAsOf: erpData.generated_at_utc };
+  document.getElementById("updated").textContent = "Joined live — ROIC data as of " + new Date(roicData.generated_at_utc).toLocaleDateString() + ", earnings yield as of " + new Date(erpData.generated_at_utc).toLocaleDateString();
+
+  renderStats();
+  renderScatterChart();
+  renderSectorChart();
+  renderRankRel3mScatter();
+  renderTable();
+
+ }catch(e){
+  showError("Couldn't build the Magic Formula screen (" + e.message + "). Both /api/roic-wacc and /api/equity-risk-premium need to have run at least once.");
+  document.getElementById("tableBody").innerHTML =
+   '<tr><td colspan="8" style="text-align:center; color:var(--muted); padding:30px;">No data available.</td></tr>';
+ }
+}
+
+function renderStats(){
+ const all = RAW.companies;
+ const top = all.filter(c => c.isTop);
+ document.getElementById("statCompanies").textContent = all.length;
+ document.getElementById("statTopRoic").textContent = fmtPct(median(top.map(c => c.roic)));
+ document.getElementById("statTopEy").textContent = fmtPct(median(top.map(c => c.earningsYield)));
+ document.getElementById("statTopSectors").textContent = new Set(top.map(c => c.sector)).size;
+}
+
+function renderScatterChart(){
+ const all = RAW.companies;
+ const rest = all.filter(c => !c.isTop).map(c => ({ x: c.earningsYield, y: c.roic, symbol: c.symbol }));
+ const top = all.filter(c => c.isTop).map(c => ({ x: c.earningsYield, y: c.roic, symbol: c.symbol }));
+
+ const ctx = document.getElementById("scatterChart").getContext("2d");
+ if(scatterChart) scatterChart.destroy();
+ scatterChart = new Chart(ctx, {
+  type: "scatter",
+  data: {
+   datasets: [
+    { label: "Rest of universe", data: rest, backgroundColor: "rgba(125,138,153,0.35)", pointRadius: 2.5, showLine: false },
+    { label: "Top " + TOP_N + " (Magic Formula)", data: top, backgroundColor: ndr("gold"), pointRadius: 4, showLine: false },
+   ],
+  },
+  options: {
+   responsive: true,
+   maintainAspectRatio: false,
+   plugins: {
+    legend: { display: true, position: "top", align: "start", labels: { boxWidth: 12, boxHeight: 12, color: ndr("axis"), font: { size: 11 } } },
+    tooltip: { callbacks: { label: ctx => ctx.raw.symbol + ": EY " + fmtPct(ctx.raw.x) + ", ROIC " + fmtPct(ctx.raw.y) } },
+   },
+   scales: {
+    x: ndrYScale({ position: "bottom", fmt: v => v + "%", title: "Earnings yield" }),
+    y: ndrYScale({ fmt: v => v + "%", title: "ROIC" }),
+   },
+  },
+ });
+}
+
+function renderSectorChart(){
+ const top = RAW.companies.filter(c => c.isTop);
+ const counts = {};
+ for(const c of top) counts[c.sector] = (counts[c.sector] || 0) + 1;
+ const sectors = Object.keys(counts).sort((a, b) => counts[b] - counts[a]);
+
+ const ctx = document.getElementById("sectorChart").getContext("2d");
+ if(sectorChart) sectorChart.destroy();
+ sectorChart = new Chart(ctx, {
+  type: "bar",
+  data: {
+   labels: sectors,
+   datasets: [{ data: sectors.map(s => counts[s]), backgroundColor: ndr("gold"), borderRadius: 3, barPercentage: 0.7 }],
+  },
+  options: {
+   responsive: true,
+   maintainAspectRatio: false,
+   indexAxis: "y",
+   plugins: {
+    legend: { display: false },
+    tooltip: { callbacks: { label: ctx => ctx.parsed.x + " of top " + TOP_N } },
+   },
+   scales: {
+    x: ndrYScale({ title: "Companies in top " + TOP_N }),
+    y: { ticks: { color: ndr("axis"), font: { size: 11 } }, grid: { display: false } },
+   },
+  },
+ });
+}
+
+function renderRankRel3mScatter(){
+ const pairs = RAW.hasRel3M
+  ? RAW.companies.filter(c => c.rel3M !== null).map(c => ({ x: c.combinedRank, y: c.rel3M, symbol: c.symbol }))
+  : [];
+ if(pairs.length < 5){
+  document.getElementById("rankRel3mMethodTable").innerHTML = '<div class="method-note">Not enough data to test.</div>';
+  return;
+ }
+ const pearson = linearRegression(pairs.map(p => p.x), pairs.map(p => p.y));
+ const spear = spearmanRegression(pairs.map(p => p.x), pairs.map(p => p.y));
+ const xs = pairs.map(p => p.x);
+ const xMin = Math.min(...xs), xMax = Math.max(...xs);
+ const linePoints = [{ x: xMin, y: pearson.intercept + pearson.slope * xMin }, { x: xMax, y: pearson.intercept + pearson.slope * xMax }];
+
+ const ctx = document.getElementById("rankRel3mScatter").getContext("2d");
+ if(rankRel3mScatter) rankRel3mScatter.destroy();
+ rankRel3mScatter = new Chart(ctx, {
+  type: "scatter",
+  data: {
+   datasets: [
+    { label: "Companies", data: pairs, backgroundColor: ndr("gold"), pointRadius: 2.5, showLine: false },
+    { label: "Regression fit", type: "line", data: linePoints, borderColor: ndr("navy"), borderWidth: 1.5, borderDash: [4, 3], pointRadius: 0, fill: false },
+   ],
+  },
+  options: {
+   responsive: true,
+   maintainAspectRatio: false,
+   plugins: {
+    legend: { display: false },
+    tooltip: { callbacks: { label: ctx => ctx.dataset.label === "Companies" ? (ctx.raw.symbol + ": rank " + ctx.raw.x + ", rel. 3M " + fmtPp(ctx.raw.y)) : null } },
+   },
+   scales: {
+    x: ndrYScale({ position: "bottom", title: "Combined rank (lower is better)" }),
+    y: ndrYScale({ fmt: v => v + "pp", title: "3-month return vs. SPY (pp)" }),
+   },
+  },
+ });
+
+ document.getElementById("rankRel3mMethodTable").innerHTML = methodTableHtml(pearson, spear,
+  "Slope is relative-return pp per 1 unit of combined rank. n=" + pearson.n + " companies. A single snapshot in time — a negative, significant slope would say a better rank currently comes with better relative performance, not that the rank predicts future returns.");
+}
+
+function sortBy(key){
+ if(SORT_KEY === key){
+  SORT_DIR = -SORT_DIR;
+ }else{
+  SORT_KEY = key;
+  SORT_DIR = 1;
+ }
+ renderTable();
+}
+
+function renderTable(){
+ const rows = [...RAW.companies].sort((a, b) => {
+  const av = a[SORT_KEY], bv = b[SORT_KEY];
+  if(av === null || av === undefined) return 1;
+  if(bv === null || bv === undefined) return -1;
+  if(typeof av === "string") return av.localeCompare(bv) * SORT_DIR;
+  return (av - bv) * SORT_DIR;
+ });
+
+ const tbody = document.getElementById("tableBody");
+ tbody.innerHTML = rows.map(r => `<tr>
+  <td class="${r.isTop ? "rank-highlight" : ""}">${fmtInt(r.combinedRank)}</td>
+  <td><span class="sector-name">${r.symbol}</span></td>
+  <td><span class="sector-ticker">${r.sector || "—"}</span></td>
+  <td>${fmtPct(r.roic)}</td>
+  <td>${fmtInt(r.roicRank)}</td>
+  <td>${fmtPct(r.earningsYield)}</td>
+  <td>${fmtInt(r.eyRank)}</td>
+  <td>${fmtPp(r.rel3M)}</td>
+ </tr>`).join("");
+
+ document.querySelectorAll("#stockTable thead th").forEach(th => {
+  const key = th.dataset.key;
+  th.classList.toggle("sorted", key === SORT_KEY);
+  const arrow = th.querySelector(".sort-arrow");
+  if(arrow) arrow.textContent = (key === SORT_KEY && SORT_DIR === 1) ? "▴" : "▾";
+ });
+}
+
+document.querySelectorAll("#stockTable thead th").forEach(th => {
+ const key = th.dataset.key;
+ if(key) th.addEventListener("click", () => sortBy(key));
+});
+
+init();
+</script>
+
+</body>
+</html>

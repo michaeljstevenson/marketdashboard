@@ -1,0 +1,1212 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta name="robots" content="noindex">
+<script>
+// Applied before first paint to avoid a flash of the wrong theme.
+(function(){
+ var saved = localStorage.getItem("theme");
+ if(saved === "light") document.documentElement.setAttribute("data-theme", "light");
+})();
+</script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom@2"></script>
+<script src="/date-format.js"></script>
+<script>
+// FRED-style zoom: drag horizontally on any chart to zoom into that range,
+// double-click to reset. Applied via Chart.defaults so every chart on the
+// page gets it without touching each individual new Chart(...) call.
+Chart.defaults.plugins.zoom = {
+ zoom: {
+  wheel: { enabled: false },
+  pinch: { enabled: false },
+  drag: { enabled: true, backgroundColor: "rgba(217,138,61,0.15)", borderColor: "rgba(217,138,61,0.4)", borderWidth: 1 },
+  mode: "x",
+ },
+ pan: { enabled: true, mode: "x", modifierKey: "shift" },
+};
+document.addEventListener("dblclick", function(e){
+ if(e.target.tagName === "CANVAS"){
+  var chart = Chart.getChart(e.target);
+  if(chart) chart.resetZoom();
+ }
+});
+document.addEventListener("DOMContentLoaded", function(){
+ document.querySelectorAll(".chart-canvas-wrap canvas").forEach(function(c){
+  c.title = "Drag to zoom · shift-drag to pan · double-click to reset";
+ });
+});
+</script>
+<style>
+.chart-fullscreen-btn{
+ position:absolute;
+ top:8px;
+ right:8px;
+ z-index:5;
+ background:var(--card, #1c2127);
+ border:1px solid var(--hair, #2b3138);
+ color:var(--muted, #8b9199);
+ border-radius:6px;
+ width:28px;
+ height:28px;
+ display:flex;
+ align-items:center;
+ justify-content:center;
+ cursor:pointer;
+ padding:0;
+ opacity:0.85;
+}
+.chart-fullscreen-btn:hover{ color:var(--ink, #eae6da); border-color:#3a424b; opacity:1; }
+.is-chart-fullscreen{
+ background:var(--bg, #14181c) !important;
+ padding:24px !important;
+ display:flex !important;
+ flex-direction:column !important;
+ overflow:auto !important;
+}
+.is-chart-fullscreen canvas{
+ max-height:none !important;
+}
+</style>
+<script>
+// Expand-to-fullscreen button on every chart, matching the pattern from
+// sites like GuruFocus: a small corner button on each chart's canvas
+// area that fullscreens the whole chart card (title, legend, controls
+// included) via the Fullscreen API. Finds every <canvas> generically
+// rather than relying on one wrapper class name, since different pages
+// on this site use different card markup (.chart-box, .scatter-box,
+// .chart, herd-mentality tiles, etc.).
+document.addEventListener("DOMContentLoaded", function(){
+ function requestFs(el){
+  var fn = el.requestFullscreen || el.webkitRequestFullscreen || el.mozRequestFullScreen || el.msRequestFullscreen;
+  if(fn) fn.call(el);
+ }
+ function exitFs(){
+  var fn = document.exitFullscreen || document.webkitExitFullscreen || document.mozCancelFullScreen || document.msExitFullscreen;
+  if(fn) fn.call(document);
+ }
+ function currentFsEl(){
+  return document.fullscreenElement || document.webkitFullscreenElement || document.mozFullScreenElement || document.msFullscreenElement;
+ }
+ function resolveCard(canvas){
+  return canvas.closest(".chart-box, .scatter-box, .herd-cell, .modal-chart")
+   || canvas.parentElement.closest("div")
+   || canvas.parentElement;
+ }
+ function resizeChartIn(wrap){
+  var canvas = wrap.querySelector("canvas");
+  var chart = canvas && window.Chart && Chart.getChart(canvas);
+  if(chart) chart.resize();
+ }
+
+ var entries = []; // { card, wrap }
+
+ document.querySelectorAll("canvas").forEach(function(canvas){
+  if(canvas.closest(".chart-fullscreen-btn")) return;
+  var card = resolveCard(canvas);
+  if(!card || card.querySelector(".chart-fullscreen-btn")) return; // one button per card, not per canvas
+
+  var wrap = canvas.parentElement;
+  var wrapStyle = getComputedStyle(wrap);
+  if(wrapStyle.position === "static") wrap.style.position = "relative";
+
+  var btn = document.createElement("button");
+  btn.type = "button";
+  btn.className = "chart-fullscreen-btn";
+  btn.title = "Expand chart";
+  btn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3H5a2 2 0 0 0-2 2v3"/><path d="M16 3h3a2 2 0 0 1 2 2v3"/><path d="M8 21H5a2 2 0 0 1-2-2v-3"/><path d="M16 21h3a2 2 0 0 0 2-2v-3"/></svg>';
+  btn.addEventListener("click", function(e){
+   e.stopPropagation();
+   if(currentFsEl() === card) exitFs();
+   else requestFs(card);
+  });
+  wrap.appendChild(btn);
+  entries.push({ card: card, wrap: wrap });
+
+  if(window.ResizeObserver){
+   new ResizeObserver(function(){ resizeChartIn(wrap); }).observe(wrap);
+  }
+ });
+
+ function onFsChange(){
+  var fsEl = currentFsEl();
+  entries.forEach(function(entry){
+   var isFs = fsEl === entry.card;
+   entry.card.classList.toggle("is-chart-fullscreen", isFs);
+   if(isFs){
+    entry.wrap.dataset.fsPrevHeight = entry.wrap.style.height || "";
+    entry.wrap.dataset.fsPrevFlex = entry.wrap.style.flex || "";
+    entry.wrap.style.flex = "1 1 auto";
+    entry.wrap.style.minHeight = "0";
+    entry.wrap.style.height = "auto";
+   }else if(entry.wrap.dataset.fsPrevHeight !== undefined){
+    entry.wrap.style.height = entry.wrap.dataset.fsPrevHeight;
+    entry.wrap.style.flex = entry.wrap.dataset.fsPrevFlex;
+    entry.wrap.style.minHeight = "";
+   }
+  });
+  entries.forEach(function(entry){ resizeChartIn(entry.wrap); });
+ }
+ ["fullscreenchange", "webkitfullscreenchange", "mozfullscreenchange", "MSFullscreenChange"].forEach(function(evt){
+  document.addEventListener(evt, onFsChange);
+ });
+});
+</script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Earnings Calendar &amp; Bar-Setting | Michael J. Stevenson</title>
+
+<style>
+
+:root{
+  --bg:#14181c;
+  --card:#1c2127;
+  --card-hover:#20262d;
+  --ink:#eae6da;
+  --muted:#8b9199;
+  --hair:#2b3138;
+
+  --fear:#6f8fac;
+  --neutral:#7c828a;
+  --greed:#d98a3d;
+  --extreme:#b56f2a;
+
+  --serif:'Times New Roman',Times,serif;
+  --mono:'SF Mono','JetBrains Mono',ui-monospace,Menlo,monospace;
+  --sans:'Times New Roman',Times,serif;
+
+  /* NDR-style chart palette. Deliberately the SAME in light and dark —
+     these charts keep a constant warm-paper look as a homage to the Ned
+     Davis Research print charts that inspired the page. JS reads them via
+     getComputedStyle (per the site convention) rather than hardcoding. */
+  --ndr-plot:#f5f1e6;
+  --ndr-axis:#3c3a33;
+  --ndr-axis-soft:#6f6a5c;
+  --ndr-grid:#ddd6c2;
+  --ndr-red:#a83c36;
+  --ndr-green:#4f6f3f;
+  --ndr-gold:#c1902f;
+  --ndr-navy:#2f4b6e;
+  --ndr-slate:#7d8a99;
+}
+
+:root[data-theme="light"]{
+  --bg:#f7f5f0;
+  --card:#ffffff;
+  --card-hover:#f2efe6;
+  --ink:#1c1f24;
+  --muted:#6b6f76;
+  --hair:#e1dbcd;
+  --fear:#4f6f8c;
+  --neutral:#6c7178;
+  --greed:#b9701f;
+  --extreme:#96591c;
+}
+
+*{ box-sizing:border-box; }
+
+body{
+ margin:0;
+ background:var(--bg);
+ color:var(--ink);
+ font-family:var(--sans);
+}
+
+a{ color:inherit; }
+
+/* SITE NAV (mega-menu, shared with homepage) */
+.sitenav{ display:grid; grid-template-columns:auto 1fr auto; align-items:center; padding:16px 24px; border-bottom:1px solid var(--hair); position:relative; z-index:50; }
+.sitenav .brand{ justify-self:start; white-space:nowrap; font-family:var(--serif); font-size:16px; color:var(--ink); text-decoration:none; letter-spacing:0.3px; }
+.navlinks{ display:flex; gap:2px; align-items:center; justify-self:center; }
+.navdrop{ position:static; }
+.navdrop > .navlabel{ display:block; white-space:nowrap; color:var(--muted); font-size:13px; cursor:default; padding:8px 14px; border-radius:6px; user-select:none; }
+.navdrop:hover > .navlabel, .navdrop.open > .navlabel, .navdrop.has-active > .navlabel{ color:var(--ink); }
+.navdrop.open > .navlabel{ background:var(--card-hover); }
+.navdrop .dropdown{ display:none; position:absolute; top:100%; left:0; right:0; min-width:0; margin-top:0; background:var(--card); border:0; border-top:1px solid var(--hair); border-bottom:1px solid var(--hair); border-radius:0; padding:22px 24px 26px; box-shadow:0 18px 40px rgba(0,0,0,0.35); }
+.navdrop.open .dropdown{ display:block; }
+.mega{ max-width:1000px; margin:0 auto; display:grid; grid-template-columns:repeat(auto-fit,minmax(210px,1fr)); gap:8px 40px; }
+.mcol h4{ margin:0 0 8px; padding-bottom:7px; border-bottom:1px solid var(--hair); font-size:12px; font-weight:600; color:var(--muted); letter-spacing:0.02em; }
+.dropdown .mcol a{ display:block; padding:6px 0; color:var(--ink); text-decoration:none; font-size:13.5px; line-height:1.35; }
+.dropdown .mcol a:hover{ color:var(--greed, #d98a3d); background:none; }
+.dropdown .mcol a.active{ color:var(--greed, #d98a3d); }
+@media (max-width:1100px){ .sitenav{ padding:14px 16px; } .sitenav .brand{ font-size:15px; } .navdrop > .navlabel{ padding:8px 8px; font-size:12.5px; } }
+@media (max-width:720px){ .navlinks{ display:none; } }
+
+.container{
+ max-width:1360px;
+ margin:auto;
+ padding:30px 20px 60px;
+}
+
+/* HEADER */
+
+.header{
+ display:flex;
+ justify-content:space-between;
+ align-items:flex-end;
+ border-bottom:1px solid var(--hair);
+ padding-bottom:18px;
+ margin-bottom:25px;
+ flex-wrap:wrap;
+ gap:12px;
+}
+
+h1{
+ font-family:var(--serif);
+ font-size:28px;
+ font-weight:400;
+ margin:0;
+}
+
+.subtitle{
+ color:var(--muted);
+ font-size:13px;
+ margin-top:6px;
+ max-width:640px;
+}
+
+.updated{
+ color:var(--muted);
+ font-size:12px;
+}
+
+/* STAT ROW */
+
+.stat-grid{
+ display:grid;
+ grid-template-columns:repeat(4,1fr);
+ gap:16px;
+ margin-bottom:30px;
+}
+
+.stat-card{
+ background:var(--card);
+ border:1px solid var(--hair);
+ border-radius:10px;
+ padding:20px;
+}
+
+.stat-label{
+ color:var(--muted);
+ font-size:12px;
+ letter-spacing:0.04em;
+ margin-bottom:8px;
+}
+
+.stat-value{
+ font-family:var(--mono);
+ font-size:26px;
+ color:var(--greed);
+}
+
+.stat-value.down{ color:var(--fear); }
+.stat-value.neutral{ color:var(--ink); }
+
+.stat-note{
+ color:var(--muted);
+ font-size:12px;
+ margin-top:6px;
+}
+
+/* CONTROLS */
+
+.toggle-group{
+ display:inline-flex;
+ background:var(--card);
+ border:1px solid var(--hair);
+ border-radius:8px;
+ padding:3px;
+}
+
+.toggle-btn{
+ background:none;
+ border:none;
+ color:var(--muted);
+ font-family:var(--sans);
+ font-size:13px;
+ padding:7px 16px;
+ border-radius:6px;
+ cursor:pointer;
+}
+
+.toggle-btn.active{
+ background:var(--greed);
+ color:#1a1408;
+ font-weight:600;
+}
+
+/* CHART */
+
+.chart-box{
+ background:var(--card);
+ border:1px solid var(--hair);
+ border-radius:12px;
+ padding:20px;
+ margin-bottom:30px;
+}
+
+.chart-box h2{
+ font-family:var(--serif);
+ font-weight:400;
+ font-size:18px;
+ margin:0;
+}
+
+.chart-box-header{
+ display:flex;
+ justify-content:space-between;
+ align-items:center;
+ flex-wrap:wrap;
+ gap:10px;
+ margin-bottom:16px;
+}
+
+.chart-box-sub{
+ color:var(--muted);
+ font-size:12px;
+ margin-top:4px;
+}
+
+/* The warm-paper plot panel behind each canvas — the NDR homage. */
+.ndr-panel{
+ background:var(--ndr-plot);
+ border:1px solid var(--ndr-grid);
+ border-radius:8px;
+ padding:14px 14px 10px;
+}
+
+.chart-canvas-wrap{
+ height:420px;
+}
+
+.chart-canvas-wrap.tall{ height:460px; }
+.chart-canvas-wrap.short{ height:320px; }
+
+/* TABLES */
+
+.table-box{
+ background:var(--card);
+ border:1px solid var(--hair);
+ border-radius:12px;
+ overflow-x:auto;
+ margin-bottom:22px;
+}
+
+table{
+ width:100%;
+ border-collapse:collapse;
+ font-size:13px;
+ min-width:600px;
+}
+
+thead th{
+ text-align:right;
+ padding:14px 12px;
+ color:var(--muted);
+ font-size:11px;
+ letter-spacing:0.04em;
+ font-weight:600;
+ white-space:nowrap;
+ border-bottom:1px solid var(--hair);
+}
+
+thead th:first-child, thead th:nth-child(2), thead th:nth-child(3){
+ text-align:left;
+}
+
+tbody td{
+ padding:11px 12px;
+ text-align:right;
+ font-family:var(--mono);
+ white-space:nowrap;
+ border-bottom:1px solid var(--hair);
+}
+
+tbody tr:last-child td{ border-bottom:none; }
+tbody tr:hover{ background:var(--card-hover); }
+
+tbody td:first-child, tbody td:nth-child(2), tbody td:nth-child(3){
+ text-align:left;
+ font-family:var(--sans);
+}
+
+tbody td:nth-child(2){ color:var(--muted); }
+tbody td:nth-child(3){ color:var(--muted); font-size:11px; }
+
+.cell-pos{ color:var(--greed); }
+.cell-neg{ color:var(--fear); }
+
+.leaderboard-grid{
+ display:grid;
+ grid-template-columns:1fr 1fr;
+ gap:16px;
+ margin-bottom:22px;
+}
+
+.leaderboard-col h3{
+ font-family:var(--serif);
+ font-weight:400;
+ font-size:15px;
+ margin:0 0 10px;
+ color:var(--muted);
+}
+
+.leaderboard-col h3.up{ color:var(--greed); }
+.leaderboard-col h3.down{ color:var(--fear); }
+
+@media (max-width:800px){
+ .leaderboard-grid{ grid-template-columns:1fr; }
+}
+
+/* PERSISTENCE TABLE */
+
+.persist-grid{
+ display:grid;
+ grid-template-columns:repeat(3,1fr);
+ gap:16px;
+ margin-bottom:16px;
+}
+
+.persist-card{
+ background:var(--card-hover);
+ border:1px solid var(--hair);
+ border-radius:10px;
+ padding:16px;
+ text-align:center;
+}
+
+.persist-card .persist-label{
+ color:var(--muted);
+ font-size:11.5px;
+ margin-bottom:8px;
+}
+
+.persist-card .persist-value{
+ font-family:var(--mono);
+ font-size:22px;
+ color:var(--ink);
+}
+
+@media (max-width:720px){
+ .persist-grid{ grid-template-columns:1fr; }
+}
+
+/* EXPLAINER */
+
+.explainer{
+ background:var(--card);
+ border:1px solid var(--hair);
+ border-radius:12px;
+ padding:24px 26px;
+ margin-bottom:22px;
+}
+
+.explainer h2{
+ font-family:var(--serif);
+ font-weight:400;
+ font-size:18px;
+ margin:0 0 12px;
+}
+
+.explainer p{
+ color:var(--muted);
+ font-size:14px;
+ line-height:1.7;
+ margin:0 0 14px;
+}
+
+.explainer p:last-child{ margin-bottom:0; }
+
+.explainer .source{
+ margin-top:16px;
+ font-size:11px;
+}
+
+.explainer .source a{
+ color:var(--muted);
+ text-decoration:none;
+ border-bottom:1px dotted var(--muted);
+}
+
+.explainer .source a:hover{ color:var(--ink); }
+
+.error-banner{
+ background:#2a1c1c;
+ border:1px solid #5a3030;
+ color:#e0a0a0;
+ border-radius:8px;
+ padding:12px 15px;
+ margin-bottom:20px;
+ font-size:13px;
+ display:none;
+}
+
+.warning-banner{
+ background:#2a2419;
+ border:1px solid #5a4f30;
+ color:#d9b877;
+ border-radius:8px;
+ padding:12px 15px;
+ margin-bottom:20px;
+ font-size:13px;
+ display:none;
+}
+
+.theme-toggle{
+ justify-self:end;
+ background:none;
+ border:1px solid var(--hair);
+ color:var(--muted);
+ border-radius:6px;
+ width:32px;
+ height:32px;
+ display:flex;
+ align-items:center;
+ justify-content:center;
+ cursor:pointer;
+ font-size:15px;
+ line-height:1;
+}
+
+.theme-toggle:hover{ color:var(--ink); border-color:var(--hair); }
+
+@media (max-width:720px){
+ .stat-grid{ grid-template-columns:1fr 1fr; }
+}
+
+/* Light-theme overrides for hardcoded (non-var) dark colors */
+
+[data-theme="light"] .error-banner{
+ background:#fdecea;
+ border-color:#f0b8b0;
+ color:#a83a30;
+}
+
+[data-theme="light"] .warning-banner{
+ background:#fdf3d9;
+ border-color:#e9cf8a;
+ color:#8a6a1f;
+}
+.chart-box-header input[type=search]{ background:var(--card); color:var(--ink); border:1px solid var(--hair); border-radius:8px; padding:8px 12px; font-size:13px; min-width:0; width:240px; max-width:100%; }
+.leaderboard-col{ min-width:0; }
+</style>
+<link rel="stylesheet" href="/site.css">
+</head>
+<body>
+<div style="position:sticky;top:0;z-index:9999;display:flex;gap:14px;justify-content:center;flex-wrap:wrap;padding:6px 16px;background:#b8860b;color:#fff;font:600 12px/1.4 system-ui,sans-serif"><span>Preview &middot; PR #40</span><a href="https://github.com/michaeljstevenson/marketdashboard/pull/40" style="color:#fff" target="_blank" rel="noopener">View PR</a><a href="/preview/" style="color:#fff">All previews</a></div>
+
+<nav class="sitenav">
+<a class="brand" href="/">Michael J. Stevenson, CAIA<span style="font-size:0.6em; vertical-align:super;">&reg;</span></a>
+<div class="navlinks">
+<div class="navdrop">
+<span class="navlabel">Research Reports ▾</span>
+<div class="dropdown"><div class="mega">
+<div class="mcol">
+<a href="/research/beneath-the-index.pdf" target="_blank" rel="noopener">Beneath the Index</a>
+</div>
+</div></div>
+</div>
+<div class="navdrop">
+<span class="navlabel">Market Internals ▾</span>
+<div class="dropdown"><div class="mega">
+<div class="mcol"><h4>Sentiment</h4>
+<a href="/sentiment-index.html">Sentiment Index</a>
+<a href="/volatility.html">Implied vs. Realized Volatility</a>
+<a href="/seasonality.html">Seasonality</a>
+</div>
+<div class="mcol"><h4>Breadth &amp; Positioning</h4>
+<a href="/market-breadth.html">Market Breadth</a>
+<a href="/ath-index.html">All-Time Highs and Lows</a>
+<a href="/margin-leverage.html">Margin &amp; Leverage Cycle</a>
+<a href="/short-sale-volume.html">Short Sale Volume</a>
+<a href="/options-positioning.html">Options Positioning</a>
+</div>
+<div class="mcol"><h4>Market Structure</h4>
+<a href="/concentration.html">Concentration</a>
+</div>
+</div></div>
+</div>
+<div class="navdrop has-active">
+<span class="navlabel">Valuation &amp; Earnings ▾</span>
+<div class="dropdown"><div class="mega">
+<div class="mcol"><h4>Valuation</h4>
+<a href="/valuations.html">Valuations</a>
+<a href="/implied-erp.html">Implied Equity Risk Premium</a>
+<a href="/equity-risk-premium.html">Equity Risk Premium by Sector</a>
+<a href="/pe-divergence.html">Forward vs. Trailing P/E Divergence</a>
+<a href="/expectations-vs-reality.html">Expectations vs. Reality</a>
+</div>
+<div class="mcol"><h4>Estimates &amp; Surprises</h4>
+<a href="/analyst-price-target.html">Analyst Price Target Upside</a>
+<a href="/earnings-revisions.html">Earnings Revisions</a>
+<a href="/preview/earnings-calendar.html" class="active">Earnings Calendar &amp; Bar-Setting</a>
+<a href="/earnings-surprise.html">Earnings Surprise History</a>
+<a href="/post-earnings-drift.html">Post-Earnings Announcement Drift</a>
+<a href="/earnings-call-sentiment.html">Earnings Call Sentiment</a>
+<a href="/earnings-growth-divergence.html">Earnings Growth vs. Price Performance</a>
+</div>
+<div class="mcol"><h4>Fundamentals &amp; Quality</h4>
+<a href="/fcf-yield.html">Free Cash Flow Yield</a>
+<a href="/quality-score.html">Financial Quality Screener (Piotroski)</a>
+<a href="/roic-wacc.html">ROIC vs. Cost of Capital</a>
+<a href="/cash-conversion-cycle.html">Cash Conversion Cycle</a>
+<a href="/rd-intensity.html">R&amp;D Intensity</a>
+</div>
+</div></div>
+</div>
+<div class="navdrop">
+<span class="navlabel">Sectors &amp; Factors ▾</span>
+<div class="dropdown"><div class="mega">
+<div class="mcol"><h4>Sectors</h4>
+<a href="/sector-analysis.html">Sector Performance</a>
+<a href="/sector-beeswarm.html">Sector Beeswarm</a>
+<a href="/sector-correlation.html">Sector Correlation Matrix</a>
+<a href="/sector-rotation.html">Sector Rotation Model</a>
+<a href="/country-sector-scorecard.html">Country / Sector Scorecard</a>
+</div>
+<div class="mcol"><h4>Style &amp; Relative Performance</h4>
+<a href="/factor-analysis.html">Factor Analysis</a>
+<a href="/quality-lowvol-factors.html">Quality &amp; Low-Volatility Factor Screen</a>
+<a href="/small-cap-vs-large-cap.html">Small Cap vs. Large Cap Spread</a>
+<a href="/international-vs-us.html">International vs. US Relative Performance</a>
+<a href="/relative-strength-leaders.html">Relative Strength Leaders/Laggards</a>
+</div>
+</div></div>
+</div>
+<div class="navdrop">
+<span class="navlabel">Capital &amp; Ownership ▾</span>
+<div class="dropdown"><div class="mega">
+<div class="mcol"><h4>Shareholder Returns</h4>
+<a href="/dividend-growth-screener.html">Dividend Growth Screener</a>
+<a href="/shareholder-yield.html">Shareholder Yield</a>
+<a href="/buyback-effectiveness.html">Buyback Effectiveness</a>
+<a href="/share-count-trends.html">Share Count Trends</a>
+</div>
+<div class="mcol"><h4>Issuance &amp; Corporate Actions</h4>
+<a href="/stock-split-tracker.html">Stock Split Tracker</a>
+<a href="/spin-off-performance.html">Spin-Off Performance Tracker</a>
+<a href="/ipo-activity.html">IPO Activity</a>
+<a href="/ipo-pipeline.html">IPO Pipeline</a>
+</div>
+<div class="mcol"><h4>Ownership &amp; Flows</h4>
+<a href="/insider-buying-selling.html">Insider Buying/Selling</a>
+<a href="/institutional-ownership.html">Institutional Ownership &amp; 13F Flow</a>
+<a href="/congressional-trading.html">Congressional Trading Activity</a>
+<a href="/small-cap-liquidity.html">Small-Cap Liquidity</a>
+</div>
+</div></div>
+</div>
+<div class="navdrop">
+<span class="navlabel">Macro &amp; Tools ▾</span>
+<div class="dropdown"><div class="mega">
+<div class="mcol"><h4>Rates &amp; Macro</h4>
+<a href="/yield-curves.html">Yield Curves</a>
+</div>
+<div class="mcol"><h4>Tools</h4>
+<a href="/portfolio-simulator.html">Portfolio Simulator</a>
+<a href="/backtesting.html">Backtesting</a>
+<a href="/statistical-engine">Statistical Engine</a>
+</div>
+</div></div>
+</div>
+</div>
+<button class="theme-toggle" id="themeToggle" type="button" aria-label="Toggle light/dark mode" title="Toggle light/dark mode">&#9789;</button>
+</nav>
+<script>
+// Class-driven (not pure :hover) nav dropdowns: pure CSS :hover drops the
+// menu the instant the cursor leaves .navdrop, which includes the moment
+// it's crossing the gap between the label and the dropdown box below —
+// exactly the "sometimes works, sometimes doesn't" flakiness reported.
+// A short close-delay after mouseleave gives the cursor room to travel
+// down into the dropdown without losing it.
+document.querySelectorAll(".navdrop").forEach(function(navdrop){
+ var closeTimer = null;
+ navdrop.addEventListener("mouseenter", function(){
+  clearTimeout(closeTimer);
+  navdrop.classList.add("open");
+ });
+ navdrop.addEventListener("mouseleave", function(){
+  closeTimer = setTimeout(function(){ navdrop.classList.remove("open"); }, 300);
+ });
+});
+</script>
+<script>
+(function(){
+ var btn = document.getElementById("themeToggle");
+ if(!btn) return;
+ var theme = document.documentElement.getAttribute("data-theme") === "light" ? "light" : "dark";
+ btn.textContent = theme === "light" ? "☀" : "☽";
+ btn.addEventListener("click", function(){
+  var current = document.documentElement.getAttribute("data-theme") === "light" ? "light" : "dark";
+  var next = current === "light" ? "dark" : "light";
+  localStorage.setItem("theme", next);
+  location.reload();
+ });
+})();
+</script>
+
+
+<div class="container">
+
+<div class="error-banner" id="errorBanner"></div>
+<div class="warning-banner" id="warningBanner"></div>
+
+<div class="header">
+<div>
+<h1>Earnings Calendar &amp; Bar-Setting</h1>
+<div class="subtitle">Which S&amp;P 500 companies report in the next six weeks, how high the Street has set the bar for each, and whether a higher bar has historically meant a smaller surprise.</div>
+</div>
+<div class="updated" id="updated">Loading...</div>
+</div>
+
+<div class="stat-grid">
+<div class="stat-card">
+<div class="stat-label">Reporting Next 45 Days</div>
+<div class="stat-value" id="statUpcoming">…</div>
+<div class="stat-note" id="statUpcomingNote">S&amp;P 500 companies</div>
+</div>
+<div class="stat-card">
+<div class="stat-label">Reporting This Week</div>
+<div class="stat-value neutral" id="statWeek">…</div>
+<div class="stat-note" id="statWeekNote">Next 7 days</div>
+</div>
+<div class="stat-card">
+<div class="stat-label">Median Implied EPS Growth</div>
+<div class="stat-value neutral" id="statGrowth">…</div>
+<div class="stat-note">Consensus vs. same quarter last year</div>
+</div>
+<div class="stat-card">
+<div class="stat-label">Bar vs. Surprise (Spearman)</div>
+<div class="stat-value neutral" id="statCorr">…</div>
+<div class="stat-note" id="statCorrNote">Implied growth vs. surprise %</div>
+</div>
+</div>
+
+<div class="chart-box">
+<div class="chart-box-header">
+<div>
+<h2>Reporting load by week</h2>
+<div class="chart-box-sub">Number of S&amp;P 500 companies scheduled to report in each week (Monday start), split by announcement timing. Timing is only listed for some companies.</div>
+</div>
+</div>
+<div class="ndr-panel">
+<div class="chart-canvas-wrap short">
+<canvas id="weekChart"></canvas>
+</div>
+</div>
+</div>
+
+<div class="chart-box">
+<div class="chart-box-header">
+<div>
+<h2>By sector</h2>
+<div class="chart-box-sub" id="sectorChartSub">Median implied year-over-year EPS growth in the consensus estimate, upcoming reporters only.</div>
+</div>
+<div class="toggle-group">
+<button class="toggle-btn active" id="btnGrowth">Implied growth</button>
+<button class="toggle-btn" id="btnBeat">Trailing beat rate</button>
+</div>
+</div>
+<div class="ndr-panel">
+<div class="chart-canvas-wrap">
+<canvas id="sectorChart"></canvas>
+</div>
+</div>
+</div>
+
+<div class="chart-box">
+<div class="chart-box-header">
+<div>
+<h2>Does a higher bar mean a smaller surprise?</h2>
+<div class="chart-box-sub">Every historical quarter for these companies, sorted into five groups by how much year-over-year EPS growth the consensus estimate implied. Bars show the average surprise in each group.</div>
+</div>
+</div>
+<div class="ndr-panel">
+<div class="chart-canvas-wrap short">
+<canvas id="quintileChart"></canvas>
+</div>
+</div>
+<div class="chart-box-sub" id="testStats" style="margin-top:12px;">…</div>
+</div>
+
+<div class="chart-box">
+<div class="chart-box-header">
+<div>
+<h2>Implied growth vs. surprise, every observation</h2>
+<div class="chart-box-sub">Each dot is one company-quarter. Axes are clipped to ±100% for readability; the statistics above use every point.</div>
+</div>
+</div>
+<div class="ndr-panel">
+<div class="chart-canvas-wrap">
+<canvas id="scatterChart"></canvas>
+</div>
+</div>
+</div>
+
+<div class="leaderboard-grid">
+<div class="leaderboard-col">
+<h3 class="up">Largest companies reporting in the next 7 days</h3>
+<div class="table-box">
+<table>
+<thead>
+<tr><th>Ticker</th><th>Company</th><th>Sector</th><th>Date</th><th>Timing</th><th>Est. EPS</th><th>Implied growth</th></tr>
+</thead>
+<tbody id="nextBody"><tr><td colspan="7" style="text-align:center; color:var(--muted); padding:20px;">Loading&hellip;</td></tr></tbody>
+</table>
+</div>
+</div>
+<div class="leaderboard-col">
+<h3 class="down">Highest bar: most growth priced in</h3>
+<div class="table-box">
+<table>
+<thead>
+<tr><th>Ticker</th><th>Company</th><th>Sector</th><th>Date</th><th>Implied growth</th><th>Beat rate</th></tr>
+</thead>
+<tbody id="highBarBody"><tr><td colspan="6" style="text-align:center; color:var(--muted); padding:20px;">Loading&hellip;</td></tr></tbody>
+</table>
+</div>
+</div>
+</div>
+
+<div class="chart-box">
+<div class="chart-box-header">
+<div>
+<h2>Full calendar</h2>
+<div class="chart-box-sub">Click a column header to sort. Beat rate and average surprise cover the last eight reported quarters (minimum four).</div>
+</div>
+<input type="search" id="calFilter" placeholder="Filter ticker, company or sector" aria-label="Filter calendar">
+</div>
+<div class="table-box" style="margin-bottom:0;">
+<table id="calTable">
+<thead>
+<tr>
+<th data-k="ticker">Ticker</th><th data-k="name">Company</th><th data-k="sector">Sector</th>
+<th data-k="reportDate">Date</th><th data-k="estimate">Est. EPS</th><th data-k="yearAgoEps">Year-ago EPS</th>
+<th data-k="impliedGrowthPct">Implied growth</th><th data-k="beatRate">Beat rate</th><th data-k="avgSurprisePct">Avg. surprise</th>
+</tr>
+</thead>
+<tbody id="calBody"></tbody>
+</table>
+</div>
+</div>
+
+<div class="explainer">
+<h2>Methodology</h2>
+<p><strong>Data.</strong> Report dates, timing and consensus EPS estimates come from Alpha Vantage's earnings calendar (next three months); each company's reported-EPS history and past surprises come from Alpha Vantage's quarterly earnings endpoint. Sector, name and market cap come from the Sector Beeswarm page's weekly metadata. Only S&amp;P 500 constituents reporting within the next 45 days are shown, and the page refreshes weekly.</p>
+<p><strong>Implied growth</strong> is the consensus estimate for the upcoming quarter compared with the EPS the company actually reported for the same fiscal quarter a year earlier. It is the growth the Street is asking for. Estimates or year-ago figures under 5&cent; are dropped, and so are growth rates beyond &plusmn;200%, because dividing by a near-zero number produces meaningless percentages. Companies missing either input show a dash.</p>
+<p><strong>The bar-setting test.</strong> Using every company-quarter in the history of the companies on this page, we compute the growth the consensus implied then, and compare it with the surprise that followed. We report Pearson and Spearman correlations (the second is less sensitive to outliers) and a five-group breakdown. The idea being tested is that companies expected to grow fast face a harder comparison and are more likely to disappoint. A correlation near zero means the bar height has told us little about the size of the surprise.</p>
+<p><strong>Limits.</strong> Quarters from the same season share market-wide conditions, so the observations are not fully independent and the p-values are best read as descriptive. Only companies reporting soon are in the sample, and the roughly two-year window of surprises reflects the endpoint's history. Trailing beat rates are backward-looking and are not a forecast. Nothing here is investment advice.</p>
+</div>
+
+</div>
+
+<script>
+const DATA_URL = "/api/earnings-calendar";
+
+let RAW = null;
+let weekChart = null;
+let sectorChart = null;
+let quintileChart = null;
+let scatterChart = null;
+let SECTOR_MODE = "growth";
+let SORT = { k: "reportDate", dir: 1 };
+
+function showError(message){
+ const banner = document.getElementById("errorBanner");
+ banner.textContent = message;
+ banner.style.display = "block";
+}
+function showWarning(message){
+ const banner = document.getElementById("warningBanner");
+ banner.textContent = message;
+ banner.style.display = "block";
+}
+function esc(s){
+ return String(s === null || s === undefined ? "" : s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+}
+function fmtPct(v, digits){
+ if(v === null || v === undefined || isNaN(v)) return "n/a";
+ return (v >= 0 ? "+" : "") + v.toFixed(digits === undefined ? 1 : digits) + "%";
+}
+function fmtPlainPct(v, digits){
+ if(v === null || v === undefined || isNaN(v)) return "n/a";
+ return v.toFixed(digits === undefined ? 0 : digits) + "%";
+}
+function fmtEps(v){
+ if(v === null || v === undefined || isNaN(v)) return "n/a";
+ return (v < 0 ? "-$" : "$") + Math.abs(v).toFixed(2);
+}
+function classForValue(v){
+ if(v === null || v === undefined || isNaN(v)) return "";
+ return v >= 0 ? "cell-pos" : "cell-neg";
+}
+function fmtDate(d){
+ const p = d.split("-");
+ return p[1] + "/" + p[2];
+}
+function timingLabel(t){
+ return t === "pre-market" ? "Pre-mkt" : t === "post-market" ? "Post-mkt" : "n/a";
+}
+function fmtPVal(p){
+ return p === null || p === undefined ? "n/a" : (p < 0.001 ? "< 0.001" : "= " + p);
+}
+
+function ndr(name){
+ return getComputedStyle(document.documentElement).getPropertyValue("--ndr-" + name).trim();
+}
+Chart.defaults.font.family = "'Iowan Old Style','Palatino Linotype',Georgia,serif";
+Chart.defaults.color = ndr("axis-soft");
+
+function ndrXScale(){
+ return {
+  ticks: { color: ndr("axis"), maxTicksLimit: 9, maxRotation: 0, autoSkip: true, font: { size: 11 } },
+  grid: { color: "rgba(0,0,0,0)", borderColor: ndr("axis") },
+ };
+}
+function ndrYScale(opts){
+ opts = opts || {};
+ return {
+  type: "linear",
+  position: "left",
+  grid: { color: ndr("grid"), drawBorder: false },
+  ticks: { color: ndr("axis"), font: { size: 11 }, callback: opts.fmt || undefined },
+  title: opts.title ? { display: true, text: opts.title, color: ndr("axis-soft"), font: { size: 10 } } : { display: false },
+  min: opts.min, max: opts.max, stacked: !!opts.stacked,
+ };
+}
+
+async function init(){
+ try{
+  const res = await fetch(DATA_URL, { cache: "no-store" });
+  const data = await res.json();
+  if(!res.ok || data.error) throw new Error(data.error || "failed to load");
+  RAW = data;
+  document.getElementById("updated").textContent = "As of " + new Date(data.generated_at_utc).toLocaleString("en-US", { month: "2-digit", day: "2-digit", year: "numeric", hour: "numeric", minute: "2-digit" });
+
+  if(!data.test) showWarning("Not enough historical estimate data to run the bar-setting test this week.");
+
+  renderStats();
+  renderWeekChart();
+  renderSectorChart();
+  renderTest();
+  renderTables();
+ }catch(e){
+  showError("Couldn't load earnings calendar data (" + e.message + "). The /api/earnings-calendar function may be unreachable.");
+ }
+}
+
+function nextSevenDays(){
+ const start = new Date(RAW.asOfDate + "T00:00:00Z").getTime();
+ return RAW.companies.filter(c => {
+  const d = (new Date(c.reportDate + "T00:00:00Z").getTime() - start) / 86400000;
+  return d >= 0 && d < 7;
+ });
+}
+
+function renderStats(){
+ document.getElementById("statUpcoming").textContent = RAW.upcomingCount + " / " + RAW.universeTotal;
+ const note = RAW.season
+  ? RAW.season.reportedLast45d + " reported in the prior 45 days"
+  : "S&P 500 companies";
+ document.getElementById("statUpcomingNote").textContent = note;
+ const wk = nextSevenDays();
+ document.getElementById("statWeek").textContent = String(wk.length);
+ document.getElementById("statWeekNote").textContent = "From " + RAW.asOfDate;
+ document.getElementById("statGrowth").textContent = fmtPct(RAW.medianImpliedGrowthPct);
+ if(RAW.test){
+  const s = RAW.test.spearman;
+  document.getElementById("statCorr").textContent = s.r === null ? "n/a" : (s.r >= 0 ? "+" : "") + s.r.toFixed(2);
+  document.getElementById("statCorrNote").textContent = "n=" + RAW.test.n + " company-quarters";
+ }else{
+  document.getElementById("statCorr").textContent = "n/a";
+ }
+}
+
+function renderWeekChart(){
+ const weeks = RAW.weeks || [];
+ const ctx = document.getElementById("weekChart").getContext("2d");
+ if(weekChart) weekChart.destroy();
+ weekChart = new Chart(ctx, {
+  type: "bar",
+  data: {
+   labels: weeks.map(w => fmtDate(w.weekStart)),
+   datasets: [
+    { label: "Pre-market", data: weeks.map(w => w.pre), backgroundColor: ndr("navy"), stack: "s" },
+    { label: "Post-market", data: weeks.map(w => w.post), backgroundColor: ndr("gold"), stack: "s" },
+    { label: "Timing not listed", data: weeks.map(w => w.unspecified), backgroundColor: ndr("slate"), stack: "s", borderRadius: 3 },
+   ],
+  },
+  options: {
+   responsive: true,
+   maintainAspectRatio: false,
+   plugins: {
+    legend: { display: true, position: "top", align: "start", labels: { boxWidth: 14, boxHeight: 8, color: ndr("axis"), font: { size: 11 } } },
+    tooltip: {
+     callbacks: {
+      title: items => "Week of " + weeks[items[0].dataIndex].weekStart,
+      footer: items => "Total: " + weeks[items[0].dataIndex].count,
+     },
+    },
+   },
+   scales: {
+    x: { ...ndrXScale(), stacked: true, title: { display: true, text: "Week starting", color: ndr("axis-soft"), font: { size: 10 } } },
+    y: ndrYScale({ title: "Companies", stacked: true, fmt: v => Number(v).toFixed(0) }),
+   },
+  },
+ });
+}
+
+function renderSectorChart(){
+ const growth = SECTOR_MODE === "growth";
+ const key = growth ? "medianImpliedGrowthPct" : "avgBeatRate";
+ const sectors = [...RAW.sectors].sort((a, b) => (b[key] ?? -Infinity) - (a[key] ?? -Infinity));
+ const values = sectors.map(s => s[key]);
+ const colors = values.map(v => v === null ? ndr("slate") : (growth ? (v >= 0 ? ndr("green") : ndr("red")) : ndr("navy")));
+ const ctx = document.getElementById("sectorChart").getContext("2d");
+ if(sectorChart) sectorChart.destroy();
+ sectorChart = new Chart(ctx, {
+  type: "bar",
+  data: {
+   labels: sectors.map(s => s.sector),
+   datasets: [{ label: growth ? "Median implied growth (%)" : "Avg. trailing beat rate (%)", data: values, backgroundColor: colors, borderRadius: 4 }],
+  },
+  options: {
+   indexAxis: "y",
+   responsive: true,
+   maintainAspectRatio: false,
+   plugins: {
+    legend: { display: false },
+    tooltip: {
+     callbacks: {
+      label: c => (growth ? "Median implied growth: " + fmtPct(c.parsed.x) : "Avg. beat rate: " + fmtPlainPct(c.parsed.x))
+       + " (" + sectors[c.dataIndex].count + " reporters)",
+     },
+    },
+   },
+   scales: {
+    x: ndrYScale({ title: growth ? "Implied YoY EPS growth (%)" : "Beat rate (%)" }),
+    y: { ticks: { color: ndr("axis"), font: { size: 11 } }, grid: { display: false } },
+   },
+  },
+ });
+}
+
+document.getElementById("btnGrowth").addEventListener("click", () => {
+ SECTOR_MODE = "growth";
+ document.getElementById("btnGrowth").classList.add("active");
+ document.getElementById("btnBeat").classList.remove("active");
+ document.getElementById("sectorChartSub").textContent = "Median implied year-over-year EPS growth in the consensus estimate, upcoming reporters only.";
+ renderSectorChart();
+});
+document.getElementById("btnBeat").addEventListener("click", () => {
+ SECTOR_MODE = "beat";
+ document.getElementById("btnBeat").classList.add("active");
+ document.getElementById("btnGrowth").classList.remove("active");
+ document.getElementById("sectorChartSub").textContent = "Average share of the last eight reported quarters in which upcoming reporters beat consensus.";
+ renderSectorChart();
+});
+
+function renderTest(){
+ const t = RAW.test;
+ const statsEl = document.getElementById("testStats");
+ if(!t){
+  statsEl.textContent = "Not enough usable history to run the test.";
+  return;
+ }
+ statsEl.textContent = "Implied growth vs. surprise %, n=" + t.n + ". Pearson r = " + t.pearson.r + " (p " + fmtPVal(t.pearson.p) + "); Spearman r = " + t.spearman.r + " (p " + fmtPVal(t.spearman.p) + ").";
+
+ const b = t.buckets;
+ const ctx = document.getElementById("quintileChart").getContext("2d");
+ if(quintileChart) quintileChart.destroy();
+ quintileChart = new Chart(ctx, {
+  type: "bar",
+  data: {
+   labels: b.map(x => "Q" + x.quintile + " (" + fmtPct(x.growthMin, 0) + " to " + fmtPct(x.growthMax, 0) + ")"),
+   datasets: [{ label: "Avg. surprise (%)", data: b.map(x => x.avgSurprisePct), backgroundColor: b.map(x => x.avgSurprisePct >= 0 ? ndr("green") : ndr("red")), borderRadius: 4, maxBarThickness: 72 }],
+  },
+  options: {
+   responsive: true,
+   maintainAspectRatio: false,
+   plugins: {
+    legend: { display: false },
+    tooltip: { callbacks: { label: c => "Avg. surprise: " + fmtPct(c.parsed.y, 2), afterLabel: c => "Beat rate: " + fmtPlainPct(b[c.dataIndex].beatRate) + " (n=" + b[c.dataIndex].n + ")" } },
+   },
+   scales: {
+    x: { ...ndrXScale(), title: { display: true, text: "Growth implied by the consensus estimate, lowest to highest fifth", color: ndr("axis-soft"), font: { size: 10 } } },
+    y: ndrYScale({ title: "Avg. surprise (%)" }),
+   },
+  },
+ });
+
+ const pts = t.scatter.filter(p => Math.abs(p[0]) <= 100 && Math.abs(p[1]) <= 100).map(p => ({ x: p[0], y: p[1] }));
+ const sctx = document.getElementById("scatterChart").getContext("2d");
+ if(scatterChart) scatterChart.destroy();
+ scatterChart = new Chart(sctx, {
+  type: "scatter",
+  data: { datasets: [{ label: "Company-quarter", data: pts, backgroundColor: ndr("navy"), pointRadius: 2, pointHoverRadius: 4 }] },
+  options: {
+   responsive: true,
+   maintainAspectRatio: false,
+   interaction: { mode: "point", intersect: true },
+   plugins: {
+    legend: { display: false },
+    tooltip: { callbacks: { label: c => "Implied growth " + fmtPct(c.parsed.x) + ", surprise " + fmtPct(c.parsed.y) } },
+   },
+   scales: {
+    x: { ...ndrYScale({ title: "Growth implied by consensus (%)" }), position: "bottom" },
+    y: ndrYScale({ title: "Surprise (%)" }),
+   },
+  },
+ });
+}
+
+function renderTables(){
+ const wk = nextSevenDays().sort((a, b) => (b.marketCap || 0) - (a.marketCap || 0)).slice(0, 10);
+ document.getElementById("nextBody").innerHTML = wk.map(r => `<tr>
+  <td>${esc(r.ticker)}</td><td>${esc(r.name)}</td><td>${esc(r.sector)}</td>
+  <td>${fmtDate(r.reportDate)}</td><td>${timingLabel(r.timeOfTheDay)}</td>
+  <td>${fmtEps(r.estimate)}</td><td class="${classForValue(r.impliedGrowthPct)}">${fmtPct(r.impliedGrowthPct)}</td>
+ </tr>`).join("") || '<tr><td colspan="7" style="text-align:center; color:var(--muted); padding:20px;">No S&amp;P 500 reports scheduled in the next 7 days</td></tr>';
+
+ const high = RAW.companies.filter(c => c.impliedGrowthPct !== null).sort((a, b) => b.impliedGrowthPct - a.impliedGrowthPct).slice(0, 10);
+ document.getElementById("highBarBody").innerHTML = high.map(r => `<tr>
+  <td>${esc(r.ticker)}</td><td>${esc(r.name)}</td><td>${esc(r.sector)}</td>
+  <td>${fmtDate(r.reportDate)}</td><td class="cell-pos">${fmtPct(r.impliedGrowthPct)}</td><td>${fmtPlainPct(r.beatRate)}</td>
+ </tr>`).join("") || '<tr><td colspan="6" style="text-align:center; color:var(--muted); padding:20px;">No data</td></tr>';
+
+ renderCalendar();
+}
+
+function renderCalendar(){
+ const q = document.getElementById("calFilter").value.trim().toLowerCase();
+ let rows = RAW.companies.filter(r => !q || (r.ticker + " " + r.name + " " + r.sector).toLowerCase().includes(q));
+ const k = SORT.k;
+ rows = rows.slice().sort((a, b) => {
+  const av = a[k], bv = b[k];
+  if(av === null || av === undefined) return 1;
+  if(bv === null || bv === undefined) return -1;
+  return (typeof av === "string" ? av.localeCompare(bv) : av - bv) * SORT.dir;
+ });
+ document.getElementById("calBody").innerHTML = rows.map(r => `<tr>
+  <td>${esc(r.ticker)}</td><td>${esc(r.name)}</td><td>${esc(r.sector)}</td>
+  <td>${r.reportDate}</td><td>${fmtEps(r.estimate)}</td><td>${fmtEps(r.yearAgoEps)}</td>
+  <td class="${classForValue(r.impliedGrowthPct)}">${fmtPct(r.impliedGrowthPct)}</td>
+  <td>${fmtPlainPct(r.beatRate)}</td><td class="${classForValue(r.avgSurprisePct)}">${fmtPct(r.avgSurprisePct, 2)}</td>
+ </tr>`).join("") || '<tr><td colspan="9" style="text-align:center; color:var(--muted); padding:20px;">No matches</td></tr>';
+}
+
+document.getElementById("calFilter").addEventListener("input", renderCalendar);
+document.querySelectorAll("#calTable thead th").forEach(th => {
+ th.style.cursor = "pointer";
+ th.addEventListener("click", () => {
+  const k = th.getAttribute("data-k");
+  SORT = { k: k, dir: SORT.k === k ? -SORT.dir : 1 };
+  renderCalendar();
+ });
+});
+
+init();
+</script>
+
+</body>
+</html>

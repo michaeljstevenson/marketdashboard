@@ -1,0 +1,329 @@
+[
+  {
+    "pr": 33,
+    "title": "Add Stock-Based Compensation Dilution and Effective Tax Rate trackers",
+    "branch": "claude/sharp-hopper-moin6g",
+    "pages": [
+      {
+        "file": "effective-tax-rate.html",
+        "title": "Effective Tax Rate"
+      },
+      {
+        "file": "sbc-dilution.html",
+        "title": "Stock-Based Compensation Dilution"
+      }
+    ],
+    "functions": [
+      "effective-tax-rate-blob-store.js",
+      "effective-tax-rate.js",
+      "sbc-dilution-blob-store.js",
+      "sbc-dilution.js",
+      "scheduled-effective-tax-rate-background.js",
+      "scheduled-sbc-dilution-background.js"
+    ],
+    "redirects": [
+      {
+        "from": "/api/sbc-dilution",
+        "to": "/.netlify/functions/sbc-dilution"
+      },
+      {
+        "from": "/api/effective-tax-rate",
+        "to": "/.netlify/functions/effective-tax-rate"
+      }
+    ]
+  },
+  {
+    "pr": 34,
+    "title": "Add Analyst Coverage and Net Cash Position Equities pages",
+    "branch": "claude/sharp-hopper-0wq0cf",
+    "pages": [
+      {
+        "file": "analyst-coverage.html",
+        "title": "Analyst Coverage & the Neglected Firm Effect"
+      },
+      {
+        "file": "net-cash-position.html",
+        "title": "Net Cash Position & the Value of Cash"
+      }
+    ],
+    "functions": [
+      "analyst-coverage-blob-store.js",
+      "analyst-coverage.js",
+      "net-cash-position-blob-store.js",
+      "net-cash-position.js",
+      "scheduled-analyst-coverage-background.js",
+      "scheduled-net-cash-position-background.js"
+    ],
+    "redirects": [
+      {
+        "from": "/api/analyst-coverage",
+        "to": "/.netlify/functions/analyst-coverage"
+      },
+      {
+        "from": "/api/net-cash-position",
+        "to": "/.netlify/functions/net-cash-position"
+      }
+    ]
+  },
+  {
+    "pr": 35,
+    "title": "Add ROE Decomposition (DuPont Analysis) page",
+    "branch": "claude/sharp-hopper-m57y6u",
+    "pages": [
+      {
+        "file": "roe-decomposition.html",
+        "title": "ROE Decomposition (DuPont Analysis)"
+      }
+    ],
+    "functions": [
+      "roe-decomposition-blob-store.js",
+      "roe-decomposition.js",
+      "scheduled-roe-decomposition-background.js"
+    ],
+    "redirects": [
+      {
+        "from": "/api/roe-decomposition",
+        "to": "/.netlify/functions/roe-decomposition"
+      }
+    ]
+  },
+  {
+    "pr": 36,
+    "title": "Add six Equities pages: Earnings Quality (Accruals), RSI Mean-Reversion Screen, 52-Week High Momentum, Dividend Coverage & Cut Risk, Volatility Risk Premium, Beta Stability",
+    "branch": "claude/sharp-hopper-q7v9kg",
+    "pages": [
+      {
+        "file": "52-week-high-momentum.html",
+        "title": "52-Week High Momentum"
+      },
+      {
+        "file": "accruals.html",
+        "title": "Earnings Quality via Accruals"
+      },
+      {
+        "file": "beta-stability.html",
+        "title": "Beta Stability"
+      },
+      {
+        "file": "dividend-coverage.html",
+        "title": "Dividend Coverage: Earnings vs. Free Cash Flow Payout"
+      },
+      {
+        "file": "rsi-reversal.html",
+        "title": "RSI Mean-Reversion Screen"
+      },
+      {
+        "file": "vol-risk-premium.html",
+        "title": "Volatility Risk Premium"
+      }
+    ],
+    "functions": [
+      "accruals-blob-store.js",
+      "accruals.js",
+      "beta-stability-blob-store.js",
+      "beta-stability.js",
+      "dividend-coverage-blob-store.js",
+      "dividend-coverage.js",
+      "high52-momentum-blob-store.js",
+      "high52-momentum.js",
+      "rsi-reversal-blob-store.js",
+      "rsi-reversal.js",
+      "scheduled-accruals-background.js",
+      "scheduled-beta-stability-background.js",
+      "scheduled-dividend-coverage-background.js",
+      "scheduled-high52-momentum-background.js",
+      "scheduled-rsi-reversal-background.js",
+      "scheduled-vol-risk-premium-background.js",
+      "vol-risk-premium-blob-store.js",
+      "vol-risk-premium.js"
+    ],
+    "redirects": [
+      {
+        "from": "/api/accruals",
+        "to": "/.netlify/functions/accruals"
+      },
+      {
+        "from": "/api/rsi-reversal",
+        "to": "/.netlify/functions/rsi-reversal"
+      },
+      {
+        "from": "/api/52-week-high-momentum",
+        "to": "/.netlify/functions/high52-momentum"
+      },
+      {
+        "from": "/api/dividend-coverage",
+        "to": "/.netlify/functions/dividend-coverage"
+      },
+      {
+        "from": "/api/vol-risk-premium",
+        "to": "/.netlify/functions/vol-risk-premium"
+      },
+      {
+        "from": "/api/beta-stability",
+        "to": "/.netlify/functions/beta-stability"
+      }
+    ]
+  },
+  {
+    "pr": 37,
+    "title": "Add two Equities pages: Altman Z-Score, Magic Formula Screen",
+    "branch": "claude/sharp-hopper-y7ycq0",
+    "pages": [
+      {
+        "file": "altman-z-score.html",
+        "title": "Altman Z-Score"
+      },
+      {
+        "file": "magic-formula.html",
+        "title": "Magic Formula Screen"
+      }
+    ],
+    "functions": [
+      "altman-z-blob-store.js",
+      "altman-z.js",
+      "scheduled-altman-z-background.js"
+    ],
+    "redirects": [
+      {
+        "from": "/api/altman-z",
+        "to": "/.netlify/functions/altman-z"
+      }
+    ]
+  },
+  {
+    "pr": 38,
+    "title": "Add three Equities pages: Buyback Timing, Sector Beta & Risk Regime, Momentum Tail Risk",
+    "branch": "claude/sharp-hopper-86bmyt",
+    "pages": [
+      {
+        "file": "buyback-timing.html",
+        "title": "Buyback Timing: Are Companies Buying High or Low?"
+      },
+      {
+        "file": "momentum-crash-risk.html",
+        "title": "Momentum Tail Risk"
+      },
+      {
+        "file": "sector-beta.html",
+        "title": "Sector Beta & Risk Regime"
+      }
+    ],
+    "functions": [
+      "buyback-timing-blob-store.js",
+      "buyback-timing.js",
+      "momentum-crash-risk-blob-store.js",
+      "momentum-crash-risk.js",
+      "scheduled-buyback-timing-background.js",
+      "scheduled-momentum-crash-risk-background.js"
+    ],
+    "redirects": [
+      {
+        "from": "/api/buyback-timing",
+        "to": "/.netlify/functions/buyback-timing"
+      },
+      {
+        "from": "/api/momentum-crash-risk",
+        "to": "/.netlify/functions/momentum-crash-risk"
+      }
+    ]
+  },
+  {
+    "pr": 39,
+    "title": "Add two Equities pages: Insider Ownership, Golden Cross / Death Cross",
+    "branch": "claude/sharp-hopper-bppmsw",
+    "pages": [
+      {
+        "file": "golden-cross.html",
+        "title": "Golden Cross / Death Cross"
+      },
+      {
+        "file": "insider-ownership.html",
+        "title": "Insider Ownership"
+      }
+    ],
+    "functions": [
+      "golden-cross-blob-store.js",
+      "golden-cross.js",
+      "insider-ownership-blob-store.js",
+      "insider-ownership.js",
+      "scheduled-golden-cross-background.js",
+      "scheduled-insider-ownership-background.js"
+    ],
+    "redirects": [
+      {
+        "from": "/api/insider-ownership",
+        "to": "/.netlify/functions/insider-ownership"
+      },
+      {
+        "from": "/api/golden-cross",
+        "to": "/.netlify/functions/golden-cross"
+      }
+    ]
+  },
+  {
+    "pr": 40,
+    "title": "Add Earnings Calendar & Bar-Setting page",
+    "branch": "claude/sharp-hopper-sdqt82",
+    "pages": [
+      {
+        "file": "earnings-calendar.html",
+        "title": "Earnings Calendar & Bar-Setting"
+      }
+    ],
+    "functions": [
+      "earnings-calendar-blob-store.js",
+      "earnings-calendar.js",
+      "scheduled-earnings-calendar-background.js"
+    ],
+    "redirects": [
+      {
+        "from": "/api/earnings-calendar",
+        "to": "/.netlify/functions/earnings-calendar"
+      }
+    ]
+  },
+  {
+    "pr": 41,
+    "title": "Add Overnight vs. Intraday Returns page",
+    "branch": "claude/sharp-hopper-5qq2w4",
+    "pages": [
+      {
+        "file": "overnight-vs-intraday.html",
+        "title": "Overnight vs. Intraday Returns"
+      }
+    ],
+    "functions": [
+      "overnight-blob-store.js",
+      "overnight.js",
+      "scheduled-overnight-background.js"
+    ],
+    "redirects": [
+      {
+        "from": "/api/overnight",
+        "to": "/.netlify/functions/overnight"
+      }
+    ]
+  },
+  {
+    "pr": 42,
+    "title": "Add Growth vs. Value: Interest-Rate Sensitivity page",
+    "branch": "claude/sharp-hopper-9q8rc5",
+    "pages": [
+      {
+        "file": "growth-vs-value.html",
+        "title": "Growth vs. Value: Interest-Rate Sensitivity"
+      }
+    ],
+    "functions": [
+      "growth-value.js",
+      "growthvalue-blob-store.js",
+      "scheduled-growth-value-background.js"
+    ],
+    "redirects": [
+      {
+        "from": "/api/growth-value",
+        "to": "/.netlify/functions/growth-value"
+      }
+    ]
+  }
+]
