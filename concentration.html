@@ -632,6 +632,20 @@ h1{
 
 </div>
 
+<!-- ============================ CHART B ============================ -->
+<div class="chart-box" id="boxB">
+<div class="chart-box-header">
+<h2>Share of S&amp;P 500 members beating the index</h2>
+<div class="chart-daterange" id="rangeB"></div>
+</div>
+<div class="chart-subhead">Rolling 12-month total return of each member against the cap-weighted S&amp;P 500 total return index. A companion to the equal-weight ratio above: it counts stocks, so a few outsized winners can't lift it. Dashed where fewer than 75% of that date's members have price data.</div>
+<div class="ndr-panel">
+<div class="chart-canvas-wrap"><canvas id="chartB"></canvas></div>
+</div>
+<div class="mini-stats" id="statsB"></div>
+<div class="chart-error" id="errB" hidden></div>
+</div>
+
 <!-- ============================ CHART C ============================ -->
 <div class="chart-box" id="boxC">
 <div class="chart-box-header">
@@ -905,6 +919,72 @@ async function renderChartD(){
 }
 
 renderChartD();
+
+// ---- Chart B: % of members beating the index (rolling 12 months) -------
+// Same series as market-breadth.html, from the point-in-time breadth job.
+async function renderChartB(){
+ const errEl = document.getElementById("errB");
+ try{
+  const res = await fetch("/api/breadth-internals", { cache: "no-store" });
+  if(!res.ok) throw new Error("HTTP " + res.status);
+  const data = await res.json();
+  if(data.error) throw new Error(data.error);
+  const rows = (data.rows || []).filter(r => r.pctBeatIndex != null);
+  if(!rows.length) throw new Error("no rows returned");
+
+  // Before ~2008 under three-quarters of each date's members have prices
+  // (long-gone acquired names), so that stretch is drawn dashed.
+  const SOLID = 75;
+  const solidFrom = rows.findIndex(r => r.coverage >= SOLID);
+  const labels = rows.map(r => r.date);
+
+  document.getElementById("rangeB").textContent =
+   "Daily data " + usDate(rows[0].date) + " to " + usDate(rows[rows.length - 1].date);
+
+  const reliable = rows.slice(solidFrom);
+  const vals = reliable.map(r => r.pctBeatIndex);
+  const cur = rows[rows.length - 1];
+  const low = reliable.reduce((m, r) => r.pctBeatIndex < m.pctBeatIndex ? r : m, reliable[0]);
+  const avg = vals.reduce((a, b) => a + b, 0) / vals.length;
+  const percentile = Math.round(100 * vals.filter(v => v <= cur.pctBeatIndex).length / vals.length);
+  const since = rows[solidFrom].date.slice(0, 4);
+  renderMiniStats("statsB", [
+   { label: "CURRENT", value: cur.pctBeatIndex.toFixed(1) + "%", note: "median member " + (cur.medExcess12m > 0 ? "+" : "") + cur.medExcess12m + " pts vs. index" },
+   { label: "AVERAGE SINCE " + since, value: avg.toFixed(1) + "%" },
+   { label: "LOWEST SINCE " + since, value: low.pctBeatIndex.toFixed(1) + "%", note: usDate(low.date) },
+   { label: "PERCENTILE (SINCE " + since + ")", value: ordinal(percentile), note: percentile < 50 ? "narrower than usual" : "broader than usual" },
+  ]);
+
+  new Chart(document.getElementById("chartB"), {
+   type: "line",
+   data: { labels, datasets: [
+    { label: "% beating the index", data: rows.map(r => r.pctBeatIndex), borderColor: ndr("navy"), borderWidth: 1.4, pointRadius: 0, tension: 0,
+      segment: { borderDash: (c) => c.p1DataIndex <= solidFrom ? [4, 3] : undefined } },
+   ]},
+   options: {
+    responsive: true, maintainAspectRatio: false, animation: false,
+    interaction: { mode: "index", intersect: false },
+    scales: { x: ndrXScale(), y: ndrYScale({ fmt: (v) => Number(v).toFixed(0) + "%", title: "% of members", min: 0, max: 100 }) },
+    plugins: {
+     legend: { display: false },
+     annotation: { annotations: { half: { type: "line", yMin: 50, yMax: 50, borderColor: ndr("axis-soft"), borderWidth: 1, borderDash: [3, 3] } } },
+     tooltip: { callbacks: {
+      label: (c) => "Beating the index: " + c.parsed.y.toFixed(1) + "%",
+      footer: (items) => {
+       const r = rows[items[0].dataIndex];
+       return ["Median member vs. index: " + (r.medExcess12m > 0 ? "+" : "") + r.medExcess12m + " pts", "Price coverage: " + r.coverage + "% of members"];
+      },
+     } },
+    },
+   },
+  });
+ }catch(err){
+  errEl.hidden = false;
+  errEl.textContent = "Could not load chart B: " + err.message;
+ }
+}
+
+renderChartB();
 
 // ---- Charts C & F: Magnificent Seven basket ---------------------------
 async function renderMag7(){

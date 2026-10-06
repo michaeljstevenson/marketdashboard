@@ -275,7 +275,7 @@ h1{
 
 .stat-grid{
  display:grid;
- grid-template-columns:repeat(4,1fr);
+ grid-template-columns:repeat(5,1fr);
  gap:16px;
  margin-bottom:30px;
 }
@@ -458,8 +458,49 @@ h1{
  display:none;
 }
 
+@media (max-width:1000px){
+ .stat-grid{ grid-template-columns:repeat(3,1fr); }
+}
 @media (max-width:720px){
  .stat-grid{ grid-template-columns:repeat(2,1fr); }
+}
+
+/* INDICATOR COMPARISON */
+
+.compare-wrap{ overflow-x:auto; }
+.compare-table{
+ width:100%;
+ border-collapse:collapse;
+ font-size:13px;
+}
+.compare-table th, .compare-table td{
+ padding:9px 12px;
+ border-bottom:1px solid var(--hair);
+ text-align:right;
+ white-space:nowrap;
+}
+.compare-table th:first-child, .compare-table td:first-child{
+ text-align:left;
+ white-space:normal;
+ min-width:190px;
+}
+.compare-table thead th{
+ color:var(--muted);
+ font-weight:400;
+ font-size:12px;
+ vertical-align:bottom;
+}
+.compare-table thead th span{ display:block; color:var(--ink); font-size:13px; }
+.compare-table td{ font-family:var(--mono); color:var(--ink); }
+.compare-table td:first-child{ font-family:var(--sans); color:var(--muted); }
+.compare-table tr.group td{
+ font-family:var(--sans);
+ color:var(--muted);
+ font-size:11px;
+ letter-spacing:0.04em;
+ text-transform:uppercase;
+ padding-top:16px;
+ border-bottom:none;
 }
 
 .theme-toggle{
@@ -675,6 +716,11 @@ h1{
 <div class="stat-value" id="statAdLine" style="font-size:20px;">…</div>
 <div class="stat-note">Cumulative, since data start</div>
 </div>
+<div class="stat-card">
+<div class="stat-label">% Beating the Index (12M)</div>
+<div class="stat-value" id="statBeat">…</div>
+<div class="stat-note" id="statBeatNote">Rolling 12-month total return</div>
+</div>
 </div>
 <div class="chart-box" id="dayChangeBox">
 <div class="chart-box-header">
@@ -732,13 +778,40 @@ h1{
 <canvas id="hlChart"></canvas>
 </div>
 </div>
+<div class="chart-box">
+<div class="chart-box-header">
+<div>
+<h2>% of members beating the index, rolling 12 months</h2>
+<div class="chart-subhead">Share of S&amp;P 500 members whose 12-month total return beat the S&amp;P 500 total return index. Dashed where fewer than 75% of that date's members have price data.</div>
+</div>
+<div class="range-controls" id="beatRangeControls"></div>
+</div>
+<div class="chart-canvas-wrap">
+<canvas id="beatChart"></canvas>
+</div>
+</div>
+<div class="chart-box" id="compareBox">
+<div class="chart-box-header">
+<div>
+<h2>Same market, different readings</h2>
+<div class="chart-subhead">Each indicator on five dates. Participation measures rise and fall with the market; relative breadth compares every stock to the cap-weighted index.</div>
+</div>
+</div>
+<div class="compare-wrap"><table class="compare-table" id="compareTable"></table></div>
+</div>
+<div class="explainer">
+<h2>Why breadth indicators disagree</h2>
+<p>Breadth indicators answer two different questions. The A-D line, the % above the 200-day moving average and new highs vs. new lows measure participation: how many stocks are rising, holding an uptrend or making new highs. They move with the market itself, so all three look strong in a broad rally and weak in a sell-off.</p>
+<p>The % of members beating the index measures relative breadth. It compares every stock to the cap-weighted S&amp;P 500, so it asks whether the typical stock is keeping up with the largest ones. It barely moves with the direction of the market. It runs high when the biggest stocks lag, as in 2000 to 2002 and in 2022, and low when a few mega-caps carry the index, as in 1998 to 1999 and 2023 to 2024.</p>
+<p>The two can point in opposite directions at the same time. On March 1, 2024, 76% of members were above their 200-day average, yet only 23% had beaten the index over the prior year. On October 12, 2022, only 17% were above their 200-day average, while 52% had held up better than the index. Reading them together separates a broad advance from one carried by a narrow group of leaders.</p>
+</div>
 <div class="explainer">
 <h2></h2>
 <p>An index can continue climbing while less and less of its constituents are actually going climbing with it. A handful of mega-caps can carry the index even as the typical stock lags or falls. The advance-decline line tracks the running tally of advancing minus declining names, day by day. Its shape relative to the index itself is the signal. Breadth divergence is when the market makes a new high but the A-D line doesn't confirm it. This has historically been a warning sign that the participation is narrowing and sometimes points to a future broader pullback.</p>
 <p>The % above the 200-day moving average: How many constituents are in a durable uptrend (instead of just up on a given day). A market near all-time highs with a low reading % above the 200-day SMA means the advance is being carried by a narrow group of leaders rather than broad participation. New highs vs. new lows: a rising count of fresh 52-week lows even while the index holds up is an early-warning breadth signal.</p>
-<p>Breadth can diverge from price for months before it matters.  A-D, % above 20-day SMA, 52-week highs vs. lows are simply context for how healthy an advance or decline is underneath the headline index number.</p>
+<p>Breadth can diverge from price for months before it matters.  A-D, % above 200-day SMA, 52-week highs vs. lows are simply context for how healthy an advance or decline is underneath the headline index number.</p>
 
-<div class="source">Source: <a href="https://www.alphavantage.co/" rel="noopener" target="_blank">Alpha Vantage</a> daily adjusted closes across S&amp;P 500 constituents. Advance-decline, 200-day SMA, and new-highs/lows charts computed once daily after the close; the day's-change distribution refreshes hourly during market hours.</div>
+<div class="source">Source: <a href="https://finance.yahoo.com/" rel="noopener" target="_blank">Yahoo Finance</a> daily adjusted closes, with <a href="https://www.alphavantage.co/" rel="noopener" target="_blank">Alpha Vantage</a> for companies no longer listed. Every date counts the stocks in the S&amp;P 500 on that date (membership history from <a href="https://github.com/fja05680/sp500" rel="noopener" target="_blank">fja05680/sp500</a>), so companies later acquired or dropped still count while they were members. Price coverage is about 55% of members in 2000, 80% by 2008 and complete today. Computed once daily after the close; the day's-change distribution refreshes hourly during market hours.</div>
 </div>
 </div>
 <script>
@@ -824,12 +897,12 @@ function rowsInRange(rangeKey){
  return startIndex === -1 ? ROWS : ROWS.slice(startIndex);
 }
 
-function renderRangeButtons(containerId, onSelect){
+function renderRangeButtons(containerId, onSelect, defaultKey = DEFAULT_RANGE){
  const container = document.getElementById(containerId);
  container.innerHTML = "";
  RANGES.forEach(r => {
   const btn = document.createElement("button");
-  btn.className = "range-btn" + (r.key === DEFAULT_RANGE ? " active" : "");
+  btn.className = "range-btn" + (r.key === defaultKey ? " active" : "");
   btn.textContent = r.key;
   btn.addEventListener("click", () => {
    container.querySelectorAll(".range-btn").forEach(b => b.classList.remove("active"));
@@ -1028,6 +1101,96 @@ function renderHlChart(rangeKey){
  });
 }
 
+// Below this share of a date's members with usable prices (before ~2008,
+// mostly long-gone acquired names) the reading is drawn dashed.
+const COVERAGE_SOLID = 75;
+let beatChart = null;
+function renderBeatChart(rangeKey){
+ const rows = rowsInRange(rangeKey).filter(r => r.pctBeatIndex != null);
+ const muted = themeVarColor("--muted", "#8b9199"), hair = themeVarColor("--hair", "#2b3138");
+ // Same orange as the other single-line breadth charts on this page.
+ const line = "#d98a3d";
+ const thin = c => rows[c.p1DataIndex] && rows[c.p1DataIndex].coverage < COVERAGE_SOLID;
+ if(beatChart) beatChart.destroy();
+ beatChart = new Chart(document.getElementById("beatChart").getContext("2d"), {
+  type: "line",
+  data: {
+   labels: rows.map(r => r.date),
+   datasets: [
+    { label: "% beating the index", data: rows.map(r => r.pctBeatIndex), borderColor: line, backgroundColor: line,
+      borderWidth: 2, pointRadius: 0, fill: false, segment: { borderDash: c => thin(c) ? [5, 4] : undefined } },
+    { label: "50%", data: rows.map(() => 50), borderColor: muted, borderWidth: 1, borderDash: [3, 4], pointRadius: 0, pointHoverRadius: 0, fill: false },
+   ],
+  },
+  options: {
+   responsive: true,
+   maintainAspectRatio: false,
+   interaction: { mode: "index", intersect: false },
+   plugins: {
+    legend: { display: false },
+    tooltip: {
+     filter: item => item.datasetIndex === 0,
+     callbacks: {
+      label: ctx => {
+       const r = rows[ctx.dataIndex];
+       const med = r.medExcess12m == null ? "n/a" : (r.medExcess12m > 0 ? "+" : "") + r.medExcess12m + " pts";
+       return ["Beating the index: " + r.pctBeatIndex + "% (" + Math.round(r.pctBeatIndex * r.beatN / 100) + " of " + r.beatN + ")",
+               "Median member vs index: " + med,
+               "Price coverage: " + r.coverage + "% of members"];
+      },
+     },
+    },
+   },
+   scales: {
+    x: { ticks: { color: muted, maxTicksLimit: 8 }, grid: { color: hair } },
+    y: { ticks: { color: muted, callback: v => v + "%" }, grid: { color: hair }, min: 0, max: 100 },
+   },
+  },
+ });
+}
+
+const COMPARE_DATES = [
+ { date: "2000-03-24", label: "Mar 24, 2000", note: "S&P 500 peak" },
+ { date: "2009-03-09", label: "Mar 9, 2009", note: "Bear market low" },
+ { date: "2022-10-12", label: "Oct 12, 2022", note: "2022 low" },
+ { date: "2024-03-01", label: "Mar 1, 2024", note: "Narrowest since 2008" },
+];
+function renderCompareTable(){
+ const idxOn = d => { let i = ROWS.findIndex(r => r.date >= d); return i === -1 ? ROWS.length - 1 : i; };
+ const yearBefore = i => idxOn(new Date(Date.parse(ROWS[i].date) - 365 * 864e5).toISOString().slice(0, 10));
+ const latest = ROWS[ROWS.length - 1];
+ const cols = COMPARE_DATES.concat([{ date: latest.date, label: usDate(latest.date), note: "Latest" }]).map(c => {
+  const i = idxOn(c.date), j = yearBefore(i), r = ROWS[i], r0 = ROWS[j];
+  const win = ROWS.slice(Math.max(0, i - 9), i + 1);
+  return Object.assign({}, c, {
+   spx: r.spxClose != null && r0.spxClose != null ? (r.spxClose / r0.spxClose - 1) * 100 : null,
+   sma: r.pctAbove200sma,
+   nh: win.reduce((sum, x) => sum + x.newHighs - x.newLows, 0) / win.length,
+   ad: r.adLine - r0.adLine,
+   beat: r.pctBeatIndex,
+   med: r.medExcess12m,
+  });
+ });
+ const signed = (v, d) => v == null ? "n/a" : (v > 0 ? "+" : "") + v.toFixed(d);
+ const pct = v => v == null ? "n/a" : v.toFixed(1) + "%";
+ const rowsDef = [
+  { group: "Market" },
+  { label: "S&P 500, trailing 12 months", f: c => signed(c.spx, 1) + "%" },
+  { group: "Participation" },
+  { label: "% above 200-day moving average", f: c => pct(c.sma) },
+  { label: "Net new 52-week highs (10-day average)", f: c => signed(c.nh, 1) },
+  { label: "A-D line, 12-month change", f: c => signed(c.ad, 0) },
+  { group: "Relative breadth" },
+  { label: "% of members beating the index (12M)", f: c => pct(c.beat) },
+  { label: "Median member vs. index (12M)", f: c => c.med == null ? "n/a" : signed(c.med, 1) + " pts" },
+ ];
+ const head = "<thead><tr><th></th>" + cols.map(c => "<th><span>" + c.label + "</span>" + c.note + "</th>").join("") + "</tr></thead>";
+ const body = rowsDef.map(d => d.group
+  ? "<tr class=\"group\"><td colspan=\"" + (cols.length + 1) + "\">" + d.group + "</td></tr>"
+  : "<tr" + (d.cls ? " class=\"" + d.cls + "\"" : "") + "><td>" + d.label + "</td>" + cols.map(c => "<td>" + d.f(c) + "</td>").join("") + "</tr>").join("");
+ document.getElementById("compareTable").innerHTML = head + "<tbody>" + body + "</tbody>";
+}
+
 async function init(){
  try{
   const res = await fetch("/api/breadth-internals", { cache: "no-store" });
@@ -1045,6 +1208,11 @@ async function init(){
   document.getElementById("statNetHL").textContent = (netHL >= 0 ? "+" : "") + netHL;
   document.getElementById("statNetHLNote").textContent = latest.newHighs + " highs, " + latest.newLows + " lows";
   document.getElementById("statAdLine").textContent = (latest.adLine >= 0 ? "+" : "") + latest.adLine.toLocaleString();
+  const beatLatest = [...ROWS].reverse().find(r => r.pctBeatIndex != null);
+  if(beatLatest){
+   document.getElementById("statBeat").textContent = beatLatest.pctBeatIndex + "%";
+   document.getElementById("statBeatNote").textContent = "Median member " + (beatLatest.medExcess12m > 0 ? "+" : "") + beatLatest.medExcess12m + " pts vs. index";
+  }
   document.getElementById("updated").textContent = "Generated " + new Date(data.generated_at_utc).toLocaleString("en-US", { month: "2-digit", day: "2-digit", year: "numeric", hour: "numeric", minute: "2-digit" }) + " · " + data.constituentCount + " constituents";
 
   renderRangeButtons("adRangeControls", renderAdChart);
@@ -1055,6 +1223,9 @@ async function init(){
   renderAdCumChart(DEFAULT_RANGE);
   renderSmaChart(DEFAULT_RANGE);
   renderHlChart(DEFAULT_RANGE);
+  renderRangeButtons("beatRangeControls", renderBeatChart, "Max");
+  renderBeatChart("Max");
+  renderCompareTable();
  }catch(err){
   showError("Couldn't load market breadth data: " + err.message);
  }

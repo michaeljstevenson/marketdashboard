@@ -1,9 +1,17 @@
 // Scheduled function (see [functions."scheduled-breadth-background"] in
 // netlify.toml) that computes real market breadth internals —
 // advances/declines, 52-week new highs/lows, % of constituents above
-// their 200-day SMA, and % at all-time highs — across the full S&P 500
-// constituent list (see breadth-constituents.js), and writes the result
+// their 200-day SMA, % at all-time highs, and the rolling 12-month % of
+// members beating the S&P 500 total return index — and writes the result
 // to Netlify Blobs for breadth-internals.js to serve.
+//
+// Every day counts the stocks that were in the index on that day, not
+// today's list: scoring 1999 on today's members leaves out everything
+// acquired, bankrupt or dropped since and overstated participation by ~3
+// points on average (13 at the 2000 peak). History through
+// breadth-pit-history.js's CUTOFF comes precomputed from that module
+// (delisted names need prices Yahoo no longer serves); later days are
+// computed here on its MEMBERSHIP intervals, then BREADTH_CONSTITUENTS.
 //
 // The "Day's change distribution" widget on market-breadth.html is fed
 // by a separate, more frequent job (scheduled-daychange-background.js) —
@@ -28,12 +36,7 @@ const { BREADTH_CONSTITUENTS } = require("./breadth-constituents");
 const { getBreadthStore, BLOB_KEY } = require("./breadth-blob-store");
 const { getDayChangeStore, BLOB_KEY: DAYCHANGE_BLOB_KEY } = require("./daychange-blob-store");
 const { fetchDailyHistory } = require("./yahoo-client");
-
-// Yahoo's history reaches back to 1970, but the earliest years have only a
-// handful of stocks, so their breadth percentages are noise, and a
-// cumulative A/D line starting there would sit at a completely different
-// level. The published series starts where it always has.
-const HISTORY_START = "1999-11-02";
+const PIT = require("./breadth-pit-history");
 
 const SMA_WINDOW = 200;
 const HIGH_LOW_WINDOW = 252; // ~52 trading weeks
@@ -68,10 +71,15 @@ function computeNameFlags(closes) {
     const { date, close } = closes[i];
     const prevClose = closes[i - 1].close;
 
-    const highLowStart = Math.max(0, i - HIGH_LOW_WINDOW + 1);
-    const windowSlice = closes.slice(highLowStart, i + 1);
-    const windowHigh = Math.max(...windowSlice.map((p) => p.close));
-    const windowLow = Math.min(...windowSlice.map((p) => p.close));
+    // A full 52 weeks is required (as in breadth-pit-history.js), so a
+    // newly listed stock doesn't register a "52-week high" on day 2.
+    let windowHigh = Infinity;
+    let windowLow = -Infinity;
+    if (i >= HIGH_LOW_WINDOW - 1) {
+      const windowSlice = closes.slice(i - HIGH_LOW_WINDOW + 1, i + 1);
+      windowHigh = Math.max(...windowSlice.map((p) => p.close));
+      windowLow = Math.min(...windowSlice.map((p) => p.close));
+    }
 
     let above200sma = null;
     if (i >= SMA_WINDOW - 1) {
@@ -210,8 +218,86 @@ function computeRangeSummaries(perNameCloses, constituentTotal) {
   return { asOfDate: latestDate, ranges };
 }
 
+const CURRENT_SET = new Set(BREADTH_CONSTITUENTS);
+const DAY_MS = 24 * 60 * 60 * 1000;
+const daysBetween = (a, b) => (Date.parse(b) - Date.parse(a)) / DAY_MS;
+
+function isMemberOn(symbol, date) {
+  if (date > PIT.MEMBERSHIP_AS_OF) return CURRENT_SET.has(symbol);
+  return (PIT.MEMBERSHIP[symbol] || []).some(([s, e]) => s <= date && (e === null || date < e));
+}
+
+// End of the membership interval containing `date` (null = still a member).
+function membershipEnd(symbol, date) {
+  if (date > PIT.MEMBERSHIP_AS_OF) return null;
+  const iv = (PIT.MEMBERSHIP[symbol] || []).find(([s, e]) => s <= date && (e === null || date < e));
+  return iv ? iv[1] : null;
+}
+
+// Members (as of the date a year earlier) still listed or recently removed:
+// everything the live tail's 12-month windows can need.
+function symbolsToFetch(today) {
+  const since = new Date(Date.parse(today) - 430 * DAY_MS).toISOString().slice(0, 10);
+  const recent = Object.entries(PIT.MEMBERSHIP)
+    .filter(([, ivs]) => ivs.some(([, e]) => e === null || e >= since))
+    .map(([sym]) => sym);
+  return [...new Set([...BREADTH_CONSTITUENTS, ...recent])];
+}
+
+function closeOnOrBefore(closes, date) {
+  let lo = 0, hi = closes.length - 1, best = -1;
+  while (lo <= hi) {
+    const mid = (lo + hi) >> 1;
+    if (closes[mid].date <= date) { best = mid; lo = mid + 1; } else hi = mid - 1;
+  }
+  return best;
+}
+
+// % of the members at the start of the trailing 12 months whose total
+// return beat the S&P 500 total return index. A member acquired mid-window
+// keeps its return to its last trading day; one whose history stops while
+// it was still a member is a data gap and is left out (same rules as
+// breadth-pit-history.js).
+function beatIndexOn(date, perNameCloses, indexCloses) {
+  const ib = closeOnOrBefore(indexCloses, date);
+  if (ib < 0 || indexCloses[ib].date !== date) return null;
+  const d = new Date(date + "T00:00:00Z");
+  const yearAgo = new Date(Date.UTC(d.getUTCFullYear() - 1, d.getUTCMonth(), d.getUTCDate())).toISOString().slice(0, 10);
+  const ia = closeOnOrBefore(indexCloses, yearAgo);
+  if (ia < 0) return null;
+  const start = indexCloses[ia].date;
+  const bench = indexCloses[ib].close / indexCloses[ia].close - 1;
+  let beat = 0;
+  const excess = [];
+  for (const [symbol, closes] of perNameCloses.entries()) {
+    if (!isMemberOn(symbol, start) || !closes.length) continue;
+    const ja = closeOnOrBefore(closes, start);
+    if (ja < 0 || daysBetween(closes[ja].date, start) > 7 || !(closes[ja].close > 0)) continue;
+    const end = membershipEnd(symbol, start);
+    const needThrough = end && end < date ? end : date;
+    if (daysBetween(closes[closes.length - 1].date, needThrough) > 14) continue;
+    const r = closes[closeOnOrBefore(closes, date)].close / closes[ja].close - 1;
+    if (r > bench) beat++;
+    excess.push(r - bench);
+  }
+  if (!excess.length) return null;
+  excess.sort((a, b) => a - b);
+  const m = excess.length;
+  const median = m % 2 ? excess[(m - 1) / 2] : (excess[m / 2 - 1] + excess[m / 2]) / 2;
+  return {
+    pctBeatIndex: Math.round((beat / m) * 1000) / 10,
+    medExcess12m: Math.round(median * 1000) / 10,
+    beatN: m,
+  };
+}
+
+function historyRows() {
+  return PIT.ROWS.map((vals) => Object.fromEntries(PIT.FIELDS.map((f, i) => [f, vals[i]])));
+}
+
 exports.handler = async () => {
-  console.log(`scheduled-breadth-background: starting, ${BREADTH_CONSTITUENTS.length} symbols`);
+  const symbols = symbolsToFetch(new Date().toISOString().slice(0, 10));
+  console.log(`scheduled-breadth-background: starting, ${symbols.length} symbols (${BREADTH_CONSTITUENTS.length} current members)`);
   try {
     // Sequential with a short gap: Yahoo has no quota but 429s intermittently
     // (yahoo-client.js retries with backoff), plus a retry pass below for
@@ -219,14 +305,18 @@ exports.handler = async () => {
     const perNameFlags = new Map();
     const perNameCloses = new Map();
     const failedSymbols = [];
-    for (const symbol of BREADTH_CONSTITUENTS) {
+    for (const symbol of symbols) {
       try {
         const closes = await fetchDailyHistory(symbol);
         perNameFlags.set(symbol, computeNameFlags(closes));
         perNameCloses.set(symbol, closes);
       } catch (err) {
-        console.error(`scheduled-breadth-background: ${symbol} failed: ${err.message}`);
-        failedSymbols.push(symbol);
+        // Former members that were acquired are gone from Yahoo; only a
+        // current member failing is worth a retry.
+        if (CURRENT_SET.has(symbol)) {
+          console.error(`scheduled-breadth-background: ${symbol} failed: ${err.message}`);
+          failedSymbols.push(symbol);
+        }
       }
       await sleep(300);
     }
@@ -244,7 +334,7 @@ exports.handler = async () => {
         await sleep(300);
       }
     }
-    console.log(`scheduled-breadth-background: fetched ${perNameFlags.size}/${BREADTH_CONSTITUENTS.length} symbols`);
+    console.log(`scheduled-breadth-background: fetched ${perNameFlags.size}/${symbols.length} symbols`);
 
     let spxByDate = new Map();
     try {
@@ -254,15 +344,29 @@ exports.handler = async () => {
     }
     await sleep(300);
 
+    let indexCloses = [];
+    try {
+      indexCloses = await fetchDailyHistory("^SP500TR", { adjusted: false });
+    } catch (err) {
+      console.error(`scheduled-breadth-background: ^SP500TR fetch failed: ${err.message}`);
+    }
+
+    const history = historyRows();
+    const memberCount = (date) =>
+      date > PIT.MEMBERSHIP_AS_OF
+        ? BREADTH_CONSTITUENTS.length
+        : Object.keys(PIT.MEMBERSHIP).filter((sym) => isMemberOn(sym, date)).length;
+
     // Union of every date any name reported, so a single missing/delisted
     // name mid-history doesn't collapse the whole date range.
     const allDates = new Set();
     for (const flags of perNameFlags.values()) {
       for (const date of flags.keys()) allDates.add(date);
     }
-    const sortedDates = [...allDates].sort().filter((d) => d >= HISTORY_START);
+    const liveDates = [...allDates].sort().filter((d) => d > PIT.CUTOFF);
 
-    const dailyRows = sortedDates.map((date) => {
+    let cumulative = history.length ? history[history.length - 1].adLine : 0;
+    const liveRows = liveDates.map((date) => {
       let advances = 0;
       let declines = 0;
       let newHighs = 0;
@@ -272,9 +376,9 @@ exports.handler = async () => {
       let atHighs = 0;
       let atLows = 0;
 
-      for (const flags of perNameFlags.values()) {
+      for (const [symbol, flags] of perNameFlags.entries()) {
         const f = flags.get(date);
-        if (!f) continue;
+        if (!f || !isMemberOn(symbol, date)) continue;
         if (f.up) advances++;
         else declines++;
         if (f.newHigh) newHighs++;
@@ -288,6 +392,7 @@ exports.handler = async () => {
       }
 
       const coverage = advances + declines;
+      cumulative += advances - declines;
       return {
         date,
         advances,
@@ -299,23 +404,25 @@ exports.handler = async () => {
         pctAtHighs: coverage ? Math.round((atHighs / coverage) * 1000) / 10 : null,
         atLows,
         pctAtLows: coverage ? Math.round((atLows / coverage) * 1000) / 10 : null,
-        spxClose: spxByDate.has(date) ? spxByDate.get(date) : null,
+        adLine: cumulative,
+        coverage: Math.round((coverage / memberCount(date)) * 1000) / 10,
+        ...(beatIndexOn(date, perNameCloses, indexCloses) || { pctBeatIndex: null, medExcess12m: null, beatN: null }),
       };
     });
 
-    let cumulative = 0;
-    const rows = dailyRows.map((row) => {
-      cumulative += row.advances - row.declines;
-      return { ...row, adLine: cumulative };
-    });
+    const rows = [...history, ...liveRows].map((row) => ({
+      ...row,
+      spxClose: spxByDate.has(row.date) ? spxByDate.get(row.date) : null,
+    }));
 
     // Snapshot of exactly which names are at an all-time high as of the
     // latest date, for display as a list (the daily rows above only carry
     // the aggregate count/percentage, not which names).
-    const latestDate = sortedDates[sortedDates.length - 1];
+    const latestDate = rows[rows.length - 1].date;
     const athTickers = [];
     let athCoverage = 0;
     for (const [symbol, flags] of perNameFlags.entries()) {
+      if (!CURRENT_SET.has(symbol)) continue;
       const f = flags.get(latestDate);
       if (!f) continue;
       athCoverage++;
@@ -326,6 +433,7 @@ exports.handler = async () => {
     const payload = {
       generated_at_utc: new Date().toISOString(),
       constituentCount: BREADTH_CONSTITUENTS.length,
+      historyCutoff: PIT.CUTOFF,
       rows,
       athSummary: {
         asOfDate: latestDate,
@@ -346,7 +454,8 @@ exports.handler = async () => {
     // scheduled-daychange-background.js instead (see that file), so this
     // read-modify-writes the shared blob rather than overwriting it wholesale.
     try {
-      const { asOfDate: rangesAsOfDate, ranges } = computeRangeSummaries(perNameCloses, BREADTH_CONSTITUENTS.length);
+      const currentCloses = new Map([...perNameCloses].filter(([symbol]) => CURRENT_SET.has(symbol)));
+      const { asOfDate: rangesAsOfDate, ranges } = computeRangeSummaries(currentCloses, BREADTH_CONSTITUENTS.length);
       const dcStore = getDayChangeStore();
       const existingDayChange = (await dcStore.get(DAYCHANGE_BLOB_KEY, { type: "json" })) || {};
       const dayChangePayload = {

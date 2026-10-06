@@ -355,8 +355,11 @@ function buildIndex(inputs, { historyPoints = 10000, componentHistoryPoints = 12
   if (inputs.breadth && inputs.breadth.length) {
     const b = inputs.breadth;
     const netShare = alignTo(dates, b.map((r) => ({ date: r.date, v: r.advances + r.declines > 0 ? (r.advances - r.declines) / (r.advances + r.declines) : null })).filter((p) => p.v !== null));
+    // Per-day count of stocks scored, not the current constituent count:
+    // breadth history is point-in-time, and before ~2008 only part of
+    // each date's membership has prices.
     const N = inputs.constituentCount || 500;
-    const netHL = alignTo(dates, b.map((r) => ({ date: r.date, v: ((r.newHighs - r.newLows) / N) * 100 })));
+    const netHL = alignTo(dates, b.map((r) => ({ date: r.date, v: ((r.newHighs - r.newLows) / (r.advances + r.declines || N)) * 100 })));
     adv10 = sma(netShare, 10);
     hl10 = sma(netHL, 10);
     pct200 = alignTo(dates, b.filter((r) => r.pctAbove200sma !== null).map((r) => ({ date: r.date, v: r.pctAbove200sma })));

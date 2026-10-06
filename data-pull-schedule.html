@@ -21,14 +21,14 @@ small{opacity:.7}
 </head>
 <body>
 <h1>Data Schedule</h1>
-<p>(New York is UTC−4 until November 1, then UTC−5.) This page is regenerated from the site's configuration on every deploy (last updated 10-04-2026).</p>
+<p>(New York is UTC−4 until November 1, then UTC−5.) This page is regenerated from the site's configuration on every deploy (last updated 10-06-2026).</p>
 <div class="w">
 <table>
 <thead><tr><th>Page</th><th>Job</th><th>When</th><th>Pulled from</th><th>Notes</th></tr></thead>
 <tbody>
 <tr><td><a href="/">Homepage</a></td><td class="m">ticker</td><td>Mon–Fri, every 2 min, 13:00–20:58 UTC</td><td>Alpha Vantage: FEDERAL_FUNDS_RATE<br>Yahoo Finance</td><td>Quotes for the S&amp;P 500, NASDAQ Composite, VIX, MSCI World and WTI crude, plus 20 watchlist stocks, and the fed funds rate.</td></tr>
 <tr><td><a href="/market-breadth.html">Market Breadth</a></td><td class="m">daychange</td><td>Mon–Fri, hourly at :30, 13:30–19:30 UTC</td><td>Yahoo Finance</td><td>Today's percent change for every S&amp;P 500 stock.</td></tr>
-<tr><td><a href="/ath-index.html">All-Time Highs and Lows</a><br><a href="/market-breadth.html">Market Breadth</a></td><td class="m">breadth</td><td>Mon–Fri 21:30 UTC</td><td>Yahoo Finance</td><td>Daily prices for every S&amp;P 500 stock, to count advances and declines, new highs and lows, and the share above the 200-day average.</td></tr>
+<tr><td><a href="/ath-index.html">All-Time Highs and Lows</a><br><a href="/concentration.html">Concentration</a><br><a href="/market-breadth.html">Market Breadth</a></td><td class="m">breadth</td><td>Mon–Fri 21:30 UTC</td><td>Yahoo Finance</td><td>Daily prices for every S&amp;P 500 stock, to count advances and declines, new highs and lows, and the share above the 200-day average.</td></tr>
 <tr><td><a href="/ath-index.html">All-Time Highs and Lows</a></td><td class="m">drawdown</td><td>Mon–Fri 21:30 UTC</td><td>Yahoo Finance</td><td>Full daily price history for SPY and URTH.</td></tr>
 <tr><td><a href="/country-sector-scorecard.html">Country / Sector Scorecard</a><br><a href="/sector-analysis.html">Sector Performance</a><br><a href="/sector-correlation.html">Sector Correlation Matrix</a><br><a href="/sector-rotation.html">Sector Rotation Model</a></td><td class="m">sectors</td><td>Mon–Fri 21:35 UTC</td><td>Yahoo Finance</td><td>Daily prices for the 11 sector ETFs and SPY.</td></tr>
 <tr><td><a href="/ath-index.html">All-Time Highs and Lows</a></td><td class="m">ath-tradingview</td><td>Mon–Fri 21:40 UTC</td><td>TradingView</td><td>Which S&amp;P 500 stocks are at an all-time high, from TradingView's screener.</td></tr>

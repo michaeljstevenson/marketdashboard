@@ -98,6 +98,11 @@ const TICKER_EXCHANGE = {
   "WM": "NYSE", "WMB": "NYSE", "WMT": "NASDAQ", "WRB": "NYSE", "WSM": "NYSE", "WST": "NYSE",
   "WTW": "NASDAQ", "WY": "NYSE", "WYNN": "NASDAQ", "XEL": "NASDAQ", "XOM": "NYSE", "XYL": "NYSE",
   "XYZ": "NYSE", "YUM": "NYSE", "ZBH": "NYSE", "ZBRA": "NASDAQ", "ZTS": "NYSE",
+  "RDDT": "NYSE",
+  "VMRK": "NYSE",
+  "BE": "NYSE",
+  "ILMN": "NASDAQ",
+  "P": "NYSE",
 };
 
 module.exports = { TICKER_EXCHANGE };
