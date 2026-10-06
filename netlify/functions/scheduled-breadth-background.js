@@ -62,7 +62,11 @@ async function fetchSpxDailyCloses() {
 // of these liquid, long-listed names reaches back to the 1990s or the
 // symbol's IPO, whichever is later — see the "all-time" caveat on the
 // ath-index.html page).
-function computeNameFlags(closes) {
+// Only days after `fromDate` get flags (earlier days come precomputed from
+// breadth-pit-history.js); the full history is still walked for the
+// running all-time high/low. Flagging every day since the 1960s for ~530
+// names hit the function's 1 GB memory cap and 15-minute limit.
+function computeNameFlags(closes, fromDate) {
   const flags = new Map();
   let runningMax = closes.length ? closes[0].close : -Infinity;
   let runningMin = closes.length ? closes[0].close : Infinity;
@@ -70,6 +74,11 @@ function computeNameFlags(closes) {
   for (let i = 1; i < closes.length; i++) {
     const { date, close } = closes[i];
     const prevClose = closes[i - 1].close;
+    if (date <= fromDate) {
+      runningMax = Math.max(runningMax, close);
+      runningMin = Math.min(runningMin, close);
+      continue;
+    }
 
     // A full 52 weeks is required (as in breadth-pit-history.js), so a
     // newly listed stock doesn't register a "52-week high" on day 2.
@@ -297,6 +306,9 @@ function historyRows() {
 
 exports.handler = async () => {
   const symbols = symbolsToFetch(new Date().toISOString().slice(0, 10));
+  // Closes kept in memory: the day's-change 5Y range and the 12-month
+  // beat-the-index window need nothing older.
+  const KEEP_CLOSES_FROM = new Date(Date.now() - 6 * 366 * DAY_MS).toISOString().slice(0, 10);
   console.log(`scheduled-breadth-background: starting, ${symbols.length} symbols (${BREADTH_CONSTITUENTS.length} current members)`);
   try {
     // Sequential with a short gap: Yahoo has no quota but 429s intermittently
@@ -308,8 +320,8 @@ exports.handler = async () => {
     for (const symbol of symbols) {
       try {
         const closes = await fetchDailyHistory(symbol);
-        perNameFlags.set(symbol, computeNameFlags(closes));
-        perNameCloses.set(symbol, closes);
+        perNameFlags.set(symbol, computeNameFlags(closes, PIT.CUTOFF));
+        perNameCloses.set(symbol, closes.filter((c) => c.date >= KEEP_CLOSES_FROM));
       } catch (err) {
         // Former members that were acquired are gone from Yahoo; only a
         // current member failing is worth a retry.
@@ -326,8 +338,8 @@ exports.handler = async () => {
       for (const symbol of failedSymbols) {
         try {
           const closes = await fetchDailyHistory(symbol);
-          perNameFlags.set(symbol, computeNameFlags(closes));
-          perNameCloses.set(symbol, closes);
+          perNameFlags.set(symbol, computeNameFlags(closes, PIT.CUTOFF));
+          perNameCloses.set(symbol, closes.filter((c) => c.date >= KEEP_CLOSES_FROM));
         } catch (err) {
           console.error(`scheduled-breadth-background: ${symbol} failed on retry: ${err.message}`);
         }
