@@ -363,6 +363,10 @@ h1{
 
 
 
+.explainer code.formula{
+ white-space:normal;
+}
+
 .explainer p:last-child{ margin-bottom:0; }
 
 .explainer .source{
@@ -598,7 +602,8 @@ h1{
 </div>
 
 <div class="explainer">
-<p>Realized volatility measures how much the S&amp;P 500 has <em>actually</em> moved over the trailing 20 trading days (the standard deviation of daily log returns, annualized). Implied volatility (VIX) measures what options are <em>pricing in</em> for the next 30 days, derived from the premiums that options traders are willing to pay.</p>
+<p>Realized volatility measures how much the S&amp;P 500 has actually moved over the trailing 20 trading days (the standard deviation of daily log returns, annualized). Implied volatility (VIX) measures what options are pricing in for the next 30 days, derived from the premiums that options traders are willing to pay.</p>
+<p>Realized volatility is calculated as <code class="formula">σ = √( Σ (rₜ − r̄)² / 19 ) × √252 × 100</code>, where rₜ = ln(Pₜ / Pₜ₋₁) is the daily log return of the S&amp;P 500 close over each of the last 20 trading days and r̄ is the average of those 20 returns.</p>
 <p>Implied and realized volatility usually move together, but the gap between them (volatility risk premium, VRP) is rarely zero. Implied volatility tends to sit above realized. Option sellers demand compensation for the risk they're taking on, so options are on average priced relatively higher than what volatility actually turns out to be. A widening VRP can be due to rising hedging demand or anticipation of an upcoming event (earnings, Fed meetings, etc.). A falling or negative VRP (implied vol trading below realized) is unusual (typically after a volatility spike).</p>
 <div class="source">Source: <a href="https://finance.yahoo.com/" target="_blank" rel="noopener">Yahoo Finance: S&amp;P 500 Index (^GSPC) &amp; CBOE Volatility Index (^VIX)</a></div>
 </div>
