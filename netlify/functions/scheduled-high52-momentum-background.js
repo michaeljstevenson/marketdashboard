@@ -52,20 +52,17 @@
 // Reuses company name/sector from Sector Beeswarm's own weekly meta.json
 // blob, same pattern as every other full-universe sweep in this codebase.
 //
-// Weekly, Saturday — see netlify.toml for the exact slot and why. Pacing:
-// ~503 sequential calls at 1050ms with a retry pass, same cadence as
-// scheduled-rsi-reversal-background.js and scheduled-rd-intensity-background.js.
+// Weekly, Saturday — see netlify.toml for the exact slot and why.
+// Reads the 52-week high/low from company overviews from the shared av-collected store (see av-collector-store.js), so it makes no Alpha Vantage calls of its own.
+// The overview collector has to run before this job for the range to be current.
 
 const { getHigh52Store, LATEST_KEY, HISTORY_KEY } = require("./high52-momentum-blob-store");
 const { getBeeswarmStore, META_KEY } = require("./beeswarm-blob-store");
 const { getRelativeStrengthStore, HISTORY_KEY: RS_HISTORY_KEY } = require("./relative-strength-blob-store");
 const { BREADTH_CONSTITUENTS } = require("./breadth-constituents");
 const { SECTOR_ORDER } = require("./beeswarm-sectors");
-const { recordAvCall } = require("./av-call-counter");
+const { collectedFor } = require("./av-collector-store");
 
-const ALPHA_VANTAGE_URL = "https://www.alphavantage.co/query";
-const USER_AGENT =
-  "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0 Safari/537.36";
 
 const NEAR_HIGH_THRESHOLD = 90; // rangePos >= this counts as "near the 52-week high"
 const NEAR_LOW_THRESHOLD = 10; // rangePos <= this counts as "near the 52-week low"
@@ -110,16 +107,7 @@ function relativeReturn(stockRet, benchRet) {
 }
 
 async function fetchHighLow(apiKey, symbol) {
-  await recordAvCall();
-  const res = await fetch(
-    `${ALPHA_VANTAGE_URL}?function=OVERVIEW&symbol=${symbol}&apikey=${apiKey}`,
-    { headers: { "User-Agent": USER_AGENT } }
-  );
-  if (!res.ok) throw new Error(`HTTP ${res.status}`);
-  const payload = await res.json();
-  if (payload.Note || payload.Information || payload.error) {
-    throw new Error(payload.Note || payload.Information || JSON.stringify(payload.error));
-  }
+  const payload = (await collectedFor("overview", symbol)) || {};
   if (!payload.Symbol) return null; // empty body — no OVERVIEW data for this symbol
   const high = num(payload["52WeekHigh"]);
   const low = num(payload["52WeekLow"]);
@@ -219,7 +207,6 @@ exports.handler = async () => {
         return true;
       } catch (err) {
         console.error(`scheduled-high52-momentum-background: ${symbol} failed: ${err.message}`);
-        if (/rate limit|per minute/i.test(err.message)) await sleep(20000);
         return false;
       }
     }
@@ -228,13 +215,11 @@ exports.handler = async () => {
     for (let pass = 0; pass < 2 && todo.length; pass++) {
       if (pass > 0) {
         console.log(`scheduled-high52-momentum-background: retry pass for ${todo.length} ticker(s)`);
-        await sleep(65000);
       }
       const missed = [];
       for (const symbol of todo) {
         const got = await fetchInto(symbol);
         if (!got) missed.push(symbol);
-        await sleep(1050);
       }
       todo = missed;
     }

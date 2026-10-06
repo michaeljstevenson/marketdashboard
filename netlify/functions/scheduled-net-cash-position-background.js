@@ -8,12 +8,8 @@
 // large cash cushion as a safety margin/option value, or discount it as
 // idle capital not being put to work?).
 //
-// A single-endpoint sweep (~503 calls, no checkpoint needed — same call-
-// volume class as scheduled-rd-intensity-background.js's single-endpoint
-// sweep, well within a Background Function's ~15-minute ceiling), unlike
-// ROIC vs. Cost of Capital's and Cash Conversion Cycle's two-statement
-// sweeps. Only the latest quarter is needed (no TTM figure to build), so
-// this doesn't even need the 4+-quarter windows those two pages fetch.
+// Reads balance sheets from the shared av-collected store (see av-collector-store.js), so it makes no Alpha Vantage calls of its own.
+// Only the latest quarter is needed (no TTM figure to build).
 //
 // Debt and cash field selection (shortLongTermDebtTotal with a short+long
 // fallback, cashAndCashEquivalentsAtCarryingValue with a cashAndShortTerm-
@@ -50,11 +46,8 @@ const { getRelativeStrengthStore, LATEST_KEY: RS_LATEST_KEY } = require("./relat
 const { getRoicWaccStore, BLOB_KEY: ROIC_WACC_KEY } = require("./roic-wacc-blob-store");
 const { BREADTH_CONSTITUENTS } = require("./breadth-constituents");
 const { SECTOR_ORDER } = require("./beeswarm-sectors");
-const { recordAvCall } = require("./av-call-counter");
+const { collectedFor } = require("./av-collector-store");
 
-const ALPHA_VANTAGE_URL = "https://www.alphavantage.co/query";
-const USER_AGENT =
-  "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0 Safari/537.36";
 
 const EXCLUDED_SECTORS = new Set(["Financials", "Real Estate", "Utilities"]);
 const NOTABLE_COUNT = 15;
@@ -104,16 +97,8 @@ function cashOf(bal) {
 }
 
 async function fetchLatestBalanceSheet(apiKey, symbol) {
-  await recordAvCall();
-  const res = await fetch(
-    `${ALPHA_VANTAGE_URL}?function=BALANCE_SHEET&symbol=${symbol}&apikey=${apiKey}`,
-    { headers: { "User-Agent": USER_AGENT } }
-  );
-  if (!res.ok) throw new Error(`HTTP ${res.status}`);
-  const payload = await res.json();
-  if (payload.Note || payload.Information || payload.error) {
-    throw new Error(payload.Note || payload.Information || JSON.stringify(payload.error));
-  }
+  const payload = await collectedFor("balance", symbol);
+  if (!payload) throw new Error(`no shared balance data`);
   const rows = payload.quarterlyReports;
   if (!Array.isArray(rows) || !rows.length) return null;
   return rows[0]; // Alpha Vantage returns quarterlyReports most-recent-first
@@ -160,7 +145,6 @@ exports.handler = async () => {
         return true;
       } catch (err) {
         console.error(`scheduled-net-cash-position-background: ${symbol} failed: ${err.message}`);
-        if (/rate limit|per minute/i.test(err.message)) await sleep(20000);
         return false;
       }
     }
@@ -169,13 +153,11 @@ exports.handler = async () => {
     for (let pass = 0; pass < 2 && todo.length; pass++) {
       if (pass > 0) {
         console.log(`scheduled-net-cash-position-background: retry pass for ${todo.length} ticker(s)`);
-        await sleep(65000);
       }
       const missed = [];
       for (const symbol of todo) {
         const got = await fetchInto(symbol);
         if (!got) missed.push(symbol);
-        await sleep(1050);
       }
       todo = missed;
     }

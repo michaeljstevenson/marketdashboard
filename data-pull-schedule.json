@@ -333,6 +333,12 @@
       ]
     },
     {
+      "name": "balance-collector",
+      "cron": null,
+      "apis": [],
+      "pages": []
+    },
+    {
       "name": "buyback-effectiveness",
       "cron": null,
       "apis": [
@@ -464,6 +470,12 @@
       "pages": [
         "fcf-yield"
       ]
+    },
+    {
+      "name": "income-collector",
+      "cron": null,
+      "apis": [],
+      "pages": []
     },
     {
       "name": "ipo-pipeline",

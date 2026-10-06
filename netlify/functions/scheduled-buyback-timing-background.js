@@ -39,20 +39,17 @@
 // handful of individual quarter events behind those averages, small enough
 // to keep. One-time snapshot, no schedule — matches this file's current
 // convention for new full-universe Equities jobs (see scheduled-roic-wacc-
-// background.js for the same note). Checkpointed/resumable like that job,
-// since a combined CASH_FLOW + Yahoo sweep across ~503 names is in the
-// same time-budget class.
+// background.js for the same note). Cash flow comes from the shared
+// av-collected store (see av-collector-store.js); prices still come from
+// Yahoo per company, so the job keeps its checkpoint/resume.
 
 const { getBuybackTimingStore, BLOB_KEY, CHECKPOINT_KEY } = require("./buyback-timing-blob-store");
 const { getBeeswarmStore, META_KEY } = require("./beeswarm-blob-store");
 const { BREADTH_CONSTITUENTS } = require("./breadth-constituents");
 const { SECTOR_ORDER } = require("./beeswarm-sectors");
-const { recordAvCall } = require("./av-call-counter");
+const { collectedFor } = require("./av-collector-store");
 const { fetchDailyHistory } = require("./yahoo-client");
 
-const ALPHA_VANTAGE_URL = "https://www.alphavantage.co/query";
-const USER_AGENT =
-  "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0 Safari/537.36";
 
 const QUARTERS_NEEDED = 24; // ~6 years, same depth as scheduled-buyback-effectiveness-background.js
 const RANGE_SESSIONS = 252; // ~1 trading year, the standard "52-week" window
@@ -62,7 +59,6 @@ const MIN_EVENTS_FOR_STATS = 3; // don't rank a company on 1-2 lucky/unlucky qua
 const MIN_SECTOR_N = 3;
 const MIN_TERCILE_N = 15;
 
-const CALL_SLEEP_MS_AV = 1050; // same pacing already proven safe at this universe size by scheduled-buyback-effectiveness-background.js
 const CALL_SLEEP_MS_YAHOO = 300; // same pacing scheduled-relative-strength-background.js uses for Yahoo
 const RUN_BUDGET_MS = 12 * 60 * 1000;
 const CHECKPOINT_MAX_AGE_MS = 24 * 60 * 60 * 1000;
@@ -122,16 +118,8 @@ function mean(values) {
 }
 
 async function fetchQuarterlyCashFlow(apiKey, symbol) {
-  await recordAvCall();
-  const res = await fetch(
-    `${ALPHA_VANTAGE_URL}?function=CASH_FLOW&symbol=${symbol}&apikey=${apiKey}`,
-    { headers: { "User-Agent": USER_AGENT } }
-  );
-  if (!res.ok) throw new Error(`HTTP ${res.status}`);
-  const payload = await res.json();
-  if (payload.Note || payload.Information || payload.error) {
-    throw new Error(payload.Note || payload.Information || JSON.stringify(payload.error));
-  }
+  const payload = await collectedFor("cashflow", symbol);
+  if (!payload) throw new Error(`no shared cashflow data`);
   const rows = payload.quarterlyReports;
   if (!Array.isArray(rows)) throw new Error(`unexpected response shape: ${JSON.stringify(payload).slice(0, 160)}`);
   return rows.slice(0, QUARTERS_NEEDED).map((r) => ({
@@ -262,7 +250,6 @@ exports.handler = async () => {
     async function fetchInto(symbol) {
       try {
         const quarters = await fetchQuarterlyCashFlow(apiKey, symbol);
-        await sleep(CALL_SLEEP_MS_AV);
         if (quarters.length < 4) { results.set(symbol, { ttmBuybackSpend: null, events: [] }); delete failures[symbol]; return true; }
 
         const last4 = quarters.slice(0, 4);
@@ -279,7 +266,6 @@ exports.handler = async () => {
       } catch (err) {
         console.error(`scheduled-buyback-timing-background: ${symbol} failed: ${err.message}`);
         failures[symbol] = String(err.message).slice(0, 200);
-        if (/rate limit|per minute/i.test(err.message)) await sleep(20000);
         return false;
       }
     }
@@ -290,7 +276,6 @@ exports.handler = async () => {
     for (let pass = 0; pass < 2 && todo.length && !stoppedForTime; pass++) {
       if (pass > 0) {
         console.log(`scheduled-buyback-timing-background: retry pass for ${todo.length} ticker(s)`);
-        await sleep(45000);
       }
       const missed = [];
       for (const symbol of todo) {

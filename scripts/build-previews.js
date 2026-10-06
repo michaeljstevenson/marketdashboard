@@ -7,7 +7,7 @@
 // functions they need and their /api routes. For each entry this script:
 //   - copies the PR's new pages from origin/<branch> into preview/, pointing
 //     links between preview pages at /preview/ and marking them noindex
-//   - copies the PR's new functions into netlify/functions/
+//   - copies the PR's new functions into netlify/functions/ (first run only)
 //   - writes the PR's /api routes into the marked block in netlify.toml
 //     (no schedules: preview jobs only run when started by hand)
 //   - rebuilds preview/index.html
@@ -55,8 +55,11 @@ for (const entry of MANIFEST) {
     fs.writeFileSync(path.join(DIR, file), stage(show(entry.branch, file), entry));
     pageCount++;
   }
+  // Functions are copied once and then edited here (e.g. moved onto the
+  // shared Alpha Vantage collectors), so a rerun must not overwrite them.
   for (const fn of entry.functions) {
-    fs.writeFileSync(path.join(ROOT, "netlify", "functions", fn), show(entry.branch, `netlify/functions/${fn}`));
+    const dest = path.join(ROOT, "netlify", "functions", fn);
+    if (!fs.existsSync(dest)) fs.writeFileSync(dest, show(entry.branch, `netlify/functions/${fn}`));
   }
 }
 

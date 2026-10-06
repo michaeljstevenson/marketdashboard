@@ -27,10 +27,8 @@
 // One-time snapshot, no recurring schedule — matches the convention this
 // site settled into for every full-universe fundamentals job added since
 // 2026-09-16 (run manually via the Netlify dashboard "Run now"; quarterly
-// fundamentals don't move day to day). The ~1006-call sweep needs the same
-// checkpoint/resume machinery as scheduled-margin-leverage-background.js
-// and scheduled-roic-wacc-background.js since it can't finish inside one
-// Background Function's ~15-minute ceiling.
+// fundamentals don't move day to day).
+// Reads income statements and balance sheets from the shared av-collected store (see av-collector-store.js), so it makes no Alpha Vantage calls of its own.
 //
 // Reuses company name/sector from the Sector Beeswarm page's own weekly
 // meta.json blob, same pattern as every other full-universe sweep in this
@@ -40,22 +38,14 @@ const { getRoeDecompositionStore, BLOB_KEY, CHECKPOINT_KEY } = require("./roe-de
 const { getBeeswarmStore, META_KEY } = require("./beeswarm-blob-store");
 const { BREADTH_CONSTITUENTS } = require("./breadth-constituents");
 const { SECTOR_ORDER } = require("./beeswarm-sectors");
-const { recordAvCall } = require("./av-call-counter");
+const { collectedFor } = require("./av-collector-store");
 
-const ALPHA_VANTAGE_URL = "https://www.alphavantage.co/query";
-const USER_AGENT =
-  "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0 Safari/537.36";
 
 const QUARTERS_NEEDED = 28; // ~7 years — same window as scheduled-margin-leverage-background.js
 const NOTABLE_COUNT = 15;
 const MIN_SECTOR_N = 3;
 const MIN_QUARTER_N = 40; // don't publish a market-aggregate calendar quarter built off fewer than this many companies
 
-// Two calls per company (~1006 total). Same pacing tradeoff as scheduled-
-// margin-leverage-background.js and scheduled-roic-wacc-background.js: 750ms
-// keeps the main pass under ~12.6 minutes, leaving room for a retry pass
-// inside a Background Function's ~15-minute ceiling.
-const CALL_SLEEP_MS = 750;
 const RUN_BUDGET_MS = 12 * 60 * 1000;
 const CHECKPOINT_MAX_AGE_MS = 24 * 60 * 60 * 1000;
 const CHECKPOINT_EVERY = 120;
@@ -65,6 +55,8 @@ const KEEP_FIELDS = {
   BALANCE_SHEET: ["fiscalDateEnding", "totalAssets", "totalShareholderEquity"],
 };
 const pick = (rows, keys) => rows.map((r) => Object.fromEntries(keys.map((k) => [k, r[k]])));
+
+const KIND_OF = { INCOME_STATEMENT: "income", BALANCE_SHEET: "balance", CASH_FLOW: "cashflow" };
 
 function sleep(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
@@ -103,16 +95,8 @@ function calendarQuarterKey(dateStr) {
 }
 
 async function fetchStatement(apiKey, fn, symbol) {
-  await recordAvCall();
-  const res = await fetch(
-    `${ALPHA_VANTAGE_URL}?function=${fn}&symbol=${symbol}&apikey=${apiKey}`,
-    { headers: { "User-Agent": USER_AGENT } }
-  );
-  if (!res.ok) throw new Error(`HTTP ${res.status}`);
-  const payload = await res.json();
-  if (payload.Note || payload.Information || payload.error) {
-    throw new Error(payload.Note || payload.Information || JSON.stringify(payload.error));
-  }
+  const payload = await collectedFor(KIND_OF[fn], symbol);
+  if (!payload) throw new Error(`no shared ${KIND_OF[fn]} data`);
   const rows = payload.quarterlyReports;
   if (!Array.isArray(rows)) throw new Error(`${fn} unexpected response shape for ${symbol}: ${JSON.stringify(payload).slice(0, 160)}`);
   return pick(rows.slice(0, QUARTERS_NEEDED), KEEP_FIELDS[fn]); // most-recent-first
@@ -271,7 +255,6 @@ exports.handler = async () => {
     async function fetchInto(symbol) {
       try {
         const income = await fetchStatement(apiKey, "INCOME_STATEMENT", symbol);
-        await sleep(CALL_SLEEP_MS);
         const balance = await fetchStatement(apiKey, "BALANCE_SHEET", symbol);
         delete failures[symbol];
         results.set(symbol, { income, balance });
@@ -279,7 +262,6 @@ exports.handler = async () => {
       } catch (err) {
         console.error(`scheduled-roe-decomposition-background: ${symbol} failed: ${err.message}`);
         failures[symbol] = String(err.message).slice(0, 200);
-        if (/rate limit|per minute/i.test(err.message)) await sleep(20000);
         return false;
       }
     }
@@ -290,7 +272,6 @@ exports.handler = async () => {
     for (let pass = 0; pass < 2 && todo.length && !stoppedForTime; pass++) {
       if (pass > 0) {
         console.log(`scheduled-roe-decomposition-background: retry pass for ${todo.length} ticker(s)`);
-        await sleep(45000);
       }
       const missed = [];
       for (const symbol of todo) {
@@ -298,7 +279,6 @@ exports.handler = async () => {
         const got = await fetchInto(symbol);
         if (!got) missed.push(symbol);
         if (got && ++sinceCheckpoint >= CHECKPOINT_EVERY) { await saveCheckpoint(false); sinceCheckpoint = 0; }
-        await sleep(CALL_SLEEP_MS);
       }
       todo = missed;
     }

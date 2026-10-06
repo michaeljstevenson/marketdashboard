@@ -1,5 +1,6 @@
 // Shared runner for the Alpha Vantage collector jobs (scheduled-overview-,
-// earnings-, cashflow- and estimates-collector-background.js). Each
+// earnings-, cashflow-, estimates-, income- and balance-collector-
+// background.js). Each
 // collector calls runCollector() with one endpoint and a pick() function
 // that keeps only the fields the site's jobs read, and this file does the
 // rest: one call per S&P 500 stock, paced for the rate limit, with the
@@ -44,7 +45,7 @@ async function fetchPayload(fn, symbol, apiKey) {
   return payload;
 }
 
-// kind: "overview" | "earnings" | "cashflow" | "estimates" (names the blobs)
+// kind: "overview" | "earnings" | "cashflow" | "estimates" | "income" | "balance" (names the blobs)
 // fn:   the Alpha Vantage function
 // pick: (payload) => slim object to store, or null when the symbol has no
 //       data; throw to have the symbol retried as a failure.

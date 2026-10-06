@@ -22,14 +22,16 @@
 // reported this season.
 //
 // Weekly, Sunday 07:00 UTC — the only day of the week with no other
-// scheduled job. ~250-350 sequential EARNINGS calls at 1050ms spacing plus a
-// retry pass.
+// scheduled job. Reads each company's earnings history from the shared
+// av-collected store (see av-collector-store.js); the calendar itself is the
+// job's only Alpha Vantage call.
 
 const { getEarningsCalendarStore, LATEST_KEY } = require("./earnings-calendar-blob-store");
 const { getBeeswarmStore, META_KEY } = require("./beeswarm-blob-store");
 const { getSurpriseStore, LATEST_KEY: SURPRISE_KEY } = require("./surprise-blob-store");
 const { BREADTH_CONSTITUENTS } = require("./breadth-constituents");
 const { recordAvCall } = require("./av-call-counter");
+const { collectedFor } = require("./av-collector-store");
 
 const ALPHA_VANTAGE_URL = "https://www.alphavantage.co/query";
 const USER_AGENT =
@@ -175,11 +177,7 @@ async function fetchCalendar(apiKey) {
 }
 
 async function fetchEarnings(apiKey, symbol) {
-  const res = await fetchAv(`${ALPHA_VANTAGE_URL}?function=EARNINGS&symbol=${symbol}&apikey=${apiKey}`);
-  const payload = await res.json();
-  if (payload.Note || payload.Information || payload.error) {
-    throw new Error(payload.Note || payload.Information || JSON.stringify(payload.error));
-  }
+  const payload = (await collectedFor("earnings", symbol)) || {};
   const qs = payload.quarterlyEarnings;
   if (!Array.isArray(qs) || !qs.length) return null;
   return qs.map((q) => ({
@@ -248,7 +246,6 @@ exports.handler = async () => {
     for (let pass = 0; pass < 2 && todo.length; pass++) {
       if (pass > 0) {
         console.log(`scheduled-earnings-calendar-background: retry pass for ${todo.length} ticker(s)`);
-        await sleep(65000);
       }
       const missed = [];
       for (const symbol of todo) {
@@ -257,10 +254,8 @@ exports.handler = async () => {
           if (q) histories.set(symbol, q);
         } catch (err) {
           console.error(`scheduled-earnings-calendar-background: ${symbol} failed: ${err.message}`);
-          if (/rate limit|per minute/i.test(err.message)) await sleep(20000);
           missed.push(symbol);
         }
-        await sleep(1050);
       }
       todo = missed;
     }

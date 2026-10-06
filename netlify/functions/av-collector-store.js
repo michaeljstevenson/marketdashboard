@@ -31,4 +31,13 @@ async function loadCollected(kind) {
   return published;
 }
 
-module.exports = { getCollectedStore, loadCollected, publishedKey, progressKey, BLOB_STORE };
+// One symbol's stored payload (same shape the Alpha Vantage endpoint
+// returns, trimmed to the kept fields), or null if the sweep had nothing for
+// it. Each kind's snapshot is loaded once per run.
+const snapshots = {};
+async function collectedFor(kind, symbol) {
+  snapshots[kind] = snapshots[kind] || loadCollected(kind);
+  return (await snapshots[kind]).data[symbol] || null;
+}
+
+module.exports = { getCollectedStore, loadCollected, collectedFor, publishedKey, progressKey, BLOB_STORE };

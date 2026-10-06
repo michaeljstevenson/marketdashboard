@@ -40,10 +40,7 @@
 // page) applied specifically to dividend sustainability rather than
 // earnings quality in general.
 //
-// Single-endpoint sweep (~503 calls, no checkpoint needed — same pattern
-// as scheduled-buyback-effectiveness-background.js and scheduled-rd-
-// intensity-background.js), unlike the two-statement sweeps ROIC vs. Cost
-// of Capital/Cash Conversion Cycle/Accruals needed. One-time snapshot, no
+// Reads quarterly cash flow from the shared av-collected store (see av-collector-store.js), so it makes no Alpha Vantage calls of its own. One-time snapshot, no
 // recurring schedule — matches the convention this site has settled into
 // for every page added since 2026-09-16. Reuses Sector Beeswarm's own
 // weekly meta.json for company name/sector, and optionally reads (not
@@ -56,11 +53,8 @@ const { getBeeswarmStore, META_KEY } = require("./beeswarm-blob-store");
 const { getRelativeStrengthStore, LATEST_KEY: RS_LATEST_KEY } = require("./relative-strength-blob-store");
 const { BREADTH_CONSTITUENTS } = require("./breadth-constituents");
 const { SECTOR_ORDER } = require("./beeswarm-sectors");
-const { recordAvCall } = require("./av-call-counter");
+const { collectedFor } = require("./av-collector-store");
 
-const ALPHA_VANTAGE_URL = "https://www.alphavantage.co/query";
-const USER_AGENT =
-  "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0 Safari/537.36";
 
 const QUARTERS_NEEDED = 4; // TTM only — this page doesn't need a longer lookback
 const NOTABLE_COUNT = 15;
@@ -94,16 +88,8 @@ function median(values) {
 }
 
 async function fetchQuarterlyCashFlow(apiKey, symbol) {
-  await recordAvCall();
-  const res = await fetch(
-    `${ALPHA_VANTAGE_URL}?function=CASH_FLOW&symbol=${symbol}&apikey=${apiKey}`,
-    { headers: { "User-Agent": USER_AGENT } }
-  );
-  if (!res.ok) throw new Error(`HTTP ${res.status}`);
-  const payload = await res.json();
-  if (payload.Note || payload.Information || payload.error) {
-    throw new Error(payload.Note || payload.Information || JSON.stringify(payload.error));
-  }
+  const payload = await collectedFor("cashflow", symbol);
+  if (!payload) throw new Error(`no shared cashflow data`);
   const rows = payload.quarterlyReports;
   if (!Array.isArray(rows)) throw new Error(`unexpected response shape: ${JSON.stringify(payload).slice(0, 160)}`);
 
@@ -188,7 +174,6 @@ exports.handler = async () => {
         return true;
       } catch (err) {
         console.error(`scheduled-dividend-coverage-background: ${symbol} failed: ${err.message}`);
-        if (/rate limit|per minute/i.test(err.message)) await sleep(20000);
         return false;
       }
     }
@@ -197,13 +182,11 @@ exports.handler = async () => {
     for (let pass = 0; pass < 2 && todo.length; pass++) {
       if (pass > 0) {
         console.log(`scheduled-dividend-coverage-background: retry pass for ${todo.length} ticker(s)`);
-        await sleep(65000);
       }
       const missed = [];
       for (const symbol of todo) {
         const got = await fetchInto(symbol);
         if (!got) missed.push(symbol);
-        await sleep(1050);
       }
       todo = missed;
     }

@@ -36,11 +36,8 @@ const { getErpStore, LATEST_KEY: ERP_LATEST_KEY } = require("./equity-risk-premi
 const { getRelativeStrengthStore, LATEST_KEY: RS_LATEST_KEY } = require("./relative-strength-blob-store");
 const { BREADTH_CONSTITUENTS } = require("./breadth-constituents");
 const { SECTOR_ORDER } = require("./beeswarm-sectors");
-const { recordAvCall } = require("./av-call-counter");
+const { collectedFor } = require("./av-collector-store");
 
-const ALPHA_VANTAGE_URL = "https://www.alphavantage.co/query";
-const USER_AGENT =
-  "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0 Safari/537.36";
 
 const NOTABLE_COUNT = 15;
 const MIN_SECTOR_N = 3;
@@ -54,9 +51,7 @@ const MIN_SECTOR_N = 3;
 // excluding sectors where its own inputs aren't meaningful.
 const EXCLUDED_SECTORS = new Set(["Financials", "Real Estate"]);
 
-// Two calls per company (~1006 total) — same pacing tradeoff as scheduled-
-// roic-wacc-background.js and scheduled-cash-conversion-cycle-background.js.
-const CALL_SLEEP_MS = 750;
+// Reads annual income statements and balance sheets from the shared av-collected store (see av-collector-store.js), so it makes no Alpha Vantage calls of its own.
 const RUN_BUDGET_MS = 12 * 60 * 1000;
 const CHECKPOINT_MAX_AGE_MS = 24 * 60 * 60 * 1000;
 const CHECKPOINT_EVERY = 120;
@@ -66,6 +61,8 @@ const KEEP_FIELDS = {
   BALANCE_SHEET: ["fiscalDateEnding", "totalAssets", "totalCurrentAssets", "totalCurrentLiabilities", "totalLiabilities", "retainedEarnings"],
 };
 const pick = (rows, keys) => rows.map((r) => Object.fromEntries(keys.map((k) => [k, r[k]])));
+
+const KIND_OF = { INCOME_STATEMENT: "income", BALANCE_SHEET: "balance", CASH_FLOW: "cashflow" };
 
 function sleep(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
@@ -105,16 +102,8 @@ function zoneOf(z) {
 }
 
 async function fetchAnnual(apiKey, fn, symbol) {
-  await recordAvCall();
-  const res = await fetch(
-    `${ALPHA_VANTAGE_URL}?function=${fn}&symbol=${symbol}&apikey=${apiKey}`,
-    { headers: { "User-Agent": USER_AGENT } }
-  );
-  if (!res.ok) throw new Error(`HTTP ${res.status}`);
-  const payload = await res.json();
-  if (payload.Note || payload.Information || payload.error) {
-    throw new Error(payload.Note || payload.Information || JSON.stringify(payload.error));
-  }
+  const payload = await collectedFor(KIND_OF[fn], symbol);
+  if (!payload) throw new Error(`no shared ${KIND_OF[fn]} data`);
   const rows = payload.annualReports;
   if (!Array.isArray(rows) || !rows.length) throw new Error(`${fn} unexpected response shape for ${symbol}: ${JSON.stringify(payload).slice(0, 160)}`);
   return pick(rows.slice(0, 1), KEEP_FIELDS[fn])[0]; // most recent fiscal year only
@@ -209,7 +198,6 @@ exports.handler = async () => {
     async function fetchInto(symbol) {
       try {
         const income = await fetchAnnual(apiKey, "INCOME_STATEMENT", symbol);
-        await sleep(CALL_SLEEP_MS);
         const balance = await fetchAnnual(apiKey, "BALANCE_SHEET", symbol);
         delete failures[symbol];
         results.set(symbol, { income, balance });
@@ -217,7 +205,6 @@ exports.handler = async () => {
       } catch (err) {
         console.error(`scheduled-altman-z-background: ${symbol} failed: ${err.message}`);
         failures[symbol] = String(err.message).slice(0, 200);
-        if (/rate limit|per minute/i.test(err.message)) await sleep(20000);
         return false;
       }
     }
@@ -228,7 +215,6 @@ exports.handler = async () => {
     for (let pass = 0; pass < 2 && todo.length && !stoppedForTime; pass++) {
       if (pass > 0) {
         console.log(`scheduled-altman-z-background: retry pass for ${todo.length} ticker(s)`);
-        await sleep(45000);
       }
       const missed = [];
       for (const symbol of todo) {
@@ -236,7 +222,6 @@ exports.handler = async () => {
         const got = await fetchInto(symbol);
         if (!got) missed.push(symbol);
         if (got && ++sinceCheckpoint >= CHECKPOINT_EVERY) { await saveCheckpoint(false); sinceCheckpoint = 0; }
-        await sleep(CALL_SLEEP_MS);
       }
       todo = missed;
     }

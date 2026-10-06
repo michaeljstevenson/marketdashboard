@@ -39,19 +39,16 @@
 // order to enforce between two jobs that don't share a recurring cron.
 //
 // One-time snapshot, no recurring schedule — matches the convention this
-// site settled into for every page added since 2026-09-16. ~503 sequential
-// INCOME_STATEMENT calls at 1050ms spacing plus a retry pass.
+// site settled into for every page added since 2026-09-16.
+// Reads quarterly income statements from the shared av-collected store (see av-collector-store.js), so it makes no Alpha Vantage calls of its own.
 
 const { getEffectiveTaxRateStore, BLOB_KEY } = require("./effective-tax-rate-blob-store");
 const { getBeeswarmStore, META_KEY } = require("./beeswarm-blob-store");
 const { getRelativeStrengthStore, LATEST_KEY: RS_LATEST_KEY } = require("./relative-strength-blob-store");
 const { BREADTH_CONSTITUENTS } = require("./breadth-constituents");
 const { SECTOR_ORDER } = require("./beeswarm-sectors");
-const { recordAvCall } = require("./av-call-counter");
+const { collectedFor } = require("./av-collector-store");
 
-const ALPHA_VANTAGE_URL = "https://www.alphavantage.co/query";
-const USER_AGENT =
-  "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0 Safari/537.36";
 
 const QUARTERS_NEEDED = 28; // ~7 years, same window as this site's other full-universe quarterly sweeps
 const NOTABLE_COUNT = 15;
@@ -107,16 +104,8 @@ function calendarQuarterKey(dateStr) {
 }
 
 async function fetchQuarterlyTax(apiKey, symbol) {
-  await recordAvCall();
-  const res = await fetch(
-    `${ALPHA_VANTAGE_URL}?function=INCOME_STATEMENT&symbol=${symbol}&apikey=${apiKey}`,
-    { headers: { "User-Agent": USER_AGENT } }
-  );
-  if (!res.ok) throw new Error(`HTTP ${res.status}`);
-  const payload = await res.json();
-  if (payload.Note || payload.Information || payload.error) {
-    throw new Error(payload.Note || payload.Information || JSON.stringify(payload.error));
-  }
+  const payload = await collectedFor("income", symbol);
+  if (!payload) throw new Error(`no shared income data`);
   const rows = payload.quarterlyReports;
   if (!Array.isArray(rows)) throw new Error(`unexpected response shape: ${JSON.stringify(payload).slice(0, 160)}`);
 
@@ -283,7 +272,6 @@ exports.handler = async () => {
         return true;
       } catch (err) {
         console.error(`scheduled-effective-tax-rate-background: ${symbol} failed: ${err.message}`);
-        if (/rate limit|per minute/i.test(err.message)) await sleep(20000);
         return false;
       }
     }
@@ -292,13 +280,11 @@ exports.handler = async () => {
     for (let pass = 0; pass < 2 && todo.length; pass++) {
       if (pass > 0) {
         console.log(`scheduled-effective-tax-rate-background: retry pass for ${todo.length} ticker(s)`);
-        await sleep(65000);
       }
       const missed = [];
       for (const symbol of todo) {
         const got = await fetchInto(symbol);
         if (!got) missed.push(symbol);
-        await sleep(1050);
       }
       todo = missed;
     }

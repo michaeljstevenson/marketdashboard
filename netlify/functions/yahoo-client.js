@@ -50,10 +50,10 @@ async function fetchYahooJson(url) {
 // split/dividend-adjusted close (matches Alpha Vantage's "5. adjusted
 // close"); otherwise the raw close. Bars with a null close (Yahoo pads
 // halted/incomplete days) are dropped.
-async function fetchDailyHistory(symbol, { adjusted = true } = {}) {
+async function fetchDailyHistory(symbol, { adjusted = true, sinceUnix = 0 } = {}) {
   const url =
     `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(YAHOO_ALIASES[symbol] || symbol)}` +
-    `?period1=0&period2=${Math.floor(Date.now() / 1000)}&interval=1d&events=div,splits`;
+    `?period1=${sinceUnix}&period2=${Math.floor(Date.now() / 1000)}&interval=1d&events=div,splits`;
   const payload = await fetchYahooJson(url);
   const result = payload.chart && payload.chart.result && payload.chart.result[0];
   if (!result) throw new Error(`Yahoo returned no data for ${symbol}`);

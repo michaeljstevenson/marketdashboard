@@ -43,19 +43,14 @@
 // job were scheduled. Re-run manually (Netlify dashboard "Run now") for a
 // fresh snapshot.
 //
-// ~503 sequential COMPANY_OVERVIEW calls, 1050ms apart with a retry pass —
-// same pacing proven at this scale by
-// scheduled-beeswarm-meta-background.js.
+// Reads company overviews from the shared av-collected store (see av-collector-store.js), so it makes no Alpha Vantage calls of its own.
 
 const { getInsiderOwnershipStore, LATEST_KEY } = require("./insider-ownership-blob-store");
 const { getRelativeStrengthStore, LATEST_KEY: RS_LATEST_KEY } = require("./relative-strength-blob-store");
 const { BREADTH_CONSTITUENTS } = require("./breadth-constituents");
 const { SECTOR_ORDER, normalizeSector } = require("./beeswarm-sectors");
-const { recordAvCall } = require("./av-call-counter");
+const { collectedFor } = require("./av-collector-store");
 
-const ALPHA_VANTAGE_URL = "https://www.alphavantage.co/query";
-const USER_AGENT =
-  "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0 Safari/537.36";
 
 const LEADERBOARD_SIZE = 15;
 
@@ -82,14 +77,7 @@ function median(values) {
 }
 
 async function fetchOverview(apiKey, symbol) {
-  await recordAvCall();
-  const res = await fetch(
-    `${ALPHA_VANTAGE_URL}?function=OVERVIEW&symbol=${symbol}&apikey=${apiKey}`,
-    { headers: { "User-Agent": USER_AGENT } }
-  );
-  if (!res.ok) throw new Error(`HTTP ${res.status}`);
-  const p = await res.json();
-  if (p.Note || p.Information || p.error) throw new Error(p.Note || p.Information || JSON.stringify(p.error));
+  const p = (await collectedFor("overview", symbol)) || {};
   if (!p.Symbol) return null; // empty {} for an unrecognized/delisted symbol
 
   return {
@@ -129,7 +117,6 @@ exports.handler = async () => {
         return true;
       } catch (err) {
         console.error(`scheduled-insider-ownership-background: ${symbol} failed: ${err.message}`);
-        if (/rate limit|per minute/i.test(err.message)) await sleep(20000);
         return false;
       }
     }
@@ -138,13 +125,11 @@ exports.handler = async () => {
     for (let pass = 0; pass < 2 && todo.length; pass++) {
       if (pass > 0) {
         console.log(`scheduled-insider-ownership-background: retry pass for ${todo.length} ticker(s)`);
-        await sleep(65000);
       }
       const missed = [];
       for (const symbol of todo) {
         const got = await fetchInto(symbol);
         if (!got) missed.push(symbol);
-        await sleep(1050);
       }
       todo = missed;
     }

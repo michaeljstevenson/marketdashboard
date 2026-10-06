@@ -1,15 +1,11 @@
 // Scheduled Background Function (see [functions."scheduled-rsi-reversal-
 // background"] in netlify.toml) for the RSI Mean-Reversion / Short-Term
-// Reversal Screen page. Sweeps Alpha Vantage's RSI technical-indicator
-// endpoint (function=RSI, daily interval, time_period=14, series_type=close)
-// across the full S&P 500 — the site's first use of any Alpha Vantage
-// technical-indicator endpoint (every other page is fundamentals-,
-// price-return-, or flow-based). Each call returns a full daily RSI time
-// series; only the latest value is used for the cross-sectional snapshot,
-// same "full series returned, only last point used" shape as
-// scheduled-splits-background.js's SPLITS calls. A single-endpoint sweep
-// (~503 calls, no BALANCE_SHEET/CASH_FLOW/INCOME_STATEMENT involved), the
-// same shape/cost as scheduled-rd-intensity-background.js.
+// Reversal Screen page. Computes each S&P 500 stock's latest 14-day RSI
+// (Wilder smoothing on daily closes, the same definition as Alpha Vantage's
+// RSI endpoint with daily interval, time_period=14, series_type=close) from a
+// year of Yahoo dividend-adjusted daily closes, which reproduces Alpha
+// Vantage's values to the hundredth (raw closes drift by up to ~1 point on
+// stocks that just went ex-dividend). No Alpha Vantage calls.
 //
 // Tests short-term reversal (Jegadeesh 1990; Lehmann 1990) rather than the
 // 1-3 month momentum scheduled-relative-strength-background.js already
@@ -40,20 +36,17 @@
 // Reuses company name/sector from Sector Beeswarm's own weekly meta.json
 // blob, same pattern as every other full-universe sweep in this codebase.
 //
-// Weekly, Saturday — see netlify.toml for the exact slot and why. Pacing:
-// ~503 sequential calls at 1050ms with a retry pass, same cadence as
-// scheduled-rd-intensity-background.js and scheduled-revisions-background.js.
+// Weekly, Saturday — see netlify.toml for the exact slot and why.
 
 const { getRsiReversalStore, LATEST_KEY, HISTORY_KEY } = require("./rsi-reversal-blob-store");
 const { getBeeswarmStore, META_KEY } = require("./beeswarm-blob-store");
 const { getRelativeStrengthStore, HISTORY_KEY: RS_HISTORY_KEY } = require("./relative-strength-blob-store");
 const { BREADTH_CONSTITUENTS } = require("./breadth-constituents");
 const { SECTOR_ORDER } = require("./beeswarm-sectors");
-const { recordAvCall } = require("./av-call-counter");
+const { fetchDailyHistory } = require("./yahoo-client");
 
-const ALPHA_VANTAGE_URL = "https://www.alphavantage.co/query";
-const USER_AGENT =
-  "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0 Safari/537.36";
+const RSI_PERIOD = 14;
+const YAHOO_SLEEP_MS = 300;
 
 const OVERSOLD_THRESHOLD = 30;
 const OVERBOUGHT_THRESHOLD = 70;
@@ -86,27 +79,28 @@ function relativeReturn(stockRet, benchRet) {
   return ((1 + stockRet) / (1 + benchRet) - 1) * 100;
 }
 
-async function fetchLatestRsi(apiKey, symbol) {
-  await recordAvCall();
-  const res = await fetch(
-    `${ALPHA_VANTAGE_URL}?function=RSI&symbol=${symbol}&interval=daily&time_period=14&series_type=close&apikey=${apiKey}`,
-    { headers: { "User-Agent": USER_AGENT } }
-  );
-  if (!res.ok) throw new Error(`HTTP ${res.status}`);
-  const payload = await res.json();
-  if (payload.Note || payload.Information || payload.error) {
-    throw new Error(payload.Note || payload.Information || JSON.stringify(payload.error));
+// A year of closes lets Wilder's smoothing settle, so the simple-average
+// seed over the first 14 changes has no visible effect on the latest value.
+function latestRsi(bars) {
+  const dates = bars.map((b) => b.date);
+  const closes = bars.map((b) => b.close);
+  if (closes.length <= RSI_PERIOD) return null;
+  let gain = 0;
+  let loss = 0;
+  for (let i = 1; i <= RSI_PERIOD; i++) {
+    const ch = closes[i] - closes[i - 1];
+    if (ch > 0) gain += ch;
+    else loss -= ch;
   }
-  const series = payload["Technical Analysis: RSI"];
-  if (!series || typeof series !== "object") {
-    throw new Error(`unexpected response shape: ${JSON.stringify(payload).slice(0, 160)}`);
+  gain /= RSI_PERIOD;
+  loss /= RSI_PERIOD;
+  for (let i = RSI_PERIOD + 1; i < closes.length; i++) {
+    const ch = closes[i] - closes[i - 1];
+    gain = (gain * (RSI_PERIOD - 1) + Math.max(ch, 0)) / RSI_PERIOD;
+    loss = (loss * (RSI_PERIOD - 1) + Math.max(-ch, 0)) / RSI_PERIOD;
   }
-  const dates = Object.keys(series).sort(); // AV returns these unordered; ascending sort makes "latest" unambiguous
-  if (!dates.length) return null;
-  const latestDate = dates[dates.length - 1];
-  const rsi = parseFloat(series[latestDate].RSI);
-  if (!Number.isFinite(rsi)) return null;
-  return { date: latestDate, rsi };
+  const rsi = loss === 0 ? 100 : 100 - 100 / (1 + gain / loss);
+  return { date: dates[dates.length - 1], rsi: Math.round(rsi * 10000) / 10000 };
 }
 
 // Ranks ascending by RSI (1 = lowest/most oversold) and splits into 10
@@ -155,9 +149,6 @@ function buildReversalPairs(points) {
 exports.handler = async () => {
   console.log(`scheduled-rsi-reversal-background: starting, ${BREADTH_CONSTITUENTS.length} tickers`);
   try {
-    const apiKey = process.env.ALPHAVANTAGE_API_KEY;
-    if (!apiKey) throw new Error("ALPHAVANTAGE_API_KEY is not set");
-
     const beeswarmStore = getBeeswarmStore();
     const meta = (await beeswarmStore.get(META_KEY, { type: "json" })) || { tickers: {} };
     const metaTickers = meta.tickers || {};
@@ -175,30 +166,31 @@ exports.handler = async () => {
     }
 
     const results = new Map();
-
-    async function fetchInto(symbol) {
-      try {
-        const entry = await fetchLatestRsi(apiKey, symbol);
-        if (entry) results.set(symbol, entry);
-        return true;
-      } catch (err) {
-        console.error(`scheduled-rsi-reversal-background: ${symbol} failed: ${err.message}`);
-        if (/rate limit|per minute/i.test(err.message)) await sleep(20000);
-        return false;
-      }
-    }
+    const sinceUnix = Math.floor(Date.now() / 1000) - 400 * 86400;
+    // A bar dated today before the 4pm ET close is still moving; Alpha
+    // Vantage's series stops at the last completed session, so match it.
+    const etNow = new Date(new Date().toLocaleString("en-US", { timeZone: "America/New_York" }));
+    const etToday = `${etNow.getFullYear()}-${String(etNow.getMonth() + 1).padStart(2, "0")}-${String(etNow.getDate()).padStart(2, "0")}`;
+    const sessionOpen = etNow.getHours() < 16;
 
     let todo = [...BREADTH_CONSTITUENTS];
     for (let pass = 0; pass < 2 && todo.length; pass++) {
       if (pass > 0) {
         console.log(`scheduled-rsi-reversal-background: retry pass for ${todo.length} ticker(s)`);
-        await sleep(65000);
+        await sleep(5000);
       }
       const missed = [];
       for (const symbol of todo) {
-        const got = await fetchInto(symbol);
-        if (!got) missed.push(symbol);
-        await sleep(1050);
+        try {
+          let bars = await fetchDailyHistory(symbol, { sinceUnix });
+          if (sessionOpen && bars.length && bars[bars.length - 1].date === etToday) bars = bars.slice(0, -1);
+          const entry = latestRsi(bars);
+          if (entry) results.set(symbol, entry);
+        } catch (err) {
+          console.error(`scheduled-rsi-reversal-background: ${symbol} failed: ${err.message}`);
+          missed.push(symbol);
+        }
+        await sleep(YAHOO_SLEEP_MS);
       }
       todo = missed;
     }

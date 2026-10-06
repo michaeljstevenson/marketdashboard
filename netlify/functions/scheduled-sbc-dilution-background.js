@@ -15,11 +15,9 @@
 // This page starts from the cost (SBC dollars, straight off the cash flow
 // statement) and asks whether it shows up downstream as dilution.
 //
-// Sweeps Alpha Vantage's CASH_FLOW endpoint (quarterly, stockBasedCompensation
-// + operatingCashflow) across the full S&P 500 — ~503 sequential calls, a
-// single-statement sweep like scheduled-ai-capex-background.js, not the
-// two-statement ~1006-call class that needs scheduled-margin-leverage-
-// background.js's checkpoint/resume machinery. Revenue is NOT re-swept
+// Reads quarterly cash flow (stockBasedCompensation + operatingCashflow) for
+// the full S&P 500 from the shared av-collected store (see
+// av-collector-store.js), so it makes no Alpha Vantage calls. Revenue is NOT re-swept
 // here: this job reads the same 28-quarter (~7 year) totalRevenue history
 // scheduled-margin-leverage-background.js already keeps in its own
 // checkpoint blob, joined against this job's own SBC quarters by
@@ -49,8 +47,8 @@
 //
 // One-time snapshot, no recurring schedule — matches the convention this
 // site settled into for every page added since 2026-09-16 (see this
-// function's own entry in netlify.toml). ~503 sequential CASH_FLOW calls
-// at 1050ms spacing plus a retry pass.
+// function's own entry in netlify.toml).
+// Reads quarterly cash flow from the shared av-collected store (see av-collector-store.js), so it makes no Alpha Vantage calls of its own.
 
 const { getSbcDilutionStore, BLOB_KEY } = require("./sbc-dilution-blob-store");
 const { getBeeswarmStore, META_KEY } = require("./beeswarm-blob-store");
@@ -58,11 +56,8 @@ const { getMarginLeverageStore, CHECKPOINT_KEY } = require("./margin-leverage-bl
 const { getShareCountStore, BLOB_KEY: SHARE_COUNT_KEY } = require("./share-count-blob-store");
 const { BREADTH_CONSTITUENTS } = require("./breadth-constituents");
 const { SECTOR_ORDER } = require("./beeswarm-sectors");
-const { recordAvCall } = require("./av-call-counter");
+const { collectedFor } = require("./av-collector-store");
 
-const ALPHA_VANTAGE_URL = "https://www.alphavantage.co/query";
-const USER_AGENT =
-  "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0 Safari/537.36";
 
 const QUARTERS_NEEDED = 28; // ~7 years, matching scheduled-margin-leverage-background.js's own window so the join has maximum overlap
 const NOTABLE_COUNT = 15;
@@ -113,16 +108,8 @@ function calendarQuarterKey(dateStr) {
 }
 
 async function fetchQuarterlySbc(apiKey, symbol) {
-  await recordAvCall();
-  const res = await fetch(
-    `${ALPHA_VANTAGE_URL}?function=CASH_FLOW&symbol=${symbol}&apikey=${apiKey}`,
-    { headers: { "User-Agent": USER_AGENT } }
-  );
-  if (!res.ok) throw new Error(`HTTP ${res.status}`);
-  const payload = await res.json();
-  if (payload.Note || payload.Information || payload.error) {
-    throw new Error(payload.Note || payload.Information || JSON.stringify(payload.error));
-  }
+  const payload = await collectedFor("cashflow", symbol);
+  if (!payload) throw new Error(`no shared cashflow data`);
   const rows = payload.quarterlyReports;
   if (!Array.isArray(rows)) throw new Error(`unexpected response shape: ${JSON.stringify(payload).slice(0, 160)}`);
 
@@ -295,7 +282,6 @@ exports.handler = async () => {
         return true;
       } catch (err) {
         console.error(`scheduled-sbc-dilution-background: ${symbol} failed: ${err.message}`);
-        if (/rate limit|per minute/i.test(err.message)) await sleep(20000);
         return false;
       }
     }
@@ -304,13 +290,11 @@ exports.handler = async () => {
     for (let pass = 0; pass < 2 && todo.length; pass++) {
       if (pass > 0) {
         console.log(`scheduled-sbc-dilution-background: retry pass for ${todo.length} ticker(s)`);
-        await sleep(65000);
       }
       const missed = [];
       for (const symbol of todo) {
         const got = await fetchInto(symbol);
         if (!got) missed.push(symbol);
-        await sleep(1050);
       }
       todo = missed;
     }

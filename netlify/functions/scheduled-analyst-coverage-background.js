@@ -7,19 +7,11 @@
 // that thinly-covered stocks earn a return premium, historically
 // attributed to an information/liquidity premium.
 //
-// A standalone full sweep, deliberately NOT read off
-// scheduled-revisions-background.js's or scheduled-dispersion-background.js's
-// own blobs even though both of those jobs already fetch this same field
-// per ticker (see fetchEarningsEstimates() in each) — neither persists a
-// full-universe array of it. scheduled-revisions-background.js keeps
-// analystCount only on its top/bottom-10 drift leaderboards, and
-// scheduled-dispersion-background.js only on its top/bottom-10 dispersion
-// leaderboards; this page needs every constituent's count for its sector
-// medians, histogram, quintile-bucket test, and full table. Same tradeoff
-// this site already made for Analyst Estimate Dispersion vs. Earnings
-// Revisions: a second (here, third) otherwise-redundant sweep of the same
-// endpoint, kept in its own job so this new page never touches either
-// already-shipped page's backend.
+// Reads every constituent's estimates from the shared av-collected store
+// (see av-collector-store.js), so it makes no Alpha Vantage calls of its
+// own. scheduled-revisions-background.js keeps analystCount only on its
+// leaderboards, and this page needs every constituent's count for its
+// sector medians, histogram, quintile-bucket test, and full table.
 //
 // Sector and company name come from the Sector Beeswarm page's own weekly
 // meta.json blob, same pattern as every other full-universe sweep in this
@@ -46,11 +38,8 @@ const { getBeeswarmStore, META_KEY } = require("./beeswarm-blob-store");
 const { getRelativeStrengthStore, LATEST_KEY: RS_LATEST_KEY } = require("./relative-strength-blob-store");
 const { BREADTH_CONSTITUENTS } = require("./breadth-constituents");
 const { SECTOR_ORDER } = require("./beeswarm-sectors");
-const { recordAvCall } = require("./av-call-counter");
+const { collectedFor } = require("./av-collector-store");
 
-const ALPHA_VANTAGE_URL = "https://www.alphavantage.co/query";
-const USER_AGENT =
-  "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0 Safari/537.36";
 
 const MAX_HISTORY_POINTS = 260; // ~5 years of weekly snapshots
 const MIN_SECTOR_N = 3;
@@ -86,16 +75,7 @@ function round(v, d = 2) {
 }
 
 async function fetchAnalystCount(apiKey, symbol) {
-  await recordAvCall();
-  const res = await fetch(
-    `${ALPHA_VANTAGE_URL}?function=EARNINGS_ESTIMATES&symbol=${symbol}&apikey=${apiKey}`,
-    { headers: { "User-Agent": USER_AGENT } }
-  );
-  if (!res.ok) throw new Error(`HTTP ${res.status}`);
-  const payload = await res.json();
-  if (payload.Note || payload.Information || payload.error) {
-    throw new Error(payload.Note || payload.Information || JSON.stringify(payload.error));
-  }
+  const payload = (await collectedFor("estimates", symbol)) || {};
   const estimates = payload.estimates;
   if (!Array.isArray(estimates) || !estimates.length) return null;
 
@@ -148,7 +128,6 @@ exports.handler = async () => {
         return true;
       } catch (err) {
         console.error(`scheduled-analyst-coverage-background: ${symbol} failed: ${err.message}`);
-        if (/rate limit|per minute/i.test(err.message)) await sleep(20000);
         return false;
       }
     }
@@ -160,13 +139,11 @@ exports.handler = async () => {
     for (let pass = 0; pass < 2 && todo.length; pass++) {
       if (pass > 0) {
         console.log(`scheduled-analyst-coverage-background: retry pass for ${todo.length} ticker(s)`);
-        await sleep(65000);
       }
       const missed = [];
       for (const symbol of todo) {
         const got = await fetchInto(symbol);
         if (!got) missed.push(symbol);
-        await sleep(1050);
       }
       todo = missed;
     }
