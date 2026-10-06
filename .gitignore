@@ -1,6 +1,6 @@
 .claude/
 __pycache__/
-node_modules/
+node_modules
 .netlify/
 .DS_Store
 preview-edits.json
