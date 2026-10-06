@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 // Writes sector-history.json: full inception-to-date daily closes for SPY and
-// the 11 sector ETFs, column-oriented (one shared date axis, one array per
+// the 11 SPDR sector ETFs, and RSP and the 11 Invesco equal-weight sector ETFs, column-oriented (one shared date axis, one array per
 // ticker), served as a static file for the sector-analysis.html chart. Run
 // daily by .github/workflows/sector-history.yml, which commits the result;
 // the page also appends any closes newer than `through` from the live
@@ -12,7 +12,10 @@ const fs = require("fs");
 const path = require("path");
 const { fetchDailyHistory, sleep } = require("../netlify/functions/yahoo-client");
 
-const TICKERS = ["SPY", "XLK", "XLF", "XLV", "XLE", "XLI", "XLY", "XLP", "XLU", "XLB", "XLRE", "XLC"];
+const TICKERS = [
+  "SPY", "XLK", "XLF", "XLV", "XLE", "XLI", "XLY", "XLP", "XLU", "XLB", "XLRE", "XLC",
+  "RSP", "RSPT", "RSPF", "RSPH", "RSPG", "RSPN", "RSPD", "RSPS", "RSPU", "RSPM", "RSPR", "RSPC",
+];
 
 (async () => {
   const all = {};

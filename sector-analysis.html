@@ -308,6 +308,14 @@ h1{
  font-weight:600;
 }
 
+.toggle-groups{
+ display:flex;
+ flex-wrap:wrap;
+ gap:10px;
+}
+
+.toggle-group[hidden]{ display:none; }
+
 .legend-note{
  color:var(--muted);
  font-size:12px;
@@ -726,15 +734,21 @@ tbody td:nth-child(2){
 <div class="header">
 <div>
 <h1>Sector Performance</h1>
-<div class="subtitle">The 11 SPDR sector ETFs, ranked across timeframes (daily, weekly, MTD, QTD, YTD, and trailing 1/3/6/12-month) in both absolute terms and relative to the S&amp;P 500 (SPY).</div>
+<div class="subtitle">The 11 SPDR sector ETFs and their Invesco equal-weight counterparts, ranked across timeframes (daily, weekly, MTD, QTD, YTD, and trailing 1/3/6/12-month) in both absolute terms and relative to the S&amp;P 500 (SPY, or RSP for equal-weight).</div>
 </div>
 <div class="updated" id="updated">Loading...</div>
 </div>
 
 <div class="controls">
+<div class="toggle-groups">
+<div class="toggle-group" id="weightToggle" hidden>
+<button class="toggle-btn active" id="btnCap" onclick="setWeight('cap')">Cap-weighted</button>
+<button class="toggle-btn" id="btnEqual" onclick="setWeight('equal')">Equal-weight</button>
+</div>
 <div class="toggle-group">
 <button class="toggle-btn active" id="btnAbsolute" onclick="setMode('absolute')">Absolute</button>
 <button class="toggle-btn" id="btnRelative" onclick="setMode('relative')">Relative to S&amp;P 500</button>
+</div>
 </div>
 <div class="legend-note" id="legendNote">Total return, split&amp;dividend-adjusted. Click a column to sort.</div>
 </div>
@@ -785,6 +799,17 @@ const COLUMNS = ["d1","w1","mtd","qtd","ytd","m1","m3","m6","y1"];
 
 let RAW = null;
 let MODE = "absolute"; // "absolute" | "relative"
+let WEIGHT = "cap"; // "cap" | "equal"
+
+// Both sets share one shape ({ benchmark, sectors }), so everything below
+// reads the active one through here.
+function view(){
+ return WEIGHT === "equal" && RAW.equalWeight ? RAW.equalWeight : RAW;
+}
+
+function escapeHtml(t){
+ return String(t).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+}
 let SORT_KEY = "y1";
 let SORT_DIR = -1; // -1 = descending
 
@@ -818,6 +843,7 @@ async function init(){
   if(data.sectors.length < 11){
    showWarning("Only " + data.sectors.length + " of 11 sectors loaded. Some data may be temporarily unavailable.");
   }
+  if(data.equalWeight) document.getElementById("weightToggle").hidden = false;
 
   render();
   renderRangeButtons();
@@ -849,8 +875,10 @@ async function loadFullHistory(){
    for(let i = 0; i < col.length; i++) if(col[i] !== null) out.push({ date: h.dates[i], close: col[i] });
    return out.concat((live || []).filter(p => p.date > h.through));
   };
-  RAW.benchmark.history = merged(RAW.benchmark.ticker, RAW.benchmark.history);
-  RAW.sectors.forEach(s => { s.history = merged(s.ticker, s.history); });
+  [RAW, RAW.equalWeight].filter(Boolean).forEach(set => {
+   set.benchmark.history = merged(set.benchmark.ticker, set.benchmark.history);
+   set.sectors.forEach(s => { s.history = merged(s.ticker, s.history); });
+  });
   const first = h.dates[0];
   document.querySelectorAll(".range-custom input").forEach(inp => { inp.min = first; });
   if(document.getElementById("rangeStart").value === (document.getElementById("rangeStart").dataset.auto || "")) document.getElementById("rangeStart").value = first;
@@ -863,10 +891,26 @@ function setMode(mode){
  MODE = mode;
  document.getElementById("btnAbsolute").classList.toggle("active", mode === "absolute");
  document.getElementById("btnRelative").classList.toggle("active", mode === "relative");
- document.getElementById("legendNote").textContent = mode === "absolute"
-  ? "Total return, split & dividend-adjusted. Click a column to sort."
-  : "Excess return vs. S&P 500 (SPY) over the same period. Click a column to sort.";
+ updateLegendNote();
  render();
+}
+
+function setWeight(weight){
+ WEIGHT = weight;
+ document.getElementById("btnCap").classList.toggle("active", weight === "cap");
+ document.getElementById("btnEqual").classList.toggle("active", weight === "equal");
+ updateLegendNote();
+ render();
+ renderChartRange(CURRENT_RANGE);
+}
+
+function updateLegendNote(){
+ const ew = WEIGHT === "equal";
+ document.getElementById("legendNote").textContent = MODE === "absolute"
+  ? (ew ? "Invesco S&P 500 Equal Weight sector ETFs. " : "") + "Total return, split & dividend-adjusted. Click a column to sort."
+  : (ew
+   ? "Excess return vs. S&P 500 Equal Weight (RSP) over the same period. Click a column to sort."
+   : "Excess return vs. S&P 500 (SPY) over the same period. Click a column to sort.");
 }
 
 function sortBy(key){
@@ -891,8 +935,9 @@ function colorForValue(value, columnValues){
 
 function render(){
  if(!RAW) return;
+ const set = view();
 
- const rows = RAW.sectors.map(s => ({
+ const rows = set.sectors.map(s => ({
   name: s.name,
   ticker: s.ticker,
   latestClose: s.latestClose,
@@ -909,11 +954,11 @@ function render(){
  // Per-column value sets, for heatmap intensity scaling
  const columnValues = {};
  for(const key of COLUMNS){
-  columnValues[key] = RAW.sectors.map(s => (MODE === "absolute" ? s.returns : s.relative)[key]);
+  columnValues[key] = set.sectors.map(s => (MODE === "absolute" ? s.returns : s.relative)[key]);
  }
 
  const tbody = document.getElementById("tableBody");
- const bm = RAW.benchmark;
+ const bm = set.benchmark;
  const benchCells = COLUMNS.map(key => {
   const v = MODE === "absolute" ? bm.returns[key] : null;
   const bg = MODE === "absolute" ? colorForValue(v, columnValues[key]) : "";
@@ -923,7 +968,7 @@ function render(){
   return `<td class="${cls}"${style}>${text === null ? "n/a" : text}</td>`;
  }).join("");
  const benchRow = `<tr style="border-bottom:2px solid var(--line, rgba(128,128,128,.35))">
-   <td><span class="sector-name">S&amp;P 500</span></td>
+   <td><span class="sector-name">${escapeHtml(bm.name || "S&P 500")}</span></td>
    <td><span class="sector-ticker">${bm.ticker}</span></td>
    ${benchCells}
   </tr>`;
@@ -977,6 +1022,15 @@ const SERIES_COLORS = {
  XLRE: "#c77dbd",
  XLC: "#4f7ae0",
 };
+// Each equal-weight sector ETF takes its SPDR counterpart's color, so a
+// sector keeps its color when the weighting toggle flips.
+Object.assign(SERIES_COLORS, {
+ RSP: SERIES_COLORS.SPY,
+ RSPT: SERIES_COLORS.XLK, RSPF: SERIES_COLORS.XLF, RSPH: SERIES_COLORS.XLV,
+ RSPG: SERIES_COLORS.XLE, RSPN: SERIES_COLORS.XLI, RSPD: SERIES_COLORS.XLY,
+ RSPS: SERIES_COLORS.XLP, RSPU: SERIES_COLORS.XLU, RSPM: SERIES_COLORS.XLB,
+ RSPR: SERIES_COLORS.XLRE, RSPC: SERIES_COLORS.XLC,
+});
 
 const CHART_RANGES = [
  { key: "1M", days: 30 },
@@ -1034,7 +1088,8 @@ function renderChartRange(rangeKey){
  CURRENT_RANGE = rangeKey;
  const range = rangeKey === "Custom" ? { custom: true } : CHART_RANGES.find(r => r.key === rangeKey);
 
- const benchmarkHistory = RAW.benchmark.history || [];
+ const set = view();
+ const benchmarkHistory = set.benchmark.history || [];
  if(!benchmarkHistory.length) return;
 
  let dates = benchmarkHistory.map(h => h.date);
@@ -1061,8 +1116,8 @@ function renderChartRange(rangeKey){
  }
 
  const allSeries = [
-  { ticker: RAW.benchmark.ticker, name: "S&P 500", history: RAW.benchmark.history, dashed: true },
-  ...RAW.sectors.map(s => ({ ticker: s.ticker, name: s.name, history: s.history, dashed: false })),
+  { ticker: set.benchmark.ticker, name: set.benchmark.name || "S&P 500", history: set.benchmark.history, dashed: true },
+  ...set.sectors.map(s => ({ ticker: s.ticker, name: s.name, history: s.history, dashed: false })),
  ];
 
  const datasets = allSeries.map(s => {

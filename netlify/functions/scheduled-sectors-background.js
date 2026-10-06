@@ -1,6 +1,6 @@
 // Scheduled Background Function (see [functions."scheduled-sectors-background"]
 // in netlify.toml) that computes performance across the 11 SPDR sector ETFs
-// plus SPY as a benchmark, across a range of standard timeframes, and writes
+// plus SPY as a benchmark, and the 11 Invesco equal-weight sector ETFs plus RSP, across a range of standard timeframes, and writes
 // the result to Netlify Blobs for sector-performance.js to serve. Also
 // carries each ticker's close history back to inception (daily for the last
 // two years, weekly before that; reusing the full history already fetched for
@@ -12,7 +12,7 @@
 // (median) when this was switched, with identical trailing returns.
 //
 // Named with the "-background" suffix for the same reason as
-// scheduled-breadth-background.js: sequential full-history fetches for 12
+// scheduled-breadth-background.js: sequential full-history fetches for 24
 // symbols can outrun the ~30s a standard function gets.
 //
 // Runs once daily after the close. Each run re-fetches full daily history
@@ -32,7 +32,7 @@ const { fetchDailyHistory, sleep } = require("./yahoo-client");
 
 const DAILY_POINTS = 504; // ~2 trading years kept daily; older history is thinned to weekly
 
-// Full inception-to-date daily history for 12 tickers is ~3MB of JSON;
+// Full inception-to-date daily history for 24 tickers is ~5MB of JSON;
 // weekly closes beyond the last two years keep the "Max" chart range
 // readable at about a third of that size.
 function thinHistory(closes) {
@@ -62,6 +62,25 @@ const SECTORS = [
   { ticker: "XLC", name: "Communication Services" },
 ];
 const BENCHMARK = { ticker: "SPY", name: "S&P 500" };
+
+// Invesco S&P 500 Equal Weight sector ETFs (renamed from RYT, RYF, etc. in
+// 2023; Yahoo carries the full history under the new tickers). Relative
+// returns for this set are measured against RSP so both sides of the
+// comparison are equal-weighted.
+const EW_SECTORS = [
+  { ticker: "RSPT", name: "Technology" },
+  { ticker: "RSPF", name: "Financials" },
+  { ticker: "RSPH", name: "Health Care" },
+  { ticker: "RSPG", name: "Energy" },
+  { ticker: "RSPN", name: "Industrials" },
+  { ticker: "RSPD", name: "Consumer Discretionary" },
+  { ticker: "RSPS", name: "Consumer Staples" },
+  { ticker: "RSPU", name: "Utilities" },
+  { ticker: "RSPM", name: "Materials" },
+  { ticker: "RSPR", name: "Real Estate" },
+  { ticker: "RSPC", name: "Communication Services" },
+];
+const EW_BENCHMARK = { ticker: "RSP", name: "S&P 500 Equal Weight" };
 
 function addMonths(dateObj, months) {
   const d = new Date(dateObj);
@@ -149,9 +168,9 @@ function relativeReturns(sectorReturns, benchmarkReturns) {
 }
 
 exports.handler = async () => {
-  console.log(`scheduled-sectors-background: starting, ${SECTORS.length} sectors + benchmark`);
+  console.log(`scheduled-sectors-background: starting, ${SECTORS.length} cap-weighted + ${EW_SECTORS.length} equal-weight sectors + 2 benchmarks`);
   try {
-    const allTickers = [BENCHMARK, ...SECTORS];
+    const allTickers = [BENCHMARK, ...SECTORS, EW_BENCHMARK, ...EW_SECTORS];
     const computed = new Map();
 
     // Spacing between calls keeps a 12-symbol full-history sweep from
@@ -193,7 +212,7 @@ exports.handler = async () => {
       Object.fromEntries(Object.entries(returns).map(([k, v]) => [k, v === null ? null : Math.round(v * 100) / 100]));
     const roundHistory = (history) => history.map((h) => ({ date: h.date, close: Math.round(h.close * 100) / 100 }));
 
-    const sectors = SECTORS.map(({ ticker, name }) => {
+    const buildSectors = (list, bench) => list.map(({ ticker, name }) => {
       const entry = computed.get(ticker);
       if (!entry) return null;
       return {
@@ -202,31 +221,47 @@ exports.handler = async () => {
         asOfDate: entry.returns.asOfDate,
         latestClose: Math.round(entry.returns.latestClose * 100) / 100,
         returns: roundReturns(entry.returns.returns),
-        relative: relativeReturns(entry.returns.returns, benchmark.returns.returns),
+        relative: relativeReturns(entry.returns.returns, bench.returns.returns),
         history: roundHistory(entry.history),
       };
     }).filter(Boolean);
+    const buildBenchmark = ({ ticker, name }, bench) => ({
+      ticker,
+      name,
+      asOfDate: bench.returns.asOfDate,
+      latestClose: Math.round(bench.returns.latestClose * 100) / 100,
+      returns: roundReturns(bench.returns.returns),
+      history: roundHistory(bench.history),
+    });
+
+    const sectors = buildSectors(SECTORS, benchmark);
 
     const payload = {
       generated_at_utc: new Date().toISOString(),
-      benchmark: {
-        ticker: BENCHMARK.ticker,
-        name: BENCHMARK.name,
-        asOfDate: benchmark.returns.asOfDate,
-        latestClose: Math.round(benchmark.returns.latestClose * 100) / 100,
-        returns: roundReturns(benchmark.returns.returns),
-        history: roundHistory(benchmark.history),
-      },
+      benchmark: buildBenchmark(BENCHMARK, benchmark),
       sectors,
     };
 
+    // The equal-weight set is optional: if RSP fails, the cap-weighted page
+    // still publishes and the page hides its weighting toggle.
+    const ewBenchmark = computed.get(EW_BENCHMARK.ticker);
+    if (ewBenchmark) {
+      payload.equalWeight = {
+        benchmark: buildBenchmark(EW_BENCHMARK, ewBenchmark),
+        sectors: buildSectors(EW_SECTORS, ewBenchmark),
+      };
+    } else {
+      console.error("scheduled-sectors-background: RSP failed to load, skipping the equal-weight set");
+    }
+
     const store = getSectorStore();
     await store.setJSON(BLOB_KEY, payload);
-    console.log(`scheduled-sectors-background: wrote ${sectors.length} sectors to blob`);
+    const ewCount = payload.equalWeight ? payload.equalWeight.sectors.length : 0;
+    console.log(`scheduled-sectors-background: wrote ${sectors.length} cap-weighted + ${ewCount} equal-weight sectors to blob`);
 
     return {
       statusCode: 200,
-      body: JSON.stringify({ ok: true, sectors: sectors.length }),
+      body: JSON.stringify({ ok: true, sectors: sectors.length, equalWeightSectors: ewCount }),
     };
   } catch (err) {
     console.error(`scheduled-sectors-background: FAILED: ${err.message}`);
