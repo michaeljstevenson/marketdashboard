@@ -1342,19 +1342,27 @@ function renderDayChangeRange(data, rangeKey, isLive){
  // 3Y and 5Y are annualized (CAGR), not cumulative - their moves land in
  // a much narrower band than 1Y's raw total return, so they get their
  // own tight buckets sized to that annualized spread rather than
- // inheriting anything close to 1Y's scale.
+ // inheriting anything close to 1Y's scale. Every set includes 0 as an
+ // edge because bars are colored by sign, so no bucket can straddle it.
  const edgeSets = {
   "1D": [-Infinity, -8, -5, -3, -2, -1, 0, 1, 2, 3, 4, 7, 10, Infinity],
   "5D": fixedStepEdges(-12, 18, 2),
   MTD: fixedStepEdges(-20, 32, 4),
-  QTD: fixedStepEdges(-32, 48, 6),
+  QTD: fixedStepEdges(-30, 48, 6),
   YTD: fixedStepEdges(-60, 200, 15),
-  "1Y": fixedStepEdges(-65, 550, 40),
+  // Half the index sits between roughly -10% and +30% over a year, so
+  // the core gets 10-point buckets and the long right tail widens out.
+  "1Y": [-Infinity, -40, -30, -20, -10, 0, 10, 20, 30, 40, 60, 80, 100, 150, 200, Infinity],
   "3Y": fixedStepEdges(-40, 130, 10),
   "5Y": fixedStepEdges(-30, 65, 5),
  };
  const edges = edgeSets[rangeKey] || edgeSets["1D"];
- const labels = edges.slice(0, -1).map((e, i) => e === -Infinity ? "<" + edges[i + 1] : (edges[i + 1] === Infinity ? e + "+" : String(e)));
+ const labels = edges.slice(0, -1).map((e, i) => {
+  const hi = edges[i + 1];
+  if(e === -Infinity) return "Below " + hi + "%";
+  if(hi === Infinity) return e + "% and up";
+  return e + " to " + hi + "%";
+ });
  const counts = new Array(edges.length - 1).fill(0);
  summary.changes.forEach(c => {
   for(let i = 0; i < edges.length - 1; i++){
