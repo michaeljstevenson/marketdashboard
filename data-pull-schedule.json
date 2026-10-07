@@ -158,6 +158,16 @@
       ]
     },
     {
+      "name": "short-interest",
+      "cron": "10 23 * * 1-5",
+      "apis": [
+        "/api/short-interest"
+      ],
+      "pages": [
+        "short-sale-volume"
+      ]
+    },
+    {
       "name": "putcall-study",
       "cron": "20 7 * * *",
       "apis": [
@@ -403,16 +413,6 @@
       ],
       "pages": [
         "options-positioning"
-      ]
-    },
-    {
-      "name": "short-interest",
-      "cron": null,
-      "apis": [
-        "/api/short-interest"
-      ],
-      "pages": [
-        "short-sale-volume"
       ]
     }
   ],

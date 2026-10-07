@@ -734,7 +734,11 @@
   schedule = "50 14 * * 6"
 
 [functions."scheduled-short-interest-background"]
-  # No schedule until its first run has filled the store.
+  # Weekdays 23:10 UTC, after the post-close Yahoo jobs (last at 22:40).
+  # FINRA posts each settlement date's file about a week after it, on no
+  # fixed day, so a daily check picks it up within a day. Runs with nothing
+  # new exit in seconds. Yahoo and stored data only, no Alpha Vantage calls.
+  schedule = "10 23 * * 1-5"
 
 [functions."scheduled-quality-financials-background"]
   # One-time snapshot, no schedule: run manually after scheduled-margin-
