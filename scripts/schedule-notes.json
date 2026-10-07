@@ -49,8 +49,10 @@
   "momentum-history": "Daily prices for SPY.",
   "backtest-prices": "Daily prices for whatever symbol you enter.",
   "options-positioning": "Put/call ratio for every S&P 500 stock, joined against the relative-strength history for the momentum test.",
-  "overview-collector": "One sweep of company overviews (name, sector, share count, P/E, analyst targets and ratings, dividend yield, beta) for every S&P 500 stock, saved for other jobs to read.",
+  "overview-collector": "One sweep of company overviews (name, sector, share count, P/E, analyst targets and ratings, dividend yield, beta, 52-week range, moving averages, insider and institutional ownership) for every S&P 500 stock, saved for other jobs to read.",
   "earnings-collector": "One sweep of earnings history (reported and estimated EPS, surprise) for every S&P 500 stock, saved for other jobs to read.",
-  "cashflow-collector": "One sweep of quarterly and annual cash flow (including buybacks) for every S&P 500 stock, saved for other jobs to read.",
-  "estimates-collector": "One sweep of analyst EPS estimates for every S&P 500 stock, saved for other jobs to read."
+  "cashflow-collector": "One sweep of quarterly and annual cash flow (including buybacks, dividends and stock-based compensation) for every S&P 500 stock, saved for other jobs to read.",
+  "estimates-collector": "One sweep of analyst EPS estimates for every S&P 500 stock, saved for other jobs to read.",
+  "income-collector": "One sweep of quarterly and annual income statements for every S&P 500 stock, saved for other jobs to read.",
+  "balance-collector": "One sweep of quarterly and annual balance sheets for every S&P 500 stock, saved for other jobs to read."
 }
