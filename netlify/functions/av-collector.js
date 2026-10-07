@@ -25,6 +25,10 @@ const CALL_SLEEP_MS = 1050;
 const RUN_BUDGET_MS = 12 * 60 * 1000;
 const PROGRESS_MAX_AGE_MS = 24 * 60 * 60 * 1000;
 const CHECKPOINT_EVERY = 100;
+// Scheduled collectors fire twice in their window so an unfinished sweep can
+// resume. A sweep that already finished this recently makes the extra run
+// exit instead of starting a second full sweep.
+const FRESH_MS = 6 * 60 * 60 * 1000;
 
 function sleep(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
@@ -60,6 +64,10 @@ async function runCollector({ kind, fn, pick }) {
     const outOfTime = () => Date.now() - startedAtMs > RUN_BUDGET_MS;
     const store = getCollectedStore();
     const saved = await store.get(progressKey(kind), { type: "json" });
+    if (saved && saved.complete && Date.now() - Date.parse(saved.startedAt) < FRESH_MS) {
+      console.log(`${tag}: a sweep finished within the last 6 hours, nothing to do`);
+      return { statusCode: 200, body: JSON.stringify({ ok: true, fresh: true }) };
+    }
     const resume = !!(saved && !saved.complete && Date.now() - Date.parse(saved.startedAt) < PROGRESS_MAX_AGE_MS);
     const cycleStartedAt = resume ? saved.startedAt : new Date().toISOString();
     const done = new Set(resume ? saved.done : []);

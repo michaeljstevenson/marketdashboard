@@ -2,7 +2,7 @@
 // to the shared av-collected store (see av-collector.js) for every job that
 // reads earnings history: reported and estimated EPS and surprise by quarter
 // (about the last ten years), plus the fiscal-year-end dates of the annual
-// series. Manual for now (no schedule).
+// series. Runs monthly (see netlify.toml).
 
 const { runCollector, pickFields } = require("./av-collector");
 
