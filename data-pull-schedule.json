@@ -212,36 +212,6 @@
       ]
     },
     {
-      "name": "insider-transactions",
-      "cron": "30 10 * * 6",
-      "apis": [
-        "/api/insider-transactions"
-      ],
-      "pages": [
-        "insider-buying-selling"
-      ]
-    },
-    {
-      "name": "share-count",
-      "cron": "50 10 * * 6",
-      "apis": [
-        "/api/share-count-trends"
-      ],
-      "pages": [
-        "share-count-trends"
-      ]
-    },
-    {
-      "name": "institutional-ownership",
-      "cron": "10 11 * * 6",
-      "apis": [
-        "/api/institutional-ownership"
-      ],
-      "pages": [
-        "institutional-ownership"
-      ]
-    },
-    {
       "name": "post-earnings-drift",
       "cron": "30 11 * * 6",
       "apis": [
@@ -252,26 +222,6 @@
       ]
     },
     {
-      "name": "dividend-growth",
-      "cron": "0 12 * * 6",
-      "apis": [
-        "/api/dividend-growth"
-      ],
-      "pages": [
-        "dividend-growth-screener"
-      ]
-    },
-    {
-      "name": "splits",
-      "cron": "20 12 * * 6",
-      "apis": [
-        "/api/stock-splits"
-      ],
-      "pages": [
-        "stock-split-tracker"
-      ]
-    },
-    {
       "name": "relative-strength",
       "cron": "10 13 * * 6",
       "apis": [
@@ -279,16 +229,6 @@
       ],
       "pages": [
         "relative-strength-leaders"
-      ]
-    },
-    {
-      "name": "quality-lowvol",
-      "cron": "40 13 * * 6",
-      "apis": [
-        "/api/quality-lowvol-factors"
-      ],
-      "pages": [
-        "quality-lowvol-factors"
       ]
     },
     {
@@ -327,9 +267,7 @@
       "apis": [],
       "pages": [
         "analyst-price-target",
-        "equity-risk-premium",
-        "pe-divergence",
-        "shareholder-yield"
+        "equity-risk-premium"
       ]
     },
     {
@@ -337,56 +275,6 @@
       "cron": null,
       "apis": [],
       "pages": []
-    },
-    {
-      "name": "buyback-effectiveness",
-      "cron": null,
-      "apis": [
-        "/api/buyback-effectiveness"
-      ],
-      "pages": [
-        "buyback-effectiveness"
-      ]
-    },
-    {
-      "name": "cashflow-collector",
-      "cron": null,
-      "apis": [],
-      "pages": [
-        "buyback-effectiveness",
-        "fcf-yield",
-        "quality-score"
-      ]
-    },
-    {
-      "name": "cash-conversion-cycle",
-      "cron": null,
-      "apis": [
-        "/api/cash-conversion-cycle"
-      ],
-      "pages": [
-        "cash-conversion-cycle"
-      ]
-    },
-    {
-      "name": "congress-trades",
-      "cron": null,
-      "apis": [
-        "/api/congress-trades"
-      ],
-      "pages": [
-        "congressional-trading"
-      ]
-    },
-    {
-      "name": "earnings-call-sentiment",
-      "cron": null,
-      "apis": [
-        "/api/earnings-call-sentiment"
-      ],
-      "pages": [
-        "earnings-call-sentiment"
-      ]
     },
     {
       "name": "earnings-collector",
@@ -434,6 +322,14 @@
       "pages": []
     },
     {
+      "name": "cashflow-collector",
+      "cron": null,
+      "apis": [],
+      "pages": [
+        "quality-score"
+      ]
+    },
+    {
       "name": "quality-financials",
       "cron": null,
       "apis": [],
@@ -452,40 +348,10 @@
       ]
     },
     {
-      "name": "pe-divergence",
-      "cron": null,
-      "apis": [
-        "/api/pe-divergence"
-      ],
-      "pages": [
-        "pe-divergence"
-      ]
-    },
-    {
-      "name": "fcf-yield",
-      "cron": null,
-      "apis": [
-        "/api/fcf-yield"
-      ],
-      "pages": [
-        "fcf-yield"
-      ]
-    },
-    {
       "name": "income-collector",
       "cron": null,
       "apis": [],
       "pages": []
-    },
-    {
-      "name": "ipo-pipeline",
-      "cron": null,
-      "apis": [
-        "/api/ipo-pipeline"
-      ],
-      "pages": [
-        "ipo-pipeline"
-      ]
     },
     {
       "name": "margin-leverage",
@@ -505,46 +371,6 @@
       ],
       "pages": [
         "options-positioning"
-      ]
-    },
-    {
-      "name": "rd-intensity",
-      "cron": null,
-      "apis": [
-        "/api/rd-intensity"
-      ],
-      "pages": [
-        "rd-intensity"
-      ]
-    },
-    {
-      "name": "roic-wacc",
-      "cron": null,
-      "apis": [
-        "/api/roic-wacc"
-      ],
-      "pages": [
-        "roic-wacc"
-      ]
-    },
-    {
-      "name": "shareholder-yield",
-      "cron": null,
-      "apis": [
-        "/api/shareholder-yield"
-      ],
-      "pages": [
-        "shareholder-yield"
-      ]
-    },
-    {
-      "name": "spinoff",
-      "cron": null,
-      "apis": [
-        "/api/spin-off-performance"
-      ],
-      "pages": [
-        "spin-off-performance"
       ]
     }
   ],

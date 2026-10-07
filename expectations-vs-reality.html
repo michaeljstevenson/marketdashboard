@@ -449,7 +449,7 @@ thead th{
  font-size:11px;
  letter-spacing:0.04em;
  font-weight:400;
- padding:0 0 10px;
+ padding:0 12px 10px;
  border-bottom:1px solid var(--hair);
 }
 
@@ -457,9 +457,23 @@ thead th:first-child{ text-align:left; }
 
 tbody td{
  text-align:right;
- padding:9px 0;
+ padding:9px 12px;
  border-bottom:1px solid var(--hair);
  font-family:var(--mono);
+ white-space:nowrap;
+}
+
+thead th:first-child, tbody td:first-child{ padding-left:0; }
+thead th:last-child, tbody td:last-child{ padding-right:0; }
+
+thead th.col-source{ text-align:left; padding-left:24px; }
+tbody td.col-source{
+ text-align:left;
+ padding-left:24px;
+ font-family:var(--sans);
+ color:var(--muted);
+ font-size:12px;
+ white-space:normal;
 }
 
 tbody td:first-child{
@@ -470,7 +484,7 @@ tbody td:first-child{
 
 tbody tr:last-child td{ border-bottom:none; }
 
-.miss-beat{ color:#5a9d6f; }
+.miss-beat{ color:var(--greed); }
 .miss-under{ color:var(--fear); }
 
 /* EXPLAINER */
@@ -566,6 +580,7 @@ tbody tr:last-child td{ border-bottom:none; }
 <a href="/sentiment-index.html">Sentiment Index</a>
 <a href="/volatility.html">Implied vs. Realized Volatility</a>
 <a href="/seasonality.html">Seasonality</a>
+<a href="/ipo-activity.html">IPO Activity</a>
 </div>
 <div class="mcol"><h4>Breadth &amp; Positioning</h4>
 <a href="/market-breadth.html">Market Breadth</a>
@@ -576,6 +591,7 @@ tbody tr:last-child td{ border-bottom:none; }
 </div>
 <div class="mcol"><h4>Market Structure</h4>
 <a href="/concentration.html">Concentration</a>
+<a href="/small-cap-liquidity.html">Small-Cap Liquidity</a>
 </div>
 </div></div>
 </div>
@@ -586,7 +602,6 @@ tbody tr:last-child td{ border-bottom:none; }
 <a href="/valuations.html">Valuations</a>
 <a href="/implied-erp.html">Implied Equity Risk Premium</a>
 <a href="/equity-risk-premium.html">Equity Risk Premium by Sector</a>
-<a href="/pe-divergence.html">Forward vs. Trailing P/E Divergence</a>
 <a href="/expectations-vs-reality.html" class="active">Expectations vs. Reality</a>
 </div>
 <div class="mcol"><h4>Estimates &amp; Surprises</h4>
@@ -594,15 +609,10 @@ tbody tr:last-child td{ border-bottom:none; }
 <a href="/earnings-revisions.html">Earnings Revisions</a>
 <a href="/earnings-surprise.html">Earnings Surprise History</a>
 <a href="/post-earnings-drift.html">Post-Earnings Announcement Drift</a>
-<a href="/earnings-call-sentiment.html">Earnings Call Sentiment</a>
 <a href="/earnings-growth-divergence.html">Earnings Growth vs. Price Performance</a>
 </div>
 <div class="mcol"><h4>Fundamentals &amp; Quality</h4>
-<a href="/fcf-yield.html">Free Cash Flow Yield</a>
 <a href="/quality-score.html">Financial Quality Screener (Piotroski)</a>
-<a href="/roic-wacc.html">ROIC vs. Cost of Capital</a>
-<a href="/cash-conversion-cycle.html">Cash Conversion Cycle</a>
-<a href="/rd-intensity.html">R&amp;D Intensity</a>
 </div>
 </div></div>
 </div>
@@ -618,33 +628,9 @@ tbody tr:last-child td{ border-bottom:none; }
 </div>
 <div class="mcol"><h4>Style &amp; Relative Performance</h4>
 <a href="/factor-analysis.html">Factor Analysis</a>
-<a href="/quality-lowvol-factors.html">Quality &amp; Low-Volatility Factor Screen</a>
-<a href="/small-cap-vs-large-cap.html">Small Cap vs. Large Cap Spread</a>
+<a href="/small-cap-vs-large-cap.html">Small, Mid and Large Cap Spreads</a>
 <a href="/international-vs-us.html">International vs. US Relative Performance</a>
 <a href="/relative-strength-leaders.html">Relative Strength Leaders/Laggards</a>
-</div>
-</div></div>
-</div>
-<div class="navdrop">
-<span class="navlabel">Capital &amp; Ownership ▾</span>
-<div class="dropdown"><div class="mega">
-<div class="mcol"><h4>Shareholder Returns</h4>
-<a href="/dividend-growth-screener.html">Dividend Growth Screener</a>
-<a href="/shareholder-yield.html">Shareholder Yield</a>
-<a href="/buyback-effectiveness.html">Buyback Effectiveness</a>
-<a href="/share-count-trends.html">Share Count Trends</a>
-</div>
-<div class="mcol"><h4>Issuance &amp; Corporate Actions</h4>
-<a href="/stock-split-tracker.html">Stock Split Tracker</a>
-<a href="/spin-off-performance.html">Spin-Off Performance Tracker</a>
-<a href="/ipo-activity.html">IPO Activity</a>
-<a href="/ipo-pipeline.html">IPO Pipeline</a>
-</div>
-<div class="mcol"><h4>Ownership &amp; Flows</h4>
-<a href="/insider-buying-selling.html">Insider Buying/Selling</a>
-<a href="/institutional-ownership.html">Institutional Ownership &amp; 13F Flow</a>
-<a href="/congressional-trading.html">Congressional Trading Activity</a>
-<a href="/small-cap-liquidity.html">Small-Cap Liquidity</a>
 </div>
 </div></div>
 </div>
@@ -754,8 +740,8 @@ tbody tr:last-child td{ border-bottom:none; }
 <th>Target Implied Return</th>
 <th>Actual Close</th>
 <th>Actual Return</th>
-<th>Miss (pts)</th>
-<th>Source</th>
+<th>Miss (index pts)</th>
+<th class="col-source">Source</th>
 </tr>
 </thead>
 <tbody id="dataTableBody"></tbody>
@@ -831,7 +817,9 @@ function themeVar(name, fallback){
  const v = getComputedStyle(document.documentElement).getPropertyValue(name).trim();
  return v || fallback;
 }
-function fmtPct(v){ return (v >= 0 ? "+" : "") + v.toFixed(1) + "%"; }
+// Rounds before choosing the sign so a tiny loss (2011: 1257.64 to 1257.60)
+// prints as 0.0% instead of -0.0%.
+function fmtPct(v){ const r = Math.round(v * 10) / 10 || 0; return (r > 0 ? "+" : "") + r.toFixed(1) + "%"; }
 function fmtNum(v){ return v.toLocaleString(undefined, { maximumFractionDigits: 0 }); }
 
 function init(){
@@ -866,7 +854,7 @@ function init(){
    <td>${fmtNum(r.actual)}</td>
    <td>${fmtPct(r.actualReturn)}</td>
    <td class="${r.missPts >= 0 ? 'miss-beat' : 'miss-under'}">${r.missPts >= 0 ? '+' : ''}${fmtNum(r.missPts)}</td>
-   <td style="text-align:left; font-family:var(--sans); color:var(--muted); font-size:12px;">${r.source}</td>
+   <td class="col-source">${r.source}</td>
   </tr>
  `).join("");
 

@@ -225,7 +225,7 @@ function main() {
     const sources = [];
     if (av.length) sources.push(`Alpha Vantage: ${av.join(", ")}`);
     if (s.yahoo) sources.push("Yahoo Finance");
-    onRequest.push({ api, name: api, when: `Fetched live when the page asks; cached ${cache}`, sources, pages: pagesOfApi[api] || [], notes: NOTES[api.slice(5)] || "" });
+    onRequest.push({ api, name: api, when: `Fetched live when the page asks (cached ${cache})`, sources, pages: pagesOfApi[api] || [], notes: NOTES[api.slice(5)] || "" });
   }
 
   rows.sort((a, b) => a.when.sort[0] - b.when.sort[0] || a.when.sort[1] - b.when.sort[1] || (titleOf[a.pages[0]] || a.name).localeCompare(titleOf[b.pages[0]] || b.name));

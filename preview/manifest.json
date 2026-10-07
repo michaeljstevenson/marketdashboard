@@ -7,25 +7,14 @@
       {
         "file": "effective-tax-rate.html",
         "title": "Effective Tax Rate"
-      },
-      {
-        "file": "sbc-dilution.html",
-        "title": "Stock-Based Compensation Dilution"
       }
     ],
     "functions": [
       "effective-tax-rate-blob-store.js",
       "effective-tax-rate.js",
-      "sbc-dilution-blob-store.js",
-      "sbc-dilution.js",
-      "scheduled-effective-tax-rate-background.js",
-      "scheduled-sbc-dilution-background.js"
+      "scheduled-effective-tax-rate-background.js"
     ],
     "redirects": [
-      {
-        "from": "/api/sbc-dilution",
-        "to": "/.netlify/functions/sbc-dilution"
-      },
       {
         "from": "/api/effective-tax-rate",
         "to": "/.netlify/functions/effective-tax-rate"
@@ -40,28 +29,17 @@
       {
         "file": "analyst-coverage.html",
         "title": "Analyst Coverage & the Neglected Firm Effect"
-      },
-      {
-        "file": "net-cash-position.html",
-        "title": "Net Cash Position & the Value of Cash"
       }
     ],
     "functions": [
       "analyst-coverage-blob-store.js",
       "analyst-coverage.js",
-      "net-cash-position-blob-store.js",
-      "net-cash-position.js",
-      "scheduled-analyst-coverage-background.js",
-      "scheduled-net-cash-position-background.js"
+      "scheduled-analyst-coverage-background.js"
     ],
     "redirects": [
       {
         "from": "/api/analyst-coverage",
         "to": "/.netlify/functions/analyst-coverage"
-      },
-      {
-        "from": "/api/net-cash-position",
-        "to": "/.netlify/functions/net-cash-position"
       }
     ]
   },
@@ -172,10 +150,6 @@
       {
         "file": "altman-z-score.html",
         "title": "Altman Z-Score"
-      },
-      {
-        "file": "magic-formula.html",
-        "title": "Magic Formula Screen"
       }
     ],
     "functions": [

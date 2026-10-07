@@ -57,15 +57,10 @@ const stamp = (j) => {
   return d && !isNaN(d) ? d : null;
 };
 
-// Each page family names its coverage fields differently. universe_size vs
-// universe_total is left out: it measures a deliberate filter (e.g. dividend
-// payers only), not failed loads.
+// universe_size vs universe_total is left out: it measures a deliberate
+// filter (companies with usable estimates), not failed loads.
 const COVERAGE_PAIRS = [
   ["loadedCount", "universeSize"],
-  ["loadedTickerCount", "universeTickerCount"],
-  ["volLoadedCount", "universeSize"],
-  ["splitsLoadedCount", "universeSize"],
-  ["priceLoadedCount", "priceUniverseSize"],
 ];
 
 function contentIssues(j) {
@@ -74,9 +69,7 @@ function contentIssues(j) {
   if (j.partial === true) issues.push(["WARN", "marked partial"]);
   for (const [got, of] of COVERAGE_PAIRS) {
     if (typeof j[got] !== "number" || typeof j[of] !== "number" || j[of] <= 0) continue;
-    // Companies with no transcript to score are a known gap, not a failed load.
-    const accounted = j[got] + (got === "loadedCount" && typeof j.noTranscriptCount === "number" ? j.noTranscriptCount : 0);
-    if (accounted / j[of] < LOW_COVERAGE) issues.push(["WARN", `${got} ${j[got]} of ${j[of]} (${Math.round((100 * j[got]) / j[of])}%)`]);
+    if (j[got] / j[of] < LOW_COVERAGE) issues.push(["WARN", `${got} ${j[got]} of ${j[of]} (${Math.round((100 * j[got]) / j[of])}%)`]);
   }
   if (Array.isArray(j.failedTickers) && j.failedTickers.length) issues.push(["INFO", `failed tickers: ${j.failedTickers.join(", ")}`]);
   if (Array.isArray(j.warnings) && j.warnings.length) issues.push(["WARN", `warnings: ${j.warnings.map((w) => (typeof w === "string" ? w : JSON.stringify(w))).join("; ").slice(0, 200)}`]);

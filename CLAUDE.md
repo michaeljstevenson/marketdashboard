@@ -22,7 +22,7 @@ Each content page (`implied-erp.html`, `ipo-activity.html`, `yield-curves.html`,
 
 **Important gotcha:** the top nav (`<nav class="sitenav">`, with its category dropdowns) is
 **duplicated verbatim into every page**, not templated or shared. Any nav change (labels,
-order, links, categories) must be applied to all ~13 pages that carry it, or it'll look fixed on
+order, links, categories) must be applied to all ~35 pages that carry it, or it'll look fixed on
 whichever page you tested and still be stale everywhere else. This has caused repeated
 confusion — a user edit made "while sitting on page X" only ever touches page X's copy.
 
@@ -60,6 +60,7 @@ chart) in the user's voice, static ("As of <date>"), rolled out a few pages at a
 Rules for any site text Claude writes or changes:
 - No em dashes anywhere on the live site, including placeholders ("…" for loading, "n/a" for missing).
 - No "X, not Y" constructions or similar AI-sounding contrasts.
+- No semicolons anywhere on the live site (all of them were replaced in October 2026).
 - Every new or changed piece of prose goes into `content-review.md` at the repo root (git-ignored via
   `.git/info/exclude`) with page, location, before and after. Nothing with new prose is pushed until the
   user approves that file.

@@ -185,7 +185,7 @@ const FACTORS = [
     signalLabel: "21-day realized volatility of S&P 500 returns",
     description: "Wider realized price swings than recent norms signal fear.",
     details:
-      "The annualized standard deviation of the S&P 500's last 21 daily log returns, how much the market has actually moved, as opposed to what options imply. Standardized against its trailing year; higher realized volatility scores lower (fear).",
+      "The annualized standard deviation of the S&P 500's last 21 daily log returns, how much the market has actually moved, as opposed to what options imply. Standardized against its trailing year. Higher realized volatility scores lower (fear).",
     source: { name: "Yahoo Finance: S&P 500 (^GSPC)", url: "https://finance.yahoo.com/quote/%5EGSPC" },
   },
   {
@@ -197,7 +197,7 @@ const FACTORS = [
     signalLabel: "ln(CBOE SKEW)",
     description: "Elevated demand for out-of-the-money puts (a steeper option skew) signals heightened tail-risk hedging.",
     details:
-      "The CBOE SKEW Index measures the perceived tail risk of S&P 500 returns from the relative pricing of out-of-the-money options: it rises when investors pay up for downside protection. It is the options-market positioning read in this index. The signal is ln(SKEW), standardized against its trailing year; a higher reading (more hedging demand) scores lower.",
+      "The CBOE SKEW Index measures the perceived tail risk of S&P 500 returns from the relative pricing of out-of-the-money options: it rises when investors pay up for downside protection. It is the options-market positioning read in this index. The signal is ln(SKEW), standardized against its trailing year. A higher reading (more hedging demand) scores lower.",
     source: { name: "Yahoo Finance: CBOE SKEW (^SKEW)", url: "https://finance.yahoo.com/quote/%5ESKEW" },
   },
   {
@@ -219,7 +219,7 @@ const FACTORS = [
     invert: false,
     pillar: "trend",
     signalLabel: "S&P 500 ÷ trailing 252-day high − 1",
-    description: "The S&P 500 trading close to its 52-week high signals strength; a deeper drawdown signals weakness.",
+    description: "The S&P 500 trading close to its 52-week high signals strength. A deeper drawdown signals weakness.",
     details:
       "The percentage distance of the S&P 500 below its trailing 252-day high (zero at a new high). It complements the moving-average momentum measure by capturing how far the market has fallen from its recent peak. Standardized against its trailing year.",
     source: { name: "Yahoo Finance: S&P 500 (^GSPC)", url: "https://finance.yahoo.com/quote/%5EGSPC" },
@@ -281,7 +281,7 @@ const FACTORS = [
     signalLabel: "20-day return of the S&P 500 minus 20-day total return of long Treasuries (log)",
     description: "Stocks outperforming long Treasuries over 20 days signals risk-on positioning.",
     details:
-      "The difference between the S&P 500's trailing 20-day return and the total return of long-term Treasuries (Vanguard Long-Term Treasury fund, VUSTX; 1986 onward). When investors flee to safety, long Treasuries outperform stocks. Standardized against its trailing year.",
+      "The difference between the S&P 500's trailing 20-day return and the total return of long-term Treasuries (Vanguard Long-Term Treasury fund, VUSTX, 1986 onward). When investors flee to safety, long Treasuries outperform stocks. Standardized against its trailing year.",
     source: { name: "Yahoo Finance: S&P 500, VUSTX", url: "https://finance.yahoo.com/quote/VUSTX" },
   },
   {
@@ -305,7 +305,7 @@ const FACTORS = [
     signalLabel: "63-day change in ln(RSP ÷ S&P 500)",
     description: "The equal-weight S&P 500 keeping pace with the cap-weighted index signals broad participation.",
     details:
-      "The trailing 63-trading-day change in the ratio of RSP (equal-weight S&P 500) to the cap-weighted S&P 500. When the equal-weight index leads, gains are spread across the roster; when it lags, a few mega-caps are carrying the market. Standardized against its trailing year. RSP launched in 2003.",
+      "The trailing 63-trading-day change in the ratio of RSP (equal-weight S&P 500) to the cap-weighted S&P 500. When the equal-weight index leads, gains are spread across the roster. When it lags, a few mega-caps are carrying the market. Standardized against its trailing year. RSP launched in 2003.",
     source: { name: "Yahoo Finance: RSP, S&P 500", url: "https://finance.yahoo.com/quote/RSP" },
   },
 ];
