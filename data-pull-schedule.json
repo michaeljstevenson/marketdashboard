@@ -253,16 +253,6 @@
       ]
     },
     {
-      "name": "relative-strength",
-      "cron": "10 13 * * 6",
-      "apis": [
-        "/api/relative-strength"
-      ],
-      "pages": [
-        "relative-strength-leaders"
-      ]
-    },
-    {
       "name": "smallcap-liquidity",
       "cron": "20 14 * * 6",
       "apis": [
@@ -418,6 +408,16 @@
       ],
       "pages": [
         "post-earnings-drift"
+      ]
+    },
+    {
+      "name": "relative-strength",
+      "cron": null,
+      "apis": [
+        "/api/relative-strength"
+      ],
+      "pages": [
+        "relative-strength-leaders"
       ]
     },
     {

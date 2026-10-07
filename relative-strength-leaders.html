@@ -273,7 +273,7 @@ h1{
 
 .stat-grid{
  display:grid;
- grid-template-columns:repeat(4,1fr);
+ grid-template-columns:repeat(5,minmax(0,1fr));
  gap:16px;
  margin-bottom:30px;
 }
@@ -306,8 +306,8 @@ h1{
  margin-top:6px;
 }
 
-@media (max-width:900px){
- .stat-grid{ grid-template-columns:repeat(2,1fr); }
+@media (max-width:1000px){
+ .stat-grid{ grid-template-columns:repeat(3,minmax(0,1fr)); }
 }
 
 /* CHART */
@@ -651,6 +651,29 @@ tbody td:nth-child(2){
 .strip-key .sk-box{ width:16px; height:9px; border:1px solid var(--muted); background:rgba(125,138,153,0.18); border-radius:2px; }
 .strip-key .sk-line{ width:3px; height:12px; background:var(--ink); border-radius:2px; }
 .strip-key .sk-tri{ width:0; height:0; border-left:4px solid transparent; border-right:4px solid transparent; border-bottom:7px solid var(--muted); }
+
+/* Momentum study controls and tables */
+.study-controls{ display:flex; flex-wrap:wrap; gap:10px 22px; margin-bottom:14px; }
+.control-group{ display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+.control-label{ color:var(--muted); font-size:12px; }
+.metric-toggle{ display:flex; gap:6px; flex-wrap:wrap; }
+.metric-toggle button{
+ background:var(--card-hover);
+ border:1px solid var(--hair);
+ color:var(--muted);
+ border-radius:6px;
+ padding:5px 12px;
+ font-size:11px;
+ cursor:pointer;
+}
+.metric-toggle button.active{ color:var(--ink); border-color:var(--greed); }
+.chart-canvas-wrap.short-ish{ height:260px; }
+.chart-note{ color:var(--muted); font-size:12px; margin-top:8px; }
+.spread-table{ margin-top:14px; }
+.spread-table td .sub{ display:block; color:var(--muted); font-size:11px; font-family:var(--sans); }
+.spread-table td:nth-child(2){ text-align:right; color:var(--ink); }
+.section-header{ margin:0 0 12px; }
+.section-header h2{ font-family:var(--serif); font-weight:400; font-size:18px; margin:0; }
 </style>
 <link rel="stylesheet" href="/site.css">
 </head>
@@ -798,6 +821,11 @@ tbody td:nth-child(2){
 <div class="stat-value" id="statLaggard">…</div>
 <div class="stat-note" id="statLaggardNote">3-month relative return</div>
 </div>
+<div class="stat-card">
+<div class="stat-label">Top Minus Bottom Tenth (12-1M)</div>
+<div class="stat-value" id="statSpread">…</div>
+<div class="stat-note" id="statSpreadNote">Next-month relative return, average since 1997</div>
+</div>
 </div>
 
 <div class="chart-box">
@@ -818,16 +846,75 @@ tbody td:nth-child(2){
 <div class="chart-box">
 <div class="chart-box-header">
 <div>
-<h2>Do this week's relative-strength leaders keep leading?</h2>
-<div class="chart-subhead">Each point is one stock in one week. X is that week's 3-month relative-return rank (1 = strongest), Y is its realized relative return over the following week. The forward window shares no trading days with the rank that predicts it (see methodology).</div>
+<h2>Do relative-strength leaders keep leading?</h2>
+<div class="chart-subhead">At each month-end since January 1997, the stocks in the S&amp;P 500 that day are split into tenths by trailing return. Bars show each tenth's average return over the following holding period relative to the S&amp;P 500 total return index, averaged across month-ends. Tenth 10 holds the strongest trailing returns.</div>
+</div>
+</div>
+<div class="study-controls">
+<div class="control-group"><span class="control-label">Lookback</span>
+<div class="metric-toggle" id="lookbackToggle">
+<button type="button" data-l="1">1M</button>
+<button type="button" data-l="3">3M</button>
+<button type="button" data-l="6">6M</button>
+<button type="button" class="active" data-l="12-1">12-1M</button>
+</div></div>
+<div class="control-group"><span class="control-label">Holding period</span>
+<div class="metric-toggle" id="horizonToggle">
+<button type="button" class="active" data-h="1">1M</button>
+<button type="button" data-h="3">3M</button>
+<button type="button" data-h="6">6M</button>
+<button type="button" data-h="12">12M</button>
+</div></div>
+</div>
+<div class="ndr-panel">
+<div class="chart-canvas-wrap short-ish">
+<canvas id="decileChart"></canvas>
+</div>
+</div>
+<div class="chart-note" id="decileNote"></div>
+<table class="method-table spread-table" id="studyTable"></table>
+</div>
+
+<div class="chart-box">
+<div class="chart-box-header">
+<div>
+<h2>Top minus bottom tenth over time</h2>
+<div class="chart-subhead">The top tenth's next-month return minus the bottom tenth's, both relative to the S&amp;P 500 total return index, for stocks ranked at the previous month-end on the lookback selected here. Shown as a trailing 36-month average or month by month.</div>
+</div>
+</div>
+<div class="study-controls">
+<div class="control-group"><span class="control-label">Lookback</span>
+<div class="metric-toggle" id="spreadLookbackToggle">
+<button type="button" data-l="1">1M</button>
+<button type="button" data-l="3">3M</button>
+<button type="button" data-l="6">6M</button>
+<button type="button" class="active" data-l="12-1">12-1M</button>
+</div></div>
+<div class="control-group"><span class="control-label">Show</span>
+<div class="metric-toggle" id="spreadViewToggle">
+<button type="button" class="active" data-v="rolling">36-month average</button>
+<button type="button" data-v="monthly">Monthly</button>
+</div></div>
+</div>
+<div class="ndr-panel">
+<div class="chart-canvas-wrap">
+<canvas id="spreadChart"></canvas>
+</div>
+</div>
+</div>
+
+<div class="chart-box">
+<div class="chart-box-header">
+<div>
+<h2>Share of index members in the study</h2>
+<div class="chart-subhead">Members at each month-end with the price history needed for the 12-1M ranking, as a share of all members that day.</div>
 </div>
 </div>
 <div class="ndr-panel">
-<div class="scatter-canvas-wrap">
-<canvas id="persistenceScatter"></canvas>
+<div class="chart-canvas-wrap short-ish">
+<canvas id="coverageChart"></canvas>
 </div>
 </div>
-<div id="persistenceMethodTable"></div>
 </div>
 
 <div class="table-grid">
@@ -853,10 +940,37 @@ tbody td:nth-child(2){
 </div>
 </div>
 
+<div class="section-header">
+<h2>This week's new leaders and laggards</h2>
+<div class="chart-subhead" id="changesSubhead">Stocks that moved into or out of the top or bottom tenth of 3-month relative return vs. SPY over the past week.</div>
+</div>
+<div class="table-grid">
+<div class="table-box">
+<div class="table-box-header">
+<h2>Top tenth</h2>
+<div class="chart-subhead">Entered or left the strongest tenth</div>
+</div>
+<table class="change-table">
+<thead><tr><th>Symbol</th><th>Sector</th><th>Change</th><th>3M Rank</th><th>Rel. 1M</th><th>Rel. 3M</th><th>Rel. 6M</th></tr></thead>
+<tbody id="topChangeBody"><tr><td colspan="7" style="text-align:center; color:var(--muted); padding:24px;">Loading&hellip;</td></tr></tbody>
+</table>
+</div>
+<div class="table-box">
+<div class="table-box-header">
+<h2>Bottom tenth</h2>
+<div class="chart-subhead">Entered or left the weakest tenth</div>
+</div>
+<table class="change-table">
+<thead><tr><th>Symbol</th><th>Sector</th><th>Change</th><th>3M Rank</th><th>Rel. 1M</th><th>Rel. 3M</th><th>Rel. 6M</th></tr></thead>
+<tbody id="bottomChangeBody"><tr><td colspan="7" style="text-align:center; color:var(--muted); padding:24px;">Loading&hellip;</td></tr></tbody>
+</table>
+</div>
+</div>
+
 <div class="table-box">
 <div class="table-box-header">
 <h2>Full S&amp;P 500</h2>
-<div class="chart-subhead">Price, trailing return and return relative to SPY at 1-month and 3-month lookbacks.</div>
+<div class="chart-subhead">Price, trailing return and return relative to SPY at 1-month and 3-month lookbacks, plus relative return at 6-month and 12-1 month lookbacks.</div>
 </div>
 <details class="full-list-details">
 <summary class="full-list-summary">Show full list</summary>
@@ -870,11 +984,13 @@ tbody td:nth-child(2){
 <th data-key="ret3M">3M<span class="sort-arrow">▾</span></th>
 <th data-key="rel1M">Rel. 1M<span class="sort-arrow">▾</span></th>
 <th data-key="rel3M">Rel. 3M<span class="sort-arrow">▾</span></th>
+<th data-key="rel6M">Rel. 6M<span class="sort-arrow">▾</span></th>
+<th data-key="rel12_1M">Rel. 12-1M<span class="sort-arrow">▾</span></th>
 <th data-key="classification">Tag<span class="sort-arrow">▾</span></th>
 </tr>
 </thead>
 <tbody id="tableBody">
-<tr><td colspan="8" style="text-align:center; color:var(--muted); padding:30px;">Loading relative strength data&hellip;</td></tr>
+<tr><td colspan="10" style="text-align:center; color:var(--muted); padding:30px;">Loading relative strength data&hellip;</td></tr>
 </tbody>
 </table>
 </details>
@@ -882,9 +998,14 @@ tbody td:nth-child(2){
 
 <div class="explainer">
 <h2>Methodology</h2>
-<p>Each stock's return is measured over the last 21 trading days (1 month) and 63 trading days (3 months), including dividends. Relative return is (1 + stock return) ÷ (1 + S&amp;P 500 return) − 1 rather than a simple subtraction, so it stays accurate for larger moves.</p>
+<p>Each stock's return is measured over the last 21 trading days (1 month), 63 trading days (3 months) and 126 trading days (6 months), and from 252 to 21 trading days ago (12-1 months), including dividends. Relative return is (1 + stock return) ÷ (1 + S&amp;P 500 return) − 1 rather than a simple subtraction, so it stays accurate for larger moves.</p>
 <p>A stock is a "Leader" if its 3-month relative return is in the top fifth of the index, a "Laggard" if it's in the bottom fifth, and "Neutral" otherwise. Rankings use 3 months rather than 1 month, since 1-month returns are noisier and more easily swung by a single event (an earnings beat, a guidance cut).</p>
-<p>The persistence test asks whether this week's rank says anything about what happens next. Comparing one week's 3-month rank with the next week's would be misleading, since the two windows share almost all of the same trading days and would line up almost automatically. Instead, each stock's rank at one point is paired with its return over the following period, which uses entirely new trading days. A positive, significant relationship would mean leaders tend to keep outperforming. A flat or negative one would mean relative strength fades or says nothing about the future at this horizon. Both Pearson (linear) and Spearman (rank) fits are shown.</p>
+<p>The weekly changes compare this week's 3-month ranking with the same ranking computed from closes one week earlier, using the same price download. A stock enters the top tenth if it is there now and wasn't a week ago, and leaves it if the reverse is true. The bottom tenth works the same way.</p>
+<p>The historical study takes every month-end from January 1997 on. At each one it uses the stocks that were in the S&amp;P 500 that day, from the membership history at fja05680/sp500 with later changes from Wikipedia, so companies later acquired, bankrupt or dropped from the index count while they were members. The stocks are split into tenths by trailing return over four lookbacks: 1 month, 3 months, 6 months, and 12 months excluding the most recent month (12-1M), the standard academic momentum measure. All returns in the study run between month-end closes.</p>
+<p>A tenth's return is the plain average of its stocks' returns over the next 1, 3, 6 or 12 months, compared with the S&amp;P 500 total return index (^SP500TR) as (1 + stock return) ÷ (1 + index return) − 1. The figures shown are averages across month-ends. Top minus bottom and top minus all members are taken month by month before averaging, which removes the drift of an equal-weighted group against the cap-weighted index. A stock that stops trading during the holding period, for example after an acquisition, keeps its last price for the rest of the period.</p>
+<p>Holding periods longer than a month overlap from one month-end to the next, so t-statistics use Newey-West standard errors with a lag of the holding period in months minus 1. They're shown only once there are at least 12 month-ends.</p>
+<p>Prices are Yahoo Finance adjusted closes, with Alpha Vantage price files for some delisted companies Yahoo no longer serves. Daily price spikes that reverse the next day are removed, and a member whose price history stops while it was still in the index is left out of that month-end. Members with no usable price history are left out too, so the study covers about 41% of members in early 1997, 48% in 2000 and 79% in 2008, and nearly all of them in recent years. The jump in late 2000 is where the Alpha Vantage files, which start in late 1999, first have a full 12-month lookback. The missing early names are mostly companies that were acquired or failed before the price files were collected, so the early years may still lean toward survivors. Month-ends through <span id="studyStaticThrough">September 2025</span> are precomputed. Later ones are computed each week from current Yahoo prices, which no longer include some recently acquired companies.</p>
+<div class="source">Source: <a href="https://finance.yahoo.com/" target="_blank" rel="noopener">Yahoo Finance</a> (prices), <a href="https://www.alphavantage.co/" target="_blank" rel="noopener">Alpha Vantage</a> (saved prices for some delisted companies), S&amp;P 500 membership history from <a href="https://github.com/fja05680/sp500" target="_blank" rel="noopener">fja05680/sp500</a>.</div>
 
 
 </div>
@@ -989,156 +1110,13 @@ function themeFearColor(){
  return v || "#6f8fac";
 }
 
-// ---- Stats helpers - same methodology as /factor-analysis, duplicated
-// here since every page on this site is self-contained (see CLAUDE.md). ----
-// ---- Outlier-robust scatter axes ----------------------------------------
-// A few extreme companies (a 13,000% EPS jump, a $44M congressional sale)
-// would otherwise set the axis range and squash everyone else into a corner.
-// The axis covers the 1st-99th percentile instead; anything beyond is drawn
-// as a hollow arrow on the edge it fell off, with a count in the corner, so
-// nothing disappears silently. Fit lines are still computed on every point.
-function robustNiceStep(range){
- const raw = range / 6;
- const mag = Math.pow(10, Math.floor(Math.log10(raw)));
- const f = raw / mag;
- return (f < 1.5 ? 1 : f < 3.5 ? 2 : f < 7.5 ? 5 : 10) * mag;
-}
-function robustScatterAxes(chart, axes, opts){
- if(!chart) return;
- const pts = [];
- chart.data.datasets.forEach((ds, di) => {
-  if(ds.showLine || ds.type === "line" || ds.borderDash) return;
-  (ds.data || []).forEach(p => { if(p && isFinite(p.x) && isFinite(p.y)) pts.push({ p, di }); });
- });
- if(pts.length < 20) return;
- const cand = {};
- let flagged = false;
- for(const ax of axes){
-  const v = pts.map(o => o.p[ax]).sort((a, b) => a - b);
-  const q = f => v[Math.round((v.length - 1) * f)];
-  const lo = q(0.01), hi = q(0.99);
-  const full = v[v.length - 1] - v[0], core = hi - lo;
-  if(!(core > 0)) continue;
-  const step = robustNiceStep(core);
-  let min = Math.floor((lo - core * 0.04) / step) * step;
-  let max = Math.ceil((hi + core * 0.04) / step) * step;
-  if(v[0] >= 0 && min < 0) min = 0;
-  cand[ax] = { min, max, flag: full / core >= 1.6 };
-  if(cand[ax].flag) flagged = true;
- }
- if(!flagged) return;
- const bounds = {};
- if(opts && opts.square){
-  // Charts with a 45-degree reference line need the same range on both axes.
-  const min = Math.min(...Object.values(cand).map(c => c.min));
-  const max = Math.max(...Object.values(cand).map(c => c.max));
-  for(const ax of Object.keys(cand)) bounds[ax] = { min, max };
- }else{
-  for(const ax of Object.keys(cand)) if(cand[ax].flag) bounds[ax] = { min: cand[ax].min, max: cand[ax].max };
- }
- // Raw config, not chart.options: that's a resolver proxy, and writing
- // through it recurses.
- const raw = chart.config.options.scales = chart.config.options.scales || {};
- for(const ax of Object.keys(bounds)){
-  const sc = raw[ax] = raw[ax] || {};
-  sc.min = bounds[ax].min; sc.max = bounds[ax].max;
- }
- const off = [];
- for(const o of pts){
-  const flags = {};
-  let out = false;
-  for(const ax of Object.keys(bounds)){
-   if(o.p[ax] < bounds[ax].min){ flags[ax] = -1; out = true; }
-   else if(o.p[ax] > bounds[ax].max){ flags[ax] = 1; out = true; }
-  }
-  if(out) off.push({ p: o.p, di: o.di, flags });
- }
- chart.$robustOff = off;
- // Stop the initial draw-in animation first, or it keeps easing points
- // toward their positions on the old, outlier-stretched scale.
- chart.stop();
- chart.update("none");
-}
-const robustOffscalePlugin = {
- id: "robustOffscale",
- afterDatasetsDraw(chart){
-  const off = chart.$robustOff;
-  if(!off || !off.length) return;
-  const { ctx, chartArea: a, scales } = chart;
-  const color = (getComputedStyle(document.documentElement).getPropertyValue("--ndr-axis-soft").trim()) || (getComputedStyle(document.documentElement).getPropertyValue("--muted").trim()) || "#8b9199";
-  ctx.save();
-  ctx.strokeStyle = color;
-  ctx.fillStyle = color;
-  ctx.lineWidth = 1.2;
-  for(const o of off){
-   const dsColor = chart.data.datasets[o.di].backgroundColor;
-   ctx.strokeStyle = typeof dsColor === "string" ? dsColor : color;
-   let x = scales.x.getPixelForValue(o.p.x), y = scales.y.getPixelForValue(o.p.y);
-   x = Math.min(a.right - 4, Math.max(a.left + 4, x));
-   y = Math.min(a.bottom - 4, Math.max(a.top + 4, y));
-   const dx = o.flags.x || 0, dy = -(o.flags.y || 0);
-   const len = Math.hypot(dx, dy) || 1, ux = dx / len, uy = dy / len;
-   const s = 4.5;
-   ctx.beginPath();
-   ctx.moveTo(x + ux * s, y + uy * s);
-   ctx.lineTo(x - ux * s - uy * s * 0.8, y - uy * s + ux * s * 0.8);
-   ctx.lineTo(x - ux * s + uy * s * 0.8, y - uy * s - ux * s * 0.8);
-   ctx.closePath();
-   ctx.stroke();
-  }
-  ctx.fillStyle = color;
-  ctx.font = "10px " + (Chart.defaults.font.family || "sans-serif");
-  ctx.textAlign = "right";
-  ctx.textBaseline = "bottom";
-  ctx.fillText(off.length + (off.length === 1 ? " point" : " points") + " beyond the axis range (arrows on the edge)", a.right - 6, a.bottom - 4);
-  ctx.restore();
- },
-};
-Chart.register(robustOffscalePlugin);
-
-function linearRegression(xs, ys){
- const n = xs.length;
- const mx = xs.reduce((a, b) => a + b, 0) / n;
- const my = ys.reduce((a, b) => a + b, 0) / n;
- const sxx = xs.reduce((s, x) => s + (x - mx) ** 2, 0);
- const sxy = xs.reduce((s, x, i) => s + (x - mx) * (ys[i] - my), 0);
- const syy = ys.reduce((s, y) => s + (y - my) ** 2, 0);
- const slope = sxy / sxx;
- const intercept = my - slope * mx;
- const r = sxy / Math.sqrt(sxx * syy);
- const r2 = r * r;
- const dof = n - 2;
- const sse = ys.reduce((s, y, i) => s + (y - (intercept + slope * xs[i])) ** 2, 0);
- const seSlope = Math.sqrt((sse / dof) / sxx);
- const t = slope / seSlope;
- const p = 2 * (1 - normalCdf(Math.abs(t)));
- return { n, slope, intercept, r, r2, t, dof, p, sse };
-}
-function normalCdf(x){ return 0.5 * (1 + erf(x / Math.SQRT2)); }
-function erf(x){
- const sign = x < 0 ? -1 : 1;
- x = Math.abs(x);
- const a1 = 0.254829592, a2 = -0.284496736, a3 = 1.421413741, a4 = -1.453152027, a5 = 1.061405429, p = 0.3275911;
- const t = 1 / (1 + p * x);
- const y = 1 - (((((a5 * t + a4) * t) + a3) * t + a2) * t + a1) * t * Math.exp(-x * x);
- return sign * y;
-}
-function rankArray(arr){
- const idx = arr.map((v, i) => i).sort((a, b) => arr[a] - arr[b]);
- const ranks = new Array(arr.length);
- let i = 0;
- while(i < idx.length){
-  let j = i;
-  while(j + 1 < idx.length && arr[idx[j + 1]] === arr[idx[i]]) j++;
-  const avgRank = (i + j) / 2 + 1;
-  for(let k = i; k <= j; k++) ranks[idx[k]] = avgRank;
-  i = j + 1;
- }
- return ranks;
-}
-function spearmanRegression(xs, ys){ return linearRegression(rankArray(xs), rankArray(ys)); }
-
-let sectorChart = null, persistenceScatter = null;
+let sectorChart = null, decileChart = null, spreadChart = null, coverageChart = null;
+let STUDY_L = "12-1", STUDY_H = 1, SPREAD_L = "12-1", SPREAD_VIEW = "rolling";
+const L_LABEL = { "1": "1M", "3": "3M", "6": "6M", "12-1": "12-1M" };
+const MONTHS_SHORT = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+const MONTHS_LONG = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+function monthLabel(d){ return MONTHS_SHORT[+d.slice(5, 7) - 1] + " " + d.slice(0, 4); }
+function monthLabelLong(d){ return MONTHS_LONG[+d.slice(5, 7) - 1] + " " + d.slice(0, 4); }
 
 async function init(){
  try{
@@ -1155,15 +1133,16 @@ async function init(){
 
   renderStats();
   renderSectorChart();
-  renderPersistence();
+  renderStudy();
   renderLeaderTable(data.leaders, "leaderBody");
   renderLeaderTable(data.laggards, "laggardBody");
+  renderChanges();
   renderTable();
 
  }catch(e){
   showError("Couldn't load relative strength data (" + e.message + "). The /api/relative-strength function may not have run yet.");
   document.getElementById("tableBody").innerHTML =
-   '<tr><td colspan="8" style="text-align:center; color:var(--muted); padding:30px;">No data available.</td></tr>';
+   '<tr><td colspan="10" style="text-align:center; color:var(--muted); padding:30px;">No data available.</td></tr>';
  }
 }
 
@@ -1186,6 +1165,18 @@ function renderStats(){
  if(laggard){
   document.getElementById("statLaggard").textContent = laggard.symbol;
   document.getElementById("statLaggardNote").textContent = fmtPct(laggard.rel3M) + " vs. SPY";
+ }
+ const sp = RAW.study && RAW.study.summary["12-1"] && RAW.study.summary["12-1"][1];
+ if(sp){
+  const v = sp.topMinusBottom.mean;
+  const el = document.getElementById("statSpread");
+  el.textContent = fmtPct(v, 2);
+  el.classList.toggle("cell-neg", v !== null && v < 0);
+  el.classList.toggle("up", v !== null && v > 0);
+  document.getElementById("statSpreadNote").textContent = "Next-month relative return, average since " + RAW.study.firstFormation.slice(0, 4) +
+   (sp.topMinusBottom.t === null ? "" : ", t = " + sp.topMinusBottom.t.toFixed(1));
+ }else{
+  document.getElementById("statSpread").textContent = "n/a";
  }
 }
 
@@ -1408,75 +1399,157 @@ function renderSectorChart(){
  document.getElementById("sectorKey").innerHTML = stripKeyHtml("mean", "company");
 }
 
-function renderPersistence(){
- const pairs = RAW.persistencePairs;
- const wrap = document.querySelector("#persistenceScatter").closest(".chart-box");
-
- if(!pairs || pairs.length < 30){
-  if(persistenceScatter){ persistenceScatter.destroy(); persistenceScatter = null; }
-  document.getElementById("persistenceMethodTable").innerHTML =
-   '<div class="method-note">Not enough weekly history accumulated yet (' + RAW.weeksAccumulated + ' snapshot' + (RAW.weeksAccumulated === 1 ? "" : "s") + ' so far). Check back in a few weeks as weekly snapshots build up.</div>';
+function renderStudy(){
+ const st = RAW.study;
+ if(!st){
+  document.getElementById("decileNote").textContent = "The historical study isn't in this snapshot yet.";
   return;
  }
+ document.getElementById("studyStaticThrough").textContent = monthLabelLong(st.staticThrough);
+ renderDecileChart();
+ renderStudyTable();
+ renderSpreadChart();
+ renderCoverageChart();
+}
 
- const pearson = linearRegression(pairs.map(p => p.x), pairs.map(p => p.y));
- const spear = spearmanRegression(pairs.map(p => p.x), pairs.map(p => p.y));
-
- const xs = pairs.map(p => p.x);
- const xMin = Math.min(...xs), xMax = Math.max(...xs);
- const linePoints = [
-  { x: xMin, y: pearson.intercept + pearson.slope * xMin },
-  { x: xMax, y: pearson.intercept + pearson.slope * xMax },
- ];
-
- const ctx = document.getElementById("persistenceScatter").getContext("2d");
- if(persistenceScatter) persistenceScatter.destroy();
- persistenceScatter = new Chart(ctx, {
-  type: "scatter",
-  data: {
-   datasets: [
-    { label: "Stock-weeks", data: pairs, backgroundColor: ndr("slate"), pointRadius: 2, pointHoverRadius: 4, showLine: false },
-    { label: "Regression fit", type: "line", data: linePoints, borderColor: ndr("red"), borderWidth: 1.5, borderDash: [4, 3], pointRadius: 0, fill: false },
-   ],
-  },
+function renderDecileChart(){
+ const st = RAW.study;
+ const curve = st.deciles[STUDY_L][STUDY_H] || [];
+ const s = st.summary[STUDY_L][STUDY_H];
+ if(decileChart) decileChart.destroy();
+ decileChart = new Chart(document.getElementById("decileChart"), {
+  type: "bar",
+  data: { labels: curve.map((v, i) => String(i + 1)), datasets: [{ label: "Average next-" + STUDY_H + "M return vs. S&P 500 TR", data: curve, backgroundColor: curve.map(v => v >= 0 ? ndr("green") : ndr("red")) }] },
   options: {
-   responsive: true,
-   maintainAspectRatio: false,
+   responsive: true, maintainAspectRatio: false, animation: false,
+   scales: {
+    x: Object.assign(ndrXScale({ title: L_LABEL[STUDY_L] + " trailing return tenth (10 = strongest)" }), { ticks: { color: ndr("axis"), autoSkip: false, maxRotation: 0, font: { size: 11 } } }),
+    y: ndrYScale({ fmt: v => v + "%", title: "avg. next " + STUDY_H + "M return vs. index" }),
+   },
+   plugins: { legend: { display: false }, zoom: false, tooltip: { callbacks: { title: items => "Tenth " + items[0].label, label: c => fmtPct(c.parsed.y, 2) + " vs. S&P 500 TR over the next " + STUDY_H + "M" } } },
+  },
+ });
+ document.getElementById("decileNote").textContent = s && s.months
+  ? "Based on " + s.months + " month-ends from " + monthLabel(s.firstMonth) + " to " + monthLabel(s.lastMonth) + ". Month-ends too recent for a holding period are left out of it."
+  : "";
+}
+
+function renderStudyTable(){
+ const st = RAW.study;
+ const cell = (v, t) => {
+  if(v === null || v === undefined) return '<td class="cell-na">n/a</td>';
+  return "<td>" + fmtPct(v, 2) + (t === undefined ? "" : '<span class="sub">' + (t === null ? "t n/a" : "t = " + t.toFixed(1)) + "</span>") + "</td>";
+ };
+ let html = "<thead><tr><th>Lookback, next " + STUDY_H + "M</th><th>Top tenth</th><th>Bottom tenth</th><th>All members</th><th>Top minus bottom</th><th>Top minus all</th><th>Month-ends</th></tr></thead><tbody>";
+ html += st.lookbacks.map(L => {
+  const s = st.summary[L][STUDY_H];
+  if(!s) return "";
+  return "<tr><td>" + L_LABEL[L] + "</td>" + cell(s.top) + cell(s.bottom) + cell(s.all) +
+   cell(s.topMinusBottom.mean, s.topMinusBottom.t) + cell(s.topMinusAll.mean, s.topMinusAll.t) + "<td>" + s.months + "</td></tr>";
+ }).join("");
+ html += "</tbody>";
+ document.getElementById("studyTable").innerHTML = html;
+}
+
+function renderSpreadChart(){
+ const st = RAW.study;
+ const vals = st.spreads[SPREAD_L] || [];
+ const labels = st.spreads.months;
+ const rolling = vals.map((v, i) => {
+  if(i < 35) return null;
+  const w = vals.slice(i - 35, i + 1).filter(x => x !== null);
+  return w.length === 36 ? Math.round(w.reduce((a, b) => a + b, 0) / 36 * 100) / 100 : null;
+ });
+ const monthly = SPREAD_VIEW === "monthly";
+ const dataset = monthly
+  ? { type: "bar", label: "Top minus bottom, month", data: vals, backgroundColor: vals.map(v => v !== null && v < 0 ? ndr("red") : ndr("green")), borderWidth: 0, barPercentage: 1, categoryPercentage: 1 }
+  : { type: "line", label: "Top minus bottom, trailing 36-month average", data: rolling, borderColor: ndr("navy"), backgroundColor: ndr("navy"), borderWidth: 1.8, pointRadius: 0, pointHoverRadius: 3, tension: 0, spanGaps: false };
+ if(spreadChart) spreadChart.destroy();
+ spreadChart = new Chart(document.getElementById("spreadChart"), {
+  type: monthly ? "bar" : "line",
+  data: { labels, datasets: [dataset] },
+  options: {
+   responsive: true, maintainAspectRatio: false, animation: false,
+   interaction: { mode: "index", intersect: false },
+   scales: {
+    x: Object.assign(ndrXScale(), { ticks: { color: ndr("axis"), maxRotation: 0, autoSkip: true, maxTicksLimit: window.innerWidth < 500 ? 5 : 7, font: { size: 11 }, callback: function(v){ return this.getLabelForValue(v).slice(0, 4); } } }),
+    y: ndrYScale({ fmt: v => v + "%", title: monthly ? "top minus bottom, month" : "36-month average, per month" }),
+   },
    plugins: {
     legend: { display: false },
-    tooltip: {
-     callbacks: {
-      label: ctx => ctx.dataset.label === "Stock-weeks" ? (ctx.raw.symbol + " (rank " + ctx.raw.x + "): " + fmtPct(ctx.raw.y) + " forward") : null,
-     },
-    },
-   },
-   // Scatter's x-axis is numeric, not category - override ndrXScale's type.
-   scales: {
-    x: ndrXScale({ type: "linear", title: "3-month relative-return rank (1 = strongest)" }),
-    y: ndrYScale({ title: "Forward relative return to next snapshot (%)" }),
+    tooltip: { callbacks: {
+     title: items => monthLabel(items[0].label + "-01"),
+     label: c => monthly
+      ? "Top minus bottom: " + fmtPct(c.parsed.y, 2)
+      : "36-month average: " + fmtPct(c.parsed.y, 2) + " per month",
+    } },
    },
   },
  });
- robustScatterAxes(persistenceScatter, ["y"]);
+}
 
- function row(label, stats){
-  const sig = stats.p < 0.05;
-  return "<tr>" +
-   "<td>" + label + "</td>" +
-   "<td>" + stats.n + "</td>" +
-   "<td>" + stats.r.toFixed(2) + "</td>" +
-   "<td>" + (stats.r2 * 100).toFixed(1) + "%</td>" +
-   "<td>" + (stats.slope >= 0 ? "+" : "") + stats.slope.toFixed(3) + "</td>" +
-   "<td>" + stats.t.toFixed(2) + "</td>" +
-   '<td class="' + (sig ? "sig" : "") + '">' + (stats.p < 0.001 ? "<0.001" : stats.p.toFixed(3)) + "</td>" +
-  "</tr>";
+function renderCoverageChart(){
+ const cov = RAW.study.coverage;
+ const pct = cov.dates.map((d, i) => cov.members[i] ? Math.round(cov.ranked["12-1"][i] / cov.members[i] * 1000) / 10 : null);
+ if(coverageChart) coverageChart.destroy();
+ coverageChart = new Chart(document.getElementById("coverageChart"), {
+  type: "line",
+  data: { labels: cov.dates, datasets: [{ label: "Share of members ranked on 12-1M", data: pct, borderColor: ndr("navy"), backgroundColor: ndr("navy"), borderWidth: 1.6, pointRadius: 0, pointHoverRadius: 3, tension: 0 }] },
+  options: {
+   responsive: true, maintainAspectRatio: false, animation: false,
+   interaction: { mode: "index", intersect: false },
+   scales: {
+    x: Object.assign(ndrXScale(), { ticks: { color: ndr("axis"), maxRotation: 0, autoSkip: true, maxTicksLimit: window.innerWidth < 500 ? 5 : 7, font: { size: 11 }, callback: function(v){ return this.getLabelForValue(v).slice(0, 4); } } }),
+    y: ndrYScale({ fmt: v => v + "%", min: 0, max: 100 }),
+   },
+   plugins: {
+    legend: { display: false },
+    tooltip: { callbacks: { title: items => monthLabel(items[0].label), label: c => c.parsed.y.toFixed(1) + "% (" + cov.ranked["12-1"][c.dataIndex] + " of " + cov.members[c.dataIndex] + " members)" } },
+   },
+  },
+ });
+}
+
+function setupToggle(id, attr, onPick){
+ document.querySelectorAll("#" + id + " button").forEach(btn => {
+  btn.addEventListener("click", () => {
+   document.querySelectorAll("#" + id + " button").forEach(b => b.classList.toggle("active", b === btn));
+   onPick(btn.dataset[attr]);
+  });
+ });
+}
+setupToggle("lookbackToggle", "l", v => { STUDY_L = v; if(RAW && RAW.study) renderDecileChart(); });
+setupToggle("horizonToggle", "h", v => { STUDY_H = +v; if(RAW && RAW.study){ renderDecileChart(); renderStudyTable(); } });
+setupToggle("spreadLookbackToggle", "l", v => { SPREAD_L = v; if(RAW && RAW.study) renderSpreadChart(); });
+setupToggle("spreadViewToggle", "v", v => { SPREAD_VIEW = v; if(RAW && RAW.study) renderSpreadChart(); });
+
+function renderChanges(){
+ const wc = RAW.weeklyChanges;
+ const empty = msg => '<tr><td colspan="7" style="text-align:center; color:var(--muted); padding:24px;">' + msg + "</td></tr>";
+ if(!wc){
+  ["topChangeBody", "bottomChangeBody"].forEach(id => { document.getElementById(id).innerHTML = empty("Not in this snapshot yet."); });
+  return;
  }
- document.getElementById("persistenceMethodTable").innerHTML =
-  '<table class="method-table">' +
-   "<thead><tr><th>Method</th><th>n</th><th>r</th><th>r&sup2;</th><th>slope</th><th>t</th><th>p</th></tr></thead>" +
-   "<tbody>" + row("Pearson (OLS)", pearson) + row("Spearman (&rho;)", spear) + "</tbody>" +
-  "</table>" +
-  '<div class="method-note">Pooled across ' + RAW.weeksAccumulated + ' weekly snapshot' + (RAW.weeksAccumulated === 1 ? "" : "s") + '. A negative slope means better-ranked stocks (rank closer to 1) earned higher forward relative returns, so leadership persisted. A positive slope means it reversed.</div>';
+ document.getElementById("changesSubhead").textContent = "Stocks that moved into or out of the top or bottom tenth of 3-month relative return vs. SPY between " + usDate(wc.weekAgo) + " and " + usDate(wc.asOf) + ".";
+ const rows = (group) => {
+  const list = [...group.entered.map(r => ({ r, change: "Entered" })), ...group.left.map(r => ({ r, change: "Left" }))];
+  if(!list.length) return empty("No changes this week.");
+  return list.map(({ r, change }) => `<tr>
+  <td><span class="sector-name">${r.symbol}</span></td>
+  <td><span class="sector-ticker">${r.sector || "n/a"}</span></td>
+  <td>${change}</td>
+  <td>${r.rank3M === null ? "n/a" : r.rank3M}<span class="sector-ticker"> (was ${r.prevRank3M === null ? "n/a" : r.prevRank3M})</span></td>
+  <td>${fmtPct(r.rel1M)}</td>
+  <td>${fmtPct(r.rel3M)}</td>
+  <td>${fmtPct(r.rel6M)}</td>
+ </tr>`).join("");
+ };
+ document.getElementById("topChangeBody").innerHTML = rows(wc.top);
+ document.getElementById("bottomChangeBody").innerHTML = rows(wc.bottom);
+}
+
+function usDate(d){
+ return d ? d.slice(5, 7) + "/" + d.slice(8, 10) + "/" + d.slice(0, 4) : "n/a";
 }
 
 function renderLeaderTable(rows, tbodyId){
@@ -1494,7 +1567,7 @@ function renderLeaderTable(rows, tbodyId){
 }
 
 function badgeFor(classification){
- if(!classification) return '<span class="cell-na">: </span>';
+ if(!classification) return '<span class="cell-na">n/a</span>';
  const cls = classification.toLowerCase();
  return '<span class="badge-tag badge-' + cls + '">' + classification + '</span>';
 }
@@ -1527,6 +1600,8 @@ function renderTable(){
    <td>${fmtPct(r.ret3M)}</td>
    <td>${fmtPct(r.rel1M)}</td>
    <td>${fmtPct(r.rel3M)}</td>
+   <td>${fmtPct(r.rel6M)}</td>
+   <td>${fmtPct(r.rel12_1M)}</td>
    <td>${badgeFor(r.classification)}</td>
   </tr>`).join("");
 

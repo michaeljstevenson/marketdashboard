@@ -663,9 +663,14 @@
   # changes meaningfully week to week, not day to day.
 
 [functions."scheduled-relative-strength-background"]
-  # Weekly, Saturday 13:10 UTC. A 1-month/3-month momentum read doesn't change
-  # day to day, and the persistence test needs snapshots spaced apart.
-  schedule = "10 13 * * 6"
+  # Weekly, Saturday 13:10 UTC. A 1-month to 12-1 month momentum read doesn't
+  # change day to day, the top/bottom tenth changes compare against a week
+  # earlier, and the momentum study only gains a month-end once a month. Its
+  # history through relative-strength-history.js's STATIC_THROUGH is
+  # precomputed offline (build_momentum_study.py), later month-ends are
+  # computed here. About 1.5 minutes with 4 Yahoo workers.
+  # Schedule paused for the reworked job's first manual run:
+  # schedule = "10 13 * * 6"
 
 [functions."scheduled-equity-risk-premium-background"]
   # One-time snapshot (2026-09-16) — no schedule, same reasoning as
