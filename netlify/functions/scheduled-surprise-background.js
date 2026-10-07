@@ -268,8 +268,12 @@ exports.handler = async () => {
 
     // Trend: last N quarters with enough absolute coverage to be meaningful,
     // oldest to newest.
+    // A quarter still in its reporting season has only its early reporters,
+    // so it joins the trend once half as many companies as the
+    // best-covered quarter have reported, the same bar as "latest quarter".
+    const fullCount = Math.max(...quarterKeysDesc.map((k) => byQuarter.get(k).entries.length));
     const trend = quarterKeysDesc
-      .filter((k) => byQuarter.get(k).entries.length >= MIN_QUARTER_COVERAGE_TREND)
+      .filter((k) => byQuarter.get(k).entries.length >= Math.max(MIN_QUARTER_COVERAGE_TREND, fullCount / 2))
       .slice(0, TREND_QUARTERS)
       .reverse()
       .map((k) => {
