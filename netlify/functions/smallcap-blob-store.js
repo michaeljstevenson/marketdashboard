@@ -8,6 +8,9 @@ const { getStore } = require("@netlify/blobs");
 
 const BLOB_STORE = "smallcap-largecap";
 const BLOB_KEY = "smallcap.json";
+// Parsed Ken French size portfolios, kept apart from the page payload so the
+// daily job can skip the download until Dartmouth publishes a new file.
+const SIZE_KEY = "kf-size-portfolios.json";
 
 function getSmallcapStore() {
   const { BLOBS_SITE_ID, BLOBS_API_TOKEN } = process.env;
@@ -17,4 +20,4 @@ function getSmallcapStore() {
   return getStore(BLOB_STORE);
 }
 
-module.exports = { getSmallcapStore, BLOB_STORE, BLOB_KEY };
+module.exports = { getSmallcapStore, BLOB_STORE, BLOB_KEY, SIZE_KEY };

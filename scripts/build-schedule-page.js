@@ -18,6 +18,7 @@ const HOST_LABELS = {
   "data.sec.gov": "SEC EDGAR",
   "mba.tuck.dartmouth.edu": "Ken French Data Library",
   "cdn.finra.org": "FINRA",
+  "fred.stlouisfed.org": "FRED",
 };
 const IGNORED_HOSTS = new Set(["www.alphavantage.co", "query1.finance.yahoo.com", "finance.yahoo.com", "www.w3.org"]);
 const NOT_SOURCES = /(-blob-store|^breadth-constituents|^beeswarm-sectors|^av-call-counter|^yahoo-client)$/;
