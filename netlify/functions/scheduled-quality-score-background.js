@@ -17,10 +17,10 @@
 //                       7. no new shares issued (shares_T <= shares_T-1)
 //   Operating eff.:     8. Δgross margin > 0        9. Δasset turnover > 0
 // See computeFScore() below for the exact arithmetic, and the page's
-// methodology blurb for the "ending assets, not average" simplification
-// this two-fiscal-year data window requires (Piotroski's original paper
-// uses average total assets for ROA, which needs a third year, T-2, that a
-// two-year pull doesn't have).
+// methodology for the year-end-assets simplification this two-fiscal-year
+// data window requires: Piotroski scales ROA by beginning-of-year total
+// assets and leverage and asset turnover by average total assets, and both
+// need a third year, T-2, that a two-year pull doesn't have.
 //
 // Reuses company name/sector from the Sector Beeswarm page's own weekly
 // meta.json blob, and — for a single-snapshot cross-sectional check of
