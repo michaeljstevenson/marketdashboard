@@ -1409,6 +1409,10 @@ function addIqrBand(chart, lows, highs, fmt, color){
  const legend = opts.plugins.legend = opts.plugins.legend || {};
  legend.labels = legend.labels || {};
  legend.labels.filter = (item, data) => !data.datasets[item.datasetIndex]._band;
+ // The first draw's animation is still running, and an un-animated update
+ // doesn't cancel it, so the line would finish at its pre-band positions
+ // whenever the band widens the axis.
+ chart.stop();
  chart.update("none");
 }
 function iqrBandNote(elId, dates, lows){

@@ -153,7 +153,7 @@ document.addEventListener("DOMContentLoaded", function(){
 </script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Short Sale Volume | Michael J. Stevenson</title>
+<title>Short Interest &amp; Short Sale Volume | Michael J. Stevenson</title>
 
 <style>
 
@@ -384,6 +384,8 @@ h1{
    viewports - the table's own overflow-x:auto (from .table-box) then
    handles the horizontal scroll instead. */
 #regressionMethodTable{ overflow-x:auto; }
+table.si-table{ min-width:0; }
+.si-sector{ display:block; color:var(--muted); font-size:11px; margin-top:2px; }
 
 .table-box-header{
  padding:18px 20px 4px;
@@ -471,6 +473,7 @@ tbody td:nth-child(2){
  position:relative;
 }
 
+.chart-note{ font-size:12px; color:var(--muted); margin:10px 2px 4px; line-height:1.5; }
 .method-table{
  width:100%;
  border-collapse:collapse;
@@ -649,6 +652,7 @@ tbody td:nth-child(2){
 .strip-key .sk-line{ width:3px; height:12px; background:var(--ink); border-radius:2px; }
 .strip-key .sk-tri{ width:0; height:0; border-left:4px solid transparent; border-right:4px solid transparent; border-bottom:7px solid var(--muted); }
 </style>
+<style>.stat-grid{ grid-template-columns:repeat(5,minmax(0,1fr)); } @media (max-width:1000px){ .stat-grid{ grid-template-columns:repeat(3,minmax(0,1fr)); } }</style>
 <link rel="stylesheet" href="/site.css">
 </head>
 <body>
@@ -768,33 +772,122 @@ tbody td:nth-child(2){
 
 <div class="header">
 <div>
-<h1>Short Sale Volume</h1>
-<div class="subtitle">What share of the S&amp;P 500's daily trading volume is flagged as a short sale, from FINRA's free daily Reg SHO files. It is a free proxy for short-selling activity, since short interest data is now behind FINRA's paid API Console.</div>
+<h1>Short Interest &amp; Short Sale Volume</h1>
+<div class="subtitle">How much of each S&amp;P 500 stock is sold short, from FINRA's twice-monthly short interest reports, and how much of each day's trading volume is short selling, from FINRA's daily Reg SHO files.</div>
 </div>
 <div class="header-meta"><div class="updated" id="updated">Loading...</div><div class="coverage-note" id="coverageNote" hidden></div></div>
 </div>
 
 <div class="stat-grid">
 <div class="stat-card">
+<div class="stat-label">Median Short Interest</div>
+<div class="stat-value" id="statSi">…</div>
+<div class="stat-note" id="statSiNote">Of shares outstanding</div>
+</div>
+<div class="stat-card">
+<div class="stat-label">Median Days to Cover</div>
+<div class="stat-value" id="statDtc">…</div>
+<div class="stat-note" id="statDtcNote">Short interest ÷ average daily volume</div>
+</div>
+<div class="stat-card">
+<div class="stat-label">Highest Short Interest Sector</div>
+<div class="stat-value txt" id="statSiSector">…</div>
+<div class="stat-note" id="statSiSectorNote">Median share of shares outstanding</div>
+</div>
+<div class="stat-card">
 <div class="stat-label">Market Median SVR</div>
 <div class="stat-value" id="statMedianSvr">…</div>
 <div class="stat-note" id="statMedianSvrNote">Short volume ÷ total volume</div>
 </div>
 <div class="stat-card">
-<div class="stat-label">Window</div>
-<div class="stat-value" id="statWindow">…</div>
-<div class="stat-note" id="statWindowNote">Trading days covered</div>
+<div class="stat-label">Short Volume vs. Short Interest</div>
+<div class="stat-value" id="statRho">…</div>
+<div class="stat-note" id="statRhoNote">Rank correlation across stocks</div>
 </div>
-<div class="stat-card">
-<div class="stat-label">Most-Shorted Sector</div>
-<div class="stat-value txt" id="statBestSector">…</div>
-<div class="stat-note" id="statBestSectorNote">Median sector SVR</div>
 </div>
-<div class="stat-card">
-<div class="stat-label">Least-Shorted Sector</div>
-<div class="stat-value txt" id="statWorstSector">…</div>
-<div class="stat-note" id="statWorstSectorNote">Median sector SVR</div>
+
+<div class="chart-box">
+<div class="chart-box-header">
+<div>
+<h2>Short interest by sector</h2>
+<div class="chart-subhead" id="siSectorSub">Shares sold short as a share of shares outstanding, by GICS sector. Each dot is one company.</div>
 </div>
+</div>
+<div class="ndr-panel">
+<div class="chart-canvas-wrap" style="height:460px;">
+<canvas id="siSectorChart"></canvas>
+</div>
+</div>
+<div class="strip-key-row" id="siSectorKey"></div>
+</div>
+
+<div class="chart-box">
+<div class="chart-box-header">
+<div>
+<h2>Median days to cover since 2021</h2>
+<div class="chart-subhead">Days to cover is short interest divided by average daily trading volume: how many days of normal volume it would take for short sellers to buy back every share. One point per settlement date, across the stocks in the S&amp;P 500 on that date, with the middle 50% shaded.</div>
+</div>
+</div>
+<div class="ndr-panel">
+<div class="chart-canvas-wrap">
+<canvas id="siHistoryChart"></canvas>
+</div>
+</div>
+</div>
+
+<div class="table-grid">
+<div class="table-box">
+<div class="table-box-header">
+<h2>Highest short interest</h2>
+<div class="chart-subhead">Largest short positions as a share of shares outstanding, latest settlement</div>
+</div>
+<table class="si-table">
+<thead><tr><th>Symbol</th><th>% of Shares</th><th>Days to Cover</th><th>Change</th></tr></thead>
+<tbody id="siHighBody"><tr><td colspan="4" style="text-align:center; color:var(--muted); padding:24px;">Loading&hellip;</td></tr></tbody>
+</table>
+</div>
+<div class="table-box">
+<div class="table-box-header">
+<h2>Lowest short interest</h2>
+<div class="chart-subhead">Smallest short positions as a share of shares outstanding, latest settlement</div>
+</div>
+<table class="si-table">
+<thead><tr><th>Symbol</th><th>% of Shares</th><th>Days to Cover</th><th>Change</th></tr></thead>
+<tbody id="siLowBody"><tr><td colspan="4" style="text-align:center; color:var(--muted); padding:24px;">Loading&hellip;</td></tr></tbody>
+</table>
+</div>
+</div>
+<div class="table-footnote" id="siTableNote" style="margin:-18px 0 30px;">Change is the change in shares sold short since the previous settlement.</div>
+
+<div class="chart-box">
+<div class="chart-box-header">
+<div>
+<h2>Did the most heavily shorted stocks lag afterward?</h2>
+<div class="chart-subhead">At each settlement date since October 2021, S&amp;P 500 members are split into tenths by days to cover. Bars show each group's average return relative to the S&amp;P 500 over the next 1, 3 and 6 months, starting 10 trading days after the settlement date, once FINRA has published the figures.</div>
+</div>
+</div>
+<div class="ndr-panel">
+<div class="chart-canvas-wrap" style="height:300px;">
+<canvas id="siForwardChart"></canvas>
+</div>
+</div>
+<div class="chart-note" id="siForwardNote"></div>
+<table class="method-table" id="siSpreadTable"></table>
+</div>
+
+<div class="chart-box">
+<div class="chart-box-header">
+<div>
+<h2>Short sale volume vs. short interest</h2>
+<div class="chart-subhead" id="siScatterSub">Each point is one stock: its average short sale volume ratio over the last ~month against its short interest as a share of shares outstanding.</div>
+</div>
+</div>
+<div class="ndr-panel">
+<div class="scatter-canvas-wrap">
+<canvas id="siScatter"></canvas>
+</div>
+</div>
+<div class="chart-note" id="siScatterNote"></div>
 </div>
 
 <div class="chart-box">
@@ -845,7 +938,7 @@ tbody td:nth-child(2){
 <div class="table-grid">
 <div class="table-box">
 <div class="table-box-header">
-<h2>Most Shorted</h2>
+<h2>Highest short sale volume ratio</h2>
 <div class="chart-subhead">Highest average short-sale-volume ratio, trailing ~1 month</div>
 </div>
 <table id="mostShortedTable">
@@ -855,7 +948,7 @@ tbody td:nth-child(2){
 </div>
 <div class="table-box">
 <div class="table-box-header">
-<h2>Least Shorted</h2>
+<h2>Lowest short sale volume ratio</h2>
 <div class="chart-subhead">Lowest average short-sale-volume ratio, trailing ~1 month</div>
 </div>
 <table id="leastShortedTable">
@@ -890,9 +983,12 @@ tbody td:nth-child(2){
 
 <div class="explainer">
 <h2>Methodology</h2>
-<p>This page measures short sale volume, the share of a stock's daily trading volume that was executed as a short sale. That's different from short interest, which is the total number of shares currently held short. A high short sale volume ratio doesn't necessarily mean a big short position is building, since some of that volume is closed out the same day or is market makers hedging. It's an imperfect stand-in for short-selling activity.</p>
+<p>Short interest is the number of shares held short on a settlement date, as brokers report it to FINRA twice a month. Here it's shown as a share of each company's shares outstanding (from Alpha Vantage's company overview) and as days to cover, FINRA's ratio of short interest to average daily volume. FINRA's free files include exchange-listed stocks from 06/15/2021.</p>
+<p>The forward-return test uses every settlement date since 10/29/2021. At each one, the stocks then in the S&amp;P 500 are split into tenths by days to cover, and each tenth's average return is compared with the S&amp;P 500 total return index over the next 1, 3 and 6 months. Returns start 10 trading days after the settlement date, once FINRA has published it, so the test only uses figures that were public at the time. Results are averaged across settlement dates, with Newey-West standard errors because neighboring windows overlap. Companies that no longer trade are left out.</p>
+<p>Short sale volume is a different measure: the share of a stock's daily trading volume that was executed as a short sale. A high short sale volume ratio doesn't necessarily mean a big short position is building, since some of that volume is closed out the same day or is market makers hedging. It's an imperfect stand-in for short-selling activity.</p>
 <p>The short sale volume ratio (SVR) = short volume ÷ total volume for each day. The sector chart, leaderboards and table use each stock's average SVR over the last ~21 trading days. The trend chart plots the market-wide median SVR each day.</p>
 <p>The forward-return test splits the ~3-month window into two halves that don't overlap. Each stock's average SVR in the first half is compared with its return relative to the S&amp;P 500 in the second half. A negative relationship would match research finding that short sellers are informed (e.g. Diether, Lee &amp; Werner, 2009): more shorting before weaker returns. A flat or positive one means that isn't showing up here. Pearson (linear) and Spearman (rank) fits are both shown.</p>
+<div class="source">Source: <a href="https://www.finra.org/finra-data/browse-catalog/equity-short-interest/files" target="_blank" rel="noopener">FINRA equity short interest files</a> and <a href="https://www.finra.org/finra-data/browse-catalog/short-sale-volume-data" target="_blank" rel="noopener">FINRA daily short sale volume files</a>, shares outstanding from <a href="https://www.alphavantage.co/" target="_blank" rel="noopener">Alpha Vantage</a>, prices from <a href="https://finance.yahoo.com/" target="_blank" rel="noopener">Yahoo Finance</a>.</div>
 
 
 </div>
@@ -901,6 +997,9 @@ tbody td:nth-child(2){
 
 <script>
 const DATA_URL = "/api/short-sale-volume";
+const SI_URL = "/api/short-interest";
+let SI = null;
+let siSectorChart = null, siHistoryChart = null, siForwardChart = null, siScatterChart = null;
 
 let RAW = null;
 let SORT_KEY = "avgSvr";
@@ -1057,6 +1156,15 @@ async function init(){
   }
 
   renderStats();
+  try{
+   const sres = await fetch(SI_URL);
+   const sdata = await sres.json();
+   if(!sres.ok || sdata.error) throw new Error(sdata.error || ("HTTP " + sres.status));
+   SI = sdata;
+   renderShortInterest();
+  }catch(se){
+   showWarning("Couldn't load short interest data (" + se.message + ").");
+  }
   renderSectorChart();
   renderHistoryChart();
   renderRegressionScatter();
@@ -1074,19 +1182,130 @@ async function init(){
 function renderStats(){
  const m = RAW.market;
  document.getElementById("statMedianSvr").textContent = fmtSvr(m.medianSvr);
- document.getElementById("statMedianSvrNote").textContent = "n=" + m.companyCount + " companies";
+ document.getElementById("statMedianSvrNote").textContent = "n=" + m.companyCount + " companies, " + RAW.tradingDays + " trading days";
+}
 
- document.getElementById("statWindow").textContent = RAW.tradingDays + " days";
- document.getElementById("statWindowNote").textContent = RAW.windowStart + " to " + RAW.windowEnd;
+function fmtShare(v){ return v === null || v === undefined || isNaN(v) ? "n/a" : v.toFixed(1) + "%"; }
+function fmtDays(v){ return v === null || v === undefined || isNaN(v) ? "n/a" : v.toFixed(1); }
+function signedCell(v){
+ if(v === null || v === undefined || isNaN(v)) return '<td class="cell-na">n/a</td>';
+ return '<td class="' + (v > 0 ? "cell-pos" : v < 0 ? "cell-neg" : "") + '">' + (v > 0 ? "+" : "") + v.toFixed(1) + "%</td>";
+}
 
- const sortedSectors = [...RAW.sectors].sort((a, b) => (b.medianSvr ?? -Infinity) - (a.medianSvr ?? -Infinity));
- if(sortedSectors.length){
-  const best = sortedSectors[0], worst = sortedSectors[sortedSectors.length - 1];
-  document.getElementById("statBestSector").textContent = best.sector;
-  document.getElementById("statBestSectorNote").textContent = fmtSvr(best.medianSvr);
-  document.getElementById("statWorstSector").textContent = worst.sector;
-  document.getElementById("statWorstSectorNote").textContent = fmtSvr(worst.medianSvr);
+function renderShortInterest(){
+ const m = SI.market;
+ document.getElementById("statSi").textContent = fmtShare(m.medianPctShares);
+ document.getElementById("statSiNote").textContent = "Of shares outstanding, settlement " + usDate(SI.settlementDate);
+ document.getElementById("statDtc").textContent = fmtDays(m.medianDaysToCover);
+ const top = (SI.sectors || []).filter(s => s.medianPctShares !== null)[0];
+ if(top){
+  document.getElementById("statSiSector").textContent = top.sector;
+  document.getElementById("statSiSectorNote").textContent = "Median " + fmtShare(top.medianPctShares) + " of shares outstanding";
  }
+ document.getElementById("statRho").textContent = m.svrVsShortInterestSpearman === null ? "n/a" : (m.svrVsShortInterestSpearman > 0 ? "+" : "") + m.svrVsShortInterestSpearman.toFixed(2);
+ document.getElementById("statRhoNote").textContent = "Spearman rank correlation, " + m.svrPairs + " stocks";
+ renderSiSectorChart();
+ renderSiHistory();
+ renderSiTable(SI.mostShorted, "siHighBody");
+ renderSiTable(SI.leastShorted, "siLowBody");
+ renderSiForward();
+ renderSiScatter();
+}
+
+function renderSiSectorChart(){
+ const bySector = {};
+ for(const c of SI.companies){
+  if(c.pctShares === null || !c.sector) continue;
+  (bySector[c.sector] = bySector[c.sector] || []).push({ v: c.pctShares, name: c.symbol });
+ }
+ const order = (SI.sectors || []).map(s => s.sector).filter(s => bySector[s]);
+ siSectorChart = renderStripChart(document.getElementById("siSectorChart"), siSectorChart, {
+  horizontal: true,
+  center: "median",
+  groups: order.map(s => ({ label: s, points: bySector[s] })),
+  fmt: v => fmtShare(v),
+  tickFmt: v => v + "%",
+  clipQuantiles: [0.005, 0.995],
+  refLine: null,
+  colors: { axis: ndr("axis"), axisSoft: ndr("axis-soft"), grid: ndr("grid"), dot: ndr("navy"), box: ndr("slate"), center: ndr("axis"), surface: ndr("plot") },
+ });
+ document.getElementById("siSectorKey").innerHTML = stripKeyHtml("median", "company");
+ document.getElementById("siSectorSub").textContent = "Shares sold short as a share of shares outstanding at the " + usDate(SI.settlementDate) + " settlement, by GICS sector. Each dot is one company.";
+}
+
+function renderSiHistory(){
+ const h = SI.history || [];
+ if(siHistoryChart) siHistoryChart.destroy();
+ siHistoryChart = new Chart(document.getElementById("siHistoryChart"), {
+  type: "line",
+  data: { labels: h.map(p => p.date), datasets: [{ label: "Median days to cover", data: h.map(p => p.medianDaysToCover), borderColor: ndr("navy"), backgroundColor: ndr("navy"), borderWidth: 1.6, pointRadius: 0, fill: false }] },
+  options: {
+   responsive: true, maintainAspectRatio: false,
+   interaction: { mode: "index", intersect: false },
+   plugins: { legend: { display: false }, tooltip: { callbacks: { label: c => "Median days to cover: " + fmtDays(c.parsed.y) + " (" + h[c.dataIndex].n + " stocks)" } } },
+   scales: { x: ndrXScale(), y: ndrYScale({ fmt: v => Number(v).toFixed(1) }) },
+  },
+ });
+ addIqrBand(siHistoryChart, h.map(p => p.p25), h.map(p => p.p75), v => fmtDays(v));
+}
+
+function renderSiTable(rows, tbodyId){
+ const tbody = document.getElementById(tbodyId);
+ if(!rows || !rows.length){
+  tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; color:var(--muted); padding:24px;">No qualifying stocks.</td></tr>';
+  return;
+ }
+ tbody.innerHTML = rows.map(r => "<tr><td><span class=\"sector-name\">" + r.symbol + "</span><span class=\"si-sector\">" + (r.sector || "n/a") + "</span></td><td>" + fmtShare(r.pctShares) + "</td><td>" + fmtDays(r.daysToCover) + "</td>" + signedCell(r.changePct) + "</tr>").join("");
+}
+
+function renderSiForward(){
+ const st = SI.study, hs = SI.horizons, label = { 21: "1M", 63: "3M", 126: "6M" };
+ const groups = [
+  { key: "highestTenth", label: "Most days to cover (top tenth)", color: ndr("red") },
+  { key: "allMembers", label: "All members", color: ndr("slate") },
+  { key: "lowestTenth", label: "Fewest days to cover (bottom tenth)", color: ndr("green") },
+ ];
+ if(siForwardChart) siForwardChart.destroy();
+ siForwardChart = new Chart(document.getElementById("siForwardChart"), {
+  type: "bar",
+  data: { labels: hs.map(h => label[h]), datasets: groups.map(g => ({ label: g.label, data: hs.map(h => st[g.key] && st[g.key][h] ? st[g.key][h].meanRelPct : null), backgroundColor: g.color, borderColor: g.color })) },
+  options: {
+   responsive: true, maintainAspectRatio: false,
+   plugins: { legend: { display: true, position: "top", align: "start", labels: { boxWidth: 12, color: ndr("axis"), font: { size: 11 } } }, tooltip: { callbacks: { label: c => c.dataset.label + ": " + fmtPct(c.parsed.y, 2) } } },
+   scales: { x: ndrXScale(), y: ndrYScale({ fmt: v => v + "%", title: "average return vs. S&P 500" }) },
+  },
+ });
+ document.getElementById("siForwardNote").textContent = st.dates ? "Based on " + st.dates + " settlement dates from " + usDate(st.firstDate) + ". Dates too recent for a horizon are left out of that horizon." : "";
+ const rows = [{ key: "highestMinusLowest", label: "Top tenth minus bottom tenth" }, { key: "highestMinusAll", label: "Top tenth minus all members" }];
+ let html = "<thead><tr><th>Difference in return</th>" + hs.map(h => "<th>" + label[h] + "</th>").join("") + "</tr></thead><tbody>";
+ html += rows.map(r => "<tr><td>" + r.label + "</td>" + hs.map(h => {
+  const v = st[r.key] && st[r.key][h];
+  if(!v || !v.dates) return '<td class="cell-na">n/a</td>';
+  return '<td class="' + (v.meanRelPct > 0 ? "cell-pos" : v.meanRelPct < 0 ? "cell-neg" : "") + '">' + fmtPct(v.meanRelPct, 2) + (v.tStat === null ? "" : '<span style="display:block; color:var(--muted); font-size:11px;">t = ' + v.tStat.toFixed(1) + ", " + v.dates + " dates</span>") + "</td>";
+ }).join("") + "</tr>").join("") + "</tbody>";
+ document.getElementById("siSpreadTable").innerHTML = html;
+}
+
+function renderSiScatter(){
+ const pts = SI.companies.filter(c => c.svr !== null && c.pctShares !== null).map(c => ({ x: c.svr, y: c.pctShares, name: c.symbol }));
+ const ys = pts.map(p => p.y).sort((a, b) => a - b);
+ const yMax = ys.length ? Math.ceil(ys[Math.floor(ys.length * 0.99)] + 1) : undefined;
+ if(siScatterChart) siScatterChart.destroy();
+ siScatterChart = new Chart(document.getElementById("siScatter"), {
+  type: "scatter",
+  data: { datasets: [{ label: "Stocks", data: pts.map(p => ({ x: p.x, y: Math.min(p.y, yMax), name: p.name, raw: p.y })), backgroundColor: ndr("navy"), pointRadius: 2.5 }] },
+  options: {
+   responsive: true, maintainAspectRatio: false,
+   interaction: { mode: "point", intersect: true },
+   plugins: { legend: { display: false }, tooltip: { callbacks: { label: c => c.raw.name + ": short volume " + c.raw.x.toFixed(1) + "%, short interest " + fmtShare(c.raw.raw) } } },
+   scales: {
+    x: Object.assign(ndrNumericScale({ fmt: v => v + "%" }), { title: { display: true, text: "short sale volume ratio, ~1 month", color: ndr("axis-soft"), font: { size: 10 } } }),
+    y: Object.assign(ndrNumericScale({ fmt: v => v + "%" }), { max: yMax, title: { display: true, text: "short interest, % of shares outstanding", color: ndr("axis-soft"), font: { size: 10 } } }),
+   },
+  },
+ });
+ const rho = SI.market.svrVsShortInterestSpearman;
+ document.getElementById("siScatterNote").textContent = rho === null ? "" : "Spearman rank correlation " + (rho > 0 ? "+" : "") + rho.toFixed(2) + " across " + SI.market.svrPairs + " stocks. Points above the 99th percentile of short interest sit on the top edge.";
 }
 
 // ---- Distribution strip chart -------------------------------------------
@@ -1333,6 +1552,10 @@ function addIqrBand(chart, lows, highs, fmt, color){
  const legend = opts.plugins.legend = opts.plugins.legend || {};
  legend.labels = legend.labels || {};
  legend.labels.filter = (item, data) => !data.datasets[item.datasetIndex]._band;
+ // The first draw's animation is still running, and an un-animated update
+ // doesn't cancel it, so the line would finish at its pre-band positions
+ // whenever the band widens the axis.
+ chart.stop();
  chart.update("none");
 }
 function iqrBandNote(elId, dates, lows){

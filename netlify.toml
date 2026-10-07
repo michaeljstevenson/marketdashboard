@@ -262,6 +262,11 @@
   status = 200
 
 [[redirects]]
+  from = "/api/short-interest"
+  to = "/.netlify/functions/short-interest"
+  status = 200
+
+[[redirects]]
   from = "/api/quality-score"
   to = "/.netlify/functions/quality-score"
   status = 200
@@ -727,6 +732,9 @@
   # Weekly, Saturday 14:50 UTC. A ~3-month average short-sale-volume ratio
   # doesn't shift day to day.
   schedule = "50 14 * * 6"
+
+[functions."scheduled-short-interest-background"]
+  # No schedule until its first run has filled the store.
 
 [functions."scheduled-quality-financials-background"]
   # One-time snapshot, no schedule: run manually after scheduled-margin-

@@ -298,7 +298,8 @@
       "pages": [
         "analyst-price-target",
         "equity-risk-premium",
-        "put-call-ratio"
+        "put-call-ratio",
+        "short-sale-volume"
       ]
     },
     {
@@ -407,8 +408,12 @@
     {
       "name": "short-interest",
       "cron": null,
-      "apis": [],
-      "pages": []
+      "apis": [
+        "/api/short-interest"
+      ],
+      "pages": [
+        "short-sale-volume"
+      ]
     }
   ],
   "onRequest": [

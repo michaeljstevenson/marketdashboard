@@ -23,6 +23,7 @@
   "relative-strength": "Daily prices for every S&P 500 stock and SPY, for 1-month and 3-month relative strength.",
   "smallcap-liquidity": "Daily prices and volume for about 200 large and small stocks.",
   "short-sale-volume": "Daily short-sale volume from FINRA, plus daily prices.",
+  "short-interest": "FINRA's twice-monthly short interest for past and present S&P 500 members since June 2021. Each run stores any new settlement dates and rebuilds the page data when one arrives, or once a week. Shares outstanding come from the shared company overviews, prices from Yahoo, so it makes no Alpha Vantage calls.",
   "analyst-price-target": "Analyst price target and buy, hold and sell ratings for every S&P 500 stock.",
   "earnings-growth-divergence": "Earnings history for every S&P 500 stock, compared with price performance.",
   "equity-risk-premium": "Company overviews for every S&P 500 stock, plus Treasury yields.",
