@@ -732,7 +732,10 @@
   # spacing plus a retry pass.
 
 [functions."scheduled-post-earnings-drift-background"]
-  # No schedule until the reworked job's first run has filled the store.
+  # Weekly, Saturday 11:30 UTC. New reports arrive every week in earnings
+  # season, and the latest reports' drift moves with each week's prices.
+  # Yahoo and the shared earnings collection, no Alpha Vantage calls.
+  schedule = "30 11 * * 6"
 
 [functions."scheduled-short-sale-volume-background"]
   # Weekly, Saturday 14:50 UTC. A ~3-month average short-sale-volume ratio

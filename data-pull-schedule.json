@@ -7,6 +7,7 @@
         "/api/putcall-history"
       ],
       "pages": [
+        "options-positioning",
         "put-call-ratio"
       ]
     },
@@ -231,6 +232,16 @@
       ]
     },
     {
+      "name": "post-earnings-drift",
+      "cron": "30 11 * * 6",
+      "apis": [
+        "/api/post-earnings-drift"
+      ],
+      "pages": [
+        "post-earnings-drift"
+      ]
+    },
+    {
       "name": "relative-strength",
       "cron": "10 13 * * 6",
       "apis": [
@@ -279,7 +290,8 @@
         "earnings-growth-divergence",
         "equity-risk-premium",
         "put-call-ratio",
-        "short-sale-volume"
+        "short-sale-volume",
+        "valuations"
       ]
     },
     {
@@ -295,7 +307,8 @@
       "pages": [
         "earnings-growth-divergence",
         "post-earnings-drift",
-        "earnings-surprise"
+        "earnings-surprise",
+        "valuations"
       ]
     },
     {
@@ -397,16 +410,6 @@
       ]
     },
     {
-      "name": "post-earnings-drift",
-      "cron": null,
-      "apis": [
-        "/api/post-earnings-drift"
-      ],
-      "pages": [
-        "post-earnings-drift"
-      ]
-    },
-    {
       "name": "smallcap",
       "cron": null,
       "apis": [
@@ -423,7 +426,9 @@
       "apis": [
         "/api/valuations"
       ],
-      "pages": []
+      "pages": [
+        "valuations"
+      ]
     }
   ],
   "onRequest": [

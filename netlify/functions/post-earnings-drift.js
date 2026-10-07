@@ -1,15 +1,13 @@
-// Serves the "Post-Earnings Announcement Drift" latest snapshot,
-// pre-computed weekly by scheduled-post-earnings-drift-background.js and
-// stored in Netlify Blobs. This function makes no Alpha Vantage calls
-// itself — it just reads the pre-computed blob.
+// Serves the post-earnings drift event panel, pre-computed weekly by
+// scheduled-post-earnings-drift-background.js and stored in Netlify Blobs.
+// No outbound calls.
 
-const { getPeadStore, LATEST_KEY, PANEL_KEY } = require("./post-earnings-drift-blob-store");
+const { getPeadStore, PANEL_KEY } = require("./post-earnings-drift-blob-store");
 
-exports.handler = async (event) => {
+exports.handler = async () => {
   try {
     const store = getPeadStore();
-    const v2 = event && event.queryStringParameters && event.queryStringParameters.v === "2";
-    const payload = await store.get(v2 ? PANEL_KEY : LATEST_KEY, { type: "json" });
+    const payload = await store.get(PANEL_KEY, { type: "json" });
 
     if (!payload) {
       throw new Error("Post-earnings drift data not yet populated, scheduled-post-earnings-drift-background hasn't run yet");

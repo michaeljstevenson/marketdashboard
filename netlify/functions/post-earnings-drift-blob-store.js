@@ -12,8 +12,8 @@ const { getStore } = require("@netlify/blobs");
 
 const BLOB_STORE = "post-earnings-drift";
 const LATEST_KEY = "latest.json";
-// The ten-year event panel. latest.json is the single-quarter version the
-// page read before October 2026, kept until the new page is live.
+// The ten-year event panel. latest.json holds the single-quarter version
+// the page read before October 2026 and is no longer written.
 const PANEL_KEY = "panel.json";
 
 function getPeadStore() {

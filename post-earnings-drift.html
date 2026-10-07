@@ -501,6 +501,14 @@ tbody td:nth-child(2){
  position:relative;
 }
 
+.section-title{ font-family:var(--serif); font-weight:400; font-size:22px; margin:8px 0 4px; }
+.section-intro{ color:var(--muted); font-size:13px; margin:0 0 18px; max-width:860px; line-height:1.5; }
+.full-list-details{ margin-top:4px; padding:0 20px 12px; }
+.full-list-summary{ cursor:pointer; font-weight:600; padding:10px 0; color:var(--ink); list-style:none; user-select:none; }
+.full-list-summary::-webkit-details-marker{ display:none; }
+.full-list-summary::before{ content:"▸ "; display:inline-block; width:1em; }
+.full-list-details[open] .full-list-summary::before{ content:"▾ "; }
+.method-table td span{ font-family:var(--mono); }
 .method-table{
  width:100%;
  min-width:0; /* overrides the site-wide table{min-width:600px} rule below -
@@ -799,758 +807,296 @@ tbody td:nth-child(2){
 <div class="header">
 <div>
 <h1>Post-Earnings Announcement Drift</h1>
-<div class="subtitle">Does a stock keep drifting in the direction of its earnings surprise for weeks afterward, as the academic literature says it should? This tests it across the S&amp;P 500's most recently reported quarter: cumulative excess return vs. SPY at +1/+5/+10/+20 trading days from each company's report date, split by beat vs. miss and regressed against surprise size.</div>
+<div class="subtitle">Does a stock keep drifting in the direction of its earnings surprise for weeks afterward, as the academic literature says it should? This tests it on about ten years of S&amp;P 500 earnings reports: the price reaction around each report and the drift over the following 60 trading days relative to SPY, by size of surprise.</div>
 </div>
 <div class="updated" id="updated">Loading...</div>
 </div>
-
 <div class="stat-grid">
 <div class="stat-card">
-<div class="stat-label">In Coverage Window</div>
-<div class="stat-value" id="statCoverage">…</div>
-<div class="stat-note" id="statCoverageNote">of 503 S&amp;P 500 companies</div>
+<div class="stat-label">Reports Tested</div>
+<div class="stat-value" id="statEvents">…</div>
+<div class="stat-note" id="statEventsNote">Today's S&amp;P 500 members</div>
 </div>
 <div class="stat-card">
-<div class="stat-label">Avg. +20D Excess, Beats</div>
-<div class="stat-value" id="statBeatExcess">…</div>
-<div class="stat-note" id="statBeatExcessNote">vs. SPY, 20 trading days out</div>
+<div class="stat-label">60-Day Drift, Top Minus Bottom Fifth</div>
+<div class="stat-value" id="statDrift">…</div>
+<div class="stat-note" id="statDriftNote">Biggest beats minus biggest misses</div>
 </div>
 <div class="stat-card">
-<div class="stat-label">Avg. +20D Excess, Misses</div>
-<div class="stat-value" id="statMissExcess">…</div>
-<div class="stat-note" id="statMissExcessNote">vs. SPY, 20 trading days out</div>
+<div class="stat-label">Reaction, Top Minus Bottom Fifth</div>
+<div class="stat-value" id="statReaction">…</div>
+<div class="stat-note" id="statReactionNote">Day before to day after the report</div>
 </div>
 <div class="stat-card">
-<div class="stat-label">Surprise &rarr; Drift Correlation</div>
-<div class="stat-value" id="statCorr">…</div>
-<div class="stat-note" id="statCorrNote">Pearson r, surprise % vs. +20D excess</div>
+<div class="stat-label">Quarters With Positive Drift Gap</div>
+<div class="stat-value" id="statHit">…</div>
+<div class="stat-note" id="statHitNote">Top fifth drifted more than bottom fifth</div>
 </div>
 </div>
 
 <div class="chart-box">
 <div class="chart-box-header">
 <div>
-<h2>Average cumulative excess return by horizon, beat vs. miss</h2>
-<div class="chart-subhead">Every company is aligned to trading day 0, the first close on or after its reported earnings date, then averaged at +1/+5/+10/+20 trading days out. N (per point, in the tooltip) shrinks at longer horizons for companies that reported near the end of the price window.</div>
+<h2>Return relative to SPY around earnings reports, by size of surprise</h2>
+<div class="chart-subhead">Each quarter's reports are split into fifths by earnings surprise, from the biggest misses (1) to the biggest beats (5). Lines show each fifth's average cumulative return relative to SPY from the close the day before the report date (day -1), five trading days before through 60 after.</div>
 </div>
 </div>
 <div class="ndr-panel">
 <div class="chart-canvas-wrap">
-<canvas id="driftChart"></canvas>
+<canvas id="curveChart"></canvas>
 </div>
 </div>
+<div class="method-note" id="curveNote"></div>
 </div>
 
 <div class="chart-box">
 <div class="chart-box-header">
 <div>
-<h2>Does the size of the surprise predict the size of the drift?</h2>
-<div class="chart-subhead">Each S&amp;P 500 company's earnings surprise % (known at the report date) against its +20-trading-day forward excess return (realized afterward). There is no lookahead: the surprise is public before the return window starts.</div>
+<h2>Reaction and drift by surprise fifth</h2>
+<div class="chart-subhead">Reaction is the return relative to SPY from the close before the report date to the close the day after it, which covers reports before the open and after the close. Drift is what followed, from that close to 20 and 60 trading days after the report date. The last rows average each quarter's top-minus-bottom gap across quarters, with Newey-West t-statistics.</div>
+</div>
+</div>
+<div style="overflow-x:auto;"><table class="method-table" id="groupTable"></table></div>
+</div>
+
+<div class="chart-box">
+<div class="chart-box-header">
+<div>
+<h2>Has the drift faded?</h2>
+<div class="chart-subhead">Average gap between the top and bottom surprise fifths each calendar year, for the 60-day drift and for the reaction around the report. The most recent quarters don't have 60 days of drift yet and are left out of the drift bars.</div>
 </div>
 </div>
 <div class="ndr-panel">
-<div class="scatter-canvas-wrap">
-<canvas id="regressionChart"></canvas>
+<div class="chart-canvas-wrap" style="height:320px;">
+<canvas id="yearChart"></canvas>
 </div>
 </div>
-<div id="regressionMethodTable"></div>
-</div>
-
-<div class="chart-box">
-<div class="chart-box-header">
-<div>
-<h2>Beat vs. miss: is the +20-day gap real, or noise?</h2>
-<div class="chart-subhead">Mean and median +20-day excess return for the beat group vs. the miss group, plus a two-sample (Welch) t-test on the difference between the two means.</div>
-</div>
-</div>
-<div id="groupMethodTable"></div>
+<div class="method-note" id="yearNote"></div>
 </div>
 
 <div class="chart-box">
 <div class="chart-box-header">
 <div>
-<h2>+20-day excess return by sector</h2>
-<div class="chart-subhead">Median +20-day excess return, beat vs. miss companies, for sectors with at least <span id="sectorThresholdLabel">5</span> companies in both groups. Sectors with fewer are left out (see the note below the chart).</div>
+<h2>60-day drift after beats and misses, by sector</h2>
+<div class="chart-subhead">Average drift relative to SPY from the day after the report to 60 trading days after it, for reports that beat or missed the consensus estimate, across all ten years. Sectors with fewer than <span id="sectorMin">40</span> beats or misses are left out.</div>
 </div>
 </div>
 <div class="ndr-panel">
-<div class="chart-canvas-wrap">
+<div class="chart-canvas-wrap" style="height:400px;">
 <canvas id="sectorChart"></canvas>
 </div>
 </div>
-<div class="method-note" id="sectorNote"></div>
 </div>
 
+<h2 class="section-title" id="recentTitle">The latest reports</h2>
+<p class="section-intro" id="recentIntro">Each company's most recent report, with its reaction and the drift since.</p>
 <div class="table-grid leaderboard-grid">
 <div class="table-box">
 <div class="table-box-header">
-<h2>Biggest positive drift among beats</h2>
-<div class="chart-subhead">Highest +20-day excess return, beat companies</div>
+<h2>Beats that kept rising</h2>
+<div class="chart-subhead">Largest drift since the report, among beats</div>
 </div>
-<table id="beatUpTable">
-<thead><tr><th>Company</th><th>Sector</th><th>Surprise</th><th>+20D Excess</th></tr></thead>
-<tbody id="beatUpBody"><tr><td colspan="4" style="text-align:center; color:var(--muted); padding:24px;">Loading&hellip;</td></tr></tbody>
-</table>
+<table><thead><tr><th>Company</th><th>Surprise</th><th>Reaction</th><th>Drift Since</th></tr></thead><tbody id="beatUpBody"><tr><td colspan="4" style="text-align:center; color:var(--muted); padding:24px;">Loading&hellip;</td></tr></tbody></table>
 </div>
 <div class="table-box">
 <div class="table-box-header">
-<h2>Biggest negative drift among beats</h2>
-<div class="chart-subhead">Lowest +20-day excess return, beat companies. A "beat that still drifted down"</div>
+<h2>Beats that slipped</h2>
+<div class="chart-subhead">Smallest drift since the report, among beats</div>
 </div>
-<table id="beatDownTable">
-<thead><tr><th>Company</th><th>Sector</th><th>Surprise</th><th>+20D Excess</th></tr></thead>
-<tbody id="beatDownBody"><tr><td colspan="4" style="text-align:center; color:var(--muted); padding:24px;">Loading&hellip;</td></tr></tbody>
-</table>
-</div>
-
-<div class="table-box">
-<div class="table-box-header">
-<h2>Biggest positive drift among misses</h2>
-<div class="chart-subhead">Highest +20-day excess return, miss companies. A "miss that still drifted up"</div>
-</div>
-<table id="missUpTable">
-<thead><tr><th>Company</th><th>Sector</th><th>Surprise</th><th>+20D Excess</th></tr></thead>
-<tbody id="missUpBody"><tr><td colspan="4" style="text-align:center; color:var(--muted); padding:24px;">Loading&hellip;</td></tr></tbody>
-</table>
+<table><thead><tr><th>Company</th><th>Surprise</th><th>Reaction</th><th>Drift Since</th></tr></thead><tbody id="beatDownBody"><tr><td colspan="4" style="text-align:center; color:var(--muted); padding:24px;">Loading&hellip;</td></tr></tbody></table>
 </div>
 <div class="table-box">
 <div class="table-box-header">
-<h2>Biggest negative drift among misses</h2>
-<div class="chart-subhead">Lowest +20-day excess return, miss companies</div>
+<h2>Misses that recovered</h2>
+<div class="chart-subhead">Largest drift since the report, among misses</div>
 </div>
-<table id="missDownTable">
-<thead><tr><th>Company</th><th>Sector</th><th>Surprise</th><th>+20D Excess</th></tr></thead>
-<tbody id="missDownBody"><tr><td colspan="4" style="text-align:center; color:var(--muted); padding:24px;">Loading&hellip;</td></tr></tbody>
-</table>
+<table><thead><tr><th>Company</th><th>Surprise</th><th>Reaction</th><th>Drift Since</th></tr></thead><tbody id="missUpBody"><tr><td colspan="4" style="text-align:center; color:var(--muted); padding:24px;">Loading&hellip;</td></tr></tbody></table>
+</div>
+<div class="table-box">
+<div class="table-box-header">
+<h2>Misses that kept falling</h2>
+<div class="chart-subhead">Smallest drift since the report, among misses</div>
+</div>
+<table><thead><tr><th>Company</th><th>Surprise</th><th>Reaction</th><th>Drift Since</th></tr></thead><tbody id="missDownBody"><tr><td colspan="4" style="text-align:center; color:var(--muted); padding:24px;">Loading&hellip;</td></tr></tbody></table>
 </div>
 </div>
 
 <div class="table-box">
 <div class="table-box-header">
-<h2>Every company in the coverage window</h2>
-<div class="chart-subhead">Every S&amp;P 500 company whose most recent earnings date falls inside the price window</div>
+<h2>Every company's latest report</h2>
+<div class="chart-subhead" id="allSub">Each S&amp;P 500 company's most recent report in the last 100 trading days</div>
 </div>
+<details class="full-list-details">
+<summary class="full-list-summary">Show full list</summary>
 <table id="companyTable">
 <thead>
 <tr>
 <th data-key="name">Company</th>
 <th data-key="sector">Sector</th>
-<th data-key="reportedDate">Reported</th>
-<th data-key="surprisePct">Surprise</th>
-<th data-key="excess1">+1D Excess</th>
-<th data-key="excess5">+5D Excess</th>
-<th data-key="excess10">+10D Excess</th>
-<th data-key="excess20">+20D Excess</th>
+<th data-key="reportedDate">Reported<span class="sort-arrow">▾</span></th>
+<th data-key="surprisePct">Surprise<span class="sort-arrow">▾</span></th>
+<th data-key="reactionPct">Reaction<span class="sort-arrow">▾</span></th>
+<th data-key="driftSincePct">Drift Since<span class="sort-arrow">▾</span></th>
+<th data-key="daysSince">Days<span class="sort-arrow">▾</span></th>
 </tr>
 </thead>
-<tbody id="companyBody">
-<tr><td colspan="8" style="text-align:center; color:var(--muted); padding:30px;">Loading drift data&hellip;</td></tr>
-</tbody>
+<tbody id="companyBody"></tbody>
 </table>
+</details>
 </div>
 
 <div class="explainer">
 <h2>Methodology</h2>
-<p>Post-Earnings Announcement Drift (PEAD) is one of the oldest anomalies in finance, first documented by Ball and Brown in 1968. After a company beats or misses the consensus estimate, its stock tends to keep moving in that direction, relative to the market, for weeks afterward. That's surprising because the result is public the moment it's reported, so an efficient market should price it in right away. This page runs that test on the S&amp;P 500's most recent reporting quarter.</p>
-<p>The surprise is (actual EPS − consensus estimate) ÷ |consensus estimate|, for each company's most recently reported quarter.</p>
-<p>For each company, the starting point is the first close on or after its report date, never before, so no pre-announcement price movement leaks in. Returns are measured 1, 5, 10 and 20 trading days later, relative to the S&amp;P 500, calculated as (1 + stock return) ÷ (1 + S&amp;P 500 return) − 1. A company that reported too recently to reach a horizon is left blank for that horizon only.</p>
-<p>The main test is the regression: each company's surprise % against its 20-day return relative to the market, with Pearson (linear) and Spearman (rank) correlation. Since the surprise is public before the return window starts, there's no look-ahead bias. The beat vs. miss comparison is a simpler version of the same question: the average and median 20-day relative return for each group, plus a Welch t-test on the difference. A t-test is used because the outcome is a return (a continuous number) rather than a yes/no rate.</p>
-<p>Sector medians are only shown for sectors with at least 5 companies in both the beat and miss groups, since smaller groups are too noisy.</p>
-
-
+<p>Post-Earnings Announcement Drift (PEAD) is one of the oldest anomalies in finance, first documented by Ball and Brown in 1968. After a company beats or misses the consensus estimate, its stock tends to keep moving in that direction, relative to the market, for weeks afterward. That's surprising because the result is public the moment it's reported, so an efficient market should price it in right away.</p>
+<p>The surprise is (actual EPS − consensus estimate) ÷ |consensus estimate|, for each reported quarter, using Alpha Vantage's reported and estimated EPS. Quarters where the estimate was within 5 cents of zero are left out, since a tiny estimate turns small misses into huge percentages.</p>
+<p>The data doesn't say whether a company reported before the open or after the close, so day 0 is the first trading day on or after the report date and the reaction runs from the close of day -1 to the close of day +1, which covers either case. Drift is measured from the close of day +1, so it starts only after the news is fully out. All returns are relative to SPY: (1 + stock return) ÷ (1 + SPY return) − 1.</p>
+<p>Within each calendar quarter of report dates, reports are ranked by surprise and split into fifths, so a quarter in which nearly every company beat doesn't fill the top group by itself. The test is the gap between the top and bottom fifths, computed quarter by quarter and then averaged, with a Newey-West standard error because neighboring quarters' 60-day windows overlap. A t-statistic above about 2 in absolute value is unlikely to be chance.</p>
+<p>The ten years cover today's S&amp;P 500 members only. Companies that left the index, including some that fell out after large misses, aren't included, which probably makes the bottom fifth look better than it was. The latest-reports tables show each company's most recent report from the last 100 trading days, with drift from the day after the report to the latest close.</p>
 </div>
 
 </div>
-
 <script>
 const DATA_URL = "/api/post-earnings-drift";
-
 let RAW = null;
-let SORT_KEY = "excess20";
+let SORT_KEY = "reportedDate";
 let SORT_DIR = -1;
-
+let curveChart = null, yearChart = null, sectorChart = null;
 function fmtPct(v, digits){
  if(v === null || v === undefined || isNaN(v)) return "n/a";
  digits = digits === undefined ? 2 : digits;
- return (v >= 0 ? "+" : "") + v.toFixed(digits) + "%";
+ const r = Number(v.toFixed(digits)) || 0;
+ return (r > 0 ? "+" : "") + r.toFixed(digits) + "%";
 }
-function fmtDate(s){
- if(!s) return "n/a";
- return usDate(s);
-}
-
-function showError(message){
- const banner = document.getElementById("errorBanner");
- banner.textContent = message;
- banner.style.display = "block";
-}
-function showWarning(message){
- const banner = document.getElementById("warningBanner");
- banner.textContent = message;
- banner.style.display = "block";
-}
-
-// ---- NDR chart styling helpers (matches /concentration, /spin-off-performance) ----
-function ndr(name){
- return getComputedStyle(document.documentElement).getPropertyValue("--ndr-" + name).trim();
-}
-
+function showError(message){ const b = document.getElementById("errorBanner"); b.textContent = message; b.style.display = "block"; }
+function ndr(name){ return getComputedStyle(document.documentElement).getPropertyValue("--ndr-" + name).trim(); }
 Chart.defaults.font.family = "'Iowan Old Style','Palatino Linotype',Georgia,serif";
 Chart.defaults.color = ndr("axis-soft");
-
-function ndrXScale(){
- return {
-  ticks: { color: ndr("axis"), maxTicksLimit: 9, maxRotation: 0, autoSkip: true, font: { size: 11 } },
-  grid: { color: "rgba(0,0,0,0)", borderColor: ndr("axis") },
- };
-}
-
-function ndrYScale(opts){
- opts = opts || {};
- return {
-  type: opts.log ? "logarithmic" : "linear",
-  position: opts.position || "left",
-  grid: { color: ndr("grid"), drawBorder: false },
-  ticks: { color: ndr("axis"), font: { size: 11 }, callback: opts.fmt || undefined },
-  title: opts.title ? { display: true, text: opts.title, color: ndr("axis-soft"), font: { size: 10 } } : { display: false },
-  min: opts.min, max: opts.max,
- };
-}
-
-function ndrLegend(){
- return {
-  display: true, position: "top", align: "start",
-  labels: { boxWidth: 22, boxHeight: 2, color: ndr("axis"), font: { size: 11 } },
- };
-}
-
-// ---- Stats helpers - duplicated per this site's "every page is
-// self-contained" convention (see /spin-off-performance.html). ----
-// ---- Outlier-robust scatter axes ----------------------------------------
-// A few extreme companies (a 13,000% EPS jump, a $44M congressional sale)
-// would otherwise set the axis range and squash everyone else into a corner.
-// The axis covers the 1st-99th percentile instead; anything beyond is drawn
-// as a hollow arrow on the edge it fell off, with a count in the corner, so
-// nothing disappears silently. Fit lines are still computed on every point.
-function robustNiceStep(range){
- const raw = range / 6;
- const mag = Math.pow(10, Math.floor(Math.log10(raw)));
- const f = raw / mag;
- return (f < 1.5 ? 1 : f < 3.5 ? 2 : f < 7.5 ? 5 : 10) * mag;
-}
-function robustScatterAxes(chart, axes, opts){
- if(!chart) return;
- const pts = [];
- chart.data.datasets.forEach((ds, di) => {
-  if(ds.showLine || ds.type === "line" || ds.borderDash) return;
-  (ds.data || []).forEach(p => { if(p && isFinite(p.x) && isFinite(p.y)) pts.push({ p, di }); });
- });
- if(pts.length < 20) return;
- const cand = {};
- let flagged = false;
- for(const ax of axes){
-  const v = pts.map(o => o.p[ax]).sort((a, b) => a - b);
-  const q = f => v[Math.round((v.length - 1) * f)];
-  const lo = q(0.01), hi = q(0.99);
-  const full = v[v.length - 1] - v[0], core = hi - lo;
-  if(!(core > 0)) continue;
-  const step = robustNiceStep(core);
-  let min = Math.floor((lo - core * 0.04) / step) * step;
-  let max = Math.ceil((hi + core * 0.04) / step) * step;
-  if(v[0] >= 0 && min < 0) min = 0;
-  cand[ax] = { min, max, flag: full / core >= 1.6 };
-  if(cand[ax].flag) flagged = true;
- }
- if(!flagged) return;
- const bounds = {};
- if(opts && opts.square){
-  // Charts with a 45-degree reference line need the same range on both axes.
-  const min = Math.min(...Object.values(cand).map(c => c.min));
-  const max = Math.max(...Object.values(cand).map(c => c.max));
-  for(const ax of Object.keys(cand)) bounds[ax] = { min, max };
- }else{
-  for(const ax of Object.keys(cand)) if(cand[ax].flag) bounds[ax] = { min: cand[ax].min, max: cand[ax].max };
- }
- // Raw config, not chart.options: that's a resolver proxy, and writing
- // through it recurses.
- const raw = chart.config.options.scales = chart.config.options.scales || {};
- for(const ax of Object.keys(bounds)){
-  const sc = raw[ax] = raw[ax] || {};
-  sc.min = bounds[ax].min; sc.max = bounds[ax].max;
- }
- const off = [];
- for(const o of pts){
-  const flags = {};
-  let out = false;
-  for(const ax of Object.keys(bounds)){
-   if(o.p[ax] < bounds[ax].min){ flags[ax] = -1; out = true; }
-   else if(o.p[ax] > bounds[ax].max){ flags[ax] = 1; out = true; }
-  }
-  if(out) off.push({ p: o.p, di: o.di, flags });
- }
- chart.$robustOff = off;
- // Stop the initial draw-in animation first, or it keeps easing points
- // toward their positions on the old, outlier-stretched scale.
- chart.stop();
- chart.update("none");
-}
-const robustOffscalePlugin = {
- id: "robustOffscale",
- afterDatasetsDraw(chart){
-  const off = chart.$robustOff;
-  if(!off || !off.length) return;
-  const { ctx, chartArea: a, scales } = chart;
-  const color = (getComputedStyle(document.documentElement).getPropertyValue("--ndr-axis-soft").trim()) || (getComputedStyle(document.documentElement).getPropertyValue("--muted").trim()) || "#8b9199";
-  ctx.save();
-  ctx.strokeStyle = color;
-  ctx.fillStyle = color;
-  ctx.lineWidth = 1.2;
-  for(const o of off){
-   const dsColor = chart.data.datasets[o.di].backgroundColor;
-   ctx.strokeStyle = typeof dsColor === "string" ? dsColor : color;
-   let x = scales.x.getPixelForValue(o.p.x), y = scales.y.getPixelForValue(o.p.y);
-   x = Math.min(a.right - 4, Math.max(a.left + 4, x));
-   y = Math.min(a.bottom - 4, Math.max(a.top + 4, y));
-   const dx = o.flags.x || 0, dy = -(o.flags.y || 0);
-   const len = Math.hypot(dx, dy) || 1, ux = dx / len, uy = dy / len;
-   const s = 4.5;
-   ctx.beginPath();
-   ctx.moveTo(x + ux * s, y + uy * s);
-   ctx.lineTo(x - ux * s - uy * s * 0.8, y - uy * s + ux * s * 0.8);
-   ctx.lineTo(x - ux * s + uy * s * 0.8, y - uy * s - ux * s * 0.8);
-   ctx.closePath();
-   ctx.stroke();
-  }
-  ctx.fillStyle = color;
-  ctx.font = "10px " + (Chart.defaults.font.family || "sans-serif");
-  ctx.textAlign = "right";
-  ctx.textBaseline = "bottom";
-  ctx.fillText(off.length + (off.length === 1 ? " point" : " points") + " beyond the axis range (arrows on the edge)", a.right - 6, a.bottom - 4);
-  ctx.restore();
- },
-};
-Chart.register(robustOffscalePlugin);
-
-function linearRegression(xs, ys){
- const n = xs.length;
- const mx = xs.reduce((a, b) => a + b, 0) / n;
- const my = ys.reduce((a, b) => a + b, 0) / n;
- const sxx = xs.reduce((s, x) => s + (x - mx) ** 2, 0);
- const sxy = xs.reduce((s, x, i) => s + (x - mx) * (ys[i] - my), 0);
- const syy = ys.reduce((s, y) => s + (y - my) ** 2, 0);
- const slope = sxy / sxx;
- const intercept = my - slope * mx;
- const r = sxy / Math.sqrt(sxx * syy);
- const r2 = r * r;
- const dof = n - 2;
- const sse = ys.reduce((s, y, i) => s + (y - (intercept + slope * xs[i])) ** 2, 0);
- const seSlope = Math.sqrt((sse / dof) / sxx);
- const t = slope / seSlope;
- const p = 2 * (1 - normalCdf(Math.abs(t)));
- return { n, slope, intercept, r, r2, t, dof, p, sse };
-}
-function normalCdf(x){ return 0.5 * (1 + erf(x / Math.SQRT2)); }
-function erf(x){
- const sign = x < 0 ? -1 : 1;
- x = Math.abs(x);
- const a1 = 0.254829592, a2 = -0.284496736, a3 = 1.421413741, a4 = -1.453152027, a5 = 1.061405429, p = 0.3275911;
- const t = 1 / (1 + p * x);
- const y = 1 - (((((a5 * t + a4) * t) + a3) * t + a2) * t + a1) * t * Math.exp(-x * x);
- return sign * y;
-}
-function rankArray(arr){
- const idx = arr.map((v, i) => i).sort((a, b) => arr[a] - arr[b]);
- const ranks = new Array(arr.length);
- let i = 0;
- while(i < idx.length){
-  let j = i;
-  while(j + 1 < idx.length && arr[idx[j + 1]] === arr[idx[i]]) j++;
-  const avgRank = (i + j) / 2 + 1;
-  for(let k = i; k <= j; k++) ranks[idx[k]] = avgRank;
-  i = j + 1;
- }
- return ranks;
-}
-function spearmanRegression(xs, ys){ return linearRegression(rankArray(xs), rankArray(ys)); }
-
-function mean(values){
- const v = values.filter(x => x !== null && x !== undefined && !isNaN(x));
- return v.length ? v.reduce((a, b) => a + b, 0) / v.length : null;
-}
-function median(values){
- const v = values.filter(x => x !== null && x !== undefined && !isNaN(x)).sort((a, b) => a - b);
- if(!v.length) return null;
- const mid = Math.floor(v.length / 2);
- return v.length % 2 ? v[mid] : (v[mid - 1] + v[mid]) / 2;
-}
-
-// Welch's two-sample t-test (unequal variances assumed, the safer default
-// when the two groups - beats and misses - have no reason to share a
-// variance). Uses this site's usual normal-approximation p-value
-// convention (see /spin-off-performance.html's oneSampleTTest) rather than
-// a full Welch-Satterthwaite t-distribution table.
-function welchTTest(a, b){
- const av = a.filter(x => x !== null && x !== undefined && !isNaN(x));
- const bv = b.filter(x => x !== null && x !== undefined && !isNaN(x));
- const na = av.length, nb = bv.length;
- if(na < 2 || nb < 2) return null;
- const ma = mean(av), mb = mean(bv);
- const va = av.reduce((s, x) => s + (x - ma) ** 2, 0) / (na - 1);
- const vb = bv.reduce((s, x) => s + (x - mb) ** 2, 0) / (nb - 1);
- const se = Math.sqrt(va / na + vb / nb);
- const t = se > 0 ? (ma - mb) / se : 0;
- const dof = (va / na + vb / nb) ** 2 / (((va / na) ** 2) / (na - 1) + ((vb / nb) ** 2) / (nb - 1));
- const p = 2 * (1 - normalCdf(Math.abs(t)));
- return { na, nb, ma, mb, va, vb, se, t, dof, p };
-}
-
-let driftChart = null, regressionChart = null, sectorChart = null;
+function legend(){ return { display: true, position: "top", align: "start", labels: { boxWidth: 14, color: ndr("axis"), font: { size: 11 } } }; }
+function yScale(title){ return { grid: { color: ndr("grid") }, ticks: { color: ndr("axis"), font: { size: 11 }, callback: v => v + "%" }, title: { display: !!title, text: title, color: ndr("axis-soft"), font: { size: 10 } } }; }
+const GROUP_COLORS = () => [ndr("red"), "#c98a6b", ndr("slate"), "#7f9b6a", ndr("green")];
+const GROUP_NAMES = ["1 (biggest misses)", "2", "3", "4", "5 (biggest beats)"];
+const tCell = (o) => o && o.t !== null && o.t !== undefined ? '<span style="display:block; color:var(--muted); font-size:10px;">t = ' + o.t.toFixed(1) + "</span>" : "";
 
 async function init(){
  try{
-  const res = await fetch(DATA_URL, { cache: "no-store" });
+  const res = await fetch(DATA_URL);
   const data = await res.json();
-  if(!res.ok || data.error) throw new Error(data.error || "failed to load");
-
+  if(!res.ok || data.error) throw new Error(data.error || ("HTTP " + res.status));
   RAW = data;
-  document.getElementById("updated").textContent = "As of " + new Date(data.generated_at_utc).toLocaleString("en-US", { month: "2-digit", day: "2-digit", year: "numeric", hour: "numeric", minute: "2-digit" });
-
-  if(data.universe.inWindow === 0){
-   showWarning("No companies fall inside the coverage window yet. The Earnings Surprise History snapshot may need a refresh (see Methodology below). Charts and tables will be empty until then.");
-  }else if(data.universe.priceLoaded < data.universe.total){
-   showWarning("Only " + data.universe.priceLoaded + " of " + data.universe.total + " tickers' price data loaded. Some companies may be missing below.");
-  }
-
-  renderStats();
-  renderDriftChart();
-  renderRegressionAndGroupTests();
-  renderSectorChart();
-  renderLeaderTable(RAW.leaderboards.beatUp, "beatUpBody");
-  renderLeaderTable(RAW.leaderboards.beatDown, "beatDownBody");
-  renderLeaderTable(RAW.leaderboards.missUp, "missUpBody");
-  renderLeaderTable(RAW.leaderboards.missDown, "missDownBody");
-  renderCompanyTable();
-
+  document.getElementById("updated").textContent = "As of " + usDate(RAW.asOf);
+  renderStats(); renderCurve(); renderGroupTable(); renderYears(); renderSectors(); renderRecent(); renderTable();
+  document.querySelectorAll("#companyTable th[data-key]").forEach(th => th.addEventListener("click", () => sortBy(th.dataset.key)));
  }catch(e){
-  showError("Couldn't load post-earnings drift data (" + e.message + "). The /api/post-earnings-drift function may not have run yet.");
-  document.getElementById("companyBody").innerHTML =
-   '<tr><td colspan="8" style="text-align:center; color:var(--muted); padding:30px;">No data available.</td></tr>';
+  showError("Couldn't load post-earnings drift data (" + e.message + ").");
  }
 }
-
-function beatVals20(){ return RAW.companies.filter(c => c.beat > 0 && c.excess.d20 !== null).map(c => c.excess.d20); }
-function missVals20(){ return RAW.companies.filter(c => c.beat < 0 && c.excess.d20 !== null).map(c => c.excess.d20); }
 
 function renderStats(){
- document.getElementById("statCoverage").textContent = RAW.universe.inWindow;
- document.getElementById("statCoverageNote").textContent = "of " + RAW.universe.total + " S&P 500 companies (" + RAW.universe.surpriseCompaniesAvailable + " had a surprise-% match)";
-
- const beatVals = beatVals20();
- const missVals = missVals20();
-
- const beatEl = document.getElementById("statBeatExcess");
- if(beatVals.length){
-  const avg = mean(beatVals);
-  beatEl.textContent = fmtPct(avg);
-  beatEl.classList.toggle("cell-neg", avg < 0);
-  beatEl.classList.toggle("up", avg > 0);
-  document.getElementById("statBeatExcessNote").textContent = "n=" + beatVals.length + " beat companies";
- }else{
-  beatEl.textContent = "n/a";
- }
-
- const missEl = document.getElementById("statMissExcess");
- if(missVals.length){
-  const avg = mean(missVals);
-  missEl.textContent = fmtPct(avg);
-  missEl.classList.toggle("cell-neg", avg < 0);
-  missEl.classList.toggle("up", avg > 0);
-  document.getElementById("statMissExcessNote").textContent = "n=" + missVals.length + " miss companies";
- }else{
-  missEl.textContent = "n/a";
- }
-
- const pairs = RAW.companies.filter(c => c.surprisePct !== null && c.excess.d20 !== null);
- const corrEl = document.getElementById("statCorr");
- if(pairs.length >= 3){
-  const reg = linearRegression(pairs.map(c => c.surprisePct), pairs.map(c => c.excess.d20));
-  corrEl.textContent = "r = " + reg.r.toFixed(3) + (reg.p < 0.05 ? " (significant)" : " (not significant)");
-  document.getElementById("statCorrNote").textContent = "n=" + reg.n + ", p " + (reg.p < 0.001 ? "< 0.001" : "= " + reg.p.toFixed(3));
- }else{
-  corrEl.textContent = "n/a";
-  document.getElementById("statCorrNote").textContent = "Not enough companies with +20D data yet";
- }
+ const u = RAW.universe, s = RAW.spread;
+ document.getElementById("statEvents").textContent = u.groupedEvents.toLocaleString();
+ document.getElementById("statEventsNote").textContent = u.quarters + " quarters, " + u.firstQuarter.replace("-", " ") + " to " + u.lastQuarter.replace("-", " ") + ", today's members";
+ document.getElementById("statDrift").textContent = fmtPct(s.drift60.meanPct);
+ document.getElementById("statDriftNote").textContent = "Average per quarter, t = " + (s.drift60.t === null ? "n/a" : s.drift60.t.toFixed(1));
+ document.getElementById("statReaction").textContent = fmtPct(s.reaction.meanPct);
+ document.getElementById("statReactionNote").textContent = "Day before to day after the report, t = " + (s.reaction.t === null ? "n/a" : s.reaction.t.toFixed(1));
+ document.getElementById("statHit").textContent = s.drift60.positivePct === null ? "n/a" : s.drift60.positivePct + "%";
+ document.getElementById("statHitNote").textContent = "Of " + s.drift60.quarters + " quarters, top fifth drifted more";
 }
 
-function renderDriftChart(){
- const curve = RAW.driftCurve;
- const ctx = document.getElementById("driftChart").getContext("2d");
- if(driftChart) driftChart.destroy();
- driftChart = new Chart(ctx, {
-  data: {
-   labels: curve.horizons.map(h => "+" + h + "D"),
-   datasets: [
-    {
-     type: "line", label: "Beats: avg. cumulative excess return", data: curve.beat.avgExcess,
-     borderColor: ndr("green"), backgroundColor: "transparent", borderWidth: 1.75,
-     pointRadius: 3, pointBackgroundColor: ndr("green"), tension: 0,
-    },
-    {
-     type: "line", label: "Misses: avg. cumulative excess return", data: curve.miss.avgExcess,
-     borderColor: ndr("red"), backgroundColor: "transparent", borderWidth: 1.75,
-     pointRadius: 3, pointBackgroundColor: ndr("red"), tension: 0,
-    },
-   ],
-  },
+function renderCurve(){
+ const days = [];
+ for(let k = -RAW.settings.preDays; k <= RAW.settings.postDays; k++) days.push(k);
+ const colors = GROUP_COLORS();
+ if(curveChart) curveChart.destroy();
+ curveChart = new Chart(document.getElementById("curveChart"), {
+  type: "line",
+  data: { labels: days, datasets: RAW.curve.map((g, i) => ({ label: GROUP_NAMES[i], data: g.path, borderColor: colors[i], backgroundColor: colors[i], borderWidth: i === 0 || i === 4 ? 2.2 : 1.4, pointRadius: 0, fill: false })) },
   options: {
-   responsive: true,
-   maintainAspectRatio: false,
+   responsive: true, maintainAspectRatio: false,
    interaction: { mode: "index", intersect: false },
-   plugins: {
-    legend: ndrLegend(),
-    tooltip: {
-     callbacks: {
-      title: items => "Trading day " + items[0].label.replace("+", "") + " since report",
-      label: ctx => {
-       const n = ctx.datasetIndex === 0 ? curve.beat.n[ctx.dataIndex] : curve.miss.n[ctx.dataIndex];
-       return ctx.dataset.label + ": " + fmtPct(ctx.raw) + " (n=" + n + ")";
-      },
-     },
-    },
-   },
-   scales: {
-    x: { ...ndrXScale(), title: { display: true, text: "Trading days since report date", color: ndr("axis-soft"), font: { size: 10 } } },
-    y: ndrYScale({ fmt: v => v + "%", title: "Avg. cumulative excess return" }),
-   },
+   plugins: { legend: legend(), tooltip: { callbacks: { title: c => "Day " + c[0].label, label: c => "Fifth " + c.dataset.label + ": " + fmtPct(c.parsed.y) } } },
+   scales: { x: { ticks: { color: ndr("axis"), font: { size: 11 }, autoSkip: false, maxRotation: 0, callback: function(v){ const d = this.getLabelForValue(v); return d % 10 === 0 || d === -5 ? d : ""; } }, grid: { color: "rgba(0,0,0,0)" }, title: { display: true, text: "trading days from the report date", color: ndr("axis-soft"), font: { size: 10 } } }, y: yScale("return vs. SPY") },
   },
  });
+ document.getElementById("curveNote").textContent = "Reports per fifth: " + RAW.curve.map(g => g.events.toLocaleString()).join(", ") + ". Median surprise from the bottom to the top fifth: " + RAW.curve.map(g => fmtPct(g.medianSurprisePct, 1)).join(", ") + ".";
 }
 
-function renderRegressionAndGroupTests(){
- const pairs = RAW.companies.filter(c => c.surprisePct !== null && c.excess.d20 !== null);
- const ctx = document.getElementById("regressionChart").getContext("2d");
- if(regressionChart) regressionChart.destroy();
+function renderGroupTable(){
+ const rows = RAW.curve.map((g, i) => "<tr><td>Fifth " + GROUP_NAMES[i] + "</td><td>" + fmtPct(g.medianSurprisePct, 1) + "</td><td>" + g.events.toLocaleString() + "</td><td>" + fmtPct(g.reactionPct) + "</td><td>" + fmtPct(g.drift20Pct) + "</td><td>" + fmtPct(g.drift60Pct) + "</td><td>" + (g.drift60HitPct === null ? "n/a" : g.drift60HitPct.toFixed(1) + "%") + "</td></tr>").join("");
+ const s = RAW.spread;
+ const spreadRow = "<tr><td>Top minus bottom, average per quarter</td><td></td><td>" + s.drift60.quarters + " quarters</td><td>" + fmtPct(s.reaction.meanPct) + tCell(s.reaction) + "</td><td>" + fmtPct(s.drift20.meanPct) + tCell(s.drift20) + "</td><td>" + fmtPct(s.drift60.meanPct) + tCell(s.drift60) + "</td><td>" + (s.drift60.positivePct === null ? "n/a" : s.drift60.positivePct + "% of quarters") + "</td></tr>";
+ document.getElementById("groupTable").innerHTML = "<thead><tr><th>Surprise fifth</th><th>Median surprise</th><th>Reports</th><th>Reaction</th><th>Drift to day 20</th><th>Drift to day 60</th><th>Drift to day 60 above zero</th></tr></thead><tbody>" + rows + spreadRow + "</tbody>";
+}
 
- const datasets = [
-  {
-   label: "Companies", data: pairs.map(c => ({ x: c.surprisePct, y: c.excess.d20, label: c.name + " (" + c.symbol + ")" })),
-   backgroundColor: pairs.map(c => c.beat > 0 ? ndr("green") : c.beat < 0 ? ndr("red") : ndr("slate")),
-   pointRadius: 3, showLine: false,
-  },
- ];
-
- if(pairs.length >= 3){
-  const xs = pairs.map(c => c.surprisePct);
-  const ys = pairs.map(c => c.excess.d20);
-  const pearson = linearRegression(xs, ys);
-  const spear = spearmanRegression(xs, ys);
-  const xMin = Math.min(...xs), xMax = Math.max(...xs);
-  datasets.push({
-   label: "Regression fit", type: "line",
-   data: [{ x: xMin, y: pearson.intercept + pearson.slope * xMin }, { x: xMax, y: pearson.intercept + pearson.slope * xMax }],
-   borderColor: ndr("navy"), borderWidth: 1.5, borderDash: [4, 3], pointRadius: 0, fill: false,
-  });
-
-  function row(label, stats){
-   const sig = stats.p < 0.05;
-   return "<tr>" +
-    "<td>" + label + "</td>" +
-    "<td>" + stats.n + "</td>" +
-    "<td>" + stats.r.toFixed(3) + "</td>" +
-    "<td>" + (stats.r2 * 100).toFixed(1) + "%</td>" +
-    "<td>" + (stats.slope >= 0 ? "+" : "") + stats.slope.toFixed(3) + "</td>" +
-    "<td>" + stats.t.toFixed(2) + "</td>" +
-    '<td class="' + (sig ? "sig" : "") + '">' + (stats.p < 0.001 ? "<0.001" : stats.p.toFixed(3)) + "</td>" +
-   "</tr>";
-  }
-  document.getElementById("regressionMethodTable").innerHTML =
-   '<table class="method-table">' +
-    "<thead><tr><th>Method</th><th>n</th><th>r</th><th>r&sup2;</th><th>slope</th><th>t</th><th>p</th></tr></thead>" +
-    "<tbody>" + row("Pearson (OLS)", pearson) + row("Spearman (&rho;)", spear) + "</tbody>" +
-   "</table>";
- }else{
-  document.getElementById("regressionMethodTable").innerHTML = '<div class="method-note">Not enough companies with both a surprise % and a +20-day excess return yet to fit a regression.</div>';
- }
-
- regressionChart = new Chart(ctx, {
-  type: "scatter",
-  data: { datasets },
+function renderYears(){
+ const ys = RAW.byYear;
+ if(yearChart) yearChart.destroy();
+ yearChart = new Chart(document.getElementById("yearChart"), {
+  type: "bar",
+  data: { labels: ys.map(y => y.year), datasets: [
+   { label: "60-day drift gap", data: ys.map(y => y.drift60Pct), backgroundColor: ndr("navy") },
+   { label: "Reaction gap", data: ys.map(y => y.reactionPct), backgroundColor: ndr("gold") },
+  ] },
   options: {
-   responsive: true,
-   maintainAspectRatio: false,
-   plugins: {
-    legend: { display: false },
-    tooltip: { callbacks: { label: ctx => ctx.dataset.label === "Companies" ? (ctx.raw.label + ": surprise " + fmtPct(ctx.raw.x) + ", +20D excess " + fmtPct(ctx.raw.y)) : null } },
-   },
-   scales: {
-    x: ndrYScale({ position: "bottom", fmt: v => v + "%", title: "Earnings surprise (%)" }),
-    y: ndrYScale({ fmt: v => v + "%", title: "+20-trading-day excess return vs. SPY (%)" }),
-   },
+   responsive: true, maintainAspectRatio: false,
+   plugins: { legend: legend(), tooltip: { callbacks: { label: c => c.dataset.label + ": " + fmtPct(c.parsed.y) + " (" + ys[c.dataIndex].quarters + " quarters)" } } },
+   scales: { x: { ticks: { color: ndr("axis"), font: { size: 11 } }, grid: { display: false } }, y: yScale("top minus bottom fifth") },
   },
  });
- robustScatterAxes(regressionChart, ["x","y"]);
-
- const beatVals = beatVals20();
- const missVals = missVals20();
- const t = welchTTest(beatVals, missVals);
- if(t){
-  const sig = t.p < 0.05;
-  document.getElementById("groupMethodTable").innerHTML =
-   '<table class="method-table">' +
-    "<thead><tr><th>Group</th><th>n</th><th>mean +20D excess</th><th>median +20D excess</th></tr></thead>" +
-    "<tbody>" +
-     "<tr><td>Beats</td><td>" + beatVals.length + "</td><td>" + fmtPct(mean(beatVals)) + "</td><td>" + fmtPct(median(beatVals)) + "</td></tr>" +
-     "<tr><td>Misses</td><td>" + missVals.length + "</td><td>" + fmtPct(mean(missVals)) + "</td><td>" + fmtPct(median(missVals)) + "</td></tr>" +
-     "<tr><td>Welch two-sample t-test</td><td colspan='2'>t = " + t.t.toFixed(2) + ", df &asymp; " + t.dof.toFixed(1) + "</td>" +
-      '<td class="' + (sig ? "sig" : "") + '">p ' + (t.p < 0.001 ? "< 0.001" : "= " + t.p.toFixed(3)) + "</td></tr>" +
-    "</tbody>" +
-   "</table>";
- }else{
-  document.getElementById("groupMethodTable").innerHTML = '<div class="method-note">Not enough companies in both the beat and miss groups with +20-day data yet to run a two-sample test.</div>';
- }
+ const half = Math.floor(ys.length / 2);
+ const avg = (a) => { const v = a.filter(x => x !== null); return v.length ? v.reduce((s, x) => s + x, 0) / v.length : null; };
+ const early = avg(ys.slice(0, half).map(y => y.drift60Pct)), late = avg(ys.slice(half).map(y => y.drift60Pct));
+ document.getElementById("yearNote").textContent = "Average yearly 60-day drift gap: " + fmtPct(early) + " in " + ys[0].year + " to " + ys[half - 1].year + ", " + fmtPct(late) + " in " + ys[half].year + " to " + ys[ys.length - 1].year + ".";
 }
 
-function renderSectorChart(){
- const threshold = RAW.sectorThinThreshold;
- document.getElementById("sectorThresholdLabel").textContent = threshold;
- const all = RAW.sectorBreakdown || [];
- const rows = all.filter(r => !r.thin);
- const thinRows = all.filter(r => r.thin);
-
- const noteParts = [];
- if(thinRows.length){
-  noteParts.push("Excluded as too thin (fewer than " + threshold + " companies in the beat or miss group): " + thinRows.map(r => r.sector + " (beats n=" + r.beatN + ", misses n=" + r.missN + ")").join("; ") + ".");
- }
- if(!rows.length){
-  noteParts.unshift("No sector currently has at least " + threshold + " companies in both the beat and miss groups. The chart is empty until more sectors qualify.");
- }
- document.getElementById("sectorNote").textContent = noteParts.join(" ");
-
- // Dumbbell: the drift question is the gap between beats and misses within
- // a sector, so that gap is drawn as the connector and sectors are sorted
- // by it.
- rows.sort((x, y) => (y.beatMedianExcess20 - y.missMedianExcess20) - (x.beatMedianExcess20 - x.missMedianExcess20));
- const ctx = document.getElementById("sectorChart").getContext("2d");
+function renderSectors(){
+ const rows = RAW.bySector.slice().sort((a, b) => (b.beatDrift60Pct - b.missDrift60Pct) - (a.beatDrift60Pct - a.missDrift60Pct));
  if(sectorChart) sectorChart.destroy();
- sectorChart = new Chart(ctx, {
-  data: {
-   labels: rows.map(r => r.sector),
-   datasets: [
-    {
-     type: "bar", label: "Gap",
-     data: rows.map(r => [Math.min(r.beatMedianExcess20, r.missMedianExcess20), Math.max(r.beatMedianExcess20, r.missMedianExcess20)]),
-     backgroundColor: rows.map(r => r.beatMedianExcess20 >= r.missMedianExcess20 ? "rgba(125,138,153,0.55)" : "rgba(168,60,54,0.35)"),
-     barPercentage: 0.14, categoryPercentage: 1, borderSkipped: false, grouped: false, order: 2,
-    },
-    { type: "line", label: "Misses", data: rows.map(r => r.missMedianExcess20), showLine: false, pointRadius: 6, pointHoverRadius: 8, pointBackgroundColor: ndr("red"), pointBorderColor: ndr("plot"), pointBorderWidth: 1.5, backgroundColor: ndr("red"), borderColor: ndr("red"), order: 1 },
-    { type: "line", label: "Beats", data: rows.map(r => r.beatMedianExcess20), showLine: false, pointRadius: 6, pointHoverRadius: 8, pointBackgroundColor: ndr("green"), pointBorderColor: ndr("plot"), pointBorderWidth: 1.5, backgroundColor: ndr("green"), borderColor: ndr("green"), order: 0 },
-   ],
-  },
+ sectorChart = new Chart(document.getElementById("sectorChart"), {
+  type: "bar",
+  data: { labels: rows.map(r => r.sector), datasets: [
+   { label: "After beats", data: rows.map(r => r.beatDrift60Pct), backgroundColor: ndr("green") },
+   { label: "After misses", data: rows.map(r => r.missDrift60Pct), backgroundColor: ndr("red") },
+  ] },
   options: {
-   indexAxis: "y",
-   responsive: true,
-   maintainAspectRatio: false,
-   interaction: { mode: "index", intersect: false, axis: "y" },
-   plugins: {
-    legend: { ...ndrLegend(), labels: { ...ndrLegend().labels, usePointStyle: true, boxWidth: 8, boxHeight: 8, filter: item => item.text !== "Gap" } },
-    zoom: false,
-    tooltip: {
-     filter: item => item.dataset.label !== "Gap",
-     callbacks: {
-      label: ctx => {
-       const r = rows[ctx.dataIndex];
-       const n = ctx.dataset.label === "Beats" ? r.beatN : r.missN;
-       return ctx.dataset.label + " median +20D excess: " + fmtPct(ctx.parsed.x) + " (n=" + n + ")";
-      },
-      footer: items => { const r = rows[items[0].dataIndex]; const g = r.beatMedianExcess20 - r.missMedianExcess20; return "Beat minus miss: " + (g >= 0 ? "+" : "") + g.toFixed(1) + "pp"; },
-     },
-    },
-   },
-   scales: {
-    x: { ...ndrYScale({ position: "bottom", fmt: v => v + "%" }), grid: { color: c => c.tick.value === 0 ? ndr("axis") : ndr("grid") } },
-    y: { ticks: { color: ndr("axis"), font: { size: 11 } }, grid: { display: false }, border: { color: ndr("axis") } },
-   },
+   indexAxis: "y", responsive: true, maintainAspectRatio: false,
+   plugins: { legend: legend(), tooltip: { callbacks: { label: c => c.dataset.label + ": " + fmtPct(c.parsed.x) + " (" + (c.datasetIndex === 0 ? rows[c.dataIndex].beats : rows[c.dataIndex].misses) + " reports)" } } },
+   scales: { y: { ticks: { color: ndr("axis"), font: { size: 11 } }, grid: { display: false } }, x: { grid: { color: ndr("grid") }, ticks: { color: ndr("axis"), font: { size: 11 }, callback: v => v + "%" }, title: { display: true, text: "average drift, day +1 to +60, vs. SPY", color: ndr("axis-soft"), font: { size: 10 } } } },
   },
  });
 }
 
-function renderLeaderTable(rows, tbodyId){
- const tbody = document.getElementById(tbodyId);
- if(!rows || !rows.length){
-  tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; color:var(--muted); padding:24px;">No qualifying companies yet.</td></tr>';
-  return;
- }
- tbody.innerHTML = rows.map(r => `<tr>
-  <td><span class="sector-name">${r.name}</span> <span class="sector-ticker">${r.symbol}</span></td>
-  <td><span class="sector-ticker">${r.sector || "n/a"}</span></td>
-  <td>${fmtPct(r.surprisePct)}</td>
-  <td>${fmtPct(r.excess20)}</td>
- </tr>`).join("");
+function leaderRows(list){
+ if(!list.length) return '<tr><td colspan="4" style="text-align:center; color:var(--muted); padding:24px;">None yet.</td></tr>';
+ return list.map(c => "<tr><td><span class=\"sector-name\">" + c.symbol + "</span><span style=\"display:block; color:var(--muted); font-size:11px;\">" + (c.sector || "n/a") + ", " + usDate(c.reportedDate) + "</span></td><td>" + fmtPct(c.surprisePct, 1) + "</td><td>" + fmtPct(c.reactionPct) + "</td><td>" + fmtPct(c.driftSincePct) + "</td></tr>").join("");
 }
-
-function companyRowValues(c){
- return {
-  symbol: c.symbol, name: c.name, sector: c.sector, reportedDate: c.reportedDate, beat: c.beat,
-  surprisePct: c.surprisePct, excess1: c.excess.d1, excess5: c.excess.d5, excess10: c.excess.d10, excess20: c.excess.d20,
- };
+function renderRecent(){
+ const r = RAW.recent;
+ document.getElementById("beatUpBody").innerHTML = leaderRows(r.leaderboards.beatUp);
+ document.getElementById("beatDownBody").innerHTML = leaderRows(r.leaderboards.beatDown);
+ document.getElementById("missUpBody").innerHTML = leaderRows(r.leaderboards.missUp);
+ document.getElementById("missDownBody").innerHTML = leaderRows(r.leaderboards.missDown);
+ document.getElementById("recentIntro").textContent = "Each company's most recent report since " + usDate(RAW.universe.recentWindowStart) + ": " + r.beats + " beats and " + r.misses + " misses. Drift since runs from the close the day after the report to the " + usDate(RAW.asOf) + " close.";
 }
 
 function sortBy(key){
- if(SORT_KEY === key){
-  SORT_DIR = -SORT_DIR;
- }else{
-  SORT_KEY = key;
-  SORT_DIR = 1;
- }
- renderCompanyTable();
+ if(SORT_KEY === key) SORT_DIR = -SORT_DIR; else { SORT_KEY = key; SORT_DIR = key === "name" || key === "sector" ? 1 : -1; }
+ renderTable();
 }
-
-function renderCompanyTable(){
- const rows = RAW.companies.map(companyRowValues).sort((a, b) => {
+function renderTable(){
+ const rows = RAW.recent.companies.slice().sort((a, b) => {
   const av = a[SORT_KEY], bv = b[SORT_KEY];
   if(av === null || av === undefined) return 1;
   if(bv === null || bv === undefined) return -1;
-  if(typeof av === "string") return av.localeCompare(bv) * SORT_DIR;
-  return (av - bv) * SORT_DIR;
+  return (typeof av === "string" ? av.localeCompare(bv) : av - bv) * SORT_DIR;
  });
-
- const tbody = document.getElementById("companyBody");
- if(!rows.length){
-  tbody.innerHTML = '<tr><td colspan="8" style="text-align:center; color:var(--muted); padding:30px;">No companies in the coverage window this run.</td></tr>';
- }else{
-  tbody.innerHTML = rows.map(r => `<tr>
-   <td><span class="sector-name">${r.name}</span> <span class="sector-ticker">${r.symbol}</span></td>
-   <td><span class="sector-ticker">${r.sector || "n/a"}</span></td>
-   <td>${fmtDate(r.reportedDate)} <span class="tag ${r.beat > 0 ? "beat" : r.beat < 0 ? "miss" : ""}">${r.beat > 0 ? "beat" : r.beat < 0 ? "miss" : "meet"}</span></td>
-   <td>${fmtPct(r.surprisePct)}</td>
-   <td>${fmtPct(r.excess1)}</td>
-   <td>${fmtPct(r.excess5)}</td>
-   <td>${fmtPct(r.excess10)}</td>
-   <td>${fmtPct(r.excess20)}</td>
-  </tr>`).join("");
- }
-
- document.querySelectorAll("#companyTable thead th").forEach(th => {
-  const key = th.dataset.key;
-  th.classList.toggle("sorted", key === SORT_KEY);
-  const arrow = th.querySelector(".sort-arrow");
-  if(arrow) arrow.textContent = (key === SORT_KEY && SORT_DIR === 1) ? "▴" : "▾";
- });
+ document.querySelectorAll("#companyTable th[data-key]").forEach(th => th.classList.toggle("sorted", th.dataset.key === SORT_KEY));
+ document.getElementById("companyBody").innerHTML = rows.map(c => "<tr><td><span class=\"sector-name\">" + c.symbol + "</span></td><td><span class=\"sector-ticker\">" + (c.sector || "n/a") + "</span></td><td>" + usDate(c.reportedDate) + "</td><td>" + fmtPct(c.surprisePct, 1) + "</td><td>" + fmtPct(c.reactionPct) + "</td><td>" + fmtPct(c.driftSincePct) + "</td><td>" + (c.daysSince === null ? "n/a" : c.daysSince) + "</td></tr>").join("");
+ document.getElementById("allSub").textContent = RAW.recent.companies.length + " S&P 500 companies' most recent reports since " + usDate(RAW.universe.recentWindowStart) + ". Days is trading days from the report date to the latest close.";
 }
-
-document.querySelectorAll("#companyTable thead th").forEach(th => {
- const key = th.dataset.key;
- if(key){
-  const arrow = document.createElement("span");
-  arrow.className = "sort-arrow";
-  arrow.textContent = "▾";
-  th.appendChild(arrow);
-  th.addEventListener("click", () => sortBy(key));
- }
-});
-
 init();
 </script>
+
 
 </body>
 </html>
