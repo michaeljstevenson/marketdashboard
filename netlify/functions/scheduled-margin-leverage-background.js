@@ -33,6 +33,10 @@ const USER_AGENT =
 const QUARTERS_NEEDED = 28; // ~7 years — covers the 2019 cuts, the 2020 emergency cuts, the 2022-23 hikes, and the 2024-25 cuts in one window
 const NOTABLE_COUNT = 15;
 const MIN_SECTOR_N = 3; // don't publish a sector-quarter median built off fewer than this many companies
+// Companies report on different schedules, so the newest calendar quarter
+// often holds only the handful with August or September quarter-ends. A
+// quarter counts once this share of a group's companies have reported it.
+const COMPLETE_SHARE = 0.6;
 const MARGIN_TREND_THRESHOLD = 1.0; // ppt over 4 quarters — smaller moves are quarter-to-quarter noise, not a real trend
 
 // Two calls per company (~1006 total) at 800ms would run ~13.4 minutes on
@@ -366,6 +370,11 @@ exports.handler = async () => {
       });
     }
 
+    for (const sector of Object.keys(sectorSeries)) {
+      const maxN = Math.max(...sectorSeries[sector].map((r) => r.n));
+      sectorSeries[sector] = sectorSeries[sector].filter((r) => r.n >= COMPLETE_SHARE * maxN);
+    }
+
     // ---- Market-level quarterly QoQ deltas, for the regime comparison ----
     // One row per calendar quarter: the cross-company median change in
     // operating margin and in net-debt/EBITDA since the prior quarter,
@@ -407,6 +416,8 @@ exports.handler = async () => {
         };
       })
       .filter((r) => r.regime !== null && (r.medianMarginDelta !== null || r.medianLeverageDelta !== null));
+    const maxMarketN = Math.max(...marketQuarterly.map((r) => r.nMargin));
+    for (let i = marketQuarterly.length - 1; i >= 0; i--) if (marketQuarterly[i].nMargin < COMPLETE_SHARE * maxMarketN) marketQuarterly.splice(i, 1);
 
     // ---- Latest-quarter cross-company scatter + sector-relative leaderboards ----
     const sectorAsOf = {}; // sector -> latest non-null {operatingMargin, netDebtEbitda} medians
