@@ -752,6 +752,12 @@
   # month-end and one current snapshot a week, and otherwise exit at once.
   schedule = "*/15 0-6 * * *"
 
+[functions."scheduled-putcall-study-background"]
+  # Daily at 07:20 UTC, right after the put/call backfill window closes
+  # (00:00-06:57 UTC), so the page reflects each night's new snapshots.
+  # Yahoo and stored data only, no Alpha Vantage calls.
+  schedule = "20 7 * * *"
+
 [functions."scheduled-options-positioning-background"]
   # One-time snapshot per run (the market-median history it appends to
   # accumulates across runs, but each run's own sweep is a fresh full-index
