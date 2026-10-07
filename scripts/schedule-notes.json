@@ -42,6 +42,6 @@
   "estimates-collector": "One sweep of analyst EPS estimates for every S&P 500 stock, saved for other jobs to read.",
   "income-collector": "One sweep of quarterly and annual income statements for every S&P 500 stock, saved for other jobs to read.",
   "balance-collector": "One sweep of quarterly and annual balance sheets for every S&P 500 stock, saved for other jobs to read.",
-  "putcall-history": "Put/call ratio of every S&P 500 member at each month-end for the last five years, plus one current snapshot each week, for the put/call ratio page's forward-return study. The five-year backfill runs in short overnight batches.",
+  "putcall-history": "Put/call ratio of every S&P 500 member at each month-end for the last five years, plus one current snapshot each week, for the put/call ratio page's forward-return study, and weekly put/call ratios for SPY, QQQ and IWM since 2008 for the Options Positioning page. The backfill runs in short overnight batches.",
   "putcall-study": "Builds the put/call ratio page from the put/call snapshots: this week's highest and lowest ratios with analyst ratings and trailing returns, and what followed extreme readings at each month-end. Reads the shared company overviews and Yahoo prices, so it makes no Alpha Vantage calls."
 }

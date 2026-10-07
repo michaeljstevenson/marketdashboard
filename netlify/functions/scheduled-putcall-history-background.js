@@ -16,6 +16,11 @@
 // no longer trade are rejected as invalid symbols; they're recorded as
 // unavailable rather than retried, and the page reports the coverage this
 // leaves.
+//
+// It also builds weekly put/call history for the index ETFs behind the
+// Options Positioning page (SPY, QQQ, IWM, every week's last close since
+// 2008), one blob per year. Those are tracked in progress.etfDone so readers
+// of progress.done keep seeing month-end dates only.
 
 const { getPutCallHistoryStore, PROGRESS_KEY, snapshotKey } = require("./putcall-history-blob-store");
 const { BUILT_THROUGH, DATES, MEMBERS } = require("./putcall-history-plan");
@@ -30,6 +35,13 @@ const MIN_CALL_GAP_MS = 1000;
 const SAVE_EVERY = 40;
 const MAX_TRANSIENT_RETRIES = 3;
 const RATE_LIMIT_PAUSE_MS = 60 * 1000;
+const ETFS = ["SPY", "QQQ", "IWM"];
+const ETF_START = "2008-01-01";
+// Per-expiration ratios are summarized as medians by days to expiry: near
+// covers the weekly and front-month contracts, far the quarterly and LEAPS
+// expirations hedgers favor.
+const NEAR_DAYS = 30;
+const FAR_DAYS = 90;
 
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
@@ -39,7 +51,28 @@ function num(v) {
   return Number.isFinite(n) ? n : null;
 }
 
-// -> { ok: true, pc, twoSided, expirations } | { ok: false, permanent, reason, rateLimited }
+function medianOf(values) {
+  const v = values.filter(Number.isFinite).sort((a, b) => a - b);
+  if (!v.length) return null;
+  const m = Math.floor(v.length / 2);
+  return v.length % 2 ? v[m] : (v[m - 1] + v[m]) / 2;
+}
+
+function byExpirySummary(byExp, date) {
+  const t0 = Date.parse(date + "T00:00:00Z");
+  const near = [], far = [];
+  for (const e of byExp) {
+    const v = num(e.value);
+    const days = (Date.parse(e.date + "T00:00:00Z") - t0) / 86400000;
+    if (v === null || !(days >= 0)) continue;
+    if (days <= NEAR_DAYS) near.push(v);
+    else if (days > FAR_DAYS) far.push(v);
+  }
+  const r = (x) => (x === null ? null : Math.round(x * 1000) / 1000);
+  return { near: r(medianOf(near)), nearN: near.length, far: r(medianOf(far)), farN: far.length };
+}
+
+// -> { ok: true, pc, twoSided, expirations, byExp } | { ok: false, permanent, reason, rateLimited }
 async function fetchRatio(apiKey, symbol, date) {
   const url = `${ALPHA_VANTAGE_URL}?function=HISTORICAL_PUT_CALL_RATIO&symbol=${encodeURIComponent(symbol)}` +
     (date ? `&date=${date}` : "") + `&apikey=${apiKey}`;
@@ -68,7 +101,7 @@ async function fetchRatio(apiKey, symbol, date) {
   }
   const byExp = Array.isArray(payload.put_call_ratio_by_expiration) ? payload.put_call_ratio_by_expiration : [];
   const twoSided = byExp.filter((e) => { const v = num(e.value); return v !== null && v > 0; }).length;
-  return { ok: true, pc: num(payload.put_call_ratio_full_chain), twoSided, expirations: byExp.length };
+  return { ok: true, pc: num(payload.put_call_ratio_full_chain), twoSided, expirations: byExp.length, byExp };
 }
 
 // Month-ends after the generated plan use today's constituents, since those
@@ -90,8 +123,21 @@ async function workList() {
   const thisWeek = weekStart(lastDate);
   const lastFullWeekClose = [...trading].reverse().find((d) => weekStart(d) < thisWeek);
   if (lastFullWeekClose) list.push({ date: lastFullWeekClose, members: BREADTH_CONSTITUENTS.slice(), kind: "weekly" });
-  // Newest month-ends first so recent history fills in before older years.
-  list.sort((a, b) => (a.kind === b.kind ? (a.date < b.date ? 1 : -1) : a.kind === "weekly" ? -1 : 1));
+  // ETF weeks: members are "date|SYMBOL" pairs, one item per calendar year.
+  const weekCloses = new Map();
+  for (const d of trading) if (d >= ETF_START && weekStart(d) < thisWeek) weekCloses.set(weekStart(d), d);
+  const byYear = new Map();
+  for (const d of weekCloses.values()) {
+    const y = d.slice(0, 4);
+    if (!byYear.has(y)) byYear.set(y, []);
+    for (const sym of ETFS) byYear.get(y).push(`${d}|${sym}`);
+  }
+  for (const [year, members] of byYear) list.push({ date: year, members, kind: "etf" });
+  // Weekly snapshot first, then ETF years (newest first, ~2,900 calls in
+  // all), then month-ends, newest first so recent history fills in before
+  // older years.
+  const rank = { weekly: 0, etf: 1, "month-end": 2 };
+  list.sort((a, b) => (a.kind === b.kind ? (a.date < b.date ? 1 : -1) : rank[a.kind] - rank[b.kind]));
   return list;
 }
 
@@ -114,15 +160,18 @@ exports.handler = async () => {
 
   let calls = 0, unrecorded = 0, lastCallAt = 0;
   const done = progress.done || {};
+  const etfDone = progress.etfDone || {};
+  const thisYear = new Date().toISOString().slice(0, 4);
   try {
     const list = await workList();
     for (const item of list) {
       if (outOfTime()) break;
       if (item.kind === "month-end" && done[item.date]) continue;
-      const key = snapshotKey(item.kind === "weekly" ? `weekly-${item.date}` : item.date);
+      if (item.kind === "etf" && etfDone[item.date]) continue;
+      const key = snapshotKey(item.kind === "weekly" ? `weekly-${item.date}` : item.kind === "etf" ? `etf-${item.date}` : item.date);
       const snap = (await store.get(key, { type: "json" })) ||
         { date: item.date, kind: item.kind, members: item.members.length, results: {}, unavailable: {}, retries: {} };
-      if (snap.complete) { if (item.kind === "month-end") done[item.date] = true; continue; }
+      if (snap.complete && item.kind !== "etf") { if (item.kind === "month-end") done[item.date] = true; continue; }
       const pending = item.members.filter((s) => !(s in snap.results) && !(s in snap.unavailable));
       let sinceSave = 0;
       for (const symbol of pending) {
@@ -130,10 +179,13 @@ exports.handler = async () => {
         const wait = MIN_CALL_GAP_MS - (Date.now() - lastCallAt);
         if (wait > 0) await sleep(wait);
         lastCallAt = Date.now();
-        const r = await fetchRatio(apiKey, symbol, item.date);
+        const [callDate, callSymbol] = item.kind === "etf" ? symbol.split("|") : [item.date, symbol];
+        const r = await fetchRatio(apiKey, callSymbol, callDate);
         calls++; unrecorded++;
         if (r.ok) {
-          snap.results[symbol] = { pc: r.pc, twoSided: r.twoSided };
+          snap.results[symbol] = item.kind === "etf"
+            ? { pc: r.pc, twoSided: r.twoSided, ...byExpirySummary(r.byExp, callDate) }
+            : { pc: r.pc, twoSided: r.twoSided };
         } else if (r.permanent) {
           snap.unavailable[symbol] = r.reason;
         } else {
@@ -155,6 +207,8 @@ exports.handler = async () => {
       await store.setJSON(key, snap);
       if (snap.complete && item.kind === "month-end") done[item.date] = true;
       if (snap.complete && item.kind === "weekly") progress.latestWeekly = item.date;
+      // The current year keeps gaining weeks, so only past years are closed.
+      if (snap.complete && item.kind === "etf" && item.date < thisYear) etfDone[item.date] = true;
       console.log(`scheduled-putcall-history-background: ${item.kind} ${item.date}: ` +
         `${Object.keys(snap.results).length} loaded, ${Object.keys(snap.unavailable).length} unavailable of ${item.members.length}` +
         (snap.complete ? " (complete)" : ""));
@@ -164,6 +218,7 @@ exports.handler = async () => {
   } finally {
     if (unrecorded) await recordAvCall(unrecorded);
     progress.done = done;
+    progress.etfDone = etfDone;
     progress.lockedUntil = null;
     progress.lastRun = { at: new Date().toISOString(), calls, seconds: Math.round((Date.now() - startedAt) / 1000) };
     await store.setJSON(PROGRESS_KEY, progress);
@@ -174,3 +229,4 @@ exports.handler = async () => {
 
 module.exports.fetchRatio = fetchRatio;
 module.exports.workList = workList;
+module.exports.byExpirySummary = byExpirySummary;

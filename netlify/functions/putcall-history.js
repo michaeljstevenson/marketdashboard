@@ -1,4 +1,5 @@
-// Read-only progress of the month-end put/call backfill: which snapshots are
+// Read-only progress of the put/call backfill (month-end stock snapshots and
+// the index-ETF weekly years): which snapshots are
 // complete and how many members each one loaded, so the backfill can be
 // followed without Netlify's function logs.
 
@@ -32,6 +33,7 @@ exports.handler = async () => {
       body: JSON.stringify({
         monthEndsPlanned: DATES.length,
         monthEndsComplete: Object.keys(done).length,
+        etfYearsComplete: Object.keys(progress.etfDone || {}).sort(),
         latestWeekly: progress.latestWeekly || null,
         lastRun: progress.lastRun || null,
         snapshots,
