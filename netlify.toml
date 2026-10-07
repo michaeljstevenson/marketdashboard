@@ -697,10 +697,11 @@
   schedule = "35 15 * * 6"
 
 [functions."scheduled-smallcap-liquidity-background"]
-  # Weekly, Saturday 14:20 UTC. Reads meta.json (itself refreshed weekly) for
-  # cohort membership and recomputes the full ~2-year window each run, so a
-  # daily rerun would redo the same sweep for a cohort that barely changes.
-  schedule = "20 14 * * 6"
+  # Weekly, Saturday 14:20 UTC: the Russell 2000 list from TradingView, then
+  # ~13 months of Yahoo daily bars for ~2,450 stocks (about 3.5 minutes
+  # locally). The 14:35 firing is a backup: it finishes a sweep that ran out
+  # of time and checkpointed, and exits at once when 14:20 already completed.
+  schedule = "20,35 14 * * 6"
 
 [functions."scheduled-margin-leverage-background"]
   # One-time snapshot, no schedule: run manually (Netlify dashboard or a POST

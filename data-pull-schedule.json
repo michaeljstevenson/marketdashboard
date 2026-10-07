@@ -143,7 +143,6 @@
         "/api/smallcap-largecap"
       ],
       "pages": [
-        "small-cap-liquidity",
         "small-cap-vs-large-cap"
       ]
     },
@@ -273,16 +272,6 @@
       ]
     },
     {
-      "name": "smallcap-liquidity",
-      "cron": "20 14 * * 6",
-      "apis": [
-        "/api/smallcap-liquidity"
-      ],
-      "pages": [
-        "small-cap-liquidity"
-      ]
-    },
-    {
       "name": "short-sale-volume",
       "cron": "50 14 * * 6",
       "apis": [
@@ -324,6 +313,16 @@
         "post-earnings-drift",
         "earnings-surprise",
         "valuations"
+      ]
+    },
+    {
+      "name": "smallcap-liquidity",
+      "cron": "20,35 14 * * 6",
+      "apis": [
+        "/api/smallcap-liquidity"
+      ],
+      "pages": [
+        "small-cap-liquidity"
       ]
     },
     {

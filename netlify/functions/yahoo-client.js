@@ -140,10 +140,10 @@ async function fetchPriorYearEndCloses(symbols, year) {
   return out;
 }
 
-async function fetchChartResult(symbol, { interval = "1d", events = "div,splits" } = {}) {
+async function fetchChartResult(symbol, { interval = "1d", events = "div,splits", sinceUnix = 0 } = {}) {
   const url =
     `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(YAHOO_ALIASES[symbol] || symbol)}` +
-    `?period1=0&period2=${Math.floor(Date.now() / 1000)}&interval=${interval}&events=${events}`;
+    `?period1=${sinceUnix}&period2=${Math.floor(Date.now() / 1000)}&interval=${interval}&events=${events}`;
   const payload = await fetchYahooJson(url);
   const result = payload.chart && payload.chart.result && payload.chart.result[0];
   if (!result) throw new Error(`Yahoo returned no data for ${symbol}`);
@@ -152,10 +152,11 @@ async function fetchChartResult(symbol, { interval = "1d", events = "div,splits"
 
 const isoDate = (t) => new Date(t * 1000).toISOString().slice(0, 10);
 
-// Full daily OHLCV + adjusted close, ascending. Rows Yahoo pads with null
-// closes (halted/incomplete days) are dropped.
-async function fetchDailyBars(symbol) {
-  const result = await fetchChartResult(symbol);
+// Daily OHLCV + adjusted close, ascending, full history unless `sinceUnix`
+// limits it (a year of bars is a far lighter response for bulk sweeps).
+// Rows Yahoo pads with null closes (halted/incomplete days) are dropped.
+async function fetchDailyBars(symbol, { sinceUnix = 0 } = {}) {
+  const result = await fetchChartResult(symbol, { sinceUnix });
   const q = result.indicators.quote[0];
   const adj = (result.indicators.adjclose && result.indicators.adjclose[0].adjclose) || q.close;
   const out = [];

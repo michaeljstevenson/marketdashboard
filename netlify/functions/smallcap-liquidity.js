@@ -1,10 +1,8 @@
-// Serves the small-cap-vs-mega-cap liquidity snapshot (cohort-level
-// dollar-volume / Amihud illiquidity / Corwin-Schultz spread history, the
-// Small/Mega Amihud ratio series, and the full per-ticker latest-day
-// table) computed weekly by scheduled-smallcap-liquidity-background.js and
-// stored in Netlify Blobs. This function makes no Alpha Vantage calls
-// itself — it just reads the pre-computed blob. Mirrors earnings-
-// revisions.js.
+// Serves the Russell 2000 vs. S&P 500 liquidity snapshot (medians by
+// index, size fifth and sector, monthly and weekly series, the gap test and
+// the per-member table) computed weekly by
+// scheduled-smallcap-liquidity-background.js and stored in Netlify Blobs.
+// It only reads the pre-computed blob. Mirrors earnings-revisions.js.
 
 const { getSmallcapLiquidityStore, LATEST_KEY } = require("./smallcap-liquidity-blob-store");
 
