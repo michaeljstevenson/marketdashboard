@@ -271,6 +271,16 @@
   to = "/.netlify/functions/options-positioning"
   status = 200
 
+[[redirects]]
+  from = "/api/putcall-study"
+  to = "/.netlify/functions/putcall-study"
+  status = 200
+
+[[redirects]]
+  from = "/api/putcall-history"
+  to = "/.netlify/functions/putcall-history"
+  status = 200
+
 # The Statistical Engine page was briefly at these paths.
 [[redirects]]
   from = "/streak-scanner"

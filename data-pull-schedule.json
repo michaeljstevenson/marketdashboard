@@ -3,8 +3,12 @@
     {
       "name": "putcall-history",
       "cron": "*/15 0-6 * * *",
-      "apis": [],
-      "pages": []
+      "apis": [
+        "/api/putcall-history"
+      ],
+      "pages": [
+        "put-call-ratio"
+      ]
     },
     {
       "name": "ticker",
@@ -273,7 +277,8 @@
       "apis": [],
       "pages": [
         "analyst-price-target",
-        "equity-risk-premium"
+        "equity-risk-premium",
+        "put-call-ratio"
       ]
     },
     {
@@ -377,6 +382,16 @@
       ],
       "pages": [
         "options-positioning"
+      ]
+    },
+    {
+      "name": "putcall-study",
+      "cron": null,
+      "apis": [
+        "/api/putcall-study"
+      ],
+      "pages": [
+        "put-call-ratio"
       ]
     }
   ],
