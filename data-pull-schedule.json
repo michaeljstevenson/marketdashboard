@@ -200,6 +200,16 @@
       ]
     },
     {
+      "name": "revisions",
+      "cron": "20 7 * * 6",
+      "apis": [
+        "/api/earnings-revisions"
+      ],
+      "pages": [
+        "earnings-revisions"
+      ]
+    },
+    {
       "name": "beeswarm-annual",
       "cron": "30 8 * * 6",
       "apis": [
@@ -341,16 +351,6 @@
       "cron": null,
       "apis": [],
       "pages": []
-    },
-    {
-      "name": "revisions",
-      "cron": null,
-      "apis": [
-        "/api/earnings-revisions"
-      ],
-      "pages": [
-        "earnings-revisions"
-      ]
     },
     {
       "name": "surprise",

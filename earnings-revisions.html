@@ -346,6 +346,9 @@ h1{
  margin-bottom:16px;
 }
 
+table.fwd-table{ min-width:560px; }
+table.fwd-table th:first-child, table.fwd-table td:first-child{ text-align:left; }
+tr.total-row td{ font-weight:600; border-top:1px solid var(--hair); }
 .chart-box-sub{
  color:var(--muted);
  font-size:12px;
@@ -697,6 +700,34 @@ tbody td:nth-child(3){ color:var(--muted); font-size:11px; }
 <div class="stat-value neutral" id="statCoverage">…</div>
 <div class="stat-note">S&amp;P 500 constituents with usable estimates</div>
 </div>
+<div class="stat-card">
+<div class="stat-label">S&amp;P 500 Forward EPS</div>
+<div class="stat-value" id="statFwd">…</div>
+<div class="stat-note" id="statFwdNote">Next 12 months, bottom-up</div>
+</div>
+</div>
+
+<div class="chart-box">
+<div class="chart-box-header">
+<div>
+<h2>S&amp;P 500 forward earnings over the last 90 days</h2>
+<div class="chart-box-sub" id="fwdSub">Change in the combined next-twelve-months EPS estimates of the S&amp;P 500's members since 7, 30, 60 and 90 days ago, for the index and each sector.</div>
+</div>
+</div>
+<div class="chart-canvas-wrap short">
+<canvas id="fwdChart"></canvas>
+</div>
+<div style="overflow-x:auto; margin-top:14px;"><table class="fwd-table" id="fwdTable"></table></div>
+</div>
+
+<div class="chart-box">
+<div class="chart-box-header">
+<div>
+<h2>Revenue vs. earnings revisions</h2>
+<div class="chart-box-sub">Change in the combined next-twelve-months revenue and EPS estimates since four and thirteen weeks ago. When earnings estimates rise faster than revenue estimates, analysts expect wider profit margins.</div>
+</div>
+</div>
+<div id="revEpsBox"></div>
 </div>
 
 <div class="chart-box">
@@ -770,6 +801,8 @@ tbody td:nth-child(3){ color:var(--muted); font-size:11px; }
 <p>There are two separate questions about analyst revisions, and they don't always agree: how many analysts are changing their minds, and how much the number is actually moving. The Net Revision Ratio answers the first. For each stock's current-year EPS estimate, it's (upward revisions − downward revisions) ÷ total revisions over the last 30 days, running from −1 (every revision was down) to +1 (every revision was up). Estimate Drift answers the second: the percent change in the consensus EPS estimate over the last 30 days. A stock can have lots of analysts nudging their numbers the same direction with almost no drift, or one or two analysts making a big call that moves the average while everyone else stays put. Sector and market figures are a simple average of their companies, with no market-cap weighting.</p>
 <p>Leaderboards leave out stocks with fewer than 3 covering analysts, since one analyst's revision can swing the numbers by double digits.</p>
 <p>The chart over time starts from when this page began tracking and adds a new point each week. Past revision data isn't available, so the line can't be filled in backward and gets more useful as it grows.</p>
+<p>Forward EPS puts every company on the same next-twelve-months basis. Each company's estimates for its current and next fiscal years are blended by how much of the current fiscal year is still ahead: a company four months from its fiscal year-end counts one third of the current year's estimate and two thirds of next year's. Multiplying by shares outstanding and adding across companies gives the index's combined forward earnings, so the largest companies weigh the most, unlike the equal-weighted breadth measures above. The S&amp;P 500 forward EPS figure is the index level divided by the members' combined forward P/E, which puts it in index points. The 7, 30, 60 and 90-day changes compare today's estimates with the consensus Alpha Vantage records for those dates, at today's share counts and with today's blend of the two fiscal years, for the companies that have all five points. Holding the blend fixed means the changes come only from analysts revising their numbers. A standard rolling forward EPS also rises as the calendar moves toward next year's higher estimate, which these figures leave out.</p>
+<p>Alpha Vantage only gives today's revenue estimate, without the past values it keeps for EPS, so revenue revisions come from this page's own weekly snapshots, starting with the first one that stored them. Each comparison uses the companies covered in both weeks' snapshots, and Alphabet, Fox and News Corp's second share classes are counted once for revenue.</p>
 
 
 </div>
@@ -862,6 +895,8 @@ async function init(){
   renderHistoryChart();
   renderScatter();
   renderLeaderboards();
+  renderForward();
+  renderRevenueVsEps();
 
  }catch(e){
   showError("Couldn't load earnings revisions data (" + e.message + "). The /api/earnings-revisions function may be unreachable.");
@@ -1152,6 +1187,51 @@ function renderLeaderboards(){
 }
 
 init();
+
+let fwdChart = null;
+function renderForward(){
+ const f = RAW.forward;
+ if(!f){ document.getElementById("fwdSub").textContent = "Forward estimates aren't in this snapshot yet."; return; }
+ document.getElementById("statFwd").textContent = f.indexEps === null ? "n/a" : "$" + f.indexEps.toFixed(2);
+ document.getElementById("statFwdNote").textContent = "Next 12 months, " + fmtPct(f.changePct[90], 1) + " over 90 days, forward P/E " + (f.forwardPE ?? "n/a");
+ const ks = ["90", "60", "30", "7"];
+ const labels = ["90 days ago", "60 days ago", "30 days ago", "7 days ago", "Today"];
+ // Index each line to 100 today from its percent changes.
+ const xs = [-90, -60, -30, -7, 0];
+ const path = ch => ks.map(k => ch[k] === null ? null : 100 / (1 + ch[k] / 100)).concat([100]).map((y, i) => ({ x: xs[i], y }));
+ const ink = themeInkColor(), muted = themeMutedColor(), hair = themeHairColor();
+ const accent = getComputedStyle(document.documentElement).getPropertyValue("--greed").trim() || "#d98a3d";
+ const top = f.sectors.slice().sort((a, b) => Math.abs(b.changePct[90] ?? 0) - Math.abs(a.changePct[90] ?? 0)).slice(0, 2);
+ const sets = [{ label: "S&P 500", data: path(f.changePct), borderColor: ink, backgroundColor: ink, borderWidth: 2.4, pointRadius: 3, tension: 0 }]
+  .concat(top.map((s, i) => ({ label: s.sector, data: path(s.changePct), borderColor: i ? muted : accent, backgroundColor: i ? muted : accent, borderWidth: 1.6, pointRadius: 2.5, borderDash: i ? [4, 3] : [], tension: 0 })));
+ if(fwdChart) fwdChart.destroy();
+ fwdChart = new Chart(document.getElementById("fwdChart"), {
+  type: "line",
+  data: { datasets: sets },
+  options: {
+   responsive: true, maintainAspectRatio: false,
+   interaction: { mode: "index", intersect: false },
+   plugins: { zoom: false, legend: { display: true, position: "top", align: "start", labels: { boxWidth: 14, color: ink, font: { size: 11 } } }, tooltip: { callbacks: { title: c => labels[xs.indexOf(c[0].parsed.x)], label: c => c.dataset.label + ": " + (c.parsed.y === null ? "n/a" : (c.parsed.y).toFixed(2)) + " (today = 100)" } } },
+   scales: { x: { type: "linear", min: -90, max: 0, ticks: { color: muted, font: { size: 11 }, stepSize: 30, callback: v => v === 0 ? "Today" : (-v) + " days ago" }, grid: { display: false } }, y: { ticks: { color: muted, font: { size: 11 } }, grid: { color: hair }, title: { display: true, text: "forward earnings, today = 100", color: muted, font: { size: 10 } } } },
+  },
+ });
+ const row = (name, n, pe, ch) => "<tr><td>" + name + "</td><td>" + n + "</td><td>" + (pe ?? "n/a") + "</td>" + ["7", "30", "60", "90"].map(k => '<td class="' + classForValue(ch[k]) + '">' + fmtPct(ch[k], 2) + "</td>").join("") + "</tr>";
+ document.getElementById("fwdTable").innerHTML = "<thead><tr><th>Group</th><th>Companies</th><th>Forward P/E</th><th>7 days</th><th>30 days</th><th>60 days</th><th>90 days</th></tr></thead><tbody>" + f.sectors.slice().sort((a, b) => (b.changePct[90] ?? -99) - (a.changePct[90] ?? -99)).map(s => row(s.sector, s.companies, s.forwardPE, s.changePct)).join("") + '<tr class="total-row">' + row("S&P 500", f.companies, f.forwardPE, f.changePct).slice(4) + "</tbody>";
+ document.getElementById("fwdSub").textContent = "Change in the combined next-twelve-months EPS estimates of " + f.companies + " S&P 500 members since 7, 30, 60 and 90 days ago, indexed to 100 today, for the index and the two sectors whose estimates moved most over 90 days. The table has every sector.";
+}
+function renderRevenueVsEps(){
+ const r = RAW.revenueVsEps, box = document.getElementById("revEpsBox");
+ if(!r){ box.innerHTML = '<div class="chart-box-sub">Not in this snapshot yet.</div>'; return; }
+ const weeks = ["4", "13"].filter(w => r.since[w]);
+ if(!weeks.length){
+  const first = new Date(Date.parse(r.firstStored) + 28 * 86400000).toISOString().slice(0, 10);
+  box.innerHTML = '<div class="chart-box-sub">Revenue estimates have been stored weekly since ' + usDate(r.firstStored) + ". The first four-week comparison will appear around " + usDate(first) + ".</div>";
+  return;
+ }
+ const w = weeks[0], d = r.since[w];
+ const rows = d.sectors.map(s => "<tr><td>" + s.sector + '</td><td class="' + classForValue(s.revenuePct) + '">' + fmtPct(s.revenuePct, 2) + '</td><td class="' + classForValue(s.earningsPct) + '">' + fmtPct(s.earningsPct, 2) + "</td></tr>").join("");
+ box.innerHTML = '<div class="chart-box-sub">Since ' + usDate(d.from) + ".</div><div style=\"overflow-x:auto;\"><table class=\"fwd-table\"><thead><tr><th>Group</th><th>Revenue estimates</th><th>EPS estimates</th></tr></thead><tbody>" + rows + '<tr class="total-row"><td>S&amp;P 500</td><td>' + fmtPct(d.revenuePct, 2) + "</td><td>" + fmtPct(d.earningsPct, 2) + "</td></tr></tbody></table></div>";
+}
 </script>
 
 </body>
