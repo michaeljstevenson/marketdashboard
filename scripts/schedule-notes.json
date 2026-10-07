@@ -12,7 +12,7 @@
   "oddstats": "Daily history for the S&P 500, SPY, the 11 sector ETFs and 25 mega-caps, to scan for streaks.",
   "smallcap": "Daily prices for IWM (small caps), MDY (mid caps) and SPY (large caps).",
   "beeswarm-daily": "15-minute price moves through the trading day for every S&P 500 stock.",
-  "international": "Daily prices for EFA (developed markets), EEM (emerging markets) and SPY, plus the EUR/USD rate.",
+  "international": "Daily prices for EFA (developed markets), EEM (emerging markets), SPY, the currency-hedged HEFA, the US dollar index (DXY), the EUR/USD rate and 20 country ETFs, seven of which are read from the countries job's stored data when it is current. Ken French Major Markets, US and emerging-market monthly returns are downloaded at most once a calendar month.",
   "concentration": "Monthly prices and SEC share counts for the Magnificent Seven stocks.",
   "concentration-history": "Long-history index data for the top-10 share of the S&P 500.",
   "factors": "Fama-French daily factor returns, back to 1926.",

@@ -8,6 +8,9 @@ const { getStore } = require("@netlify/blobs");
 
 const BLOB_STORE = "international-us";
 const BLOB_KEY = "international.json";
+// Ken French monthly series, cached so the daily job downloads them at most
+// once a calendar month.
+const KF_BLOB_KEY = "international-kenfrench.json";
 
 function getInternationalStore() {
   const { BLOBS_SITE_ID, BLOBS_API_TOKEN } = process.env;
@@ -17,4 +20,4 @@ function getInternationalStore() {
   return getStore(BLOB_STORE);
 }
 
-module.exports = { getInternationalStore, BLOB_STORE, BLOB_KEY };
+module.exports = { getInternationalStore, BLOB_STORE, BLOB_KEY, KF_BLOB_KEY };

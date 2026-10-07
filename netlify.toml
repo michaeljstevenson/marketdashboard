@@ -640,8 +640,10 @@
 
 [functions."scheduled-international-background"]
   # Daily 22:20 UTC, right after scheduled-smallcap-background (22:15). Index
-  # levels move every trading day; a handful of Yahoo calls, no contention
-  # risk.
+  # levels move every trading day; about 20 paced Yahoo calls, no contention
+  # risk. After scheduled-countries-background (21:45 weekdays) so the country
+  # ETFs that job stores are current when this one reads them. Ken French
+  # files are re-downloaded at most once a calendar month.
   schedule = "20 22 * * *"
 
 [functions."scheduled-surprise-background"]
