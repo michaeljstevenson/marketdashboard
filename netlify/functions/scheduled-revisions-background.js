@@ -133,7 +133,6 @@ function ntm(fy1Value, fy2Value, fy1EndDate, date) {
   if (!Number.isFinite(fy2Value)) return w > 0.5 ? fy1Value : null;
   return w * fy1Value + (1 - w) * fy2Value;
 }
-const daysBefore = (date, k) => new Date(Date.parse(date) - k * 86400000).toISOString().slice(0, 10);
 
 // Change in forward earnings and revenue totals since the stored weekly point
 // nearest 4 and 13 weeks back (within a week), once history reaches that far.
@@ -158,11 +157,13 @@ function revenueVsEps(points, now) {
 
 // Aggregate forward earnings (shares x NTM EPS) for a group at each
 // days-ago point, using only stocks with every point, so the path compares
-// the same companies throughout.
+// the same companies throughout. Every point uses today's fiscal-year
+// weights, so the path shows estimate revisions only, without the drift
+// that comes from rolling toward next year's (usually higher) estimate.
 function forwardPath(rows, today) {
-  const usable = rows.filter((r) => r.shares && r.price && AGO.every((k) => Number.isFinite(ntm(r.fy1Eps[k], r.fy2Eps[k], r.fyEndDate, daysBefore(today, k)))));
+  const usable = rows.filter((r) => r.shares && r.price && AGO.every((k) => Number.isFinite(ntm(r.fy1Eps[k], r.fy2Eps[k], r.fyEndDate, today))));
   if (!usable.length) return null;
-  const total = (k) => usable.reduce((s, r) => s + r.shares * ntm(r.fy1Eps[k], r.fy2Eps[k], r.fyEndDate, daysBefore(today, k)), 0);
+  const total = (k) => usable.reduce((s, r) => s + r.shares * ntm(r.fy1Eps[k], r.fy2Eps[k], r.fyEndDate, today), 0);
   const now = total(0);
   const cap = usable.reduce((s, r) => s + r.shares * r.price, 0);
   return {
