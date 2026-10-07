@@ -369,6 +369,16 @@
       ]
     },
     {
+      "name": "volatility",
+      "cron": null,
+      "apis": [
+        "/api/volatility"
+      ],
+      "pages": [
+        "volatility"
+      ]
+    },
+    {
       "name": "income-collector",
       "cron": null,
       "apis": [],
@@ -393,6 +403,12 @@
       "pages": [
         "options-positioning"
       ]
+    },
+    {
+      "name": "short-interest",
+      "cron": null,
+      "apis": [],
+      "pages": []
     }
   ],
   "onRequest": [
@@ -400,12 +416,6 @@
       "api": "/api/momentum-history",
       "pages": [
         "sentiment-index"
-      ]
-    },
-    {
-      "api": "/api/volatility",
-      "pages": [
-        "volatility"
       ]
     },
     {

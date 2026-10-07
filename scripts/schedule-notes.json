@@ -30,7 +30,7 @@
   "quality-financials": "Annual balance sheet and income figures for every S&P 500 stock. Makes no API calls: reads the annual reports margin-leverage already saved.",
   "quality-score": "Cash flow for every S&P 500 stock, added to the financials for a quality score. Second stage of the Quality Score page. Needs quality-financials first.",
   "surprise": "Reported versus estimated earnings for every S&P 500 stock. Manual snapshot. Post-earnings-drift depends on it.",
-  "volatility": "Daily closes for the S&P 500 index and the VIX.",
+  "volatility": "Full daily history of the S&P 500 index and the VIX since 1990, plus the VIX9D, VIX3M and VIX6M indices for the term structure.",
   "concentration-market": "Daily prices for SPY and RSP.",
   "momentum-history": "Daily prices for SPY.",
   "backtest-prices": "Daily prices for whatever symbol you enter.",

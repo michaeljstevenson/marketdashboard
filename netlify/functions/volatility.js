@@ -1,74 +1,17 @@
-// Realized vs. Implied Volatility research page data.
-//
-// This uses the textbook definitions, deliberately different from the
-// ATR-based "Realized Volatility" factor in the sentiment index (data.js):
-// that factor prioritizes simplicity and consistency with the rest of the
-// dashboard's scoring method. This page is meant to stand on its own as a
-// recognizable comparison to anyone with finance training, so it uses the
-// standard construction instead:
-//   - Realized volatility: 20-trading-day rolling standard deviation of
-//     daily log returns, annualized (x sqrt(252)) and expressed as a %.
-//   - Implied volatility: the VIX itself, which is already an annualized
-//     30-day-forward volatility estimate by construction — no transform.
-// The gap between them (implied - realized) is the "volatility risk
-// premium": historically positive most of the time (options tend to
-// slightly overprice future volatility), so its sign and size are
-// interesting in their own right.
+// Serves the Implied vs. Realized Volatility page's data, computed once per
+// weekday after the close by scheduled-volatility-background.js and stored
+// in Netlify Blobs (see that file for the definitions). This function makes
+// no Yahoo calls itself. Mirrors country-performance.js.
 
-const { fetchDailyHistory } = require("./yahoo-client");
-
-const REALIZED_VOL_WINDOW = 20; // trading days
-const HISTORY_POINTS = 180; // ~6 months
-// Yahoo returns each index's full history (14,000+ daily rows for ^GSPC); only
-// the recent tail is needed for the window plus HISTORY_POINTS of output.
-const ROWS_NEEDED = 400;
-
-function round(n, digits) {
-  const f = 10 ** digits;
-  return Math.round(n * f) / f;
-}
-
-async function fetchIndexDaily(symbol) {
-  const rows = await fetchDailyHistory(symbol, { adjusted: false });
-  return rows.slice(-ROWS_NEEDED);
-}
-
-function computeRealizedVolSeries(closes, window) {
-  const points = [];
-  for (let i = window; i < closes.length; i++) {
-    const rets = [];
-    for (let j = i - window + 1; j <= i; j++) {
-      rets.push(Math.log(closes[j].close / closes[j - 1].close));
-    }
-    const mean = rets.reduce((s, r) => s + r, 0) / rets.length;
-    const variance = rets.reduce((s, r) => s + (r - mean) ** 2, 0) / (rets.length - 1);
-    const annualized = Math.sqrt(variance) * Math.sqrt(252) * 100;
-    points.push({ date: closes[i].date, value: annualized });
-  }
-  return points;
-}
+const { getVolatilityStore, BLOB_KEY } = require("./volatility-blob-store");
 
 exports.handler = async () => {
   try {
-    const spx = await fetchIndexDaily("^GSPC");
-    const vix = await fetchIndexDaily("^VIX");
+    const payload = await getVolatilityStore().get(BLOB_KEY, { type: "json" });
 
-    const realizedSeries = computeRealizedVolSeries(spx, REALIZED_VOL_WINDOW);
-    const vixByDate = new Map(vix.map((v) => [v.date, v.close]));
-
-    const merged = realizedSeries
-      .filter((p) => vixByDate.has(p.date))
-      .map((p) => ({
-        date: p.date,
-        realized: round(p.value, 2),
-        implied: round(vixByDate.get(p.date), 2),
-        spread: round(vixByDate.get(p.date) - p.value, 2),
-      }));
-
-    const trimmed = merged.slice(-HISTORY_POINTS);
-    const latest = merged.length ? merged[merged.length - 1] : null;
-
-    const now = new Date();
+    if (!payload) {
+      throw new Error("Volatility data not yet populated, scheduled-volatility-background hasn't run yet");
+    }
 
     return {
       statusCode: 200,
@@ -77,20 +20,7 @@ exports.handler = async () => {
         "Cache-Control": "public, max-age=7200",
         "Access-Control-Allow-Origin": "*",
       },
-      body: JSON.stringify({
-        timestamp: now.toLocaleString("en-US", {
-          timeZone: "America/New_York",
-          month: "long",
-          day: "numeric",
-          year: "numeric",
-          hour: "numeric",
-          minute: "2-digit",
-          hour12: true,
-        }) + " ET",
-        latest,
-        history: trimmed,
-        window: REALIZED_VOL_WINDOW,
-      }),
+      body: JSON.stringify(payload),
     };
   } catch (err) {
     return {
