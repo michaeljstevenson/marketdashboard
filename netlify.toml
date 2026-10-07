@@ -644,7 +644,8 @@
   # risk. After scheduled-countries-background (21:45 weekdays) so the country
   # ETFs that job stores are current when this one reads them. Ken French
   # files are re-downloaded at most once a calendar month.
-  schedule = "20 22 * * *"
+  # Schedule paused for the reworked job's first manual run:
+  # schedule = "20 22 * * *"
 
 [functions."scheduled-surprise-background"]
   # One-time snapshot (2026-09-16) — no schedule. Earnings Surprise History
