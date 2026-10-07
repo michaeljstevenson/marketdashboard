@@ -12,6 +12,149 @@
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1" name="viewport"/>
 <title>Valuations by Industry | Michael J. Stevenson</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom@2"></script>
+<script src="date-format.js"></script>
+<script>
+// FRED-style zoom: drag horizontally on any chart to zoom into that range,
+// double-click to reset. Applied via Chart.defaults so every chart on the
+// page gets it without touching each individual new Chart(...) call.
+Chart.defaults.plugins.zoom = {
+ zoom: {
+  wheel: { enabled: false },
+  pinch: { enabled: false },
+  drag: { enabled: true, backgroundColor: "rgba(217,138,61,0.15)", borderColor: "rgba(217,138,61,0.4)", borderWidth: 1 },
+  mode: "x",
+ },
+ pan: { enabled: true, mode: "x", modifierKey: "shift" },
+};
+document.addEventListener("dblclick", function(e){
+ if(e.target.tagName === "CANVAS"){
+  var chart = Chart.getChart(e.target);
+  if(chart) chart.resetZoom();
+ }
+});
+document.addEventListener("DOMContentLoaded", function(){
+ document.querySelectorAll(".chart-canvas-wrap canvas").forEach(function(c){
+  c.title = "Drag to zoom · shift-drag to pan · double-click to reset";
+ });
+});
+</script>
+<style>
+.chart-fullscreen-btn{
+ position:absolute;
+ top:8px;
+ right:8px;
+ z-index:5;
+ background:var(--card, #1c2127);
+ border:1px solid var(--hair, #2b3138);
+ color:var(--muted, #8b9199);
+ border-radius:6px;
+ width:28px;
+ height:28px;
+ display:flex;
+ align-items:center;
+ justify-content:center;
+ cursor:pointer;
+ padding:0;
+ opacity:0.85;
+}
+.chart-fullscreen-btn:hover{ color:var(--ink, #eae6da); border-color:#3a424b; opacity:1; }
+.is-chart-fullscreen{
+ background:var(--bg, #14181c) !important;
+ padding:24px !important;
+ display:flex !important;
+ flex-direction:column !important;
+ overflow:auto !important;
+}
+.is-chart-fullscreen canvas{
+ max-height:none !important;
+}
+</style>
+<script>
+// Expand-to-fullscreen button on every chart, matching the pattern from
+// sites like GuruFocus: a small corner button on each chart's canvas
+// area that fullscreens the whole chart card (title, legend, controls
+// included) via the Fullscreen API. Finds every <canvas> generically
+// rather than relying on one wrapper class name, since different pages
+// on this site use different card markup (.chart-box, .scatter-box,
+// .chart, herd-mentality tiles, etc.).
+document.addEventListener("DOMContentLoaded", function(){
+ function requestFs(el){
+  var fn = el.requestFullscreen || el.webkitRequestFullscreen || el.mozRequestFullScreen || el.msRequestFullscreen;
+  if(fn) fn.call(el);
+ }
+ function exitFs(){
+  var fn = document.exitFullscreen || document.webkitExitFullscreen || document.mozCancelFullScreen || document.msExitFullscreen;
+  if(fn) fn.call(document);
+ }
+ function currentFsEl(){
+  return document.fullscreenElement || document.webkitFullscreenElement || document.mozFullScreenElement || document.msFullscreenElement;
+ }
+ function resolveCard(canvas){
+  return canvas.closest(".chart-box, .scatter-box, .herd-cell, .modal-chart")
+   || canvas.parentElement.closest("div")
+   || canvas.parentElement;
+ }
+ function resizeChartIn(wrap){
+  var canvas = wrap.querySelector("canvas");
+  var chart = canvas && window.Chart && Chart.getChart(canvas);
+  if(chart) chart.resize();
+ }
+
+ var entries = []; // { card, wrap }
+
+ document.querySelectorAll("canvas").forEach(function(canvas){
+  if(canvas.closest(".chart-fullscreen-btn")) return;
+  var card = resolveCard(canvas);
+  if(!card || card.querySelector(".chart-fullscreen-btn")) return; // one button per card, not per canvas
+
+  var wrap = canvas.parentElement;
+  var wrapStyle = getComputedStyle(wrap);
+  if(wrapStyle.position === "static") wrap.style.position = "relative";
+
+  var btn = document.createElement("button");
+  btn.type = "button";
+  btn.className = "chart-fullscreen-btn";
+  btn.title = "Expand chart";
+  btn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3H5a2 2 0 0 0-2 2v3"/><path d="M16 3h3a2 2 0 0 1 2 2v3"/><path d="M8 21H5a2 2 0 0 1-2-2v-3"/><path d="M16 21h3a2 2 0 0 0 2-2v-3"/></svg>';
+  btn.addEventListener("click", function(e){
+   e.stopPropagation();
+   if(currentFsEl() === card) exitFs();
+   else requestFs(card);
+  });
+  wrap.appendChild(btn);
+  entries.push({ card: card, wrap: wrap });
+
+  if(window.ResizeObserver){
+   new ResizeObserver(function(){ resizeChartIn(wrap); }).observe(wrap);
+  }
+ });
+
+ function onFsChange(){
+  var fsEl = currentFsEl();
+  entries.forEach(function(entry){
+   var isFs = fsEl === entry.card;
+   entry.card.classList.toggle("is-chart-fullscreen", isFs);
+   if(isFs){
+    entry.wrap.dataset.fsPrevHeight = entry.wrap.style.height || "";
+    entry.wrap.dataset.fsPrevFlex = entry.wrap.style.flex || "";
+    entry.wrap.style.flex = "1 1 auto";
+    entry.wrap.style.minHeight = "0";
+    entry.wrap.style.height = "auto";
+   }else if(entry.wrap.dataset.fsPrevHeight !== undefined){
+    entry.wrap.style.height = entry.wrap.dataset.fsPrevHeight;
+    entry.wrap.style.flex = entry.wrap.dataset.fsPrevFlex;
+    entry.wrap.style.minHeight = "";
+   }
+  });
+  entries.forEach(function(entry){ resizeChartIn(entry.wrap); });
+ }
+ ["fullscreenchange", "webkitfullscreenchange", "mozfullscreenchange", "MSFullscreenChange"].forEach(function(evt){
+  document.addEventListener(evt, onFsChange);
+ });
+});
+</script>
 <style>
 
 :root{
@@ -30,6 +173,19 @@
   --serif:'Times New Roman',Times,serif;
   --mono:'SF Mono','JetBrains Mono',ui-monospace,Menlo,monospace;
   --sans:'Times New Roman',Times,serif;
+
+  /* NDR-style chart palette, the same in light and dark like the site's
+     other chart pages. JS reads it via getComputedStyle. */
+  --ndr-plot:#f5f1e6;
+  --ndr-axis:#3c3a33;
+  --ndr-axis-soft:#6f6a5c;
+  --ndr-grid:#ddd6c2;
+  --ndr-red:#a83c36;
+  --ndr-green:#4f6f3f;
+  --ndr-gold:#c1902f;
+  --ndr-navy:#2f4b6e;
+  --ndr-slate:#7d8a99;
+
 }
 
 :root[data-theme="light"]{
@@ -240,6 +396,27 @@ tbody td:first-child{
 
 .cell-na{ color:var(--muted); }
 
+/* S&P 500 monthly section */
+.section-title{ font-family:var(--serif); font-weight:400; font-size:22px; margin:8px 0 4px; }
+.section-intro{ color:var(--muted); font-size:13px; margin:0 0 18px; max-width:860px; line-height:1.5; }
+.chart-box{ background:var(--card); border:1px solid var(--hair); border-radius:12px; padding:20px; margin-bottom:30px; }
+.chart-box-header{ display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom:16px; }
+.chart-box h2{ font-family:var(--serif); font-weight:400; font-size:18px; margin:0; }
+.chart-subhead{ color:var(--muted); font-size:12px; margin-top:4px; }
+.chart-note{ font-size:12px; color:var(--muted); margin:10px 2px 4px; line-height:1.5; }
+.chart-canvas-wrap{ height:380px; }
+.ndr-panel{ background:var(--ndr-plot); border:1px solid var(--ndr-grid); border-radius:8px; padding:14px 14px 10px; }
+.chart-box .table-scroll{ overflow-x:auto; }
+.chart-box table.sp-table{ min-width:760px; }
+tr.total-row td{ font-weight:600; border-top:1px solid var(--hair); }
+.sector-pick{ font-family:inherit; font-size:13px; background:var(--card); color:var(--ink); border:1px solid var(--hair); border-radius:6px; padding:5px 8px; }
+.full-list-details{ margin-top:4px; }
+.full-list-summary{ cursor:pointer; font-weight:600; padding:10px 0; color:var(--ink); list-style:none; user-select:none; }
+.full-list-summary::-webkit-details-marker{ display:none; }
+.full-list-summary::before{ content:"▸ "; display:inline-block; width:1em; }
+.full-list-details[open] .full-list-summary::before{ content:"▾ "; }
+.damodaran-head{ margin-top:40px; }
+
 /* EXPLAINER */
 
 .explainer{
@@ -414,10 +591,86 @@ tbody td:first-child{
 <div class="header">
 <div>
 <h1>Valuations by Industry</h1>
-<div class="subtitle">Aggregated valuation multiples across ~7,000 US public companies, grouped into 94 industry classifications. P/E, EV/EBITDA, P/B, and expected growth.</div>
+<div class="subtitle">S&amp;P 500 valuation multiples by sector and industry, updated monthly, and aggregated valuation multiples across ~7,000 US public companies, grouped into 94 industry classifications. P/E, EV/EBITDA, P/B, and expected growth.</div>
 </div>
-<div class="updated" id="updated">Annual, updated each January</div>
+<div class="updated" id="updated">Loading...</div>
 </div>
+
+<div class="stat-grid" id="spStats">
+<div class="stat-card"><div class="stat-label">S&amp;P 500 Trailing P/E</div><div class="stat-value" id="statTrailing">…</div><div class="stat-note" id="statTrailingNote">Reported EPS, last four quarters</div></div>
+<div class="stat-card"><div class="stat-label">Forward P/E</div><div class="stat-value" id="statForward">…</div><div class="stat-note" id="statForwardNote">Analysts' EPS estimates</div></div>
+<div class="stat-card"><div class="stat-label">EV/EBITDA</div><div class="stat-value" id="statEv">…</div><div class="stat-note">Excluding financials</div></div>
+<div class="stat-card"><div class="stat-label">Price/Book</div><div class="stat-value" id="statPb">…</div><div class="stat-note" id="statPbNote">Companies with positive book value</div></div>
+<div class="stat-card"><div class="stat-label">Trailing P/E vs. Its History</div><div class="stat-value txt" id="statPct">…</div><div class="stat-note" id="statPctNote">Percentile of the rebuilt monthly history</div></div>
+</div>
+<div class="chart-note" id="spError" hidden></div>
+
+<div class="chart-box">
+<div class="chart-box-header">
+<div>
+<h2>S&amp;P 500 sectors this month</h2>
+<div class="chart-subhead" id="sectorSub">Each multiple is the sector's total market value divided by its total earnings, book value or sales, so the largest companies weigh the most.</div>
+</div>
+</div>
+<div class="table-scroll">
+<table class="sp-table">
+<thead><tr><th>Sector</th><th>Companies</th><th>Market Cap ($bn)</th><th>Trailing P/E</th><th>Forward P/E</th><th>EV/EBITDA</th><th>P/B</th><th>P/S</th><th>Trailing P/E Percentile</th></tr></thead>
+<tbody id="sectorBody"><tr><td colspan="9" style="text-align:center; color:var(--muted); padding:24px;">Loading&hellip;</td></tr></tbody>
+</table>
+</div>
+<div class="chart-note">Trailing P/E percentile is where this month's trailing P/E sits within the sector's own monthly readings in the rebuilt history (100 is the highest). EV/EBITDA leaves out financials, where EBITDA isn't meaningful. n/a means the figure wasn't available.</div>
+</div>
+
+<div class="chart-box">
+<div class="chart-box-header">
+<div>
+<h2>Trailing P/E today against its history</h2>
+<div class="chart-subhead" id="rangeSub">For the S&amp;P 500 and each sector: the full range of monthly readings in the rebuilt history (thin bar), the middle half of them (thick bar), the median (tick) and this month (dot).</div>
+</div>
+</div>
+<div class="ndr-panel">
+<div class="chart-canvas-wrap" style="height:440px;">
+<canvas id="rangeChart"></canvas>
+</div>
+</div>
+</div>
+
+<div class="chart-box">
+<div class="chart-box-header">
+<div>
+<h2>Trailing P/E since 2017</h2>
+<div class="chart-subhead">Month-end trailing P/E of today's S&amp;P 500 members, rebuilt from each company's reported EPS and price at the time with today's share counts. Pick a sector to compare with the index.</div>
+</div>
+<select class="sector-pick" id="historyPick" aria-label="Sector to compare"></select>
+</div>
+<div class="ndr-panel">
+<div class="chart-canvas-wrap">
+<canvas id="historyChart"></canvas>
+</div>
+</div>
+<div class="chart-note" id="historyNote"></div>
+</div>
+
+<div class="chart-box">
+<div class="chart-box-header">
+<div>
+<h2>S&amp;P 500 industries this month</h2>
+<div class="chart-subhead" id="industrySub">Industries with at least three S&amp;P 500 companies, using Alpha Vantage's industry classification.</div>
+</div>
+</div>
+<details class="full-list-details">
+<summary class="full-list-summary">Show industries</summary>
+<div class="table-scroll">
+<table class="sp-table">
+<thead><tr><th>Industry</th><th>Sector</th><th>Companies</th><th>Trailing P/E</th><th>Forward P/E</th><th>EV/EBITDA</th><th>P/B</th><th>P/S</th></tr></thead>
+<tbody id="industryBody"></tbody>
+</table>
+</div>
+</details>
+</div>
+
+<h2 class="section-title damodaran-head">All US industries, from Damodaran</h2>
+<p class="section-intro">Aswath Damodaran's dataset covers every US public company and updates once a year, each January. The figures below are from his 01/09/2026 update.</p>
 <div class="stat-grid" id="totalMarketStats"></div>
 <div class="controls">
 <div class="search-box"><input id="searchBox" oninput="render()" placeholder="Filter industries..." type="text"/></div>
@@ -443,9 +696,11 @@ tbody td:first-child{
 </table>
 </div>
 <div class="explainer">
+<p>The S&amp;P 500 figures update monthly. Each sector's or industry's multiple is its total market value divided by its total earnings, book value or sales, losses included, which is how index providers compute an index P/E. Trailing P/E uses each company's reported EPS for its last four quarters, the adjusted figure companies and analysts quote, times shares outstanding. Forward P/E uses the forward P/E in Alpha Vantage's company overview, which is based on analysts' consensus EPS estimates. EV/EBITDA, price/book and price/sales use the same overview's enterprise value, EBITDA, book value and revenue, counting each company once across its share classes, and EV/EBITDA leaves out financials.</p>
+<p>The history is rebuilt, so it's an approximation. It starts once at least 80% of today's members have four quarters of reported EPS in the data, which is late 2017 for most sectors. It takes today's members and today's share counts and values them at each past month-end with the price and reported EPS known then. Companies that left the index, and today's members before they joined, are counted as if the index were today's list throughout, and buybacks and share issuance since then aren't reflected. It shows how today's index would have been valued, which is close to, but not the same as, the published index P/E at the time. From the first monthly run on, each month's actual reading is also kept.</p>
 <p>Each row aggregates every publicly traded US company Damodaran's dataset covers within that industry classification. Current PE uses trailing 12-month diluted EPS including one-time items, trailing PE excludes them, forward PE uses next-12-month analyst EPS estimates. PEG divides the PE ratio by the expected 5-year earnings growth rate. ROE is aggregate net income divided by aggregate book equity for money-making firms in the industry.</p>
 
-<div class="source">Source: <a href="https://pages.stern.nyu.edu/~adamodar/New_Home_Page/data.html" rel="noopener" target="_blank">Aswath Damodaran, NYU Stern: Industry-average valuation multiples (PE, EV/EBITDA, Price/Book)</a></div>
+<div class="source">Sources: S&amp;P 500 multiples from <a href="https://www.alphavantage.co/" rel="noopener" target="_blank">Alpha Vantage</a> company overviews and earnings and <a href="https://finance.yahoo.com/" rel="noopener" target="_blank">Yahoo Finance</a> prices. <a href="https://pages.stern.nyu.edu/~adamodar/New_Home_Page/data.html" rel="noopener" target="_blank">Aswath Damodaran, NYU Stern: Industry-average valuation multiples (PE, EV/EBITDA, Price/Book)</a>.</div>
 </div>
 </div>
 <script>
@@ -648,6 +903,130 @@ document.querySelectorAll("thead th").forEach(th => {
 
 renderStats();
 render();
+</script>
+<script>
+function ndr(name){ return getComputedStyle(document.documentElement).getPropertyValue("--ndr-" + name).trim(); }
+function cssVar(name){ return getComputedStyle(document.documentElement).getPropertyValue(name).trim(); }
+Chart.defaults.font.family = "'Iowan Old Style','Palatino Linotype',Georgia,serif";
+Chart.defaults.color = ndr("axis-soft");
+const fx = (v, d) => (v === null || v === undefined || !isFinite(v) ? "n/a" : Number(v).toFixed(d));
+const naCell = (v, d) => '<td' + (v === null || v === undefined ? ' class="cell-na"' : "") + ">" + fx(v, d) + "</td>";
+let SP = null, rangeChart = null, historyChart = null;
+
+function ordinal(n){ const s = ["th", "st", "nd", "rd"], v = n % 100; return n + (s[(v - 20) % 10] || s[v] || s[0]); }
+
+function renderSpStats(){
+ const t = SP.total, r = SP.ranges.find(x => x.name === "S&P 500");
+ document.getElementById("statTrailing").textContent = fx(t.trailingPE, 1);
+ document.getElementById("statTrailingNote").textContent = "Reported EPS, last four quarters, " + t.trailingCoverage + " stocks";
+ document.getElementById("statForward").textContent = fx(t.forwardPE, 1);
+ document.getElementById("statEv").textContent = fx(t.evEbitda, 1);
+ document.getElementById("statPb").textContent = fx(t.priceToBook, 2);
+ if(r && r.percentile !== null){
+  document.getElementById("statPct").textContent = ordinal(r.percentile) + " percentile";
+  document.getElementById("statPctNote").textContent = "Range " + fx(r.min, 1) + " to " + fx(r.max, 1) + " since " + usDate(SP.historyStart.slice(0, 7));
+ }
+}
+
+function renderSectorTable(){
+ const pctOf = name => { const r = SP.ranges.find(x => x.name === name); return r && r.percentile !== null ? r.percentile : null; };
+ const row = (g, cls) => '<tr' + (cls ? ' class="' + cls + '"' : "") + "><td>" + g.name + "</td><td>" + g.companies + "</td><td>" + (g.marketCapBn === null ? "n/a" : g.marketCapBn.toLocaleString()) + "</td>" + naCell(g.trailingPE, 1) + naCell(g.forwardPE, 1) + naCell(g.evEbitda, 1) + naCell(g.priceToBook, 2) + naCell(g.priceToSales, 2) + naCell(pctOf(g.name), 0) + "</tr>";
+ document.getElementById("sectorBody").innerHTML = SP.sectors.map(g => row(g)).join("") + row(SP.total, "total-row");
+ document.getElementById("sectorSub").textContent = "As of " + usDate(SP.asOf) + ". Each multiple is the sector's total market value divided by its total earnings, book value or sales, so the largest companies weigh the most.";
+}
+
+function renderRangeChart(){
+ const rows = SP.ranges.filter(r => r.current !== null && r.min !== null);
+ const labels = rows.map(r => r.name);
+ if(rangeChart) rangeChart.destroy();
+ rangeChart = new Chart(document.getElementById("rangeChart"), {
+  type: "bar",
+  data: {
+   labels,
+   datasets: [
+    { type: "scatter", label: "This month", data: rows.map(r => ({ x: r.current, y: r.name })), backgroundColor: ndr("red"), borderColor: ndr("red"), pointRadius: 5.5, pointHoverRadius: 7, order: 0 },
+    { type: "scatter", label: "Median", data: rows.map(r => ({ x: r.median, y: r.name })), pointStyle: "line", rotation: 90, pointRadius: 9, borderWidth: 2, borderColor: ndr("axis"), backgroundColor: ndr("axis"), order: 1 },
+    { label: "Middle half", data: rows.map(r => [r.p25, r.p75]), backgroundColor: ndr("slate"), barPercentage: 0.55, categoryPercentage: 0.9, grouped: false, order: 2 },
+    { label: "Full range", data: rows.map(r => [r.min, r.max]), backgroundColor: ndr("axis-soft") + "88", barPercentage: 0.18, categoryPercentage: 0.9, grouped: false, order: 3 },
+   ],
+  },
+  options: {
+   indexAxis: "y",
+   responsive: true, maintainAspectRatio: false,
+   interaction: { mode: "point", intersect: true },
+   plugins: {
+    zoom: false,
+    legend: { display: true, position: "top", align: "start", labels: { boxWidth: 12, color: ndr("axis"), font: { size: 11 } } },
+    tooltip: { callbacks: { label: c => {
+     const r = rows[c.dataIndex];
+     if(c.dataset.label === "This month") return r.name + ": " + fx(r.current, 1) + " (" + ordinal(r.percentile) + " percentile)";
+     if(c.dataset.label === "Median") return "Median since 2016: " + fx(r.median, 1);
+     if(c.dataset.label === "Middle half") return "Middle half: " + fx(r.p25, 1) + " to " + fx(r.p75, 1);
+     return "Range: " + fx(r.min, 1) + " to " + fx(r.max, 1);
+    } } },
+   },
+   scales: {
+    y: { type: "category", labels, ticks: { color: ndr("axis"), font: { size: 11 } }, grid: { display: false } },
+    x: { type: "logarithmic", min: 5, ticks: { color: ndr("axis"), font: { size: 11 }, autoSkip: false, callback: v => [5, 10, 15, 20, 30, 50, 100, 200].includes(v) ? v : "" }, grid: { color: ndr("grid") }, title: { display: true, text: "trailing P/E, log scale", color: ndr("axis-soft"), font: { size: 10 } } },
+   },
+  },
+ });
+ document.getElementById("rangeSub").textContent = "For the S&P 500 and each sector: the full range of monthly readings since " + usDate(SP.historyStart.slice(0, 7)) + " (thin bar), the middle half of them (thick bar), the median (tick) and " + usDate(SP.asOf) + " (dot).";
+}
+
+function renderHistoryChart(){
+ const pick = document.getElementById("historyPick").value;
+ const h = SP.history;
+ const sets = [{ label: "S&P 500", data: h.map(p => p["S&P 500"]), borderColor: ndr("navy"), backgroundColor: ndr("navy"), borderWidth: 2, pointRadius: 0, fill: false }];
+ if(pick && pick !== "S&P 500") sets.push({ label: pick, data: h.map(p => p[pick]), borderColor: ndr("gold"), backgroundColor: ndr("gold"), borderWidth: 1.6, pointRadius: 0, fill: false });
+ if(historyChart) historyChart.destroy();
+ historyChart = new Chart(document.getElementById("historyChart"), {
+  type: "line",
+  data: { labels: h.map(p => p.date), datasets: sets },
+  options: {
+   responsive: true, maintainAspectRatio: false,
+   interaction: { mode: "index", intersect: false },
+   plugins: { legend: { display: true, position: "top", align: "start", labels: { boxWidth: 12, color: ndr("axis"), font: { size: 11 } } }, tooltip: { callbacks: { label: c => c.dataset.label + ": " + fx(c.parsed.y, 1) } } },
+   scales: {
+    x: { ticks: { color: ndr("axis"), maxTicksLimit: 9, maxRotation: 0, autoSkip: true, font: { size: 11 } }, grid: { color: "rgba(0,0,0,0)" } },
+    y: { grid: { color: ndr("grid") }, ticks: { color: ndr("axis"), font: { size: 11 } }, title: { display: true, text: "trailing P/E", color: ndr("axis-soft"), font: { size: 10 } } },
+   },
+  },
+ });
+ const first = h[0], last = h[h.length - 1];
+ document.getElementById("historyNote").textContent = "Month-ends from " + usDate(first.date) + " to " + usDate(last.date) + ". The history starts once at least 80% of members have four quarters of reported EPS in the data (" + first.coverage + " of " + first.priced + " at the start, " + last.coverage + " of " + last.priced + " now). A sector's line starts once 80% of its members do.";
+}
+
+function renderIndustryTable(){
+ const rows = SP.industries.slice().sort((a, b) => (b.trailingPE ?? -1) - (a.trailingPE ?? -1));
+ document.getElementById("industryBody").innerHTML = rows.map(g => "<tr><td>" + g.name + "</td><td>" + g.sector + "</td><td>" + g.companies + "</td>" + naCell(g.trailingPE, 1) + naCell(g.forwardPE, 1) + naCell(g.evEbitda, 1) + naCell(g.priceToBook, 2) + naCell(g.priceToSales, 2) + "</tr>").join("");
+ document.getElementById("industrySub").textContent = SP.industries.length + " industries with at least three S&P 500 companies, using Alpha Vantage's industry classification, sorted by trailing P/E.";
+}
+
+async function initSp(){
+ try{
+  const res = await fetch("/api/valuations");
+  const data = await res.json();
+  if(!res.ok || data.error) throw new Error(data.error || ("HTTP " + res.status));
+  SP = data;
+  document.getElementById("updated").textContent = "S&P 500 as of " + usDate(SP.asOf);
+  const pick = document.getElementById("historyPick");
+  pick.innerHTML = ['<option value="S&P 500">S&amp;P 500 only</option>'].concat(SP.sectors.map(s => '<option value="' + s.name + '">' + s.name + "</option>")).join("");
+  pick.value = SP.sectors.length ? SP.sectors[0].name : "S&P 500";
+  pick.addEventListener("change", renderHistoryChart);
+  renderSpStats();
+  renderSectorTable();
+  renderRangeChart();
+  renderHistoryChart();
+  renderIndustryTable();
+ }catch(e){
+  document.getElementById("updated").textContent = "Damodaran figures annual, updated each January";
+  const el = document.getElementById("spError");
+  el.textContent = "Couldn't load the monthly S&P 500 figures (" + e.message + ").";
+  el.hidden = false;
+ }
+}
+initSp();
 </script>
 </body>
 </html>

@@ -282,18 +282,8 @@
       ]
     },
     {
-      "name": "analyst-price-target",
-      "cron": null,
-      "apis": [
-        "/api/analyst-price-target"
-      ],
-      "pages": [
-        "analyst-price-target"
-      ]
-    },
-    {
       "name": "overview-collector",
-      "cron": null,
+      "cron": "0,25 11 2 * *",
       "apis": [],
       "pages": [
         "analyst-price-target",
@@ -305,14 +295,8 @@
       ]
     },
     {
-      "name": "balance-collector",
-      "cron": null,
-      "apis": [],
-      "pages": []
-    },
-    {
       "name": "earnings-collector",
-      "cron": null,
+      "cron": "0,25 12 2 * *",
       "apis": [],
       "pages": [
         "earnings-growth-divergence",
@@ -320,6 +304,32 @@
         "earnings-surprise",
         "valuations"
       ]
+    },
+    {
+      "name": "valuations",
+      "cron": "50 12 2 * *",
+      "apis": [
+        "/api/valuations"
+      ],
+      "pages": [
+        "valuations"
+      ]
+    },
+    {
+      "name": "analyst-price-target",
+      "cron": null,
+      "apis": [
+        "/api/analyst-price-target"
+      ],
+      "pages": [
+        "analyst-price-target"
+      ]
+    },
+    {
+      "name": "balance-collector",
+      "cron": null,
+      "apis": [],
+      "pages": []
     },
     {
       "name": "revisions",
@@ -418,16 +428,6 @@
       "pages": [
         "small-cap-liquidity",
         "small-cap-vs-large-cap"
-      ]
-    },
-    {
-      "name": "valuations",
-      "cron": null,
-      "apis": [
-        "/api/valuations"
-      ],
-      "pages": [
-        "valuations"
       ]
     }
   ],

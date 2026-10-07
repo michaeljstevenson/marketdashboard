@@ -730,8 +730,22 @@
   # doesn't shift day to day.
   schedule = "50 14 * * 6"
 
+[functions."scheduled-overview-collector-background"]
+  # Monthly, the 2nd at 11:00 UTC, a slot no other Alpha Vantage job uses on
+  # any weekday or Saturday. A sweep can need slightly more than one 12-minute
+  # run, so it fires again at 11:25 to finish. A run within six hours of a
+  # finished sweep exits at once (av-collector.js).
+  schedule = "0,25 11 2 * *"
+
+[functions."scheduled-earnings-collector-background"]
+  # Monthly, the 2nd at 12:00 UTC with a second run at 12:25, after the
+  # overview collector and before the weekday jobs start at 13:00.
+  schedule = "0,25 12 2 * *"
+
 [functions."scheduled-valuations-background"]
-  # No schedule until its first run has filled the store.
+  # Monthly, the 2nd at 12:50 UTC, after both collectors. Yahoo prices plus
+  # the overview and earnings collections, no Alpha Vantage calls.
+  schedule = "50 12 2 * *"
 
 [functions."scheduled-short-interest-background"]
   # Weekdays 23:10 UTC, after the post-close Yahoo jobs (last at 22:40).
