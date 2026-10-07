@@ -7,7 +7,6 @@
         "/api/putcall-history"
       ],
       "pages": [
-        "options-positioning",
         "put-call-ratio"
       ]
     },
@@ -143,7 +142,6 @@
         "/api/smallcap-largecap"
       ],
       "pages": [
-        "small-cap-liquidity",
         "small-cap-vs-large-cap"
       ]
     },
@@ -283,16 +281,6 @@
       ]
     },
     {
-      "name": "smallcap-liquidity",
-      "cron": "20 14 * * 6",
-      "apis": [
-        "/api/smallcap-liquidity"
-      ],
-      "pages": [
-        "small-cap-liquidity"
-      ]
-    },
-    {
       "name": "short-sale-volume",
       "cron": "50 14 * * 6",
       "apis": [
@@ -428,6 +416,16 @@
       ],
       "pages": [
         "options-positioning"
+      ]
+    },
+    {
+      "name": "smallcap-liquidity",
+      "cron": null,
+      "apis": [
+        "/api/smallcap-liquidity"
+      ],
+      "pages": [
+        "small-cap-liquidity"
       ]
     }
   ],

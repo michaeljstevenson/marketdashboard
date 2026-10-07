@@ -4,15 +4,15 @@
 // breadth-blob-store.js for why the explicit siteID/token fallback is
 // needed on this site (automatic context injection doesn't work here).
 //
-// Only a single latest.json is kept (no accumulating history.json like
-// earnings-revisions.js) — each weekly run recomputes the full ~2-year
-// cohort history from scratch rather than appending one new data point,
-// so there's nothing to accumulate across runs.
+// latest.json is the page payload, rebuilt from scratch every week.
+// checkpoint.json holds per-stock summaries while a sweep spans more than
+// one run (see the job's header).
 
 const { getStore } = require("@netlify/blobs");
 
 const BLOB_STORE = "smallcap-liquidity";
 const LATEST_KEY = "latest.json";
+const CHECKPOINT_KEY = "checkpoint.json";
 
 function getSmallcapLiquidityStore() {
   const { BLOBS_SITE_ID, BLOBS_API_TOKEN } = process.env;
@@ -22,4 +22,4 @@ function getSmallcapLiquidityStore() {
   return getStore(BLOB_STORE);
 }
 
-module.exports = { getSmallcapLiquidityStore, BLOB_STORE, LATEST_KEY };
+module.exports = { getSmallcapLiquidityStore, BLOB_STORE, LATEST_KEY, CHECKPOINT_KEY };
