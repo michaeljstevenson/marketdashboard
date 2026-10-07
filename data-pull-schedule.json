@@ -325,6 +325,16 @@
       ]
     },
     {
+      "name": "smallcap-liquidity",
+      "cron": "20,35 14 * * 6",
+      "apis": [
+        "/api/smallcap-liquidity"
+      ],
+      "pages": [
+        "small-cap-liquidity"
+      ]
+    },
+    {
       "name": "valuations",
       "cron": "50 12 2 * *",
       "apis": [
@@ -416,16 +426,6 @@
       ],
       "pages": [
         "options-positioning"
-      ]
-    },
-    {
-      "name": "smallcap-liquidity",
-      "cron": null,
-      "apis": [
-        "/api/smallcap-liquidity"
-      ],
-      "pages": [
-        "small-cap-liquidity"
       ]
     }
   ],

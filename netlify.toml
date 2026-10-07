@@ -700,8 +700,7 @@
   # ~13 months of Yahoo daily bars for ~2,450 stocks (about 3.5 minutes
   # locally). The 14:35 firing is a backup: it finishes a sweep that ran out
   # of time and checkpointed, and exits at once when 14:20 already completed.
-  # Schedule paused for the reworked job's first manual run:
-  # schedule = "20,35 14 * * 6"
+  schedule = "20,35 14 * * 6"
 
 [functions."scheduled-margin-leverage-background"]
   # One-time snapshot, no schedule: run manually (Netlify dashboard or a POST
