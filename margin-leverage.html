@@ -66,6 +66,12 @@ document.addEventListener("DOMContentLoaded", function(){
 .is-chart-fullscreen canvas{
  max-height:none !important;
 }
+.commentary{ background:var(--card); border:1px solid var(--hair); border-left:3px solid var(--greed); border-radius:10px; padding:18px 22px 20px; margin-bottom:30px; }
+.commentary-head{ display:flex; justify-content:space-between; align-items:baseline; flex-wrap:wrap; gap:6px 16px; }
+.commentary h2{ font-family:var(--serif); font-weight:400; font-size:18px; margin:0; }
+.commentary-date{ color:var(--muted); font-size:12px; }
+.commentary p{ font-size:14px; line-height:1.6; margin:10px 0 0; max-width:780px; }
+.chart-note{ font-size:12px; color:var(--muted); margin:6px 0 2px; line-height:1.5; max-width:820px; }
 </style>
 <script>
 // Expand-to-fullscreen button on every chart, matching the pattern from
@@ -865,11 +871,23 @@ tbody td:nth-child(2){
 </div>
 </div>
 
+<section class="commentary" aria-labelledby="commentaryTitle">
+<div class="commentary-head">
+<h2 id="commentaryTitle">Commentary</h2>
+<div class="commentary-date">As of second-quarter 2026 results</div>
+</div>
+<p>Profit margins are still widening. The median S&amp;P 500 member's operating margin rose 0.96 points from the first quarter to the second, after a 0.49-point gain the quarter before, and the typical member now earns an operating margin of 19.3%.</p>
+<p>The biggest changes over the past year are in Energy, where the median operating margin rose from 18.6% to 25.1% and net debt fell from 1.46 to 0.89 times EBITDA, and Consumer Staples, up from 9.8% to 14.6%. Health Care went the other way, from 17.7% to 15.1%, while its leverage rose from 1.83 to 2.25 times.</p>
+<p>Balance sheets look steady overall: the median member carries net debt of about 2.0 times EBITDA. Utilities (5.6 times) and Real Estate (4.8) are the most levered sectors, as usual for businesses built on long-lived assets, and Energy and Technology the least.</p>
+</section>
+
+
 <div class="chart-box">
 <div class="chart-box-header">
 <div>
 <h2>Sector margins over time</h2>
 <div class="chart-subhead">Median quarterly margin across each SPDR sector's S&amp;P 500 constituents</div>
+<div class="chart-note">Every sector except Health Care and Real Estate has a higher median operating margin than at the end of 2019. Energy's rose from 4.2% to 25.1%.</div>
 </div>
 <div class="metric-toggle" id="marginMetricToggle">
 <button type="button" data-metric="operating" class="active">Operating</button>
@@ -888,6 +906,7 @@ tbody td:nth-child(2){
 <div>
 <h2>Sector leverage over time</h2>
 <div class="chart-subhead">Median net debt / trailing-twelve-month EBITDA by sector. Higher means more balance-sheet leverage relative to cash earnings.</div>
+<div class="chart-note">Energy has cut its median net debt to 0.89 times EBITDA from 1.46 a year ago.</div>
 </div>
 </div>
 <div class="ndr-panel">
@@ -902,6 +921,7 @@ tbody td:nth-child(2){
 <div>
 <h2>Margin change by Fed regime</h2>
 <div class="chart-subhead">Median quarter-over-quarter operating margin change (ppt), grouped by that quarter's Fed-funds regime</div>
+<div class="chart-note">Over 27 quarters, median margins rose 0.52 points a quarter while the Fed held rates, 0.15 while it hiked and fell 0.27 while it cut. The cutting quarters include 2020, so the regimes partly stand in for the business cycle.</div>
 </div>
 </div>
 <div class="ndr-panel">
@@ -961,6 +981,7 @@ tbody td:nth-child(2){
 <div>
 <h2>Margin vs. leverage, most recent quarter</h2>
 <div class="chart-subhead">Every company with both figures available. Is thinner margin associated with more leverage right now?</div>
+<div class="chart-note">Interactive Brokers (86.4%) and Micron (81.7%) have the widest operating margins. Alexandria Real Estate (29 times) and Carvana (21 times) carry the most net debt relative to EBITDA.</div>
 </div>
 </div>
 <div class="ndr-panel">

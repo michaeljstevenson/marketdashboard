@@ -66,6 +66,12 @@ document.addEventListener("DOMContentLoaded", function(){
 .is-chart-fullscreen canvas{
  max-height:none !important;
 }
+.commentary{ background:var(--card); border:1px solid var(--hair); border-left:3px solid var(--greed); border-radius:10px; padding:18px 22px 20px; margin-bottom:30px; }
+.commentary-head{ display:flex; justify-content:space-between; align-items:baseline; flex-wrap:wrap; gap:6px 16px; }
+.commentary h2{ font-family:var(--serif); font-weight:400; font-size:18px; margin:0; }
+.commentary-date{ color:var(--muted); font-size:12px; }
+.commentary p{ font-size:14px; line-height:1.6; margin:10px 0 0; max-width:780px; }
+.chart-note{ font-size:12px; color:var(--muted); margin:6px 0 2px; line-height:1.5; max-width:820px; }
 </style>
 <script>
 // Expand-to-fullscreen button on every chart, matching the pattern from
@@ -786,10 +792,22 @@ tbody td:nth-child(2){
 </div>
 </div>
 
+<section class="commentary" aria-labelledby="commentaryTitle">
+<div class="commentary-head">
+<h2 id="commentaryTitle">Commentary</h2>
+<div class="commentary-date">As of the October 6, 2026 close, 1,932 Russell 2000 members</div>
+</div>
+<p>The typical Russell 2000 stock trades about $12 million a day, against about $344 million for the typical S&amp;P 500 member, and by the Amihud measure it moves about 40 times more for each dollar traded. Its estimated trading cost, from the Corwin-Schultz high-low spread, is 1.06% against 0.65%.</p>
+<p>That gap has narrowed over the past year. Median daily dollar volume for Russell 2000 members rose from $8.9 million in September 2025 to $12.6 million in September 2026, and the illiquidity gap with the S&amp;P 500 fell from about 64 times to about 42 times.</p>
+<p>Within the index, cost falls with size. The smallest fifth of members (under about $350 million in market value) has an estimated spread of 1.36%, the largest fifth 0.93%. Whether the gap widens in weeks when small caps lag couldn't be detected over this past year (r = 0.10, t = 0.67).</p>
+</section>
+
+
 <div class="table-box">
 <div class="table-box-header">
 <h2>Russell 2000 vs. S&amp;P 500 members</h2>
 <div class="chart-subhead">Median member over the latest 63 and 21 trading days. The zero-volume rows are an average across members and the share of members with any such day.</div>
+<div class="chart-note">Russell 2000 members turn over a slightly larger share of their shares each day (0.99% vs. 0.75%) despite trading far fewer dollars.</div>
 </div>
 <table class="data-table" id="compareTable">
 <thead><tr><th>Measure</th><th>Russell 2000, 63 days</th><th>S&amp;P 500, 63 days</th><th>Ratio, R2000 ÷ S&amp;P</th><th>Russell 2000, 21 days</th><th>S&amp;P 500, 21 days</th></tr></thead>
@@ -802,6 +820,7 @@ tbody td:nth-child(2){
 <div>
 <h2>Median daily dollar volume by month</h2>
 <div class="chart-subhead">Median across members of each stock's median daily dollar volume in the month, Russell 2000 vs. S&amp;P 500, log scale. The latest month may be partial.</div>
+<div class="chart-note">Russell 2000 volume rose about 40% over the year, from $8.9 million to $12.6 million a day.</div>
 </div>
 </div>
 <div class="ndr-panel">
@@ -844,6 +863,7 @@ tbody td:nth-child(2){
 <div>
 <h2>Spread estimate by size within the Russell 2000</h2>
 <div class="chart-subhead">Median Corwin-Schultz spread estimate over the latest 63 trading days for each fifth of the Russell 2000 by market value, smallest to largest, with the S&amp;P 500 median for reference.</div>
+<div class="chart-note">1.36%, 1.12%, 1.04%, 0.92% and 0.93% from the smallest fifth to the largest.</div>
 </div>
 </div>
 <div class="ndr-panel">
@@ -894,6 +914,7 @@ tbody td:nth-child(2){
 <div>
 <h2>Liquidity gap vs. small-cap relative performance</h2>
 <div class="chart-subhead">Each point is one week. X is that week's IWM vs. SPY relative return, Y is that week's percent change in the Russell 2000 / S&amp;P 500 Amihud ratio.</div>
+<div class="chart-note">56 weeks, Pearson r = 0.10 (Newey-West t = 0.67). No reliable link this year.</div>
 </div>
 </div>
 <div class="warning-banner" id="regressionFallback"></div>
