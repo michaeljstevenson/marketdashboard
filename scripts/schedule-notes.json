@@ -20,7 +20,7 @@
   "beeswarm-annual": "Year-by-year returns for the 11 sector ETFs and SPY, about 15 years.",
   "revisions": "Analyst EPS estimates for the current year and how they moved over 7, 30 and 90 days.",
   "post-earnings-drift": "Daily prices for every S&P 500 stock, lined up with their earnings reports. Uses the earnings-surprise data, which is a manual snapshot.",
-  "relative-strength": "Daily prices for every S&P 500 stock and SPY, for 1-month and 3-month relative strength.",
+  "relative-strength": "Daily prices for every S&P 500 stock, recent former members, SPY and the S&P 500 total return index, for 1-month to 12-1 month relative strength and this week's moves into and out of the top and bottom tenth. Month-ends after the precomputed momentum study (relative-strength-history.js) are added from the same prices. Rerun build_momentum_study.py in the Research Data folder to move that cutoff forward.",
   "smallcap-liquidity": "Daily prices and volume for about 200 large and small stocks.",
   "short-sale-volume": "Daily short-sale volume from FINRA, plus daily prices.",
   "short-interest": "FINRA's twice-monthly short interest for past and present S&P 500 members since June 2021. Each run stores any new settlement dates and rebuilds the page data when one arrives, or once a week. Shares outstanding come from the shared company overviews, prices from Yahoo, so it makes no Alpha Vantage calls.",
