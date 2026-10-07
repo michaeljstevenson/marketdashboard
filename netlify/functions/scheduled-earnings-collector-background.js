@@ -9,7 +9,9 @@ const { runCollector, pickFields } = require("./av-collector");
 const AV_FUNCTION = "EARNINGS";
 
 const QUARTERLY_KEYS = ["fiscalDateEnding", "reportedDate", "reportedEPS", "estimatedEPS", "surprise", "surprisePercentage"];
-const QUARTERS_KEPT = 40;
+// 44 quarters lets the Valuations page rebuild trailing P/E for a full ten
+// years (four quarters of EPS before the first month).
+const QUARTERS_KEPT = 44;
 const ANNUAL_KEPT = 30;
 
 function pick(payload) {

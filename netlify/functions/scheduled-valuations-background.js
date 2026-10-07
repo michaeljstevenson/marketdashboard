@@ -32,6 +32,10 @@ const HISTORY_START = "2016-09-01";
 const PRICE_WORKERS = 4;
 const MIN_INDUSTRY_COMPANIES = 3;
 const TOTAL = "S&P 500";
+// The earnings collection keeps 40 quarters, so the earliest months have
+// trailing EPS for only a few stocks. A month counts for a group once this
+// share of its priced members has it.
+const MIN_HISTORY_COVERAGE = 0.8;
 
 function num(v) {
   if (v === null || v === undefined || v === "" || v === "None" || v === "-") return null;
@@ -185,14 +189,17 @@ exports.handler = async () => {
 
     // ---- rebuilt history -------------------------------------------------
     const history = [];
+    const covered = (list) => list.length && list.filter((m) => Number.isFinite(m.ttmEps)).length / list.length >= MIN_HISTORY_COVERAGE;
     for (const date of monthEnds) {
       const members = valueOn(date);
+      if (!covered(members)) continue;
       const point = { date, [TOTAL]: aggregate(members).trailingPE };
       for (const s of SECTOR_ORDER) {
         const list = members.filter((m) => m.sector === s);
-        point[s] = list.length ? aggregate(list).trailingPE : null;
+        point[s] = covered(list) ? aggregate(list).trailingPE : null;
       }
       point.coverage = members.filter((m) => Number.isFinite(m.ttmEps)).length;
+      point.priced = members.length;
       history.push(point);
     }
     const ranges = [TOTAL, ...SECTOR_ORDER].map((name) => {
