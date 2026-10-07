@@ -565,6 +565,7 @@ h1{
  color:#a83a30;
 }
 </style>
+<style>#termStats{ grid-template-columns:repeat(2,minmax(0,1fr)) !important; }</style>
 <link rel="stylesheet" href="/site.css">
 </head>
 <body>
@@ -843,6 +844,8 @@ const RANGES = [
  { key: "Max", months: null },
 ];
 const TERM_HORIZONS = { 9: "9 days", 30: "30 days", 93: "3 months", 184: "6 months" };
+// 3 and 6 months sit close together on the log axis, so the ticks use short names.
+const TERM_TICKS = { 9: "9D", 30: "30D", 93: "3M", 184: "6M" };
 
 let DATA = null;
 let C = null;
@@ -1354,7 +1357,7 @@ function renderTerm(){
      min: 6,
      max: 270,
      afterBuildTicks: axis => { axis.ticks = Object.keys(TERM_HORIZONS).map(v => ({ value: Number(v) })); },
-     ticks: { color: C.muted, autoSkip: false, maxRotation: 0, callback: v => TERM_HORIZONS[v] || "" },
+     ticks: { color: C.muted, autoSkip: false, maxRotation: 0, callback: v => TERM_TICKS[v] || "" },
      grid: { color: C.hair },
      border: { color: C.hair },
      title: { display: true, text: "Horizon (log scale)", color: C.muted, font: { size: 10 } },

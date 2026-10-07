@@ -87,6 +87,16 @@
       ]
     },
     {
+      "name": "volatility",
+      "cron": "47 21 * * 1-5",
+      "apis": [
+        "/api/volatility"
+      ],
+      "pages": [
+        "volatility"
+      ]
+    },
+    {
       "name": "seasonality",
       "cron": "50 21 * * 1-5",
       "apis": [
@@ -366,16 +376,6 @@
       ],
       "pages": [
         "quality-score"
-      ]
-    },
-    {
-      "name": "volatility",
-      "cron": null,
-      "apis": [
-        "/api/volatility"
-      ],
-      "pages": [
-        "volatility"
       ]
     },
     {

@@ -758,6 +758,13 @@
   # Yahoo and stored data only, no Alpha Vantage calls.
   schedule = "20 7 * * *"
 
+[functions."scheduled-volatility-background"]
+  # 21:47 UTC = 5:47pm EDT / 4:47pm EST, after the VIX indices' 4:15pm ET
+  # close in either regime. Yahoo only, no Alpha Vantage calls. Between
+  # scheduled-countries-background (21:45) and scheduled-seasonality-
+  # background (21:50) so its five Yahoo requests don't overlap theirs.
+  schedule = "47 21 * * 1-5"
+
 [functions."scheduled-options-positioning-background"]
   # One-time snapshot per run (the market-median history it appends to
   # accumulates across runs, but each run's own sweep is a fresh full-index
