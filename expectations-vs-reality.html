@@ -673,7 +673,7 @@ tbody tr:last-child td{ border-bottom:none; }
 <h1>Expectations vs. Reality</h1>
 <div class="subtitle">Every year, strategists publish a year-end target for the S&amp;P 500. How does that target compare to where the index actually finished, each year from 2000 to 2025.</div>
 </div>
-<div class="updated">Source: Bloomberg, BusinessWeek, CNNMoney, Barron's, CNBC, and Yahoo Finance strategist surveys</div>
+<div class="updated">Source: BusinessWeek, Barron's, CNNMoney, Reuters, USA TODAY, Bloomberg, CNBC and Yahoo Finance strategist surveys</div>
 </div>
 <div class="stat-grid" id="statGrid" style="grid-template-columns:repeat(3,1fr);">
 <div class="stat-card">
@@ -749,60 +749,51 @@ tbody tr:last-child td{ border-bottom:none; }
 </table>
 </div>
 <div class="explainer">
-<p>Every year by early January, major banks and independent strategists publish where they expect the S&amp;P 500 to finish that calendar year. I compiled these into a consensus figure, an average or median across roughly 10-20 named strategists, plotted here as the "target." </p>
+<p>Every year by early January, major banks and independent strategists publish where they expect the S&amp;P 500 to finish that calendar year. Financial media survey them, and the "target" plotted here is the average or median from one of those surveys at the start of each year. Panels run from about 10 strategists to 80, and the Source column names each year's survey.</p>
 <p>The pattern that shows up consistently is that for almost every year, strategists cluster their targets around a "normal" high-single-digit gain, while actual returns are far more volatile. Both to the upside (2019, 2021, 2023, 2024, all beat consensus by wide margins) and the downside (2018, 2022). </p>
 
-<div class="source">Sources: BusinessWeek (via Seeking Alpha archive), CNNMoney/Yahoo Finance strategist roundups, Bloomberg surveys (via CNBC, Financial Samurai, globalmarketsinvestor.substack.com compilations, and 6meridian.com's Bloomberg-sourced retrospective chart), Barron's Big Money Poll. Actual year-end closes from public S&amp;P 500 index data. Individual year sourcing varies since no single publisher has run a consistent annual survey across the full period. See the Source column in the table above.</div>
+<div class="source">Sources: each year's consensus target comes from the survey named in the Source column, BusinessWeek's year-end forecast polls for 2000 to 2007 and then Barron's, CNNMoney, Reuters, USA TODAY, Bloomberg and CNBC surveys. Individual firm targets come from press archives, including BusinessWeek (via Seeking Alpha archive), CNNMoney and Yahoo Finance strategist roundups, CNBC, Financial Samurai, globalmarketsinvestor.substack.com compilations and Barron's Big Money Poll. Actual year-end closes from public S&amp;P 500 index data. No single publisher has run the same survey across the full period.</div>
 </div>
 </div>
 <script>
-// Each entry: year, the S&P 500 close at the end of the PRIOR year (i.e.
-// where the index stood when the target was published), the consensus
-// year-end target published that January (or the preceding December),
-// and the actual year-end close.
+// Each entry: year, the S&P 500 close at the end of the PRIOR year (where
+// the index stood when the target was published), the consensus year-end
+// target, and the actual year-end close.
 //
-// Sourcing note: "consensus" here means an average or median across a
-// panel of Wall Street strategists as compiled by financial media. The
-// exact panel size and methodology differs by year and publisher
-// (Bloomberg, BusinessWeek, CNNMoney, Barron's, CNBC, Yahoo Finance)
-// since no single outlet has run a consistent, identically-methodologized
-// annual survey across this whole period - see the Source column per row.
-//
-// 2000 and 2002-2007 come from a Bloomberg-sourced scatter chart
-// published by 6meridian.com (in turn crediting Bespoke Investment
-// Group's methodology) plotting each year's strategist-forecast return
-// against its actual return - read directly off that chart rather than
-// from a press-reported consensus figure, since no individually-sourced
-// number could be found for those specific years. The implied target
-// price is back-calculated from the forecast return and that year's
-// prior-year close.
+// Each target is the average or median a published strategist survey
+// reported for that year, checked against the original article or an
+// archived copy (2008, 2010, 2014 and 2022 against a secondary summary of
+// it). No single survey covers 2000-2025, so the publisher, statistic and
+// panel size change over time and are given per row. Rows that were earlier
+// read off a chart or back-calculated from an average percentage gain were
+// replaced in October 2026 with published survey figures.
 const DATA = [
- { year: 2000, priorClose: 1469.25, target: 1550,  actual: 1320.28, source: "Bloomberg (via 6meridian.com scatter chart)" },
- { year: 2001, priorClose: 1320.28, target: 1571,  actual: 1148.08, source: "Bloomberg (via 6meridian.com scatter chart)" },
- { year: 2002, priorClose: 1148.08, target: 1292,  actual: 879.82,  source: "Bloomberg (via 6meridian.com scatter chart)" },
- { year: 2003, priorClose: 879.82,  target: 1002,  actual: 1111.92, source: "Bloomberg (via 6meridian.com scatter chart)" },
- { year: 2004, priorClose: 1111.92, target: 1173,  actual: 1211.92, source: "Bloomberg (via 6meridian.com scatter chart)" },
- { year: 2005, priorClose: 1211.92, target: 1253,  actual: 1248.29, source: "Bloomberg (via 6meridian.com scatter chart)" },
- { year: 2006, priorClose: 1248.29, target: 1364,  actual: 1418.30, source: "Bloomberg (via 6meridian.com scatter chart)" },
- { year: 2007, priorClose: 1418.30, target: 1553,  actual: 1468.36, source: "Bloomberg (via 6meridian.com scatter chart)" },
- { year: 2008, priorClose: 1468.36, target: 1603,  actual: 903.25,  source: "BusinessWeek (13 strategists, avg. +9.2%)" },
- { year: 2009, priorClose: 903.25,  target: 1057,  actual: 1115.10, source: "Contemporary press (avg. +17% call)" },
- { year: 2010, priorClose: 1115.10, target: 1224,  actual: 1257.64, source: "Bloomberg (avg. +9.8%)" },
- { year: 2011, priorClose: 1257.64, target: 1390,  actual: 1257.60, source: "CNNMoney (32 strategists)" },
- { year: 2012, priorClose: 1257.60, target: 1350,  actual: 1426.19, source: "CNNMoney survey" },
- { year: 2013, priorClose: 1426.19, target: 1490,  actual: 1848.36, source: "CNNMoney survey" },
- { year: 2014, priorClose: 1848.36, target: 1977,  actual: 2058.90, source: "Barron's" },
- { year: 2015, priorClose: 2058.90, target: 2225,  actual: 2043.94, source: "Consensus survey" },
- { year: 2016, priorClose: 2043.94, target: 2175,  actual: 2238.83, source: "Bloomberg" },
- { year: 2017, priorClose: 2238.83, target: 2363,  actual: 2673.61, source: "Yahoo Finance (16 strategists)" },
- { year: 2018, priorClose: 2673.61, target: 2966,  actual: 2506.85, source: "Consensus survey" },
- { year: 2019, priorClose: 2506.85, target: 2975,  actual: 3230.78, source: "Consensus survey" },
- { year: 2020, priorClose: 3230.78, target: 3333,  actual: 3756.07, source: "Consensus survey" },
- { year: 2021, priorClose: 3756.07, target: 4056,  actual: 4766.18, source: "CNBC" },
- { year: 2022, priorClose: 4766.18, target: 4843,  actual: 3839.50, source: "CNBC" },
- { year: 2023, priorClose: 3839.50, target: 4009,  actual: 4769.83, source: "Bloomberg" },
- { year: 2024, priorClose: 4769.83, target: 4861,  actual: 5881.63, source: "CNBC" },
- { year: 2025, priorClose: 5881.63, target: 6600,  actual: 6845.50, source: "CNBC" },
+ { year: 2000, priorClose: 1469.25, target: 1559, actual: 1320.28, source: "BusinessWeek, 12/27/1999 (average of 51)" },
+ { year: 2001, priorClose: 1320.28, target: 1558, actual: 1148.08, source: "BusinessWeek, 12/25/2000 (average of 38)" },
+ { year: 2002, priorClose: 1148.08, target: 1292, actual: 879.82, source: "BusinessWeek, 12/31/2001 (average of 54)" },
+ { year: 2003, priorClose: 879.82, target: 1049, actual: 1111.92, source: "BusinessWeek, 12/30/2002 (average of 69)" },
+ { year: 2004, priorClose: 1111.92, target: 1166, actual: 1211.92, source: "BusinessWeek, 12/29/2003 (average of 66)" },
+ { year: 2005, priorClose: 1211.92, target: 1271, actual: 1248.29, source: "BusinessWeek, 12/27/2004 (average of 67)" },
+ { year: 2006, priorClose: 1248.29, target: 1347, actual: 1418.30, source: "BusinessWeek, 12/26/2005 (average of 76)" },
+ { year: 2007, priorClose: 1418.30, target: 1501, actual: 1468.36, source: "BusinessWeek, December 2006 (consensus of 80)" },
+ { year: 2008, priorClose: 1468.36, target: 1640, actual: 903.25, source: "Barron's, December 2007 (average of 12)" },
+ { year: 2009, priorClose: 903.25, target: 1045, actual: 1115.10, source: "Barron's, 12/22/2008 (average of 12)" },
+ { year: 2010, priorClose: 1115.10, target: 1239, actual: 1257.64, source: "Barron's, 12/21/2009 (average of 12, as summarized by Validea)" },
+ { year: 2011, priorClose: 1257.64, target: 1390, actual: 1257.60, source: "CNNMoney, 01/04/2011 (average of 32)" },
+ { year: 2012, priorClose: 1257.60, target: 1350, actual: 1426.19, source: "CNNMoney, 01/02/2012 (median of 33)" },
+ { year: 2013, priorClose: 1426.19, target: 1490, actual: 1848.36, source: "CNNMoney, 01/01/2013 (average of 32)" },
+ { year: 2014, priorClose: 1848.36, target: 1977, actual: 2058.90, source: "Barron's, December 2013 (average)" },
+ { year: 2015, priorClose: 2058.90, target: 2225, actual: 2043.94, source: "CNBC (median at the start of 2015, reported 09/22/2015)" },
+ { year: 2016, priorClose: 2043.94, target: 2207, actual: 2238.83, source: "Reuters poll, 12/14/2015 (median of 46)" },
+ { year: 2017, priorClose: 2238.83, target: 2363, actual: 2673.61, source: "USA TODAY, 12/27/2016 (average of 15)" },
+ { year: 2018, priorClose: 2673.61, target: 2838, actual: 2506.85, source: "Bloomberg survey, 12/21/2017 (average)" },
+ { year: 2019, priorClose: 2506.85, target: 2975, actual: 3230.78, source: "Reuters poll, 11/28/2018 (median of 46)" },
+ { year: 2020, priorClose: 3230.78, target: 3320, actual: 3756.07, source: "CNBC survey, 12/27/2019 (average)" },
+ { year: 2021, priorClose: 3756.07, target: 4056, actual: 4766.18, source: "CNBC survey, 12/18/2020 (average)" },
+ { year: 2022, priorClose: 4766.18, target: 4843, actual: 3839.50, source: "Bloomberg survey, as of 11/19/2021 (average of 12)" },
+ { year: 2023, priorClose: 3839.50, target: 4009, actual: 4769.83, source: "Bloomberg survey, 12/01/2022 (average of 17)" },
+ { year: 2024, priorClose: 4769.83, target: 4881, actual: 5881.63, source: "CNBC Strategist Survey, 12/18/2023 (consensus)" },
+ { year: 2025, priorClose: 5881.63, target: 6600, actual: 6845.50, source: "CNBC Market Strategist Survey, 12/13/2024 (median)" },
 ];
 
 function pct(a, b){ return (a / b - 1) * 100; }
