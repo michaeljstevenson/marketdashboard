@@ -25,7 +25,8 @@ const { DATES: PLAN_DATES, MEMBERS } = require("./putcall-history-plan");
 const { BREADTH_CONSTITUENTS } = require("./breadth-constituents");
 const { loadCollected } = require("./av-collector-store");
 const { getBeeswarmStore, META_KEY } = require("./beeswarm-blob-store");
-const { getShortSaleVolumeStore, BLOB_KEY: SSV_KEY } = require("./short-sale-volume-blob-store");
+const { getShortSaleVolumeStore, LATEST_KEY: SSV_KEY } = require("./short-sale-volume-blob-store");
+const { normalizeSector } = require("./beeswarm-sectors");
 const { fetchDailyHistory, sleep } = require("./yahoo-client");
 const { TICKER_NOW } = require("./putcall-ticker-map");
 
@@ -42,6 +43,9 @@ const INDEX = "^SP500TR";
 // ~600 price histories one at a time took ~11 minutes in testing, too close
 // to the 15-minute limit, so a few run side by side.
 const PRICE_WORKERS = 4;
+// Bumped whenever build() changes, so the next run rebuilds the payload
+// instead of waiting for a new settlement date or the weekly rebuild.
+const BUILD_VERSION = 2;
 
 const finraSymbol = (s) => s.replace(/[-.]/g, "");
 const round = (v, d = 2) => (v === null || v === undefined || !Number.isFinite(v) ? null : Math.round(v * 10 ** d) / 10 ** d);
@@ -191,7 +195,7 @@ async function build(store, index) {
     current.push({
       symbol,
       name: m.name || (overview[symbol] && overview[symbol].Name) || symbol,
-      sector: m.sector || null,
+      sector: m.sector || (overview[symbol] && normalizeSector(symbol, overview[symbol].Sector)) || null,
       shortShares: r[0],
       pctShares: shares ? pct(r[0] / shares) : null,
       daysToCover: r[2] !== null && r[2] < MAX_DTC ? round(r[2]) : null,
@@ -296,6 +300,7 @@ async function build(store, index) {
 
   return {
     generated_at_utc: new Date().toISOString(),
+    buildVersion: BUILD_VERSION,
     settlementDate: latest.date,
     previousSettlementDate: previous ? previous.date : null,
     firstSettlementDate: snaps[0].date,
@@ -327,7 +332,7 @@ exports.handler = async () => {
     const added = await collect(store, index, started);
     if (added) await store.setJSON(INDEX_KEY, { ...index, updatedAt: new Date().toISOString() });
     const latest = await store.get(LATEST_KEY, { type: "json" });
-    const stale = !latest || Date.now() - Date.parse(latest.generated_at_utc) > REBUILD_AFTER_MS;
+    const stale = !latest || latest.buildVersion !== BUILD_VERSION || Date.now() - Date.parse(latest.generated_at_utc) > REBUILD_AFTER_MS;
     if ((added || stale) && Date.now() - started < RUN_BUDGET_MS - 5 * 60 * 1000) {
       const payload = await build(store, index);
       await store.setJSON(LATEST_KEY, payload);
