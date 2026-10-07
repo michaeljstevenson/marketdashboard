@@ -262,6 +262,11 @@
   status = 200
 
 [[redirects]]
+  from = "/api/valuations"
+  to = "/.netlify/functions/valuations"
+  status = 200
+
+[[redirects]]
   from = "/api/short-interest"
   to = "/.netlify/functions/short-interest"
   status = 200
@@ -732,6 +737,9 @@
   # Weekly, Saturday 14:50 UTC. A ~3-month average short-sale-volume ratio
   # doesn't shift day to day.
   schedule = "50 14 * * 6"
+
+[functions."scheduled-valuations-background"]
+  # No schedule until its first run has filled the store.
 
 [functions."scheduled-short-interest-background"]
   # Weekdays 23:10 UTC, after the post-close Yahoo jobs (last at 22:40).
