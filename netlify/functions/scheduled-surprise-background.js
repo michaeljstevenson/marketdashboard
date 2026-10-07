@@ -47,12 +47,12 @@ const { SECTOR_ORDER } = require("./beeswarm-sectors");
 const { loadCollected } = require("./av-collector-store");
 
 
-const MAX_QUARTERS_KEPT = 13; // ~3 years, plus one extra for lag-1 pairing at the edge
+const MAX_QUARTERS_KEPT = 41; // ~10 years, plus one extra for lag-1 pairing at the edge
 const MIN_EST_EPS_ABS = 0.05; // a consensus estimate smaller than a nickel makes surprise% divide-by-near-zero noise
 const MAX_ABS_SURPRISE_PCT = 200; // clip the (rare) blow-up prints past this rather than let one stock dominate a mean
 const MIN_QUARTER_COVERAGE_LATEST = 0.5; // share of the mapped universe that must have reported for a quarter to count as "latest"
 const MIN_QUARTER_COVERAGE_TREND = 30; // absolute floor (companies) for a quarter to appear on the trend line at all
-const TREND_QUARTERS = 12;
+const TREND_QUARTERS = 40;
 const MIN_STREAK_LEN = 3; // leaderboard floor: a 1- or 2-quarter "streak" isn't informative
 const DIST_BINS = [-Infinity, -20, -10, -5, 0, 5, 10, 20, Infinity];
 
