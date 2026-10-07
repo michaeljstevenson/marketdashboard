@@ -137,6 +137,17 @@
       ]
     },
     {
+      "name": "smallcap",
+      "cron": "15 22 * * 1-5",
+      "apis": [
+        "/api/smallcap-largecap"
+      ],
+      "pages": [
+        "small-cap-liquidity",
+        "small-cap-vs-large-cap"
+      ]
+    },
+    {
       "name": "beeswarm-daily",
       "cron": "40 22 * * 1-5",
       "apis": [
@@ -252,6 +263,16 @@
       ]
     },
     {
+      "name": "analyst-price-target",
+      "cron": "40 13 * * 6",
+      "apis": [
+        "/api/analyst-price-target"
+      ],
+      "pages": [
+        "analyst-price-target"
+      ]
+    },
+    {
       "name": "smallcap-liquidity",
       "cron": "20 14 * * 6",
       "apis": [
@@ -313,16 +334,6 @@
       ],
       "pages": [
         "valuations"
-      ]
-    },
-    {
-      "name": "analyst-price-target",
-      "cron": null,
-      "apis": [
-        "/api/analyst-price-target"
-      ],
-      "pages": [
-        "analyst-price-target"
       ]
     },
     {
@@ -417,17 +428,6 @@
       ],
       "pages": [
         "options-positioning"
-      ]
-    },
-    {
-      "name": "smallcap",
-      "cron": null,
-      "apis": [
-        "/api/smallcap-largecap"
-      ],
-      "pages": [
-        "small-cap-liquidity",
-        "small-cap-vs-large-cap"
       ]
     }
   ],

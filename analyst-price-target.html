@@ -502,6 +502,9 @@ tbody td:nth-child(2){
  position:relative;
 }
 
+.chart-grid-2{ display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+@media (max-width:900px){ .chart-grid-2{ grid-template-columns:1fr; } }
+.chart-note{ font-size:12px; color:var(--muted); margin:10px 2px 4px; line-height:1.5; }
 .method-table{
  width:100%;
  border-collapse:collapse;
@@ -835,6 +838,11 @@ tbody td:nth-child(2){
 <div class="stat-value txt" id="statWorstSector">…</div>
 <div class="stat-note" id="statWorstSectorNote">Median target upside</div>
 </div>
+<div class="stat-card">
+<div class="stat-label">Bottom-Up S&amp;P 500 Target</div>
+<div class="stat-value" id="statImplied">…</div>
+<div class="stat-note" id="statImpliedNote">Members' targets added up</div>
+</div>
 </div>
 
 <div class="chart-box">
@@ -859,8 +867,59 @@ tbody td:nth-child(2){
 <div class="chart-box">
 <div class="chart-box-header">
 <div>
+<h2>What the targets add up to</h2>
+<div class="chart-subhead" id="impliedSub">Each stock's target times its shares outstanding, added up and compared with its price times its shares: the upside analysts' targets imply for the index or sector as a whole. The typical stock's upside (the median) is shown alongside.</div>
+</div>
+</div>
+<div style="overflow-x:auto;"><table class="method-table" id="impliedTable"></table></div>
+</div>
+
+<div class="chart-grid-2">
+<div class="chart-box">
+<div class="chart-box-header">
+<div>
+<h2>Upside by company size</h2>
+<div class="chart-subhead">S&amp;P 500 members split into fifths by market value, smallest first. Bars show each fifth's median target upside.</div>
+</div>
+</div>
+<div class="ndr-panel">
+<div class="chart-canvas-wrap" style="height:260px;">
+<canvas id="sizeChart"></canvas>
+</div>
+</div>
+<div class="chart-note" id="sizeNote"></div>
+</div>
+<div class="chart-box">
+<div class="chart-box-header">
+<div>
+<h2>Upside by 12-1 month momentum</h2>
+<div class="chart-subhead">Members split into fifths by return relative to SPY from 12 months to 1 month ago, weakest first. Bars show each fifth's median target upside.</div>
+</div>
+</div>
+<div class="ndr-panel">
+<div class="chart-canvas-wrap" style="height:260px;">
+<canvas id="momentumChart"></canvas>
+</div>
+</div>
+<div class="chart-note" id="momentumNote"></div>
+</div>
+</div>
+
+<div class="chart-box">
+<div class="chart-box-header">
+<div>
+<h2>Did high-upside stocks deliver?</h2>
+<div class="chart-subhead">Each month's targets are saved with that day's prices. Once 3, 6 and 12 months have passed, stocks are split into fifths by the upside their targets implied, and each fifth's actual return relative to the S&amp;P 500 total return index is set against that implied upside.</div>
+</div>
+</div>
+<div id="deliveryBox"></div>
+</div>
+
+<div class="chart-box">
+<div class="chart-box-header">
+<div>
 <h2>Market median upside over time</h2>
-<div class="chart-subhead">One snapshot at a time. This page is a one-time pull as of the date below, so expect a short line until it's rerun.</div>
+<div class="chart-subhead">One point per run since 09/20/2026, weekly from October 2026. Targets refresh monthly with the company overview data, and upside moves with prices each week.</div>
 </div>
 </div>
 <div class="ndr-panel">
@@ -960,6 +1019,9 @@ tbody td:nth-child(2){
 <p>Target Upside is the consensus 12-month analyst price target divided by the last closing price, minus 1. Buy Ratio is the share of covering analysts who rate the stock Strong Buy or Buy. A Consensus Score (1 = Strong Sell to 5 = Strong Buy, weighted by the number of analysts at each rating) is in the full table, but it mostly moves with Buy Ratio so it isn't a headline number.</p>
 <p>The scatter tests whether analysts assign more upside to stocks that have already sold off (targets being slower to adjust than prices), or whether upside follows recent winners. Each stock's target upside is plotted against its 3-month return relative to the S&amp;P 500. It's a same-period comparison and makes no prediction. Both Pearson (linear) and Spearman (rank) fits are shown since either one alone can mislead when the relationship isn't a straight line.</p>
 <p>Leaderboards require at least 3 covering analysts, since a target from only one or two analysts can easily be an outlier.</p>
+<p>Targets and ratings come from Alpha Vantage's company overview, refreshed on the 2nd of each month, and prices from Yahoo Finance at each weekly run, so upside moves with prices between target refreshes.</p>
+<p>The bottom-up target adds up every member's target times its shares outstanding and divides by the members' combined market value at today's prices. That weights each stock by its size, the way the index does, so it can differ a lot from the median stock's upside. Applied to the S&amp;P 500's level, it gives the index level the targets imply about 12 months out. Strategists' own year-end targets for the index are on <a href="/expectations-vs-reality.html">Expectations vs. Reality</a>, and they measure something different: one forecast of the whole market, rather than the sum of hundreds of separate stock calls.</p>
+<p>The delivery test can only use targets saved by this page, since past analyst targets aren't available to it. Its first results appear three months after the first saved month, and the 12-month results a year after. Returns include dividends and are relative to the S&amp;P 500 total return index. Stocks that leave the index after a snapshot are still followed as long as Yahoo has their prices.</p>
 
 </div>
 
@@ -1111,11 +1173,15 @@ async function init(){
   if(data.loadedCount < data.universeSize){
    showCoverage(data.loadedCount, data.universeSize, "S&P 500 constituents");
   }else if(!data.hasPriceData){
-   showWarning("Relative Strength Leaders/Laggards data isn't available yet, so target upside couldn't be computed against a current price.");
+   showWarning("Current prices weren't available in this run, so target upside couldn't be computed.");
   }
 
   renderStats();
   renderSectorChart();
+  renderImplied();
+  renderFifths("sizeChart", "sizeNote", data.bySize, "size");
+  renderFifths("momentumChart", "momentumNote", data.byMomentum, "momentum");
+  renderDelivery();
   renderHistoryChart();
   renderUpsideScatter();
   renderLeaderTable(data.highestUpside, "highestUpsideBody", "upside");
@@ -1582,6 +1648,49 @@ document.querySelectorAll("#stockTable thead th").forEach(th => {
 });
 
 init();
+
+function renderImplied(){
+ const im = RAW.implied;
+ if(!im){ document.getElementById("impliedTable").innerHTML = ""; return; }
+ document.getElementById("statImplied").textContent = im.targetLevel ? im.targetLevel.toLocaleString() : "n/a";
+ document.getElementById("statImpliedNote").textContent = fmtPct(im.upsidePct) + " from the S&P 500 at " + (im.indexLevel ? im.indexLevel.toLocaleString(undefined, { maximumFractionDigits: 0 }) : "n/a") + ", " + im.companies + " stocks";
+ const rows = RAW.sectors.slice().sort((a, b) => (b.impliedUpsidePct ?? -99) - (a.impliedUpsidePct ?? -99));
+ document.getElementById("impliedTable").innerHTML = "<thead><tr><th>Group</th><th>Stocks</th><th>Bottom-up upside</th><th>Median stock upside</th></tr></thead><tbody>" +
+  '<tr><td style="color:var(--ink); font-weight:600;">S&amp;P 500</td><td>' + im.companies + "</td><td>" + fmtPct(im.upsidePct) + "</td><td>" + fmtPct(RAW.market.medianUpsidePct) + "</td></tr>" +
+  rows.map(s => "<tr><td>" + s.sector + "</td><td>" + s.companyCount + "</td><td>" + fmtPct(s.impliedUpsidePct) + "</td><td>" + fmtPct(s.medianUpsidePct) + "</td></tr>").join("") + "</tbody>";
+ document.getElementById("impliedSub").textContent = "Each stock's target times its shares outstanding, added up and compared with its price times its shares: the upside analysts' targets imply for the index or sector as a whole. The typical stock's upside (the median) is shown alongside. Targets as of " + usDate(RAW.targetsDate) + ".";
+}
+const fifthCharts = {};
+function renderFifths(canvasId, noteId, rows, kind){
+ if(!rows || !rows.length) return;
+ const labels = rows.map(r => kind === "size" ? (r.fifth === 1 ? "1 (smallest)" : r.fifth === 5 ? "5 (largest)" : String(r.fifth)) : (r.fifth === 1 ? "1 (weakest)" : r.fifth === 5 ? "5 (strongest)" : String(r.fifth)));
+ if(fifthCharts[canvasId]) fifthCharts[canvasId].destroy();
+ fifthCharts[canvasId] = new Chart(document.getElementById(canvasId), {
+  type: "bar",
+  data: { labels, datasets: [{ label: "Median target upside", data: rows.map(r => r.medianUpsidePct), backgroundColor: ndr("navy") }] },
+  options: {
+   responsive: true, maintainAspectRatio: false,
+   plugins: { legend: { display: false }, zoom: false, tooltip: { callbacks: { label: c => "Median upside " + fmtPct(c.parsed.y) + ", buy ratio " + fmtPlainPct(rows[c.dataIndex].medianBuyRatio) + " (" + rows[c.dataIndex].companies + " stocks)" } } },
+   scales: { x: ndrCategoryScale(), y: ndrYScale({ fmt: v => v + "%" }) },
+  },
+ });
+ const lo = rows[0], hi = rows[rows.length - 1];
+ document.getElementById(noteId).textContent = kind === "size"
+  ? "Smallest fifth $" + lo.minCapBn + "bn to $" + lo.maxCapBn + "bn, largest $" + hi.minCapBn + "bn and up. Median buy ratio " + fmtPlainPct(lo.medianBuyRatio) + " for the smallest fifth and " + fmtPlainPct(hi.medianBuyRatio) + " for the largest."
+  : "Weakest fifth " + fmtPct(lo.minValue) + " to " + fmtPct(lo.maxValue) + " relative to SPY, strongest " + fmtPct(hi.minValue) + " and up. Median buy ratio " + fmtPlainPct(lo.medianBuyRatio) + " for the weakest fifth and " + fmtPlainPct(hi.medianBuyRatio) + " for the strongest.";
+}
+function renderDelivery(){
+ const d = RAW.delivery, box = document.getElementById("deliveryBox");
+ if(!d){ box.innerHTML = ""; return; }
+ const hs = Object.keys(d.horizons || {});
+ if(!hs.length){
+  const first = d.firstSnapshot;
+  const due = first ? (() => { const t = new Date(first + "T00:00:00Z"); t.setUTCMonth(t.getUTCMonth() + 3); return t.toISOString().slice(0, 7); })() : null;
+  box.innerHTML = '<div class="chart-note">' + (first ? "First targets saved " + usDate(first) + ". The first 3-month results appear in " + usDate(due) + "." : "No targets saved yet.") + "</div>";
+  return;
+ }
+ box.innerHTML = hs.map(h => { const x = d.horizons[h]; return '<div class="chart-subhead" style="margin-top:10px;">' + h + " months later, " + x.snapshots + " saved month" + (x.snapshots === 1 ? "" : "s") + '</div><div style="overflow-x:auto;"><table class="method-table"><thead><tr><th>Upside fifth</th><th>Stocks</th><th>Implied upside</th><th>Return vs. S&amp;P 500</th></tr></thead><tbody>' + x.fifths.map(f => "<tr><td>" + (f.fifth === 1 ? "1 (least upside)" : f.fifth === 5 ? "5 (most upside)" : f.fifth) + "</td><td>" + f.stocks + "</td><td>" + fmtPct(f.impliedUpsidePct) + "</td><td>" + fmtPct(f.relReturnPct) + "</td></tr>").join("") + "</tbody></table></div>"; }).join("");
+}
 </script>
 
 </body>

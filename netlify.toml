@@ -633,8 +633,7 @@
   # FRED series and a HEAD check on the Ken French size file (downloaded
   # only when it changes), about 5 seconds. Daily since ETF prices move
   # every trading day.
-  # Schedule paused for the reworked job's first manual run:
-  # schedule = "15 22 * * 1-5"
+  schedule = "15 22 * * 1-5"
 
 [functions."scheduled-international-background"]
   # Daily 22:20 UTC, right after scheduled-smallcap-background (22:15). Index
@@ -712,7 +711,11 @@
   # scheduled-quality-financials-background.js reads, so run this one first.
 
 [functions."scheduled-analyst-price-target-background"]
-  # No schedule until the reworked job's first run.
+  # Weekly, Saturday 13:40 UTC, after scheduled-relative-strength-background
+  # (13:10, about 1.5 minutes), whose 3-month and 12-1 month returns it reads.
+  # Targets change monthly with the overview collection, prices each week.
+  # No Alpha Vantage calls.
+  schedule = "40 13 * * 6"
 
 [functions."scheduled-post-earnings-drift-background"]
   # Weekly, Saturday 11:30 UTC. New reports arrive every week in earnings
