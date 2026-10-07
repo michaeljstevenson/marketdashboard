@@ -173,6 +173,9 @@ document.addEventListener("DOMContentLoaded", function(){
   --serif:'Times New Roman',Times,serif;
   --mono:'SF Mono','JetBrains Mono',ui-monospace,Menlo,monospace;
   --sans:'Times New Roman',Times,serif;
+
+  --series-1:#7fa7d9;
+  --series-2:#d6a556;
 }
 
 :root[data-theme="light"]{
@@ -186,6 +189,8 @@ document.addEventListener("DOMContentLoaded", function(){
   --neutral:#6c7178;
   --greed:#b9701f;
   --extreme:#96591c;
+  --series-1:#2c5c99;
+  --series-2:#94600f;
 }
 
 *{ box-sizing:border-box; }
@@ -259,7 +264,7 @@ h1{
 
 .stat-grid{
  display:grid;
- grid-template-columns:repeat(4,1fr);
+ grid-template-columns:repeat(5,minmax(0,1fr));
  gap:16px;
  margin-bottom:30px;
 }
@@ -292,8 +297,8 @@ h1{
  margin-top:6px;
 }
 
-@media (max-width:900px){
- .stat-grid{ grid-template-columns:repeat(2,1fr); }
+@media (max-width:1000px){
+ .stat-grid{ grid-template-columns:repeat(3,minmax(0,1fr)); }
 }
 
 /* CHART */
@@ -564,6 +569,17 @@ tbody td:first-child{
  color:#8a6a1f;
 }
 
+/* Toggle buttons, footnotes under charts, two-line table cells */
+.range-row{ display:flex; flex-wrap:wrap; gap:8px 18px; align-items:center; margin-bottom:12px; font-size:12px; color:var(--muted); }
+.range-group{ display:flex; flex-wrap:wrap; gap:6px; align-items:center; }
+.range-btn{ background:var(--card); border:1px solid var(--hair); color:var(--muted); font-size:12px; font-family:var(--sans); padding:4px 10px; border-radius:6px; cursor:pointer; }
+.range-btn:hover{ color:var(--ink); }
+.range-btn.active{ background:var(--card-hover); color:var(--ink); border-color:var(--muted); }
+.chart-footnote{ color:var(--muted); font-size:11.5px; line-height:1.55; margin-top:10px; }
+.chart-footnote + .chart-footnote{ margin-top:4px; }
+.cell-sub{ display:block; color:var(--muted); font-size:10.5px; font-family:var(--sans); margin-top:2px; }
+tr.row-total td{ border-top:1px solid var(--muted); }
+
 /* Distribution strip charts: key under the plot */
 .strip-key-row{
  display:flex;
@@ -706,9 +722,9 @@ tbody td:first-child{
 
 <div class="stat-grid">
 <div class="stat-card">
-<div class="stat-label">Small/Large Ratio</div>
-<div class="stat-value" id="statRatio">…</div>
-<div class="stat-note" id="statRatioNote">Indexed to 100 at IWM's inception</div>
+<div class="stat-label">5-Year Spread Percentile</div>
+<div class="stat-value" id="statPctile">…</div>
+<div class="stat-note" id="statPctileNote">Trailing 5-year small vs. large return, ranked since 1931</div>
 </div>
 <div class="stat-card">
 <div class="stat-label">12-Month Relative Return</div>
@@ -716,14 +732,19 @@ tbody td:first-child{
 <div class="stat-note">IWM vs. SPY, trailing 252 trading days</div>
 </div>
 <div class="stat-card">
-<div class="stat-label">Current Fed Regime</div>
-<div class="stat-value txt" id="statRegime">…</div>
-<div class="stat-note" id="statRegimeNote">Avg. monthly spread return, this regime</div>
+<div class="stat-label">Small/Large Ratio Drawdown</div>
+<div class="stat-value" id="statRelDd">…</div>
+<div class="stat-note" id="statRelDdNote">IWM/SPY ratio below its peak</div>
 </div>
 <div class="stat-card">
-<div class="stat-label">Correlation w/ 10Y Yield &Delta;</div>
-<div class="stat-value" id="statCorr">…</div>
-<div class="stat-note" id="statCorrNote">Monthly, Pearson r</div>
+<div class="stat-label">S&amp;P 600 vs. Russell 2000</div>
+<div class="stat-value" id="statIjr">…</div>
+<div class="stat-note" id="statIjrNote">IJR vs. IWM, annualized since 2000</div>
+</div>
+<div class="stat-card">
+<div class="stat-label">Size Premium Since 1926</div>
+<div class="stat-value" id="statPremium">…</div>
+<div class="stat-note" id="statPremiumNote">Smallest fifth vs. largest fifth of U.S. stocks</div>
 </div>
 </div>
 
@@ -737,6 +758,19 @@ tbody td:first-child{
 <div class="chart-canvas-wrap">
 <canvas id="ratioChart"></canvas>
 </div>
+</div>
+
+<div class="chart-box">
+<div class="chart-box-header">
+<div>
+<h2>Small-cap / large-cap ratio drawdown, since 2000</h2>
+<div class="chart-subhead">How far the IWM/SPY ratio sits below its highest level up to each day. Zero marks a new high for small caps relative to large caps.</div>
+</div>
+</div>
+<div class="chart-canvas-wrap short">
+<canvas id="relDdChart"></canvas>
+</div>
+<div class="chart-footnote" id="relDdNote"></div>
 </div>
 
 <div class="table-box">
@@ -762,6 +796,116 @@ tbody td:first-child{
 </div>
 <div class="chart-canvas-wrap">
 <canvas id="rollingChart"></canvas>
+</div>
+</div>
+
+<div class="chart-box">
+<div class="chart-box-header">
+<div>
+<h2>Rolling 10-year small-cap vs. large-cap return, since 1936</h2>
+<div class="chart-subhead">Annualized return of the smallest fifth of U.S. stocks by market value relative to the largest fifth, over each trailing 10 years (Ken French size quintiles, value-weighted). The second line is IWM relative to SPY over the same window, from 2010.</div>
+</div>
+</div>
+<div class="chart-canvas-wrap">
+<canvas id="premiumChart"></canvas>
+</div>
+<div class="chart-footnote" id="premiumNote"></div>
+</div>
+
+<div class="table-box">
+<div class="table-box-header">
+<h2>Size returns by decade, since 1926</h2>
+<div class="chart-subhead">Annualized total return of the smallest and largest fifths of U.S. stocks by market value, value-weighted. Relative is the annualized return of small divided by large.</div>
+</div>
+<table id="decadeTable">
+<thead><tr><th>Decade</th><th>Months</th><th>Smallest fifth</th><th>Largest fifth</th><th>Relative</th></tr></thead>
+<tbody id="decadeBody">
+<tr><td colspan="5" style="text-align:center; color:var(--muted); padding:24px;">Loading&hellip;</td></tr>
+</tbody>
+</table>
+<div class="table-footnote" id="decadeFootnote"></div>
+</div>
+
+<div class="chart-box">
+<div class="chart-box-header">
+<div>
+<h2>Returns after extreme trailing spreads</h2>
+<div class="chart-subhead">Each point is one month in the Ken French history. X is the trailing annualized small vs. large return, Y is the annualized small vs. large return over the following years. Colored points sit in the bottom or top tenth of all trailing readings. The dashed vertical line is today's reading.</div>
+</div>
+</div>
+<div class="range-row">
+<div class="range-group" id="lookbackBtns"><span>Trailing window</span></div>
+<div class="range-group" id="forwardBtns"><span>Following</span></div>
+</div>
+<div class="chart-canvas-wrap">
+<canvas id="extremeScatter"></canvas>
+</div>
+<div class="strip-key-row" id="extremeKey"></div>
+<div class="chart-footnote" id="extremeNow"></div>
+</div>
+
+<div class="table-box">
+<div class="table-box-header">
+<h2>Forward small vs. large returns by starting spread</h2>
+<div class="chart-subhead" id="extremeTableSub">Average annualized small vs. large return over the next 1, 3 and 5 years, grouped by where the trailing spread sat. t-statistics use Newey-West standard errors with a lag equal to the forward window in months.</div>
+</div>
+<table id="extremeTable">
+<thead><tr><th>Starting point</th><th>Episodes</th><th>Next 1 year</th><th>Next 3 years</th><th>Next 5 years</th></tr></thead>
+<tbody id="extremeBody">
+<tr><td colspan="5" style="text-align:center; color:var(--muted); padding:24px;">Loading&hellip;</td></tr>
+</tbody>
+</table>
+<div class="table-footnote" id="extremeFootnote"></div>
+<div class="table-footnote" id="extremeEpisodes"></div>
+</div>
+
+<div class="table-box">
+<div class="table-box-header">
+<h2>S&amp;P 600 vs. Russell 2000 (IJR vs. IWM), since 2000</h2>
+<div class="chart-subhead" id="ijrTableSub">Total return through the last close. Volatility is the standard deviation of daily returns, annualized.</div>
+</div>
+<table id="ijrTable">
+<thead><tr><th>ETF</th><th>Annualized return</th><th>Annualized volatility</th><th>Max drawdown</th><th>Peak to trough</th><th>Current drawdown</th><th>Growth of $1</th></tr></thead>
+<tbody id="ijrBody">
+<tr><td colspan="7" style="text-align:center; color:var(--muted); padding:24px;">Loading&hellip;</td></tr>
+</tbody>
+</table>
+<div class="table-footnote" id="ijrFootnote"></div>
+</div>
+
+<div class="chart-box">
+<div class="chart-box-header">
+<div>
+<h2>IJR / IWM ratio, since 2000</h2>
+<div class="chart-subhead">IJR adjusted close ÷ IWM adjusted close, indexed to 100 on the first shared day. Rising means the S&amp;P 600 is ahead of the Russell 2000.</div>
+</div>
+</div>
+<div class="chart-canvas-wrap short">
+<canvas id="ijrRatioChart"></canvas>
+</div>
+</div>
+
+<div class="chart-box">
+<div class="chart-box-header">
+<div>
+<h2>Calendar-year returns, IJR and IWM</h2>
+<div class="chart-subhead">Total return each calendar year. The first year starts at the first shared day and the current year is year to date (both marked *).</div>
+</div>
+</div>
+<div class="chart-canvas-wrap">
+<canvas id="ijrYearsChart"></canvas>
+</div>
+</div>
+
+<div class="chart-box">
+<div class="chart-box-header">
+<div>
+<h2>Drawdowns, IJR and IWM</h2>
+<div class="chart-subhead">Percent below each ETF's own highest close to date.</div>
+</div>
+</div>
+<div class="chart-canvas-wrap short">
+<canvas id="ijrDdChart"></canvas>
 </div>
 </div>
 
@@ -796,6 +940,12 @@ tbody td:first-child{
 <p>Small-caps and large-caps are represented by two ETFs: IWM (Russell 2000) for small-caps and SPY (S&amp;P 500) for large-caps, with MDY (S&amp;P MidCap 400) added as a mid-cap step in the return table. Returns include dividends. The ratio starts at 100 in May 2000, when IWM launched.</p>
 <p>Each month is classified by the change in the Fed funds rate over the prior 3 months. Up more than 0.10 percentage points is "Hiking," down more than 0.10 is "Cutting," and anything in between is "Holding." The idea being tested is that small-caps, which tend to carry more floating-rate debt and have less pricing power, should be more sensitive to rate changes. Each regime only has a few dozen months, so treat the averages as suggestive.</p>
 <p>The scatter shows Pearson (linear) and Spearman (rank) correlation so one or two extreme months can't drive the result. A low r² is expected, since one macro variable rarely explains much of monthly returns.</p>
+<p>Prices are Yahoo Finance adjusted closes, which add back dividends and splits. The Fed funds rate (FRED series FEDFUNDS) and the 10-year Treasury yield (FRED series GS10) are monthly averages from the St. Louis Fed. The 10-year change in the scatter is the change in that monthly average.</p>
+<p>The ratio drawdown divides the IWM/SPY ratio by its highest earlier value and subtracts one. It shows how much relative ground small caps have given up since their best point against large caps.</p>
+<p>The S&amp;P SmallCap 600 only adds a company when its latest quarter and the sum of its last four quarters both show positive earnings. The Russell 2000 holds the 2,000 U.S. companies ranked after the largest 1,000 by market value, with no profit test. The earnings screen applies when a company is added, so some members still post losses, but it tilts the S&amp;P 600 toward profitable companies. IJR and IWM stand in for the two indexes. Both are total return from adjusted closes, with fund fees already in the prices. The calendar-year count leaves out the partial first and current years.</p>
+<p>The long history uses Ken French's Portfolios Formed on Size. Each June, every NYSE, AMEX and NASDAQ stock in CRSP is sorted into fifths by market value using NYSE breakpoints, and the file reports value-weighted monthly returns from July 1926. Small is the bottom fifth and large the top fifth. Because the breakpoints come from NYSE stocks, the bottom fifth holds several times as many companies as the top fifth and reaches into micro caps smaller than most Russell 2000 members. Relative returns compound small divided by large, the same way as the ETF ratio. The file is updated about once a month and runs one to two months behind.</p>
+<p>For the extreme-spread study, each month gets its trailing 3-year and 5-year annualized small vs. large return from the Ken French quintiles. Months in the bottom or top tenth of all those readings are compared with the annualized relative return over the next 1, 3 and 5 years. The tenths are set using the whole history, which no one could have known at the time. Forward windows overlap from one month to the next, so the t-statistics use Newey-West standard errors, and the table counts non-overlapping windows and separate episodes (runs of extreme months less than a year apart). Each extreme has only five or six episodes, and a few periods such as the early 1930s, the mid-1970s and the late 1990s carry most of the result, so the evidence is thin even where a t-statistic looks large.</p>
+<p>Today's reading uses Ken French returns through the latest month published and the IWM/SPY ratio for the months since, with the current month counted to date. IWM and SPY follow the quintile spread closely without matching it (monthly correlation <span id="overlapCorr">…</span> since 2000), so the percentile is approximate.</p>
 
 
 </div>
@@ -898,12 +1048,6 @@ function rankArray(arr){
 
 function spearmanRegression(xs, ys){
  return linearRegression(rankArray(xs), rankArray(ys));
-}
-
-function percentileRank(arr, value){
- let below = 0;
- for(const v of arr) if(v <= value) below++;
- return (below / arr.length) * 100;
 }
 
 // ---- Monthly aggregation: Fed regime classification, month-end ratio
@@ -1164,6 +1308,8 @@ function stripKeyHtml(center, unit){
 }
 
 let ratioChart = null, rollingChart = null, regimeChart = null, corrScatter = null;
+let relDdChart = null, premiumChart = null, extremeScatter = null, ijrRatioChart = null, ijrYearsChart = null, ijrDdChart = null;
+let extremeLookback = 5, extremeForward = 5;
 
 async function init(){
  try{
@@ -1178,8 +1324,22 @@ async function init(){
   const monthly = buildMonthly(data);
   renderStats(data, monthly);
   renderRatioChart(data);
+  renderRelDdChart(data);
   renderLadderTable(data);
   renderRollingChart(data);
+  if(data.sizeHistory){
+   renderPremiumChart(data.sizeHistory);
+   renderDecadeTable(data.sizeHistory);
+   setupExtremeControls(data.sizeHistory);
+   renderExtremes(data.sizeHistory);
+   document.getElementById("overlapCorr").textContent = data.sizeHistory.overlapCheck ? data.sizeHistory.overlapCheck.correlation.toFixed(2) : "n/a";
+  }
+  if(data.sp600VsR2000){
+   renderIjrTable(data);
+   renderIjrRatioChart(data);
+   renderIjrYearsChart(data);
+   renderIjrDdChart(data);
+  }
   renderRegimeChart(monthly);
   renderCorrScatter(monthly);
 
@@ -1199,14 +1359,52 @@ function ordinal(n){
  }
 }
 
+function fmtAnn(v){
+ return v === null || v === undefined || isNaN(v) ? "n/a" : fmtPct(v) + "/yr";
+}
+
+function setSigned(el, v){
+ el.classList.toggle("up", v !== null && v > 0);
+ el.classList.toggle("down", v !== null && v < 0);
+}
+
+function cssVar(name, fallback){
+ const v = getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+ return v || fallback;
+}
+
+const NARROW = window.matchMedia("(max-width:520px)").matches;
+
+function xTicks(extra){
+ return Object.assign({ color: themeMutedColor(), maxTicksLimit: NARROW ? 5 : 8, maxRotation: 0, autoSkip: true }, extra || {});
+}
+
+function pctTick(v){
+ return (Math.round(v * 100) / 100) + "%";
+}
+
+// Percent below the running peak, plus where the current and deepest
+// drawdowns started.
+function drawdownSeries(values, dates){
+ const dd = new Array(values.length);
+ let peak = -Infinity, peakIdx = 0, worst = 0, worstIdx = 0, worstPeakIdx = 0;
+ for(let i = 0; i < values.length; i++){
+  if(values[i] > peak){ peak = values[i]; peakIdx = i; }
+  dd[i] = (values[i] / peak - 1) * 100;
+  if(dd[i] < worst){ worst = dd[i]; worstIdx = i; worstPeakIdx = peakIdx; }
+ }
+ return {
+  dd,
+  current: dd[dd.length - 1],
+  currentPeakDate: dates[peakIdx],
+  worst,
+  worstDate: dates[worstIdx],
+  worstPeakDate: dates[worstPeakIdx],
+ };
+}
+
 function renderStats(data, monthly){
  const ratio = data.ratioSmallLarge;
- const current = ratio[ratio.length - 1];
- const pct = percentileRank(ratio, current);
- document.getElementById("statRatio").textContent = current.toFixed(1);
- document.getElementById("statRatioNote").textContent =
-  ordinal(Math.round(pct)) + " percentile of full history (since " + data.commonStartDate.slice(0, 4) + ")";
-
  const window252 = 252;
  let rel12m = null;
  if(ratio.length > window252) rel12m = (ratio[ratio.length - 1] / ratio[ratio.length - 1 - window252] - 1) * 100;
@@ -1215,26 +1413,35 @@ function renderStats(data, monthly){
  rel12mEl.classList.toggle("cell-neg", rel12m !== null && rel12m < 0);
  rel12mEl.classList.toggle("up", rel12m !== null && rel12m > 0);
 
- const regime = monthly.currentRegime;
- const stats = regime ? monthly.regimeStats[regime] : null;
- document.getElementById("statRegime").textContent = regime || "n/a";
- if(stats && stats.n){
-  document.getElementById("statRegimeNote").textContent =
-   "Avg. " + fmtPct(stats.mean) + "/mo in " + regime + " regimes (n=" + stats.n + " mo.)";
+ const sh = data.sizeHistory;
+ const st5 = sh && sh.study && sh.study[5];
+ if(st5 && st5.current.splicedPercentile !== null){
+  document.getElementById("statPctile").textContent = ordinal(Math.round(st5.current.splicedPercentile));
+  document.getElementById("statPctileNote").textContent =
+   fmtAnn(st5.current.splicedPct) + " vs. large caps, ranked against 5-year spans since " + st5.firstMonth.slice(0, 4);
  }
 
- const corrEl = document.getElementById("statCorr");
- const corrNoteEl = document.getElementById("statCorrNote");
- if(monthly.corrPairs.length >= 8){
-  const reg = linearRegression(monthly.corrPairs.map(p => p.x), monthly.corrPairs.map(p => p.y));
-  corrEl.textContent = (reg.r >= 0 ? "+" : "") + reg.r.toFixed(2);
-  let interp = "Weak linear relationship in this sample";
-  if(Math.abs(reg.r) >= 0.15){
-   interp = reg.r < 0
-    ? "Small-caps have tended to lag when yields rise"
-    : "Small-caps have tended to lead when yields rise";
-  }
-  corrNoteEl.textContent = interp + " (n=" + reg.n + " mo.)";
+ const dd = drawdownSeries(ratio, data.dates);
+ document.getElementById("statRelDd").textContent = fmtPct(dd.current);
+ document.getElementById("statRelDdNote").textContent = dd.current < 0
+  ? "IWM/SPY below its " + usDate(dd.currentPeakDate) + " peak"
+  : "IWM/SPY at a new high";
+
+ const sp = data.sp600VsR2000;
+ if(sp){
+  const el = document.getElementById("statIjr");
+  el.textContent = fmtAnn(sp.relativeAnnPct);
+  setSigned(el, sp.relativeAnnPct);
+  document.getElementById("statIjrNote").textContent =
+   "IJR vs. IWM since " + sp.from.slice(0, 4) + ", ahead in " + sp.ijrBeatYears + " of " + sp.fullYears + " full years";
+ }
+
+ if(sh){
+  const el = document.getElementById("statPremium");
+  el.textContent = fmtAnn(sh.full.relAnnPct);
+  setSigned(el, sh.full.relAnnPct);
+  document.getElementById("statPremiumNote").textContent =
+   "Smallest fifth vs. largest fifth of U.S. stocks, " + usDate(sh.full.from) + " to " + usDate(sh.full.to);
  }
 }
 
@@ -1408,6 +1615,288 @@ function renderCorrScatter(monthly){
    "<tbody>" + row("Pearson (OLS)", pearson) + row("Spearman (&rho;)", spear) + "</tbody>" +
   "</table>" +
   '<div class="method-note">Slope is percentage points of monthly spread return per 1pp move in the 10-year yield that month.</div>';
+}
+
+function lineOptions(extra){
+ return Object.assign({
+  responsive: true,
+  maintainAspectRatio: false,
+  animation: false,
+  interaction: { mode: "index", intersect: false },
+  plugins: { legend: { display: false } },
+ }, extra || {});
+}
+
+function legendTop(){
+ return { display: true, position: "top", align: "start", labels: { boxWidth: 22, boxHeight: 2, color: themeMutedColor(), font: { size: 11 } } };
+}
+
+function renderRelDdChart(data){
+ const dd = drawdownSeries(data.ratioSmallLarge, data.dates);
+ const color = cssVar("--series-1", "#7fa7d9");
+ if(relDdChart) relDdChart.destroy();
+ relDdChart = new Chart(document.getElementById("relDdChart").getContext("2d"), {
+  type: "line",
+  data: { labels: data.dates, datasets: [
+   { label: "Ratio drawdown", data: dd.dd.map(v => Math.round(v * 100) / 100), borderColor: color, backgroundColor: stripRgba(color, 0.18), borderWidth: 1.2, pointRadius: 0, fill: "origin" },
+  ] },
+  options: lineOptions({
+   plugins: { legend: { display: false }, tooltip: { callbacks: { label: ctx => "Below peak: " + fmtPct(ctx.parsed.y) } } },
+   scales: {
+    x: { ticks: xTicks(), grid: { color: themeHairColor() } },
+    y: { max: 0, ticks: { color: themeMutedColor(), callback: pctTick }, grid: { color: themeHairColor() } },
+   },
+  }),
+ });
+ document.getElementById("relDdNote").textContent =
+  "Now " + Math.abs(dd.current).toFixed(2) + "% below the " + usDate(dd.currentPeakDate) + " peak. Deepest: " + fmtPct(dd.worst) +
+  " on " + usDate(dd.worstDate) + ", from the " + usDate(dd.worstPeakDate) + " peak.";
+}
+
+function renderPremiumChart(sh){
+ const r = sh.rolling10;
+ const c1 = cssVar("--series-1", "#7fa7d9");
+ if(premiumChart) premiumChart.destroy();
+ premiumChart = new Chart(document.getElementById("premiumChart").getContext("2d"), {
+  type: "line",
+  data: { labels: r.months, datasets: [
+   { label: "Smallest vs. largest fifth (Ken French)", data: r.kf, borderColor: themeInkColor(), backgroundColor: themeInkColor(), borderWidth: 1.3, pointRadius: 0, fill: false },
+   { label: "IWM vs. SPY", data: r.etf, borderColor: c1, backgroundColor: c1, borderWidth: 1.5, pointRadius: 0, fill: false },
+   { label: "Zero", data: r.months.map(() => 0), borderColor: themeMutedColor(), borderWidth: 1, borderDash: [4, 3], pointRadius: 0, fill: false },
+  ] },
+  options: lineOptions({
+   plugins: {
+    legend: { display: true, position: "top", align: "start", labels: { boxWidth: 22, boxHeight: 2, color: themeMutedColor(), font: { size: 11 }, filter: item => item.text !== "Zero" } },
+    tooltip: { callbacks: { label: ctx => ctx.dataset.label === "Zero" || ctx.parsed.y === null ? null : ctx.dataset.label + ": " + fmtAnn(ctx.parsed.y) } },
+   },
+   scales: {
+    x: { ticks: xTicks(), grid: { color: themeHairColor() } },
+    y: { ticks: { color: themeMutedColor(), callback: pctTick }, grid: { color: themeHairColor() }, title: { display: true, text: "Annualized, trailing 10 years", color: themeMutedColor(), font: { size: 10 } } },
+   },
+  }),
+ });
+ const oc = sh.overlapCheck;
+ let note = "Ken French data " + usDate(sh.full.from) + " to " + usDate(sh.full.to) + ".";
+ if(oc){
+  note += " From " + usDate(oc.from) + " to " + usDate(oc.to) + " the quintile spread returned " + fmtAnn(oc.kfRelAnnPct) +
+   " and IWM vs. SPY " + fmtAnn(oc.etfRelAnnPct) + ", with a monthly correlation of " + oc.correlation.toFixed(2) + ".";
+ }
+ document.getElementById("premiumNote").textContent = note;
+}
+
+function renderDecadeTable(sh){
+ const row = (label, d, cls) => "<tr" + (cls ? ' class="' + cls + '"' : "") + "><td>" + label + "</td><td>" + d.months.toLocaleString("en-US") + "</td><td>" +
+  fmtPct(d.smallAnnPct) + "</td><td>" + fmtPct(d.largeAnnPct) + "</td><td>" + fmtPct(d.relAnnPct) + "</td></tr>";
+ document.getElementById("decadeBody").innerHTML =
+  sh.decades.map(d => row(d.decade, d)).join("") + row("Full history", sh.full, "row-total");
+ const first = sh.decades[0], last = sh.decades[sh.decades.length - 1];
+ document.getElementById("decadeFootnote").textContent =
+  "Annualized. The " + first.decade + " start in " + usDate(first.from) + " and the " + last.decade + " run through " + usDate(last.to) +
+  ". Since " + sh.full.from.slice(0, 4) + ", $1 in the smallest fifth grew to $" + sh.full.smallGrowthOf1.toLocaleString("en-US") +
+  " and $1 in the largest fifth to $" + sh.full.largeGrowthOf1.toLocaleString("en-US") + ", before costs.";
+}
+
+function setupExtremeControls(sh){
+ const make = (containerId, options, getter, setter) => {
+  const box = document.getElementById(containerId);
+  options.forEach(o => {
+   const b = document.createElement("button");
+   b.type = "button";
+   b.className = "range-btn" + (getter() === o.value ? " active" : "");
+   b.textContent = o.label;
+   b.addEventListener("click", () => {
+    setter(o.value);
+    box.querySelectorAll(".range-btn").forEach(x => x.classList.toggle("active", x === b));
+    renderExtremes(sh);
+   });
+   box.appendChild(b);
+  });
+ };
+ make("lookbackBtns", Object.keys(sh.study).map(Number).map(k => ({ value: k, label: k + " years" })), () => extremeLookback, v => { extremeLookback = v; });
+ make("forwardBtns", Object.keys(sh.scatter.forward).map(Number).map(h => ({ value: h, label: h === 1 ? "1 year" : h + " years" })), () => extremeForward, v => { extremeForward = v; });
+}
+
+function renderExtremes(sh){
+ const K = extremeLookback, H = extremeForward;
+ const st = sh.study[K];
+ const xs = sh.scatter.trailing[K], ys = sh.scatter.forward[H], months = sh.scatter.months;
+ const groups = { bottom: [], mid: [], top: [] };
+ for(let i = 0; i < months.length; i++){
+  if(xs[i] === null || ys[i] === null) continue;
+  const p = { x: xs[i], y: ys[i], m: months[i] };
+  (xs[i] <= st.p10Pct ? groups.bottom : xs[i] >= st.p90Pct ? groups.top : groups.mid).push(p);
+ }
+ const c1 = cssVar("--series-1", "#7fa7d9"), c2 = cssVar("--series-2", "#d6a556"), muted = themeMutedColor();
+ const allY = ys.filter(v => v !== null);
+ const yMin = Math.min(...allY), yMax = Math.max(...allY);
+ const now = st.current.splicedPct;
+ const fwdLabel = H === 1 ? "Next year" : "Next " + H + " years";
+ if(extremeScatter) extremeScatter.destroy();
+ extremeScatter = new Chart(document.getElementById("extremeScatter").getContext("2d"), {
+  type: "scatter",
+  data: { datasets: [
+   { label: "Other months", data: groups.mid, backgroundColor: stripRgba(muted, 0.35), pointRadius: 2, pointHoverRadius: 4 },
+   { label: "Bottom tenth", data: groups.bottom, backgroundColor: stripRgba(c1, 0.85), pointRadius: 2.6, pointHoverRadius: 4.5 },
+   { label: "Top tenth", data: groups.top, backgroundColor: stripRgba(c2, 0.85), pointRadius: 2.6, pointHoverRadius: 4.5 },
+   { label: "Today", type: "line", data: now === null ? [] : [{ x: now, y: yMin }, { x: now, y: yMax }], borderColor: themeInkColor(), borderWidth: 1.5, borderDash: [5, 4], pointRadius: 0, pointHitRadius: 0, fill: false },
+  ] },
+  options: {
+   responsive: true,
+   maintainAspectRatio: false,
+   animation: false,
+   interaction: { mode: "point", intersect: true },
+   plugins: {
+    legend: { display: false },
+    zoom: false,
+    tooltip: {
+     filter: item => item.dataset.label !== "Today",
+     callbacks: {
+      title: items => usDate(items[0].raw.m),
+      label: ctx => ["Trailing " + K + " years: " + fmtAnn(ctx.raw.x), fwdLabel + ": " + fmtAnn(ctx.raw.y)],
+     },
+    },
+   },
+   scales: {
+    x: { type: "linear", ticks: { color: muted, callback: pctTick, maxTicksLimit: NARROW ? 5 : 9, maxRotation: 0 }, grid: { color: themeHairColor() },
+     title: { display: true, text: "Trailing " + K + "-year small vs. large, annualized", color: muted, font: { size: 10 } } },
+    y: { ticks: { color: muted, callback: pctTick }, grid: { color: themeHairColor() },
+     title: { display: true, text: fwdLabel + ", annualized", color: muted, font: { size: 10 } } },
+   },
+  },
+ });
+ const dot = color => '<span class="sk-dot" style="background:' + color + '; opacity:1;"></span>';
+ document.getElementById("extremeKey").innerHTML =
+  '<span class="strip-key">' + dot(c1) + "Bottom tenth of trailing readings (" + fmtAnn(st.p10Pct) + " or lower)</span>" +
+  '<span class="strip-key">' + dot(c2) + "Top tenth (" + fmtAnn(st.p90Pct) + " or higher)</span>" +
+  '<span class="strip-key">' + dot(stripRgba(muted, 0.5)) + "Other months</span>" +
+  '<span class="strip-key"><span class="sk-line"></span>Today</span>';
+ const cur = st.current;
+ const etfSpan = cur.etfMonths.length
+  ? " and IWM/SPY for " + usDate(cur.etfMonths[0]) + (cur.etfMonths.length > 1 ? " to " + usDate(cur.etfMonths[cur.etfMonths.length - 1]) : "") + " (month to date)"
+  : "";
+ document.getElementById("extremeNow").textContent =
+  "Today's trailing " + K + "-year reading: " + fmtAnn(cur.splicedPct) + ", the " + ordinal(Math.round(cur.splicedPercentile)) +
+  " percentile since " + st.firstMonth.slice(0, 4) + ". It uses Ken French months through " + usDate(cur.kfLastMonth) + etfSpan +
+  ". IWM vs. SPY alone gives " + fmtAnn(cur.etfOnlyPct) + " (" + ordinal(Math.round(cur.etfOnlyPercentile)) + " percentile).";
+
+ const horizons = Object.keys(st.byHorizon).map(Number);
+ const cell = (o, extra) => {
+  if(!o || o.meanPct === null) return '<span class="cell-na">n/a</span>';
+  const parts = ["t " + (o.tStat === null ? "n/a" : o.tStat.toFixed(2))];
+  if(extra) parts.push(...extra);
+  return fmtPct(o.meanPct) + '<span class="cell-sub">' + parts.join(", ") + "</span>";
+ };
+ const groupCell = o => cell(o, [o.months + " mo.", o.independent + " separate", o.hitPct.toFixed(0) + "% positive"]);
+ const rows = [
+  { label: "All months", get: b => groupCell(b.all), episodes: "" },
+  { label: "Bottom tenth", get: b => groupCell(b.bottom), episodes: st.episodes.bottom.length },
+  { label: "Top tenth", get: b => groupCell(b.top), episodes: st.episodes.top.length },
+  { label: "Bottom tenth minus other months", get: b => cell(b.bottomMinusOther), episodes: "" },
+  { label: "Top tenth minus other months", get: b => cell(b.topMinusOther), episodes: "" },
+  { label: "Bottom tenth minus top tenth", get: b => cell(b.bottomMinusTop), episodes: "" },
+ ];
+ document.getElementById("extremeBody").innerHTML = rows.map(r =>
+  "<tr><td>" + r.label + "</td><td>" + r.episodes + "</td>" + horizons.map(h => "<td>" + r.get(st.byHorizon[h]) + "</td>").join("") + "</tr>"
+ ).join("");
+ document.getElementById("extremeFootnote").textContent =
+  "Trailing " + K + "-year readings from " + usDate(st.firstMonth) + " (" + st.observations.toLocaleString("en-US") + " months). Each cell shows the annualized mean, its t-statistic, " +
+  "the months with a complete forward window, how many of those windows do not overlap, and the share of months in which small beat large.";
+ const lastIdx = months.length - 1;
+ const epText = (list, label) => label + ": " + list.map(e => {
+  const recent = months.indexOf(e.start) + 12 > lastIdx ? ", too recent to score" : "";
+  return usDate(e.start) + " to " + usDate(e.end) + " (" + e.monthsInTenth + " mo., " + fmtAnn(e.extremePct) + recent + ")";
+ }).join(", ") + ".";
+ document.getElementById("extremeEpisodes").textContent =
+  epText(st.episodes.bottom, "Bottom-tenth episodes, with the weakest trailing reading") + " " +
+  epText(st.episodes.top, "Top-tenth episodes, with the strongest");
+}
+
+function renderIjrTable(data){
+ const sp = data.sp600VsR2000;
+ const row = (label, s) => "<tr><td>" + label + "</td><td>" + fmtPct(s.annReturnPct) + "</td><td>" + s.annVolPct.toFixed(2) + "%</td><td>" +
+  fmtPct(s.maxDrawdownPct) + "</td><td>" + usDate(s.maxDrawdownPeak) + " to " + usDate(s.maxDrawdownTrough) + "</td><td>" + fmtPct(s.currentDrawdownPct) +
+  "</td><td>$" + s.growthOf1.toFixed(2) + "</td></tr>";
+ document.getElementById("ijrBody").innerHTML =
+  row("IJR (S&amp;P 600)", sp.ijr) + row("IWM (Russell 2000)", sp.iwm) +
+  '<tr class="row-total"><td>IJR relative to IWM</td><td>' + fmtPct(sp.relativeAnnPct) + '</td><td colspan="5"></td></tr>';
+ document.getElementById("ijrTableSub").textContent =
+  "Total return from " + usDate(sp.from) + ", the first day both ETFs have prices, through " + usDate(sp.to) +
+  ". Volatility is the standard deviation of daily returns, annualized.";
+ const full = sp.years.filter(y => !y.partial);
+ document.getElementById("ijrFootnote").textContent =
+  "IJR beat IWM in " + sp.ijrBeatYears + " of " + sp.fullYears + " full calendar years (" + sp.ijrBeatPct.toFixed(0) + "%), " +
+  full[0].year + " to " + full[full.length - 1].year + ".";
+}
+
+function renderIjrRatioChart(data){
+ const ratio = data.smallSp600.map((v, i) => Math.round((v / data.small[i]) * 10000) / 100);
+ const c1 = cssVar("--series-1", "#7fa7d9");
+ if(ijrRatioChart) ijrRatioChart.destroy();
+ ijrRatioChart = new Chart(document.getElementById("ijrRatioChart").getContext("2d"), {
+  type: "line",
+  data: { labels: data.dates, datasets: [
+   { label: "IJR/IWM ratio", data: ratio, borderColor: c1, backgroundColor: c1, borderWidth: 1.3, pointRadius: 0, fill: false },
+  ] },
+  options: lineOptions({
+   plugins: { legend: { display: false }, tooltip: { callbacks: { label: ctx => "IJR/IWM: " + ctx.parsed.y.toFixed(1) } } },
+   scales: {
+    x: { ticks: xTicks(), grid: { color: themeHairColor() } },
+    y: { ticks: { color: themeMutedColor() }, grid: { color: themeHairColor() } },
+   },
+  }),
+ });
+}
+
+function renderIjrYearsChart(data){
+ const yrs = data.sp600VsR2000.years;
+ const c1 = cssVar("--series-1", "#7fa7d9"), c2 = cssVar("--series-2", "#d6a556");
+ if(ijrYearsChart) ijrYearsChart.destroy();
+ ijrYearsChart = new Chart(document.getElementById("ijrYearsChart").getContext("2d"), {
+  type: "bar",
+  data: { labels: yrs.map(y => y.year + (y.partial ? "*" : "")), datasets: [
+   { label: "IJR (S&P 600)", data: yrs.map(y => y.ijrPct), backgroundColor: c1, borderWidth: 0 },
+   { label: "IWM (Russell 2000)", data: yrs.map(y => y.iwmPct), backgroundColor: c2, borderWidth: 0 },
+  ] },
+  options: {
+   responsive: true,
+   maintainAspectRatio: false,
+   animation: false,
+   interaction: { mode: "index", intersect: false },
+   plugins: {
+    legend: { display: true, position: "top", align: "start", labels: { boxWidth: 12, boxHeight: 10, color: themeMutedColor(), font: { size: 11 } } },
+    zoom: false,
+    tooltip: { callbacks: {
+     title: items => { const y = yrs[items[0].dataIndex]; return y.partial ? y.year + " (" + usDate(y.fromDate) + " to " + usDate(y.toDate) + ")" : String(y.year); },
+     label: ctx => ctx.dataset.label + ": " + fmtPct(ctx.parsed.y),
+     footer: items => { const y = yrs[items[0].dataIndex]; return "IJR minus IWM: " + fmtPct(Math.round((y.ijrPct - y.iwmPct) * 100) / 100); },
+    } },
+   },
+   scales: {
+    x: { ticks: xTicks({ maxTicksLimit: NARROW ? 7 : 27 }), grid: { display: false } },
+    y: { ticks: { color: themeMutedColor(), callback: pctTick }, grid: { color: themeHairColor() } },
+   },
+  },
+ });
+}
+
+function renderIjrDdChart(data){
+ const a = drawdownSeries(data.smallSp600, data.dates), b = drawdownSeries(data.small, data.dates);
+ const c1 = cssVar("--series-1", "#7fa7d9"), c2 = cssVar("--series-2", "#d6a556");
+ if(ijrDdChart) ijrDdChart.destroy();
+ ijrDdChart = new Chart(document.getElementById("ijrDdChart").getContext("2d"), {
+  type: "line",
+  data: { labels: data.dates, datasets: [
+   { label: "IJR (S&P 600)", data: a.dd.map(v => Math.round(v * 100) / 100), borderColor: c1, backgroundColor: c1, borderWidth: 1.2, pointRadius: 0, fill: false },
+   { label: "IWM (Russell 2000)", data: b.dd.map(v => Math.round(v * 100) / 100), borderColor: c2, backgroundColor: c2, borderWidth: 1.2, pointRadius: 0, fill: false },
+  ] },
+  options: lineOptions({
+   plugins: { legend: legendTop(), tooltip: { callbacks: { label: ctx => ctx.dataset.label + ": " + fmtPct(ctx.parsed.y) } } },
+   scales: {
+    x: { ticks: xTicks(), grid: { color: themeHairColor() } },
+    y: { max: 0, ticks: { color: themeMutedColor(), callback: pctTick }, grid: { color: themeHairColor() } },
+   },
+  }),
+ });
 }
 
 init();

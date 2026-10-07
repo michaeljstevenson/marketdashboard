@@ -629,15 +629,12 @@
   # schedule = "20 7 * * 6"
 
 [functions."scheduled-smallcap-background"]
-  # 21:15 UTC — in the gap between scheduled-oddstats (21:10) and
-  # scheduled-beeswarm-daily (21:40) in the once-daily post-close block.
-  # Only 5 Alpha Vantage calls total (3 full-history TIME_SERIES_DAILY_
-  # ADJUSTED + FEDERAL_FUNDS_RATE + TREASURY_YIELD, both monthly), so
-  # unlike the full-S&P-500-sweep jobs in this block there's no real
-  # rate-limit contention risk either way — staggered anyway to keep the
-  # daily block's logs easy to read in order. Daily, not weekly, since
-  # (unlike a sparse-event dataset) index levels move every trading day.
-  schedule = "15 22 * * 1-5"
+  # Weekdays 22:15 UTC, after the close. Four Yahoo price histories, two
+  # FRED series and a HEAD check on the Ken French size file (downloaded
+  # only when it changes), about 5 seconds. Daily since ETF prices move
+  # every trading day.
+  # Schedule paused for the reworked job's first manual run:
+  # schedule = "15 22 * * 1-5"
 
 [functions."scheduled-international-background"]
   # Daily 22:20 UTC, right after scheduled-smallcap-background (22:15). Index
