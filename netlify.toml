@@ -644,8 +644,7 @@
   # risk. After scheduled-countries-background (21:45 weekdays) so the country
   # ETFs that job stores are current when this one reads them. Ken French
   # files are re-downloaded at most once a calendar month.
-  # Schedule paused for the reworked job's first manual run:
-  # schedule = "20 22 * * *"
+  schedule = "20 22 * * *"
 
 [functions."scheduled-surprise-background"]
   # One-time snapshot (2026-09-16) — no schedule. Earnings Surprise History
@@ -672,8 +671,7 @@
   # history through relative-strength-history.js's STATIC_THROUGH is
   # precomputed offline (build_momentum_study.py), later month-ends are
   # computed here. About 1.5 minutes with 4 Yahoo workers.
-  # Schedule paused for the reworked job's first manual run:
-  # schedule = "10 13 * * 6"
+  schedule = "10 13 * * 6"
 
 [functions."scheduled-equity-risk-premium-background"]
   # One-time snapshot (2026-09-16) — no schedule, same reasoning as

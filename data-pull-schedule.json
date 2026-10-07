@@ -179,6 +179,16 @@
       ]
     },
     {
+      "name": "international",
+      "cron": "20 22 * * *",
+      "apis": [
+        "/api/international-us"
+      ],
+      "pages": [
+        "international-vs-us"
+      ]
+    },
+    {
       "name": "beeswarm-meta",
       "cron": "0 7 * * 6",
       "apis": [
@@ -240,6 +250,16 @@
       ],
       "pages": [
         "concentration"
+      ]
+    },
+    {
+      "name": "relative-strength",
+      "cron": "10 13 * * 6",
+      "apis": [
+        "/api/relative-strength"
+      ],
+      "pages": [
+        "relative-strength-leaders"
       ]
     },
     {
@@ -371,16 +391,6 @@
       "pages": []
     },
     {
-      "name": "international",
-      "cron": null,
-      "apis": [
-        "/api/international-us"
-      ],
-      "pages": [
-        "international-vs-us"
-      ]
-    },
-    {
       "name": "margin-leverage",
       "cron": null,
       "apis": [
@@ -408,16 +418,6 @@
       ],
       "pages": [
         "post-earnings-drift"
-      ]
-    },
-    {
-      "name": "relative-strength",
-      "cron": null,
-      "apis": [
-        "/api/relative-strength"
-      ],
-      "pages": [
-        "relative-strength-leaders"
       ]
     },
     {
