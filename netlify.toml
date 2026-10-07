@@ -691,23 +691,11 @@
   # day to day.
 
 [functions."scheduled-earnings-growth-divergence-background"]
-  # One-time snapshot (2026-09-16) — no schedule, same reasoning as
-  # scheduled-surprise-background above. Kept for reference, the original
-  # staggering rationale: Weekly, Saturday 14:00 UTC — originally 13:00
-  # (after this PR's own
-  # scheduled-relative-strength-background at 12:00 and scheduled-equity-
-  # risk-premium-background at 12:30, both since moved — see those
-  # functions' own schedule comments for the unrelated collisions that
-  # forced the moves). Real dependency, not just pacing: this job reads
-  # scheduled-relative-strength-background's own latest.json for 3-month
-  # price performance instead of running a second price sweep, so it needs
-  # that job to have already completed this same Saturday morning for
-  # fresh data (falls back to EPS-growth-only rows, not a crash, if it
-  # hasn't) — now scheduled at 13:10, finishing ~13:19. Moved to 14:00 to
-  # stay safely after that and after scheduled-equity-risk-premium-
-  # background (13:35 UTC, finishes ~13:44), the last two jobs in the
-  # Saturday block as of this fix. ~503 sequential Alpha Vantage EARNINGS
-  # calls at 1050ms spacing plus a retry pass.
+  # Weekly, Saturday 15:35 UTC, after the Saturday Alpha Vantage sweeps. EPS
+  # changes quarterly but the 1, 3 and 5-year windows move with prices.
+  # Yahoo plus the shared earnings and overview collections, no Alpha
+  # Vantage calls.
+  schedule = "35 15 * * 6"
 
 [functions."scheduled-smallcap-liquidity-background"]
   # Weekly, Saturday 14:20 UTC. Reads meta.json (itself refreshed weekly) for

@@ -465,6 +465,11 @@ tbody td:nth-child(2){
  position:relative;
 }
 
+.seg-toggle{ display:inline-flex; border:1px solid var(--hair); border-radius:7px; overflow:hidden; }
+.seg-toggle button{ font:inherit; font-size:12px; background:none; color:var(--muted); border:0; padding:5px 11px; cursor:pointer; }
+.seg-toggle button + button{ border-left:1px solid var(--hair); }
+.seg-toggle button.on{ background:var(--card-hover, rgba(127,127,127,0.12)); color:var(--ink); }
+table.egd-table{ min-width:0; }
 .method-table{
  width:100%;
  border-collapse:collapse;
@@ -748,650 +753,282 @@ tbody td:nth-child(2){
 <div class="header">
 <div>
 <h1>Earnings Growth vs. Price Performance</h1>
-<div class="subtitle">Where has the market already priced in a company's earnings growth, and where hasn't it? Trailing year-over-year EPS growth vs. 3-month price performance relative to SPY, across the S&amp;P 500.</div>
+<div class="subtitle">How much of the S&amp;P 500's return, and each sector's and stock's, came from earnings growth, and how much from investors paying a higher or lower price for those earnings? Returns over the last 1, 3 and 5 years, split into EPS growth, change in the P/E multiple and dividends.</div>
 </div>
-<div class="header-meta"><div class="updated" id="updated">Loading...</div><div class="coverage-note" id="coverageNote" hidden></div></div>
+<div class="updated" id="updated">Loading...</div>
 </div>
-
 <div class="stat-grid">
 <div class="stat-card">
-<div class="stat-label">Median YoY EPS Growth</div>
-<div class="stat-value" id="statMedianEps">…</div>
-<div class="stat-note" id="statMedianEpsNote">Full universe</div>
+<div class="stat-label">S&amp;P 500 Return, 5 Years</div>
+<div class="stat-value" id="statTotal">…</div>
+<div class="stat-note" id="statTotalNote">Annualized, dividends included</div>
 </div>
 <div class="stat-card">
-<div class="stat-label">Median 3M Relative Return</div>
-<div class="stat-value" id="statMedianPrice">…</div>
-<div class="stat-note" id="statMedianPriceNote">vs. SPY, full universe</div>
+<div class="stat-label">From EPS Growth</div>
+<div class="stat-value" id="statEps">…</div>
+<div class="stat-note">A year, over 5 years</div>
 </div>
 <div class="stat-card">
-<div class="stat-label">Growth Ahead of Price</div>
-<div class="stat-value" id="statGrowthAhead">…</div>
-<div class="stat-note" id="statGrowthAheadNote">Strongest earnings growth, weakest relative price</div>
+<div class="stat-label">From P/E Change</div>
+<div class="stat-value" id="statPe">…</div>
+<div class="stat-note" id="statPeNote">A year, over 5 years</div>
 </div>
 <div class="stat-card">
-<div class="stat-label">Price Ahead of Growth</div>
-<div class="stat-value" id="statPriceAhead">…</div>
-<div class="stat-note" id="statPriceAheadNote">Strongest relative price, weakest earnings growth</div>
+<div class="stat-label">From Dividends</div>
+<div class="stat-value" id="statDiv">…</div>
+<div class="stat-note">A year, over 5 years</div>
+</div>
+<div class="stat-card">
+<div class="stat-label">Return Explained by EPS Growth</div>
+<div class="stat-value txt" id="statR2">…</div>
+<div class="stat-note" id="statR2Note">Across stocks, R-squared</div>
 </div>
 </div>
 
 <div class="chart-box">
 <div class="chart-box-header">
 <div>
-<h2>Median YoY EPS growth vs. median 3-month relative return, by sector</h2>
-<div class="chart-subhead">One point per sector. Blue points sit where growth and price agree in direction, gold where they diverge. Do they broadly agree, or diverge?</div>
+<h2>Where the S&amp;P 500's return came from</h2>
+<div class="chart-subhead">Annualized total return of today's S&amp;P 500 members over each period, split into growth in their combined earnings, the change in their combined P/E and dividends. The three parts compound to the total return, marked with a red line. A part below zero is drawn below the axis.</div>
 </div>
 </div>
 <div class="ndr-panel">
-<div class="chart-canvas-wrap">
+<div class="chart-canvas-wrap" style="height:300px;">
+<canvas id="indexChart"></canvas>
+</div>
+</div>
+</div>
+
+<div class="chart-box">
+<div class="chart-box-header">
+<div>
+<h2>By sector</h2>
+<div class="chart-subhead" id="sectorSub">Each sector's annualized return split the same way.</div>
+</div>
+<div class="seg-toggle" id="sectorToggle"></div>
+</div>
+<div class="ndr-panel">
+<div class="chart-canvas-wrap" style="height:440px;">
 <canvas id="sectorChart"></canvas>
 </div>
 </div>
+<div class="method-note" id="sectorNote"></div>
 </div>
 
 <div class="chart-box">
 <div class="chart-box-header">
 <div>
-<h2>Does 3-month relative price performance track earnings growth?</h2>
-<div class="chart-subhead">Each point is one stock. X is trailing year-over-year EPS growth, Y is 3-month price return relative to SPY.</div>
+<h2>Does earnings growth explain stock returns?</h2>
+<div class="chart-subhead" id="fitSub">Each point is one S&amp;P 500 stock: its annualized EPS growth against its annualized price return. Stocks with a loss at either end are left out.</div>
 </div>
+<div class="seg-toggle" id="fitToggle"></div>
 </div>
 <div class="ndr-panel">
-<div class="scatter-canvas-wrap">
-<canvas id="growthScatter"></canvas>
+<div class="scatter-canvas-wrap" style="height:380px;">
+<canvas id="fitChart"></canvas>
 </div>
 </div>
-<div id="growthMethodTable"></div>
+<div style="overflow-x:auto;"><table class="method-table" id="fitTable"></table></div>
 </div>
 
 <div class="table-grid">
 <div class="table-box">
 <div class="table-box-header">
-<h2>Growth Ahead of Price</h2>
-<div class="chart-subhead">Strong earnings growth the market hasn't rewarded (yet), or has good reason not to.</div>
+<h2>Biggest P/E expansion, 3 years</h2>
+<div class="chart-subhead">Stocks whose price rose most relative to their earnings, annualized</div>
 </div>
-<table id="leaderTable">
-<thead><tr><th>Symbol</th><th>Sector</th><th>EPS YoY</th><th>Price 3M</th></tr></thead>
-<tbody id="leaderBody"><tr><td colspan="4" style="text-align:center; color:var(--muted); padding:24px;">Loading&hellip;</td></tr></tbody>
-</table>
+<table class="egd-table"><thead><tr><th>Symbol</th><th>Price</th><th>EPS</th><th>P/E</th><th>P/E Now</th></tr></thead><tbody id="expBody"><tr><td colspan="5" style="text-align:center; color:var(--muted); padding:24px;">Loading&hellip;</td></tr></tbody></table>
 </div>
 <div class="table-box">
 <div class="table-box-header">
-<h2>Price Ahead of Growth</h2>
-<div class="chart-subhead">Strong relative price performance without matching earnings growth</div>
+<h2>Biggest P/E contraction, 3 years</h2>
+<div class="chart-subhead">Stocks whose price fell most relative to their earnings, annualized</div>
 </div>
-<table id="laggardTable">
-<thead><tr><th>Symbol</th><th>Sector</th><th>EPS YoY</th><th>Price 3M</th></tr></thead>
-<tbody id="laggardBody"><tr><td colspan="4" style="text-align:center; color:var(--muted); padding:24px;">Loading&hellip;</td></tr></tbody>
-</table>
+<table class="egd-table"><thead><tr><th>Symbol</th><th>Price</th><th>EPS</th><th>P/E</th><th>P/E Now</th></tr></thead><tbody id="conBody"><tr><td colspan="5" style="text-align:center; color:var(--muted); padding:24px;">Loading&hellip;</td></tr></tbody></table>
 </div>
 </div>
 
 <div class="table-box">
 <div class="table-box-header">
 <h2>Full S&amp;P 500</h2>
-<div class="chart-subhead">Trailing year-over-year EPS growth and 3-month price return relative to SPY for each S&amp;P 500 company.</div>
+<div class="chart-subhead" id="fullSub">Annualized return and its parts for every stock</div>
 </div>
 <details class="full-list-details">
 <summary class="full-list-summary">Show full list</summary>
+<div class="seg-toggle" id="tableToggle" style="margin:6px 0 4px;"></div>
 <table id="stockTable">
 <thead>
 <tr>
 <th data-key="symbol">Symbol</th>
 <th data-key="sector">Sector</th>
-<th data-key="epsGrowthYoY">EPS YoY<span class="sort-arrow">▾</span></th>
-<th data-key="relPrice3M">Price 3M<span class="sort-arrow">▾</span></th>
-<th data-key="divergenceScore">Divergence<span class="sort-arrow">▾</span></th>
+<th data-key="pe">P/E Now<span class="sort-arrow">▾</span></th>
+<th data-key="totalReturnPct">Total Return<span class="sort-arrow">▾</span></th>
+<th data-key="priceReturnPct">Price<span class="sort-arrow">▾</span></th>
+<th data-key="epsGrowthPct">EPS Growth<span class="sort-arrow">▾</span></th>
+<th data-key="peChangePct">P/E Change<span class="sort-arrow">▾</span></th>
+<th data-key="dividendsPct">Dividends<span class="sort-arrow">▾</span></th>
 </tr>
 </thead>
-<tbody id="tableBody">
-<tr><td colspan="5" style="text-align:center; color:var(--muted); padding:30px;">Loading earnings growth data&hellip;</td></tr>
-</tbody>
+<tbody id="tableBody"></tbody>
 </table>
 </details>
 </div>
 
 <div class="explainer">
 <h2>Methodology</h2>
-<p>EPS growth compares each company's latest quarterly EPS to the same quarter a year earlier, so seasonal swings (like a retailer's Q4 vs. Q3) don't distort it. Companies that had a loss in the year-ago quarter are left out, since going from a loss to a profit doesn't produce a meaningful growth rate.</p>
-<p>Price performance is each stock's 3-month return relative to the S&amp;P 500.</p>
-<p>Every stock is ranked twice: once by EPS growth (1 = fastest growing) and once by 3-month relative price return (1 = best performing). The divergence score is the difference between the two ranks. A large positive score means the stock's price has done much better than its earnings growth, so the market is either paying for something other than past results or pricing in growth that hasn't been reported yet. A large negative score means the opposite: earnings are growing faster than the stock is moving. That can be an overlooked opportunity, or the market correctly discounting something the past EPS number doesn't show (rising costs, a slowing outlook, a one-time tax benefit). This page shows the divergence, but doesn't say which explanation applies.</p>
-
-
+<p>A stock's price return over any period splits exactly into two parts: the growth in its earnings per share and the change in its price-to-earnings multiple. If EPS grows 10% and the P/E rises 5%, the price rises 1.10 × 1.05 − 1 = 15.5%. Dividends come on top of that for the total return. Each part is annualized as a geometric rate over the period, so the parts multiply back to the annualized return: (1 + total) = (1 + EPS growth) × (1 + P/E change) × (1 + dividends).</p>
+<p>EPS is trailing four-quarter reported EPS, the adjusted figure companies and analysts quote, from Alpha Vantage, as it was known on each date: a quarter counts once its report date has passed. Prices are Yahoo Finance closes, adjusted for splits for the P/E and for splits and dividends for the total return. The periods end at the latest close and start 1, 3 and 5 years earlier.</p>
+<p>A stock with a loss over the trailing four quarters at either end of the period has no meaningful P/E or EPS growth, so it's left out of the stock-level split and the scatter. The S&amp;P 500 and sector figures add up earnings and market value across all of today's members at today's share counts, so they include those stocks, losses and all, and the largest companies count the most. Because the members are today's, stocks that left the index during the period aren't included.</p>
+<p>The fit across stocks is the R-squared of annualized log price return on annualized log EPS growth: the share of the differences in stocks' price returns that lines up with differences in their earnings growth. The rank correlation is shown too, since a few extreme growth rates can sway the R-squared.</p>
+<div class="source">Sources: <a href="https://www.alphavantage.co/" target="_blank" rel="noopener">Alpha Vantage</a> (reported EPS and report dates, shares outstanding), <a href="https://finance.yahoo.com/" target="_blank" rel="noopener">Yahoo Finance</a> (prices).</div>
 </div>
 
 </div>
-
 <script>
 const DATA_URL = "/api/earnings-growth-divergence";
-
 let RAW = null;
-let SORT_KEY = "divergenceScore";
-let SORT_DIR = -1;
-
+let SECTOR_H = 5, FIT_H = 5, TABLE_H = 5;
+let SORT_KEY = "totalReturnPct", SORT_DIR = -1;
+let indexChart = null, sectorChart = null, fitChart = null;
 function fmtPct(v, digits){
  if(v === null || v === undefined || isNaN(v)) return "n/a";
  digits = digits === undefined ? 1 : digits;
- return (v >= 0 ? "+" : "") + v.toFixed(digits) + "%";
+ const r = Number(v.toFixed(digits)) || 0;
+ return (r > 0 ? "+" : "") + r.toFixed(digits) + "%";
 }
-
-function fmtNum(v){
- if(v === null || v === undefined || isNaN(v)) return "n/a";
- return (v >= 0 ? "+" : "") + v;
-}
-
-function showError(message){
- const banner = document.getElementById("errorBanner");
- banner.textContent = message;
- banner.style.display = "block";
-}
-function showWarning(message){
- const banner = document.getElementById("warningBanner");
- banner.textContent = message;
- banner.style.display = "block";
-}
-
-// A partial sweep is noted quietly under the As-of time instead of in a banner.
-function showCoverage(loaded, total, label){
- const el = document.getElementById("coverageNote");
- el.textContent = loaded + " of " + total + " " + label;
- el.title = (total - loaded) + " of the " + total + " had no usable data in this run.";
- el.hidden = false;
-}
-
-function themeInkColor(){
- const v = getComputedStyle(document.documentElement).getPropertyValue("--ink").trim();
- return v || "#eae6da";
-}
-function themeMutedColor(){
- const v = getComputedStyle(document.documentElement).getPropertyValue("--muted").trim();
- return v || "#8b9199";
-}
-function themeHairColor(){
- const v = getComputedStyle(document.documentElement).getPropertyValue("--hair").trim();
- return v || "#2b3138";
-}
-function themeGreedColor(){
- const v = getComputedStyle(document.documentElement).getPropertyValue("--greed").trim();
- return v || "#d98a3d";
-}
-function themeFearColor(){
- const v = getComputedStyle(document.documentElement).getPropertyValue("--fear").trim();
- return v || "#6f8fac";
-}
-
-// ---- NDR chart styling helpers (matches /concentration.html) -----------
-// Colours come from the --ndr-* custom properties (constant across themes)
-// so the charts keep their warm-paper look while still following the
-// site's "read chart colours from CSS, don't hardcode" rule.
-function ndr(name){
- return getComputedStyle(document.documentElement).getPropertyValue("--ndr-" + name).trim();
-}
-
+function showError(message){ const b = document.getElementById("errorBanner"); b.textContent = message; b.style.display = "block"; }
+function ndr(name){ return getComputedStyle(document.documentElement).getPropertyValue("--ndr-" + name).trim(); }
 Chart.defaults.font.family = "'Iowan Old Style','Palatino Linotype',Georgia,serif";
 Chart.defaults.color = ndr("axis-soft");
-
-function ndrXScale(){
- return {
-  ticks: { color: ndr("axis"), maxTicksLimit: 9, maxRotation: 0, autoSkip: true, font: { size: 11 } },
-  grid: { color: "rgba(0,0,0,0)", borderColor: ndr("axis") },
- };
+const PARTS = () => [
+ { key: "epsGrowthPct", label: "EPS growth", color: ndr("navy") },
+ { key: "peChangePct", label: "P/E change", color: ndr("gold") },
+ { key: "dividendsPct", label: "Dividends", color: ndr("green") },
+];
+function legend(){ return { display: true, position: "top", align: "start", labels: { boxWidth: 14, color: ndr("axis"), font: { size: 11 } } }; }
+function pctAxis(title){ return { grid: { color: ndr("grid") }, ticks: { color: ndr("axis"), font: { size: 11 }, callback: v => v + "%" }, title: { display: !!title, text: title, color: ndr("axis-soft"), font: { size: 10 } } }; }
+function toggle(id, current, onPick){
+ const el = document.getElementById(id);
+ el.innerHTML = RAW.horizons.map(h => '<button type="button" data-h="' + h + '" class="' + (h === current ? "on" : "") + '">' + h + (h === 1 ? " year" : " years") + "</button>").join("");
+ el.querySelectorAll("button").forEach(b => b.addEventListener("click", () => { el.querySelectorAll("button").forEach(x => x.classList.toggle("on", x === b)); onPick(Number(b.dataset.h)); }));
 }
-
-function ndrYScale(opts){
- opts = opts || {};
- return {
-  type: opts.log ? "logarithmic" : "linear",
-  position: opts.position || "left",
-  grid: { color: ndr("grid"), drawBorder: false },
-  ticks: { color: ndr("axis"), font: { size: 11 }, callback: opts.fmt || undefined },
-  title: opts.title ? { display: true, text: opts.title, color: ndr("axis-soft"), font: { size: 10 } } : { display: false },
-  min: opts.min, max: opts.max,
- };
-}
-
-function ndrLegend(){
- return {
-  display: true, position: "top", align: "start",
-  labels: { boxWidth: 22, boxHeight: 2, color: ndr("axis"), font: { size: 11 } },
- };
-}
-
-// This page's sector chart flips to indexAxis:"y" (sector names on y,
-// values on x) - reuses ndr() colors but keeps the plain category
-// styling the original chart had (no ticks/grid on the label axis).
-function ndrCategoryScale(){
- return {
-  ticks: { color: ndr("axis"), font: { size: 11 } },
-  grid: { display: false },
- };
-}
-
-// This page's scatter chart uses a genuinely numeric (linear) x-axis -
-// EPS growth, not a date-string category axis - so it needs its own
-// scale helper rather than ndrXScale (which is category-shaped, per
-// concentration.html's "no date adapter" convention).
-function ndrNumericScale(opts){
- opts = opts || {};
- return {
-  title: opts.title ? { display: true, text: opts.title, color: ndr("axis-soft"), font: { size: 10 } } : { display: false },
-  ticks: { color: ndr("axis"), font: { size: 10 } },
-  grid: { color: ndr("grid"), drawBorder: false },
- };
-}
-
-// ---- Stats helpers - same methodology as /factor-analysis, duplicated
-// here since every page on this site is self-contained (see CLAUDE.md). ----
-// ---- Outlier-robust scatter axes ----------------------------------------
-// A few extreme companies (a 13,000% EPS jump, a $44M congressional sale)
-// would otherwise set the axis range and squash everyone else into a corner.
-// The axis covers the 1st-99th percentile instead; anything beyond is drawn
-// as a hollow arrow on the edge it fell off, with a count in the corner, so
-// nothing disappears silently. Fit lines are still computed on every point.
-function robustNiceStep(range){
- const raw = range / 6;
- const mag = Math.pow(10, Math.floor(Math.log10(raw)));
- const f = raw / mag;
- return (f < 1.5 ? 1 : f < 3.5 ? 2 : f < 7.5 ? 5 : 10) * mag;
-}
-function robustScatterAxes(chart, axes, opts){
- if(!chart) return;
- const pts = [];
- chart.data.datasets.forEach((ds, di) => {
-  if(ds.showLine || ds.type === "line" || ds.borderDash) return;
-  (ds.data || []).forEach(p => { if(p && isFinite(p.x) && isFinite(p.y)) pts.push({ p, di }); });
- });
- if(pts.length < 20) return;
- const cand = {};
- let flagged = false;
- for(const ax of axes){
-  const v = pts.map(o => o.p[ax]).sort((a, b) => a - b);
-  const q = f => v[Math.round((v.length - 1) * f)];
-  const lo = q(0.01), hi = q(0.99);
-  const full = v[v.length - 1] - v[0], core = hi - lo;
-  if(!(core > 0)) continue;
-  const step = robustNiceStep(core);
-  let min = Math.floor((lo - core * 0.04) / step) * step;
-  let max = Math.ceil((hi + core * 0.04) / step) * step;
-  if(v[0] >= 0 && min < 0) min = 0;
-  cand[ax] = { min, max, flag: full / core >= 1.6 };
-  if(cand[ax].flag) flagged = true;
- }
- if(!flagged) return;
- const bounds = {};
- if(opts && opts.square){
-  // Charts with a 45-degree reference line need the same range on both axes.
-  const min = Math.min(...Object.values(cand).map(c => c.min));
-  const max = Math.max(...Object.values(cand).map(c => c.max));
-  for(const ax of Object.keys(cand)) bounds[ax] = { min, max };
- }else{
-  for(const ax of Object.keys(cand)) if(cand[ax].flag) bounds[ax] = { min: cand[ax].min, max: cand[ax].max };
- }
- // Raw config, not chart.options: that's a resolver proxy, and writing
- // through it recurses.
- const raw = chart.config.options.scales = chart.config.options.scales || {};
- for(const ax of Object.keys(bounds)){
-  const sc = raw[ax] = raw[ax] || {};
-  sc.min = bounds[ax].min; sc.max = bounds[ax].max;
- }
- const off = [];
- for(const o of pts){
-  const flags = {};
-  let out = false;
-  for(const ax of Object.keys(bounds)){
-   if(o.p[ax] < bounds[ax].min){ flags[ax] = -1; out = true; }
-   else if(o.p[ax] > bounds[ax].max){ flags[ax] = 1; out = true; }
-  }
-  if(out) off.push({ p: o.p, di: o.di, flags });
- }
- chart.$robustOff = off;
- // Stop the initial draw-in animation first, or it keeps easing points
- // toward their positions on the old, outlier-stretched scale.
- chart.stop();
- chart.update("none");
-}
-const robustOffscalePlugin = {
- id: "robustOffscale",
- afterDatasetsDraw(chart){
-  const off = chart.$robustOff;
-  if(!off || !off.length) return;
-  const { ctx, chartArea: a, scales } = chart;
-  const color = (getComputedStyle(document.documentElement).getPropertyValue("--ndr-axis-soft").trim()) || (getComputedStyle(document.documentElement).getPropertyValue("--muted").trim()) || "#8b9199";
-  ctx.save();
-  ctx.strokeStyle = color;
-  ctx.fillStyle = color;
-  ctx.lineWidth = 1.2;
-  for(const o of off){
-   const dsColor = chart.data.datasets[o.di].backgroundColor;
-   ctx.strokeStyle = typeof dsColor === "string" ? dsColor : color;
-   let x = scales.x.getPixelForValue(o.p.x), y = scales.y.getPixelForValue(o.p.y);
-   x = Math.min(a.right - 4, Math.max(a.left + 4, x));
-   y = Math.min(a.bottom - 4, Math.max(a.top + 4, y));
-   const dx = o.flags.x || 0, dy = -(o.flags.y || 0);
-   const len = Math.hypot(dx, dy) || 1, ux = dx / len, uy = dy / len;
-   const s = 4.5;
-   ctx.beginPath();
-   ctx.moveTo(x + ux * s, y + uy * s);
-   ctx.lineTo(x - ux * s - uy * s * 0.8, y - uy * s + ux * s * 0.8);
-   ctx.lineTo(x - ux * s + uy * s * 0.8, y - uy * s - ux * s * 0.8);
-   ctx.closePath();
-   ctx.stroke();
-  }
-  ctx.fillStyle = color;
-  ctx.font = "10px " + (Chart.defaults.font.family || "sans-serif");
-  ctx.textAlign = "right";
-  ctx.textBaseline = "bottom";
-  ctx.fillText(off.length + (off.length === 1 ? " point" : " points") + " beyond the axis range (arrows on the edge)", a.right - 6, a.bottom - 4);
-  ctx.restore();
- },
-};
-Chart.register(robustOffscalePlugin);
-
-function linearRegression(xs, ys){
- const n = xs.length;
- const mx = xs.reduce((a, b) => a + b, 0) / n;
- const my = ys.reduce((a, b) => a + b, 0) / n;
- const sxx = xs.reduce((s, x) => s + (x - mx) ** 2, 0);
- const sxy = xs.reduce((s, x, i) => s + (x - mx) * (ys[i] - my), 0);
- const syy = ys.reduce((s, y) => s + (y - my) ** 2, 0);
- const slope = sxy / sxx;
- const intercept = my - slope * mx;
- const r = sxy / Math.sqrt(sxx * syy);
- const r2 = r * r;
- const dof = n - 2;
- const sse = ys.reduce((s, y, i) => s + (y - (intercept + slope * xs[i])) ** 2, 0);
- const seSlope = Math.sqrt((sse / dof) / sxx);
- const t = slope / seSlope;
- const p = 2 * (1 - normalCdf(Math.abs(t)));
- return { n, slope, intercept, r, r2, t, dof, p, sse };
-}
-function normalCdf(x){ return 0.5 * (1 + erf(x / Math.SQRT2)); }
-function erf(x){
- const sign = x < 0 ? -1 : 1;
- x = Math.abs(x);
- const a1 = 0.254829592, a2 = -0.284496736, a3 = 1.421413741, a4 = -1.453152027, a5 = 1.061405429, p = 0.3275911;
- const t = 1 / (1 + p * x);
- const y = 1 - (((((a5 * t + a4) * t) + a3) * t + a2) * t + a1) * t * Math.exp(-x * x);
- return sign * y;
-}
-function rankArray(arr){
- const idx = arr.map((v, i) => i).sort((a, b) => arr[a] - arr[b]);
- const ranks = new Array(arr.length);
- let i = 0;
- while(i < idx.length){
-  let j = i;
-  while(j + 1 < idx.length && arr[idx[j + 1]] === arr[idx[i]]) j++;
-  const avgRank = (i + j) / 2 + 1;
-  for(let k = i; k <= j; k++) ranks[idx[k]] = avgRank;
-  i = j + 1;
- }
- return ranks;
-}
-function spearmanRegression(xs, ys){ return linearRegression(rankArray(xs), rankArray(ys)); }
-
-let sectorChart = null, growthScatter = null;
 
 async function init(){
  try{
-  const res = await fetch(DATA_URL, { cache: "no-store" });
+  const res = await fetch(DATA_URL);
   const data = await res.json();
-  if(!res.ok || data.error) throw new Error(data.error || "failed to load");
-
+  if(!res.ok || data.error) throw new Error(data.error || ("HTTP " + res.status));
   RAW = data;
-  document.getElementById("updated").textContent = "As of " + new Date(data.generated_at_utc).toLocaleString("en-US", { month: "2-digit", day: "2-digit", year: "numeric", hour: "numeric", minute: "2-digit" });
-
-  if(data.loadedCount < data.universeSize){
-   showCoverage(data.loadedCount, data.universeSize, "S&P 500 constituents");
-  }else if(!data.hasPriceData){
-   showWarning("Price data isn't available yet (Relative Strength Leaders/Laggards hasn't refreshed). Showing earnings growth only.");
-  }
-
-  renderStats();
-  renderSectorChart();
-  renderScatter();
-  renderLeaderTable(data.growthAheadOfPrice, "leaderBody");
-  renderLeaderTable(data.priceAheadOfGrowth, "laggardBody");
-  renderTable();
-
+  document.getElementById("updated").textContent = "As of " + usDate(RAW.asOf);
+  renderStats(); renderIndex();
+  toggle("sectorToggle", SECTOR_H, h => { SECTOR_H = h; renderSectors(); }); renderSectors();
+  toggle("fitToggle", FIT_H, h => { FIT_H = h; renderFit(); }); renderFit();
+  toggle("tableToggle", TABLE_H, h => { TABLE_H = h; renderTable(); });
+  renderTables(); renderTable();
+  document.querySelectorAll("#stockTable th[data-key]").forEach(th => th.addEventListener("click", () => sortBy(th.dataset.key)));
  }catch(e){
-  showError("Couldn't load earnings growth divergence data (" + e.message + "). The /api/earnings-growth-divergence function may not have run yet.");
-  document.getElementById("tableBody").innerHTML =
-   '<tr><td colspan="5" style="text-align:center; color:var(--muted); padding:30px;">No data available.</td></tr>';
+  showError("Couldn't load earnings growth data (" + e.message + ").");
  }
 }
 
 function renderStats(){
- const m = RAW.market;
- const epsEl = document.getElementById("statMedianEps");
- epsEl.textContent = fmtPct(m.medianEpsGrowth);
- epsEl.classList.toggle("cell-neg", m.medianEpsGrowth !== null && m.medianEpsGrowth < 0);
- epsEl.classList.toggle("up", m.medianEpsGrowth !== null && m.medianEpsGrowth > 0);
- document.getElementById("statMedianEpsNote").textContent = "n=" + m.withEpsGrowth + " with a valid YoY figure";
-
- const priceEl = document.getElementById("statMedianPrice");
- priceEl.textContent = fmtPct(m.medianRelPrice3M);
- priceEl.classList.toggle("cell-neg", m.medianRelPrice3M !== null && m.medianRelPrice3M < 0);
- priceEl.classList.toggle("up", m.medianRelPrice3M !== null && m.medianRelPrice3M > 0);
- document.getElementById("statMedianPriceNote").textContent = "n=" + m.withPriceData + " with price data";
-
- const growthAhead = RAW.growthAheadOfPrice[0];
- if(growthAhead){
-  document.getElementById("statGrowthAhead").textContent = growthAhead.symbol;
-  document.getElementById("statGrowthAheadNote").textContent = fmtPct(growthAhead.epsGrowthYoY) + " EPS, " + fmtPct(growthAhead.relPrice3M) + " price";
- }
- const priceAhead = RAW.priceAheadOfGrowth[0];
- if(priceAhead){
-  document.getElementById("statPriceAhead").textContent = priceAhead.symbol;
-  document.getElementById("statPriceAheadNote").textContent = fmtPct(priceAhead.relPrice3M) + " price, " + fmtPct(priceAhead.epsGrowthYoY) + " EPS";
- }
+ const t = RAW.breakdown[0].y5;
+ document.getElementById("statTotal").textContent = fmtPct(t.totalReturnPct);
+ document.getElementById("statTotalNote").textContent = "Annualized from " + usDate(RAW.dates[5]) + ", dividends included";
+ document.getElementById("statEps").textContent = fmtPct(t.epsGrowthPct);
+ document.getElementById("statPe").textContent = fmtPct(t.peChangePct);
+ document.getElementById("statPeNote").textContent = "A year, P/E " + (t.pe0 ?? "n/a") + " to " + (t.pe1 ?? "n/a");
+ document.getElementById("statDiv").textContent = fmtPct(t.dividendsPct);
+ const f1 = RAW.fit.find(f => f.years === 1), f5 = RAW.fit.find(f => f.years === 5);
+ document.getElementById("statR2").textContent = f1 && f5 && f1.r2 !== undefined ? Math.round(f1.r2 * 100) + "% → " + Math.round(f5.r2 * 100) + "%" : "n/a";
+ document.getElementById("statR2Note").textContent = "R-squared across stocks, 1 year to 5 years";
 }
 
-// Growth and price return live on very different scales (a 140% EPS jump
-// next to a 3% relative return), so side-by-side bars make the return bar
-// unreadable. One labeled point per sector puts each measure on its own
-// axis; sectors in the upper-right and lower-left quadrants agree, the
-// other two quadrants are where price and earnings have diverged.
-function renderSectorChart(){
- const rows = RAW.sectors.filter(s => s.medianEpsGrowth !== null && s.medianEpsGrowth !== undefined && s.medianRelPrice3M !== null && s.medianRelPrice3M !== undefined);
- const ctx = document.getElementById("sectorChart").getContext("2d");
- if(sectorChart) sectorChart.destroy();
- const labelPlugin = {
-  id: "sectorLabels",
-  afterDatasetsDraw(chart){
-   const { ctx: c, chartArea: area } = chart;
-   const meta = chart.getDatasetMeta(0);
-   c.save();
-   c.font = "11px " + Chart.defaults.font.family;
-   c.fillStyle = ndr("axis");
-   c.textBaseline = "middle";
-   // Try a few spots around each point and take the first that doesn't
-   // collide with a label already placed.
-   const placed = [];
-   const overlaps = r => placed.some(o => r.x < o.x + o.w && r.x + r.w > o.x && r.y < o.y + o.h && r.y + r.h > o.y);
-   meta.data.forEach((pt, i) => {
-    const label = rows[i].sector;
-    const w = c.measureText(label).width, h = 12;
-    const spots = [[9, 0, "left"], [-9, 0, "right"], [9, -11, "left"], [9, 11, "left"], [-9, -11, "right"], [-9, 11, "right"]];
-    let pick = null;
-    for(const [dx, dy, align] of spots){
-     const x0 = align === "left" ? pt.x + dx : pt.x + dx - w;
-     const r = { x: x0, y: pt.y + dy - h / 2, w, h };
-     if(r.x < area.left || r.x + w > area.right) continue;
-     if(!overlaps(r)){ pick = { r, align, x: pt.x + dx, y: pt.y + dy }; break; }
-    }
-    if(!pick){ const x0 = pt.x + 9; pick = { r: { x: x0, y: pt.y - h / 2, w, h }, align: "left", x: x0, y: pt.y }; }
-    placed.push(pick.r);
-    c.textAlign = pick.align;
-    c.fillText(label, pick.x, pick.y);
-   });
-   const zx = chart.scales.x.getPixelForValue(0), zy = chart.scales.y.getPixelForValue(0);
-   c.strokeStyle = ndr("axis-soft");
-   c.lineWidth = 1;
-   c.beginPath();
-   if(zx >= area.left && zx <= area.right){ c.moveTo(zx, area.top); c.lineTo(zx, area.bottom); }
-   if(zy >= area.top && zy <= area.bottom){ c.moveTo(area.left, zy); c.lineTo(area.right, zy); }
-   c.stroke();
-   c.restore();
-  },
- };
- sectorChart = new Chart(ctx, {
-  type: "scatter",
-  data: {
-   datasets: [{
-    label: "Sectors",
-    data: rows.map(s => ({ x: s.medianEpsGrowth, y: s.medianRelPrice3M })),
-    pointRadius: 6, pointHoverRadius: 8,
-    pointBackgroundColor: rows.map(s => (s.medianEpsGrowth >= 0) === (s.medianRelPrice3M >= 0) ? ndr("navy") : ndr("gold")),
-    pointBorderColor: ndr("plot"), pointBorderWidth: 1.5,
-   }],
-  },
-  plugins: [labelPlugin],
+function stackedBars(canvasId, existing, labels, rows, horizontal){
+ if(existing) existing.destroy();
+ const parts = PARTS();
+ const sets = parts.map(p => ({ type: "bar", label: p.label, data: rows.map(r => r[p.key]), backgroundColor: p.color, stack: "s" }));
+ const total = rows.map(r => r.totalReturnPct);
+ sets.push({ type: "scatter", label: "Total return", data: horizontal ? total.map((v, i) => ({ x: v, y: labels[i] })) : total.map((v, i) => ({ x: labels[i], y: v })), pointStyle: "line", rotation: horizontal ? 90 : 0, pointRadius: horizontal ? 9 : 16, borderWidth: 3, borderColor: ndr("red"), backgroundColor: ndr("red"), order: -1 });
+ const valueAxis = pctAxis("a year");
+ const catAxis = { type: "category", labels, ticks: { color: ndr("axis"), font: { size: 11 } }, grid: { display: false }, stacked: true };
+ valueAxis.stacked = true;
+ return new Chart(document.getElementById(canvasId), {
+  data: { labels, datasets: sets },
   options: {
-   responsive: true,
-   maintainAspectRatio: false,
-   layout: { padding: { right: 12 } },
-   plugins: {
-    legend: { display: false },
-    zoom: false,
-    tooltip: { callbacks: {
-     title: items => rows[items[0].dataIndex].sector,
-     label: ctx => ["Median EPS growth YoY: " + fmtPct(ctx.parsed.x), "Median 3M relative price: " + fmtPct(ctx.parsed.y)],
-    } },
-   },
-   scales: {
-    x: { ...ndrYScale({ position: "bottom", fmt: v => (Math.round(v * 100) / 100) + "%", title: "Median EPS growth YoY" }), grace: "8%" },
-    y: { ...ndrYScale({ fmt: v => (Math.round(v * 100) / 100) + "%", title: "Median 3-month return vs. SPY" }), grace: "12%" },
-   },
+   indexAxis: horizontal ? "y" : "x",
+   responsive: true, maintainAspectRatio: false,
+   interaction: { mode: "point", intersect: true },
+   plugins: { legend: legend(), zoom: false, tooltip: { callbacks: { label: c => c.dataset.label + ": " + fmtPct(horizontal ? c.parsed.x : c.parsed.y, 2) } } },
+   scales: horizontal ? { y: catAxis, x: valueAxis } : { x: catAxis, y: valueAxis },
   },
  });
 }
 
-function renderScatter(){
- const pairs = RAW.scatterPairs || [];
- if(pairs.length < 20){
-  if(growthScatter){ growthScatter.destroy(); growthScatter = null; }
-  document.getElementById("growthMethodTable").innerHTML =
-   '<div class="method-note">Not enough stocks with both a valid EPS growth figure and price data to test.</div>';
-  return;
- }
-
- const pearson = linearRegression(pairs.map(p => p.x), pairs.map(p => p.y));
- const spear = spearmanRegression(pairs.map(p => p.x), pairs.map(p => p.y));
-
- const xs = pairs.map(p => p.x);
- const xMin = Math.min(...xs), xMax = Math.max(...xs);
- const linePoints = [
-  { x: xMin, y: pearson.intercept + pearson.slope * xMin },
-  { x: xMax, y: pearson.intercept + pearson.slope * xMax },
- ];
-
- const ctx = document.getElementById("growthScatter").getContext("2d");
- if(growthScatter) growthScatter.destroy();
- growthScatter = new Chart(ctx, {
-  type: "scatter",
-  data: {
-   datasets: [
-    { label: "Stocks", data: pairs, backgroundColor: ndr("navy"), pointRadius: 2.5, pointHoverRadius: 4, showLine: false },
-    { label: "Regression fit", type: "line", data: linePoints, borderColor: ndr("red"), borderWidth: 1.5, borderDash: [4, 3], pointRadius: 0, fill: false },
-   ],
-  },
-  options: {
-   responsive: true,
-   maintainAspectRatio: false,
-   plugins: {
-    legend: { display: false },
-    tooltip: {
-     callbacks: {
-      label: ctx => ctx.dataset.label === "Stocks" ? (ctx.raw.symbol + ": EPS " + fmtPct(ctx.raw.x) + ", price " + fmtPct(ctx.raw.y)) : null,
-     },
-    },
-   },
-   scales: {
-    x: ndrNumericScale({ title: "YoY EPS growth (%)" }),
-    y: ndrNumericScale({ title: "3-month relative price return (%)" }),
-   },
-  },
- });
- robustScatterAxes(growthScatter, ["x","y"]);
-
- function row(label, stats){
-  const sig = stats.p < 0.05;
-  return "<tr>" +
-   "<td>" + label + "</td>" +
-   "<td>" + stats.n + "</td>" +
-   "<td>" + stats.r.toFixed(2) + "</td>" +
-   "<td>" + (stats.r2 * 100).toFixed(1) + "%</td>" +
-   "<td>" + (stats.slope >= 0 ? "+" : "") + stats.slope.toFixed(3) + "</td>" +
-   "<td>" + stats.t.toFixed(2) + "</td>" +
-   '<td class="' + (sig ? "sig" : "") + '">' + (stats.p < 0.001 ? "<0.001" : stats.p.toFixed(3)) + "</td>" +
-  "</tr>";
- }
- document.getElementById("growthMethodTable").innerHTML =
-  '<table class="method-table">' +
-   "<thead><tr><th>Method</th><th>n</th><th>r</th><th>r&sup2;</th><th>slope</th><th>t</th><th>p</th></tr></thead>" +
-   "<tbody>" + row("Pearson (OLS)", pearson) + row("Spearman (&rho;)", spear) + "</tbody>" +
-  "</table>" +
-  '<div class="method-note">A positive, significant relationship means faster earnings growth has coincided with stronger relative price performance over the same window. A weak or flat one means the market isn\'t (yet, or at all) rewarding trailing EPS growth.</div>';
+function renderIndex(){
+ const b = RAW.breakdown[0];
+ const labels = RAW.horizons.map(h => h + (h === 1 ? " year" : " years"));
+ indexChart = stackedBars("indexChart", indexChart, labels, RAW.horizons.map(h => b["y" + h]), false);
 }
 
-function renderLeaderTable(rows, tbodyId){
- const tbody = document.getElementById(tbodyId);
- if(!rows || !rows.length){
-  tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; color:var(--muted); padding:24px;">No qualifying stocks.</td></tr>';
-  return;
- }
- tbody.innerHTML = rows.map(r => `<tr>
-  <td><span class="sector-name">${r.symbol}</span></td>
-  <td><span class="sector-ticker">${r.sector || "n/a"}</span></td>
-  <td>${fmtPct(r.epsGrowthYoY)}</td>
-  <td>${fmtPct(r.relPrice3M)}</td>
- </tr>`).join("");
+function renderSectors(){
+ const rows = RAW.breakdown.slice(1).filter(g => g["y" + SECTOR_H].totalReturnPct !== null).sort((a, b) => b["y" + SECTOR_H].totalReturnPct - a["y" + SECTOR_H].totalReturnPct);
+ sectorChart = stackedBars("sectorChart", sectorChart, rows.map(r => r.name), rows.map(r => r["y" + SECTOR_H]), true);
+ document.getElementById("sectorSub").textContent = "Each sector's annualized return over " + SECTOR_H + (SECTOR_H === 1 ? " year" : " years") + " to " + usDate(RAW.asOf) + ", split the same way. Sectors are sorted by total return.";
+ const neg = RAW.breakdown.slice(1).filter(g => g["y" + SECTOR_H].epsGrowthPct === null).map(g => g.name);
+ document.getElementById("sectorNote").textContent = neg.length ? "No split for " + neg.join(", ") + ": combined earnings were negative at one end of the period." : "";
+}
+
+function renderFit(){
+ const pts = RAW.companies.map(c => ({ c, h: c["y" + FIT_H] })).filter(o => o.h.epsGrowthPct !== undefined && o.h.epsGrowthPct !== null && o.h.priceReturnPct !== null);
+ const xs = pts.map(o => o.h.epsGrowthPct).sort((a, b) => a - b), ys = pts.map(o => o.h.priceReturnPct).sort((a, b) => a - b);
+ const q = (a, p) => a[Math.max(0, Math.min(a.length - 1, Math.floor(p * (a.length - 1))))];
+ const lo10 = v => Math.floor(v / 10) * 10, hi10 = v => Math.ceil(v / 10) * 10;
+ const xLo = lo10(q(xs, 0.01)), xHi = hi10(q(xs, 0.99)), yLo = lo10(q(ys, 0.01)), yHi = hi10(q(ys, 0.99));
+ const clip = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
+ if(fitChart) fitChart.destroy();
+ fitChart = new Chart(document.getElementById("fitChart"), {
+  type: "scatter",
+  data: { datasets: [
+   { label: "Stocks", data: pts.map(o => ({ x: clip(o.h.epsGrowthPct, xLo, xHi), y: clip(o.h.priceReturnPct, yLo, yHi), s: o.c.symbol, rx: o.h.epsGrowthPct, ry: o.h.priceReturnPct })), backgroundColor: ndr("navy"), pointRadius: 2.5 },
+   { type: "line", label: "Price return = EPS growth", data: [{ x: Math.max(xLo, yLo), y: Math.max(xLo, yLo) }, { x: Math.min(xHi, yHi), y: Math.min(xHi, yHi) }], borderColor: ndr("red"), borderDash: [5, 4], borderWidth: 1.4, pointRadius: 0 },
+  ] },
+  options: {
+   responsive: true, maintainAspectRatio: false,
+   interaction: { mode: "point", intersect: true },
+   plugins: { legend: legend(), tooltip: { callbacks: { label: c => c.datasetIndex ? c.dataset.label : c.raw.s + ": EPS growth " + fmtPct(c.raw.rx) + ", price " + fmtPct(c.raw.ry) + " a year" } } },
+   scales: { x: Object.assign(pctAxis("EPS growth, a year"), { min: xLo, max: xHi }), y: Object.assign(pctAxis("price return, a year"), { min: yLo, max: yHi }) },
+  },
+ });
+ document.getElementById("fitSub").textContent = "Each point is one S&P 500 stock over " + FIT_H + (FIT_H === 1 ? " year" : " years") + ": its annualized EPS growth against its annualized price return. Points on the dashed line moved exactly with their earnings. Stocks with a loss at either end are left out (" + RAW.excluded[FIT_H] + "), and the outer 1% on each axis sit on the edges.";
+ document.getElementById("fitTable").innerHTML = "<thead><tr><th>Period</th><th>Stocks</th><th>R-squared</th><th>Pearson r</th><th>Rank correlation</th><th>Median EPS growth</th><th>Median P/E change</th></tr></thead><tbody>" + RAW.fit.map(f => "<tr><td>" + f.years + (f.years === 1 ? " year" : " years") + "</td><td>" + f.n + "</td><td>" + (f.r2 === undefined ? "n/a" : f.r2.toFixed(2)) + "</td><td>" + (f.pearson === undefined ? "n/a" : f.pearson.toFixed(2)) + "</td><td>" + (f.spearman === undefined ? "n/a" : f.spearman.toFixed(2)) + "</td><td>" + fmtPct(f.medianEpsGrowthPct) + "</td><td>" + fmtPct(f.medianPeChangePct) + "</td></tr>").join("") + "</tbody>";
+}
+
+function renderTables(){
+ const row = c => "<tr><td><span class=\"sector-name\">" + c.symbol + "</span><span style=\"display:block; color:var(--muted); font-size:11px;\">" + (c.sector || "n/a") + "</span></td><td>" + fmtPct(c.y3.priceReturnPct) + "</td><td>" + fmtPct(c.y3.epsGrowthPct) + "</td><td>" + fmtPct(c.y3.peChangePct) + "</td><td>" + (c.pe === null ? "n/a" : c.pe.toFixed(1)) + "</td></tr>";
+ document.getElementById("expBody").innerHTML = RAW.tables.expansion.map(row).join("");
+ document.getElementById("conBody").innerHTML = RAW.tables.contraction.map(row).join("");
 }
 
 function sortBy(key){
- if(SORT_KEY === key){
-  SORT_DIR = -SORT_DIR;
- }else{
-  SORT_KEY = key;
-  SORT_DIR = -1;
- }
+ if(SORT_KEY === key) SORT_DIR = -SORT_DIR; else { SORT_KEY = key; SORT_DIR = key === "symbol" || key === "sector" ? 1 : -1; }
  renderTable();
 }
-
 function renderTable(){
- const rows = [...RAW.companies].sort((a, b) => {
-  const av = a[SORT_KEY], bv = b[SORT_KEY];
+ const val = (c, k) => (k === "symbol" || k === "sector" || k === "pe") ? c[k] : c["y" + TABLE_H][k];
+ const rows = RAW.companies.slice().sort((a, b) => {
+  const av = val(a, SORT_KEY), bv = val(b, SORT_KEY);
   if(av === null || av === undefined) return 1;
   if(bv === null || bv === undefined) return -1;
-  if(typeof av === "string") return av.localeCompare(bv) * SORT_DIR;
-  return (av - bv) * SORT_DIR;
+  return (typeof av === "string" ? av.localeCompare(bv) : av - bv) * SORT_DIR;
  });
-
- const tbody = document.getElementById("tableBody");
- tbody.innerHTML = rows.map(r => `<tr>
-   <td><span class="sector-name">${r.symbol}</span></td>
-   <td><span class="sector-ticker">${r.sector || "n/a"}</span></td>
-   <td>${fmtPct(r.epsGrowthYoY)}</td>
-   <td>${fmtPct(r.relPrice3M)}</td>
-   <td>${fmtNum(r.divergenceScore)}</td>
-  </tr>`).join("");
-
- document.querySelectorAll("#stockTable thead th").forEach(th => {
-  const key = th.dataset.key;
-  th.classList.toggle("sorted", key === SORT_KEY);
-  const arrow = th.querySelector(".sort-arrow");
-  if(arrow) arrow.textContent = (key === SORT_KEY && SORT_DIR === 1) ? "▴" : "▾";
- });
+ document.querySelectorAll("#stockTable th[data-key]").forEach(th => th.classList.toggle("sorted", th.dataset.key === SORT_KEY));
+ document.getElementById("tableBody").innerHTML = rows.map(c => { const h = c["y" + TABLE_H]; return "<tr><td><span class=\"sector-name\">" + c.symbol + "</span></td><td><span class=\"sector-ticker\">" + (c.sector || "n/a") + "</span></td><td>" + (c.pe === null ? "n/a" : c.pe.toFixed(1)) + "</td><td>" + fmtPct(h.totalReturnPct) + "</td><td>" + fmtPct(h.priceReturnPct) + "</td><td>" + fmtPct(h.epsGrowthPct) + "</td><td>" + fmtPct(h.peChangePct) + "</td><td>" + fmtPct(h.dividendsPct) + "</td></tr>"; }).join("");
+ document.getElementById("fullSub").textContent = "Annualized return over " + TABLE_H + (TABLE_H === 1 ? " year" : " years") + " and its parts for " + RAW.companies.length + " stocks. n/a in the EPS and P/E columns means a loss at one end of the period.";
 }
-
-document.querySelectorAll("#stockTable thead th").forEach(th => {
- const key = th.dataset.key;
- if(key) th.addEventListener("click", () => sortBy(key));
-});
-
 init();
 </script>
+
 
 </body>
 </html>

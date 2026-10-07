@@ -272,6 +272,16 @@
       ]
     },
     {
+      "name": "earnings-growth-divergence",
+      "cron": "35 15 * * 6",
+      "apis": [
+        "/api/earnings-growth-divergence"
+      ],
+      "pages": [
+        "earnings-growth-divergence"
+      ]
+    },
+    {
       "name": "analyst-price-target",
       "cron": null,
       "apis": [
@@ -309,16 +319,6 @@
         "post-earnings-drift",
         "earnings-surprise",
         "valuations"
-      ]
-    },
-    {
-      "name": "earnings-growth-divergence",
-      "cron": null,
-      "apis": [
-        "/api/earnings-growth-divergence"
-      ],
-      "pages": [
-        "earnings-growth-divergence"
       ]
     },
     {
