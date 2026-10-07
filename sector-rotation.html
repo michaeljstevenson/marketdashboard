@@ -66,6 +66,12 @@ document.addEventListener("DOMContentLoaded", function(){
 .is-chart-fullscreen canvas{
  max-height:none !important;
 }
+.commentary{ background:var(--card); border:1px solid var(--hair); border-left:3px solid var(--greed); border-radius:10px; padding:18px 22px 20px; margin-bottom:30px; }
+.commentary-head{ display:flex; justify-content:space-between; align-items:baseline; flex-wrap:wrap; gap:6px 16px; }
+.commentary h2{ font-family:var(--serif); font-weight:400; font-size:18px; margin:0; }
+.commentary-date{ color:var(--muted); font-size:12px; }
+.commentary p{ font-size:14px; line-height:1.6; margin:10px 0 0; max-width:780px; }
+.chart-note{ font-size:12px; color:var(--muted); margin:6px 0 2px; line-height:1.5; max-width:820px; }
 </style>
 <script>
 // Expand-to-fullscreen button on every chart, matching the pattern from
@@ -820,11 +826,23 @@ table.grid-table tbody td{ text-align:center; padding:10px 12px; }
 </div>
 </div>
 
+<section class="commentary" aria-labelledby="commentaryTitle">
+<div class="commentary-head">
+<h2 id="commentaryTitle">Commentary</h2>
+<div class="commentary-date">As of the October 6, 2026 close</div>
+</div>
+<p>Energy has been the strongest sector over three months, 16.7 points ahead of SPY, but it's already slipped into the weakening quadrant on the rotation graph, as has Technology. Almost every other sector sits in the improving quadrant: still behind SPY, but gaining on it.</p>
+<p>Technology is the only sector well ahead over six months (+29.2 points). Everything else has trailed SPY over that stretch, Utilities most of all (-28.5), which says as much about how narrow the market's gains have been as about any one sector.</p>
+<p>The rotation model holds Technology, Health Care and Financials for October. Over 26 years it has earned about what SPY did (8.47% a year against 8.24%, and 8.08% after costs), and none of the 15 lookback and holding combinations in the grid shows a reliable edge. Following sector momentum hasn't paid off in a way that's distinguishable from luck.</p>
+</section>
+
+
 <div class="chart-box">
 <div class="chart-box-header">
 <div>
 <h2>Relative rotation graph</h2>
 <div class="chart-subhead">X: RS-Ratio, the trend in each sector's relative strength against SPY. Y: RS-Momentum, the rate of change of RS-Ratio. Each tail is one sector's last 10 weekly points, ending at the labeled dot.</div>
+<div class="chart-note">Energy and Technology are in the weakening quadrant, Health Care is lagging, and the other eight sectors are improving.</div>
 </div>
 </div>
 <div class="scrubber">
@@ -856,6 +874,7 @@ table.grid-table tbody td{ text-align:center; padding:10px 12px; }
 <div>
 <h2>Relative return by sector, across lookback periods</h2>
 <div class="chart-subhead">Return relative to SPY over the trailing 1/3/6/12 months</div>
+<div class="chart-note">Over one year, Energy (+29.5) and Technology (+23.9) lead, while Consumer Discretionary (-23.3) and Utilities (-22.9) trail most.</div>
 </div>
 </div>
 <div class="chart-canvas-wrap">
@@ -868,6 +887,7 @@ table.grid-table tbody td{ text-align:center; padding:10px 12px; }
 <div>
 <h2>Rotation model backtest</h2>
 <div class="chart-subhead">Growth of $100 on a log scale. At each month-end close the model buys the three sectors with the highest trailing return relative to SPY, in equal weights, and holds them for the next month.</div>
+<div class="chart-note">8.47% a year since 1999 against 8.24% for SPY and 8.54% for equal-weight sectors, with a smaller worst drawdown (-48% vs. -55%).</div>
 </div>
 <div class="controls">
 <span class="control-label" id="signalLabel">Signal</span>
@@ -903,6 +923,7 @@ table.grid-table tbody td{ text-align:center; padding:10px 12px; }
 <div class="table-box-header">
 <h2>Top 3 minus bottom 3 sectors, by formation and holding period</h2>
 <div class="chart-subhead">Annualized average monthly return of a portfolio that buys the three sectors with the highest return over the formation period and sells the three with the lowest, built from overlapping portfolios. Shading follows the t-statistic under each value.</div>
+<div class="chart-note">The largest t-statistic in any cell is -1.01, well short of the 2 that would suggest a real effect.</div>
 </div>
 <table class="datatable grid-table" id="gridTable">
 <thead><tr><th>Formation</th><th>Hold 1M</th><th>Hold 3M</th><th>Hold 6M</th></tr></thead>

@@ -66,6 +66,12 @@ document.addEventListener("DOMContentLoaded", function(){
 .is-chart-fullscreen canvas{
  max-height:none !important;
 }
+.commentary{ background:var(--card); border:1px solid var(--hair); border-left:3px solid var(--greed); border-radius:10px; padding:18px 22px 20px; margin-bottom:30px; }
+.commentary-head{ display:flex; justify-content:space-between; align-items:baseline; flex-wrap:wrap; gap:6px 16px; }
+.commentary h2{ font-family:var(--serif); font-weight:400; font-size:18px; margin:0; }
+.commentary-date{ color:var(--muted); font-size:12px; }
+.commentary p{ font-size:14px; line-height:1.6; margin:10px 0 0; max-width:780px; }
+.chart-note{ font-size:12px; color:var(--muted); margin:6px 0 2px; line-height:1.5; max-width:820px; }
 </style>
 <script>
 // Expand-to-fullscreen button on every chart, matching the pattern from
@@ -718,11 +724,23 @@ h1{
 </div>
 </div>
 
+<section class="commentary" aria-labelledby="commentaryTitle">
+<div class="commentary-head">
+<h2 id="commentaryTitle">Commentary</h2>
+<div class="commentary-date">As of the October 6, 2026 close</div>
+</div>
+<p>The market is calm by its own recent standards. The VIX closed at 15.0, the 32nd percentile since 1990 and only the 11th percentile of the past year, and the S&amp;P 500's realized volatility over 20 days was 10.4%.</p>
+<p>Options are priced for more movement than the market has been delivering. The VIX sits 4.6 points above trailing realized volatility, close to the typical premium. Measured against the volatility that actually followed, the VIX was higher on 85% of days since 1990, by a median of 4.7 points. The exceptions cluster in sudden selloffs, when realized volatility jumps past what was priced.</p>
+<p>The term structure has a normal upward slope: 12.0 for nine days, 15.0 for one month and 17.6 for three, with VIX at 0.85 of VIX3M. It's been inverted on only 11% of days since 2006, mostly in selloffs.</p>
+</section>
+
+
 <div class="chart-box">
 <div class="chart-box-header">
 <div>
 <h2>VIX and 20-day realized volatility</h2>
 <div class="chart-subhead" id="volSub">Daily closes since 01/02/1990.</div>
+<div class="chart-note">VIX 15.0 and realized 10.4% on October 6.</div>
 </div>
 <div class="range-controls" id="volRange"></div>
 </div>
@@ -736,6 +754,7 @@ h1{
 <div>
 <h2>VIX minus realized volatility over the next 21 trading days</h2>
 <div class="chart-subhead" id="fwdSub">Loading...</div>
+<div class="chart-note">VIX was above the next month's realized volatility on 85.3% of days from 1990 to September 2026.</div>
 </div>
 <div class="range-controls" id="fwdRange"></div>
 </div>
@@ -764,6 +783,7 @@ h1{
 <div>
 <h2>VIX term structure</h2>
 <div class="chart-subhead" id="termSub">Loading...</div>
+<div class="chart-note">12.0 at nine days, 15.0 at one month, 17.6 at three months and 19.8 at six. The nine-day and one-month readings are below their medians since 2011 (15.2 and 16.4).</div>
 </div>
 </div>
 <div class="mini-stats" id="termStats"></div>
@@ -776,6 +796,7 @@ h1{
 <div>
 <h2>VIX ÷ VIX3M</h2>
 <div class="chart-subhead" id="ratioSub">Loading...</div>
+<div class="chart-note">0.851 on October 6, below the median of 0.896 since 2006.</div>
 </div>
 <div class="range-controls" id="ratioRange"></div>
 </div>
@@ -805,6 +826,7 @@ h1{
 <div>
 <h2>Forward S&amp;P 500 returns by starting VIX level</h2>
 <div class="chart-subhead" id="retSub">Loading...</div>
+<div class="chart-note">From VIX readings of 15 to 20, the S&amp;P 500's median return over the next month was +1.19%, close to the all-days median of +1.23%. Returns after VIX above 30 have been higher but far more spread out.</div>
 </div>
 <div class="toggle-group" id="retToggle">
 <button class="toggle-btn active" type="button" data-h="21">21 days</button>

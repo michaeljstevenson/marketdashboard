@@ -66,6 +66,12 @@ document.addEventListener("DOMContentLoaded", function(){
 .is-chart-fullscreen canvas{
  max-height:none !important;
 }
+.commentary{ background:var(--card); border:1px solid var(--hair); border-left:3px solid var(--greed); border-radius:10px; padding:18px 22px 20px; margin-bottom:30px; }
+.commentary-head{ display:flex; justify-content:space-between; align-items:baseline; flex-wrap:wrap; gap:6px 16px; }
+.commentary h2{ font-family:var(--serif); font-weight:400; font-size:18px; margin:0; }
+.commentary-date{ color:var(--muted); font-size:12px; }
+.commentary p{ font-size:14px; line-height:1.6; margin:10px 0 0; max-width:780px; }
+.chart-note{ font-size:12px; color:var(--muted); margin:6px 0 2px; line-height:1.5; max-width:820px; }
 </style>
 <script>
 // Expand-to-fullscreen button on every chart, matching the pattern from
@@ -828,11 +834,23 @@ tbody td:nth-child(2){
 </div>
 </div>
 
+<section class="commentary" aria-labelledby="commentaryTitle">
+<div class="commentary-head">
+<h2 id="commentaryTitle">Commentary</h2>
+<div class="commentary-date">As of the October 7, 2026 close</div>
+</div>
+<p>Only 31% of S&amp;P 500 members have beaten SPY over the past three months, and the median member trails it by 6.7 points. SPY gained 3.2% in that time, carried by a narrow group. Energy, Health Care and Technology are the only sectors ahead on average, while Utilities, Real Estate and Consumer Discretionary trail by 10 to 12 points.</p>
+<p>This week's moves into the top tenth lean toward technology (Palo Alto Networks, AMD, Keysight and NVIDIA), while casino operators and consumer brands (Wynn, Las Vegas Sands, Lululemon, Nike) dropped into the bottom tenth.</p>
+<p>Whether today's leaders keep leading is a weaker bet than its reputation. Since 1997, the top tenth by 12-1 month return beat the bottom tenth by 0.29% in the following month, not statistically different from zero (t = 0.7), and the strategy's worst month, April 2009, cost 52 points when the previous year's losers rebounded.</p>
+</section>
+
+
 <div class="chart-box">
 <div class="chart-box-header">
 <div>
 <h2>Average 3-month relative return by sector</h2>
 <div class="chart-subhead">Excess return vs. SPY over the trailing 63 trading days, averaged across each sector's constituents.</div>
+<div class="chart-note">Energy leads at +8.7 points against SPY on average, Utilities trails at -11.8.</div>
 </div>
 </div>
 <div class="ndr-panel">
@@ -848,6 +866,7 @@ tbody td:nth-child(2){
 <div>
 <h2>Do relative-strength leaders keep leading?</h2>
 <div class="chart-subhead">At each month-end since January 1997, the stocks in the S&amp;P 500 that day are split into tenths by trailing return. Bars show each tenth's average return over the following holding period relative to the S&amp;P 500 total return index, averaged across month-ends. Tenth 10 holds the strongest trailing returns.</div>
+<div class="chart-note">On the 12-1 month lookback, the top tenth beat the S&amp;P 500 by 0.40% the next month on average and the bottom tenth by 0.11%, from 356 month-ends.</div>
 </div>
 </div>
 <div class="study-controls">
@@ -880,6 +899,7 @@ tbody td:nth-child(2){
 <div>
 <h2>Top minus bottom tenth over time</h2>
 <div class="chart-subhead">The top tenth's next-month return minus the bottom tenth's, both relative to the S&amp;P 500 total return index, for stocks ranked at the previous month-end on the lookback selected here. Shown as a trailing 36-month average or month by month.</div>
+<div class="chart-note">The gap has come in long runs, positive around 2000, negative around 2009 to 2011, and modestly positive recently.</div>
 </div>
 </div>
 <div class="study-controls">
@@ -943,6 +963,7 @@ tbody td:nth-child(2){
 <div class="section-header">
 <h2>This week's new leaders and laggards</h2>
 <div class="chart-subhead" id="changesSubhead">Stocks that moved into or out of the top or bottom tenth of 3-month relative return vs. SPY over the past week.</div>
+<div class="chart-note">10 stocks entered the top tenth this week and 12 entered the bottom tenth.</div>
 </div>
 <div class="table-grid">
 <div class="table-box">
