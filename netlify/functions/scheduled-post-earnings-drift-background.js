@@ -1,336 +1,232 @@
 // Scheduled Background Function (see [functions."scheduled-post-earnings-
-// drift-background"] in netlify.toml) that tests Post-Earnings Announcement
-// Drift (PEAD) — one of the best-documented anomalies in the academic
-// asset-pricing literature: stocks that beat (miss) their earnings estimate
-// tend to keep drifting in the same direction vs. the market for weeks
-// afterward, rather than the surprise being instantly and fully priced in.
+// drift-background"] in netlify.toml): post-earnings announcement drift
+// (PEAD), the tendency of stocks to keep moving in the direction of an
+// earnings surprise for weeks after the report.
 //
-// Reuses the earnings-surprise blob (getSurpriseStore) for the input side
-// of the test — each company's most recent reportedDate and
-// surprisePercentage — instead of re-sweeping Alpha Vantage's EARNINGS
-// endpoint a second time. Same cross-page-reuse convention
-// scheduled-earnings-growth-divergence-background.js uses for the
-// relative-strength blob and scheduled-shareholder-yield-background.js uses
-// for the share-count-trends blob.
+// Events come from the shared earnings collection (about ten years of
+// quarterly reported and estimated EPS per S&P 500 member), prices from
+// Yahoo, benchmark SPY. No Alpha Vantage calls.
 //
-// IMPORTANT staleness caveat: scheduled-surprise-background.js's own
-// recurring schedule was removed by commit 704645f — it is now a one-time
-// snapshot (2026-09-16), not auto-refreshing, unless someone manually
-// reruns it from the Netlify dashboard. As real time passes, the
-// `reportedDate` values in that snapshot get stale and fewer of them will
-// still fall inside this job's own rolling ~100-trading-day compact price
-// window — this job does NOT try to paper over that, it just reports the
-// shrinking "in coverage window" count plainly (see `universe.inWindow`
-// below) rather than silently dropping to a confusing near-zero N with no
-// explanation. The page's methodology section documents this honestly.
+// Timing: the collection doesn't say whether a report came before the open
+// or after the close, so day 0 is the first trading day on or after the
+// report date and the announcement reaction runs from the close of day -1 to
+// the close of day +1, which covers either case. Drift is what comes after:
+// from the close of day +1 to day +20 or +60. Returns are relative to SPY
+// over the same days.
 //
-// Price data is a fresh sweep of Yahoo Finance daily adjusted closes across
-// the full S&P 500 (BREADTH_CONSTITUENTS) + SPY, trimmed to the last ~100
-// trading days — same deliberate choice scheduled-relative-strength-
-// background.js made for the same reason: a short event window (+1/+5/+10/
-// +20 trading days from an earnings date) doesn't need, and shouldn't pay
-// the bandwidth/parse cost of, full history (10,000+ daily bars for a
-// single mega-cap).
-//
-// For each company with a reportedDate that falls inside the fetched
-// compact window, the anchor trading day is the first close on or after
-// reportedDate (never before — that would leak pre-announcement data into
-// the "after" side of the test). Forward/excess returns are computed at
-// +1/+5/+10/+20 trading days from that anchor, against SPY over the
-// identical span, using the same compounding-consistent excess-return
-// formula (relativeReturn) as scheduled-relative-strength-background.js
-// and scheduled-international-background.js. A leg whose price history
-// doesn't reach a given horizon yet (recent report, near the end of the
-// compact window) gets a null for that horizon only, not a dropped company
-// or a fabricated value — same convention as scheduled-spinoff-
-// background.js's per-leg horizon handling.
-//
-// The real statistical test (Pearson/Spearman regression of
-// surprisePercentage against the +20-day forward excess return, plus a
-// plain beat-vs-miss two-sample comparison) is computed client-side in
-// post-earnings-drift.html from the raw per-company `companies` array this
-// job writes — same division of labor as /spin-off-performance.html (this
-// job precomputes the aggregate drift curve, sector medians and
-// leaderboards server-side; the page duplicates this site's usual stats
-// helpers to run the regression/t-test itself, since every page here is
-// self-contained per CLAUDE.md).
-//
-// No accumulating weekly history: like /spin-off-performance, this
-// recomputes the full drift panel fresh from whatever quarter/price window
-// is available each run, rather than building up a time series — there's
-// no obvious "trend of PEAD over time" this page is trying to chart, and a
-// fresh snapshot is simpler and cheaper to reason about.
-//
-// ~504 sequential Yahoo chart calls (503 constituents + SPY), 300ms apart
-// with a retry pass. Yahoo has no quota, but it 429s intermittently, so the
-// spacing and yahoo-client.js's retries stay.
+// Surprise groups are formed within each calendar quarter of report dates,
+// so a quarter where nearly everyone beat doesn't fill the top group by
+// itself. Spreads (top fifth minus bottom fifth) are averaged across
+// quarters with a Newey-West standard error. The panel only has today's
+// members, so companies that left the index aren't in it.
 
-const { getPeadStore, LATEST_KEY } = require("./post-earnings-drift-blob-store");
-const { getSurpriseStore, LATEST_KEY: SURPRISE_LATEST_KEY } = require("./surprise-blob-store");
+const { getPeadStore, PANEL_KEY } = require("./post-earnings-drift-blob-store");
+const { loadCollected } = require("./av-collector-store");
 const { getBeeswarmStore, META_KEY } = require("./beeswarm-blob-store");
 const { BREADTH_CONSTITUENTS } = require("./breadth-constituents");
 const { SECTOR_ORDER } = require("./beeswarm-sectors");
-const { fetchDailyHistory } = require("./yahoo-client");
-const COMPACT_DAYS = 100;
+const { fetchDailyHistory, sleep } = require("./yahoo-client");
 
-
-const HORIZONS = [1, 5, 10, 20];
+const PRICE_START = "2015-06-01";
+const PRE_DAYS = 5;
+const POST_DAYS = 60;
+const GROUPS = 5;
+const MIN_EVENTS_PER_QUARTER = 50;
+// Surprise percentages explode when the estimate is near zero.
+const MIN_ABS_ESTIMATE = 0.05;
+const RECENT_DAYS = 100;
 const LEADERBOARD_COUNT = 10;
-const MIN_SECTOR_N = 5; // per group (beat/miss), per sector — below this a median is noise, not signal
+const PRICE_WORKERS = 4;
+const MIN_SECTOR_EVENTS = 40;
 
-function sleep(ms) {
-  return new Promise((resolve) => setTimeout(resolve, ms));
+function num(v) {
+  if (v === null || v === undefined || v === "" || v === "None") return null;
+  const n = parseFloat(v);
+  return Number.isFinite(n) ? n : null;
 }
-
-function round(v, digits = 3) {
+function round(v, d = 2) {
   if (v === null || v === undefined || !Number.isFinite(v)) return null;
-  const f = 10 ** digits;
+  const f = 10 ** d;
   return Math.round(v * f) / f;
 }
-
-function mean(values) {
-  const v = values.filter((x) => x !== null && x !== undefined && Number.isFinite(x));
-  return v.length ? v.reduce((a, b) => a + b, 0) / v.length : null;
-}
-
-function median(values) {
-  const v = values.filter((x) => x !== null && x !== undefined && Number.isFinite(x)).sort((a, b) => a - b);
+const pct = (v, d = 2) => (v === null || v === undefined ? null : round(v * 100, d));
+const mean = (a) => { const v = a.filter(Number.isFinite); return v.length ? v.reduce((s, x) => s + x, 0) / v.length : null; };
+function median(a) {
+  const v = a.filter(Number.isFinite).sort((x, y) => x - y);
   if (!v.length) return null;
-  const mid = Math.floor(v.length / 2);
-  return v.length % 2 ? v[mid] : (v[mid - 1] + v[mid]) / 2;
+  const m = Math.floor(v.length / 2);
+  return v.length % 2 ? v[m] : (v[m - 1] + v[m]) / 2;
 }
-
-// Compounding-consistent excess return, in percentage points — same
-// construction used by scheduled-relative-strength-background.js and
-// scheduled-international-background.js.
-function relativeReturn(stockRet, benchRet) {
-  if (stockRet === null || benchRet === null) return null;
-  return ((1 + stockRet) / (1 + benchRet) - 1) * 100;
-}
-
-async function fetchDailyAdjusted(symbol) {
-  const rows = (await fetchDailyHistory(symbol)).slice(-COMPACT_DAYS);
-  return { dates: rows.map((r) => r.date), closes: rows.map((r) => r.close) };
-}
-
-// First index in an ascending `dates` array on or after `targetDate`. Null
-// if targetDate falls entirely outside the array's span — either before
-// its first date (the report predates this run's compact window: we can't
-// find the true "day after" without fabricating a gap) or after its last
-// date (shouldn't happen when both fetches run the same day, but guarded).
-function findAnchorIndex(dates, targetDate) {
-  if (!dates.length || targetDate < dates[0] || targetDate > dates[dates.length - 1]) return null;
-  let lo = 0;
-  let hi = dates.length - 1;
-  while (lo < hi) {
-    const mid = (lo + hi) >> 1;
-    if (dates[mid] >= targetDate) hi = mid;
-    else lo = mid + 1;
+function neweyWest(series, lag) {
+  const x = series.filter(Number.isFinite);
+  const n = x.length;
+  if (n < 12) return { mean: mean(x), t: null, n };
+  const m = mean(x);
+  const d = x.map((v) => v - m);
+  let s = d.reduce((acc, v) => acc + v * v, 0) / n;
+  for (let l = 1; l <= Math.min(lag, n - 1); l++) {
+    let c = 0;
+    for (let i = l; i < n; i++) c += d[i] * d[i - l];
+    s += 2 * (1 - l / (lag + 1)) * (c / n);
   }
-  return lo;
+  const se = Math.sqrt(Math.max(s, 0) / n);
+  return { mean: m, t: se > 0 ? m / se : null, n };
+}
+const quarterOf = (date) => `${date.slice(0, 4)}-Q${Math.floor((+date.slice(5, 7) - 1) / 3) + 1}`;
+
+async function loadPrices(symbols, sinceUnix) {
+  const out = new Map();
+  const queue = [...symbols];
+  const worker = async () => {
+    while (queue.length) {
+      const t = queue.shift();
+      try {
+        const rows = await fetchDailyHistory(t, { adjusted: true, sinceUnix });
+        out.set(t, new Map(rows.map((r) => [r.date, r.close])));
+      } catch (err) { /* left out of every event */ }
+      await sleep(200);
+    }
+  };
+  await Promise.all(Array.from({ length: PRICE_WORKERS }, worker));
+  return out;
 }
 
 exports.handler = async () => {
-  console.log(`scheduled-post-earnings-drift-background: starting, ${BREADTH_CONSTITUENTS.length} tickers + SPY`);
+  const started = Date.now();
   try {
+    const earningsPub = await loadCollected("earnings");
+    const meta = ((await getBeeswarmStore().get(META_KEY, { type: "json" })) || {}).tickers || {};
+    const sinceUnix = Math.floor(Date.parse(PRICE_START + "T00:00:00Z") / 1000);
+    const spyRows = await fetchDailyHistory("SPY", { adjusted: true, sinceUnix });
+    const days = spyRows.map((r) => r.date);
+    const spy = spyRows.map((r) => r.close);
+    const dayIndex = (date) => { let lo = 0, hi = days.length; while (lo < hi) { const m = (lo + hi) >> 1; if (days[m] < date) lo = m + 1; else hi = m; } return lo; };
+    const prices = await loadPrices(BREADTH_CONSTITUENTS, sinceUnix);
 
-    // ---- Reused input: each company's most recent reported surprise ----
-    let surpriseByTicker = {};
-    let surpriseSnapshotGeneratedAt = null;
-    try {
-      const surpriseStore = getSurpriseStore();
-      const surpriseLatest = await surpriseStore.get(SURPRISE_LATEST_KEY, { type: "json" });
-      if (surpriseLatest) {
-        surpriseSnapshotGeneratedAt = surpriseLatest.generated_at_utc || null;
-        if (Array.isArray(surpriseLatest.companiesLatest)) {
-          for (const c of surpriseLatest.companiesLatest) {
-            if (c.reportedDate && Number.isFinite(c.surprisePct)) surpriseByTicker[c.ticker] = c;
-          }
-        }
-      }
-    } catch (err) {
-      console.error("scheduled-post-earnings-drift-background: could not read earnings-surprise blob, continuing with zero coverage:", err.message);
-    }
-    const surpriseCompaniesAvailable = Object.keys(surpriseByTicker).length;
-
-    // ---- SPY benchmark: fetch first, abort the run if it fails ----
-    let spy = null;
-    for (let attempt = 0; attempt < 3 && !spy; attempt++) {
-      try {
-        spy = await fetchDailyAdjusted("SPY");
-      } catch (err) {
-        console.error(`scheduled-post-earnings-drift-background: SPY fetch failed (attempt ${attempt + 1}): ${err.message}`);
-        await sleep(5000);
-      }
-    }
-    if (!spy) throw new Error("Could not fetch SPY benchmark data after 3 attempts");
-    await sleep(300);
-
-    const beeswarmStore = getBeeswarmStore();
-    const meta = (await beeswarmStore.get(META_KEY, { type: "json" })) || { tickers: {} };
-    const metaTickers = meta.tickers || {};
-
-    // ---- Full-universe compact price sweep ----
-    const priceResults = new Map();
-    async function fetchInto(symbol) {
-      try {
-        const hist = await fetchDailyAdjusted(symbol);
-        if (hist.dates.length) priceResults.set(symbol, hist);
-        return true;
-      } catch (err) {
-        console.error(`scheduled-post-earnings-drift-background: ${symbol} failed: ${err.message}`);
-        if (/rate limit|per minute/i.test(err.message)) await sleep(20000);
-        return false;
-      }
-    }
-    let todo = [...BREADTH_CONSTITUENTS];
-    for (let pass = 0; pass < 2 && todo.length; pass++) {
-      if (pass > 0) {
-        console.log(`scheduled-post-earnings-drift-background: retry pass for ${todo.length} ticker(s)`);
-        await sleep(65000);
-      }
-      const missed = [];
-      for (const symbol of todo) {
-        const got = await fetchInto(symbol);
-        if (!got) missed.push(symbol);
-        await sleep(300);
-      }
-      todo = missed;
-    }
-    console.log(`scheduled-post-earnings-drift-background: fetched ${priceResults.size}/${BREADTH_CONSTITUENTS.length} price series`);
-
-    // ---- Build one drift record per company ----
-    const companies = [];
-    let priceLoadFailed = 0;
-    let missingSurpriseMatch = 0;
-    let outOfWindow = 0;
-
+    // ---- events ------------------------------------------------------------
+    const events = [];
     for (const symbol of BREADTH_CONSTITUENTS) {
-      const hist = priceResults.get(symbol);
-      if (!hist) { priceLoadFailed++; continue; }
-
-      const surprise = surpriseByTicker[symbol];
-      if (!surprise) { missingSurpriseMatch++; continue; }
-
-      const anchorIdx = findAnchorIndex(hist.dates, surprise.reportedDate);
-      if (anchorIdx === null) { outOfWindow++; continue; }
-
-      const anchorDate = hist.dates[anchorIdx];
-      const spyAnchorIdx = findAnchorIndex(spy.dates, anchorDate);
-      if (spyAnchorIdx === null) { outOfWindow++; continue; }
-
-      const m = metaTickers[symbol];
-      const sector = (m && m.sector) || null;
-      if (!sector) { missingSurpriseMatch++; continue; } // no sector metadata: can't place it in any sector aggregate
-
-      const ret = {};
-      const excess = {};
-      for (const h of HORIZONS) {
-        const fwdIdx = anchorIdx + h;
-        const spyFwdIdx = spyAnchorIdx + h;
-        if (fwdIdx >= hist.closes.length || spyFwdIdx >= spy.closes.length) {
-          ret[h] = null;
-          excess[h] = null;
-          continue;
+      const p = prices.get(symbol);
+      const e = earningsPub.data[symbol];
+      if (!p || !e) continue;
+      for (const q of e.quarterlyEarnings || []) {
+        const est = num(q.estimatedEPS), rep = num(q.reportedEPS), surprise = num(q.surprisePercentage);
+        if (!q.reportedDate || est === null || rep === null || surprise === null || Math.abs(est) < MIN_ABS_ESTIMATE) continue;
+        const d0 = dayIndex(q.reportedDate);
+        if (d0 - PRE_DAYS - 1 < 0 || d0 + 1 >= days.length) continue;
+        const base = d0 - 1;
+        const pb = p.get(days[base]);
+        if (!pb) continue;
+        // Path relative to SPY from the close before day 0, -PRE_DAYS..+POST_DAYS.
+        const path = [];
+        for (let k = -PRE_DAYS; k <= POST_DAYS; k++) {
+          const i = d0 + k;
+          const px = i < days.length ? p.get(days[i]) : undefined;
+          path.push(px ? (px / pb) / (spy[i] / spy[base]) - 1 : null);
         }
-        const stockRet = hist.closes[fwdIdx] / hist.closes[anchorIdx] - 1;
-        const spyRet = spy.closes[spyFwdIdx] / spy.closes[spyAnchorIdx] - 1;
-        ret[h] = round(stockRet * 100, 2);
-        excess[h] = round(relativeReturn(stockRet, spyRet), 2);
+        const at = (k) => path[k + PRE_DAYS];
+        const reaction = at(1);
+        if (!Number.isFinite(reaction)) continue;
+        const after = (k) => (Number.isFinite(at(k)) ? (1 + at(k)) / (1 + reaction) - 1 : null);
+        events.push({
+          symbol, date: q.reportedDate, quarter: quarterOf(q.reportedDate), surprise, beat: rep > est ? 1 : rep < est ? -1 : 0,
+          sector: (meta[symbol] && meta[symbol].sector) || null,
+          reaction, drift20: after(20), drift60: after(60), path,
+        });
       }
-
-      companies.push({
-        symbol,
-        name: (m && m.name) || symbol,
-        sector,
-        reportedDate: surprise.reportedDate,
-        quarterLabel: surprise.quarterLabel || null,
-        surprisePct: round(surprise.surprisePct, 2),
-        beat: surprise.surprisePct > 0 ? 1 : surprise.surprisePct < 0 ? -1 : 0,
-        anchorDate,
-        ret: { d1: ret[1], d5: ret[5], d10: ret[10], d20: ret[20] },
-        excess: { d1: excess[1], d5: excess[5], d10: excess[10], d20: excess[20] },
-      });
     }
 
-    const inWindow = companies.length;
-    console.log(`scheduled-post-earnings-drift-background: ${inWindow} companies in coverage window (surprise available: ${surpriseCompaniesAvailable}, price failed: ${priceLoadFailed}, no surprise match: ${missingSurpriseMatch}, out of window: ${outOfWindow})`);
-
-    // ---- Drift curve: avg cumulative excess return by horizon, beat vs miss ----
-    const beat = companies.filter((c) => c.beat > 0);
-    const miss = companies.filter((c) => c.beat < 0);
-    const horizonKeyOf = { 1: "d1", 5: "d5", 10: "d10", 20: "d20" };
-    function curveFor(group) {
-      const avgExcess = [];
-      const n = [];
-      for (const h of HORIZONS) {
-        const key = horizonKeyOf[h];
-        const vals = group.map((c) => c.excess[key]).filter((v) => v !== null);
-        avgExcess.push(round(mean(vals), 3));
-        n.push(vals.length);
-      }
-      return { avgExcess, n };
+    // ---- surprise groups within each report quarter -------------------------
+    const byQuarter = new Map();
+    for (const ev of events) { if (!byQuarter.has(ev.quarter)) byQuarter.set(ev.quarter, []); byQuarter.get(ev.quarter).push(ev); }
+    const quarters = [...byQuarter.keys()].sort().filter((q) => byQuarter.get(q).length >= MIN_EVENTS_PER_QUARTER);
+    for (const q of quarters) {
+      const list = byQuarter.get(q).sort((a, b) => a.surprise - b.surprise);
+      list.forEach((ev, i) => { ev.group = Math.min(GROUPS - 1, Math.floor((i * GROUPS) / list.length)); });
     }
-    const driftCurve = { horizons: HORIZONS, beat: curveFor(beat), miss: curveFor(miss) };
+    const grouped = events.filter((ev) => ev.group !== undefined);
 
-    // ---- Sector breakdown: median +20d excess by sector, beat vs miss ----
-    const sectorBreakdown = SECTOR_ORDER.map((sector) => {
-      const beatVals = beat.filter((c) => c.sector === sector && c.excess.d20 !== null).map((c) => c.excess.d20);
-      const missVals = miss.filter((c) => c.sector === sector && c.excess.d20 !== null).map((c) => c.excess.d20);
-      if (!beatVals.length && !missVals.length) return null;
+    const curve = Array.from({ length: GROUPS }, (_, g) => {
+      const members = grouped.filter((ev) => ev.group === g);
       return {
-        sector,
-        beatN: beatVals.length,
-        missN: missVals.length,
-        beatMedianExcess20: round(median(beatVals), 2),
-        missMedianExcess20: round(median(missVals), 2),
-        thin: beatVals.length < MIN_SECTOR_N || missVals.length < MIN_SECTOR_N,
+        group: g + 1,
+        events: members.length,
+        medianSurprisePct: round(median(members.map((ev) => ev.surprise)), 1),
+        path: Array.from({ length: PRE_DAYS + POST_DAYS + 1 }, (_, k) => pct(mean(members.map((ev) => ev.path[k])), 2)),
+        reactionPct: pct(mean(members.map((ev) => ev.reaction))),
+        drift20Pct: pct(mean(members.map((ev) => ev.drift20))),
+        drift60Pct: pct(mean(members.map((ev) => ev.drift60))),
+        drift60HitPct: round((members.filter((ev) => ev.drift60 > 0).length / Math.max(1, members.filter((ev) => Number.isFinite(ev.drift60)).length)) * 100, 1),
       };
+    });
+
+    // Top-minus-bottom spread per quarter, then averaged across quarters.
+    const perQuarter = quarters.map((q) => {
+      const list = byQuarter.get(q);
+      const top = list.filter((ev) => ev.group === GROUPS - 1), bottom = list.filter((ev) => ev.group === 0);
+      const spread = (f) => { const a = mean(top.map(f)), b = mean(bottom.map(f)); return Number.isFinite(a) && Number.isFinite(b) ? a - b : null; };
+      return { quarter: q, events: list.length, reaction: spread((ev) => ev.reaction), drift20: spread((ev) => ev.drift20), drift60: spread((ev) => ev.drift60) };
+    });
+    const summarize = (key) => {
+      const nw = neweyWest(perQuarter.map((r) => r[key]), 1);
+      return { meanPct: pct(nw.mean), t: round(nw.t), quarters: nw.n, positivePct: round((perQuarter.filter((r) => r[key] > 0).length / Math.max(1, perQuarter.filter((r) => Number.isFinite(r[key])).length)) * 100, 0) };
+    };
+    const spread = { reaction: summarize("reaction"), drift20: summarize("drift20"), drift60: summarize("drift60") };
+
+    const years = [...new Set(perQuarter.map((r) => r.quarter.slice(0, 4)))].sort();
+    const byYear = years.map((y) => {
+      const rows = perQuarter.filter((r) => r.quarter.startsWith(y));
+      return { year: y, quarters: rows.length, events: rows.reduce((s, r) => s + r.events, 0), reactionPct: pct(mean(rows.map((r) => r.reaction))), drift60Pct: pct(mean(rows.map((r) => r.drift60))) };
+    });
+
+    const beats = grouped.filter((ev) => ev.beat > 0), misses = grouped.filter((ev) => ev.beat < 0);
+    const bySector = SECTOR_ORDER.map((sector) => {
+      const b = beats.filter((ev) => ev.sector === sector), m = misses.filter((ev) => ev.sector === sector);
+      if (b.length < MIN_SECTOR_EVENTS || m.length < MIN_SECTOR_EVENTS) return null;
+      return { sector, beats: b.length, misses: m.length, beatDrift60Pct: pct(mean(b.map((ev) => ev.drift60))), missDrift60Pct: pct(mean(m.map((ev) => ev.drift60))), beatReactionPct: pct(mean(b.map((ev) => ev.reaction))), missReactionPct: pct(mean(m.map((ev) => ev.reaction))) };
     }).filter(Boolean);
-    const sectorsWithEnoughData = sectorBreakdown.filter((s) => !s.thin).length;
 
-    // ---- Leaderboards: biggest +20d drift among beats and among misses ----
-    function leaderRow(c) {
+    // ---- the latest reports ------------------------------------------------
+    const lastDay = days[days.length - 1];
+    const cutoff = days[Math.max(0, days.length - RECENT_DAYS)];
+    const latestBySymbol = new Map();
+    for (const ev of events) if (ev.date >= cutoff && (!latestBySymbol.has(ev.symbol) || ev.date > latestBySymbol.get(ev.symbol).date)) latestBySymbol.set(ev.symbol, ev);
+    const companies = [...latestBySymbol.values()].map((ev) => {
+      let lastK = null;
+      for (let k = POST_DAYS; k >= 1; k--) if (Number.isFinite(ev.path[k + PRE_DAYS])) { lastK = k; break; }
+      const since = lastK && lastK > 1 ? (1 + ev.path[lastK + PRE_DAYS]) / (1 + ev.reaction) - 1 : null;
       return {
-        symbol: c.symbol, name: c.name, sector: c.sector, reportedDate: c.reportedDate,
-        surprisePct: c.surprisePct, excess20: c.excess.d20,
+        symbol: ev.symbol, name: (meta[ev.symbol] && meta[ev.symbol].name) || ev.symbol, sector: ev.sector, reportedDate: ev.date,
+        surprisePct: round(ev.surprise, 1), beat: ev.beat, reactionPct: pct(ev.reaction), driftSincePct: pct(since), daysSince: lastK,
+        drift20Pct: pct(ev.drift20),
       };
-    }
-    const beatWithD20 = beat.filter((c) => c.excess.d20 !== null);
-    const missWithD20 = miss.filter((c) => c.excess.d20 !== null);
+    }).sort((a, b) => (a.symbol < b.symbol ? -1 : 1));
+    const withDrift = companies.filter((c) => c.driftSincePct !== null);
+    const lead = (list, dir) => list.slice().sort((a, b) => dir * (b.driftSincePct - a.driftSincePct)).slice(0, LEADERBOARD_COUNT);
     const leaderboards = {
-      beatUp: [...beatWithD20].sort((a, b) => b.excess.d20 - a.excess.d20).slice(0, LEADERBOARD_COUNT).map(leaderRow),
-      beatDown: [...beatWithD20].sort((a, b) => a.excess.d20 - b.excess.d20).slice(0, LEADERBOARD_COUNT).map(leaderRow),
-      missUp: [...missWithD20].sort((a, b) => b.excess.d20 - a.excess.d20).slice(0, LEADERBOARD_COUNT).map(leaderRow),
-      missDown: [...missWithD20].sort((a, b) => a.excess.d20 - b.excess.d20).slice(0, LEADERBOARD_COUNT).map(leaderRow),
+      beatUp: lead(withDrift.filter((c) => c.beat > 0), 1), beatDown: lead(withDrift.filter((c) => c.beat > 0), -1),
+      missUp: lead(withDrift.filter((c) => c.beat < 0), 1), missDown: lead(withDrift.filter((c) => c.beat < 0), -1),
     };
 
     const payload = {
       generated_at_utc: new Date().toISOString(),
-      priceWindow: { start: spy.dates[0], end: spy.dates[spy.dates.length - 1] },
-      horizons: HORIZONS,
-      universe: {
-        total: BREADTH_CONSTITUENTS.length,
-        priceLoaded: priceResults.size,
-        surpriseSnapshotGeneratedAt,
-        surpriseCompaniesAvailable,
-        inWindow,
-      },
-      skipped: { priceLoadFailed, missingSurpriseMatch, outOfWindow },
-      driftCurve,
-      sectorBreakdown,
-      sectorThinThreshold: MIN_SECTOR_N,
-      sectorsWithEnoughData,
-      leaderboards,
-      companies,
+      asOf: lastDay,
+      earningsDate: earningsPub.generated_at_utc.slice(0, 10),
+      universe: { members: BREADTH_CONSTITUENTS.length, priced: prices.size, events: events.length, groupedEvents: grouped.length, quarters: quarters.length, firstQuarter: quarters[0], lastQuarter: quarters[quarters.length - 1], recentWindowStart: cutoff },
+      settings: { preDays: PRE_DAYS, postDays: POST_DAYS, groups: GROUPS, minAbsEstimate: MIN_ABS_ESTIMATE },
+      beatSharePct: round((beats.length / grouped.length) * 100, 1),
+      curve,
+      spread,
+      byYear,
+      perQuarter: perQuarter.map((r) => ({ quarter: r.quarter, events: r.events, reactionPct: pct(r.reaction), drift60Pct: pct(r.drift60) })),
+      bySector,
+      recent: { companies, leaderboards, beats: companies.filter((c) => c.beat > 0).length, misses: companies.filter((c) => c.beat < 0).length },
     };
-
-    await getPeadStore().setJSON(LATEST_KEY, payload);
-    console.log(`scheduled-post-earnings-drift-background: wrote ${inWindow} companies in window (${beat.length} beats, ${miss.length} misses)`);
-
-    return { statusCode: 200, body: JSON.stringify({ ok: true, inWindow, beats: beat.length, misses: miss.length }) };
+    await getPeadStore().setJSON(PANEL_KEY, payload);
+    console.log(`scheduled-post-earnings-drift-background: ${events.length} events over ${quarters.length} quarters, drift60 spread ${spread.drift60.meanPct}% (t ${spread.drift60.t}), ${companies.length} recent, ${Math.round((Date.now() - started) / 1000)}s`);
+    return { statusCode: 200 };
   } catch (err) {
-    console.error("scheduled-post-earnings-drift-background: failed", err);
-    return { statusCode: 500, body: err.message };
+    console.error(`scheduled-post-earnings-drift-background: FAILED: ${err.message}`);
+    return { statusCode: 500 };
   }
 };

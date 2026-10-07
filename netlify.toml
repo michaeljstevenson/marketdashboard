@@ -728,10 +728,7 @@
   # spacing plus a retry pass.
 
 [functions."scheduled-post-earnings-drift-background"]
-  # Weekly, Saturday 11:30 UTC, after institutional-ownership (11:10). Its
-  # rolling ~100-trading-day event window needs a fresh price sweep every run,
-  # though the earnings-surprise blob it reads is itself a frozen snapshot.
-  schedule = "30 11 * * 6"
+  # No schedule until the reworked job's first run has filled the store.
 
 [functions."scheduled-short-sale-volume-background"]
   # Weekly, Saturday 14:50 UTC. A ~3-month average short-sale-volume ratio

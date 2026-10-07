@@ -253,16 +253,6 @@
       ]
     },
     {
-      "name": "post-earnings-drift",
-      "cron": "30 11 * * 6",
-      "apis": [
-        "/api/post-earnings-drift"
-      ],
-      "pages": [
-        "post-earnings-drift"
-      ]
-    },
-    {
       "name": "relative-strength",
       "cron": "10 13 * * 6",
       "apis": [
@@ -326,6 +316,7 @@
       "apis": [],
       "pages": [
         "earnings-growth-divergence",
+        "post-earnings-drift",
         "earnings-surprise",
         "valuations"
       ]
@@ -416,6 +407,16 @@
       ],
       "pages": [
         "options-positioning"
+      ]
+    },
+    {
+      "name": "post-earnings-drift",
+      "cron": null,
+      "apis": [
+        "/api/post-earnings-drift"
+      ],
+      "pages": [
+        "post-earnings-drift"
       ]
     },
     {

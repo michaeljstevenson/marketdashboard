@@ -19,7 +19,7 @@
   "beeswarm-meta": "Name, sector and shares outstanding for every S&P 500 stock. Company names and sectors reused by about 20 other jobs.",
   "beeswarm-annual": "Year-by-year returns for the 11 sector ETFs and SPY, about 15 years.",
   "revisions": "Analyst EPS estimates for the current year and how they moved over 7, 30 and 90 days.",
-  "post-earnings-drift": "Daily prices for every S&P 500 stock, lined up with their earnings reports. Uses the earnings-surprise data, which is a manual snapshot.",
+  "post-earnings-drift": "About ten years of S&P 500 earnings reports from the shared earnings collection, with Yahoo prices: the reaction around each report and the drift over the next 20 and 60 trading days, by size of surprise, plus the latest quarter's reports. No Alpha Vantage calls.",
   "relative-strength": "Daily prices for every S&P 500 stock and SPY, for 1-month and 3-month relative strength.",
   "smallcap-liquidity": "Daily prices and volume for about 200 large and small stocks.",
   "short-sale-volume": "Daily short-sale volume from FINRA, plus daily prices.",

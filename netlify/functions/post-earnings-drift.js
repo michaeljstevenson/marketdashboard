@@ -3,12 +3,13 @@
 // stored in Netlify Blobs. This function makes no Alpha Vantage calls
 // itself — it just reads the pre-computed blob.
 
-const { getPeadStore, LATEST_KEY } = require("./post-earnings-drift-blob-store");
+const { getPeadStore, LATEST_KEY, PANEL_KEY } = require("./post-earnings-drift-blob-store");
 
-exports.handler = async () => {
+exports.handler = async (event) => {
   try {
     const store = getPeadStore();
-    const payload = await store.get(LATEST_KEY, { type: "json" });
+    const v2 = event && event.queryStringParameters && event.queryStringParameters.v === "2";
+    const payload = await store.get(v2 ? PANEL_KEY : LATEST_KEY, { type: "json" });
 
     if (!payload) {
       throw new Error("Post-earnings drift data not yet populated, scheduled-post-earnings-drift-background hasn't run yet");
