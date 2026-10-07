@@ -169,6 +169,7 @@ document.addEventListener("DOMContentLoaded", function(){
   --neutral:#7c828a;
   --greed:#d98a3d;
   --extreme:#b56f2a;
+  --recession:rgba(139,111,172,0.18);
 
   --serif:'Times New Roman',Times,serif;
   --mono:'SF Mono','JetBrains Mono',ui-monospace,Menlo,monospace;
@@ -186,6 +187,7 @@ document.addEventListener("DOMContentLoaded", function(){
   --neutral:#6c7178;
   --greed:#b9701f;
   --extreme:#96591c;
+  --recession:rgba(139,111,172,0.22);
 }
 
 *{ box-sizing:border-box; }
@@ -259,7 +261,7 @@ h1{
 
 .stat-grid{
  display:grid;
- grid-template-columns:repeat(4,1fr);
+ grid-template-columns:repeat(5,1fr);
  gap:16px;
  margin-bottom:30px;
 }
@@ -292,7 +294,11 @@ h1{
  margin-top:6px;
 }
 
-@media (max-width:900px){
+@media (max-width:1000px){
+ .stat-grid{ grid-template-columns:repeat(3,1fr); }
+}
+
+@media (max-width:720px){
  .stat-grid{ grid-template-columns:repeat(2,1fr); }
 }
 
@@ -331,6 +337,97 @@ h1{
 .chart-canvas-wrap{
  height:340px;
 }
+
+/* LONG-RUN CHARTS */
+
+.chart-readout{
+ color:var(--muted);
+ font-size:12px;
+ margin-top:6px;
+}
+
+.chart-readout strong{
+ color:var(--ink);
+ font-family:var(--mono);
+ font-weight:600;
+}
+
+.range-controls{
+ display:flex;
+ flex-wrap:wrap;
+ align-items:center;
+ gap:6px;
+}
+
+.range-btn{
+ background:#171b20;
+ border:1px solid var(--hair);
+ color:var(--muted);
+ font-size:12px;
+ font-family:var(--sans);
+ padding:4px 10px;
+ border-radius:6px;
+ cursor:pointer;
+}
+
+.range-btn:hover{
+ color:var(--ink);
+ border-color:#3a424b;
+}
+
+.range-btn.active{
+ background:var(--card-hover);
+ color:var(--up);
+ border-color:var(--up);
+}
+
+.chart-legend-custom{
+ display:flex;
+ flex-wrap:wrap;
+ gap:8px 18px;
+ margin-bottom:12px;
+}
+
+.chart-legend-custom span{
+ display:flex;
+ align-items:center;
+ gap:6px;
+ color:var(--muted);
+ font-size:12px;
+}
+
+.chart-legend-custom .swatch{
+ display:inline-block;
+ width:14px;
+ height:2px;
+ border-radius:1px;
+}
+
+.chart-legend-custom .swatch-series{ background:var(--greed); }
+.chart-legend-custom .swatch-latest{ height:0; border-top:1px dashed var(--muted); border-radius:0; }
+.chart-legend-custom .swatch-recession{ height:10px; background:var(--recession); }
+.chart-legend-custom .swatch-higher,
+.chart-legend-custom .swatch-lower{ width:12px; height:12px; border-radius:2px; opacity:0.55; }
+.chart-legend-custom .swatch-higher{ background:var(--greed); }
+.chart-legend-custom .swatch-lower{ background:var(--fear); }
+
+.chart-canvas-wrap.stacked{
+ height:420px;
+ display:flex;
+ flex-direction:column;
+ gap:2px;
+}
+
+.chart-canvas-wrap.stacked .stack-panel{
+ position:relative;
+ min-height:0;
+ width:100%;
+ align-self:stretch;
+}
+
+.chart-canvas-wrap.stacked .stack-panel.top{ flex:55 1 0; }
+.chart-canvas-wrap.stacked .stack-panel.bottom{ flex:45 1 0; }
+.is-chart-fullscreen .chart-canvas-wrap.stacked{ height:auto !important; flex:1 1 auto; min-height:0; }
 
 /* HEATMAP */
 
@@ -371,6 +468,15 @@ h1{
 .heatmap td.diag{
  color:var(--muted);
  background:var(--card-hover) !important;
+ font-weight:400;
+}
+
+.heatmap.change td{
+ color:var(--ink);
+}
+
+.heatmap.change td.na{
+ color:var(--muted);
  font-weight:400;
 }
 
@@ -581,6 +687,10 @@ table.datatable tbody td:first-child{
 
 /* Light-theme overrides for hardcoded (non-var) dark colors */
 
+[data-theme="light"] .range-btn{
+ background:#efece2;
+}
+
 [data-theme="light"] .error-banner{
  background:#fdecea;
  border-color:#f0b8b0;
@@ -739,6 +849,11 @@ table.datatable tbody td:first-child{
 <div class="stat-value" id="statCorrVol">…</div>
 <div class="stat-note" id="statCorrVolNote">r, avg. correlation vs. SPY realized vol</div>
 </div>
+<div class="stat-card">
+<div class="stat-label">First-Factor Share</div>
+<div class="stat-value" id="statFactorShare">…</div>
+<div class="stat-note" id="statFactorShareNote">126-trading-day window</div>
+</div>
 </div>
 
 <div class="chart-box">
@@ -756,6 +871,24 @@ table.datatable tbody td:first-child{
 <div class="chart-box">
 <div class="chart-box-header">
 <div>
+<h2>Change in pairwise correlation over the last year</h2>
+<div class="chart-subhead">Each pair's correlation over the last 63 trading days minus the same pair's correlation over the 63 trading days that ended one year (252 trading days) earlier, all 11 sectors</div>
+</div>
+</div>
+<div class="chart-legend-custom">
+<span><i class="swatch swatch-higher"></i>Higher than a year ago</span>
+<span><i class="swatch swatch-lower"></i>Lower than a year ago</span>
+<span>Darker shading means a larger change, with full shading at 0.50 or more</span>
+</div>
+<div class="heatmap-wrap">
+<table class="heatmap change" id="changeHeatmapTable"></table>
+</div>
+<div class="method-note" id="changeWindowsNote">Loading...</div>
+</div>
+
+<div class="chart-box">
+<div class="chart-box-header">
+<div>
 <h2>Average pairwise correlation over time</h2>
 <div class="chart-subhead">Rolling 63-trading-day average across all 55 sector pairs. Rises when sectors move together (broad risk-on/risk-off), falls when sector-specific stories dominate</div>
 </div>
@@ -763,6 +896,65 @@ table.datatable tbody td:first-child{
 <div class="chart-canvas-wrap">
 <canvas id="rollingChart"></canvas>
 </div>
+</div>
+
+<div class="chart-box">
+<div class="chart-box-header">
+<div>
+<h2>Average pairwise correlation since 1999</h2>
+<div class="chart-subhead">Rolling 63-trading-day average of the 36 pairwise correlations among the nine original SPDR sector ETFs</div>
+<div class="chart-readout" id="longCorrReadout">Loading...</div>
+</div>
+<div class="range-controls" id="longCorrRange"></div>
+</div>
+<div class="chart-legend-custom">
+<span><i class="swatch swatch-series"></i>Average pairwise correlation</span>
+<span><i class="swatch swatch-latest"></i>Latest reading</span>
+<span><i class="swatch swatch-recession"></i>NBER recession</span>
+</div>
+<div class="chart-canvas-wrap">
+<canvas id="longCorrChart"></canvas>
+</div>
+<div class="method-note">Daily log returns of XLK, XLF, XLV, XLE, XLI, XLY, XLP, XLU and XLB, the nine sector ETFs with prices back to 12/1998. Real Estate (2015) and Communication Services (2018) are left out so the series covers the same nine sectors throughout. The percentile is the share of all daily readings since 1999 that are below the latest one.</div>
+</div>
+
+<div class="chart-box">
+<div class="chart-box-header">
+<div>
+<h2>Sector dispersion and average correlation</h2>
+<div class="chart-subhead">Average pairwise correlation of the nine original sectors (top) and the cross-sectional standard deviation of their trailing 21-trading-day returns (bottom)</div>
+<div class="chart-readout" id="dispersionReadout">Loading...</div>
+</div>
+<div class="range-controls" id="dispersionRange"></div>
+</div>
+<div class="chart-legend-custom">
+<span><i class="swatch swatch-recession"></i>NBER recession</span>
+</div>
+<div class="chart-canvas-wrap stacked">
+<div class="stack-panel top"><canvas id="dispCorrChart"></canvas></div>
+<div class="stack-panel bottom"><canvas id="dispersionChart"></canvas></div>
+</div>
+<div class="method-note">Each day takes every sector's return over the prior 21 trading days and measures the standard deviation of those nine returns.</div>
+</div>
+
+<div class="chart-box">
+<div class="chart-box-header">
+<div>
+<h2>Share of sector variance explained by the first factor</h2>
+<div class="chart-subhead">Largest eigenvalue of the nine original sectors' rolling 126-trading-day correlation matrix divided by 9, which is the share of their total variance captured by the first principal component</div>
+<div class="chart-readout" id="factorReadout">Loading...</div>
+</div>
+<div class="range-controls" id="factorRange"></div>
+</div>
+<div class="chart-legend-custom">
+<span><i class="swatch swatch-series"></i>First-factor share</span>
+<span><i class="swatch swatch-latest"></i>Latest reading</span>
+<span><i class="swatch swatch-recession"></i>NBER recession</span>
+</div>
+<div class="chart-canvas-wrap">
+<canvas id="factorChart"></canvas>
+</div>
+<div class="method-note">Daily log returns. The share would be 1/9 (about 11%) if the nine sectors were uncorrelated and 100% if they moved in lockstep. The percentile is the share of all daily readings since 1999 that are below the latest one.</div>
 </div>
 
 <div class="chart-box">
@@ -963,6 +1155,7 @@ async function init(){
  }catch(e){
   showError("Couldn't load sector correlation data (" + e.message + "). The /api/sector-performance function may not have run yet.");
  }
+ loadLongRun(RAW);
 }
 
 function renderStats(rollingAvgCorr, rollingSpyVol, sectorReturns){
@@ -1135,6 +1328,585 @@ function renderCorrVolScatter(xs, ys, dates){
    "<tbody>" + row("Pearson (OLS)", pearsonReg) + row("Spearman (&rho;)", spear) + "</tbody>" +
   "</table>" +
   '<div class="method-note">n counts overlapping rolling-window days, which share most of their data. See the methodology note below.</div>';
+}
+
+// The live feed is weekly before late 2024, so the long-run measures read the
+// daily static history and append only the newer daily closes from the feed.
+const HISTORY_REQUEST = fetch("/sector-history.json")
+ .then(res => { if(!res.ok) throw new Error("HTTP " + res.status); return res.json(); })
+ .catch(e => ({ loadError: e.message }));
+
+const SECTOR_LIST = [
+ { ticker: "XLK", name: "Technology" },
+ { ticker: "XLF", name: "Financials" },
+ { ticker: "XLV", name: "Health Care" },
+ { ticker: "XLE", name: "Energy" },
+ { ticker: "XLI", name: "Industrials" },
+ { ticker: "XLY", name: "Consumer Discretionary" },
+ { ticker: "XLP", name: "Consumer Staples" },
+ { ticker: "XLU", name: "Utilities" },
+ { ticker: "XLB", name: "Materials" },
+ { ticker: "XLRE", name: "Real Estate" },
+ { ticker: "XLC", name: "Communication Services" },
+];
+// Real Estate (2015) and Communication Services (2018) would change the set
+// partway through, so the long-run series use the nine launched in 12/1998.
+const ORIGINAL_NINE = ["XLK", "XLF", "XLV", "XLE", "XLI", "XLY", "XLP", "XLU", "XLB"];
+const CORR_WINDOW = 63, FACTOR_WINDOW = 126, DISPERSION_DAYS = 21, YEAR_LAG = 252;
+// Same NBER peak and trough months as yield-curves.html.
+const RECESSIONS = [
+ { start: "2001-03", end: "2001-11" },
+ { start: "2007-12", end: "2009-06" },
+ { start: "2020-02", end: "2020-04" },
+];
+const LONG_RANGES = [
+ { key: "1Y", years: 1 },
+ { key: "5Y", years: 5 },
+ { key: "10Y", years: 10 },
+ { key: "Max", years: null },
+];
+const DEFAULT_LONG_RANGE = "Max";
+
+let LONG = null;
+let longCorrChart = null, factorChart = null, dispersionPanels = [];
+
+function themeVar(name, fallback){
+ return getComputedStyle(document.documentElement).getPropertyValue(name).trim() || fallback;
+}
+
+function cssColorToRgb(color){
+ const c = String(color).trim();
+ let m = /^#([0-9a-f]{3})$/i.exec(c);
+ if(m) return m[1].split("").map(h => parseInt(h + h, 16));
+ m = /^#([0-9a-f]{6})/i.exec(c);
+ if(m) return m[1].match(/../g).map(h => parseInt(h, 16));
+ m = /rgba?\(\s*([\d.]+)[\s,]+([\d.]+)[\s,]+([\d.]+)/i.exec(c);
+ if(m) return [Number(m[1]), Number(m[2]), Number(m[3])];
+ return [128, 128, 128];
+}
+
+function fixed(v, digits){
+ if(!isFinite(v)) return "n/a";
+ const s = v.toFixed(digits);
+ return Number(s) === 0 ? s.replace("-", "") : s;
+}
+
+function buildDailyReturns(history, live){
+ const S = history.dates.length;
+ const seam = history.dates[S - 1];
+ const liveCloses = new Map();
+ if(live){
+  [live.benchmark].concat(live.sectors || []).forEach(s => {
+   if(s && s.ticker) liveCloses.set(s.ticker, new Map((s.history || []).map(p => [p.date, p.close])));
+  });
+ }
+ const nineHave = d => ORIGINAL_NINE.every(t => liveCloses.has(t) && liveCloses.get(t).get(d) > 0);
+ const extra = [];
+ if(live && live.benchmark && nineHave(seam)){
+  for(const d of dailyCalendar(live.benchmark.history || [])){
+   if(d <= seam) continue;
+   if(!nineHave(d)) break;
+   extra.push(d);
+  }
+ }
+ const dates = history.dates.concat(extra);
+ const N = dates.length;
+ const returns = {};
+ SECTOR_LIST.forEach(({ ticker }) => {
+  const col = history.series[ticker] || [];
+  const r = new Float64Array(N).fill(NaN);
+  for(let i = 1; i < S; i++){
+   if(col[i - 1] > 0 && col[i] > 0) r[i] = Math.log(col[i] / col[i - 1]);
+  }
+  // Both closes across the seam come from the live feed, which may already be
+  // adjusted for a dividend that went ex after the static file was built.
+  const lc = liveCloses.get(ticker);
+  if(lc){
+   for(let i = S; i < N; i++){
+    const a = lc.get(dates[i - 1]), b = lc.get(dates[i]);
+    if(a > 0 && b > 0) r[i] = Math.log(b / a);
+   }
+  }
+  returns[ticker] = r;
+ });
+ return { dates, returns };
+}
+
+// Running sums with one day added and one dropped per step keep this linear
+// in the number of days (~7,000 windows on page load).
+function rollingCorrelations(series, from, to, W, visit){
+ const K = series.length;
+ const sx = new Float64Array(K), sxy = new Float64Array(K * K), v = new Float64Array(K), corr = new Float64Array(K * K);
+ for(let t = from; t < to; t++){
+  for(let i = 0; i < K; i++){
+   const x = series[i][t];
+   sx[i] += x;
+   for(let j = i; j < K; j++) sxy[i * K + j] += x * series[j][t];
+  }
+  const out = t - W;
+  if(out >= from){
+   for(let i = 0; i < K; i++){
+    const x = series[i][out];
+    sx[i] -= x;
+    for(let j = i; j < K; j++) sxy[i * K + j] -= x * series[j][out];
+   }
+  }
+  if(t - from + 1 < W) continue;
+  for(let i = 0; i < K; i++) v[i] = W * sxy[i * K + i] - sx[i] * sx[i];
+  for(let i = 0; i < K; i++){
+   corr[i * K + i] = 1;
+   for(let j = i + 1; j < K; j++){
+    corr[i * K + j] = corr[j * K + i] = (W * sxy[i * K + j] - sx[i] * sx[j]) / Math.sqrt(v[i] * v[j]);
+   }
+  }
+  visit(t, corr);
+ }
+}
+
+// Power iteration, warm-started from the previous window's eigenvector since
+// neighboring windows differ by one day. A correlation matrix is positive
+// semidefinite, so the dominant eigenvalue it finds is also the largest.
+function largestEigenvalue(C, K, vec, next){
+ let lambda = 0;
+ for(let it = 0; it < 500; it++){
+  let rayleigh = 0, norm = 0;
+  for(let i = 0; i < K; i++){
+   let s = 0;
+   for(let j = 0; j < K; j++) s += C[i * K + j] * vec[j];
+   next[i] = s;
+   rayleigh += vec[i] * s;
+   norm += s * s;
+  }
+  norm = Math.sqrt(norm);
+  let moved = 0;
+  for(let i = 0; i < K; i++){
+   const x = next[i] / norm;
+   moved = Math.max(moved, Math.abs(x - vec[i]));
+   vec[i] = x;
+  }
+  const settled = Math.abs(rayleigh - lambda) < 1e-13 && moved < 1e-9;
+  lambda = rayleigh;
+  if(settled) break;
+ }
+ return lambda;
+}
+
+function trailingDispersion(series, from, to, days){
+ const K = series.length;
+ const cum = series.map(r => {
+  const c = new Float64Array(to + 1);
+  for(let t = from; t < to; t++) c[t + 1] = c[t] + r[t];
+  return c;
+ });
+ const out = new Float64Array(to).fill(NaN);
+ const x = new Float64Array(K);
+ for(let t = from + days - 1; t < to; t++){
+  let mean = 0;
+  for(let i = 0; i < K; i++){
+   x[i] = (Math.exp(cum[i][t + 1] - cum[i][t + 1 - days]) - 1) * 100;
+   mean += x[i];
+  }
+  mean /= K;
+  let ss = 0;
+  for(let i = 0; i < K; i++) ss += (x[i] - mean) * (x[i] - mean);
+  out[t] = Math.sqrt(ss / K);
+ }
+ return out;
+}
+
+function windowCorrelation(a, b, from, to){
+ const n = to - from;
+ let ma = 0, mb = 0;
+ for(let t = from; t < to; t++){ ma += a[t]; mb += b[t]; }
+ if(!isFinite(ma) || !isFinite(mb)) return NaN;
+ ma /= n; mb /= n;
+ let saa = 0, sbb = 0, sab = 0;
+ for(let t = from; t < to; t++){
+  const da = a[t] - ma, db = b[t] - mb;
+  saa += da * da; sbb += db * db; sab += da * db;
+ }
+ return sab / Math.sqrt(saa * sbb);
+}
+
+function computeLongRun(panel){
+ const { dates, returns } = panel;
+ const nine = ORIGINAL_NINE.map(t => returns[t]);
+ const K = nine.length, pairs = K * (K - 1) / 2;
+ const complete = t => nine.every(r => isFinite(r[t]));
+ let from = 1;
+ while(from < dates.length && !complete(from)) from++;
+ let to = from;
+ while(to < dates.length && complete(to)) to++;
+
+ const corrIndex = [], corrValues = [];
+ rollingCorrelations(nine, from, to, CORR_WINDOW, (t, C) => {
+  let sum = 0;
+  for(let i = 0; i < K; i++) for(let j = i + 1; j < K; j++) sum += C[i * K + j];
+  corrIndex.push(t);
+  corrValues.push(sum / pairs);
+ });
+
+ const factorDates = [], factorValues = [];
+ const vec = new Float64Array(K).fill(1 / Math.sqrt(K)), next = new Float64Array(K);
+ rollingCorrelations(nine, from, to, FACTOR_WINDOW, (t, C) => {
+  factorDates.push(dates[t]);
+  factorValues.push(largestEigenvalue(C, K, vec, next) / K * 100);
+ });
+
+ const dispersion = trailingDispersion(nine, from, to, DISPERSION_DAYS);
+
+ const nowFrom = to - CORR_WINDOW, agoTo = to - YEAR_LAG, agoFrom = agoTo - CORR_WINDOW;
+ const hasAgo = agoFrom >= from;
+ const cols = SECTOR_LIST.map(s => returns[s.ticker]);
+ const matrix = cols.map((a, i) => cols.map((b, j) => {
+  if(i === j || !hasAgo) return { now: NaN, ago: NaN, change: NaN };
+  const now = windowCorrelation(a, b, nowFrom, to);
+  const ago = windowCorrelation(a, b, agoFrom, agoTo);
+  return { now, ago, change: now - ago };
+ }));
+
+ return {
+  corr: { dates: corrIndex.map(t => dates[t]), values: corrValues },
+  dispersion: corrIndex.map(t => dispersion[t]),
+  factor: { dates: factorDates, values: factorValues },
+  change: { matrix, now: [dates[nowFrom], dates[to - 1]], ago: hasAgo ? [dates[agoFrom], dates[agoTo - 1]] : null },
+ };
+}
+
+function lowerBound(sorted, value){
+ let lo = 0, hi = sorted.length;
+ while(lo < hi){
+  const mid = (lo + hi) >> 1;
+  if(sorted[mid] < value) lo = mid + 1; else hi = mid;
+ }
+ return lo;
+}
+
+function rangeStart(dates, key){
+ const range = LONG_RANGES.find(r => r.key === key);
+ if(!range || !range.years || !dates.length) return 0;
+ const cutoff = new Date(dates[dates.length - 1] + "T00:00:00Z");
+ cutoff.setUTCFullYear(cutoff.getUTCFullYear() - range.years);
+ return lowerBound(dates, cutoff.toISOString().slice(0, 10));
+}
+
+function renderRangeButtons(containerId, render){
+ const box = document.getElementById(containerId);
+ box.innerHTML = "";
+ LONG_RANGES.forEach(r => {
+  const btn = document.createElement("button");
+  btn.type = "button";
+  btn.className = "range-btn" + (r.key === DEFAULT_LONG_RANGE ? " active" : "");
+  btn.textContent = r.key;
+  btn.addEventListener("click", () => {
+   box.querySelectorAll(".range-btn").forEach(b => b.classList.toggle("active", b === btn));
+   render(r.key);
+  });
+  box.appendChild(btn);
+ });
+}
+
+function percentileRank(values, v){
+ let below = 0;
+ for(let i = 0; i < values.length; i++) if(values[i] < v) below++;
+ return 100 * below / values.length;
+}
+
+function percentileText(p){
+ const r = Math.round(p);
+ if(r < 1) return "below the 1st percentile";
+ if(r > 99) return "above the 99th percentile";
+ const s = ["th", "st", "nd", "rd"];
+ return r + (s[(r - 20) % 10] || s[r] || s[0]) + " percentile";
+}
+
+function monthAfter(ym){
+ const [y, m] = ym.split("-").map(Number);
+ return m === 12 ? (y + 1) + "-01" : y + "-" + String(m + 1).padStart(2, "0");
+}
+
+const recessionBands = {
+ id: "recessionBands",
+ beforeDatasetsDraw(chart, args, opts){
+  const labels = chart.data.labels, area = chart.chartArea, x = chart.scales.x;
+  if(!area || !labels || !labels.length) return;
+  const ctx = chart.ctx;
+  ctx.save();
+  ctx.beginPath();
+  ctx.rect(area.left, area.top, area.right - area.left, area.bottom - area.top);
+  ctx.clip();
+  ctx.fillStyle = opts.color || themeVar("--recession", "rgba(139,111,172,0.18)");
+  RECESSIONS.forEach(r => {
+   const first = lowerBound(labels, r.start + "-01");
+   const last = lowerBound(labels, monthAfter(r.end) + "-01") - 1;
+   if(first >= labels.length || last < first) return;
+   const x0 = x.getPixelForValue(first), x1 = x.getPixelForValue(last);
+   ctx.fillRect(x0, area.top, Math.max(x1 - x0, 1), area.bottom - area.top);
+  });
+  ctx.restore();
+ },
+};
+
+const latestLevel = {
+ id: "latestLevel",
+ afterDatasetsDraw(chart, args, opts){
+  if(!opts || !isFinite(opts.value)) return;
+  const { ctx, chartArea: area, scales } = chart;
+  const y = scales.y.getPixelForValue(opts.value);
+  ctx.save();
+  ctx.beginPath();
+  ctx.rect(area.left, area.top, area.right - area.left, area.bottom - area.top);
+  ctx.clip();
+  ctx.strokeStyle = opts.color;
+  ctx.lineWidth = 1;
+  ctx.setLineDash([4, 4]);
+  ctx.beginPath();
+  ctx.moveTo(area.left, y);
+  ctx.lineTo(area.right, y);
+  ctx.stroke();
+  const points = chart.getDatasetMeta(0).data;
+  const last = points[points.length - 1];
+  if(last){
+   ctx.setLineDash([]);
+   ctx.fillStyle = opts.dot;
+   ctx.beginPath();
+   ctx.arc(last.x, last.y, 3.5, 0, Math.PI * 2);
+   ctx.fill();
+  }
+  ctx.restore();
+ },
+};
+
+// Correlation and dispersion have unrelated units, so each gets its own panel
+// on the same dates, with zoom and hover linked.
+const STACK_Y_WIDTH = 64;
+function stackYAxis(extra){
+ return Object.assign({ afterFit: scale => { scale.width = STACK_Y_WIDTH; } }, extra || {});
+}
+function linkedZoom(group){
+ const d = Chart.defaults.plugins.zoom || {};
+ const sync = ({ chart }) => {
+  const { min, max } = chart.scales.x;
+  group.forEach(c => { if(c !== chart) c.zoomScale("x", { min, max }, "none"); });
+ };
+ return { zoom: { ...(d.zoom || {}), onZoomComplete: sync }, pan: { ...(d.pan || {}), onPanComplete: sync } };
+}
+function linkPanels(group){
+ group.forEach(c => {
+  // Properties rather than addEventListener: the canvases outlive each
+  // re-render (range buttons), and listeners would pile up.
+  c.canvas.ondblclick = () => group.forEach(o => o.resetZoom());
+  c.canvas.onmousemove = e => {
+   const els = c.getElementsAtEventForMode(e, "index", { intersect: false }, false);
+   if(!els.length) return;
+   const idx = els[0].index;
+   group.forEach(o => {
+    if(o === c) return;
+    const active = o.data.datasets
+     .map((d, di) => ({ datasetIndex: di, index: idx }))
+     .filter(a => o.isDatasetVisible(a.datasetIndex) && o.getDatasetMeta(a.datasetIndex).data[idx] && o.data.datasets[a.datasetIndex].data[idx] !== null);
+    if(!active.length) return;
+    const el = o.getDatasetMeta(active[0].datasetIndex).data[idx];
+    o.setActiveElements(active);
+    o.tooltip.setActiveElements(active, { x: el.x, y: el.y });
+    o.update("none");
+   });
+  };
+  c.canvas.onmouseleave = () => {
+   group.forEach(o => { if(o !== c){ o.setActiveElements([]); o.tooltip.setActiveElements([], { x: 0, y: 0 }); o.update("none"); } });
+  };
+ });
+}
+
+function lineDataset(label, data, color){
+ return { label, data, borderColor: color, backgroundColor: color, borderWidth: 1.5, pointRadius: 0, pointHoverRadius: 3, fill: false };
+}
+
+function corrAxisMin(){
+ return Math.min(0, Math.floor(Math.min(...LONG.corr.values) * 10) / 10);
+}
+
+function renderLongCorrChart(rangeKey){
+ const s = LONG.corr;
+ const i0 = rangeStart(s.dates, rangeKey);
+ const accent = themeGreedColor(), muted = themeMutedColor(), hair = themeHairColor();
+ if(longCorrChart) longCorrChart.destroy();
+ longCorrChart = new Chart(document.getElementById("longCorrChart").getContext("2d"), {
+  type: "line",
+  data: { labels: s.dates.slice(i0), datasets: [lineDataset("Average pairwise correlation", s.values.slice(i0), accent)] },
+  options: {
+   responsive: true,
+   maintainAspectRatio: false,
+   animation: false,
+   interaction: { mode: "index", intersect: false },
+   plugins: {
+    legend: { display: false },
+    tooltip: { callbacks: { label: c => "Avg. correlation: " + fixed(c.parsed.y, 2) } },
+    recessionBands: { color: themeVar("--recession", "rgba(139,111,172,0.18)") },
+    latestLevel: { value: s.values[s.values.length - 1], color: muted, dot: accent },
+   },
+   scales: {
+    x: { ticks: { color: muted, maxTicksLimit: 8 }, grid: { color: hair } },
+    y: { min: corrAxisMin(), max: 1, ticks: { color: muted }, grid: { color: hair } },
+   },
+  },
+  plugins: [recessionBands, latestLevel],
+ });
+}
+
+function renderDispersionPanels(rangeKey){
+ const s = LONG.corr;
+ const i0 = rangeStart(s.dates, rangeKey);
+ const labels = s.dates.slice(i0);
+ const accent = themeGreedColor(), ink = themeInkColor(), muted = themeMutedColor(), hair = themeHairColor();
+ const bands = { color: themeVar("--recession", "rgba(139,111,172,0.18)") };
+ const panelTitle = text => ({ display: true, text, color: muted, align: "start", font: { size: 11, weight: "normal" }, padding: { bottom: 4 } });
+ dispersionPanels.forEach(c => c.destroy());
+ const group = [];
+ group.push(new Chart(document.getElementById("dispCorrChart").getContext("2d"), {
+  type: "line",
+  data: { labels, datasets: [lineDataset("Average pairwise correlation", s.values.slice(i0), accent)] },
+  options: {
+   responsive: true,
+   maintainAspectRatio: false,
+   animation: false,
+   interaction: { mode: "index", intersect: false },
+   plugins: {
+    legend: { display: false },
+    zoom: linkedZoom(group),
+    title: panelTitle("Average pairwise correlation, 63 trading days"),
+    tooltip: { callbacks: { label: c => "Avg. correlation: " + fixed(c.parsed.y, 2) } },
+    recessionBands: bands,
+   },
+   scales: {
+    x: { ticks: { display: false }, grid: { color: hair } },
+    y: stackYAxis({ min: corrAxisMin(), max: 1, ticks: { color: muted }, grid: { color: hair } }),
+   },
+  },
+  plugins: [recessionBands],
+ }));
+ group.push(new Chart(document.getElementById("dispersionChart").getContext("2d"), {
+  type: "line",
+  data: { labels, datasets: [lineDataset("Dispersion", LONG.dispersion.slice(i0), ink)] },
+  options: {
+   responsive: true,
+   maintainAspectRatio: false,
+   animation: false,
+   interaction: { mode: "index", intersect: false },
+   plugins: {
+    legend: { display: false },
+    zoom: linkedZoom(group),
+    title: panelTitle("Standard deviation of the nine sectors' 21-day returns (%)"),
+    tooltip: { callbacks: { label: c => "Dispersion: " + fixed(c.parsed.y, 1) + "%" } },
+    recessionBands: bands,
+   },
+   scales: {
+    x: { ticks: { color: muted, maxTicksLimit: 8 }, grid: { color: hair } },
+    y: stackYAxis({ min: 0, ticks: { color: muted, callback: v => v + "%" }, grid: { color: hair } }),
+   },
+  },
+  plugins: [recessionBands],
+ }));
+ dispersionPanels = group;
+ linkPanels(group);
+}
+
+function renderFactorChart(rangeKey){
+ const s = LONG.factor;
+ const i0 = rangeStart(s.dates, rangeKey);
+ const accent = themeGreedColor(), muted = themeMutedColor(), hair = themeHairColor();
+ if(factorChart) factorChart.destroy();
+ factorChart = new Chart(document.getElementById("factorChart").getContext("2d"), {
+  type: "line",
+  data: { labels: s.dates.slice(i0), datasets: [lineDataset("First-factor share", s.values.slice(i0), accent)] },
+  options: {
+   responsive: true,
+   maintainAspectRatio: false,
+   animation: false,
+   interaction: { mode: "index", intersect: false },
+   plugins: {
+    legend: { display: false },
+    tooltip: { callbacks: { label: c => "First-factor share: " + fixed(c.parsed.y, 1) + "%" } },
+    recessionBands: { color: themeVar("--recession", "rgba(139,111,172,0.18)") },
+    latestLevel: { value: s.values[s.values.length - 1], color: muted, dot: accent },
+   },
+   scales: {
+    x: { ticks: { color: muted, maxTicksLimit: 8 }, grid: { color: hair } },
+    y: { min: 0, max: 100, ticks: { color: muted, callback: v => v + "%" }, grid: { color: hair } },
+   },
+  },
+  plugins: [recessionBands, latestLevel],
+ });
+}
+
+function renderLongRunReadouts(){
+ const c = LONG.corr, f = LONG.factor, disp = LONG.dispersion;
+ const corrNow = c.values[c.values.length - 1], dispNow = disp[disp.length - 1], shareNow = f.values[f.values.length - 1];
+ const corrSince = " of daily readings since " + usDate(c.dates[0]);
+ document.getElementById("longCorrReadout").innerHTML =
+  "Latest <strong>" + fixed(corrNow, 2) + "</strong> on " + usDate(c.dates[c.dates.length - 1]) + ", " + percentileText(percentileRank(c.values, corrNow)) + corrSince;
+ document.getElementById("dispersionReadout").innerHTML =
+  "Latest dispersion <strong>" + fixed(dispNow, 1) + "%</strong> on " + usDate(c.dates[c.dates.length - 1]) + ", " + percentileText(percentileRank(disp, dispNow)) + corrSince;
+ const sharePct = percentileText(percentileRank(f.values, shareNow));
+ document.getElementById("factorReadout").innerHTML =
+  "Latest <strong>" + fixed(shareNow, 1) + "%</strong> on " + usDate(f.dates[f.dates.length - 1]) + ", " + sharePct + " of daily readings since " + usDate(f.dates[0]);
+ document.getElementById("statFactorShare").textContent = fixed(shareNow, 1) + "%";
+ document.getElementById("statFactorShareNote").textContent = sharePct.charAt(0).toUpperCase() + sharePct.slice(1) + " since " + f.dates[0].slice(0, 4);
+}
+
+function changeColor(d){
+ const [r, g, b] = cssColorToRgb(d >= 0 ? themeGreedColor() : themeVar("--fear", "#f85149"));
+ const alpha = 0.55 * Math.min(1, Math.abs(d) / 0.5);
+ return "rgba(" + r + "," + g + "," + b + "," + alpha.toFixed(3) + ")";
+}
+
+function renderChangeHeatmap(){
+ const ch = LONG.change;
+ const names = SECTOR_LIST.map(s => s.name);
+ let html = "<thead><tr><th></th>" + names.map(n => `<th>${HEATMAP_ABBREV[n] || n}</th>`).join("") + "</tr></thead><tbody>";
+ names.forEach((rowName, i) => {
+  html += `<tr><th class="row-label">${rowName}</th>`;
+  names.forEach((colName, j) => {
+   if(i === j){ html += '<td class="diag"></td>'; return; }
+   const cell = ch.matrix[i][j];
+   if(!isFinite(cell.change)){ html += '<td class="na">n/a</td>'; return; }
+   const shown = fixed(cell.change, 2);
+   const title = rowName + " / " + colName + ": " + fixed(cell.now, 2) + " now, " + fixed(cell.ago, 2) + " a year ago";
+   html += `<td style="background:${changeColor(cell.change)}" title="${title}">${(Number(shown) > 0 ? "+" : "") + shown}</td>`;
+  });
+  html += "</tr>";
+ });
+ document.getElementById("changeHeatmapTable").innerHTML = html + "</tbody>";
+ document.getElementById("changeWindowsNote").textContent = ch.ago
+  ? "Last " + CORR_WINDOW + " trading days: " + usDate(ch.now[0]) + " to " + usDate(ch.now[1]) + ". Year-earlier window: " + usDate(ch.ago[0]) + " to " + usDate(ch.ago[1]) + ". Daily log returns."
+  : "n/a";
+}
+
+function longRunUnavailable(reason){
+ ["longCorrReadout", "dispersionReadout", "factorReadout", "changeWindowsNote"].forEach(id => { document.getElementById(id).textContent = "n/a"; });
+ document.getElementById("statFactorShare").textContent = "n/a";
+ const banner = document.getElementById("errorBanner");
+ const message = "Couldn't load the long-run sector history (" + reason + ").";
+ banner.textContent = banner.textContent ? banner.textContent + " " + message : message;
+ banner.style.display = "block";
+}
+
+async function loadLongRun(live){
+ try{
+  const history = await HISTORY_REQUEST;
+  if(history.loadError) throw new Error(history.loadError);
+  if(!history.dates || !history.series) throw new Error("unexpected format");
+  LONG = computeLongRun(buildDailyReturns(history, live));
+  if(!LONG.corr.values.length || !LONG.factor.values.length) throw new Error("not enough history");
+  renderLongRunReadouts();
+  renderChangeHeatmap();
+  [["longCorrRange", renderLongCorrChart], ["dispersionRange", renderDispersionPanels], ["factorRange", renderFactorChart]].forEach(([id, render]) => {
+   renderRangeButtons(id, render);
+   render(DEFAULT_LONG_RANGE);
+  });
+ }catch(e){
+  longRunUnavailable(e.message);
+ }
 }
 
 init();
