@@ -67,6 +67,12 @@ document.addEventListener("DOMContentLoaded", function(){
 .is-chart-fullscreen canvas{
  max-height:none !important;
 }
+.commentary{ background:var(--card); border:1px solid var(--hair); border-left:3px solid var(--greed); border-radius:10px; padding:18px 22px 20px; margin-bottom:30px; }
+.commentary-head{ display:flex; justify-content:space-between; align-items:baseline; flex-wrap:wrap; gap:6px 16px; }
+.commentary h2{ font-family:var(--serif); font-weight:400; font-size:18px; margin:0; }
+.commentary-date{ color:var(--muted); font-size:12px; }
+.commentary p{ font-size:14px; line-height:1.6; margin:10px 0 0; max-width:780px; }
+.chart-note{ font-size:12px; color:var(--muted); margin:6px 0 2px; line-height:1.5; max-width:820px; }
 </style>
 <script>
 // Expand-to-fullscreen button on every chart, matching the pattern from
@@ -693,16 +699,26 @@ h1{
 </div>
 <div class="updated" id="updated">Loading...</div>
 </div>
+<section class="commentary" aria-labelledby="commentaryTitle">
+<div class="commentary-head">
+<h2 id="commentaryTitle">Commentary</h2>
+<div class="commentary-date">As of the October 6, 2026 close</div>
+</div>
+<p>SPY closed at an all-time high on October 6, about six months after a 9.1% pullback that bottomed on March 30. The MSCI World Index is just 0.8% below its August 13 high.</p>
+<p>Only 16 S&amp;P 500 members, 3.2% of the index, are at all-time highs of their own, among them NVIDIA, AMD, Arista, Palo Alto Networks and Thermo Fisher. That's an ordinary share for a market at a record, and well below February 6, when 74 members were at highs. No member is at an all-time low.</p>
+</section>
 <div class="dd-section">
 <div class="dd-header"><div class="range-controls" id="ddRangeControls"></div></div>
 <div class="dd-grid">
 <div class="chart-box dd-box">
 <h2>S&amp;P 500 (SPY) % off of all-time highs</h2>
+<div class="chart-note">At a record on October 6. The deepest drawdown of the past year was 9.1%, on March 30.</div>
 <div class="dd-stats"><span class="dd-now" id="ddNow-SPY">…</span><span class="dd-meta" id="ddMeta-SPY"></span></div>
 <div class="chart-canvas-wrap"><canvas id="ddChart-SPY"></canvas></div>
 </div>
 <div class="chart-box dd-box">
 <h2>MSCI World Index (URTH) % off of all-time highs</h2>
+<div class="chart-note">0.8% below its August 13, 2026 high on October 6.</div>
 <div class="dd-stats"><span class="dd-now" id="ddNow-URTH">…</span><span class="dd-meta" id="ddMeta-URTH"></span></div>
 <div class="chart-canvas-wrap"><canvas id="ddChart-URTH"></canvas></div>
 </div>
@@ -734,6 +750,7 @@ h1{
 <div class="chart-box">
 <div class="chart-box-header">
 <h2>% of sample at all-time highs, over time</h2>
+<div class="chart-note">3% on October 6, close to the median of 2.6% since 1999. This year's peak was 74 stocks on February 6.</div>
 <div class="range-controls" id="rangeControls"></div>
 </div>
 <div class="chart-canvas-wrap">
@@ -788,6 +805,7 @@ h1{
 <div class="chart-box">
 <div class="chart-box-header">
 <h2>Number at ATH minus number at ATL, vs. S&amp;P 500</h2>
+<div class="chart-note">15 at highs and none at lows on October 6. This chart uses the site's own price history, which counts one fewer than TradingView's 16.</div>
 <div class="range-controls" id="netRangeControls"></div>
 </div>
 <div class="chart-canvas-wrap stacked" style="height:420px;">

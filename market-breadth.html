@@ -67,6 +67,12 @@ document.addEventListener("DOMContentLoaded", function(){
 .is-chart-fullscreen canvas{
  max-height:none !important;
 }
+.commentary{ background:var(--card); border:1px solid var(--hair); border-left:3px solid var(--greed); border-radius:10px; padding:18px 22px 20px; margin-bottom:30px; }
+.commentary-head{ display:flex; justify-content:space-between; align-items:baseline; flex-wrap:wrap; gap:6px 16px; }
+.commentary h2{ font-family:var(--serif); font-weight:400; font-size:18px; margin:0; }
+.commentary-date{ color:var(--muted); font-size:12px; }
+.commentary p{ font-size:14px; line-height:1.6; margin:10px 0 0; max-width:780px; }
+.chart-note{ font-size:12px; color:var(--muted); margin:6px 0 2px; line-height:1.5; max-width:820px; }
 </style>
 <script>
 // Expand-to-fullscreen button on every chart, matching the pattern from
@@ -695,11 +701,22 @@ h1{
 <div class="stat-note" id="statBeatNote">Rolling 12-month total return</div>
 </div>
 </div>
+
+<section class="commentary" aria-labelledby="commentaryTitle">
+<div class="commentary-head">
+<h2 id="commentaryTitle">Commentary</h2>
+<div class="commentary-date">As of the October 6, 2026 close</div>
+</div>
+<p>The S&amp;P 500 closed at a record on October 6 with only half of its members above their 200-day moving average. The 50.3% reading ranks in the 23rd percentile since 1999 and is down from 67.1% a month earlier.</p>
+<p>The advance-decline line hasn't confirmed the new high. It peaked on August 14 and is still below that level, so more stocks have fallen than risen since then even as the index climbed.</p>
+<p>Over the past 12 months, 34.4% of members beat the index, the 11th percentile since 1999, and the median member trailed it by 11.9 points. A small group of large stocks is doing most of the work. The narrowest reading on record was 19.7% in April 2000.</p>
+</section>
 <div class="chart-box" id="dayChangeBox">
 <div class="chart-box-header">
 <div>
 <h2>Day's change distribution</h2>
 <div class="chart-subhead" id="dayChangeAsOf">…</div>
+<div class="chart-note">On October 6, 339 members rose and 162 fell, a broad up day.</div>
 </div>
 <div class="range-controls" id="dayChangeRangeControls"></div>
 </div>
@@ -716,6 +733,7 @@ h1{
 <div class="chart-box">
 <div class="chart-box-header">
 <h2>Daily advance-decline vs. S&amp;P 500</h2>
+<div class="chart-note">Advances beat declines on only 9 of the 21 trading days through October 6, even with the index near its high.</div>
 <div class="range-controls" id="adRangeControls"></div>
 </div>
 <div class="chart-canvas-wrap stacked" style="height:400px;">
@@ -726,6 +744,7 @@ h1{
 <div class="chart-box">
 <div class="chart-box-header">
 <h2>Cumulative advance-decline line vs. S&amp;P 500</h2>
+<div class="chart-note">The line peaked on August 14, 2026 and sits about 1,700 below that peak, while the S&amp;P 500 set a record on October 6.</div>
 <div class="range-controls" id="adCumRangeControls"></div>
 </div>
 <div class="chart-canvas-wrap stacked" style="height:420px;">
@@ -736,6 +755,7 @@ h1{
 <div class="chart-box">
 <div class="chart-box-header">
 <h2>% of constituents above their 200-day moving average</h2>
+<div class="chart-note">50.3% on October 6, against a median of 66.5% since 1999.</div>
 <div class="range-controls" id="smaRangeControls"></div>
 </div>
 <div class="chart-canvas-wrap">
@@ -745,6 +765,7 @@ h1{
 <div class="chart-box">
 <div class="chart-box-header">
 <h2>52-week new highs vs. new lows</h2>
+<div class="chart-note">16 new highs and 4 new lows on October 6. Over the 21 trading days through October 6, the daily counts added up to 404 new lows and 198 new highs.</div>
 <div class="range-controls" id="hlRangeControls"></div>
 </div>
 <div class="chart-canvas-wrap">
@@ -756,6 +777,7 @@ h1{
 <div>
 <h2>% of members beating the index, rolling 12 months</h2>
 <div class="chart-subhead">Share of S&amp;P 500 members whose 12-month total return beat the S&amp;P 500 total return index. Dashed where fewer than 75% of that date's members have price data.</div>
+<div class="chart-note">34.4% on October 6, the 11th percentile since 1999. The median member trailed the index by 11.9 points over the year.</div>
 </div>
 <div class="range-controls" id="beatRangeControls"></div>
 </div>

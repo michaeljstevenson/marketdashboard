@@ -447,6 +447,12 @@ table.heatmap td.na{ color:var(--muted); opacity:0.35; }
  border-color:#f0b8b0;
  color:#a83a30;
 }
+.commentary{ background:var(--card); border:1px solid var(--hair); border-left:3px solid var(--greed); border-radius:10px; padding:18px 22px 20px; margin-bottom:30px; }
+.commentary-head{ display:flex; justify-content:space-between; align-items:baseline; flex-wrap:wrap; gap:6px 16px; }
+.commentary h2{ font-family:var(--serif); font-weight:400; font-size:18px; margin:0; }
+.commentary-date{ color:var(--muted); font-size:12px; }
+.commentary p{ font-size:14px; line-height:1.6; margin:10px 0 0; max-width:780px; }
+.chart-note{ font-size:12px; color:var(--muted); margin:6px 0 2px; line-height:1.5; max-width:820px; }
 </style>
 <script src="date-format.js"></script>
 <link rel="stylesheet" href="/site.css">
@@ -595,12 +601,23 @@ table.heatmap td.na{ color:var(--muted); opacity:0.35; }
 </div>
 </div>
 
+<section class="commentary" aria-labelledby="commentaryTitle">
+<div class="commentary-head">
+<h2 id="commentaryTitle">Commentary</h2>
+<div class="commentary-date">As of the October 6, 2026 close, full history since 1928</div>
+</div>
+<p>September 2026 slipped 0.45%, which fits its history. It's the only month with a negative average return since 1928 (-1.11%) and the only one that rose in fewer than half of years (44%). The S&amp;P 500 is up 11.8% for 2026 through September.</p>
+<p>The calendar now turns in the index's favor. The fourth quarter has averaged +2.86%, the best of the four, and has been positive in 74% of years. December has the highest hit rate of any month, at 72%.</p>
+<p>Some well-known patterns have faded. Monday is the only weekday with a negative average since 1928, but since 2000 Monday has averaged +0.02%, about the same as the rest of the week. Monthly averages also swing a lot from year to year, so even September's weakness is only borderline significant (a t-statistic of about -2).</p>
+</section>
+
 <div class="chart-grid-2">
 <div class="chart-box">
 <div class="chart-box-header">
 <div>
 <h2>Average daily return by day of week</h2>
 <div class="chart-subhead"></div>
+<div class="chart-note">Since 1928, Monday averaged -0.06% and Wednesday +0.08%. Since 2000, every weekday has averaged between +0.01% and +0.06%.</div>
 </div>
 <div class="view-tabs" data-view-tabs="dowTable">
 <button class="view-tab active" data-view="table" type="button">Table</button>
@@ -618,6 +635,7 @@ table.heatmap td.na{ color:var(--muted); opacity:0.35; }
 <div>
 <h2>Average daily return by day of month</h2>
 <div class="chart-subhead"></div>
+<div class="chart-note">The first two trading days of the month have been the strongest, about +0.16% to +0.17% on average since 1950, the turn-of-the-month effect.</div>
 </div>
 <div class="view-tabs" data-view-tabs="domTable">
 <button class="view-tab active" data-view="table" type="button">Table</button>
@@ -637,6 +655,7 @@ table.heatmap td.na{ color:var(--muted); opacity:0.35; }
 <div>
 <h2>Average monthly return by calendar month</h2>
 <div class="chart-subhead">Return each calendar month, averaged across every year.</div>
+<div class="chart-note">September is the weakest month since 1928 (-1.11%) and July the strongest (+1.67%).</div>
 </div>
 <div class="view-tabs" data-view-tabs="monthTable">
 <button class="view-tab active" data-view="table" type="button">Table</button>
@@ -654,6 +673,7 @@ table.heatmap td.na{ color:var(--muted); opacity:0.35; }
 <div>
 <h2>Average quarterly return</h2>
 <div class="chart-subhead">Return each calendar quarter, averaged across every year. </div>
+<div class="chart-note">The fourth quarter leads at +2.86% since 1928, positive in 74% of years.</div>
 </div>
 <div class="view-tabs" data-view-tabs="quarterTable">
 <button class="view-tab active" data-view="table" type="button">Table</button>
