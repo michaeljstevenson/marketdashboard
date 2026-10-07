@@ -66,6 +66,12 @@ document.addEventListener("DOMContentLoaded", function(){
 .is-chart-fullscreen canvas{
  max-height:none !important;
 }
+.commentary{ background:var(--card); border:1px solid var(--hair); border-left:3px solid var(--greed); border-radius:10px; padding:18px 22px 20px; margin-bottom:30px; }
+.commentary-head{ display:flex; justify-content:space-between; align-items:baseline; flex-wrap:wrap; gap:6px 16px; }
+.commentary h2{ font-family:var(--serif); font-weight:400; font-size:18px; margin:0; }
+.commentary-date{ color:var(--muted); font-size:12px; }
+.commentary p{ font-size:14px; line-height:1.6; margin:10px 0 0; max-width:780px; }
+.chart-note{ font-size:12px; color:var(--muted); margin:6px 0 2px; line-height:1.5; max-width:820px; }
 </style>
 <script>
 // Expand-to-fullscreen button on every chart, matching the pattern from
@@ -812,12 +818,24 @@ table.heat-table tr.heat-group td{
 </div>
 </div>
 
+<section class="commentary" aria-labelledby="commentaryTitle">
+<div class="commentary-head">
+<h2 id="commentaryTitle">Commentary</h2>
+<div class="commentary-date">As of October 7, 2026</div>
+</div>
+<p>International stocks have led the US since November 2024, but only by 7.8%, and most of that came back out this year. The lead peaked at 23.4% in February 2026, and over the last month developed markets fell 5.0% while SPY rose 0.8%. The developed/US ratio still sits at its lowest level since 2003.</p>
+<p>Over the past 12 months, developed markets trailed the US by 4.8 points, and the dollar explains all of it and more. Local stock markets actually beat the US by 2.3 points (the hedged fund minus SPY), but the stronger dollar took 7.2 points off what a US investor earned.</p>
+<p>Diversification abroad has been unusually effective. The 36-month correlation between EFA and SPY is 0.63, the lowest reading since 2004, and returns inside the index are far apart: Japan is up 24.8% over the past year and emerging markets 27.0%, while France is down 3.2% and China 20.1%.</p>
+</section>
+
+
 <div class="chart-grid">
 <div class="chart-box">
 <div class="chart-box-header">
 <div>
 <h2>Developed / US ratio, since 2003</h2>
 <div class="chart-subhead">EFA adjusted close ÷ SPY adjusted close, indexed to 100 at EEM's inception. Rising means developed international is outperforming.</div>
+<div class="chart-note">46.5 on October 6, the lowest point in the series.</div>
 </div>
 </div>
 <div class="ndr-panel">
@@ -860,6 +878,7 @@ table.heat-table tr.heat-group td{
 <div>
 <h2>International vs. US gap split into currency and local markets</h2>
 <div class="chart-subhead" id="splitSubhead">Each bar is one calendar year's EFA minus SPY total return in percentage points, split into a local-market part (hedged HEFA minus SPY) and a currency part (EFA minus HEFA). The marker is the total gap. The current year is year to date.</div>
+<div class="chart-note">In 2026 so far, the dollar's rise accounts for most of the 5.6-point gap (currency -4.7, local markets -0.9). In 2025 both parts favored international stocks.</div>
 </div>
 <div class="toggle-group" id="splitToggle">
 <button class="toggle-btn active" type="button" data-view="etf">2015 to date (ETFs)</button>
@@ -877,6 +896,7 @@ table.heat-table tr.heat-group td{
 <div class="table-box-header">
 <h2>Trailing return ladder</h2>
 <div class="chart-subhead">Total return (dividends reinvested) by region, as of the last close.</div>
+<div class="chart-note">The US leads developed markets over every period shown, from one month to ten years. Emerging markets lead the US over one and three years (+27.0% and +24.1% a year).</div>
 </div>
 <table id="ladderTable">
 <thead><tr id="ladderHead"></tr></thead>
@@ -891,6 +911,7 @@ table.heat-table tr.heat-group td{
 <div class="table-box-header">
 <h2>Country ETF returns</h2>
 <div class="chart-subhead" id="heatSubhead">Total return in US dollars by country ETF, as of the last close. Green cells are gains and red cells are losses, shaded by size within each column.</div>
+<div class="chart-note">Over one year, Japan (+24.8%), Spain (+21.7%) and the Netherlands (+19.2%) beat the US (+16.9%), while China (-20.1%), France (-3.2%) and Germany (-1.1%) fell.</div>
 <div class="toggle-group" id="heatToggle">
 <button class="toggle-btn active" type="button" data-mode="abs">USD return</button>
 <button class="toggle-btn" type="button" data-mode="rel">Minus US</button>
@@ -924,6 +945,7 @@ table.heat-table tr.heat-group td{
 <div>
 <h2>International vs. US leadership cycles, since 1975</h2>
 <div class="chart-subhead">International cumulative dollar return ÷ US cumulative dollar return, monthly, 100 at the end of 1974, log scale. Shaded spans are international-led legs. Dots mark turning points, where the line reversed at least 20%.</div>
+<div class="chart-note">The current international-led leg is 23 months old, about the median length of the six completed ones (24 months), but its +7.8% is far below their median gain of 69.6%.</div>
 </div>
 </div>
 <div class="ndr-panel">
@@ -953,6 +975,7 @@ table.heat-table tr.heat-group td{
 <div>
 <h2>Rolling 36-month correlation with the US</h2>
 <div class="chart-subhead">Pearson correlation of monthly dollar returns with the US over the trailing 36 months. Solid lines are the ETFs (EFA and EEM vs. SPY). Dashed lines are the Ken French indexes vs. the US market.</div>
+<div class="chart-note">0.63 for EFA vs. SPY through September 2026, the lowest since the series starts in 2004. Over Ken French's history, the 2000s and 2010s averaged about 0.84.</div>
 </div>
 </div>
 <div class="ndr-panel">

@@ -66,6 +66,12 @@ document.addEventListener("DOMContentLoaded", function(){
 .is-chart-fullscreen canvas{
  max-height:none !important;
 }
+.commentary{ background:var(--card); border:1px solid var(--hair); border-left:3px solid var(--greed); border-radius:10px; padding:18px 22px 20px; margin-bottom:30px; }
+.commentary-head{ display:flex; justify-content:space-between; align-items:baseline; flex-wrap:wrap; gap:6px 16px; }
+.commentary h2{ font-family:var(--serif); font-weight:400; font-size:18px; margin:0; }
+.commentary-date{ color:var(--muted); font-size:12px; }
+.commentary p{ font-size:14px; line-height:1.6; margin:10px 0 0; max-width:780px; }
+.chart-note{ font-size:12px; color:var(--muted); margin:6px 0 2px; line-height:1.5; max-width:820px; }
 </style>
 <script>
 // Expand-to-fullscreen button on every chart, matching the pattern from
@@ -856,11 +862,23 @@ table.datatable tbody td:first-child{
 </div>
 </div>
 
+<section class="commentary" aria-labelledby="commentaryTitle">
+<div class="commentary-head">
+<h2 id="commentaryTitle">Commentary</h2>
+<div class="commentary-date">As of the October 6, 2026 close</div>
+</div>
+<p>Sectors are moving more independently than at almost any point since 1999. The average correlation among the nine original sector ETFs over the last 63 trading days is 0.13, the lowest 1% of daily readings in that history, and the first factor explains just 34.5% of their combined movement, also a 1st-percentile reading.</p>
+<p>The sectors are still moving a lot. Dispersion, how far apart their one-month returns are, sits in the 73rd percentile, so they're moving sharply in different directions. That's when sector weights matter most for a portfolio.</p>
+<p>Almost every pair is less correlated than a year ago. Energy has come loose the most, with its correlation to Industrials down 0.45 and to Consumer Discretionary down 0.42, and Technology's correlation to Communication Services is down 0.40.</p>
+</section>
+
+
 <div class="chart-box">
 <div class="chart-box-header">
 <div>
 <h2>Full-period pairwise correlation matrix</h2>
 <div class="chart-subhead">Pearson correlation of daily returns between each pair of sector ETFs, trailing ~2 years</div>
+<div class="chart-note">Over the full two years, Consumer Discretionary and Communication Services have moved together most (0.75) and Technology and Consumer Staples least (-0.10).</div>
 </div>
 </div>
 <div class="heatmap-wrap">
@@ -873,6 +891,7 @@ table.datatable tbody td:first-child{
 <div>
 <h2>Change in pairwise correlation over the last year</h2>
 <div class="chart-subhead">Each pair's correlation over the last 63 trading days minus the same pair's correlation over the 63 trading days that ended one year (252 trading days) earlier, all 11 sectors</div>
+<div class="chart-note">Nearly every pair fell. Energy's drops against Industrials (-0.45) and Consumer Discretionary (-0.42) are the largest.</div>
 </div>
 </div>
 <div class="chart-legend-custom">
@@ -891,6 +910,7 @@ table.datatable tbody td:first-child{
 <div>
 <h2>Average pairwise correlation over time</h2>
 <div class="chart-subhead">Rolling 63-trading-day average across all 55 sector pairs. Rises when sectors move together (broad risk-on/risk-off), falls when sector-specific stories dominate</div>
+<div class="chart-note">0.16 across all 55 pairs on October 6, against a two-year average of 0.38.</div>
 </div>
 </div>
 <div class="chart-canvas-wrap">
@@ -903,6 +923,7 @@ table.datatable tbody td:first-child{
 <div>
 <h2>Average pairwise correlation since 1999</h2>
 <div class="chart-subhead">Rolling 63-trading-day average of the 36 pairwise correlations among the nine original SPDR sector ETFs</div>
+<div class="chart-note">0.13 on October 6, in the lowest 1% of daily readings since March 1999.</div>
 <div class="chart-readout" id="longCorrReadout">Loading...</div>
 </div>
 <div class="range-controls" id="longCorrRange"></div>
@@ -923,6 +944,7 @@ table.datatable tbody td:first-child{
 <div>
 <h2>Sector dispersion and average correlation</h2>
 <div class="chart-subhead">Average pairwise correlation of the nine original sectors (top) and the cross-sectional standard deviation of their trailing 21-trading-day returns (bottom)</div>
+<div class="chart-note">Dispersion is 3.9%, the 73rd percentile, while correlation is near its low.</div>
 <div class="chart-readout" id="dispersionReadout">Loading...</div>
 </div>
 <div class="range-controls" id="dispersionRange"></div>
@@ -942,6 +964,7 @@ table.datatable tbody td:first-child{
 <div>
 <h2>Share of sector variance explained by the first factor</h2>
 <div class="chart-subhead">Largest eigenvalue of the nine original sectors' rolling 126-trading-day correlation matrix divided by 9, which is the share of their total variance captured by the first principal component</div>
+<div class="chart-note">34.5% on October 6, the 1st percentile of readings since 1999.</div>
 <div class="chart-readout" id="factorReadout">Loading...</div>
 </div>
 <div class="range-controls" id="factorRange"></div>
@@ -962,6 +985,7 @@ table.datatable tbody td:first-child{
 <div>
 <h2>Average correlation vs. SPY realized volatility</h2>
 <div class="chart-subhead">Each point is one trading day: x-axis is that day's trailing-63-day annualized SPY realized volatility, y-axis is that day's trailing-63-day average pairwise sector correlation. Testing the "correlations go to 1 in a crisis" claim directly</div>
+<div class="chart-note">Higher-volatility stretches have come with higher sector correlation over the past two years (Pearson r = 0.85 on overlapping windows).</div>
 </div>
 </div>
 <div class="scatter-canvas-wrap">
@@ -974,6 +998,7 @@ table.datatable tbody td:first-child{
 <div class="table-box-header">
 <h2>Correlation to the market</h2>
 <div class="chart-subhead">Each sector's correlation to SPY, full ~2-year period. Lower means more diversifying against a broad market position</div>
+<div class="chart-note">Technology tracks SPY most closely (0.89) and Consumer Staples least (0.20).</div>
 </div>
 <table class="datatable" id="marketCorrTable">
 <thead><tr><th>Sector</th><th>Corr. to SPY</th></tr></thead>

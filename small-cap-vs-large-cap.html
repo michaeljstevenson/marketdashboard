@@ -66,6 +66,12 @@ document.addEventListener("DOMContentLoaded", function(){
 .is-chart-fullscreen canvas{
  max-height:none !important;
 }
+.commentary{ background:var(--card); border:1px solid var(--hair); border-left:3px solid var(--greed); border-radius:10px; padding:18px 22px 20px; margin-bottom:30px; }
+.commentary-head{ display:flex; justify-content:space-between; align-items:baseline; flex-wrap:wrap; gap:6px 16px; }
+.commentary h2{ font-family:var(--serif); font-weight:400; font-size:18px; margin:0; }
+.commentary-date{ color:var(--muted); font-size:12px; }
+.commentary p{ font-size:14px; line-height:1.6; margin:10px 0 0; max-width:780px; }
+.chart-note{ font-size:12px; color:var(--muted); margin:6px 0 2px; line-height:1.5; max-width:820px; }
 </style>
 <script>
 // Expand-to-fullscreen button on every chart, matching the pattern from
@@ -748,6 +754,17 @@ tr.row-total td{ border-top:1px solid var(--muted); }
 </div>
 </div>
 
+<section class="commentary" aria-labelledby="commentaryTitle">
+<div class="commentary-head">
+<h2 id="commentaryTitle">Commentary</h2>
+<div class="commentary-date">As of October 7, 2026</div>
+</div>
+<p>Small caps are near one of their weakest stretches against large caps. Over the past five years, the smallest fifth of US stocks trailed the largest by 7.9% a year, the 13th percentile of five-year spans since 1931, and the IWM/SPY ratio is 47% below its April 2011 peak. The past month added to it: IWM fell 5.9% while SPY rose 1.1%.</p>
+<p>Readings this low have tended to come before small-cap rebounds. When the five-year spread was in its bottom tenth, small caps beat large by about 13.5% a year over the following five years. That rests on only five or six separate episodes since 1931, so it's a thin basis, and today's reading sits just above that bottom tenth.</p>
+<p>Within small caps, the S&amp;P 600's profitability screen has paid over time. It has beaten the Russell 2000 by 1.27% a year since 2000 and in 14 of 25 full years. It trailed in 2023, 2024 and 2025, but leads so far in 2026 (+15.0% vs. +13.6%).</p>
+</section>
+
+
 <div class="chart-box">
 <div class="chart-box-header">
 <div>
@@ -765,6 +782,7 @@ tr.row-total td{ border-top:1px solid var(--muted); }
 <div>
 <h2>Small-cap / large-cap ratio drawdown, since 2000</h2>
 <div class="chart-subhead">How far the IWM/SPY ratio sits below its highest level up to each day. Zero marks a new high for small caps relative to large caps.</div>
+<div class="chart-note">47% below the April 2011 peak. The low point was 49% below, on April 11, 2025.</div>
 </div>
 </div>
 <div class="chart-canvas-wrap short">
@@ -777,6 +795,7 @@ tr.row-total td{ border-top:1px solid var(--muted); }
 <div class="table-box-header">
 <h2>Trailing return ladder</h2>
 <div class="chart-subhead">Total return (dividends reinvested) by cap size, as of the last close.</div>
+<div class="chart-note">Large caps lead small caps over every period from one month to ten years. Over ten years, SPY returned 15.5% a year and IWM 9.9%.</div>
 </div>
 <table id="ladderTable">
 <thead><tr id="ladderHead"></tr></thead>
@@ -804,6 +823,7 @@ tr.row-total td{ border-top:1px solid var(--muted); }
 <div>
 <h2>Rolling 10-year small-cap vs. large-cap return, since 1936</h2>
 <div class="chart-subhead">Annualized return of the smallest fifth of U.S. stocks by market value relative to the largest fifth, over each trailing 10 years (Ken French size quintiles, value-weighted). The second line is IWM relative to SPY over the same window, from 2010.</div>
+<div class="chart-note">Small caps have trailed large by 4.7% a year over the past ten years, using IWM and SPY for the most recent months.</div>
 </div>
 </div>
 <div class="chart-canvas-wrap">
@@ -816,6 +836,7 @@ tr.row-total td{ border-top:1px solid var(--muted); }
 <div class="table-box-header">
 <h2>Size returns by decade, since 1926</h2>
 <div class="chart-subhead">Annualized total return of the smallest and largest fifths of U.S. stocks by market value, value-weighted. Relative is the annualized return of small divided by large.</div>
+<div class="chart-note">Small beat large by 8.4% a year in the 2000s, then trailed by 3.0% in the 2010s and 3.1% so far in the 2020s.</div>
 </div>
 <table id="decadeTable">
 <thead><tr><th>Decade</th><th>Months</th><th>Smallest fifth</th><th>Largest fifth</th><th>Relative</th></tr></thead>
@@ -863,6 +884,7 @@ tr.row-total td{ border-top:1px solid var(--muted); }
 <div class="table-box-header">
 <h2>S&amp;P 600 vs. Russell 2000 (IJR vs. IWM), since 2000</h2>
 <div class="chart-subhead" id="ijrTableSub">Total return through the last close. Volatility is the standard deviation of daily returns, annualized.</div>
+<div class="chart-note">IJR leads IWM by 1.27% a year since 2000, with a slightly lower volatility and a similar worst drawdown in 2007 to 2009.</div>
 </div>
 <table id="ijrTable">
 <thead><tr><th>ETF</th><th>Annualized return</th><th>Annualized volatility</th><th>Max drawdown</th><th>Peak to trough</th><th>Current drawdown</th><th>Growth of $1</th></tr></thead>
@@ -890,6 +912,7 @@ tr.row-total td{ border-top:1px solid var(--muted); }
 <div>
 <h2>Calendar-year returns, IJR and IWM</h2>
 <div class="chart-subhead">Total return each calendar year. The first year starts at the first shared day and the current year is year to date (both marked *).</div>
+<div class="chart-note">IJR lagged in 2023, 2024 and 2025 and is ahead so far in 2026.</div>
 </div>
 </div>
 <div class="chart-canvas-wrap">
