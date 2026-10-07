@@ -66,6 +66,12 @@ document.addEventListener("DOMContentLoaded", function(){
 .is-chart-fullscreen canvas{
  max-height:none !important;
 }
+.commentary{ background:var(--card); border:1px solid var(--hair); border-left:3px solid var(--greed); border-radius:10px; padding:18px 22px 20px; margin-bottom:30px; }
+.commentary-head{ display:flex; justify-content:space-between; align-items:baseline; flex-wrap:wrap; gap:6px 16px; }
+.commentary h2{ font-family:var(--serif); font-weight:400; font-size:18px; margin:0; }
+.commentary-date{ color:var(--muted); font-size:12px; }
+.commentary p{ font-size:14px; line-height:1.6; margin:10px 0 0; max-width:780px; }
+.chart-note{ font-size:12px; color:var(--muted); margin:6px 0 2px; line-height:1.5; max-width:820px; }
 </style>
 <script>
 // Expand-to-fullscreen button on every chart, matching the pattern from
@@ -707,11 +713,23 @@ tbody td:nth-child(3){ color:var(--muted); font-size:11px; }
 </div>
 </div>
 
+<section class="commentary" aria-labelledby="commentaryTitle">
+<div class="commentary-head">
+<h2 id="commentaryTitle">Commentary</h2>
+<div class="commentary-date">As of October 7, 2026</div>
+</div>
+<p>Analysts are raising their numbers. Over the past 30 days, 4,007 S&amp;P 500 estimate revisions were up and 1,426 down, and the combined next-twelve-months EPS of the index has risen 5.7% over 90 days, to $402.21 in index points.</p>
+<p>Two sectors are doing most of the lifting. Energy's forward earnings are up 15.0% over 90 days and Technology's 9.8%, with Technology also showing the broadest upgrades (a net revision ratio of +0.61). Refiners such as Marathon Petroleum, Phillips 66 and Valero are among the biggest upgrades this month, along with Dell and Micron.</p>
+<p>Elsewhere the picture is flat to soft. Consumer Discretionary and Communication Services estimates slipped about 1% over 30 days, and Materials is the only sector with more downgrades than upgrades.</p>
+</section>
+
+
 <div class="chart-box">
 <div class="chart-box-header">
 <div>
 <h2>S&amp;P 500 forward earnings over the last 90 days</h2>
 <div class="chart-box-sub" id="fwdSub">Change in the combined next-twelve-months EPS estimates of the S&amp;P 500's members since 7, 30, 60 and 90 days ago, for the index and each sector.</div>
+<div class="chart-note">+0.8% over 7 days, +1.4% over 30 and +5.7% over 90 for the index.</div>
 </div>
 </div>
 <div class="chart-canvas-wrap short">
@@ -735,6 +753,7 @@ tbody td:nth-child(3){ color:var(--muted); font-size:11px; }
 <div>
 <h2>By sector</h2>
 <div class="chart-box-sub" id="sectorChartSub">Net Revision Ratio: share of analysts revising up minus down, trailing 30 days.</div>
+<div class="chart-note">Technology leads on breadth (+0.61) and Energy on drift (+3.6% in 30 days). Materials is the only negative ratio (-0.15).</div>
 </div>
 <div class="toggle-group">
 <button class="toggle-btn active" id="btnBreadth">Breadth (Net Revision Ratio)</button>

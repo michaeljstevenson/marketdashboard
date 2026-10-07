@@ -66,6 +66,12 @@ document.addEventListener("DOMContentLoaded", function(){
 .is-chart-fullscreen canvas{
  max-height:none !important;
 }
+.commentary{ background:var(--card); border:1px solid var(--hair); border-left:3px solid var(--greed); border-radius:10px; padding:18px 22px 20px; margin-bottom:30px; }
+.commentary-head{ display:flex; justify-content:space-between; align-items:baseline; flex-wrap:wrap; gap:6px 16px; }
+.commentary h2{ font-family:var(--serif); font-weight:400; font-size:18px; margin:0; }
+.commentary-date{ color:var(--muted); font-size:12px; }
+.commentary p{ font-size:14px; line-height:1.6; margin:10px 0 0; max-width:780px; }
+.chart-note{ font-size:12px; color:var(--muted); margin:6px 0 2px; line-height:1.5; max-width:820px; }
 </style>
 <script>
 // Expand-to-fullscreen button on every chart, matching the pattern from
@@ -834,11 +840,23 @@ tbody td:nth-child(2){
 </div>
 </div>
 
+<section class="commentary" aria-labelledby="commentaryTitle">
+<div class="commentary-head">
+<h2 id="commentaryTitle">Commentary</h2>
+<div class="commentary-date">As of the October 7, 2026 close, reports from Q4 2016 to Q3 2026</div>
+</div>
+<p>Almost all of the market's response to an earnings surprise happens around the report itself. Across 19,008 reports, the biggest beats outran the biggest misses by 4.3 points from the day before the report to the day after, with a t-statistic above 20.</p>
+<p>What happens after that is much smaller. Over the next 60 trading days the gap between the two groups widened by another 1.0 point on average, positive in 68% of quarters but only borderline significant (t = 1.7). The drift Ball and Brown found in 1968 still shows up in today's S&amp;P 500, faintly.</p>
+<p>It may be fading further. The yearly gap averaged 1.1 points from 2016 to 2020 and 0.6 points from 2021 to 2026, though single years swing from about -3 to +4 points. In the reports since mid-May, 427 members beat and 53 missed.</p>
+</section>
+
+
 <div class="chart-box">
 <div class="chart-box-header">
 <div>
 <h2>Return relative to SPY around earnings reports, by size of surprise</h2>
 <div class="chart-subhead">Each quarter's reports are split into fifths by earnings surprise, from the biggest misses (1) to the biggest beats (5). Lines show each fifth's average cumulative return relative to SPY from the close the day before the report date (day -1), five trading days before through 60 after.</div>
+<div class="chart-note">The biggest misses fell about 2% around the report and the biggest beats rose about 2.3%. After day +1 the lines mostly flatten.</div>
 </div>
 </div>
 <div class="ndr-panel">
@@ -854,6 +872,7 @@ tbody td:nth-child(2){
 <div>
 <h2>Reaction and drift by surprise fifth</h2>
 <div class="chart-subhead">Reaction is the return relative to SPY from the close before the report date to the close the day after it, which covers reports before the open and after the close. Drift is what followed, from that close to 20 and 60 trading days after the report date. The last rows average each quarter's top-minus-bottom gap across quarters, with Newey-West t-statistics.</div>
+<div class="chart-note">The top-minus-bottom gap is 4.27 points for the reaction, 0.40 to day 20 and 0.98 to day 60.</div>
 </div>
 </div>
 <div style="overflow-x:auto;"><table class="method-table" id="groupTable"></table></div>
@@ -864,6 +883,7 @@ tbody td:nth-child(2){
 <div>
 <h2>Has the drift faded?</h2>
 <div class="chart-subhead">Average gap between the top and bottom surprise fifths each calendar year, for the 60-day drift and for the reaction around the report. The most recent quarters don't have 60 days of drift yet and are left out of the drift bars.</div>
+<div class="chart-note">Drift gaps ranged from -2.8 points (2026 so far) to +3.9 (2020).</div>
 </div>
 </div>
 <div class="ndr-panel">
@@ -879,6 +899,7 @@ tbody td:nth-child(2){
 <div>
 <h2>60-day drift after beats and misses, by sector</h2>
 <div class="chart-subhead">Average drift relative to SPY from the day after the report to 60 trading days after it, for reports that beat or missed the consensus estimate, across all ten years. Sectors with fewer than <span id="sectorMin">40</span> beats or misses are left out.</div>
+<div class="chart-note">Energy and Consumer Discretionary show the clearest split between beats and misses. In Technology, misses drifted up more than beats.</div>
 </div>
 </div>
 <div class="ndr-panel">

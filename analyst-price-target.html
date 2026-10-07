@@ -66,6 +66,12 @@ document.addEventListener("DOMContentLoaded", function(){
 .is-chart-fullscreen canvas{
  max-height:none !important;
 }
+.commentary{ background:var(--card); border:1px solid var(--hair); border-left:3px solid var(--greed); border-radius:10px; padding:18px 22px 20px; margin-bottom:30px; }
+.commentary-head{ display:flex; justify-content:space-between; align-items:baseline; flex-wrap:wrap; gap:6px 16px; }
+.commentary h2{ font-family:var(--serif); font-weight:400; font-size:18px; margin:0; }
+.commentary-date{ color:var(--muted); font-size:12px; }
+.commentary p{ font-size:14px; line-height:1.6; margin:10px 0 0; max-width:780px; }
+.chart-note{ font-size:12px; color:var(--muted); margin:6px 0 2px; line-height:1.5; max-width:820px; }
 </style>
 <script>
 // Expand-to-fullscreen button on every chart, matching the pattern from
@@ -845,6 +851,17 @@ tbody td:nth-child(2){
 </div>
 </div>
 
+<section class="commentary" aria-labelledby="commentaryTitle">
+<div class="commentary-head">
+<h2 id="commentaryTitle">Commentary</h2>
+<div class="commentary-date">As of October 7, 2026, targets from the October company overview</div>
+</div>
+<p>Analysts' price targets add up to an S&amp;P 500 level of about 9,228, 18.3% above the October 7 close, close to the typical stock's upside of 18.9%. Targets look about 12 months out, and this page starts checking how they turn out in January 2027.</p>
+<p>Analysts see the most room in the stocks that have done worst. The weakest fifth of members by 12-1 month momentum has a median upside of 30.5%, against 13.8% for the strongest fifth. That fits targets adjusting more slowly than prices, which the scatter below looks at.</p>
+<p>They're most enthusiastic about the biggest companies, though. The largest fifth by market value has Buy ratings from 77% of analysts but only 15.0% median upside. The smallest fifth has 47% Buy ratings and 21.9% upside.</p>
+</section>
+
+
 <div class="chart-box">
 <div class="chart-box-header">
 <div>
@@ -869,6 +886,7 @@ tbody td:nth-child(2){
 <div>
 <h2>What the targets add up to</h2>
 <div class="chart-subhead" id="impliedSub">Each stock's target times its shares outstanding, added up and compared with its price times its shares: the upside analysts' targets imply for the index or sector as a whole. The typical stock's upside (the median) is shown alongside.</div>
+<div class="chart-note">Bottom-up upside is highest for Real Estate (24.1%) and Industrials (22.9%) and lowest for Energy (9.4%) and Health Care (11.2%).</div>
 </div>
 </div>
 <div style="overflow-x:auto;"><table class="method-table" id="impliedTable"></table></div>
@@ -880,6 +898,7 @@ tbody td:nth-child(2){
 <div>
 <h2>Upside by company size</h2>
 <div class="chart-subhead">S&amp;P 500 members split into fifths by market value, smallest first. Bars show each fifth's median target upside.</div>
+<div class="chart-note">Median upside falls steadily from 21.9% for the smallest fifth to 15.0% for the largest.</div>
 </div>
 </div>
 <div class="ndr-panel">
@@ -894,6 +913,7 @@ tbody td:nth-child(2){
 <div>
 <h2>Upside by 12-1 month momentum</h2>
 <div class="chart-subhead">Members split into fifths by return relative to SPY from 12 months to 1 month ago, weakest first. Bars show each fifth's median target upside.</div>
+<div class="chart-note">30.5% for the weakest fifth and 13.8% for the strongest.</div>
 </div>
 </div>
 <div class="ndr-panel">

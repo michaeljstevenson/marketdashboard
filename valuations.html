@@ -70,6 +70,12 @@ document.addEventListener("DOMContentLoaded", function(){
 .is-chart-fullscreen canvas{
  max-height:none !important;
 }
+.commentary{ background:var(--card); border:1px solid var(--hair); border-left:3px solid var(--greed); border-radius:10px; padding:18px 22px 20px; margin-bottom:30px; }
+.commentary-head{ display:flex; justify-content:space-between; align-items:baseline; flex-wrap:wrap; gap:6px 16px; }
+.commentary h2{ font-family:var(--serif); font-weight:400; font-size:18px; margin:0; }
+.commentary-date{ color:var(--muted); font-size:12px; }
+.commentary p{ font-size:14px; line-height:1.6; margin:10px 0 0; max-width:780px; }
+.chart-note{ font-size:12px; color:var(--muted); margin:6px 0 2px; line-height:1.5; max-width:820px; }
 </style>
 <script>
 // Expand-to-fullscreen button on every chart, matching the pattern from
@@ -603,6 +609,17 @@ tr.total-row td{ font-weight:600; border-top:1px solid var(--hair); }
 <div class="stat-card"><div class="stat-label">Price/Book</div><div class="stat-value" id="statPb">…</div><div class="stat-note" id="statPbNote">Companies with positive book value</div></div>
 <div class="stat-card"><div class="stat-label">Trailing P/E vs. Its History</div><div class="stat-value txt" id="statPct">…</div><div class="stat-note" id="statPctNote">Percentile of the rebuilt monthly history</div></div>
 </div>
+
+<section class="commentary" aria-labelledby="commentaryTitle">
+<div class="commentary-head">
+<h2 id="commentaryTitle">Commentary</h2>
+<div class="commentary-date">As of the October 7, 2026 close</div>
+</div>
+<p>The S&amp;P 500 trades at 24.1 times its last four quarters of reported earnings and 20.0 times what analysts expect over the next year. On the rebuilt history since 2017, the trailing multiple sits in the 65th percentile, above its median of 22.1 but well short of the 36.4 reached in March 2021, when trailing earnings still included the 2020 slump.</p>
+<p>Technology carries the richest trailing multiple among the large sectors (32.6), but on forward earnings it's 23.0, close to Industrials and Consumer Discretionary, because analysts expect its earnings to keep growing quickly. Energy (17.6 trailing, 12.9 forward) and Financials (15.8 and 14.4) are the cheapest.</p>
+<p>Health Care stands out against its own past. At 22.5 times trailing earnings it's in the 90th percentile of its history, while Real Estate is at its lowest reading and Communication Services is in its 18th percentile.</p>
+</section>
+
 <div class="chart-note" id="spError" hidden></div>
 
 <div class="chart-box">
@@ -610,6 +627,7 @@ tr.total-row td{ font-weight:600; border-top:1px solid var(--hair); }
 <div>
 <h2>S&amp;P 500 sectors this month</h2>
 <div class="chart-subhead" id="sectorSub">Each multiple is the sector's total market value divided by its total earnings, book value or sales, so the largest companies weigh the most.</div>
+<div class="chart-note">Technology has the highest trailing P/E (32.6) and Financials the lowest (15.8).</div>
 </div>
 </div>
 <div class="table-scroll">
@@ -626,6 +644,7 @@ tr.total-row td{ font-weight:600; border-top:1px solid var(--hair); }
 <div>
 <h2>Trailing P/E today against its history</h2>
 <div class="chart-subhead" id="rangeSub">For the S&amp;P 500 and each sector: the full range of monthly readings in the rebuilt history (thin bar), the middle half of them (thick bar), the median (tick) and this month (dot).</div>
+<div class="chart-note">Health Care (90th percentile) and Technology (79th) are near the top of their ranges, Real Estate (0th) and Communication Services (18th) near the bottom.</div>
 </div>
 </div>
 <div class="ndr-panel">
@@ -640,6 +659,7 @@ tr.total-row td{ font-weight:600; border-top:1px solid var(--hair); }
 <div>
 <h2>Trailing P/E since 2017</h2>
 <div class="chart-subhead">Month-end trailing P/E of today's S&amp;P 500 members, rebuilt from each company's reported EPS and price at the time with today's share counts. Pick a sector to compare with the index.</div>
+<div class="chart-note">The index peaked at 36.4 in March 2021, when prices had recovered but trailing earnings still included the 2020 slump. It was 25.9 in October 2021 against 24.1 now.</div>
 </div>
 <select class="sector-pick" id="historyPick" aria-label="Sector to compare"></select>
 </div>
