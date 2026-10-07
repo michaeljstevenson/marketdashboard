@@ -773,7 +773,7 @@ tbody td:nth-child(2){
 <h1>Relative Strength Leaders/Laggards</h1>
 <div class="subtitle">1-month and 3-month price momentum relative to SPY across the S&amp;P 500: who's outperforming, who's lagging, and whether this week's leaders tend to stay leaders.</div>
 </div>
-<div class="updated" id="updated">Loading...</div>
+<div class="header-meta"><div class="updated" id="updated">Loading...</div><div class="coverage-note" id="coverageNote" hidden></div></div>
 </div>
 
 <div class="stat-grid">
@@ -789,12 +789,12 @@ tbody td:nth-child(2){
 </div>
 <div class="stat-card">
 <div class="stat-label">Current Leader</div>
-<div class="stat-value" id="statLeader" style="font-size:20px;">…</div>
+<div class="stat-value" id="statLeader">…</div>
 <div class="stat-note" id="statLeaderNote">3-month relative return</div>
 </div>
 <div class="stat-card">
 <div class="stat-label">Current Laggard</div>
-<div class="stat-value" id="statLaggard" style="font-size:20px;">…</div>
+<div class="stat-value" id="statLaggard">…</div>
 <div class="stat-note" id="statLaggardNote">3-month relative return</div>
 </div>
 </div>
@@ -957,6 +957,14 @@ function showWarning(message){
  const banner = document.getElementById("warningBanner");
  banner.textContent = message;
  banner.style.display = "block";
+}
+
+// A partial sweep is noted quietly under the As-of time instead of in a banner.
+function showCoverage(loaded, total, label){
+ const el = document.getElementById("coverageNote");
+ el.textContent = loaded + " of " + total + " " + label;
+ el.title = (total - loaded) + " of the " + total + " had no usable data in this run.";
+ el.hidden = false;
 }
 
 function themeInkColor(){
@@ -1141,7 +1149,7 @@ async function init(){
   document.getElementById("updated").textContent = "As of " + new Date(data.generated_at_utc).toLocaleString("en-US", { month: "2-digit", day: "2-digit", year: "numeric", hour: "numeric", minute: "2-digit" });
 
   if(data.loadedCount < data.universeSize){
-   showWarning("Only " + data.loadedCount + " of " + data.universeSize + " S&P 500 constituents loaded. Some data may be missing.");
+   showCoverage(data.loadedCount, data.universeSize, "S&P 500 constituents");
   }
 
   renderStats();
@@ -1166,6 +1174,7 @@ function renderStats(){
  const medEl = document.getElementById("statMedian");
  medEl.textContent = fmtPct(m.medianRel3M);
  medEl.classList.toggle("cell-neg", m.medianRel3M !== null && m.medianRel3M < 0);
+ medEl.classList.toggle("up", m.medianRel3M !== null && m.medianRel3M > 0);
 
  const leader = RAW.leaders[0];
  if(leader){

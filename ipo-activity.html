@@ -688,12 +688,12 @@ h1{
 </div>
 <div class="stat-card">
 <div class="stat-label">Avg. First-Day Pop</div>
-<div class="stat-value" id="statPop" style="color:var(--extreme);">…</div>
+<div class="stat-value" id="statPop">…</div>
 <div class="stat-note">Offer price to first close, equal-weighted</div>
 </div>
 <div class="stat-card">
 <div class="stat-label">Gross Proceeds</div>
-<div class="stat-value" id="statProceeds" style="color:var(--fear);">…</div>
+<div class="stat-value" id="statProceeds">…</div>
 <div class="stat-note">Not inflation-adjusted</div>
 </div>
 <div class="stat-card">
@@ -1043,9 +1043,11 @@ function init(){
  document.getElementById("statCountNote").textContent =
   (countDelta >= 0 ? "+" : "") + countDelta + " vs. " + prior.year;
  document.getElementById("statPop").textContent = latest.pop.toFixed(1) + "%";
+ document.getElementById("statPop").className = "stat-value" + (latest.pop > 0 ? " up" : latest.pop < 0 ? " down" : "");
  document.getElementById("statProceeds").textContent = "$" + (latest.proceeds / 1000).toFixed(1) + "B";
  const latestSP = spReturns[spReturns.length - 1];
  document.getElementById("statSP").textContent = (latestSP >= 0 ? "+" : "") + latestSP.toFixed(1) + "%";
+ document.getElementById("statSP").className = "stat-value" + (latestSP > 0 ? " up" : latestSP < 0 ? " down" : "");
 
  const muted = themeVarColor("--muted", "#8b9199"), hair = themeVarColor("--hair", "#2b3138");
  const labels = IPO_DATA.map(r => String(r.year));

@@ -753,13 +753,13 @@ tbody td:nth-child(2){
 <h1>Financial Quality Screener</h1>
 <div class="subtitle">The Piotroski (2000) F-Score, computed across the S&amp;P 500: nine year-over-year signals covering profitability, balance-sheet strength and operating efficiency, combined into one 0&ndash;9 quality score per company.</div>
 </div>
-<div class="updated" id="updated">Loading...</div>
+<div class="header-meta"><div class="updated" id="updated">Loading...</div><div class="coverage-note" id="coverageNote" hidden></div></div>
 </div>
 
 <div class="stat-grid">
 <div class="stat-card">
 <div class="stat-label">Companies Scored</div>
-<div class="stat-value" id="statCompanies" style="font-size:20px;">…</div>
+<div class="stat-value" id="statCompanies">…</div>
 <div class="stat-note" id="statCompaniesNote">Of full S&amp;P 500</div>
 </div>
 <div class="stat-card">
@@ -774,7 +774,7 @@ tbody td:nth-child(2){
 </div>
 <div class="stat-card">
 <div class="stat-label">Low Quality (0&ndash;2)</div>
-<div class="stat-value" id="statLowQuality" style="color:var(--fear);">…</div>
+<div class="stat-value" id="statLowQuality">…</div>
 <div class="stat-note">Financial-distress watch zone</div>
 </div>
 </div>
@@ -955,6 +955,14 @@ function showWarning(message){
  banner.style.display = "block";
 }
 
+// A partial sweep is noted quietly under the As-of time instead of in a banner.
+function showCoverage(loaded, total, label){
+ const el = document.getElementById("coverageNote");
+ el.textContent = loaded + " of " + total + " " + label;
+ el.title = (total - loaded) + " of the " + total + " had no usable data in this run.";
+ el.hidden = false;
+}
+
 // ---- NDR chart styling helpers (matches /concentration, /margin-leverage) ----
 function ndr(name){
  return getComputedStyle(document.documentElement).getPropertyValue("--ndr-" + name).trim();
@@ -1068,7 +1076,7 @@ async function init(){
   document.getElementById("updated").textContent = "As of " + new Date(data.generated_at_utc).toLocaleString("en-US", { month: "2-digit", day: "2-digit", year: "numeric", hour: "numeric", minute: "2-digit" });
 
   if(data.loadedCount < data.universeSize){
-   showWarning("Only " + data.loadedCount + " of " + data.universeSize + " S&P 500 constituents loaded. Some data may be missing.");
+   showCoverage(data.loadedCount, data.universeSize, "S&P 500 constituents");
   }
 
   renderStats();

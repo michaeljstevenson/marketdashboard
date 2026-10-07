@@ -687,7 +687,7 @@ tbody tr:last-child td{ border-bottom:none; }
 </div>
 <div class="stat-card">
 <div class="stat-label">Direction of Bias</div>
-<div class="stat-value" id="statBias" style="font-size:18px;">…</div>
+<div class="stat-value txt" id="statBias">…</div>
 <div class="stat-note">Strategists tend to be systematically...</div>
 </div>
 </div>
@@ -840,7 +840,7 @@ function init(){
 
  const avgMissSigned = rows.reduce((s, r) => s + r.missReturnPts, 0) / rows.length;
  document.getElementById("statBias").textContent = avgMissSigned >= 0 ? "Too Conservative" : "Too Optimistic";
- document.getElementById("statBias").className = "stat-value " + (avgMissSigned >= 0 ? "beat" : "miss");
+ document.getElementById("statBias").className = "stat-value txt";
  document.querySelector("#statGrid .stat-card:last-child .stat-note").textContent =
   "Strategists tend to be systematically " + (avgMissSigned >= 0 ? "too low" : "too high") + " (avg. " + fmtPct(avgMissSigned) + ")";
 

@@ -821,7 +821,7 @@ tbody td:nth-child(2){
 </div>
 <div class="stat-card">
 <div class="stat-label">Surprise &rarr; Drift Correlation</div>
-<div class="stat-value" id="statCorr" style="font-size:18px;">…</div>
+<div class="stat-value" id="statCorr">…</div>
 <div class="stat-note" id="statCorrNote">Pearson r, surprise % vs. +20D excess</div>
 </div>
 </div>
@@ -1252,6 +1252,7 @@ function renderStats(){
   const avg = mean(beatVals);
   beatEl.textContent = fmtPct(avg);
   beatEl.classList.toggle("cell-neg", avg < 0);
+  beatEl.classList.toggle("up", avg > 0);
   document.getElementById("statBeatExcessNote").textContent = "n=" + beatVals.length + " beat companies";
  }else{
   beatEl.textContent = "n/a";
@@ -1262,6 +1263,7 @@ function renderStats(){
   const avg = mean(missVals);
   missEl.textContent = fmtPct(avg);
   missEl.classList.toggle("cell-neg", avg < 0);
+  missEl.classList.toggle("up", avg > 0);
   document.getElementById("statMissExcessNote").textContent = "n=" + missVals.length + " miss companies";
  }else{
   missEl.textContent = "n/a";

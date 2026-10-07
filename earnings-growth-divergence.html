@@ -749,7 +749,7 @@ tbody td:nth-child(2){
 <h1>Earnings Growth vs. Price Performance</h1>
 <div class="subtitle">Where has the market already priced in a company's earnings growth, and where hasn't it? Trailing year-over-year EPS growth vs. 3-month price performance relative to SPY, across the S&amp;P 500.</div>
 </div>
-<div class="updated" id="updated">Loading...</div>
+<div class="header-meta"><div class="updated" id="updated">Loading...</div><div class="coverage-note" id="coverageNote" hidden></div></div>
 </div>
 
 <div class="stat-grid">
@@ -765,12 +765,12 @@ tbody td:nth-child(2){
 </div>
 <div class="stat-card">
 <div class="stat-label">Growth Ahead of Price</div>
-<div class="stat-value" id="statGrowthAhead" style="font-size:20px;">…</div>
+<div class="stat-value" id="statGrowthAhead">…</div>
 <div class="stat-note" id="statGrowthAheadNote">Strongest earnings growth, weakest relative price</div>
 </div>
 <div class="stat-card">
 <div class="stat-label">Price Ahead of Growth</div>
-<div class="stat-value" id="statPriceAhead" style="font-size:20px;">…</div>
+<div class="stat-value" id="statPriceAhead">…</div>
 <div class="stat-note" id="statPriceAheadNote">Strongest relative price, weakest earnings growth</div>
 </div>
 </div>
@@ -889,6 +889,14 @@ function showWarning(message){
  const banner = document.getElementById("warningBanner");
  banner.textContent = message;
  banner.style.display = "block";
+}
+
+// A partial sweep is noted quietly under the As-of time instead of in a banner.
+function showCoverage(loaded, total, label){
+ const el = document.getElementById("coverageNote");
+ el.textContent = loaded + " of " + total + " " + label;
+ el.title = (total - loaded) + " of the " + total + " had no usable data in this run.";
+ el.hidden = false;
 }
 
 function themeInkColor(){
@@ -1133,7 +1141,7 @@ async function init(){
   document.getElementById("updated").textContent = "As of " + new Date(data.generated_at_utc).toLocaleString("en-US", { month: "2-digit", day: "2-digit", year: "numeric", hour: "numeric", minute: "2-digit" });
 
   if(data.loadedCount < data.universeSize){
-   showWarning("Only " + data.loadedCount + " of " + data.universeSize + " S&P 500 constituents loaded. Some data may be missing.");
+   showCoverage(data.loadedCount, data.universeSize, "S&P 500 constituents");
   }else if(!data.hasPriceData){
    showWarning("Price data isn't available yet (Relative Strength Leaders/Laggards hasn't refreshed). Showing earnings growth only.");
   }
@@ -1157,11 +1165,13 @@ function renderStats(){
  const epsEl = document.getElementById("statMedianEps");
  epsEl.textContent = fmtPct(m.medianEpsGrowth);
  epsEl.classList.toggle("cell-neg", m.medianEpsGrowth !== null && m.medianEpsGrowth < 0);
+ epsEl.classList.toggle("up", m.medianEpsGrowth !== null && m.medianEpsGrowth > 0);
  document.getElementById("statMedianEpsNote").textContent = "n=" + m.withEpsGrowth + " with a valid YoY figure";
 
  const priceEl = document.getElementById("statMedianPrice");
  priceEl.textContent = fmtPct(m.medianRelPrice3M);
  priceEl.classList.toggle("cell-neg", m.medianRelPrice3M !== null && m.medianRelPrice3M < 0);
+ priceEl.classList.toggle("up", m.medianRelPrice3M !== null && m.medianRelPrice3M > 0);
  document.getElementById("statMedianPriceNote").textContent = "n=" + m.withPriceData + " with price data";
 
  const growthAhead = RAW.growthAheadOfPrice[0];

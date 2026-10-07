@@ -838,13 +838,13 @@ tbody td:nth-child(2){
 <h1>Margin &amp; Leverage Cycle</h1>
 <div class="subtitle">How S&amp;P 500 profit margins and balance-sheet leverage have moved through the recent Fed hiking and cutting cycle: sector trends, a company-level margin-vs-leverage scatter, and a test of whether hiking regimes coincide with margin compression or rising leverage.</div>
 </div>
-<div class="updated" id="updated">Loading...</div>
+<div class="header-meta"><div class="updated" id="updated">Loading...</div><div class="coverage-note" id="coverageNote" hidden></div></div>
 </div>
 
 <div class="stat-grid">
 <div class="stat-card">
 <div class="stat-label">Companies Loaded</div>
-<div class="stat-value" id="statCompanies" style="font-size:20px;">…</div>
+<div class="stat-value" id="statCompanies">…</div>
 <div class="stat-note" id="statCompaniesNote">Of full S&amp;P 500</div>
 </div>
 <div class="stat-card">
@@ -859,7 +859,7 @@ tbody td:nth-child(2){
 </div>
 <div class="stat-card">
 <div class="stat-label">Current Fed Regime</div>
-<div class="stat-value" id="statRegime" style="font-size:20px;">…</div>
+<div class="stat-value txt" id="statRegime">…</div>
 <div class="stat-note" id="statRegimeNote">Avg. quarterly margin change, this regime</div>
 </div>
 </div>
@@ -1081,6 +1081,14 @@ function showWarning(message){
  const banner = document.getElementById("warningBanner");
  banner.textContent = message;
  banner.style.display = "block";
+}
+
+// A partial sweep is noted quietly under the As-of time instead of in a banner.
+function showCoverage(loaded, total, label){
+ const el = document.getElementById("coverageNote");
+ el.textContent = loaded + " of " + total + " " + label;
+ el.title = (total - loaded) + " of the " + total + " had no usable data in this run.";
+ el.hidden = false;
 }
 
 function themeInkColor(){
@@ -1322,7 +1330,7 @@ async function init(){
   document.getElementById("updated").textContent = "As of " + new Date(data.generated_at_utc).toLocaleString("en-US", { month: "2-digit", day: "2-digit", year: "numeric", hour: "numeric", minute: "2-digit" });
 
   if(data.loadedCount < data.universeSize){
-   showWarning("Only " + data.loadedCount + " of " + data.universeSize + " S&P 500 constituents loaded. Some data may be missing.");
+   showCoverage(data.loadedCount, data.universeSize, "S&P 500 constituents");
   }
 
   renderStats();

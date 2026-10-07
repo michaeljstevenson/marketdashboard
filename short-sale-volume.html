@@ -770,7 +770,7 @@ tbody td:nth-child(2){
 <h1>Short Sale Volume</h1>
 <div class="subtitle">What share of the S&amp;P 500's daily trading volume is flagged as a short sale, from FINRA's free daily Reg SHO files. It is a free proxy for short-selling activity, since short interest data is now behind FINRA's paid API Console.</div>
 </div>
-<div class="updated" id="updated">Loading...</div>
+<div class="header-meta"><div class="updated" id="updated">Loading...</div><div class="coverage-note" id="coverageNote" hidden></div></div>
 </div>
 
 <div class="stat-grid">
@@ -781,17 +781,17 @@ tbody td:nth-child(2){
 </div>
 <div class="stat-card">
 <div class="stat-label">Window</div>
-<div class="stat-value" id="statWindow" style="color:var(--ink); font-size:18px;">…</div>
+<div class="stat-value" id="statWindow">…</div>
 <div class="stat-note" id="statWindowNote">Trading days covered</div>
 </div>
 <div class="stat-card">
 <div class="stat-label">Most-Shorted Sector</div>
-<div class="stat-value" id="statBestSector" style="font-size:20px;">…</div>
+<div class="stat-value txt" id="statBestSector">…</div>
 <div class="stat-note" id="statBestSectorNote">Median sector SVR</div>
 </div>
 <div class="stat-card">
 <div class="stat-label">Least-Shorted Sector</div>
-<div class="stat-value" id="statWorstSector" style="font-size:20px;">…</div>
+<div class="stat-value txt" id="statWorstSector">…</div>
 <div class="stat-note" id="statWorstSectorNote">Median sector SVR</div>
 </div>
 </div>
@@ -933,6 +933,14 @@ function showWarning(message){
  banner.style.display = "block";
 }
 
+// A partial sweep is noted quietly under the As-of time instead of in a banner.
+function showCoverage(loaded, total, label){
+ const el = document.getElementById("coverageNote");
+ el.textContent = loaded + " of " + total + " " + label;
+ el.title = (total - loaded) + " of the " + total + " had no usable data in this run.";
+ el.hidden = false;
+}
+
 function themeInkColor(){
  const v = getComputedStyle(document.documentElement).getPropertyValue("--ink").trim();
  return v || "#eae6da";
@@ -1044,7 +1052,7 @@ async function init(){
   document.getElementById("updated").textContent = "As of " + new Date(data.generated_at_utc).toLocaleString("en-US", { month: "2-digit", day: "2-digit", year: "numeric", hour: "numeric", minute: "2-digit" });
 
   if(data.loadedCount < data.universeSize){
-   showWarning("Only " + data.loadedCount + " of " + data.universeSize + " S&P 500 constituents loaded. Some data may be missing.");
+   showCoverage(data.loadedCount, data.universeSize, "S&P 500 constituents");
   }
 
   renderStats();

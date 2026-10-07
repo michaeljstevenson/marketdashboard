@@ -810,7 +810,7 @@ tbody td:nth-child(2){
 <h1>Analyst Price Target Upside</h1>
 <div class="subtitle">Sell-side 12-month price targets and buy/hold/sell consensus across the S&amp;P 500: how much upside the Street is pricing in, by sector and by stock.</div>
 </div>
-<div class="updated" id="updated">Loading...</div>
+<div class="header-meta"><div class="updated" id="updated">Loading...</div><div class="coverage-note" id="coverageNote" hidden></div></div>
 </div>
 
 <div class="stat-grid">
@@ -821,17 +821,17 @@ tbody td:nth-child(2){
 </div>
 <div class="stat-card">
 <div class="stat-label">Median Buy Ratio</div>
-<div class="stat-value" id="statBuyRatio" style="color:var(--ink);">…</div>
+<div class="stat-value" id="statBuyRatio">…</div>
 <div class="stat-note" id="statBuyRatioNote">Strong Buy + Buy, share of covering analysts</div>
 </div>
 <div class="stat-card">
 <div class="stat-label">Most Bullish Sector</div>
-<div class="stat-value" id="statBestSector" style="font-size:20px;">…</div>
+<div class="stat-value txt" id="statBestSector">…</div>
 <div class="stat-note" id="statBestSectorNote">Median target upside</div>
 </div>
 <div class="stat-card">
 <div class="stat-label">Most Bearish Sector</div>
-<div class="stat-value" id="statWorstSector" style="font-size:20px;">…</div>
+<div class="stat-value txt" id="statWorstSector">…</div>
 <div class="stat-note" id="statWorstSectorNote">Median target upside</div>
 </div>
 </div>
@@ -1001,6 +1001,14 @@ function showWarning(message){
  banner.style.display = "block";
 }
 
+// A partial sweep is noted quietly under the As-of time instead of in a banner.
+function showCoverage(loaded, total, label){
+ const el = document.getElementById("coverageNote");
+ el.textContent = loaded + " of " + total + " " + label;
+ el.title = (total - loaded) + " of the " + total + " had no usable data in this run.";
+ el.hidden = false;
+}
+
 // ---- NDR chart styling helpers (matches /concentration.html) -----------
 function ndr(name){
  return getComputedStyle(document.documentElement).getPropertyValue("--ndr-" + name).trim();
@@ -1099,8 +1107,8 @@ async function init(){
   RAW = data;
   document.getElementById("updated").textContent = "As of " + new Date(data.generated_at_utc).toLocaleString("en-US", { month: "2-digit", day: "2-digit", year: "numeric", hour: "numeric", minute: "2-digit" });
 
-  if(data.loadedCount < data.universeSize * 0.85){
-   showWarning("Only " + data.loadedCount + " of " + data.universeSize + " S&P 500 constituents loaded. Some sector figures may be based on partial coverage.");
+  if(data.loadedCount < data.universeSize){
+   showCoverage(data.loadedCount, data.universeSize, "S&P 500 constituents");
   }else if(!data.hasPriceData){
    showWarning("Relative Strength Leaders/Laggards data isn't available yet, so target upside couldn't be computed against a current price.");
   }
@@ -1126,7 +1134,6 @@ function renderStats(){
  const m = RAW.market;
  const upsideEl = document.getElementById("statUpside");
  upsideEl.textContent = fmtPct(m.medianUpsidePct);
- upsideEl.classList.toggle("cell-neg", m.medianUpsidePct !== null && m.medianUpsidePct < 0);
  document.getElementById("statUpsideNote").textContent = "n=" + m.withPriceData + " with a current price";
 
  document.getElementById("statBuyRatio").textContent = fmtPlainPct(m.medianBuyRatio);

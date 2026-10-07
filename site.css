@@ -92,6 +92,37 @@ body::before{
   .sitenav.nav-open .dropdown .mcol a{padding:9px 0;font-size:15px}
 }
 
+/* Stat cards as one compact strip: the grid is the box and each card is a
+   cell. The dividers are box-shadows the grid's overflow clips, so the
+   first column and first row never draw a second edge, whatever the column
+   count or wrap. The !important rules beat the per-page copies and the
+   inline font sizes and colors left over from the old cards. Green and red
+   only mark values whose sign is the point (.up/.down and the older
+   per-page names for the same thing). */
+.stat-grid{gap:0!important;background:var(--card);border:1px solid var(--hair);border-radius:10px;overflow:hidden;margin-bottom:24px}
+.stat-card{background:none;border:0;border-radius:0;padding:10px 14px 11px;min-width:0;box-shadow:-1px 0 0 var(--hair),0 -1px 0 var(--hair)}
+.stat-label{font-size:11.5px;letter-spacing:.02em;margin-bottom:2px}
+.stat-value{font-family:var(--mono);font-size:19px!important;line-height:1.3;font-variant-numeric:tabular-nums;color:var(--ink)!important}
+.stat-value.txt,.stat-value.stat-value-text{font-family:var(--serif);font-size:16px!important;line-height:1.35}
+.stat-value.up,.stat-value.good,.stat-value.beat,.stat-value.spread-pos{color:var(--up)!important}
+.stat-value.down,.stat-value.cell-neg,.stat-value.bad,.stat-value.miss,.stat-value.spread-neg{color:var(--down)!important}
+.stat-note,.stat-vs{font-size:11.5px;margin-top:1px}
+
+.mini-stats{gap:0!important;background:var(--card);border:1px solid var(--hair);border-radius:10px;overflow:hidden}
+.mini-stat{background:none;border:0;border-radius:0;padding:10px 14px 11px;min-width:0;box-shadow:-1px 0 0 var(--hair),0 -1px 0 var(--hair)}
+.mini-stat-label{font-size:11.5px;letter-spacing:.02em;margin-bottom:2px}
+.mini-stat-value{font-size:19px;line-height:1.3;font-variant-numeric:tabular-nums;color:var(--ink)}
+.mini-stat-value.up{color:var(--up)}
+.mini-stat-value.down{color:var(--down)}
+.mini-stat-note{font-size:11.5px;margin-top:1px}
+
+/* Coverage: a quiet line under the As-of time when a sweep loaded only part
+   of its universe. Real failures keep .warning-banner, now compact. */
+.header-meta{display:flex;flex-direction:column;align-items:flex-end}
+.coverage-note{color:var(--muted);font-size:11.5px;margin-top:3px;text-align:right}
+.coverage-note[title]{cursor:help;text-decoration:underline dotted;text-underline-offset:3px}
+.warning-banner{font-size:12px;padding:7px 11px;border-radius:7px;margin-bottom:14px}
+
 /* Phones: nothing may be wider than the screen. Tables keep their desktop
    min-width but scroll sideways inside their own box (contain:inline-size
    stops the table's width from propagating up and widening the page), and
@@ -103,5 +134,8 @@ body::before{
      a sector name) stretched a whole row of cards past the screen. */
   :is(.stat-grid,.chart-grid,.table-grid,.scatter-grid,.leaderboard-grid) > *{min-width:0}
   .stat-card{overflow-wrap:anywhere}
-  .stat-grid[style*="repeat(3"]{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+  .header-meta{align-items:flex-start}
+  .coverage-note{text-align:left}
+  .stat-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+  .stat-grid > .stat-card:last-child:nth-child(odd){grid-column:1/-1}
 }

@@ -779,6 +779,15 @@ function ordinal(n){
  return n + (s[(v - 20) % 10] || s[v] || s[0]);
 }
 
+// `pct` is the share of readings at or below today's.
+function percentileNote(pct, since){
+ if(pct <= 0) return "Lowest reading since " + since;
+ if(pct >= 100) return "Highest reading since " + since;
+ return pct < 50 ? "Lower than " + (100 - pct) + "% of readings" : "Higher than " + pct + "% of readings";
+}
+
+function signedCls(v){ return v > 0 ? "up" : v < 0 ? "down" : ""; }
+
 function renderMiniStats(containerId, items){
  const el = document.getElementById(containerId);
  if(!el) return;
@@ -829,10 +838,10 @@ async function renderChartD(){
   const curRatio = ratio[ratio.length - 1];
   const percentile = Math.round(100 * ratio.filter(v => v <= curRatio).length / ratio.length);
   renderMiniStats("statsD", [
-   { label: "CURRENT RATIO", value: curRatio.toFixed(2), note: "equal-weight ÷ cap-weight" },
-   { label: "ALL-TIME HIGH", value: ratio[peakIdx].toFixed(2), note: labels[peakIdx] },
-   { label: "ALL-TIME LOW", value: ratio[troughIdx].toFixed(2), note: labels[troughIdx] },
-   { label: "PERCENTILE (SINCE 2003)", value: ordinal(percentile), note: percentile < 50 ? "narrower than usual" : "broader than usual" },
+   { label: "Current ratio", value: curRatio.toFixed(2), note: "Equal-weight ÷ cap-weight" },
+   { label: "All-time high", value: ratio[peakIdx].toFixed(2), note: usDate(labels[peakIdx]) },
+   { label: "All-time low", value: ratio[troughIdx].toFixed(2), note: usDate(labels[troughIdx]) },
+   { label: "Percentile since 2003", value: ordinal(percentile), note: percentileNote(percentile, "2003") },
   ]);
 
   let chartD = null;
@@ -913,13 +922,15 @@ async function renderChartB(){
   const cur = rows[rows.length - 1];
   const low = reliable.reduce((m, r) => r.pctBeatIndex < m.pctBeatIndex ? r : m, reliable[0]);
   const avg = vals.reduce((a, b) => a + b, 0) / vals.length;
+  const sorted = vals.slice().sort((a, b) => a - b);
+  const med = sorted.length % 2 ? sorted[(sorted.length - 1) / 2] : (sorted[sorted.length / 2 - 1] + sorted[sorted.length / 2]) / 2;
   const percentile = Math.round(100 * vals.filter(v => v <= cur.pctBeatIndex).length / vals.length);
   const since = rows[solidFrom].date.slice(0, 4);
   renderMiniStats("statsB", [
-   { label: "CURRENT", value: cur.pctBeatIndex.toFixed(1) + "%", note: "median member " + (cur.medExcess12m > 0 ? "+" : "") + cur.medExcess12m + " pts vs. index" },
-   { label: "AVERAGE SINCE " + since, value: avg.toFixed(1) + "%" },
-   { label: "LOWEST SINCE " + since, value: low.pctBeatIndex.toFixed(1) + "%", note: usDate(low.date) },
-   { label: "PERCENTILE (SINCE " + since + ")", value: ordinal(percentile), note: percentile < 50 ? "narrower than usual" : "broader than usual" },
+   { label: "Current", value: cur.pctBeatIndex.toFixed(1) + "%", note: "Median member " + (cur.medExcess12m > 0 ? "+" : "") + cur.medExcess12m + " pts vs. index" },
+   { label: "Average since " + since, value: avg.toFixed(1) + "%", note: "Median " + med.toFixed(1) + "%" },
+   { label: "Lowest since " + since, value: low.pctBeatIndex.toFixed(1) + "%", note: usDate(low.date) },
+   { label: "Percentile since " + since, value: ordinal(percentile), note: percentileNote(percentile, since) },
   ]);
 
   new Chart(document.getElementById("chartB"), {
@@ -979,10 +990,11 @@ async function renderMag7(){
   const yearsElapsed = (rows.length - 1) / 12;
   const cagr = (last) => (Math.pow(last / 100, 1 / yearsElapsed) - 1) * 100;
   renderMiniStats("statsC", [
-   { label: "MAGNIFICENT SEVEN CAGR", value: "+" + cagr(mag7[mag7.length - 1]).toFixed(1) + "%/yr", cls: "up" },
-   { label: "S&P 500 CAGR", value: "+" + cagr(sp500[sp500.length - 1]).toFixed(1) + "%/yr", cls: "up" },
-   { label: "S&P 493 CAGR", value: "+" + cagr(sp493[sp493.length - 1]).toFixed(1) + "%/yr", cls: "up" },
-   { label: "MULTIPLE SINCE 2014", value: (mag7[mag7.length - 1] / 100).toFixed(1) + "x", note: "vs. " + (sp500[sp500.length - 1] / 100).toFixed(1) + "x for the S&P 500" },
+   ...[["Magnificent Seven CAGR", mag7], ["S&P 500 CAGR", sp500], ["S&P 493 CAGR", sp493]].map(([label, series]) => {
+    const g = cagr(series[series.length - 1]);
+    return { label, value: (g > 0 ? "+" : "") + g.toFixed(1) + "%/yr", cls: signedCls(g) };
+   }),
+   { label: "Multiple since 2014", value: (mag7[mag7.length - 1] / 100).toFixed(1) + "x", note: "vs. " + (sp500[sp500.length - 1] / 100).toFixed(1) + "x for the S&P 500" },
   ]);
 
 
@@ -1014,10 +1026,10 @@ async function renderMag7(){
   const currentDD = dd[dd.length - 1];
 
   renderMiniStats("statsF", [
-   { label: "CURRENT DRAWDOWN", value: currentDD >= -0.05 ? "At a new high" : currentDD.toFixed(1) + "%", cls: currentDD >= -0.05 ? "up" : "down" },
-   { label: "DEEPEST DRAWDOWN", value: dd[troughIdx].toFixed(1) + "%", note: labels[troughIdx], cls: "down" },
-   { label: "TIME TO RECOVER", value: recoverIdx >= 0 ? (recoverIdx - troughIdx) + " months" : "Still recovering",
-     note: recoverIdx >= 0 ? "trough " + labels[troughIdx] + " → " + labels[recoverIdx] : "since " + labels[troughIdx] },
+   { label: "Current drawdown", value: currentDD >= -0.05 ? "At a new high" : currentDD.toFixed(1) + "%", cls: currentDD >= -0.05 ? "up" : "down" },
+   { label: "Deepest drawdown", value: dd[troughIdx].toFixed(1) + "%", note: usDate(labels[troughIdx]), cls: "down" },
+   { label: "Time to recover", value: recoverIdx >= 0 ? (recoverIdx - troughIdx) + " months" : "Still recovering",
+     note: recoverIdx >= 0 ? "Trough " + usDate(labels[troughIdx]) + " → " + usDate(labels[recoverIdx]) : "Since " + usDate(labels[troughIdx]) },
   ]);
 
   new Chart(document.getElementById("chartF"), {
@@ -1077,10 +1089,10 @@ async function renderHistory(){
   const trough = q.reduce((m, r) => (r.top10_share < m.top10_share ? r : m), q[0]);
   const today = q[q.length - 1];
   renderMiniStats("statsG", [
-   { label: "TODAY", value: today.top10_share.toFixed(0) + "%", note: usDate(today.date) },
-   { label: "DOT-COM ERA PEAK", value: dotcomPeak.top10_share.toFixed(0) + "%", note: usDate(dotcomPeak.date) },
-   { label: "VS. DOT-COM PEAK", value: (today.top10_share / dotcomPeak.top10_share).toFixed(1) + "x", cls: "up" },
-   { label: trough.date.slice(0, 4) + " TROUGH", value: trough.top10_share.toFixed(0) + "%", note: usDate(trough.date) },
+   { label: "Today", value: today.top10_share.toFixed(0) + "%", note: usDate(today.date) },
+   { label: "Dot-com era peak", value: dotcomPeak.top10_share.toFixed(0) + "%", note: usDate(dotcomPeak.date) },
+   { label: "Vs. dot-com peak", value: (today.top10_share / dotcomPeak.top10_share).toFixed(1) + "x" },
+   { label: trough.date.slice(0, 4) + " trough", value: trough.top10_share.toFixed(0) + "%", note: usDate(trough.date) },
   ]);
 
   new Chart(document.getElementById("chartG"), {
@@ -1118,10 +1130,10 @@ async function renderHistory(){
    const bestYear = a.reduce((m, r) => (r.top10_contrib > m.top10_contrib ? r : m), a[0]);
    const worstYear = a.reduce((m, r) => (r.top10_contrib < m.top10_contrib ? r : m), a[0]);
    renderMiniStats("statsH", [
-    { label: "TOP-10 OUT-CONTRIBUTED THE REST", value: domCount + " of " + a.length + " years" },
-    { label: "CURRENT STREAK", value: streak > 0 ? streak + " years running" : "broken", note: streak > 0 ? "through " + a[a.length - 1].year : null },
-    { label: "BEST TOP-10 YEAR", value: (bestYear.top10_contrib > 0 ? "+" : "") + bestYear.top10_contrib + " pp", note: bestYear.year, cls: "up" },
-    { label: "WORST TOP-10 YEAR", value: worstYear.top10_contrib + " pp", note: worstYear.year, cls: "down" },
+    { label: "Top-10 out-contributed the rest", value: domCount + " of " + a.length + " years" },
+    { label: "Current streak", value: streak > 0 ? streak + " years running" : "Broken", note: streak > 0 ? "Through " + a[a.length - 1].year : null },
+    { label: "Best top-10 year", value: (bestYear.top10_contrib > 0 ? "+" : "") + bestYear.top10_contrib + " pp", note: bestYear.year, cls: signedCls(bestYear.top10_contrib) },
+    { label: "Worst top-10 year", value: (worstYear.top10_contrib > 0 ? "+" : "") + worstYear.top10_contrib + " pp", note: worstYear.year, cls: signedCls(worstYear.top10_contrib) },
    ]);
 
    new Chart(document.getElementById("chartH"), {

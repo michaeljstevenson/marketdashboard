@@ -764,7 +764,7 @@ tbody td:nth-child(2){
 <h1>Equity Risk Premium by Sector</h1>
 <div class="subtitle">An earnings yield minus Treasury yield premium, computed for the S&amp;P 500 and its 11 GICS sectors. It is a cruder lens than the Damodaran DCF model behind Implied Equity Risk Premium.</div>
 </div>
-<div class="updated" id="updated">Loading...</div>
+<div class="header-meta"><div class="updated" id="updated">Loading...</div><div class="coverage-note" id="coverageNote" hidden></div></div>
 </div>
 
 <div class="stat-grid">
@@ -775,17 +775,17 @@ tbody td:nth-child(2){
 </div>
 <div class="stat-card">
 <div class="stat-label">10-Year Treasury Yield</div>
-<div class="stat-value" id="statRiskFree" style="color:var(--ink);">…</div>
+<div class="stat-value" id="statRiskFree">…</div>
 <div class="stat-note" id="statRiskFreeNote">Risk-free rate used below</div>
 </div>
 <div class="stat-card">
 <div class="stat-label">Highest-ERP Sector</div>
-<div class="stat-value" id="statBestSector" style="font-size:20px;">…</div>
+<div class="stat-value txt" id="statBestSector">…</div>
 <div class="stat-note" id="statBestSectorNote">Median sector ERP</div>
 </div>
 <div class="stat-card">
 <div class="stat-label">Lowest-ERP Sector</div>
-<div class="stat-value" id="statWorstSector" style="font-size:20px;">…</div>
+<div class="stat-value txt" id="statWorstSector">…</div>
 <div class="stat-note" id="statWorstSectorNote">Median sector ERP</div>
 </div>
 </div>
@@ -922,6 +922,14 @@ function showWarning(message){
  const banner = document.getElementById("warningBanner");
  banner.textContent = message;
  banner.style.display = "block";
+}
+
+// A partial sweep is noted quietly under the As-of time instead of in a banner.
+function showCoverage(loaded, total, label){
+ const el = document.getElementById("coverageNote");
+ el.textContent = loaded + " of " + total + " " + label;
+ el.title = (total - loaded) + " of the " + total + " had no usable data in this run.";
+ el.hidden = false;
 }
 
 function themeInkColor(){
@@ -1062,7 +1070,7 @@ async function init(){
   document.getElementById("updated").textContent = "As of " + new Date(data.generated_at_utc).toLocaleString("en-US", { month: "2-digit", day: "2-digit", year: "numeric", hour: "numeric", minute: "2-digit" });
 
   if(data.loadedCount < data.universeSize){
-   showWarning("Only " + data.loadedCount + " of " + data.universeSize + " S&P 500 constituents loaded. Some data may be missing.");
+   showCoverage(data.loadedCount, data.universeSize, "S&P 500 constituents");
   }
 
   renderStats();
@@ -1084,7 +1092,6 @@ function renderStats(){
  const m = RAW.market;
  const medEl = document.getElementById("statMedianErp");
  medEl.textContent = fmtPct(m.medianErp);
- medEl.classList.toggle("cell-neg", m.medianErp !== null && m.medianErp < 0);
  document.getElementById("statMedianErpNote").textContent = "n=" + m.companyCount + " companies";
 
  document.getElementById("statRiskFree").textContent = m.riskFreeRate === null ? "n/a" : m.riskFreeRate.toFixed(2) + "%";

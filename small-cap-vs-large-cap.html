@@ -716,12 +716,12 @@ tbody td:first-child{
 </div>
 <div class="stat-card">
 <div class="stat-label">Current Fed Regime</div>
-<div class="stat-value" id="statRegime" style="font-size:20px;">…</div>
+<div class="stat-value txt" id="statRegime">…</div>
 <div class="stat-note" id="statRegimeNote">Avg. monthly spread return, this regime</div>
 </div>
 <div class="stat-card">
 <div class="stat-label">Correlation w/ 10Y Yield &Delta;</div>
-<div class="stat-value" id="statCorr" style="font-size:20px;">…</div>
+<div class="stat-value" id="statCorr">…</div>
 <div class="stat-note" id="statCorrNote">Monthly, Pearson r</div>
 </div>
 </div>
@@ -1212,6 +1212,7 @@ function renderStats(data, monthly){
  const rel12mEl = document.getElementById("statRel12m");
  rel12mEl.textContent = fmtPct(rel12m);
  rel12mEl.classList.toggle("cell-neg", rel12m !== null && rel12m < 0);
+ rel12mEl.classList.toggle("up", rel12m !== null && rel12m > 0);
 
  const regime = monthly.currentRegime;
  const stats = regime ? monthly.regimeStats[regime] : null;
@@ -1226,7 +1227,6 @@ function renderStats(data, monthly){
  if(monthly.corrPairs.length >= 8){
   const reg = linearRegression(monthly.corrPairs.map(p => p.x), monthly.corrPairs.map(p => p.y));
   corrEl.textContent = (reg.r >= 0 ? "+" : "") + reg.r.toFixed(2);
-  corrEl.classList.toggle("cell-neg", reg.r < 0);
   let interp = "Weak linear relationship in this sample";
   if(Math.abs(reg.r) >= 0.15){
    interp = reg.r < 0

@@ -588,12 +588,12 @@ h1{ font-family:var(--serif); font-size:28px; font-weight:400; margin:0; }
 </div>
 <div class="stat-card">
 <div class="stat-label">3m/10y Spread</div>
-<div class="stat-value" id="stat3m10y" style="color:var(--fear);">…</div>
+<div class="stat-value" id="stat3m10y">…</div>
 <div class="stat-note">The New York Fed's preferred recession-model input</div>
 </div>
 <div class="stat-card">
 <div class="stat-label">10Y Term Premium</div>
-<div class="stat-value" id="statTP" style="color:var(--extreme);">…</div>
+<div class="stat-value" id="statTP">…</div>
 <div class="stat-note">ACM model, NY Fed</div>
 </div>
 <div class="stat-card">
@@ -935,8 +935,10 @@ function init(){
  const latest = CURVE_MONTHLY[CURVE_MONTHLY.length - 1];
  const prior2s10s = CURVE_MONTHLY[CURVE_MONTHLY.length - 13]; // ~12 months earlier
  document.getElementById("stat2s10s").textContent = (latest[1] >= 0 ? "+" : "") + latest[1].toFixed(2) + "%";
+ document.getElementById("stat2s10s").className = "stat-value" + (latest[1] > 0 ? " up" : latest[1] < 0 ? " down" : "");
  document.getElementById("stat2s10sNote").textContent = "As of " + latest[0] + (prior2s10s ? " (" + (latest[1] - prior2s10s[1] >= 0 ? "+" : "") + (latest[1] - prior2s10s[1]).toFixed(2) + " pts YoY)" : "");
  document.getElementById("stat3m10y").textContent = (latest[2] >= 0 ? "+" : "") + latest[2].toFixed(2) + "%";
+ document.getElementById("stat3m10y").className = "stat-value" + (latest[2] > 0 ? " up" : latest[2] < 0 ? " down" : "");
  const latestTP = TERM_PREMIUM[TERM_PREMIUM.length - 1];
  document.getElementById("statTP").textContent = (latestTP[1] >= 0 ? "+" : "") + latestTP[1].toFixed(2) + "%";
 

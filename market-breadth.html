@@ -341,8 +341,8 @@ h1{
  color:var(--ink);
 }
 
-.daychange-stat-value.beat{ color:#5a9d6f; }
-.daychange-stat-value.miss{ color:var(--fear); }
+.daychange-stat-value.beat{ color:var(--up); }
+.daychange-stat-value.miss{ color:var(--down); }
 
 .chart-box h2{
  font-family:var(--serif);
@@ -685,7 +685,7 @@ h1{
 </div>
 <div class="stat-card">
 <div class="stat-label">A-D Line</div>
-<div class="stat-value" id="statAdLine" style="font-size:20px;">…</div>
+<div class="stat-value" id="statAdLine">…</div>
 <div class="stat-note">Cumulative, since data start</div>
 </div>
 <div class="stat-card">
@@ -1178,6 +1178,7 @@ async function init(){
   document.getElementById("statPctSma").textContent = latest.pctAbove200sma === null ? "n/a" : latest.pctAbove200sma + "%";
   const netHL = (latest.newHighs || 0) - (latest.newLows || 0);
   document.getElementById("statNetHL").textContent = (netHL >= 0 ? "+" : "") + netHL;
+  document.getElementById("statNetHL").className = "stat-value" + (netHL > 0 ? " up" : netHL < 0 ? " down" : "");
   document.getElementById("statNetHLNote").textContent = latest.newHighs + " highs, " + latest.newLows + " lows";
   document.getElementById("statAdLine").textContent = (latest.adLine >= 0 ? "+" : "") + latest.adLine.toLocaleString();
   const beatLatest = [...ROWS].reverse().find(r => r.pctBeatIndex != null);

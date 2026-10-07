@@ -672,7 +672,7 @@ tbody td:nth-child(3){ color:var(--muted); font-size:11px; }
 <h1>Earnings Revisions</h1>
 <div class="subtitle">How Wall Street analysts are revising S&amp;P 500 earnings estimates, how many are moving their numbers, which way and by how much, broken out by sector.</div>
 </div>
-<div class="updated" id="updated">Loading...</div>
+<div class="header-meta"><div class="updated" id="updated">Loading...</div><div class="coverage-note" id="coverageNote" hidden></div></div>
 </div>
 
 <div class="stat-grid">
@@ -810,6 +810,14 @@ function showWarning(message){
  banner.style.display = "block";
 }
 
+// A partial sweep is noted quietly under the As-of time instead of in a banner.
+function showCoverage(loaded, total, label){
+ const el = document.getElementById("coverageNote");
+ el.textContent = loaded + " of " + total + " " + label;
+ el.title = (total - loaded) + " of the " + total + " had no usable data in this run.";
+ el.hidden = false;
+}
+
 function fmtRatio(v){
  if(v === null || v === undefined || isNaN(v)) return "n/a";
  return (v >= 0 ? "+" : "") + v.toFixed(2);
@@ -844,8 +852,8 @@ async function init(){
   RAW = data;
   document.getElementById("updated").textContent = "As of " + new Date(data.generated_at_utc).toLocaleString("en-US", { month: "2-digit", day: "2-digit", year: "numeric", hour: "numeric", minute: "2-digit" });
 
-  if(data.universe_size < data.universe_total * 0.85){
-   showWarning("Only " + data.universe_size + " of " + data.universe_total + " S&P 500 constituents had usable estimates. Some sector figures may be based on partial coverage.");
+  if(data.universe_size < data.universe_total){
+   showCoverage(data.universe_size, data.universe_total, "constituents with usable estimates");
   }
 
   renderStats();
@@ -967,9 +975,9 @@ Chart.register(robustOffscalePlugin);
 function renderStats(){
  const m = RAW.market;
  document.getElementById("statNrr").textContent = fmtRatio(m.netRevisionRatio30);
- document.getElementById("statNrr").className = "stat-value" + (m.netRevisionRatio30 < 0 ? " down" : "");
+ document.getElementById("statNrr").className = "stat-value" + (m.netRevisionRatio30 < 0 ? " down" : m.netRevisionRatio30 > 0 ? " up" : "");
  document.getElementById("statDrift").textContent = fmtPct(m.drift30);
- document.getElementById("statDrift").className = "stat-value" + (m.drift30 < 0 ? " down" : "");
+ document.getElementById("statDrift").className = "stat-value" + (m.drift30 < 0 ? " down" : m.drift30 > 0 ? " up" : "");
  document.getElementById("statUpDown").textContent = m.upTotal + " / " + m.downTotal;
  document.getElementById("statCoverage").textContent = RAW.universe_size + " / " + RAW.universe_total;
 }

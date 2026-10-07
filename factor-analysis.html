@@ -1542,12 +1542,16 @@ async function init(){
 
   document.getElementById("statMkt").textContent = pctText(latest.mktRf);
   document.getElementById("statMkt").classList.toggle("down", latest.mktRf < 0);
+  document.getElementById("statMkt").classList.toggle("up", latest.mktRf > 0);
   document.getElementById("statSmb").textContent = pctText(latest.smb);
   document.getElementById("statSmb").classList.toggle("down", latest.smb < 0);
+  document.getElementById("statSmb").classList.toggle("up", latest.smb > 0);
   document.getElementById("statHml").textContent = pctText(latest.hml);
   document.getElementById("statHml").classList.toggle("down", latest.hml < 0);
+  document.getElementById("statHml").classList.toggle("up", latest.hml > 0);
   document.getElementById("statMom").textContent = pctText(latest.mom);
   document.getElementById("statMom").classList.toggle("down", latest.mom < 0);
+  document.getElementById("statMom").classList.toggle("up", latest.mom > 0);
 
   document.getElementById("updated").textContent =
    "As of " + usDate(latest.date) + " · " + ALL_ROWS.length.toLocaleString() + " trading days since " + usDate(ALL_ROWS[0].date);
