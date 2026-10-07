@@ -72,6 +72,28 @@ async function fetchDailyHistory(symbol, { adjusted = true, sinceUnix = 0 } = {}
   return out;
 }
 
+// Split-adjusted close and total-return (adjusted) close together, ascending,
+// from one request: [{ date, close, adjClose }]. For jobs that need both a
+// price comparable with per-share earnings and a total return.
+async function fetchDailyCloses(symbol, { sinceUnix = 0 } = {}) {
+  const url =
+    `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(YAHOO_ALIASES[symbol] || symbol)}` +
+    `?period1=${sinceUnix}&period2=${Math.floor(Date.now() / 1000)}&interval=1d&events=div,splits`;
+  const payload = await fetchYahooJson(url);
+  const result = payload.chart && payload.chart.result && payload.chart.result[0];
+  if (!result) throw new Error(`Yahoo returned no data for ${symbol}`);
+  const close = result.indicators.quote[0].close || [];
+  const adj = (result.indicators.adjclose && result.indicators.adjclose[0].adjclose) || close;
+  const out = [];
+  (result.timestamp || []).forEach((t, i) => {
+    if (close[i] == null || adj[i] == null) return;
+    const date = new Date(t * 1000).toISOString().slice(0, 10);
+    out.push({ date, close: close[i], adjClose: adj[i] * spinoffFactor(symbol, date) });
+  });
+  if (!out.length) throw new Error(`Yahoo returned no closes for ${symbol}`);
+  return out;
+}
+
 // Latest price and previous close for many symbols at once (one call per
 // 20 symbols). Returns Map(symbol -> { price, prevClose }); symbols Yahoo
 // has no two-bar history for are simply absent from the map, like a failed
@@ -212,6 +234,7 @@ async function fetchIntradayBatch(symbols, { range = "5d", interval = "15m" } = 
 module.exports = {
   spinoffFactor,
   fetchDailyHistory,
+  fetchDailyCloses,
   fetchDailyBars,
   fetchDividendEvents,
   fetchSplitEvents,

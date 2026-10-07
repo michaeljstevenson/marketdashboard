@@ -26,6 +26,7 @@ const { getBeeswarmStore, META_KEY } = require("./beeswarm-blob-store");
 const { SECTOR_ORDER, normalizeSector } = require("./beeswarm-sectors");
 const { BREADTH_CONSTITUENTS } = require("./breadth-constituents");
 const { fetchDailyHistory, sleep } = require("./yahoo-client");
+const { quartersFrom, ttmEpsOn } = require("./ttm-eps");
 
 const HISTORY_START = "2016-09-01";
 const PRICE_WORKERS = 4;
@@ -57,18 +58,6 @@ function percentileOf(values, x) {
 }
 const ratio = (a, b) => (b > 0 && Number.isFinite(a) ? a / b : null);
 const titleCase = (s) => String(s).toLowerCase().replace(/\b([a-z])/g, (m) => m.toUpperCase()).replace(/\bAnd\b/g, "and").replace(/\b(Reit|Reits|It)\b/g, (m) => m.toUpperCase());
-
-// Trailing four-quarter EPS known on `date`: the four latest quarters
-// reported by then, provided they cover about one year.
-function ttmEpsOn(quarters, date) {
-  const known = quarters.filter((q) => q.reportedDate <= date);
-  if (known.length < 4) return null;
-  const last4 = known.slice(-4);
-  const span = (Date.parse(last4[3].fiscalDateEnding) - Date.parse(last4[0].fiscalDateEnding)) / 86400000;
-  if (span < 240 || span > 320) return null;
-  if (last4.some((q) => q.eps === null)) return null;
-  return last4.reduce((s, q) => s + q.eps, 0);
-}
 
 async function loadPrices(symbols, sinceUnix) {
   const prices = new Map();
@@ -151,10 +140,7 @@ exports.handler = async () => {
       if (!o || !rows || !rows.length) continue;
       const shares = num(o.SharesOutstanding);
       if (!shares) continue;
-      const quarters = ((earnings[symbol] && earnings[symbol].quarterlyEarnings) || [])
-        .map((q) => ({ fiscalDateEnding: q.fiscalDateEnding, reportedDate: q.reportedDate, eps: num(q.reportedEPS) }))
-        .filter((q) => q.reportedDate && q.fiscalDateEnding)
-        .sort((a, b) => (a.reportedDate < b.reportedDate ? -1 : 1));
+      const quarters = quartersFrom(earnings[symbol]);
       const sector = (meta[symbol] && meta[symbol].sector) || normalizeSector(symbol, o.Sector);
       const priceAtOverview = closeOn(rows, overviewDate);
       const fpe = num(o.ForwardPE);
@@ -251,5 +237,4 @@ exports.handler = async () => {
   }
 };
 
-module.exports.ttmEpsOn = ttmEpsOn;
 module.exports.aggregate = aggregate;

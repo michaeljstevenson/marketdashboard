@@ -4,12 +4,13 @@
 // Netlify Blobs. This function makes no Alpha Vantage calls itself — it
 // just reads the pre-computed blob.
 
-const { getEarningsGrowthStore, LATEST_KEY } = require("./earnings-growth-divergence-blob-store");
+const { getEarningsGrowthStore, LATEST_KEY, SPLIT_KEY } = require("./earnings-growth-divergence-blob-store");
 
-exports.handler = async () => {
+exports.handler = async (event) => {
   try {
     const store = getEarningsGrowthStore();
-    const payload = await store.get(LATEST_KEY, { type: "json" });
+    const v2 = event && event.queryStringParameters && event.queryStringParameters.v === "2";
+    const payload = await store.get(v2 ? SPLIT_KEY : LATEST_KEY, { type: "json" });
 
     if (!payload) {
       throw new Error("Earnings growth divergence data not yet populated, scheduled-earnings-growth-divergence-background hasn't run yet");

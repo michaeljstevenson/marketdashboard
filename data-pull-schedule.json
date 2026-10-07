@@ -298,6 +298,7 @@
       "apis": [],
       "pages": [
         "analyst-price-target",
+        "earnings-growth-divergence",
         "equity-risk-premium",
         "put-call-ratio",
         "short-sale-volume",

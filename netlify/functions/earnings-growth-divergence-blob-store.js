@@ -9,6 +9,9 @@ const { getStore } = require("@netlify/blobs");
 
 const BLOB_STORE = "earnings-growth-divergence";
 const LATEST_KEY = "latest.json";
+// The return decomposition. latest.json is the rank-divergence snapshot the
+// page read before October 2026, kept until the new page is live.
+const SPLIT_KEY = "decomposition.json";
 
 function getEarningsGrowthStore() {
   const { BLOBS_SITE_ID, BLOBS_API_TOKEN } = process.env;
@@ -18,4 +21,4 @@ function getEarningsGrowthStore() {
   return getStore(BLOB_STORE);
 }
 
-module.exports = { getEarningsGrowthStore, BLOB_STORE, LATEST_KEY };
+module.exports = { getEarningsGrowthStore, BLOB_STORE, LATEST_KEY, SPLIT_KEY };
