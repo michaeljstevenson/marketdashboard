@@ -712,12 +712,7 @@
   # scheduled-quality-financials-background.js reads, so run this one first.
 
 [functions."scheduled-analyst-price-target-background"]
-  # One-time snapshot (2026-09-16) — no schedule, same reasoning as
-  # scheduled-institutional-ownership-background above: matches this
-  # site's current convention for new full-universe Equities background
-  # jobs. Run manually (Netlify dashboard "Run now") for a fresh
-  # snapshot later. ~503 sequential COMPANY_OVERVIEW calls at 1050ms
-  # spacing plus a retry pass.
+  # No schedule until the reworked job's first run.
 
 [functions."scheduled-post-earnings-drift-background"]
   # Weekly, Saturday 11:30 UTC. New reports arrive every week in earnings
