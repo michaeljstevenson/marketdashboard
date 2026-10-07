@@ -200,16 +200,6 @@
       ]
     },
     {
-      "name": "revisions",
-      "cron": "20 7 * * 6",
-      "apis": [
-        "/api/earnings-revisions"
-      ],
-      "pages": [
-        "earnings-revisions"
-      ]
-    },
-    {
       "name": "beeswarm-annual",
       "cron": "30 8 * * 6",
       "apis": [
@@ -330,6 +320,16 @@
       ],
       "pages": [
         "earnings-growth-divergence"
+      ]
+    },
+    {
+      "name": "revisions",
+      "cron": null,
+      "apis": [
+        "/api/earnings-revisions"
+      ],
+      "pages": [
+        "earnings-revisions"
       ]
     },
     {

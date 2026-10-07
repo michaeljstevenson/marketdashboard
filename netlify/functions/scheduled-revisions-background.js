@@ -42,6 +42,7 @@ const { getBeeswarmStore, META_KEY } = require("./beeswarm-blob-store");
 const { BREADTH_CONSTITUENTS } = require("./breadth-constituents");
 const { SECTOR_ORDER } = require("./beeswarm-sectors");
 const { recordAvCall } = require("./av-call-counter");
+const { fetchQuotes } = require("./yahoo-client");
 
 const ALPHA_VANTAGE_URL = "https://www.alphavantage.co/query";
 const USER_AGENT =
@@ -49,6 +50,11 @@ const USER_AGENT =
 
 const MAX_HISTORY_POINTS = 260; // ~5 years of weekly snapshots
 const MIN_ANALYSTS_FOR_LEADERBOARD = 3; // thin coverage makes drift/NRR noisy
+// Days-ago points Alpha Vantage gives for each consensus EPS estimate.
+const AGO = [0, 7, 30, 60, 90];
+// Second share classes whose revenue estimate repeats the first class's
+// company-level figure, so revenue totals count each company once.
+const SECOND_CLASSES = new Set(["GOOG", "FOX", "NWS"]);
 
 function sleep(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
@@ -89,6 +95,8 @@ async function fetchEarningsEstimates(apiKey, symbol) {
   if (!fyRows.length) return null;
   fyRows.sort((a, b) => (a.date < b.date ? -1 : 1));
   const fy1 = fyRows[0];
+  const fy2 = fyRows[1] || null;
+  const epsAt = (row, k) => (row ? num(k ? row[`eps_estimate_average_${k}_days_ago`] : row.eps_estimate_average) : null);
 
   const epsNow = num(fy1.eps_estimate_average);
   const eps7 = num(fy1.eps_estimate_average_7_days_ago);
@@ -108,6 +116,60 @@ async function fetchEarningsEstimates(apiKey, symbol) {
     up30,
     down30,
     netRevisionRatio30: totalRevisions30 > 0 ? (up30 - down30) / totalRevisions30 : null,
+    fy2EndDate: fy2 ? fy2.date : null,
+    fy1Eps: Object.fromEntries(AGO.map((k) => [k, epsAt(fy1, k)])),
+    fy2Eps: Object.fromEntries(AGO.map((k) => [k, epsAt(fy2, k)])),
+    fy1Revenue: num(fy1.revenue_estimate_average),
+    fy2Revenue: fy2 ? num(fy2.revenue_estimate_average) : null,
+  };
+}
+
+// Next-twelve-months blend of the two fiscal years, weighted by how much of
+// FY1 is still ahead on `date`: the usual way to put companies with different
+// fiscal year-ends on one forward basis.
+function ntm(fy1Value, fy2Value, fy1EndDate, date) {
+  if (!Number.isFinite(fy1Value)) return null;
+  const w = Math.max(0, Math.min(1, (Date.parse(fy1EndDate) - Date.parse(date)) / (365 * 86400000)));
+  if (!Number.isFinite(fy2Value)) return w > 0.5 ? fy1Value : null;
+  return w * fy1Value + (1 - w) * fy2Value;
+}
+const daysBefore = (date, k) => new Date(Date.parse(date) - k * 86400000).toISOString().slice(0, 10);
+
+// Change in forward earnings and revenue totals since the stored weekly point
+// nearest 4 and 13 weeks back (within a week), once history reaches that far.
+function revenueVsEps(points, now) {
+  const out = { since: {} };
+  for (const weeks of [4, 13]) {
+    const target = Date.parse(now.date) - weeks * 7 * 86400000;
+    const then = points.filter((p) => p.revenue && p.earnings).sort((a, b) => Math.abs(Date.parse(a.date) - target) - Math.abs(Date.parse(b.date) - target))[0];
+    if (!then || Math.abs(Date.parse(then.date) - target) > 7 * 86400000) continue;
+    const ch = (a, b) => (a > 0 && b > 0 ? round((a / b - 1) * 100, 2) : null);
+    out.since[weeks] = {
+      from: then.date,
+      revenuePct: ch(now.revenue, then.revenue),
+      earningsPct: ch(now.earnings, then.earnings),
+      sectors: SECTOR_ORDER.filter((s) => then.sectorTotals && then.sectorTotals[s]).map((s) => ({ sector: s, revenuePct: ch(now.sectorTotals[s].revenue, then.sectorTotals[s].revenue), earningsPct: ch(now.sectorTotals[s].earnings, then.sectorTotals[s].earnings) })),
+    };
+  }
+  const withTotals = points.filter((p) => p.revenue && p.earnings);
+  out.firstStored = withTotals.length ? withTotals[0].date : now.date;
+  return out;
+}
+
+// Aggregate forward earnings (shares x NTM EPS) for a group at each
+// days-ago point, using only stocks with every point, so the path compares
+// the same companies throughout.
+function forwardPath(rows, today) {
+  const usable = rows.filter((r) => r.shares && r.price && AGO.every((k) => Number.isFinite(ntm(r.fy1Eps[k], r.fy2Eps[k], r.fyEndDate, daysBefore(today, k)))));
+  if (!usable.length) return null;
+  const total = (k) => usable.reduce((s, r) => s + r.shares * ntm(r.fy1Eps[k], r.fy2Eps[k], r.fyEndDate, daysBefore(today, k)), 0);
+  const now = total(0);
+  const cap = usable.reduce((s, r) => s + r.shares * r.price, 0);
+  return {
+    companies: usable.length,
+    forwardPE: now > 0 ? round(cap / now, 1) : null,
+    changePct: Object.fromEntries(AGO.filter((k) => k).map((k) => { const then = total(k); return [k, then > 0 ? round((now / then - 1) * 100, 2) : null]; })),
+    earningsNow: now,
   };
 }
 
@@ -169,6 +231,8 @@ exports.handler = async () => {
 
     // Join against sector/name metadata; drop anything unmapped rather than
     // let it distort a sector aggregate under the wrong column.
+    let quotes = new Map();
+    try { quotes = await fetchQuotes([...results.keys()]); } catch (err) { console.error(`scheduled-revisions-background: quotes failed (${err.message})`); }
     const rows = [];
     for (const [symbol, est] of results.entries()) {
       const m = metaTickers[symbol];
@@ -178,6 +242,8 @@ exports.handler = async () => {
         name: m.name || symbol,
         sector: m.sector,
         marketCap: m.marketCap || null,
+        shares: m.sharesOutstanding || null,
+        price: quotes.get(symbol) ? quotes.get(symbol).price : null,
         ...est,
       });
     }
@@ -231,6 +297,23 @@ exports.handler = async () => {
       }));
 
     const generatedAt = new Date().toISOString();
+    const today = generatedAt.slice(0, 10);
+
+    // ---- forward EPS: index and sectors -----------------------------------
+    let spx = null;
+    try { const q = await fetchQuotes(["^GSPC"]); spx = q.get("^GSPC") ? q.get("^GSPC").price : null; } catch (err) { /* level left out */ }
+    const marketPath = forwardPath(rows, today);
+    const forward = marketPath && {
+      ...marketPath,
+      // The index's own forward EPS in index points: its level divided by
+      // the members' combined forward P/E.
+      indexEps: spx && marketPath.forwardPE ? round(spx / marketPath.forwardPE, 2) : null,
+      indexLevel: spx ? round(spx, 2) : null,
+      sectors: SECTOR_ORDER.map((sector) => { const p = forwardPath(rows.filter((r) => r.sector === sector), today); return p && { sector, companies: p.companies, forwardPE: p.forwardPE, changePct: p.changePct }; }).filter(Boolean),
+    };
+    if (forward) delete forward.earningsNow;
+    const revenueOf = (list) => list.filter((r) => !SECOND_CLASSES.has(r.ticker)).reduce((s, r) => { const v = ntm(r.fy1Revenue, r.fy2Revenue, r.fyEndDate, today); return s + (Number.isFinite(v) ? v : 0); }, 0);
+    const earningsOf = (list) => list.reduce((s, r) => { const v = ntm(r.fy1Eps[0], r.fy2Eps[0], r.fyEndDate, today); return s + (r.shares && Number.isFinite(v) ? r.shares * v : 0); }, 0);
 
     const latest = {
       generated_at_utc: generatedAt,
@@ -243,16 +326,18 @@ exports.handler = async () => {
         downTotal,
       },
       sectors: sectorAgg,
+      forward,
       scatter: scatterPoints,
       upgrades: upgrades.map(leaderboardRow),
       downgrades: downgrades.map(leaderboardRow),
     };
 
     const store = getRevisionsStore();
-    await store.setJSON(LATEST_KEY, latest);
-
     const history = (await store.get(HISTORY_KEY, { type: "json" })) || { points: [] };
     const points = Array.isArray(history.points) ? history.points : [];
+    latest.revenueVsEps = revenueVsEps(points, { date: today, earnings: earningsOf(rows), revenue: revenueOf(rows), sectorTotals: Object.fromEntries(SECTOR_ORDER.map((sec) => { const list = rows.filter((r) => r.sector === sec); return [sec, { earnings: earningsOf(list), revenue: revenueOf(list) }]; })) });
+    await store.setJSON(LATEST_KEY, latest);
+
     const todayDate = generatedAt.slice(0, 10);
     // A re-run on the same UTC day (manual trigger, redeploy) replaces that
     // day's point instead of appending a duplicate.
@@ -262,6 +347,12 @@ exports.handler = async () => {
       marketNrr,
       marketDrift30,
       sectors: Object.fromEntries(sectorAgg.map((s) => [s.sector, s.netRevisionRatio30])),
+      // Forward earnings and revenue totals ($), so revenue and EPS
+      // revisions can be compared week to week from here on.
+      forwardEps: forward ? forward.indexEps : null,
+      earnings: Math.round(earningsOf(rows)),
+      revenue: Math.round(revenueOf(rows)),
+      sectorTotals: Object.fromEntries(SECTOR_ORDER.map((sec) => { const list = rows.filter((r) => r.sector === sec); return [sec, { earnings: Math.round(earningsOf(list)), revenue: Math.round(revenueOf(list)) }]; })),
     });
     const trimmed = filtered.slice(-MAX_HISTORY_POINTS);
     await store.setJSON(HISTORY_KEY, { points: trimmed });
@@ -274,3 +365,7 @@ exports.handler = async () => {
     return { statusCode: 502, body: JSON.stringify({ error: err.message }) };
   }
 };
+
+module.exports.ntm = ntm;
+module.exports.forwardPath = forwardPath;
+module.exports.revenueVsEps = revenueVsEps;

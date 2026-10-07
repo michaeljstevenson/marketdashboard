@@ -625,7 +625,8 @@
   # meta job; trailing-30-day revision counts and 30-day drift don't need
   # daily refresh, so weekly (not one of the weekday daily-close jobs)
   # matches how this site treats other full-index sweeps.
-  schedule = "20 7 * * 6"
+  # Schedule paused for the reworked job's first manual run:
+  # schedule = "20 7 * * 6"
 
 [functions."scheduled-smallcap-background"]
   # 21:15 UTC — in the gap between scheduled-oddstats (21:10) and
