@@ -273,7 +273,7 @@ h1{
 
 .stat-grid{
  display:grid;
- grid-template-columns:repeat(4,1fr);
+ grid-template-columns:repeat(5,1fr);
  gap:16px;
  margin-bottom:30px;
 }
@@ -610,6 +610,54 @@ tbody td:first-child{
 .strip-key .sk-box{ width:16px; height:9px; border:1px solid var(--muted); background:rgba(125,138,153,0.18); border-radius:2px; }
 .strip-key .sk-line{ width:3px; height:12px; background:var(--ink); border-radius:2px; }
 .strip-key .sk-tri{ width:0; height:0; border-left:4px solid transparent; border-right:4px solid transparent; border-bottom:7px solid var(--muted); }
+
+/* View toggles (decomposition range, heat map mode) */
+.toggle-group{
+ display:inline-flex;
+ background:var(--card);
+ border:1px solid var(--hair);
+ border-radius:8px;
+ padding:3px;
+ flex-wrap:wrap;
+}
+.toggle-btn{
+ background:none;
+ border:none;
+ color:var(--muted);
+ font-family:var(--sans);
+ font-size:12.5px;
+ padding:6px 12px;
+ border-radius:6px;
+ cursor:pointer;
+}
+.toggle-btn.active{
+ background:var(--greed);
+ color:var(--bg);
+ font-weight:600;
+}
+.table-box-header .toggle-group{ margin:6px 0 8px; }
+
+/* Country heat map */
+table.heat-table td{ color:var(--ink); }
+table.heat-table td.heat-name, table.heat-table th.heat-name{
+ position:sticky;
+ left:0;
+ background:var(--card);
+ z-index:1;
+}
+table.heat-table td.heat-ticker{ color:var(--muted); text-align:left; font-size:11.5px; }
+table.heat-table th.heat-ticker{ text-align:left; }
+table.heat-table tr.heat-group td{
+ font-family:var(--sans);
+ color:var(--muted);
+ font-size:11px;
+ letter-spacing:0.04em;
+ text-align:left;
+ padding:12px 12px 6px;
+ background:var(--card);
+}
+.heat-group-label{ position:sticky; left:12px; }
+.box-empty{ color:var(--muted); font-size:13px; padding:24px 0; text-align:center; }
 </style>
 <link rel="stylesheet" href="/site.css">
 </head>
@@ -748,14 +796,19 @@ tbody td:first-child{
 <div class="stat-note">EFA vs. SPY, trailing 252 trading days</div>
 </div>
 <div class="stat-card">
-<div class="stat-label">Current Dollar Regime</div>
-<div class="stat-value txt" id="statRegime">…</div>
-<div class="stat-note" id="statRegimeNote">Avg. monthly spread return, this regime</div>
+<div class="stat-label">Currency Part of 12-Month Gap</div>
+<div class="stat-value" id="statCurrency">…</div>
+<div class="stat-note" id="statCurrencyNote">EFA minus hedged HEFA, trailing 252 trading days</div>
 </div>
 <div class="stat-card">
-<div class="stat-label">Correlation w/ EUR/USD &Delta;</div>
-<div class="stat-value" id="statCorr">…</div>
-<div class="stat-note" id="statCorrNote">Monthly, Pearson r</div>
+<div class="stat-label">Current Leadership Leg</div>
+<div class="stat-value txt" id="statLeg">…</div>
+<div class="stat-note" id="statLegNote">Monthly relative line since 1975</div>
+</div>
+<div class="stat-card">
+<div class="stat-label">36-Month Correlation</div>
+<div class="stat-value" id="statCorr36">…</div>
+<div class="stat-note" id="statCorr36Note">EFA vs. SPY, monthly returns</div>
 </div>
 </div>
 
@@ -802,6 +855,24 @@ tbody td:first-child{
 </div>
 </div>
 
+<div class="chart-box">
+<div class="chart-box-header">
+<div>
+<h2>International vs. US gap split into currency and local markets</h2>
+<div class="chart-subhead" id="splitSubhead">Each bar is one calendar year's EFA minus SPY total return in percentage points, split into a local-market part (hedged HEFA minus SPY) and a currency part (EFA minus HEFA). The marker is the total gap. The current year is year to date.</div>
+</div>
+<div class="toggle-group" id="splitToggle">
+<button class="toggle-btn active" type="button" data-view="etf">2015 to date (ETFs)</button>
+<button class="toggle-btn" type="button" data-view="kf" id="splitKfBtn">Since 1975 (Ken French)</button>
+</div>
+</div>
+<div class="ndr-panel">
+<div class="chart-canvas-wrap">
+<canvas id="splitChart"></canvas>
+</div>
+</div>
+</div>
+
 <div class="table-box">
 <div class="table-box-header">
 <h2>Trailing return ladder</h2>
@@ -816,6 +887,24 @@ tbody td:first-child{
 <div class="table-footnote">1M–1Y are cumulative returns. 3Y/5Y/10Y are annualized. Developed = EFA (MSCI EAFE proxy), Emerging = EEM (MSCI Emerging Markets proxy), US = SPY (S&amp;P 500 proxy).</div>
 </div>
 
+<div class="table-box">
+<div class="table-box-header">
+<h2>Country ETF returns</h2>
+<div class="chart-subhead" id="heatSubhead">Total return in US dollars by country ETF, as of the last close. Green cells are gains and red cells are losses, shaded by size within each column.</div>
+<div class="toggle-group" id="heatToggle">
+<button class="toggle-btn active" type="button" data-mode="abs">USD return</button>
+<button class="toggle-btn" type="button" data-mode="rel">Minus US</button>
+</div>
+</div>
+<table class="heat-table" id="heatTable">
+<thead><tr id="heatHead"></tr></thead>
+<tbody id="heatBody">
+<tr><td colspan="8" style="text-align:center; color:var(--muted); padding:24px;">Loading&hellip;</td></tr>
+</tbody>
+</table>
+<div class="table-footnote">1M, 3M, YTD and 1Y are cumulative returns. 3Y and 5Y are annualized. n/a means the fund's history doesn't cover the whole period.</div>
+</div>
+
 <div class="chart-box">
 <div class="chart-box-header">
 <div>
@@ -826,6 +915,49 @@ tbody td:first-child{
 <div class="ndr-panel">
 <div class="chart-canvas-wrap">
 <canvas id="rollingChart"></canvas>
+</div>
+</div>
+</div>
+
+<div class="chart-box">
+<div class="chart-box-header">
+<div>
+<h2>International vs. US leadership cycles, since 1975</h2>
+<div class="chart-subhead">International cumulative dollar return ÷ US cumulative dollar return, monthly, 100 at the end of 1974, log scale. Shaded spans are international-led legs. Dots mark turning points, where the line reversed at least 20%.</div>
+</div>
+</div>
+<div class="ndr-panel">
+<div class="chart-canvas-wrap">
+<canvas id="cycleChart"></canvas>
+</div>
+</div>
+<div class="strip-key-row" id="cycleKey"></div>
+</div>
+
+<div class="table-box">
+<div class="table-box-header">
+<h2>Leadership legs</h2>
+<div class="chart-subhead">Each leg runs from one turning point to the next. Returns are cumulative over the leg, in US dollars. The currency and local-market columns compound to the relative move.</div>
+</div>
+<table id="cycleTable">
+<thead><tr><th>Leader</th><th>From</th><th>To</th><th>Months</th><th>Relative move</th><th>Currency</th><th>Local vs. US</th><th>Dollar index</th><th>Intl. return</th><th>US return</th></tr></thead>
+<tbody id="cycleBody">
+<tr><td colspan="10" style="text-align:center; color:var(--muted); padding:24px;">Loading&hellip;</td></tr>
+</tbody>
+</table>
+<div class="table-footnote">Relative move is the change in the international/US line over the leg. Dollar index is the change in DXY over the same months, where a rise means a stronger dollar.</div>
+</div>
+
+<div class="chart-box">
+<div class="chart-box-header">
+<div>
+<h2>Rolling 36-month correlation with the US</h2>
+<div class="chart-subhead">Pearson correlation of monthly dollar returns with the US over the trailing 36 months. Solid lines are the ETFs (EFA and EEM vs. SPY). Dashed lines are the Ken French indexes vs. the US market.</div>
+</div>
+</div>
+<div class="ndr-panel">
+<div class="chart-canvas-wrap">
+<canvas id="corrRollingChart"></canvas>
 </div>
 </div>
 </div>
@@ -862,9 +994,15 @@ tbody td:first-child{
 
 <div class="explainer">
 <h2>Methodology</h2>
-<p>International and US stocks are represented by three ETFs: EFA for developed markets outside the US, EEM for emerging markets, and SPY for the US. Returns include dividends and are in US dollars, so the currency effect a US investor would actually experience is already built in. The ratio series starts at 100 in April 2003, when EEM launched.</p>
+<p>Unless a section says otherwise, international and US stocks are represented by three ETFs: EFA for developed markets outside the US, EEM for emerging markets, and SPY for the US. Returns include dividends and are in US dollars, so the currency effect a US investor would actually experience is already built in. The ratio series starts at 100 in April 2003, when EEM launched.</p>
 <p>Each month is classified by how much EUR/USD changed over the prior 3 months. A rise of more than 2% is "Dollar Weakening," a fall of more than 2% is "Dollar Strengthening," and anything in between is "Flat." EUR/USD is only one currency pair, so this is a rough stand-in for the dollar's direction. The idea being tested is that a weaker dollar should boost international returns for a US investor. Each regime only has a couple dozen months, so treat the averages as suggestive.</p>
 <p>The scatter shows Pearson (linear) and Spearman (rank) correlation so one or two extreme months can't drive the result. A low r² is expected, since one currency pair rarely explains much of monthly stock returns.</p>
+<p>The currency split from 2015 uses HEFA, the currency-hedged version of EFA, which launched in January 2014. HEFA holds EFA and sells the foreign currencies forward each month, so its return is close to what the same stocks earned in their own currencies. The EFA minus SPY gap is split into two parts that add up exactly: HEFA minus SPY (local markets) and EFA minus HEFA (currency). The arithmetic is exact, but HEFA is only an approximation of local-currency returns. A currency hedge earns the gap between US and foreign short-term interest rates. With US short-term rates above euro, yen and Swiss franc rates throughout the period since 2015, HEFA has picked up anywhere from under one to about three percentage points a year from the hedge on top of the local stock return. That carry sits in the local-market part and comes out of the currency part. The two funds' small fee and tracking differences also land in the split.</p>
+<p>The Ken French view, which starts in 1975, uses Kenneth French's Major Markets index, which averages his country portfolios using EAFE plus Canada country weights and publishes value-weighted returns both in US dollars and in local currencies. There the currency part is the dollar return minus the local return, and the local-market part is the local return minus the US market return (Ken French's Mkt-RF plus RF). That split is exact for the index, with no hedging carry in it. The index includes Canada, which EFA leaves out, so its yearly returns can differ from EFA's by a few percentage points. Ken French updates this file once a year, and the latest published month is <span id="mmThrough">…</span>. The tooltips and the leg table also show the change in the ICE US Dollar Index (DXY), a basket of six currencies weighted mostly to the euro, as a cross-check. DXY is used because its history runs back to 1971, while the Federal Reserve's broad trade-weighted dollar index (DTWEXBGS) starts in 2006.</p>
+<p>The leadership-cycle line divides the international cumulative dollar return by the US cumulative dollar return, month by month. International is the Major Markets index through <span id="cycleIntlThrough">…</span> and EFA after that. The US is Ken French's US market return through <span id="cycleUsThrough">…</span> and SPY after that. The last point is the latest close, so the current month is partial. A leg ends when the line reverses at least 20% from its latest peak or trough, measured in log terms so rises and falls are treated alike. A 15% threshold adds a one-month leg in 1990 and splits the 2008 to 2009 swings into short legs. A 30% threshold merges the 1983 to 1988 run with its 1984 pause. The first leg starts where the data starts, so it is cut short. The current leg is still open and only becomes a completed leg once the line reverses 20%. In the leg table, (1 + currency) × (1 + local vs. US) = 1 + relative move. After the Major Markets data ends, the local-currency return comes from HEFA, so a leg running past that point picks up a little hedging carry.</p>
+<p>The heat map shows dividend-inclusive total returns in US dollars for single-country iShares ETFs, the same funds the Country / Sector Scorecard uses where the two overlap. All periods end at the latest close. YTD starts from the prior year's last close, and 3Y and 5Y are annualized. "Minus US" subtracts SPY's return for the same period, in percentage points. Shading is scaled within each column, and any cell at or beyond the column's 85th percentile of absolute size gets the full shade. Each country fund holds that market's large and mid caps, so a few large companies can drive it.</p>
+<p>The rolling correlation uses complete months only. The ETF lines start 36 months after each fund's first full month, in 2004 for EFA and 2006 for EEM. The Ken French lines take the comparison back to 1977 for developed markets (Major Markets index vs. US market) and 1992 for emerging markets (Ken French's emerging-markets market return, Mkt-RF plus RF, vs. US market). A lower correlation means international stocks moved more independently of US stocks, which is when holding them did more to smooth a US investor's returns. Correlation doesn't show which side returned more.</p>
+<p class="source">Sources: Yahoo Finance (ETF adjusted closes, EUR/USD, DXY) and the <a href="https://mba.tuck.dartmouth.edu/pages/faculty/ken.french/data_library.html" target="_blank" rel="noopener">Kenneth R. French Data Library</a> (International Index Portfolios, Fama/French 3 Factors, Emerging Markets 5 Factors).</p>
 
 
 </div>
@@ -908,10 +1046,15 @@ Chart.defaults.color = ndr("axis-soft");
 // `opts.title` is a deviation from concentration.html's ndrXScale (which
 // never needed an x-axis title) - this page's scatter panel has a numeric
 // x-axis that needs one, so it's supported here directly.
+// Nine year labels collide at phone width.
+function narrowTicks(){
+ return window.innerWidth < 560 ? 5 : 9;
+}
+
 function ndrXScale(opts){
  opts = opts || {};
  return {
-  ticks: { color: ndr("axis"), maxTicksLimit: 9, maxRotation: 0, autoSkip: true, font: { size: opts.fontSize || 11 } },
+  ticks: { color: ndr("axis"), maxTicksLimit: opts.maxTicks || narrowTicks(), maxRotation: 0, autoSkip: true, font: { size: opts.fontSize || 11 } },
   grid: { color: "rgba(0,0,0,0)", borderColor: ndr("axis") },
   title: opts.title ? { display: true, text: opts.title, color: ndr("axis-soft"), font: { size: 10 } } : { display: false },
  };
@@ -1263,6 +1406,8 @@ function stripKeyHtml(center, unit){
 }
 
 let ratioDevelopedChart = null, ratioEmergingChart = null, rollingChart = null, regimeChart = null, corrScatter = null, yearlyChart = null;
+let splitChart = null, cycleChart = null, corrRollingChart = null;
+let SPLIT_VIEW = "etf", HEAT_MODE = "abs";
 
 async function init(){
  try{
@@ -1282,6 +1427,13 @@ async function init(){
   renderRollingChart(data);
   renderRegimeChart(monthly);
   renderCorrScatter(monthly);
+  renderSplitChart(data);
+  renderHeatmap(data);
+  renderCycleChart(data);
+  renderCycleTable(data);
+  renderCorrRolling(data);
+  renderMethodDates(data);
+  wireToggles();
 
  }catch(e){
   showError("Couldn't load international-vs-US data (" + e.message + "). The /api/international-us function may not have run yet.");
@@ -1315,27 +1467,58 @@ function renderStats(data, monthly){
  rel12mEl.classList.toggle("cell-neg", rel12m !== null && rel12m < 0);
  rel12mEl.classList.toggle("up", rel12m !== null && rel12m > 0);
 
- const regime = monthly.currentRegime;
- const stats = regime ? monthly.regimeStats[regime] : null;
- document.getElementById("statRegime").textContent = regime || "n/a";
- if(stats && stats.n){
-  document.getElementById("statRegimeNote").textContent =
-   "Avg. " + fmtPct(stats.mean) + "/mo in “" + regime + "” regimes (n=" + stats.n + " mo.)";
+ const tw = data.currencySplit && data.currencySplit.trailing12m;
+ const curEl = document.getElementById("statCurrency");
+ if(tw && tw.currency !== null && tw.currency !== undefined){
+  curEl.textContent = fmtPp(tw.currency);
+  curEl.classList.toggle("up", tw.currency > 0);
+  curEl.classList.toggle("down", tw.currency < 0);
+  document.getElementById("statCurrencyNote").textContent =
+   "Of a " + fmtPp(tw.gap) + " EFA minus SPY gap. Local markets " + fmtPp(tw.local) + " (HEFA minus SPY).";
+ }else{
+  curEl.textContent = "n/a";
  }
 
- const corrEl = document.getElementById("statCorr");
- const corrNoteEl = document.getElementById("statCorrNote");
- if(monthly.corrPairs.length >= 8){
-  const reg = linearRegression(monthly.corrPairs.map(p => p.x), monthly.corrPairs.map(p => p.y));
-  corrEl.textContent = (reg.r >= 0 ? "+" : "") + reg.r.toFixed(2);
-  let interp = "Weak linear relationship in this sample";
-  if(Math.abs(reg.r) >= 0.15){
-   interp = reg.r < 0
-    ? "International has tended to lag when the dollar weakens"
-    : "International has tended to lead when the dollar weakens";
+ const legs = data.long && data.long.legs;
+ if(legs && legs.length){
+  const cur = legs[legs.length - 1];
+  const leader = cur.leader === "international" ? "International" : "US";
+  document.getElementById("statLeg").textContent = leader + " since " + usDate(cur.start);
+  const past = legs.filter(g => !g.ongoing && !g.fromDataStart && g.leader === cur.leader);
+  let note = fmtPct(cur.relChange, 1) + " in " + cur.months + " mo.";
+  if(cur.extreme && cur.extreme !== cur.end) note += " (furthest " + fmtPct(cur.extremeChange, 1) + " in " + usDate(cur.extreme) + ")";
+  if(past.length){
+   note += ". Past " + (cur.leader === "international" ? "international" : "US") + "-led legs: median " +
+    Math.round(median(past.map(g => g.months))) + " mo., " + fmtPct(median(past.map(g => g.relChange)), 1);
   }
-  corrNoteEl.textContent = interp + " (n=" + reg.n + " mo.)";
+  document.getElementById("statLegNote").textContent = note;
+ }else{
+  document.getElementById("statLeg").textContent = "n/a";
  }
+
+ const corr = data.correlation && data.correlation.developedEtf;
+ if(corr && corr.length){
+  const last = corr[corr.length - 1];
+  const pct = Math.max(1, Math.round(percentileRank(corr.map(c => c.r), last.r)));
+  document.getElementById("statCorr36").textContent = last.r.toFixed(2);
+  document.getElementById("statCorr36Note").textContent =
+   "EFA vs. SPY to " + usDate(last.ym) + ". " + ordinal(pct) + " percentile since " + corr[0].ym.slice(0, 4);
+ }else{
+  document.getElementById("statCorr36").textContent = "n/a";
+ }
+}
+
+function fmtPp(v, digits){
+ if(v === null || v === undefined || isNaN(v)) return "n/a";
+ digits = digits === undefined ? 1 : digits;
+ return (v >= 0 ? "+" : "") + v.toFixed(digits) + " pp";
+}
+
+function median(arr){
+ const s = arr.slice().sort((a, b) => a - b);
+ const n = s.length;
+ if(!n) return null;
+ return n % 2 ? s[(n - 1) / 2] : (s[n / 2 - 1] + s[n / 2]) / 2;
 }
 
 function renderRatioCharts(data){
@@ -1514,7 +1697,7 @@ function renderRegimeChart(monthly){
    label: k,
    points: monthly.records.filter(r => r.regime === k && r.relReturn !== null).map(r => ({ v: r.relReturn, name: r.ym })),
   })),
-  groupTick: (g, st) => g.label + " (n=" + st.n + ")",
+  groupTick: (g, st) => window.innerWidth < 560 ? g.label.split(" ").concat("(n=" + st.n + ")") : g.label + " (n=" + st.n + ")",
   fmt: v => fmtPct(v),
   tickFmt: v => (Math.round(v * 100) / 100) + "%",
   clipQuantiles: [0.005, 0.995],
@@ -1582,6 +1765,306 @@ function renderCorrScatter(monthly){
    "<tbody>" + row("Pearson (OLS)", pearson) + row("Spearman (&rho;)", spear) + "</tbody>" +
   "</table>" +
   '<div class="method-note">Slope is percentage points of monthly developed-vs-US return spread per 1% move in EUR/USD that month.</div>';
+}
+
+// ---- Currency vs. local-market split -------------------------------------
+
+const SPLIT_SUBHEADS = {
+ etf: "Each bar is one calendar year's EFA minus SPY total return in percentage points, split into a local-market part (hedged HEFA minus SPY) and a currency part (EFA minus HEFA). The marker is the total gap. The current year is year to date.",
+ kf: "Each bar is one calendar year's Ken French Major Markets minus US market return in percentage points, split into a local-market part (local-currency return minus US) and a currency part (dollar return minus local-currency return). The marker is the total gap.",
+};
+
+function renderSplitChart(data){
+ const cs = data.currencySplit;
+ const rows = (cs && (SPLIT_VIEW === "kf" ? cs.kfYears : cs.etfYears)) || [];
+ document.getElementById("splitSubhead").textContent = SPLIT_SUBHEADS[SPLIT_VIEW];
+ if(splitChart) splitChart.destroy();
+ splitChart = null;
+ const canvas = document.getElementById("splitChart");
+ const ctx = canvas.getContext("2d");
+ if(!rows.length){
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  return;
+ }
+ const kf = SPLIT_VIEW === "kf";
+ splitChart = new Chart(ctx, {
+  type: "bar",
+  data: {
+   labels: rows.map(r => r.partial ? r.year + " YTD" : String(r.year)),
+   datasets: [
+    { type: "bar", label: "Local markets vs. US", data: rows.map(r => r.local), backgroundColor: ndr("navy"), stack: "parts", borderRadius: 2, maxBarThickness: 30, order: 2 },
+    { type: "bar", label: "Currency", data: rows.map(r => r.currency), backgroundColor: ndr("gold"), stack: "parts", borderRadius: 2, maxBarThickness: 30, order: 2 },
+    { type: "line", label: "Total gap", data: rows.map(r => r.gap), stack: "total", showLine: false, pointStyle: "rectRot", pointRadius: kf ? 3.5 : 5, pointHoverRadius: kf ? 5 : 7, pointBackgroundColor: ndr("red"), pointBorderColor: ndr("plot"), pointBorderWidth: 1.2, borderColor: ndr("red"), backgroundColor: ndr("red"), order: 1 },
+   ],
+  },
+  options: {
+   responsive: true,
+   maintainAspectRatio: false,
+   animation: false,
+   interaction: { mode: "index", intersect: false },
+   plugins: {
+    legend: ndrLegend(),
+    tooltip: {
+     callbacks: {
+      title: items => items[0].label,
+      label: c => c.dataset.label + ": " + fmtPp(c.parsed.y),
+      afterBody: items => {
+       const r = rows[items[0].dataIndex];
+       const out = kf
+        ? ["Major Markets " + fmtPct(r.intl, 1) + " in USD, " + fmtPct(r.intlLocal, 1) + " local", "US market " + fmtPct(r.us, 1)]
+        : ["EFA " + fmtPct(r.efa, 1) + ", HEFA " + fmtPct(r.hefa, 1) + ", SPY " + fmtPct(r.spy, 1)];
+       if(r.dxy !== null && r.dxy !== undefined) out.push("Dollar index (DXY) " + fmtPct(r.dxy, 1));
+       if(r.partial) out.push("Through " + usDate(r.throughDate));
+       return out;
+      },
+     },
+    },
+   },
+   scales: {
+    x: Object.assign(ndrXScale(), { stacked: true }),
+    y: Object.assign(ndrYScale({ fmt: v => v + " pp" }), { stacked: true }),
+   },
+  },
+ });
+}
+
+// ---- Country heat map ----------------------------------------------------
+
+function themeRgb(name){
+ let hex = getComputedStyle(document.documentElement).getPropertyValue(name).trim().replace("#", "");
+ if(hex.length === 3) hex = hex.split("").map(c => c + c).join("");
+ const n = parseInt(hex, 16);
+ return [(n >> 16) & 255, (n >> 8) & 255, n & 255].join(",");
+}
+
+const HEAT_SUBHEADS = {
+ abs: "Total return in US dollars by country ETF, as of the last close. Green cells are gains and red cells are losses, shaded by size within each column.",
+ rel: "Each country ETF's return minus the US (SPY) return over the same period, in percentage points, as of the last close. Green cells beat the US and red cells trailed it, shaded by size within each column.",
+};
+const HEAT_GROUP_LABELS = { Benchmarks: "Benchmarks", Developed: "Developed markets", Emerging: "Emerging markets" };
+
+function renderHeatmap(data){
+ const hm = data.heatmap;
+ document.getElementById("heatSubhead").textContent = HEAT_SUBHEADS[HEAT_MODE];
+ if(!hm || !hm.rows || !hm.rows.length){
+  document.getElementById("heatBody").innerHTML = '<tr><td colspan="8" class="box-empty">Country data not available yet.</td></tr>';
+  return;
+ }
+ const periods = hm.periods;
+ document.getElementById("heatHead").innerHTML =
+  '<th class="heat-name">Country</th><th class="heat-ticker">ETF</th>' + periods.map(p => "<th>" + p + "</th>").join("");
+
+ const usRow = hm.rows.find(r => r.ticker === "SPY");
+ const rel = HEAT_MODE === "rel";
+ const shown = hm.rows.map(r => ({
+  row: r,
+  vals: r.values.map((v, j) => {
+   if(v === null || v === undefined) return null;
+   if(!rel) return v;
+   const u = usRow ? usRow.values[j] : null;
+   return u === null || u === undefined ? null : Math.round((v - u) * 100) / 100;
+  }),
+ }));
+
+ const caps = periods.map((p, j) => {
+  const mags = shown.filter(s => !(rel && s.row.ticker === "SPY")).map(s => s.vals[j]).filter(v => v !== null).map(Math.abs).sort((a, b) => a - b);
+  return Math.max(1, stripQuantile(mags, 0.85) || 1);
+ });
+ const up = themeRgb("--up"), down = themeRgb("--down");
+
+ let html = "";
+ let group = null;
+ for(const s of shown){
+  if(s.row.group !== group){
+   group = s.row.group;
+   html += '<tr class="heat-group"><td colspan="' + (periods.length + 2) + '"><span class="heat-group-label">' + (HEAT_GROUP_LABELS[group] || group) + "</span></td></tr>";
+  }
+  const cells = s.vals.map((v, j) => {
+   if(v === null) return '<td class="cell-na">n/a</td>';
+   const text = rel ? fmtPp(v) : fmtPct(v, 1);
+   if(rel && s.row.ticker === "SPY") return '<td class="cell-na">' + text + "</td>";
+   const alpha = Math.min(Math.abs(v) / caps[j], 1) * 0.55;
+   const title = s.row.name + ", " + periods[j] + ": " + text;
+   return '<td title="' + title + '" style="background:rgba(' + (v >= 0 ? up : down) + "," + alpha.toFixed(2) + ')">' + text + "</td>";
+  }).join("");
+  html += '<tr><td class="heat-name">' + s.row.name + '</td><td class="heat-ticker">' + s.row.ticker + "</td>" + cells + "</tr>";
+ }
+ document.getElementById("heatBody").innerHTML = html;
+}
+
+// ---- Leadership cycles ---------------------------------------------------
+
+function legIndexRanges(L){
+ const idx = new Map(L.months.map((m, i) => [m, i]));
+ return L.legs.map(g => ({ leg: g, s: idx.get(g.start), e: g.ongoing ? L.months.length - 1 : idx.get(g.end) }));
+}
+
+function renderCycleChart(data){
+ const L = data.long;
+ const canvas = document.getElementById("cycleChart");
+ if(cycleChart) cycleChart.destroy();
+ cycleChart = null;
+ if(!L || !L.months || !L.months.length) return;
+
+ const ranges = legIndexRanges(L);
+ const pivot = L.relative.map(() => null);
+ ranges.forEach(r => {
+  if(!r.leg.fromDataStart) pivot[r.s] = L.relative[r.s];
+ });
+ const shade = stripRgba(ndr("gold"), 0.2);
+ const shadePlugin = {
+  id: "legShade",
+  beforeDatasetsDraw(chart){
+   const { ctx, chartArea, scales } = chart;
+   ctx.save();
+   ctx.fillStyle = shade;
+   for(const r of ranges){
+    if(r.leg.leader !== "international") continue;
+    const x0 = Math.max(chartArea.left, scales.x.getPixelForValue(r.s));
+    const x1 = Math.min(chartArea.right, scales.x.getPixelForValue(r.e));
+    if(x1 > x0) ctx.fillRect(x0, chartArea.top, x1 - x0, chartArea.bottom - chartArea.top);
+   }
+   ctx.restore();
+  },
+ };
+
+ const lo = Math.min(...L.relative), hi = Math.max(...L.relative);
+ const NICE = [10, 15, 20, 25, 30, 40, 50, 60, 80, 100, 120, 150, 200, 250, 300, 400, 500];
+ const yScale = Object.assign(ndrYScale({ log: true, fmt: v => String(v) }), {
+  min: lo * 0.92,
+  max: hi * 1.08,
+  afterBuildTicks: axis => { axis.ticks = NICE.filter(v => v >= axis.min && v <= axis.max).map(v => ({ value: v })); },
+ });
+
+ cycleChart = new Chart(canvas.getContext("2d"), {
+  type: "line",
+  data: {
+   labels: L.months,
+   datasets: [
+    { label: "International ÷ US", data: L.relative, borderColor: ndr("navy"), backgroundColor: ndr("navy"), borderWidth: 1.4, pointRadius: 0, pointHitRadius: 4, fill: false },
+    { label: "Turning point", data: pivot, showLine: false, pointRadius: 3.5, pointHoverRadius: 5, pointBackgroundColor: ndr("red"), pointBorderColor: ndr("plot"), pointBorderWidth: 1, borderColor: ndr("red"), backgroundColor: ndr("red") },
+   ],
+  },
+  plugins: [shadePlugin],
+  options: {
+   responsive: true,
+   maintainAspectRatio: false,
+   animation: false,
+   interaction: { mode: "index", intersect: false },
+   plugins: {
+    legend: { display: false },
+    tooltip: {
+     filter: item => item.parsed.y !== null && !isNaN(item.parsed.y),
+     callbacks: {
+      title: items => {
+       const i = items[0].dataIndex;
+       return i === L.months.length - 1 ? usDate(L.lastDate) : usDate(L.months[i]);
+      },
+      label: c => c.datasetIndex === 0 ? "International ÷ US: " + c.parsed.y.toFixed(1) : "Turning point",
+      afterBody: items => {
+       const i = items[0].dataIndex;
+       const r = ranges.find(x => i > x.s && i <= x.e) || ranges.find(x => i === x.s);
+       if(!r) return [];
+       const who = r.leg.leader === "international" ? "International-led" : "US-led";
+       return [who + " leg, " + usDate(r.leg.start) + " to " + (r.leg.ongoing ? "now" : usDate(r.leg.end)) + ", " + fmtPct(r.leg.relChange, 1)];
+      },
+     },
+    },
+   },
+   scales: { x: ndrXScale(), y: yScale },
+  },
+ });
+
+ document.getElementById("cycleKey").innerHTML =
+  '<span class="strip-key"><span class="sk-box" style="background:' + shade + '; border-color:' + stripRgba(ndr("gold"), 0.7) + '"></span>International-led leg</span>' +
+  '<span class="strip-key"><span class="sk-box" style="background:none"></span>US-led leg</span>' +
+  '<span class="strip-key"><span class="sk-dot" style="background:' + ndr("red") + '; opacity:1"></span>Turning point (20% reversal)</span>';
+}
+
+function renderCycleTable(data){
+ const L = data.long;
+ const body = document.getElementById("cycleBody");
+ if(!L || !L.legs || !L.legs.length){
+  body.innerHTML = '<tr><td colspan="10" class="box-empty">Ken French history not available yet.</td></tr>';
+  return;
+ }
+ const cell = v => v === null || v === undefined ? '<td class="cell-na">n/a</td>' : "<td>" + fmtPct(v, 1) + "</td>";
+ body.innerHTML = L.legs.slice().reverse().map(g => {
+  const from = usDate(g.start) + (g.fromDataStart ? " (data start)" : "");
+  const to = g.ongoing ? "Open, " + usDate(g.endDate) : usDate(g.end);
+  return "<tr><td>" + (g.leader === "international" ? "International" : "US") + "</td>" +
+   "<td>" + from + "</td><td>" + to + "</td><td>" + g.months + "</td>" +
+   cell(g.relChange) + cell(g.currency) + cell(g.localVsUs) + cell(g.dxy) + cell(g.intlReturn) + cell(g.usReturn) + "</tr>";
+ }).join("");
+}
+
+// ---- Rolling correlation -------------------------------------------------
+
+function renderCorrRolling(data){
+ const c = data.correlation;
+ if(corrRollingChart) corrRollingChart.destroy();
+ corrRollingChart = null;
+ if(!c) return;
+ const series = [
+  { key: "developedEtf", label: "EFA vs. SPY", color: "navy", dash: [], width: 1.6 },
+  { key: "emergingEtf", label: "EEM vs. SPY", color: "gold", dash: [], width: 1.6 },
+  { key: "developedKf", label: "Developed (Ken French) vs. US", color: "navy", dash: [5, 3], width: 1.1 },
+  { key: "emergingKf", label: "Emerging (Ken French) vs. US", color: "gold", dash: [5, 3], width: 1.1 },
+ ].filter(s => c[s.key] && c[s.key].length);
+ const months = [...new Set(series.flatMap(s => c[s.key].map(p => p.ym)))].sort();
+ const pos = new Map(months.map((m, i) => [m, i]));
+ const datasets = series.map(s => {
+  const arr = months.map(() => null);
+  c[s.key].forEach(p => { arr[pos.get(p.ym)] = p.r; });
+  return { label: s.label, data: arr, borderColor: ndr(s.color), backgroundColor: ndr(s.color), borderDash: s.dash, borderWidth: s.width, pointRadius: 0, pointHitRadius: 3, fill: false, spanGaps: false };
+ });
+ corrRollingChart = new Chart(document.getElementById("corrRollingChart").getContext("2d"), {
+  type: "line",
+  data: { labels: months, datasets },
+  options: {
+   responsive: true,
+   maintainAspectRatio: false,
+   animation: false,
+   interaction: { mode: "index", intersect: false },
+   plugins: {
+    legend: ndrLegend(),
+    tooltip: {
+     filter: item => item.parsed.y !== null && !isNaN(item.parsed.y),
+     callbacks: { label: t => t.dataset.label + ": " + t.parsed.y.toFixed(2) },
+    },
+   },
+   scales: { x: ndrXScale(), y: ndrYScale({ min: 0, max: 1, fmt: v => v.toFixed(1) }) },
+  },
+ });
+}
+
+function renderMethodDates(data){
+ const kfYears = data.currencySplit && data.currencySplit.kfYears;
+ if(kfYears && kfYears.length){
+  document.getElementById("splitKfBtn").textContent = kfYears[0].year + " to " + kfYears[kfYears.length - 1].year + " (Ken French)";
+ }
+ const sp = data.long && data.long.splice;
+ if(!sp) return;
+ document.getElementById("mmThrough").textContent = usDate(sp.intlKfThrough);
+ document.getElementById("cycleIntlThrough").textContent = usDate(sp.intlKfThrough);
+ document.getElementById("cycleUsThrough").textContent = usDate(sp.usKfThrough);
+}
+
+function wireToggles(){
+ document.querySelectorAll("#splitToggle .toggle-btn").forEach(btn => {
+  btn.addEventListener("click", () => {
+   SPLIT_VIEW = btn.dataset.view;
+   document.querySelectorAll("#splitToggle .toggle-btn").forEach(b => b.classList.toggle("active", b === btn));
+   renderSplitChart(RAW);
+  });
+ });
+ document.querySelectorAll("#heatToggle .toggle-btn").forEach(btn => {
+  btn.addEventListener("click", () => {
+   HEAT_MODE = btn.dataset.mode;
+   document.querySelectorAll("#heatToggle .toggle-btn").forEach(b => b.classList.toggle("active", b === btn));
+   renderHeatmap(RAW);
+  });
+ });
 }
 
 init();
