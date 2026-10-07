@@ -40,5 +40,6 @@
   "cashflow-collector": "One sweep of quarterly and annual cash flow (including buybacks, dividends and stock-based compensation) for every S&P 500 stock, saved for other jobs to read.",
   "estimates-collector": "One sweep of analyst EPS estimates for every S&P 500 stock, saved for other jobs to read.",
   "income-collector": "One sweep of quarterly and annual income statements for every S&P 500 stock, saved for other jobs to read.",
-  "balance-collector": "One sweep of quarterly and annual balance sheets for every S&P 500 stock, saved for other jobs to read."
+  "balance-collector": "One sweep of quarterly and annual balance sheets for every S&P 500 stock, saved for other jobs to read.",
+  "putcall-history": "Put/call ratio of every S&P 500 member at each month-end for the last five years, plus one current snapshot each week, for the put/call ratio page's forward-return study. The five-year backfill runs in short overnight batches."
 }

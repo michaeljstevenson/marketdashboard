@@ -1,6 +1,12 @@
 {
   "jobs": [
     {
+      "name": "putcall-history",
+      "cron": "*/15 0-6 * * *",
+      "apis": [],
+      "pages": []
+    },
+    {
       "name": "ticker",
       "cron": "*/2 13-20 * * 1-5",
       "apis": [
