@@ -173,6 +173,16 @@ document.addEventListener("DOMContentLoaded", function(){
   --serif:'Times New Roman',Times,serif;
   --mono:'SF Mono','JetBrains Mono',ui-monospace,Menlo,monospace;
   --sans:'Times New Roman',Times,serif;
+
+  --q-leading:var(--up);
+  --q-weakening:#d29922;
+  --q-lagging:var(--down);
+  --q-improving:#58a6ff;
+  --model-line:#3987e5;
+  --lb-1:#58718d;
+  --lb-2:#7b97b5;
+  --lb-3:#a3bdd8;
+  --lb-4:#d6e3f0;
 }
 
 :root[data-theme="light"]{
@@ -186,6 +196,13 @@ document.addEventListener("DOMContentLoaded", function(){
   --neutral:#6c7178;
   --greed:#b9701f;
   --extreme:#96591c;
+  --q-weakening:#9a6700;
+  --q-improving:#0969da;
+  --model-line:#2a78d6;
+  --lb-1:#a9bdd2;
+  --lb-2:#7f9bb8;
+  --lb-3:#4f6f8c;
+  --lb-4:#2c4763;
 }
 
 *{ box-sizing:border-box; }
@@ -332,16 +349,131 @@ h1{
  height:380px;
 }
 
-.quadrant-labels{
- display:grid;
- grid-template-columns:1fr 1fr;
- font-size:10px;
- color:var(--muted);
- letter-spacing:0.04em;
- margin-top:8px;
- text-transform:uppercase;
+.rrg-canvas-wrap{
+ height:560px;
+ position:relative;
 }
-.quadrant-labels div{ text-align:center; padding:2px 0; }
+
+@media (max-width:720px){
+ .rrg-canvas-wrap{ height:420px; }
+}
+
+/* CONTROLS */
+
+.controls{
+ display:flex;
+ align-items:center;
+ gap:10px;
+ flex-wrap:wrap;
+}
+
+.control-label{
+ color:var(--muted);
+ font-size:12px;
+}
+
+.toggle-group{
+ display:inline-flex;
+ background:var(--card);
+ border:1px solid var(--hair);
+ border-radius:8px;
+ padding:3px;
+}
+
+.toggle-btn{
+ background:none;
+ border:none;
+ color:var(--muted);
+ font-family:var(--sans);
+ font-size:13px;
+ padding:6px 14px;
+ border-radius:6px;
+ cursor:pointer;
+}
+
+.toggle-btn:hover{ color:var(--ink); }
+
+.toggle-btn.active{
+ background:var(--greed);
+ color:#1a1408;
+ font-weight:600;
+}
+
+.scrubber{
+ display:flex;
+ align-items:center;
+ gap:10px;
+ flex-wrap:wrap;
+ margin-bottom:12px;
+}
+
+.scrubber .playbtn{
+ background:var(--greed);
+ color:#1a1408;
+ border:none;
+ border-radius:6px;
+ width:34px;
+ height:32px;
+ font-size:13px;
+ cursor:pointer;
+ flex:none;
+}
+
+.scrubber .stepbtn{
+ background:none;
+ border:1px solid var(--hair);
+ color:var(--muted);
+ border-radius:6px;
+ width:30px;
+ height:32px;
+ font-size:16px;
+ cursor:pointer;
+ flex:none;
+}
+
+.scrubber .stepbtn:hover{ color:var(--ink); }
+.scrubber input[type=range]{ flex:1 1 220px; min-width:0; accent-color:var(--greed); }
+
+.scrubber .frame-label{
+ font-family:var(--mono);
+ font-size:13px;
+ color:var(--ink);
+ min-width:92px;
+ text-align:right;
+}
+
+.chip-row{
+ display:flex;
+ flex-wrap:wrap;
+ gap:6px;
+ margin-top:12px;
+}
+
+.chip{
+ background:none;
+ border:1px solid var(--hair);
+ color:var(--ink);
+ border-radius:999px;
+ padding:4px 10px;
+ font-family:var(--sans);
+ font-size:12px;
+ cursor:pointer;
+}
+
+.chip:hover{ border-color:var(--muted); }
+.chip .chip-ticker{ font-family:var(--mono); font-size:11px; color:var(--muted); margin-right:4px; }
+.chip[aria-pressed="false"]{ color:var(--muted); opacity:0.55; text-decoration:line-through; }
+
+.subsection{ margin-top:22px; }
+
+.subsection h3{
+ font-family:var(--serif);
+ font-weight:400;
+ font-size:15px;
+ margin:0 0 8px;
+}
+
+.muted-ticker{ color:var(--muted); font-family:var(--mono); font-size:11px; }
 
 /* TABLE */
 
@@ -414,57 +546,18 @@ table.datatable tbody td:first-child{
  padding:2px 6px;
  font-family:var(--sans);
 }
-.badge-leading{ color:var(--greed); border:1px solid var(--greed); }
-.badge-weakening{ color:var(--extreme); border:1px solid var(--extreme); }
-.badge-lagging{ color:var(--fear); border:1px solid var(--fear); }
-.badge-improving{ color:var(--neutral); border:1px solid var(--neutral); }
+.badge-leading{ color:var(--q-leading); border:1px solid var(--q-leading); }
+.badge-weakening{ color:var(--q-weakening); border:1px solid var(--q-weakening); }
+.badge-lagging{ color:var(--q-lagging); border:1px solid var(--q-lagging); }
+.badge-improving{ color:var(--q-improving); border:1px solid var(--q-improving); }
 
-/* SCATTER / METHOD TABLE (mirrors /factor-analysis) */
+/* FORMATION x HOLDING GRID */
 
-.scatter-canvas-wrap{
- height:340px;
- margin-bottom:12px;
- position:relative;
-}
-
-.method-table{
- width:100%;
- border-collapse:collapse;
- font-family:var(--mono);
- font-size:11px;
- margin-top:8px;
-}
-
-.method-table th{
- text-align:right;
- padding:6px 5px;
- color:var(--muted);
- font-size:10px;
- letter-spacing:0.03em;
- font-weight:600;
- border-bottom:1px solid var(--hair);
- white-space:nowrap;
-}
-
-.method-table th:first-child{ text-align:left; }
-
-.method-table td{
- padding:7px 5px;
- text-align:right;
- border-bottom:1px solid var(--hair);
- white-space:nowrap;
- color:var(--ink);
-}
-
-.method-table td:first-child{
- text-align:left;
- font-family:var(--sans);
- color:var(--muted);
-}
-
-.method-table tr:last-child td{ border-bottom:none; }
-
-.method-table .sig{ color:var(--greed); }
+table.grid-table{ min-width:460px; }
+table.grid-table thead th{ text-align:center; }
+table.grid-table tbody td{ text-align:center; padding:10px 12px; }
+.grid-table .gv{ display:block; font-size:14px; color:var(--ink); }
+.grid-table .gt{ display:block; font-size:11px; color:var(--muted); margin-top:2px; }
 
 .method-note{
  font-size:11px;
@@ -472,6 +565,8 @@ table.datatable tbody td:first-child{
  margin-top:8px;
  font-style:italic;
 }
+
+.table-box .method-note{ margin:0; padding:10px 20px 16px; }
 
 /* EXPLAINER */
 
@@ -714,14 +809,14 @@ table.datatable tbody td:first-child{
 <div class="stat-note" id="statLaggardNote">3-month relative return vs. SPY</div>
 </div>
 <div class="stat-card">
-<div class="stat-label">Sectors in "Leading" Quadrant</div>
-<div class="stat-value" id="statLeadingCount">…</div>
-<div class="stat-note">Positive level and positive momentum</div>
+<div class="stat-label">Model Holdings</div>
+<div class="stat-value txt" id="statHoldings">…</div>
+<div class="stat-note" id="statHoldingsNote">…</div>
 </div>
 <div class="stat-card">
-<div class="stat-label">Month-to-Month Rank Persistence</div>
-<div class="stat-value" id="statPersistence">…</div>
-<div class="stat-note" id="statPersistenceNote">Spearman &rho;, this month's leaders vs. next month's</div>
+<div class="stat-label">Model CAGR vs. SPY</div>
+<div class="stat-value" id="statCagr">…</div>
+<div class="stat-note" id="statCagrNote">…</div>
 </div>
 </div>
 
@@ -729,16 +824,31 @@ table.datatable tbody td:first-child{
 <div class="chart-box-header">
 <div>
 <h2>Relative rotation graph</h2>
-<div class="chart-subhead">X: 3-month change in relative strength (level). Y: 1-month change in relative strength (momentum). Each point is one sector, as of the latest close.</div>
+<div class="chart-subhead">X: RS-Ratio, the trend in each sector's relative strength against SPY. Y: RS-Momentum, the rate of change of RS-Ratio. Each tail is one sector's last 10 weekly points, ending at the labeled dot.</div>
 </div>
 </div>
-<div class="chart-canvas-wrap">
+<div class="scrubber">
+<button class="stepbtn" id="rrgBack" type="button" title="Previous week" aria-label="Previous week">&#8249;</button>
+<button class="playbtn" id="rrgPlay" type="button" title="Play" aria-label="Play">&#9654;</button>
+<button class="stepbtn" id="rrgFwd" type="button" title="Next week" aria-label="Next week">&#8250;</button>
+<input type="range" id="rrgRange" min="0" max="0" value="0" step="1" aria-label="Week shown">
+<span class="frame-label" id="rrgDate">…</span>
+</div>
+<div class="rrg-canvas-wrap">
 <canvas id="rrgChart"></canvas>
 </div>
-<div class="quadrant-labels">
-<div>&larr; Lagging / Improving &rarr;</div>
-<div>&larr; Weakening / Leading &rarr;</div>
+<div class="chip-row" id="rrgChips" role="group" aria-label="Sectors shown"></div>
 </div>
+
+<div class="table-box">
+<div class="table-box-header">
+<h2>Current rotation snapshot</h2>
+<div class="chart-subhead">Relative return vs. SPY, sorted by 3-month relative return</div>
+</div>
+<table class="datatable" id="rotationTable">
+<thead><tr><th>Sector</th><th>1M</th><th>3M</th><th>6M</th><th>1Y</th><th>Quadrant</th></tr></thead>
+<tbody id="rotationBody"><tr><td colspan="6" style="text-align:center; color:var(--muted); padding:24px;">Loading&hellip;</td></tr></tbody>
+</table>
 </div>
 
 <div class="chart-box">
@@ -756,41 +866,393 @@ table.datatable tbody td:first-child{
 <div class="chart-box">
 <div class="chart-box-header">
 <div>
-<h2>Does this month's sector leadership predict next month's?</h2>
-<div class="chart-subhead">Each circle is one pair of ranks, sized by how many sector-months landed there. X is that sector's relative-return rank that month (1 = best), Y is its rank the following month. Does chasing recent sector leadership work?</div>
+<h2>Rotation model backtest</h2>
+<div class="chart-subhead">Growth of $100 on a log scale. At each month-end close the model buys the three sectors with the highest trailing return relative to SPY, in equal weights, and holds them for the next month.</div>
+</div>
+<div class="controls">
+<span class="control-label" id="signalLabel">Signal</span>
+<div class="toggle-group" id="signalToggle" role="group" aria-labelledby="signalLabel">
+<button class="toggle-btn" type="button" data-signal="3">3M</button>
+<button class="toggle-btn active" type="button" data-signal="6">6M</button>
+<button class="toggle-btn" type="button" data-signal="12">12M</button>
+<button class="toggle-btn" type="button" data-signal="12-1">12-1</button>
 </div>
 </div>
-<div class="scatter-canvas-wrap">
-<canvas id="persistenceScatter"></canvas>
 </div>
-<div id="persistenceMethodTable"></div>
+<div class="chart-canvas-wrap">
+<canvas id="equityChart"></canvas>
+</div>
+<div class="subsection">
+<table class="datatable" id="modelStats">
+<thead><tr><th>Portfolio</th><th>CAGR</th><th>Volatility</th><th>Max drawdown</th><th>Months beating SPY</th><th>Information ratio</th><th>Avg. monthly turnover</th><th>CAGR after costs</th></tr></thead>
+<tbody id="modelStatsBody"><tr><td colspan="8" style="text-align:center; color:var(--muted); padding:24px;">Loading&hellip;</td></tr></tbody>
+</table>
+<div class="method-note" id="modelStatsNote"></div>
+</div>
+<div class="subsection">
+<h3>Current holdings</h3>
+<table class="datatable" id="holdingsTable">
+<thead><tr><th>Sector</th><th>Entered</th><th>Signal</th><th>Since entry vs. SPY</th></tr></thead>
+<tbody id="holdingsBody"><tr><td colspan="4" style="text-align:center; color:var(--muted); padding:24px;">Loading&hellip;</td></tr></tbody>
+</table>
+<div class="method-note" id="holdingsNote"></div>
+</div>
 </div>
 
 <div class="table-box">
 <div class="table-box-header">
-<h2>Current rotation snapshot</h2>
-<div class="chart-subhead">Relative return vs. SPY, sorted by 3-month relative return</div>
+<h2>Top 3 minus bottom 3 sectors, by formation and holding period</h2>
+<div class="chart-subhead">Annualized average monthly return of a portfolio that buys the three sectors with the highest return over the formation period and sells the three with the lowest, built from overlapping portfolios. Shading follows the t-statistic under each value.</div>
 </div>
-<table class="datatable" id="rotationTable">
-<thead><tr><th>Sector</th><th>1M</th><th>3M</th><th>6M</th><th>1Y</th><th>Quadrant</th></tr></thead>
-<tbody id="rotationBody"><tr><td colspan="6" style="text-align:center; color:var(--muted); padding:24px;">Loading&hellip;</td></tr></tbody>
+<table class="datatable grid-table" id="gridTable">
+<thead><tr><th>Formation</th><th>Hold 1M</th><th>Hold 3M</th><th>Hold 6M</th></tr></thead>
+<tbody id="gridBody"><tr><td colspan="4" style="text-align:center; color:var(--muted); padding:24px;">Loading&hellip;</td></tr></tbody>
 </table>
+<div class="method-note" id="gridNote"></div>
 </div>
 
 <div class="explainer">
 <h2>Methodology</h2>
 <p>Daily prices for the 11 sector ETFs compared against SPY.</p>
-<p>The rotation graph follows the standard Relative Rotation Graph (RRG) setup. The x-axis is each sector's medium-term trend: the 3-month change in its price relative to SPY. The y-axis is its momentum: the 1-month change in that same ratio. The four quadrants are Leading (outperforming and accelerating), Weakening (still outperforming but slowing), Lagging (underperforming and falling further behind) and Improving (underperforming but turning up). Sectors tend to rotate through the quadrants clockwise over a full cycle, though not on any fixed schedule.</p>
-<p>At each month-end, the 11 sectors are ranked by their 1-month return relative to SPY. Each sector's rank one month is compared with its rank the next month using Spearman (rank) correlation across all sector-months. A result near zero or negative means chasing last month's winners is no better than random.</p>
-
+<p>The rotation graph follows the standard Relative Rotation Graph (RRG) setup. The x-axis is each sector's medium-term trend: its RS-Ratio, which is 100 plus the number of standard deviations its relative strength sits above or below its average over the trailing 12 weeks. The y-axis is its momentum: its RS-Momentum, which is 100 plus the same 12-week measure applied to the 1-week percent change in RS-Ratio. The four quadrants are Leading (outperforming and accelerating), Weakening (still outperforming but slowing), Lagging (underperforming and falling further behind) and Improving (underperforming but turning up). Sectors tend to rotate through the quadrants clockwise over a full cycle, though not on any fixed schedule.</p>
+<p>Relative strength is 100 times the sector's weekly close divided by SPY's, using the last trading day of each week. The RS-Ratio and RS-Momentum formulas behind Julius de Kempenaer's RRG are proprietary, so the graph here is an approximation of the RRG method. Each tail covers the last 10 weeks. The latest point uses the latest close, so it can move until the week ends. The Quadrant column in the snapshot table uses each sector's latest point on the graph.</p>
+<p>The rotation model works from month-end closes. At each month-end it ranks every sector ETF with at least 12 months of history by its trailing return relative to SPY and holds the top three in equal weights for the next month. The signal can be the trailing 3, 6 or 12 months, or 12 months skipping the latest month (12-1), and the default is 6 months. Because every sector is measured against the same SPY return, ranking on relative return gives the same order as ranking on total return. Signals use only closes up to the month-end, and each month's return runs from that close to the next month-end close. The benchmarks are SPY and an equal-weight basket of every sector the model could choose from that month, rebalanced monthly. Returns use split- and dividend-adjusted closes, so they include dividends.</p>
+<p>Volatility is the annualized standard deviation of monthly returns. Max drawdown is the largest fall from a peak in daily value. The information ratio is the average monthly return over SPY divided by its standard deviation, annualized. Turnover is the share of the portfolio sold at each monthly rebalance, including trades that reset drifted weights to equal. CAGR after costs deducts 10 basis points per unit of turnover.</p>
+<p>The formation and holding grid tests which lookbacks have had predictive value. At each month-end, the same eligible sectors are ranked on their return over the formation period, and a portfolio buys the top three and sells the bottom three in equal weights. Following Jegadeesh and Titman (1993), each month holds equal parts of the portfolios formed at each of the last K month-ends, where K is the holding period, so no monthly return is counted twice. Each cell shows that portfolio's annualized average monthly return and its t-statistic. A t-statistic beyond 2 in either direction is the usual threshold for significance at the 5% level.</p>
 </div>
 
 </div>
 
 <script>
-const DATA_URL = "/api/sector-performance";
+const HISTORY_URL = "/sector-history.json";
+const LIVE_URL = "/api/sector-performance";
 
-let RAW = null;
+const BENCH = "SPY";
+const SECTORS = [
+ { ticker: "XLK", name: "Technology" },
+ { ticker: "XLF", name: "Financials" },
+ { ticker: "XLV", name: "Health Care" },
+ { ticker: "XLE", name: "Energy" },
+ { ticker: "XLI", name: "Industrials" },
+ { ticker: "XLY", name: "Consumer Discretionary" },
+ { ticker: "XLP", name: "Consumer Staples" },
+ { ticker: "XLU", name: "Utilities" },
+ { ticker: "XLB", name: "Materials" },
+ { ticker: "XLRE", name: "Real Estate" },
+ { ticker: "XLC", name: "Communication Services" },
+];
+const SECTOR_NAME = Object.fromEntries(SECTORS.map(s => [s.ticker, s.name]));
+
+const SIGNALS = [
+ { key: "3", label: "3M", months: 3, skip: 0 },
+ { key: "6", label: "6M", months: 6, skip: 0 },
+ { key: "12", label: "12M", months: 12, skip: 0 },
+ { key: "12-1", label: "12-1", months: 12, skip: 1 },
+];
+const DEFAULT_SIGNAL = "6";
+const FORMATIONS = [
+ { key: "1", label: "1M", months: 1, skip: 0 },
+ { key: "3", label: "3M", months: 3, skip: 0 },
+ { key: "6", label: "6M", months: 6, skip: 0 },
+ { key: "12", label: "12M", months: 12, skip: 0 },
+ { key: "12-1", label: "12-1", months: 12, skip: 1 },
+];
+const HOLDINGS = [1, 3, 6];
+const TOP_N = 3;
+const MIN_HISTORY_MONTHS = 12;
+const COST_PER_TURNOVER = 0.001;
+const RRG_WINDOW = 12;
+const TAIL_WEEKS = 10;
+// A z-score over 12 points can't exceed 11/sqrt(12), about 3.18, so fixed
+// axes hold every point and the frame stays still during replay.
+const RRG_AXIS = [96.5, 103.5];
+const PLAY_MS = 100;
+
+let CAL = null, ME = null, RRG = null, GRID = null, LIVE = null, SNAP = null;
+const MODELS = {};
+let SIGNAL = DEFAULT_SIGNAL;
+
+function mean(xs){ return xs.reduce((a, b) => a + b, 0) / xs.length; }
+function sd(xs){
+ const mu = mean(xs);
+ return Math.sqrt(xs.reduce((s, x) => s + (x - mu) ** 2, 0) / (xs.length - 1));
+}
+
+function isoDay(d){ return Date.UTC(+d.slice(0, 4), +d.slice(5, 7) - 1, +d.slice(8, 10)) / 86400000; }
+function weekKey(d){ const t = isoDay(d); return t - ((t + 3) % 7); }
+function nextWeekday(d){
+ let t = isoDay(d) + 1;
+ while([0, 6].includes(new Date(t * 86400000).getUTCDay())) t++;
+ return new Date(t * 86400000).toISOString().slice(0, 10);
+}
+function addMonthsIso(d, months){
+ const x = new Date(d + "T00:00:00Z");
+ x.setUTCMonth(x.getUTCMonth() + months);
+ return x.toISOString().slice(0, 10);
+}
+function indexOnOrBefore(dates, d){
+ let lo = 0, hi = dates.length - 1, found = -1;
+ while(lo <= hi){
+  const mid = (lo + hi) >> 1;
+  if(dates[mid] <= d){ found = mid; lo = mid + 1; } else hi = mid - 1;
+ }
+ return found;
+}
+
+// Same merge as loadFullHistory() on sector-analysis.html, so both pages
+// read identical closes. Everything is aligned to SPY's calendar.
+function mergeHistory(h, live){
+ const liveHist = {};
+ if(live && live.benchmark) liveHist[live.benchmark.ticker] = live.benchmark.history;
+ if(live && live.sectors) live.sectors.forEach(s => { liveHist[s.ticker] = s.history; });
+ const merged = ticker => {
+  const col = h.series[ticker];
+  const lv = liveHist[ticker] || [];
+  if(!col) return lv;
+  const out = [];
+  for(let i = 0; i < col.length; i++) if(col[i] !== null) out.push({ date: h.dates[i], close: col[i] });
+  return out.concat(lv.filter(p => p.date > h.through));
+ };
+ const spy = merged(BENCH);
+ const dates = spy.map(p => p.date);
+ const index = new Map(dates.map((d, i) => [d, i]));
+ const close = { [BENCH]: spy.map(p => p.close) };
+ SECTORS.forEach(s => {
+  const col = new Array(dates.length).fill(null);
+  merged(s.ticker).forEach(p => { const i = index.get(p.date); if(i !== undefined) col[i] = p.close; });
+  // A sector missing from one live run would otherwise drop out of that
+  // week's graph and that month's ranking.
+  for(let i = 1; i < col.length; i++) if(col[i] === null && col[i - 1] !== null) col[i] = col[i - 1];
+  close[s.ticker] = col;
+ });
+ return { dates, close };
+}
+
+// The latest month counts as finished only when the next weekday falls in
+// a new month, so a mid-month close never triggers a rebalance.
+function monthEnds(dates){
+ const out = [];
+ for(let i = 0; i < dates.length - 1; i++) if(dates[i].slice(0, 7) !== dates[i + 1].slice(0, 7)) out.push(i);
+ const last = dates.length - 1;
+ if(last >= 0 && nextWeekday(dates[last]).slice(0, 7) !== dates[last].slice(0, 7)) out.push(last);
+ return out;
+}
+
+function trailingRelative(cal, me, m, ticker, months, skip){
+ const a = m - months, b = m - skip;
+ if(a < 0) return NaN;
+ const c = cal.close[ticker], s = cal.close[BENCH];
+ const i0 = me[a], i1 = me[b];
+ if(c[i0] === null || c[i1] === null) return NaN;
+ return (c[i1] / c[i0] - 1) - (s[i1] / s[i0] - 1);
+}
+
+function eligibleAt(cal, me, m, ticker){
+ return m >= MIN_HISTORY_MONTHS && cal.close[ticker][me[m - MIN_HISTORY_MONTHS]] !== null && cal.close[ticker][me[m]] !== null;
+}
+
+function rankAt(cal, me, m, months, skip){
+ return SECTORS.filter(s => eligibleAt(cal, me, m, s.ticker))
+  .map(s => ({ ticker: s.ticker, signal: trailingRelative(cal, me, m, s.ticker, months, skip) }))
+  .filter(x => isFinite(x.signal))
+  .sort((a, b) => b.signal - a.signal);
+}
+
+function firstFormation(cal, me){
+ for(let m = 0; m < me.length; m++) if(SECTORS.filter(s => eligibleAt(cal, me, m, s.ticker)).length >= 2 * TOP_N) return m;
+ return -1;
+}
+
+function oneWayTurnover(prevW, nextW){
+ const keys = new Set(Object.keys(prevW).concat(Object.keys(nextW)));
+ let sum = 0;
+ keys.forEach(k => { sum += Math.abs((nextW[k] || 0) - (prevW[k] || 0)); });
+ return sum / 2;
+}
+
+function equalWeights(tickers){
+ const w = {};
+ tickers.forEach(t => { w[t] = 1 / tickers.length; });
+ return w;
+}
+
+function driftedWeights(tickers, growth){
+ const total = tickers.reduce((a, t) => a + growth[t], 0);
+ const w = {};
+ tickers.forEach(t => { w[t] = growth[t] / total; });
+ return w;
+}
+
+function maxDrawdown(values){
+ let peak = -Infinity, worst = 0;
+ values.forEach(v => { peak = Math.max(peak, v); worst = Math.min(worst, v / peak - 1); });
+ return worst;
+}
+
+// The equal-weight basket holds the same eligible sectors the model picks
+// from, so the gap between the two comes from the ranking alone.
+function runModel(cal, me, signal){
+ const { dates, close } = cal;
+ const m0 = firstFormation(cal, me);
+ const daily = { dates: [dates[me[m0]]], model: [100], spy: [100], ew: [100] };
+ const months = [];
+ const formations = [];
+ let vM = 100, vS = 100, vE = 100;
+ let prevHold = null, prevUni = null, prevGrowth = null;
+ for(let m = m0; m < me.length; m++){
+  const ranked = rankAt(cal, me, m, signal.months, signal.skip);
+  const hold = ranked.slice(0, TOP_N).map(x => x.ticker);
+  const uni = ranked.map(x => x.ticker);
+  formations.push({ m, date: dates[me[m]], hold, ranked });
+  const toM = prevHold ? oneWayTurnover(driftedWeights(prevHold, prevGrowth), equalWeights(hold)) : 0;
+  const toE = prevUni ? oneWayTurnover(driftedWeights(prevUni, prevGrowth), equalWeights(uni)) : 0;
+  if(m === me.length - 1) break;
+  const i0 = me[m], i1 = me[m + 1];
+  for(let i = i0 + 1; i <= i1; i++){
+   const g = t => close[t][i] / close[t][i0];
+   daily.dates.push(dates[i]);
+   daily.model.push(vM * mean(hold.map(g)));
+   daily.spy.push(vS * g(BENCH));
+   daily.ew.push(vE * mean(uni.map(g)));
+  }
+  const growth = {};
+  uni.concat([BENCH]).forEach(t => { growth[t] = close[t][i1] / close[t][i0]; });
+  const rM = mean(hold.map(t => growth[t])) - 1;
+  const rS = growth[BENCH] - 1;
+  const rE = mean(uni.map(t => growth[t])) - 1;
+  vM *= 1 + rM; vS *= 1 + rS; vE *= 1 + rE;
+  months.push({ date: dates[i1], rM, rS, rE, toM, toE });
+  prevHold = hold; prevUni = uni; prevGrowth = growth;
+ }
+ const current = formations[formations.length - 1];
+ const entered = current.hold.map(t => {
+  let k = formations.length - 1;
+  while(k > 0 && formations[k - 1].hold.includes(t)) k--;
+  return { ticker: t, date: formations[k].date, index: me[formations[k].m] };
+ });
+ return { signal, start: dates[me[m0]], end: months.length ? months[months.length - 1].date : dates[me[m0]], daily, months, formations, current, entered };
+}
+
+function seriesStats(r, bench, values, turnover){
+ const n = r.length;
+ const net = r.map((x, i) => (1 - COST_PER_TURNOVER * turnover[i]) * (1 + x) - 1);
+ const out = {
+  n,
+  cagr: Math.pow(r.reduce((v, x) => v * (1 + x), 1), 12 / n) - 1,
+  vol: sd(r) * Math.sqrt(12),
+  maxDd: maxDrawdown(values),
+  turnover: n > 1 ? mean(turnover.slice(1)) : NaN,
+  cagrNet: Math.pow(net.reduce((v, x) => v * (1 + x), 1), 12 / n) - 1,
+  beat: NaN,
+  ir: NaN,
+ };
+ if(bench){
+  const active = r.map((x, i) => x - bench[i]);
+  out.beat = r.filter((x, i) => x > bench[i]).length / n;
+  out.ir = mean(active) / sd(active) * Math.sqrt(12);
+ }
+ return out;
+}
+
+function modelStats(res){
+ const rS = res.months.map(x => x.rS);
+ return {
+  model: seriesStats(res.months.map(x => x.rM), rS, res.daily.model, res.months.map(x => x.toM)),
+  spy: seriesStats(rS, null, res.daily.spy, res.months.map(() => 0)),
+  ew: seriesStats(res.months.map(x => x.rE), rS, res.daily.ew, res.months.map(x => x.toE)),
+ };
+}
+
+// Jegadeesh-Titman overlapping portfolios: month t holds 1/K of the
+// long-short portfolio formed at each of the K prior month-ends, so each
+// monthly return is used once. Every cell uses the same months (those with
+// all six prior formations available) so the cells are comparable.
+function formationGrid(cal, me){
+ const { close } = cal;
+ const m0 = firstFormation(cal, me);
+ const last = me.length - 1;
+ const maxK = Math.max(...HOLDINGS);
+ const monthRet = (t, m) => close[t][me[m]] / close[t][me[m - 1]] - 1;
+ const firstMonth = m0 + maxK;
+ return {
+  start: cal.dates[me[firstMonth]],
+  end: cal.dates[me[last]],
+  rows: FORMATIONS.map(f => {
+   const legs = {};
+   for(let m = m0; m < last; m++){
+    const r = rankAt(cal, me, m, f.months, f.skip);
+    legs[m] = { win: r.slice(0, TOP_N).map(x => x.ticker), lose: r.slice(-TOP_N).map(x => x.ticker) };
+   }
+   return {
+    formation: f,
+    cells: HOLDINGS.map(K => {
+     const series = [];
+     for(let t = firstMonth; t <= last; t++){
+      let s = 0;
+      for(let k = 1; k <= K; k++){
+       const leg = legs[t - k];
+       s += mean(leg.win.map(x => monthRet(x, t))) - mean(leg.lose.map(x => monthRet(x, t)));
+      }
+      series.push(s / K);
+     }
+     const mu = mean(series);
+     return { K, n: series.length, annual: mu * 12, t: mu / (sd(series) / Math.sqrt(series.length)) };
+    }),
+   };
+  }),
+ };
+}
+
+function rollingZ(xs, n){
+ return xs.map((x, j) => {
+  if(j < n - 1) return NaN;
+  const w = xs.slice(j - n + 1, j + 1);
+  if(!w.every(v => isFinite(v))) return NaN;
+  const s = sd(w);
+  return s > 0 ? (x - mean(w)) / s : NaN;
+ });
+}
+
+function computeRrg(cal){
+ const { dates, close } = cal;
+ const wk = [];
+ for(let i = 0; i < dates.length; i++) if(i === dates.length - 1 || weekKey(dates[i]) !== weekKey(dates[i + 1])) wk.push(i);
+ const sectors = {};
+ SECTORS.forEach(s => {
+  const rs = wk.map(i => close[s.ticker][i] !== null ? 100 * close[s.ticker][i] / close[BENCH][i] : NaN);
+  const ratio = rollingZ(rs, RRG_WINDOW).map(z => 100 + z);
+  const roc = ratio.map((v, j) => j > 0 ? 100 * (v / ratio[j - 1] - 1) : NaN);
+  const momentum = rollingZ(roc, RRG_WINDOW).map(z => 100 + z);
+  sectors[s.ticker] = { ratio, momentum };
+ });
+ let first = -1;
+ for(let j = TAIL_WEEKS - 1; j < wk.length && first < 0; j++){
+  if(SECTORS.some(s => {
+   for(let k = j - TAIL_WEEKS + 1; k <= j; k++) if(!isFinite(sectors[s.ticker].ratio[k]) || !isFinite(sectors[s.ticker].momentum[k])) return false;
+   return true;
+  })) first = j;
+ }
+ return { dates: wk.map(i => dates[i]), sectors, first };
+}
+
+function quadrantOf(ratio, momentum){
+ if(!isFinite(ratio) || !isFinite(momentum)) return null;
+ if(ratio >= 100) return momentum >= 100 ? "Leading" : "Weakening";
+ return momentum >= 100 ? "Improving" : "Lagging";
+}
+
+// Calendar-month lookbacks from the latest close, matching
+// scheduled-sectors-background.js.
+function latestRelative(cal, months){
+ const n = cal.dates.length - 1;
+ const base = indexOnOrBefore(cal.dates, addMonthsIso(cal.dates[n], -months));
+ const out = {};
+ SECTORS.forEach(s => {
+  const c = cal.close[s.ticker], b = cal.close[BENCH];
+  out[s.ticker] = base < 0 || c[base] === null || c[n] === null ? NaN : ((c[n] / c[base]) - (b[n] / b[base])) * 100;
+ });
+ return out;
+}
 
 function showError(message){
  const banner = document.getElementById("errorBanner");
@@ -804,225 +1266,352 @@ function fmtPct(v, digits){
  return (v >= 0 ? "+" : "") + v.toFixed(digits) + "%";
 }
 
-function themeInkColor(){
- const v = getComputedStyle(document.documentElement).getPropertyValue("--ink").trim();
- return v || "#eae6da";
-}
-function themeMutedColor(){
- const v = getComputedStyle(document.documentElement).getPropertyValue("--muted").trim();
- return v || "#8b9199";
-}
-function themeHairColor(){
- const v = getComputedStyle(document.documentElement).getPropertyValue("--hair").trim();
- return v || "#2b3138";
-}
-function themeGreedColor(){
- const v = getComputedStyle(document.documentElement).getPropertyValue("--greed").trim();
- return v || "#d98a3d";
-}
-function themeFearColor(){
- const v = getComputedStyle(document.documentElement).getPropertyValue("--fear").trim();
- return v || "#6f8fac";
+function cssVar(name){
+ return getComputedStyle(document.documentElement).getPropertyValue(name).trim();
 }
 
-// ---- Stats helpers - same methodology as /factor-analysis, duplicated
-// here since every page on this site is self-contained (see CLAUDE.md). ----
-function linearRegression(xs, ys){
- const n = xs.length;
- const mx = xs.reduce((a, b) => a + b, 0) / n;
- const my = ys.reduce((a, b) => a + b, 0) / n;
- const sxx = xs.reduce((s, x) => s + (x - mx) ** 2, 0);
- const sxy = xs.reduce((s, x, i) => s + (x - mx) * (ys[i] - my), 0);
- const syy = ys.reduce((s, y) => s + (y - my) ** 2, 0);
- const slope = sxy / sxx;
- const intercept = my - slope * mx;
- const r = sxy / Math.sqrt(sxx * syy);
- const r2 = r * r;
- const dof = n - 2;
- const sse = ys.reduce((s, y, i) => s + (y - (intercept + slope * xs[i])) ** 2, 0);
- const seSlope = Math.sqrt((sse / dof) / sxx);
- const t = slope / seSlope;
- const p = 2 * (1 - normalCdf(Math.abs(t)));
- return { n, slope, intercept, r, r2, t, dof, p, sse };
-}
-function normalCdf(x){ return 0.5 * (1 + erf(x / Math.SQRT2)); }
-function erf(x){
- const sign = x < 0 ? -1 : 1;
- x = Math.abs(x);
- const a1 = 0.254829592, a2 = -0.284496736, a3 = 1.421413741, a4 = -1.453152027, a5 = 1.061405429, p = 0.3275911;
- const t = 1 / (1 + p * x);
- const y = 1 - (((((a5 * t + a4) * t) + a3) * t + a2) * t + a1) * t * Math.exp(-x * x);
- return sign * y;
-}
-function rankArray(arr){
- const idx = arr.map((v, i) => i).sort((a, b) => arr[a] - arr[b]);
- const ranks = new Array(arr.length);
- let i = 0;
- while(i < idx.length){
-  let j = i;
-  while(j + 1 < idx.length && arr[idx[j + 1]] === arr[idx[i]]) j++;
-  const avgRank = (i + j) / 2 + 1;
-  for(let k = i; k <= j; k++) ranks[idx[k]] = avgRank;
-  i = j + 1;
+function rgba(color, alpha){
+ const hex = color.replace("#", "");
+ if(/^([0-9a-f]{3}|[0-9a-f]{6})$/i.test(hex)){
+  const full = hex.length === 3 ? hex.split("").map(c => c + c).join("") : hex;
+  const n = parseInt(full, 16);
+  return "rgba(" + ((n >> 16) & 255) + "," + ((n >> 8) & 255) + "," + (n & 255) + "," + alpha + ")";
  }
- return ranks;
-}
-function spearmanRegression(xs, ys){ return linearRegression(rankArray(xs), rankArray(ys)); }
-
-// Joined on date against SPY's calendar. SPY's history starts in 1993 and
-// XLRE/XLC only in 2015/2018, so pairing closes by array position divided
-// each sector by SPY from a different day. Dates before a sector existed
-// get NaN.
-function dailyRatioSeries(sectorHistory, spyHistory, calendar){
- const close = new Map(sectorHistory.map(h => [h.date, h.close]));
- const spy = new Map(spyHistory.map(h => [h.date, h.close]));
- const ratio = calendar.map(d => (close.has(d) && spy.get(d)) ? close.get(d) / spy.get(d) : NaN);
- return { dates: calendar, ratio };
+ const m = color.match(/rgba?\(([^)]+)\)/);
+ if(m){
+  const p = m[1].split(",").map(x => x.trim());
+  return "rgba(" + p[0] + "," + p[1] + "," + p[2] + "," + alpha + ")";
+ }
+ return color;
 }
 
-let rrgChart = null, periodChart = null, persistenceScatter = null;
+function logTick(v){
+ if(!(v > 0)) return "";
+ const p = Math.pow(10, Math.floor(Math.log10(v) + 1e-9));
+ const m = Math.round(v / p * 1000) / 1000;
+ return m === 1 || m === 2 || m === 5 ? "$" + Math.round(v).toLocaleString("en-US") : "";
+}
 
 async function init(){
  try{
-  const res = await fetch(DATA_URL, { cache: "no-store" });
-  const data = await res.json();
-  if(!res.ok || data.error) throw new Error(data.error || "failed to load");
+  const [hist, live] = await Promise.all([
+   fetch(HISTORY_URL).then(r => { if(!r.ok) throw new Error("sector history HTTP " + r.status); return r.json(); }),
+   fetch(LIVE_URL, { cache: "no-store" }).then(r => r.ok ? r.json() : null).catch(() => null),
+  ]);
+  if(!hist || !hist.series || !hist.dates) throw new Error("sector history is empty");
+  LIVE = live && !live.error && live.benchmark ? live : null;
+  CAL = mergeHistory(hist, LIVE);
+  ME = monthEnds(CAL.dates);
+  if(firstFormation(CAL, ME) < 0) throw new Error("not enough history");
+  RRG = computeRrg(CAL);
+  SIGNALS.forEach(s => {
+   const res = runModel(CAL, ME, s);
+   res.stats = modelStats(res);
+   MODELS[s.key] = res;
+  });
+  GRID = formationGrid(CAL, ME);
+  SNAP = snapshotRows();
 
-  RAW = data;
-  document.getElementById("updated").textContent =
-   "As of " + usDate(data.benchmark.asOfDate) + " · " + new Date(data.generated_at_utc).toLocaleString("en-US", { month: "2-digit", day: "2-digit", year: "numeric", hour: "numeric", minute: "2-digit" });
-
-  const spyHistory = data.benchmark.history;
-  const firstSectorDate = data.sectors.map(s => s.history[0].date).sort()[0];
-  const calendar = spyHistory.map(h => h.date).filter(d => d >= firstSectorDate);
-  const sectorSeries = data.sectors.map(s => ({ ticker: s.ticker, name: s.name, relative: s.relative, ...dailyRatioSeries(s.history, spyHistory, calendar) }));
-
-  renderStats(sectorSeries);
-  renderRrgChart(sectorSeries);
+  renderUpdated();
+  renderStats();
+  renderRrg();
+  renderRotationTable();
   renderPeriodChart();
-  renderRotationTable(sectorSeries);
-  renderPersistence(sectorSeries);
-
+  renderModel();
+  renderGrid();
+  document.querySelectorAll("#signalToggle .toggle-btn").forEach(b => {
+   b.addEventListener("click", () => setSignal(b.dataset.signal));
+  });
  }catch(e){
-  showError("Couldn't load sector rotation data (" + e.message + "). The /api/sector-performance function may not have run yet.");
+  showError("Couldn't load sector rotation data (" + e.message + ").");
+  markUnavailable();
  }
 }
 
-function ratioChangePct(series, monthsBack){
- const n = series.ratio.length;
- const idx = Math.max(0, n - 1 - Math.round(monthsBack * 21));
- return ((series.ratio[n - 1] / series.ratio[idx]) - 1) * 100;
+function markUnavailable(){
+ [["rotationBody", 6], ["modelStatsBody", 8], ["holdingsBody", 4], ["gridBody", 4]].forEach(([id, cols]) => {
+  document.getElementById(id).innerHTML = '<tr><td colspan="' + cols + '" style="text-align:center; color:var(--muted); padding:24px;">n/a</td></tr>';
+ });
+ ["statLeader", "statLaggard", "statHoldings", "statCagr"].forEach(id => { document.getElementById(id).textContent = "n/a"; });
 }
 
-function quadrantOf(level, momentum){
- if(level >= 0 && momentum >= 0) return "Leading";
- if(level >= 0 && momentum < 0) return "Weakening";
- if(level < 0 && momentum < 0) return "Lagging";
- return "Improving";
+function renderUpdated(){
+ let text = "As of " + usDate(CAL.dates[CAL.dates.length - 1]);
+ if(LIVE && LIVE.generated_at_utc){
+  text += " · " + new Date(LIVE.generated_at_utc).toLocaleString("en-US", { month: "2-digit", day: "2-digit", year: "numeric", hour: "numeric", minute: "2-digit" });
+ }
+ document.getElementById("updated").textContent = text;
 }
 
-function renderStats(sectorSeries){
- const sorted = [...RAW.sectors].sort((a, b) => (b.relative.m3 ?? -Infinity) - (a.relative.m3 ?? -Infinity));
- document.getElementById("statLeader").textContent = sorted[0].name;
- document.getElementById("statLeaderNote").textContent = fmtPct(sorted[0].relative.m3) + " vs. SPY";
- const worst = sorted[sorted.length - 1];
- document.getElementById("statLaggard").textContent = worst.name;
- document.getElementById("statLaggardNote").textContent = fmtPct(worst.relative.m3) + " vs. SPY";
-
- const quadrants = sectorSeries.map(s => quadrantOf(ratioChangePct(s, 3), ratioChangePct(s, 1)));
- document.getElementById("statLeadingCount").textContent = quadrants.filter(q => q === "Leading").length + " / " + sectorSeries.length;
-
- // filled in by renderPersistence()
+function snapshotRows(){
+ const rel = { m1: latestRelative(CAL, 1), m3: latestRelative(CAL, 3), m6: latestRelative(CAL, 6), y1: latestRelative(CAL, 12) };
+ const j = RRG.dates.length - 1;
+ const key = v => isFinite(v) ? v : -Infinity;
+ return SECTORS.map(s => ({
+  ticker: s.ticker,
+  name: s.name,
+  relative: { m1: rel.m1[s.ticker], m3: rel.m3[s.ticker], m6: rel.m6[s.ticker], y1: rel.y1[s.ticker] },
+  quadrant: quadrantOf(RRG.sectors[s.ticker].ratio[j], RRG.sectors[s.ticker].momentum[j]),
+ })).sort((a, b) => key(b.relative.m3) === key(a.relative.m3) ? 0 : key(b.relative.m3) > key(a.relative.m3) ? 1 : -1);
 }
 
-function renderRrgChart(sectorSeries){
- const points = sectorSeries.map(s => ({
-  x: ratioChangePct(s, 3), y: ratioChangePct(s, 1), name: s.name,
- }));
- const colors = points.map(p => quadrantOf(p.x, p.y) === "Leading" ? themeGreedColor()
-  : quadrantOf(p.x, p.y) === "Lagging" ? themeFearColor() : themeMutedColor());
+function renderStats(){
+ const ranked = SNAP.filter(r => isFinite(r.relative.m3));
+ const leader = ranked[0], laggard = ranked[ranked.length - 1];
+ document.getElementById("statLeader").textContent = leader ? leader.name : "n/a";
+ document.getElementById("statLeaderNote").textContent = leader ? fmtPct(leader.relative.m3) + " vs. SPY over 3 months" : "n/a";
+ document.getElementById("statLaggard").textContent = laggard ? laggard.name : "n/a";
+ document.getElementById("statLaggardNote").textContent = laggard ? fmtPct(laggard.relative.m3) + " vs. SPY over 3 months" : "n/a";
 
- const xs = points.map(p => Math.abs(p.x));
- const ys = points.map(p => Math.abs(p.y));
- const maxAbs = Math.max(...xs, ...ys, 1) * 1.2;
+ const res = MODELS[DEFAULT_SIGNAL];
+ const sig = SIGNALS.find(s => s.key === DEFAULT_SIGNAL);
+ document.getElementById("statHoldings").textContent = res.current.hold.map(t => SECTOR_NAME[t]).join(", ");
+ document.getElementById("statHoldingsNote").textContent = sig.label + " signal, set at the " + usDate(res.current.date) + " close";
+ const model = res.stats.model.cagr * 100, spy = res.stats.spy.cagr * 100;
+ const el = document.getElementById("statCagr");
+ el.textContent = fmtPct(model - spy, 2);
+ el.classList.add(model - spy >= 0 ? "up" : "down");
+ document.getElementById("statCagrNote").textContent = model.toFixed(2) + "% vs. " + spy.toFixed(2) + "% a year since " + usDate(res.start) + ", before costs";
+}
 
- const labelPlugin = {
-  id: "rrgLabels",
-  afterDatasetsDraw(chart){
-   const { ctx, chartArea } = chart;
-   const meta = chart.getDatasetMeta(0);
+let rrgChart = null, rrgFrame = 0, rrgTimer = null, rrgHover = null, rrgColors = null;
+const rrgHidden = new Set();
+
+function rrgTail(ticker, j){
+ const s = RRG.sectors[ticker], pts = [];
+ for(let k = Math.max(0, j - TAIL_WEEKS + 1); k <= j; k++){
+  if(isFinite(s.ratio[k]) && isFinite(s.momentum[k])) pts.push({ x: s.ratio[k], y: s.momentum[k], date: RRG.dates[k] });
+ }
+ return pts;
+}
+
+function renderRrg(){
+ rrgColors = {
+  ink: cssVar("--ink"), muted: cssVar("--muted"), hair: cssVar("--hair"), card: cssVar("--card"),
+  leading: cssVar("--q-leading"), weakening: cssVar("--q-weakening"), lagging: cssVar("--q-lagging"), improving: cssVar("--q-improving"),
+ };
+ const C = rrgColors;
+ const font = Chart.defaults.font.family;
+
+ const quadrants = {
+  id: "rrgQuadrants",
+  beforeDraw(chart){
+   const { ctx, chartArea: a, scales: { x, y } } = chart;
+   if(!a) return;
+   const cx = x.getPixelForValue(100), cy = y.getPixelForValue(100);
+   // The fullscreen button covers the chart's top-right corner, so the
+   // Leading label sits to its left.
+   const zones = [
+    { color: C.leading, rect: [cx, a.top, a.right - cx, cy - a.top], label: "Leading", at: [a.right - 46, a.top + 8], align: "right", base: "top" },
+    { color: C.weakening, rect: [cx, cy, a.right - cx, a.bottom - cy], label: "Weakening", at: [a.right - 10, a.bottom - 8], align: "right", base: "bottom" },
+    { color: C.lagging, rect: [a.left, cy, cx - a.left, a.bottom - cy], label: "Lagging", at: [a.left + 10, a.bottom - 8], align: "left", base: "bottom" },
+    { color: C.improving, rect: [a.left, a.top, cx - a.left, cy - a.top], label: "Improving", at: [a.left + 10, a.top + 8], align: "left", base: "top" },
+   ];
    ctx.save();
-   ctx.font = "11px -apple-system, sans-serif";
-   ctx.fillStyle = themeInkColor();
-   ctx.textBaseline = "middle";
-   meta.data.forEach((el, i) => {
-    // Flip the label to the point's left, right-aligned, when there isn't
-    // room to the right - otherwise a point near the chart's right edge
-    // (a strong "Leading" sector, the most interesting case) draws its
-    // label straight off the canvas.
-    const label = points[i].name;
-    const labelWidth = ctx.measureText(label).width;
-    const fitsRight = el.x + 8 + labelWidth <= chartArea.right;
-    ctx.textAlign = fitsRight ? "left" : "right";
-    ctx.fillText(label, fitsRight ? el.x + 8 : el.x - 8, el.y);
+   ctx.font = "13px " + font;
+   zones.forEach(z => {
+    ctx.fillStyle = rgba(z.color, 0.09);
+    ctx.fillRect(z.rect[0], z.rect[1], z.rect[2], z.rect[3]);
+    ctx.fillStyle = C.muted;
+    ctx.textAlign = z.align;
+    ctx.textBaseline = z.base;
+    ctx.fillText(z.label, z.at[0], z.at[1]);
    });
    ctx.restore();
   },
  };
 
- const ctx = document.getElementById("rrgChart").getContext("2d");
- if(rrgChart) rrgChart.destroy();
- rrgChart = new Chart(ctx, {
+ // Labels try right, left, above and below the head dot and take the first
+ // spot that stays inside the plot and clear of labels already drawn, since
+ // sectors bunch near the center.
+ const headLabels = {
+  id: "rrgHeadLabels",
+  afterDatasetsDraw(chart){
+   const { ctx, chartArea: a } = chart;
+   const placed = [];
+   ctx.save();
+   ctx.font = "600 11px " + font;
+   ctx.textAlign = "left";
+   ctx.textBaseline = "middle";
+   ctx.lineJoin = "round";
+   chart.data.datasets.forEach((ds, i) => {
+    if(!chart.isDatasetVisible(i) || !ds.data.length) return;
+    const el = chart.getDatasetMeta(i).data[ds.data.length - 1];
+    if(!el) return;
+    const w = ctx.measureText(ds.label).width, h = 12;
+    const spots = [[el.x + 9, el.y - h / 2], [el.x - 9 - w, el.y - h / 2], [el.x - w / 2, el.y - 9 - h], [el.x - w / 2, el.y + 9]];
+    const fits = ([l, t]) => l >= a.left && l + w <= a.right && t >= a.top && t + h <= a.bottom
+     && !placed.some(p => l < p[0] + p[2] && l + w > p[0] && t < p[1] + p[3] && t + h > p[1]);
+    const spot = spots.find(fits) || spots[0];
+    placed.push([spot[0], spot[1], w, h]);
+    ctx.globalAlpha = rrgHover && rrgHover !== ds.label ? 0.3 : 1;
+    ctx.strokeStyle = C.card;
+    ctx.lineWidth = 3;
+    ctx.strokeText(ds.label, spot[0], spot[1] + h / 2);
+    ctx.fillStyle = C.ink;
+    ctx.fillText(ds.label, spot[0], spot[1] + h / 2);
+   });
+   ctx.restore();
+  },
+ };
+
+ const axis = title => ({
+  type: "linear",
+  min: RRG_AXIS[0],
+  max: RRG_AXIS[1],
+  title: { display: true, text: title, color: C.muted, font: { size: 11 } },
+  ticks: { color: C.muted, stepSize: 1, includeBounds: false },
+  grid: { color: c => c.tick && c.tick.value === 100 ? C.muted : C.hair },
+ });
+
+ rrgChart = new Chart(document.getElementById("rrgChart").getContext("2d"), {
   type: "scatter",
-  data: { datasets: [{ label: "Sectors", data: points, backgroundColor: colors, pointRadius: 5, showLine: false }] },
-  plugins: [labelPlugin],
+  data: { datasets: SECTORS.map(s => ({ label: s.ticker, data: [], showLine: true })) },
+  plugins: [quadrants, headLabels],
   options: {
    responsive: true,
    maintainAspectRatio: false,
+   animation: false,
+   interaction: { mode: "point", intersect: true },
+   onHover: (evt, els) => {
+    const t = els.length ? SECTORS[els[0].datasetIndex].ticker : null;
+    if(t !== rrgHover){ rrgHover = t; rrgApply(); }
+   },
    plugins: {
     legend: { display: false },
+    zoom: false,
     tooltip: {
      callbacks: {
-      label: ctx => {
-       const p = points[ctx.dataIndex];
-       return p.name + ": level " + fmtPct(p.x) + ", momentum " + fmtPct(p.y);
-      },
+      title: items => items.length ? SECTOR_NAME[items[0].dataset.label] + " (" + items[0].dataset.label + ")" : "",
+      label: c => usDate(c.raw.date) + ": RS-Ratio " + c.raw.x.toFixed(2) + ", RS-Momentum " + c.raw.y.toFixed(2),
      },
     },
    },
-   scales: {
-    x: { min: -maxAbs, max: maxAbs, title: { display: true, text: "Level (3M ratio change, %)", color: themeMutedColor(), font: { size: 10 } }, ticks: { color: themeMutedColor() }, grid: { color: themeHairColor() } },
-    y: { min: -maxAbs, max: maxAbs, title: { display: true, text: "Momentum (1M ratio change, %)", color: themeMutedColor(), font: { size: 10 } }, ticks: { color: themeMutedColor() }, grid: { color: themeHairColor() } },
-   },
+   scales: { x: axis("RS-Ratio"), y: axis("RS-Momentum") },
   },
  });
+
+ const chips = document.getElementById("rrgChips");
+ SECTORS.forEach(s => {
+  const b = document.createElement("button");
+  b.type = "button";
+  b.className = "chip";
+  b.setAttribute("aria-pressed", "true");
+  const t = document.createElement("span");
+  t.className = "chip-ticker";
+  t.textContent = s.ticker;
+  b.appendChild(t);
+  b.appendChild(document.createTextNode(s.name));
+  b.addEventListener("click", () => {
+   if(rrgHidden.has(s.ticker)) rrgHidden.delete(s.ticker); else rrgHidden.add(s.ticker);
+   b.setAttribute("aria-pressed", rrgHidden.has(s.ticker) ? "false" : "true");
+   rrgApply();
+  });
+  b.addEventListener("mouseenter", () => { rrgHover = s.ticker; rrgApply(); });
+  b.addEventListener("mouseleave", () => { rrgHover = null; rrgApply(); });
+  chips.appendChild(b);
+ });
+
+ const range = document.getElementById("rrgRange");
+ range.min = RRG.first;
+ range.max = RRG.dates.length - 1;
+ range.addEventListener("input", () => { rrgStop(); rrgSetFrame(+range.value); });
+ document.getElementById("rrgBack").addEventListener("click", () => { rrgStop(); rrgSetFrame(rrgFrame - 1); });
+ document.getElementById("rrgFwd").addEventListener("click", () => { rrgStop(); rrgSetFrame(rrgFrame + 1); });
+ document.getElementById("rrgPlay").addEventListener("click", rrgTogglePlay);
+ rrgSetFrame(RRG.dates.length - 1);
 }
+
+function rrgApply(){
+ if(!rrgChart) return;
+ const C = rrgColors;
+ rrgChart.data.datasets.forEach((ds, i) => {
+  const t = SECTORS[i].ticker;
+  ds.data = rrgTail(t, rrgFrame);
+  ds.hidden = rrgHidden.has(t);
+  const head = ds.data.length - 1;
+  const dim = rrgHover && rrgHover !== t ? 0.18 : 1;
+  const fade = k => k / Math.max(1, head);
+  ds.borderWidth = rrgHover === t ? 2.5 : 1.5;
+  ds.borderColor = rgba(C.ink, 0.6 * dim);
+  ds.segment = { borderColor: c => rgba(C.ink, dim * (0.15 + 0.6 * fade(c.p1DataIndex))) };
+  ds.pointRadius = ds.data.map((p, k) => k === head ? 5 : 2);
+  ds.pointHoverRadius = ds.data.map((p, k) => k === head ? 7 : 4);
+  ds.pointHitRadius = 6;
+  ds.pointBackgroundColor = ds.data.map((p, k) => rgba(C.ink, dim * (k === head ? 1 : 0.2 + 0.5 * fade(k))));
+  ds.pointBorderColor = ds.data.map((p, k) => k === head ? C.card : "rgba(0,0,0,0)");
+  ds.pointBorderWidth = ds.data.map((p, k) => k === head ? 2 : 0);
+ });
+ rrgChart.update("none");
+}
+
+function rrgSetFrame(j){
+ rrgFrame = Math.max(RRG.first, Math.min(RRG.dates.length - 1, j));
+ document.getElementById("rrgRange").value = rrgFrame;
+ document.getElementById("rrgDate").textContent = usDate(RRG.dates[rrgFrame]);
+ rrgApply();
+}
+
+function rrgTogglePlay(){
+ if(rrgTimer){ rrgStop(); return; }
+ if(rrgFrame >= RRG.dates.length - 1) rrgSetFrame(RRG.first);
+ const btn = document.getElementById("rrgPlay");
+ btn.innerHTML = "&#10073;&#10073;";
+ btn.title = "Pause";
+ btn.setAttribute("aria-label", "Pause");
+ rrgTimer = setInterval(() => {
+  if(rrgFrame >= RRG.dates.length - 1){ rrgStop(); return; }
+  rrgSetFrame(rrgFrame + 1);
+ }, PLAY_MS);
+}
+
+function rrgStop(){
+ if(!rrgTimer) return;
+ clearInterval(rrgTimer);
+ rrgTimer = null;
+ const btn = document.getElementById("rrgPlay");
+ btn.innerHTML = "&#9654;";
+ btn.title = "Play";
+ btn.setAttribute("aria-label", "Play");
+}
+
+function renderRotationTable(){
+ document.getElementById("rotationBody").innerHTML = SNAP.map(r => `<tr>
+  <td>${r.name}</td>
+  <td>${fmtPct(r.relative.m1)}</td>
+  <td>${fmtPct(r.relative.m3)}</td>
+  <td>${fmtPct(r.relative.m6)}</td>
+  <td>${fmtPct(r.relative.y1)}</td>
+  <td>${r.quadrant ? `<span class="badge-quadrant badge-${r.quadrant.toLowerCase()}">${r.quadrant}</span>` : "n/a"}</td>
+ </tr>`).join("");
+}
+
+let periodChart = null;
 
 // The four windows are ordered (1M inside 3M inside 6M inside 1Y), so they
 // get one hue stepped by length rather than four unrelated colors, and dots
 // on a shared axis rather than 44 bars, so each sector reads as one row.
 function renderPeriodChart(){
- const sorted = [...RAW.sectors].sort((a, b) => (b.relative.m3 ?? -Infinity) - (a.relative.m3 ?? -Infinity));
  const periods = [
   { key: "m1", label: "1M" }, { key: "m3", label: "3M" }, { key: "m6", label: "6M" }, { key: "y1", label: "1Y" },
  ];
- const light = document.documentElement.getAttribute("data-theme") === "light";
- const ramp = light ? ["#a9bdd2", "#7f9bb8", "#4f6f8c", "#2c4763"] : ["#58718d", "#7b97b5", "#a3bdd8", "#d6e3f0"];
+ const ramp = ["--lb-1", "--lb-2", "--lb-3", "--lb-4"].map(cssVar);
  const radii = [4, 5, 6, 7];
+ const muted = cssVar("--muted"), hair = cssVar("--hair"), card = cssVar("--card");
  const ctx = document.getElementById("periodChart").getContext("2d");
  if(periodChart) periodChart.destroy();
  periodChart = new Chart(ctx, {
   type: "line",
   data: {
-   labels: sorted.map(s => s.name),
+   labels: SNAP.map(s => s.name),
    datasets: periods.map((p, i) => ({
     label: p.label,
-    data: sorted.map(s => s.relative[p.key]),
+    data: SNAP.map(s => isFinite(s.relative[p.key]) ? s.relative[p.key] : null),
     showLine: false,
     pointRadius: radii[i],
     pointHoverRadius: radii[i] + 2,
     pointBackgroundColor: ramp[i],
-    pointBorderColor: getComputedStyle(document.documentElement).getPropertyValue("--card").trim() || "#1c2127",
+    pointBorderColor: card,
     pointBorderWidth: 1.5,
     backgroundColor: ramp[i],
     borderColor: ramp[i],
@@ -1034,149 +1623,103 @@ function renderPeriodChart(){
    indexAxis: "y",
    interaction: { mode: "index", intersect: false, axis: "y" },
    plugins: {
-    legend: { position: "top", align: "start", labels: { color: themeMutedColor(), usePointStyle: true, boxWidth: 8, boxHeight: 8 } },
+    legend: { position: "top", align: "start", labels: { color: muted, usePointStyle: true, boxWidth: 8, boxHeight: 8 } },
     zoom: false,
     tooltip: { callbacks: { label: ctx => ctx.dataset.label + ": " + fmtPct(ctx.parsed.x) } },
    },
    scales: {
-    x: { ticks: { color: themeMutedColor(), callback: v => v + "%" }, grid: { color: c => c.tick.value === 0 ? themeMutedColor() : themeHairColor() } },
-    y: { ticks: { color: themeMutedColor(), autoSkip: false }, grid: { color: themeHairColor() } },
+    x: { ticks: { color: muted, callback: v => v + "%" }, grid: { color: c => c.tick.value === 0 ? muted : hair } },
+    y: { ticks: { color: muted, autoSkip: false }, grid: { color: hair } },
    },
   },
  });
 }
 
-function renderRotationTable(sectorSeries){
- const rows = sectorSeries.map(s => ({
-  name: s.name, relative: s.relative,
-  quadrant: quadrantOf(ratioChangePct(s, 3), ratioChangePct(s, 1)),
- })).sort((a, b) => (b.relative.m3 ?? -Infinity) - (a.relative.m3 ?? -Infinity));
+let equityChart = null;
 
- document.getElementById("rotationBody").innerHTML = rows.map(r => `<tr>
-  <td>${r.name}</td>
-  <td>${fmtPct(r.relative.m1)}</td>
-  <td>${fmtPct(r.relative.m3)}</td>
-  <td>${fmtPct(r.relative.m6)}</td>
-  <td>${fmtPct(r.relative.y1)}</td>
-  <td><span class="badge-quadrant badge-${r.quadrant.toLowerCase()}">${r.quadrant}</span></td>
- </tr>`).join("");
+function setSignal(key){
+ SIGNAL = key;
+ document.querySelectorAll("#signalToggle .toggle-btn").forEach(b => b.classList.toggle("active", b.dataset.signal === key));
+ renderModel();
 }
 
-function renderPersistence(sectorSeries){
- // Calendar-month returns, month-end to month-end. The history is weekly
- // before late 2024 and daily after, so a fixed "21 observations back"
- // window would span ~21 weeks in the older data and overlap heavily from
- // one month to the next, which manufactures persistence.
- const n = sectorSeries[0].dates.length;
- const monthEnds = [];
- for(let i = 0; i < n - 1; i++){
-  if(sectorSeries[0].dates[i].slice(0, 7) !== sectorSeries[0].dates[i + 1].slice(0, 7)) monthEnds.push(i);
- }
-
- const monthlyRanks = []; // one array of {name, rank} per calendar month
- for(let k = 1; k < monthEnds.length; k++){
-  const idx = monthEnds[k], prevIdx = monthEnds[k - 1];
-  const changes = sectorSeries.map(s => ({
-   name: s.name,
-   change: ((s.ratio[idx] / s.ratio[prevIdx]) - 1) * 100,
-  }));
-  // Sectors without a listed ETF yet that month (Real Estate, Communication
-  // Services) have no return and sit out rather than being ranked as NaN.
-  const sorted = changes.filter(c => isFinite(c.change)).sort((a, b) => b.change - a.change);
-  const ranks = {};
-  sorted.forEach((c, i) => { ranks[c.name] = i + 1; });
-  monthlyRanks.push(ranks);
- }
-
- const pairs = [];
- for(let m = 0; m + 1 < monthlyRanks.length; m++){
-  for(const s of sectorSeries){
-   const x = monthlyRanks[m][s.name], y = monthlyRanks[m + 1][s.name];
-   if(x !== undefined && y !== undefined) pairs.push({ x, y });
-  }
- }
-
- const pEl = document.getElementById("statPersistence");
- const pNoteEl = document.getElementById("statPersistenceNote");
- if(pairs.length >= 20){
-  const spear = spearmanRegression(pairs.map(p => p.x), pairs.map(p => p.y));
-  pEl.textContent = (spear.r >= 0 ? "+" : "") + spear.r.toFixed(2);
-  pNoteEl.textContent = "n=" + spear.n + " sector-months, p=" + (spear.p < 0.001 ? "<0.001" : spear.p.toFixed(3));
-  renderPersistenceScatter(pairs);
- }else{
-  pEl.textContent = "n/a";
-  pNoteEl.textContent = "Not enough month boundaries in the available history";
-  document.getElementById("persistenceMethodTable").innerHTML = '<div class="method-note">Not enough history to test.</div>';
- }
-}
-
-function renderPersistenceScatter(pairs){
- const pearsonReg = linearRegression(pairs.map(p => p.x), pairs.map(p => p.y));
- const spear = spearmanRegression(pairs.map(p => p.x), pairs.map(p => p.y));
-
- const xMin = Math.min(...pairs.map(p => p.x)), xMax = Math.max(...pairs.map(p => p.x));
- const linePoints = [
-  { x: xMin, y: pearsonReg.intercept + pearsonReg.slope * xMin },
-  { x: xMax, y: pearsonReg.intercept + pearsonReg.slope * xMax },
- ];
-
- const counts = new Map();
- for(const p of pairs){ const k = p.x + "," + p.y; counts.set(k, (counts.get(k) || 0) + 1); }
- const maxCount = Math.max(...counts.values());
- const cellCounts = [...counts.entries()].map(([k, n]) => {
-  const [x, y] = k.split(",").map(Number);
-  return { x, y, r: 2 + 11 * Math.sqrt(n / maxCount), n };
- });
- const ctx = document.getElementById("persistenceScatter").getContext("2d");
- if(persistenceScatter) persistenceScatter.destroy();
- persistenceScatter = new Chart(ctx, {
-  type: "scatter",
+function renderModel(){
+ const res = MODELS[SIGNAL];
+ const sig = SIGNALS.find(s => s.key === SIGNAL);
+ const muted = cssVar("--muted"), hair = cssVar("--hair"), ink = cssVar("--ink"), line = cssVar("--model-line");
+ if(equityChart) equityChart.destroy();
+ equityChart = new Chart(document.getElementById("equityChart").getContext("2d"), {
+  type: "line",
   data: {
+   labels: res.daily.dates,
    datasets: [
-    // Ranks are integers, so raw points stack exactly on top of each other
-    // and every cell looks the same. Each rank pair is drawn once, sized by
-    // how many sector-months landed there; persistence shows up as larger
-    // circles along the diagonal.
-    { label: "Sector-months", type: "bubble", data: cellCounts, backgroundColor: "rgba(217,138,61,0.55)", borderColor: "rgba(217,138,61,0.9)", borderWidth: 1 },
-    { label: "Regression fit", type: "line", data: linePoints, borderColor: themeInkColor(), borderWidth: 1.5, borderDash: [4, 3], pointRadius: 0, fill: false },
+    { label: "Rotation model (" + sig.label + ")", data: res.daily.model, borderColor: line, backgroundColor: line, borderWidth: 2, pointRadius: 0, pointHoverRadius: 3, fill: false },
+    { label: "SPY", data: res.daily.spy, borderColor: ink, backgroundColor: ink, borderWidth: 1.25, pointRadius: 0, pointHoverRadius: 3, fill: false },
+    { label: "Equal-weight sectors", data: res.daily.ew, borderColor: muted, backgroundColor: muted, borderWidth: 1.25, borderDash: [5, 4], pointRadius: 0, pointHoverRadius: 3, fill: false },
    ],
   },
   options: {
    responsive: true,
    maintainAspectRatio: false,
+   animation: false,
+   normalized: true,
+   interaction: { mode: "index", intersect: false },
    plugins: {
-    legend: { display: false },
-    tooltip: {
-     callbacks: {
-      label: ctx => ctx.dataset.label === "Sector-months" ? ("Rank " + ctx.raw.x + " → " + ctx.raw.y + ": " + ctx.raw.n + " sector-month" + (ctx.raw.n === 1 ? "" : "s")) : null,
-     },
-    },
+    legend: { position: "top", align: "start", labels: { color: muted, boxWidth: 18, boxHeight: 2 } },
+    tooltip: { callbacks: { label: c => c.dataset.label + ": $" + Math.round(c.parsed.y).toLocaleString("en-US") } },
    },
    scales: {
-    x: { reverse: false, title: { display: true, text: "Rank this month (1 = best)", color: themeMutedColor(), font: { size: 10 } }, ticks: { color: themeMutedColor(), stepSize: 1 }, grid: { color: themeHairColor() } },
-    y: { title: { display: true, text: "Rank next month (1 = best)", color: themeMutedColor(), font: { size: 10 } }, ticks: { color: themeMutedColor(), stepSize: 1 }, grid: { color: themeHairColor() } },
+    x: { ticks: { color: muted, maxTicksLimit: 10, maxRotation: 0 }, grid: { color: hair } },
+    y: {
+     type: "logarithmic",
+     title: { display: true, text: "Growth of $100", color: muted, font: { size: 11 } },
+     ticks: { color: muted, callback: v => logTick(v) },
+     grid: { color: c => c.tick && logTick(c.tick.value) ? hair : "rgba(0,0,0,0)" },
+    },
    },
   },
  });
 
- function row(label, stats){
-  const sig = stats.p < 0.05;
-  return "<tr>" +
-   "<td>" + label + "</td>" +
-   "<td>" + stats.n + "</td>" +
-   "<td>" + stats.r.toFixed(2) + "</td>" +
-   "<td>" + (stats.r2 * 100).toFixed(1) + "%</td>" +
-   "<td>" + (stats.slope >= 0 ? "+" : "") + stats.slope.toFixed(2) + "</td>" +
-   "<td>" + stats.t.toFixed(2) + "</td>" +
-   '<td class="' + (sig ? "sig" : "") + '">' + (stats.p < 0.001 ? "<0.001" : stats.p.toFixed(3)) + "</td>" +
-  "</tr>";
- }
- document.getElementById("persistenceMethodTable").innerHTML =
-  '<table class="method-table">' +
-   "<thead><tr><th>Method</th><th>n</th><th>r</th><th>r&sup2;</th><th>slope</th><th>t</th><th>p</th></tr></thead>" +
-   "<tbody>" + row("Pearson (OLS)", pearsonReg) + row("Spearman (&rho;)", spear) + "</tbody>" +
-  "</table>" +
-  '<div class="method-note">Ranks run from 1 (best relative return that month) to 11 (worst). A positive slope near +1 would mean this month\'s rank order repeats next month.</div>';
+ const st = res.stats;
+ const pct = (v, d) => isFinite(v) ? (v * 100).toFixed(d) + "%" : "n/a";
+ const row = (label, s) => "<tr><td>" + label + "</td>" +
+  "<td>" + pct(s.cagr, 2) + "</td>" +
+  "<td>" + pct(s.vol, 1) + "</td>" +
+  "<td>" + pct(s.maxDd, 1) + "</td>" +
+  "<td>" + pct(s.beat, 1) + "</td>" +
+  "<td>" + (isFinite(s.ir) ? s.ir.toFixed(2) : "n/a") + "</td>" +
+  "<td>" + pct(s.turnover, 1) + "</td>" +
+  "<td>" + pct(s.cagrNet, 2) + "</td></tr>";
+ document.getElementById("modelStatsBody").innerHTML =
+  row("Rotation model (" + sig.label + ")", st.model) + row("SPY", st.spy) + row("Equal-weight sectors", st.ew);
+ document.getElementById("modelStatsNote").textContent = "Monthly returns from " + usDate(res.months[0].date.slice(0, 7)) +
+  " to " + usDate(res.end.slice(0, 7)) + " (" + st.model.n + " months). Costs are 10 basis points per unit of turnover.";
+
+ const n = CAL.dates.length - 1;
+ const b = CAL.close[BENCH];
+ document.getElementById("holdingsBody").innerHTML = res.current.ranked.slice(0, TOP_N).map(x => {
+  const e = res.entered.find(y => y.ticker === x.ticker);
+  const c = CAL.close[x.ticker];
+  const since = (c[n] / c[e.index] - b[n] / b[e.index]) * 100;
+  return "<tr><td>" + SECTOR_NAME[x.ticker] + ' <span class="muted-ticker">' + x.ticker + "</span></td>" +
+   "<td>" + usDate(e.date) + "</td>" +
+   "<td>" + fmtPct(x.signal * 100) + "</td>" +
+   "<td>" + fmtPct(since) + "</td></tr>";
+ }).join("");
+ document.getElementById("holdingsNote").textContent = "Set at the " + usDate(res.current.date) + " close. Signal is the " + sig.label +
+  " return relative to SPY at that close. Since entry runs from the entry close to the " + usDate(CAL.dates[n]) + " close.";
+}
+
+function renderGrid(){
+ const up = cssVar("--up"), down = cssVar("--down");
+ document.getElementById("gridBody").innerHTML = GRID.rows.map(r => "<tr><td>" + r.formation.label + "</td>" + r.cells.map(c => {
+  const alpha = Math.min(Math.abs(c.t) / 3, 1) * 0.55;
+  return '<td style="background:' + rgba(c.t >= 0 ? up : down, alpha.toFixed(3)) + '">' +
+   '<span class="gv">' + fmtPct(c.annual * 100, 2) + "</span>" +
+   '<span class="gt">t = ' + c.t.toFixed(2) + "</span></td>";
+ }).join("") + "</tr>").join("");
+ document.getElementById("gridNote").textContent = "Monthly returns from " + usDate(GRID.start.slice(0, 7)) + " to " +
+  usDate(GRID.end.slice(0, 7)) + " (" + GRID.rows[0].cells[0].n + " months) in every cell.";
 }
 
 init();
