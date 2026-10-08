@@ -2,7 +2,8 @@
   "name": "market-dashboard",
   "private": true,
   "scripts": {
-    "preview": "node scripts/preview-server.js"
+    "preview": "node scripts/preview-server.js",
+    "publish-edits": "node scripts/apply-edits.js"
   },
   "dependencies": {
     "@netlify/blobs": "^8.1.0",

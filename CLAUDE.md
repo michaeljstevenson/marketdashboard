@@ -45,6 +45,8 @@ When the user says something like **"edited, push"** / **"updated, push"** after
 5. Commit (descriptive message, `Co-Authored-By: Claude <noreply@anthropic.com>`) and push.
 6. Report back what shipped.
 
+The user can also publish Edit Mode changes without Claude: `npm run publish-edits` (scripts/apply-edits.js) applies the same rules, commits only the changed pages and pushes, and leaves anything it can't place unambiguously in preview-edits.json. `-- --dry-run` previews. Pull before pushing in a session, since the user may push this way.
+
 If a selector's target text isn't found where expected, don't guess — read the current file state
 around that area first. Auto-formatting hooks may have touched the file since the edit was logged.
 
