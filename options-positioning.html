@@ -861,7 +861,15 @@ tbody td:first-child{
 <div class="stat-card"><div class="stat-label">SPY Near vs. Far-Dated</div><div class="stat-value" id="statNearFar">…</div><div class="stat-note">Within 30 days vs. beyond 90</div></div>
 </div>
 
-<!--COMMENTARY-->
+<section class="commentary" aria-labelledby="commentaryTitle">
+<div class="commentary-head">
+<h2 id="commentaryTitle">Commentary</h2>
+<div class="commentary-date">As of the week ending October 2, 2026</div>
+</div>
+<p>Index options are showing little fear. SPY's put/call ratio was 1.21 for the week ending October 2, the 18th percentile of weekly readings since 2008, and QQQ's 1.06 was in the 16th. Against their own past year both are ordinary, near the 49th and 35th percentiles, so the low readings reflect a long drift down in how many puts trade relative to calls.</p>
+<p>A high put/call ratio has a reputation as a contrarian buy signal, and since 2009 that has held only for small caps. When IWM's ratio was in the top fifth of its past year, IWM returned 4.98% over the next three months on average, against 1.96% from the bottom fifth (t = 3.0). For SPY and QQQ the differences are small and not significant, and SPY's even leans the other way.</p>
+<p>Among individual stocks, the median S&amp;P 500 member's ratio is 0.59, and only a quarter of members have more put volume than call volume. Financials are the most put-heavy sector (0.87), and a stock's ratio still has no measurable link to how it did over the past three months.</p>
+</section>
 
 <div class="chart-box">
 <div class="chart-box-header">
@@ -1012,6 +1020,9 @@ function ndrXScale(){
  };
 }
 
+function ndrCategoryScale(){
+ return { ticks: { color: ndr("axis"), font: { size: 11 } }, grid: { display: false } };
+}
 function ndrYScale(opts){
  opts = opts || {};
  return {
