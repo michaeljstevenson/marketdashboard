@@ -790,11 +790,7 @@
   schedule = "47 21 * * 1-5"
 
 [functions."scheduled-options-positioning-background"]
-  # One-time snapshot per run (the market-median history it appends to
-  # accumulates across runs, but each run's own sweep is a fresh full-index
-  # pull, not a resume) — no recurring schedule, same convention as every
-  # page added since 2026-09-16. Run manually via the Netlify dashboard's
-  # "Run now"; benefits from running after scheduled-relative-strength-
-  # background (for the momentum join) but degrades gracefully if that
-  # blob is stale or missing. ~503 sequential HISTORICAL_PUT_CALL_RATIO
-  # calls at 1050ms spacing plus a retry pass.
+  # Daily at 07:25 UTC, after the overnight put/call backfill window (to
+  # 06:57) adds each week's SPY, QQQ and IWM point and new month-ends.
+  # Stored snapshots and Yahoo prices only, no Alpha Vantage calls.
+  schedule = "25 7 * * *"

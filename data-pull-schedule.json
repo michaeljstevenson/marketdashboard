@@ -178,6 +178,16 @@
       ]
     },
     {
+      "name": "options-positioning",
+      "cron": "25 7 * * *",
+      "apis": [
+        "/api/options-positioning"
+      ],
+      "pages": [
+        "options-positioning"
+      ]
+    },
+    {
       "name": "international",
       "cron": "20 22 * * *",
       "apis": [
@@ -417,16 +427,6 @@
       ],
       "pages": [
         "margin-leverage"
-      ]
-    },
-    {
-      "name": "options-positioning",
-      "cron": null,
-      "apis": [
-        "/api/options-positioning"
-      ],
-      "pages": [
-        "options-positioning"
       ]
     }
   ],

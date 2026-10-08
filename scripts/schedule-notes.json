@@ -36,7 +36,7 @@
   "concentration-market": "Daily prices for SPY and RSP.",
   "momentum-history": "Daily prices for SPY.",
   "backtest-prices": "Daily prices for whatever symbol you enter.",
-  "options-positioning": "Put/call ratio for every S&P 500 stock, joined against the relative-strength history for the momentum test.",
+  "options-positioning": "Market-level options positioning from the stored put/call snapshots: SPY, QQQ and IWM weekly since 2008 with a forward-return test and near- vs. far-dated expirations, plus the S&P 500 members' median by month-end and sector. No Alpha Vantage calls.",
   "overview-collector": "One sweep of company overviews (name, sector, share count, P/E, analyst targets and ratings, dividend yield, beta, 52-week range, moving averages, insider and institutional ownership, industry, EBITDA, EV/EBITDA, price/book, revenue) for every S&P 500 stock, saved for other jobs to read. Runs on the 2nd of each month, with a second run 25 minutes later to finish a sweep that ran out of time.",
   "earnings-collector": "One sweep of earnings history (reported and estimated EPS, surprise) for every S&P 500 stock, saved for other jobs to read. Runs on the 2nd of each month, with a second run 25 minutes later to finish a sweep that ran out of time.",
   "cashflow-collector": "One sweep of quarterly and annual cash flow (including buybacks, dividends and stock-based compensation) for every S&P 500 stock, saved for other jobs to read.",
