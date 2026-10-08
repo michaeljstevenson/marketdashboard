@@ -1,143 +1,98 @@
 // Scheduled Background Function (see [functions."scheduled-options-
-// positioning-background"] in netlify.toml) for /options-positioning.html —
-// the backlog's "Options Positioning" idea, previously left as a "coming
-// soon" placeholder under Ownership & Flows with no obvious free data
-// source. Alpha Vantage's HISTORICAL_PUT_CALL_RATIO turns out to cover it
-// directly: one call per symbol returns that name's whole-option-chain
-// put/call ratio as of the latest trading session (a single number, not a
-// per-contract breakdown — HISTORICAL_VOLUME_OPEN_INTEREST_RATIO was
-// considered too, but returns thousands of individual contract rows per
-// symbol with no aggregate figure, disproportionate to what a cross-
-// sectional positioning page needs, so it's left out).
+// positioning-background"] in netlify.toml) for /options-positioning.html:
+// market-level options positioning.
 //
-// Sweeps the full S&P 500, one call per symbol (no date param — omitting it
-// returns the latest session, per the endpoint's own behavior), a single-
-// endpoint sweep like scheduled-fcf-yield-background.js. The endpoint
-// itself is a current-state snapshot (not a queryable time series in one
-// call the way CASH_FLOW's quarterlyReports is), so a market-median history
-// accumulates one point per run — same "builds real history over
-// successive runs" pattern as scheduled-pe-divergence-background.js and
-// scheduled-earnings-revisions-background.js.
+// Makes no Alpha Vantage calls. Everything comes from the put/call snapshots
+// scheduled-putcall-history-background.js collects overnight:
+//   - weekly put/call ratios for SPY, QQQ and IWM since 2008 (full chain plus
+//     near- and far-dated expiration medians), for the history, where this
+//     week sits in it, and a test against each ETF's later return
+//   - month-end snapshots of every S&P 500 member since October 2021, for
+//     the history of the market-median ratio
+//   - the weekly snapshot of current members, for sectors and the
+//     cross-sectional test against 3-month relative return
+// ETF prices come from Yahoo.
 //
-// Joins against scheduled-relative-strength-background.js's own latest.json
-// (3-month relative return vs. SPY) for a contemporaneous cross-sectional
-// test — same reuse pattern scheduled-earnings-growth-divergence-
-// background.js uses, including its graceful fallback (rel3M: null, no
-// crash) if that blob isn't populated.
-//
-// One-time snapshot, no recurring schedule — matches the convention this
-// site settled into for every page added since 2026-09-16 (see this
-// function's own entry in netlify.toml). ~503 sequential
-// HISTORICAL_PUT_CALL_RATIO calls at 1050ms spacing plus a retry pass.
+// The forward test ranks each week's ratio against its own trailing 52
+// weeks, so a slow drift in the ratio's level (the options market changed a
+// lot after 2008) doesn't decide the result, and uses only what was known on
+// the day: the ratio is end-of-day, so returns start at the next close.
 
 const { getOptionsPositioningStore, BLOB_KEY } = require("./options-positioning-blob-store");
+const { getPutCallHistoryStore, PROGRESS_KEY, snapshotKey } = require("./putcall-history-blob-store");
+const { DATES: PLAN_DATES } = require("./putcall-history-plan");
 const { getBeeswarmStore, META_KEY } = require("./beeswarm-blob-store");
 const { getRelativeStrengthStore, LATEST_KEY: RS_LATEST_KEY } = require("./relative-strength-blob-store");
-const { BREADTH_CONSTITUENTS } = require("./breadth-constituents");
 const { SECTOR_ORDER } = require("./beeswarm-sectors");
-const { recordAvCall } = require("./av-call-counter");
+const { fetchDailyHistory } = require("./yahoo-client");
 
-const ALPHA_VANTAGE_URL = "https://www.alphavantage.co/query";
-const USER_AGENT =
-  "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0 Safari/537.36";
-
-const NOTABLE_COUNT = 15;
-// A chain only qualifies for the most-bearish/most-bullish tables if puts and
-// calls both traded in at least this many expirations. Below it, the full-chain
-// ratio comes from a handful of stray contracts (e.g. 35.8 from one expiry with
-// no calls) or reads 0 because nothing but calls traded. Aggregates and the
-// regression keep every name, since medians already shrug these off.
+const ETFS = ["SPY", "QQQ", "IWM"];
+const HORIZONS = [21, 63, 126];
+const LOOKBACK_WEEKS = 52;
+const BUCKETS = 5;
 const MIN_TWO_SIDED_EXPIRATIONS = 3;
-const MAX_HISTORY_WEEKS = 104;
 const MIN_SECTOR_N = 3;
 
-function sleep(ms) {
-  return new Promise((resolve) => setTimeout(resolve, ms));
-}
-
 function round(v, d = 2) {
-  if (v === null || v === undefined || isNaN(v)) return null;
+  if (v === null || v === undefined || !Number.isFinite(v)) return null;
   const f = 10 ** d;
   return Math.round(v * f) / f;
 }
-
-function num(v) {
-  if (v === null || v === undefined || v === "None" || v === "" || v === "null") return null;
-  const n = parseFloat(v);
-  return Number.isFinite(n) ? n : null;
-}
-
-function mean(values) {
-  const v = values.filter((x) => x !== null && x !== undefined && !isNaN(x));
-  if (!v.length) return null;
-  return v.reduce((a, b) => a + b, 0) / v.length;
-}
-
-// Linear-interpolated percentile, so the history can carry an
-// interquartile band around each snapshot's median.
+const pct = (v, d = 2) => (v === null || v === undefined ? null : round(v * 100, d));
+const mean = (a) => { const v = a.filter(Number.isFinite); return v.length ? v.reduce((s, x) => s + x, 0) / v.length : null; };
 function quantile(values, q) {
-  const v = values.filter((x) => x !== null && x !== undefined && !isNaN(x)).sort((a, b) => a - b);
+  const v = values.filter(Number.isFinite).sort((a, b) => a - b);
   if (!v.length) return null;
-  const pos = (v.length - 1) * q;
-  const lo = Math.floor(pos), hi = Math.ceil(pos);
-  return v[lo] + (v[hi] - v[lo]) * (pos - lo);
+  const p = (v.length - 1) * q, lo = Math.floor(p), hi = Math.ceil(p);
+  return v[lo] + (v[hi] - v[lo]) * (p - lo);
+}
+const median = (a) => quantile(a, 0.5);
+// Share of values at or below x, ties counted half, so a reading equal to
+// every past value sits at 50.
+function percentileOf(values, x) {
+  const v = values.filter(Number.isFinite);
+  if (!v.length || !Number.isFinite(x)) return null;
+  let below = 0, equal = 0;
+  for (const y of v) { if (y < x) below++; else if (y === x) equal++; }
+  return ((below + equal / 2) / v.length) * 100;
 }
 
-function median(values) {
-  const v = values.filter((x) => x !== null && x !== undefined && !isNaN(x)).sort((a, b) => a - b);
-  if (!v.length) return null;
-  const mid = Math.floor(v.length / 2);
-  return v.length % 2 ? v[mid] : (v[mid - 1] + v[mid]) / 2;
-}
-
-async function fetchPutCallRatio(apiKey, symbol) {
-  await recordAvCall();
-  const res = await fetch(
-    `${ALPHA_VANTAGE_URL}?function=HISTORICAL_PUT_CALL_RATIO&symbol=${symbol}&apikey=${apiKey}`,
-    { headers: { "User-Agent": USER_AGENT } }
-  );
-  if (!res.ok) throw new Error(`HTTP ${res.status}`);
-  const payload = await res.json();
-  if (payload.Note || payload.Information || payload.error) {
-    const msg = payload.Note || payload.Information || (payload.error && payload.error.message) || JSON.stringify(payload.error);
-    throw new Error(msg);
+// OLS slope of y on x with a Newey-West standard error, for forward returns
+// whose windows overlap from one week to the next.
+function nwRegression(xs, ys, lag) {
+  const n = xs.length;
+  if (n < 30) return { n, slope: null, t: null };
+  const mx = mean(xs), my = mean(ys);
+  let sxx = 0, sxy = 0;
+  for (let i = 0; i < n; i++) { sxx += (xs[i] - mx) ** 2; sxy += (xs[i] - mx) * (ys[i] - my); }
+  const b = sxy / sxx, a = my - b * mx;
+  const g = xs.map((x, i) => (x - mx) * (ys[i] - a - b * x));
+  let s = g.reduce((acc, v) => acc + v * v, 0);
+  for (let l = 1; l <= Math.min(lag, n - 1); l++) {
+    let c = 0;
+    for (let i = l; i < n; i++) c += g[i] * g[i - l];
+    s += 2 * (1 - l / (lag + 1)) * c;
   }
-  const ratio = num(payload.put_call_ratio_full_chain);
-  if (ratio === null) throw new Error(`no put_call_ratio_full_chain for ${symbol}`);
-  const byExp = Array.isArray(payload.put_call_ratio_by_expiration) ? payload.put_call_ratio_by_expiration : [];
-  const twoSided = byExp.filter((e) => { const v = num(e.value); return v !== null && v > 0; }).length;
-  return { ratio, twoSided, date: payload.date };
+  const se = Math.sqrt(s) / sxx;
+  return { n, slope: b, t: se > 0 ? b / se : null };
 }
 
-// ---- Stats helpers — same methodology as /factor-analysis, duplicated
-// here since every page on this site is self-contained. ----
 function linearRegression(xs, ys) {
   const n = xs.length;
-  const mx = xs.reduce((a, b) => a + b, 0) / n;
-  const my = ys.reduce((a, b) => a + b, 0) / n;
-  const sxx = xs.reduce((s, x) => s + (x - mx) ** 2, 0);
-  const sxy = xs.reduce((s, x, i) => s + (x - mx) * (ys[i] - my), 0);
-  const syy = ys.reduce((s, y) => s + (y - my) ** 2, 0);
-  const slope = sxy / sxx;
-  const intercept = my - slope * mx;
-  const r = sxy / Math.sqrt(sxx * syy);
-  const r2 = r * r;
-  const dof = n - 2;
+  const mx = mean(xs), my = mean(ys);
+  let sxx = 0, sxy = 0, syy = 0;
+  for (let i = 0; i < n; i++) { sxx += (xs[i] - mx) ** 2; sxy += (xs[i] - mx) * (ys[i] - my); syy += (ys[i] - my) ** 2; }
+  const slope = sxy / sxx, intercept = my - slope * mx, r = sxy / Math.sqrt(sxx * syy);
   const sse = ys.reduce((s, y, i) => s + (y - (intercept + slope * xs[i])) ** 2, 0);
-  const seSlope = Math.sqrt(sse / dof / sxx);
-  const t = slope / seSlope;
-  const p = 2 * (1 - normalCdf(Math.abs(t)));
-  return { n, slope, intercept, r, r2, t, dof, p, sse };
+  const t = slope / Math.sqrt(sse / (n - 2) / sxx);
+  return { n, slope, r, r2: r * r, t, p: 2 * (1 - normalCdf(Math.abs(t))) };
 }
-function normalCdf(x) {
-  return 0.5 * (1 + erf(x / Math.SQRT2));
-}
+function normalCdf(x) { return 0.5 * (1 + erf(x / Math.SQRT2)); }
 function erf(x) {
   const sign = x < 0 ? -1 : 1;
   x = Math.abs(x);
-  const a1 = 0.254829592, a2 = -0.284496736, a3 = 1.421413741, a4 = -1.453152027, a5 = 1.061405429, p = 0.3275911;
-  const t = 1 / (1 + p * x);
-  const y = 1 - (((((a5 * t + a4) * t) + a3) * t + a2) * t + a1) * t * Math.exp(-x * x);
+  const t = 1 / (1 + 0.3275911 * x);
+  const y = 1 - (((((1.061405429 * t - 1.453152027) * t) + 1.421413741) * t - 0.284496736) * t + 0.254829592) * t * Math.exp(-x * x);
   return sign * y;
 }
 function rankArray(arr) {
@@ -147,165 +102,170 @@ function rankArray(arr) {
   while (i < idx.length) {
     let j = i;
     while (j + 1 < idx.length && arr[idx[j + 1]] === arr[idx[i]]) j++;
-    const avgRank = (i + j) / 2 + 1;
-    for (let k = i; k <= j; k++) ranks[idx[k]] = avgRank;
+    for (let k = i; k <= j; k++) ranks[idx[k]] = (i + j) / 2 + 1;
     i = j + 1;
   }
   return ranks;
 }
-function spearmanRegression(xs, ys) {
-  return linearRegression(rankArray(xs), rankArray(ys));
+
+async function loadEtfHistory(hist) {
+  const series = Object.fromEntries(ETFS.map((s) => [s, []]));
+  const firstYear = 2008, lastYear = new Date().getUTCFullYear();
+  for (let y = firstYear; y <= lastYear; y++) {
+    const snap = await hist.get(snapshotKey(`etf-${y}`), { type: "json" });
+    if (!snap) continue;
+    for (const [key, r] of Object.entries(snap.results || {})) {
+      const [date, sym] = key.split("|");
+      if (!series[sym] || r.pc === null) continue;
+      series[sym].push({ date, pc: r.pc, near: r.near ?? null, far: r.far ?? null });
+    }
+  }
+  for (const s of ETFS) series[s].sort((a, b) => (a.date < b.date ? -1 : 1));
+  return series;
+}
+
+function forwardTest(points, prices) {
+  const days = prices.map((p) => p.date);
+  const close = prices.map((p) => p.close);
+  const indexAfter = (date) => { let lo = 0, hi = days.length; while (lo < hi) { const m = (lo + hi) >> 1; if (days[m] <= date) lo = m + 1; else hi = m; } return lo; };
+  const rows = [];
+  for (let i = LOOKBACK_WEEKS; i < points.length; i++) {
+    const past = points.slice(i - LOOKBACK_WEEKS, i).map((p) => p.pc);
+    const signal = percentileOf(past.concat(points[i].pc), points[i].pc);
+    const entry = indexAfter(points[i].date);
+    if (entry >= days.length) continue;
+    const fwd = {};
+    for (const h of HORIZONS) if (entry + h < days.length) fwd[h] = close[entry + h] / close[entry] - 1;
+    rows.push({ date: points[i].date, signal, bucket: Math.min(BUCKETS - 1, Math.floor((signal / 100) * BUCKETS)), fwd });
+  }
+  const byHorizon = {};
+  for (const h of HORIZONS) {
+    const usable = rows.filter((r) => Number.isFinite(r.fwd[h]));
+    const all = mean(usable.map((r) => r.fwd[h]));
+    const buckets = Array.from({ length: BUCKETS }, (_, k) => {
+      const v = usable.filter((r) => r.bucket === k).map((r) => r.fwd[h]);
+      return { bucket: k + 1, weeks: v.length, meanPct: pct(mean(v)), hitRatePct: v.length ? round((v.filter((x) => x > 0).length / v.length) * 100, 1) : null };
+    });
+    const reg = nwRegression(usable.map((r) => r.signal / 100), usable.map((r) => r.fwd[h]), Math.ceil(h / 5));
+    byHorizon[h] = {
+      weeks: usable.length,
+      allMeanPct: pct(all),
+      buckets,
+      highMinusLowPct: buckets[BUCKETS - 1].weeks && buckets[0].weeks ? round(buckets[BUCKETS - 1].meanPct - buckets[0].meanPct, 2) : null,
+      highMinusAllPct: buckets[BUCKETS - 1].weeks ? round(buckets[BUCKETS - 1].meanPct - pct(all), 2) : null,
+      // Return per move from the bottom to the top of the trailing range.
+      slopePct: pct(reg.slope), slopeT: round(reg.t),
+    };
+  }
+  return { firstSignalDate: rows.length ? rows[0].date : null, weeksTested: rows.length, byHorizon };
 }
 
 exports.handler = async () => {
-  console.log(`scheduled-options-positioning-background: starting, ${BREADTH_CONSTITUENTS.length} tickers`);
+  const started = Date.now();
   try {
-    const apiKey = process.env.ALPHAVANTAGE_API_KEY;
-    if (!apiKey) throw new Error("ALPHAVANTAGE_API_KEY environment variable is not set");
+    const hist = getPutCallHistoryStore();
+    const progress = (await hist.get(PROGRESS_KEY, { type: "json" })) || {};
 
-    const beeswarmMeta = await getBeeswarmStore().get(META_KEY, { type: "json" });
-    const metaTickers = (beeswarmMeta && beeswarmMeta.tickers) || {};
+    // ---- index ETFs ----------------------------------------------------
+    const etfHistory = await loadEtfHistory(hist);
+    const since = Math.floor(Date.parse("2007-12-01T00:00:00Z") / 1000);
+    const etfs = {};
+    for (const sym of ETFS) {
+      const points = etfHistory[sym];
+      if (!points.length) continue;
+      const prices = await fetchDailyHistory(sym, { adjusted: true, sinceUnix: since });
+      const last = points[points.length - 1];
+      const trailing = points.slice(-LOOKBACK_WEEKS).map((p) => p.pc);
+      etfs[sym] = {
+        weeks: points.length,
+        firstDate: points[0].date,
+        latest: { date: last.date, pc: last.pc, near: last.near, far: last.far },
+        percentileSinceStart: round(percentileOf(points.map((p) => p.pc), last.pc), 1),
+        percentile52w: round(percentileOf(trailing, last.pc), 1),
+        median52w: round(median(trailing), 3),
+        medianSinceStart: round(median(points.map((p) => p.pc)), 3),
+        history: points.map((p) => [p.date, p.pc, p.near, p.far]),
+        test: forwardTest(points, prices),
+      };
+    }
 
-    let relStrengthBySymbol = {};
+    // ---- S&P 500 members: month-end history plus this week -------------
+    const monthEnds = PLAN_DATES.concat(Object.keys(progress.done || {}).filter((d) => !PLAN_DATES.includes(d))).sort();
+    const history = [];
+    for (const date of monthEnds) {
+      if (!(progress.done || {})[date]) continue;
+      const snap = await hist.get(snapshotKey(date), { type: "json" });
+      if (!snap) continue;
+      const v = Object.values(snap.results || {}).map((r) => r.pc).filter(Number.isFinite);
+      if (v.length < 100) continue;
+      history.push({ date, median: round(median(v), 3), p25: round(quantile(v, 0.25), 3), p75: round(quantile(v, 0.75), 3), n: v.length, kind: "month-end" });
+    }
+    const weekly = progress.latestWeekly ? await hist.get(snapshotKey(`weekly-${progress.latestWeekly}`), { type: "json" }) : null;
+    if (!weekly) throw new Error("no weekly put/call snapshot yet");
+    const wv = Object.values(weekly.results).map((r) => r.pc).filter(Number.isFinite);
+    if (!history.length || history[history.length - 1].date < weekly.date) {
+      history.push({ date: weekly.date, median: round(median(wv), 3), p25: round(quantile(wv, 0.25), 3), p75: round(quantile(wv, 0.75), 3), n: wv.length, kind: "weekly" });
+    }
+
+    const meta = ((await getBeeswarmStore().get(META_KEY, { type: "json" })) || {}).tickers || {};
+    let rel3M = {};
     try {
-      const rsLatest = await getRelativeStrengthStore().get(RS_LATEST_KEY, { type: "json" });
-      if (rsLatest && Array.isArray(rsLatest.companies)) {
-        for (const c of rsLatest.companies) relStrengthBySymbol[c.symbol] = c.rel3M;
-      }
+      const rs = await getRelativeStrengthStore().get(RS_LATEST_KEY, { type: "json" });
+      for (const c of (rs && rs.companies) || []) rel3M[c.symbol] = c.rel3M;
     } catch (err) {
-      console.error(`scheduled-options-positioning-background: relative-strength blob unavailable (${err.message}), continuing without it`);
+      console.error(`scheduled-options-positioning-background: relative-strength blob unavailable (${err.message})`);
     }
-
-    const results = new Map(); // symbol -> { ratio, twoSided, date }
-
-    async function fetchInto(symbol) {
-      try {
-        const r = await fetchPutCallRatio(apiKey, symbol);
-        results.set(symbol, r);
-        return true;
-      } catch (err) {
-        console.error(`scheduled-options-positioning-background: ${symbol} failed: ${err.message}`);
-        if (/rate limit|per minute/i.test(err.message)) await sleep(20000);
-        return false;
-      }
-    }
-
-    let todo = [...BREADTH_CONSTITUENTS];
-    for (let pass = 0; pass < 2 && todo.length; pass++) {
-      if (pass > 0) {
-        console.log(`scheduled-options-positioning-background: retry pass for ${todo.length} ticker(s)`);
-        await sleep(65000);
-      }
-      const missed = [];
-      for (const symbol of todo) {
-        const got = await fetchInto(symbol);
-        if (!got) missed.push(symbol);
-        await sleep(1050);
-      }
-      todo = missed;
-    }
-
-    console.log(`scheduled-options-positioning-background: fetched ${results.size}/${BREADTH_CONSTITUENTS.length} tickers`);
-    if (results.size === 0) throw new Error("Every ticker failed. Refusing to write an empty snapshot");
-
     const companies = [];
-    for (const [symbol, { ratio, twoSided }] of results.entries()) {
-      const m = metaTickers[symbol];
-      if (!m || !m.sector) continue;
-      const rel3M = Object.prototype.hasOwnProperty.call(relStrengthBySymbol, symbol) ? relStrengthBySymbol[symbol] : null;
-      companies.push({ symbol, name: m.name || symbol, sector: m.sector, putCallRatio: ratio, rel3M, twoSidedExpirations: twoSided });
+    for (const [symbol, r] of Object.entries(weekly.results)) {
+      const m = meta[symbol];
+      if (r.pc === null || !m || !m.sector) continue;
+      companies.push({ symbol, sector: m.sector, putCallRatio: r.pc, twoSided: r.twoSided, rel3M: Number.isFinite(rel3M[symbol]) ? rel3M[symbol] : null });
     }
-    if (!companies.length) throw new Error("No tickers resolved with a put/call ratio and sector metadata");
-
-    // ---- Market + sector aggregates. Median, not mean — put/call ratio is
-    // right-skewed (a handful of illiquid names print ratios of 3-4+), so a
-    // mean would be dragged around by a small number of thin option chains. ----
     const market = {
+      date: weekly.date,
       companyCount: companies.length,
       medianPutCallRatio: round(median(companies.map((c) => c.putCallRatio)), 3),
       meanPutCallRatio: round(mean(companies.map((c) => c.putCallRatio)), 3),
+      shareAboveOnePct: round((companies.filter((c) => c.putCallRatio > 1).length / companies.length) * 100, 1),
     };
-
     const sectors = SECTOR_ORDER.map((sector) => {
-      const inSector = companies.filter((c) => c.sector === sector);
-      if (inSector.length < MIN_SECTOR_N) return null;
-      return {
-        sector,
-        count: inSector.length,
-        medianPutCallRatio: round(median(inSector.map((c) => c.putCallRatio)), 3),
-      };
+      const list = companies.filter((c) => c.sector === sector);
+      if (list.length < MIN_SECTOR_N) return null;
+      return { sector, count: list.length, medianPutCallRatio: round(median(list.map((c) => c.putCallRatio)), 3) };
     }).filter(Boolean);
-
-    // ---- Cross-sectional test: is bearish options positioning (a high
-    // put/call ratio) concentrated in names that have already underperformed
-    // over the trailing 3 months, or spread evenly across momentum deciles?
-    // Pearson+Spearman, same two-method convention as every regression on
-    // this site. ----
-    const pairs = companies.filter((c) => c.rel3M !== null && c.rel3M !== undefined);
-    const scatter = pairs.map((c) => ({ symbol: c.symbol, sector: c.sector, putCallRatio: c.putCallRatio, rel3M: c.rel3M }));
+    const pairs = companies.filter((c) => c.rel3M !== null);
     let momentumTest = null;
-    if (pairs.length >= 8) {
-      const xs = pairs.map((c) => c.rel3M);
-      const ys = pairs.map((c) => c.putCallRatio);
-      const pearson = linearRegression(xs, ys);
-      const spear = spearmanRegression(xs, ys);
-      momentumTest = {
-        pearson: { n: pearson.n, r: round(pearson.r, 3), r2: round(pearson.r2, 3), slope: round(pearson.slope, 4), t: round(pearson.t, 2), p: pearson.p },
-        spearman: { n: spear.n, r: round(spear.r, 3), r2: round(spear.r2, 3), slope: round(spear.slope, 4), t: round(spear.t, 2), p: spear.p },
-      };
+    if (pairs.length >= 30) {
+      const xs = pairs.map((c) => c.rel3M), ys = pairs.map((c) => c.putCallRatio);
+      const pe = linearRegression(xs, ys), sp = linearRegression(rankArray(xs), rankArray(ys));
+      const pack = (x) => ({ n: x.n, r: round(x.r, 3), r2: round(x.r2, 3), slope: round(x.slope, 4), t: round(x.t, 2), p: x.p });
+      momentumTest = { pearson: pack(pe), spearman: pack(sp) };
     }
-
-    // ---- Leaderboards ----
-    const row = (c) => ({ symbol: c.symbol, name: c.name, sector: c.sector, putCallRatio: c.putCallRatio, rel3M: c.rel3M });
-    const liquid = companies.filter((c) => c.twoSidedExpirations >= MIN_TWO_SIDED_EXPIRATIONS);
-    const mostBearish = [...liquid].sort((a, b) => b.putCallRatio - a.putCallRatio).slice(0, NOTABLE_COUNT).map(row);
-    const mostBullish = [...liquid].sort((a, b) => a.putCallRatio - b.putCallRatio).slice(0, NOTABLE_COUNT).map(row);
-
-    // ---- Weekly-accumulating market-median history — the endpoint is a
-    // current-state snapshot, not a queryable time series, same pattern as
-    // scheduled-pe-divergence-background.js. ----
-    const previous = (await getOptionsPositioningStore().get(BLOB_KEY, { type: "json" })) || { history: [] };
-    const history = Array.isArray(previous.history) ? previous.history : [];
-    const weekKey = new Date().toISOString().slice(0, 10);
-    const point = {
-      week: weekKey, medianPutCallRatio: market.medianPutCallRatio, companyCount: market.companyCount,
-      p25PutCallRatio: round(quantile(companies.map((c) => c.putCallRatio), 0.25), 3),
-      p75PutCallRatio: round(quantile(companies.map((c) => c.putCallRatio), 0.75), 3),
-    };
-    // One point per Monday-to-Sunday week: a second run in the same week
-    // replaces that week's point (a re-run the next day used to add a twin).
-    const mondayOf = (d) => {
-      const t = new Date(d + "T00:00:00Z");
-      t.setUTCDate(t.getUTCDate() - ((t.getUTCDay() + 6) % 7));
-      return t.toISOString().slice(0, 10);
-    };
-    const kept = history.filter((h) => mondayOf(h.week) !== mondayOf(weekKey));
-    history.length = 0;
-    history.push(...kept, point);
-    while (history.length > MAX_HISTORY_WEEKS) history.shift();
 
     const payload = {
       generated_at_utc: new Date().toISOString(),
-      universeSize: BREADTH_CONSTITUENTS.length,
-      loadedCount: companies.length,
+      etfs,
+      horizons: HORIZONS,
+      lookbackWeeks: LOOKBACK_WEEKS,
+      buckets: BUCKETS,
       market,
-      sectors,
       history,
-      scatter,
+      sectors,
+      scatter: pairs.map((c) => ({ symbol: c.symbol, sector: c.sector, putCallRatio: c.putCallRatio, rel3M: c.rel3M })),
       momentumTest,
-      mostBearish,
-      mostBullish,
       minTwoSidedExpirations: MIN_TWO_SIDED_EXPIRATIONS,
-      thinChainCount: companies.length - liquid.length,
-      companies: companies.map((c) => ({ symbol: c.symbol, name: c.name, sector: c.sector, putCallRatio: c.putCallRatio, rel3M: c.rel3M, twoSidedExpirations: c.twoSidedExpirations })),
+      thinChainCount: companies.filter((c) => c.twoSided < MIN_TWO_SIDED_EXPIRATIONS).length,
+      companies: companies.map((c) => ({ symbol: c.symbol, sector: c.sector, putCallRatio: c.putCallRatio })),
     };
-
     await getOptionsPositioningStore().setJSON(BLOB_KEY, payload);
-    console.log(`scheduled-options-positioning-background: wrote ${companies.length} companies across ${sectors.length} sectors, ${history.length}-week history`);
-
-    return { statusCode: 200, body: JSON.stringify({ ok: true, companies: companies.length }) };
+    console.log(`scheduled-options-positioning-background: ${Object.keys(etfs).map((s) => `${s} ${etfs[s].weeks} weeks`).join(", ")}, ${history.length} member snapshots, ${companies.length} companies, ${Math.round((Date.now() - started) / 1000)}s`);
+    return { statusCode: 200 };
   } catch (err) {
     console.error(`scheduled-options-positioning-background: FAILED: ${err.message}`);
-    return { statusCode: 502, body: JSON.stringify({ error: err.message }) };
+    return { statusCode: 500 };
   }
 };
+
+module.exports.forwardTest = forwardTest;
+module.exports.percentileOf = percentileOf;
+module.exports.nwRegression = nwRegression;
