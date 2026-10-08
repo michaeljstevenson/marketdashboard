@@ -780,8 +780,7 @@
   # Daily at 07:20 UTC, right after the put/call backfill window closes
   # (00:00-06:57 UTC), so the page reflects each night's new snapshots.
   # Yahoo and stored data only, no Alpha Vantage calls.
-  # Schedule paused for a manual run:
-  # schedule = "20 7 * * *"
+  schedule = "20 7 * * *"
 
 [functions."scheduled-volatility-background"]
   # 21:47 UTC = 5:47pm EDT / 4:47pm EST, after the VIX indices' 4:15pm ET
