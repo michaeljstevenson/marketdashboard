@@ -667,6 +667,12 @@ tbody td:first-child{
 .full-list-details[open] .full-list-summary::before{ content:"▾ "; }
 .full-list-details table{ margin-top:8px; }
 /* COMMENTARY: dated, static read of the data; rewritten by hand, not generated. */
+.seg-toggle{ display:inline-flex; align-items:center; border:1px solid var(--hair); border-radius:7px; overflow:hidden; }
+.seg-toggle button{ font:inherit; font-size:12px; background:none; color:var(--muted); border:0; padding:5px 11px; cursor:pointer; }
+.seg-toggle button + button{ border-left:1px solid var(--hair); }
+.seg-toggle button.on{ background:rgba(127,127,127,0.15); color:var(--ink); }
+.seg-label{ font-size:11px; color:var(--muted); padding:0 8px; }
+.pointer-note{ font-size:14px; color:var(--muted); margin:0 0 30px; }
 .commentary{
  background:var(--card);
  border:1px solid var(--hair);
@@ -842,51 +848,69 @@ tbody td:first-child{
 <div class="header">
 <div>
 <h1>Options Positioning</h1>
-<div class="subtitle">Put/call ratios across the S&amp;P 500's full option chains, by stock and by sector, and whether bearish positioning lines up with names that have already underperformed.</div>
+<div class="subtitle">Put/call ratios for the market as a whole: SPY, QQQ and IWM since 2008, where this week's readings sit in that history and whether high readings came before better or worse returns, plus how the S&amp;P 500's own members are positioned by sector.</div>
 </div>
 <div class="updated" id="updated">Loading...</div>
 </div>
 
 <div class="stat-grid">
-<div class="stat-card">
-<div class="stat-label">Median Put/Call Ratio</div>
-<div class="stat-value" id="statMedian">…</div>
-<div class="stat-note">Full option chain, latest session</div>
-</div>
-<div class="stat-card">
-<div class="stat-label">Mean Put/Call Ratio</div>
-<div class="stat-value" id="statMean">…</div>
-<div class="stat-note">Pulled up by a handful of thin, illiquid chains</div>
-</div>
-<div class="stat-card">
-<div class="stat-label">Most Bearish Sector</div>
-<div class="stat-value stat-value-text" id="statBearSector">…</div>
-<div class="stat-note" id="statBearSectorNote">Highest median put/call ratio</div>
-</div>
-<div class="stat-card">
-<div class="stat-label">Most Bullish Sector</div>
-<div class="stat-value stat-value-text" id="statBullSector">…</div>
-<div class="stat-note" id="statBullSectorNote">Lowest median put/call ratio</div>
-</div>
+<div class="stat-card"><div class="stat-label">SPY Put/Call</div><div class="stat-value" id="statSpy">…</div><div class="stat-note" id="statSpyNote">Weekly, full option chain</div></div>
+<div class="stat-card"><div class="stat-label">QQQ Put/Call</div><div class="stat-value" id="statQqq">…</div><div class="stat-note" id="statQqqNote">Weekly, full option chain</div></div>
+<div class="stat-card"><div class="stat-label">IWM Put/Call</div><div class="stat-value" id="statIwm">…</div><div class="stat-note" id="statIwmNote">Weekly, full option chain</div></div>
+<div class="stat-card"><div class="stat-label">S&amp;P 500 Median Stock</div><div class="stat-value" id="statMedian">…</div><div class="stat-note" id="statMedianNote">Members' full option chains</div></div>
+<div class="stat-card"><div class="stat-label">SPY Near vs. Far-Dated</div><div class="stat-value" id="statNearFar">…</div><div class="stat-note">Within 30 days vs. beyond 90</div></div>
 </div>
 
-<section class="commentary" aria-labelledby="commentaryTitle">
-<div class="commentary-head">
-<h2 id="commentaryTitle">What the data says</h2>
-<div class="commentary-date">As of the October 2, 2026 session &middot; first snapshot</div>
+<!--COMMENTARY-->
+
+<div class="chart-box">
+<div class="chart-box-header">
+<div>
+<h2>Put/call ratio of SPY, QQQ and IWM since 2008</h2>
+<div class="chart-subhead">Each fund's put volume divided by call volume across its whole option chain, on the last trading day of each week, with a 13-week average. Above 1.0, more puts traded than calls.</div>
 </div>
-<p>The typical S&amp;P 500 option chain leans bullish. The median put/call ratio is 0.59, about 1.7 calls traded for every put, and only a quarter of the index has more put volume than call volume. The mean of 1.16 points the other way because of a handful of thinly traded chains: 18 names print above 5.0 on a few stray put trades against almost no call volume.</p>
-<p>Financials stand out. At a 0.79 median, the sector sits well above the other ten, which range from 0.44 (Utilities) to 0.62 (Technology). Whether it&rsquo;s hedging or outright bearish bets, the options market is more defensive on banks, insurers and asset managers than anywhere else in the index.</p>
-<p>Positioning also doesn&rsquo;t line up with recent price action. Across all 498 names, a stock&rsquo;s put/call ratio has no measurable relationship with its 3-month return against SPY (r = 0.02, p = 0.64). Bearish activity is spread across recent winners and losers alike.</p>
-<p>This is the first snapshot, so there&rsquo;s nothing to compare it to yet. Each run adds a point to the history chart, and it starts to say something after a few months of them.</p>
-</section>
+<div class="seg-toggle" id="etfToggle"></div>
+</div>
+<div class="ndr-panel"><div class="chart-canvas-wrap"><canvas id="etfChart"></canvas></div></div>
+</div>
+
+<div class="chart-box">
+<div class="chart-box-header">
+<div>
+<h2>Where this week's readings sit</h2>
+<div class="chart-subhead">The latest weekly ratio against the fund's own past year and its full history since 2008. A percentile of 90 means the ratio was lower in 90% of past weeks.</div>
+</div>
+</div>
+<div style="overflow-x:auto;"><table class="method-table" id="nowTable"></table></div>
+</div>
+
+<div class="chart-box">
+<div class="chart-box-header">
+<div>
+<h2>Did high put/call readings come before better or worse returns?</h2>
+<div class="chart-subhead">Each week since 2009, the fund chosen above has its put/call ratio is ranked against its own past 52 weeks and placed in a fifth, from lowest (1) to highest (5). Bars show the fund's average return over the following period, starting at the next close.</div>
+</div>
+<div class="seg-toggle" id="testToggle"></div>
+</div>
+<div class="ndr-panel"><div class="chart-canvas-wrap" style="height:300px;"><canvas id="testChart"></canvas></div></div>
+<div style="overflow-x:auto;"><table class="method-table" id="testTable"></table></div>
+</div>
+
+<div class="chart-box">
+<div class="chart-box-header">
+<div>
+<h2>Near-dated vs. longer-dated SPY options</h2>
+<div class="chart-subhead">Median put/call ratio across SPY's expirations within 30 days and beyond 90 days, each week, 13-week averages. Short-dated options are where most trading happens, and longer-dated puts are where hedgers tend to buy protection.</div>
+</div>
+</div>
+<div class="ndr-panel"><div class="chart-canvas-wrap"><canvas id="nearFarChart"></canvas></div></div>
+</div>
 
 <div class="chart-box">
 <div class="chart-box-header">
 <div>
 <h2>Market-median put/call ratio over time</h2>
-<div class="chart-subhead">One point per run, since the data source has no queryable history. Each run adds this week's cross-sectional median. Builds up real history one snapshot at a time, like <a href="/earnings-revisions.html">Earnings Revisions</a>.</div>
-<div class="chart-note">One point so far: 0.59 on October 2, 2026. Nothing to read into until more runs accumulate.</div>
+<div class="chart-subhead">Median put/call ratio across S&amp;P 500 members at each month-end since October 2021, plus the latest weekly snapshot, with the middle 50% of members shaded.</div>
 </div>
 </div>
 <div class="ndr-panel">
@@ -902,7 +926,7 @@ tbody td:first-child{
 <div>
 <h2>Put/call ratio by sector</h2>
 <div class="chart-subhead">Median across each sector's constituents. Above 1.0, more put volume than call volume across the sector's option chains, meaning more hedging or bearish speculation than bullish.</div>
-<div class="chart-note">Financials (0.79) is the outlier. Set it aside and the other ten sectors span just 0.44 to 0.62, with Utilities and Communication Services the most call-heavy.</div>
+
 </div>
 </div>
 <div class="ndr-panel">
@@ -918,7 +942,7 @@ tbody td:first-child{
 <div>
 <h2>Put/call ratio vs. 3-month relative return</h2>
 <div class="chart-subhead">Each point is one S&amp;P 500 company: its options market's put/call ratio against its trailing 3-month price performance relative to SPY (from <a href="/relative-strength-leaders.html">Relative Strength Leaders/Laggards</a>). Is bearish options positioning concentrated in names that have already lagged, or spread evenly across winners and losers?</div>
-<div class="chart-note">Flat. Pearson r = 0.02 (p = 0.64) and Spearman &rho; = 0.07 (p = 0.14), so there&rsquo;s no tilt toward recent laggards or recent winners.</div>
+
 </div>
 </div>
 <div class="ndr-panel">
@@ -929,67 +953,16 @@ tbody td:first-child{
 <div id="momentumMethodTable"></div>
 </div>
 
-<div class="table-grid">
-<div class="table-box">
-<div class="table-box-header">
-<h2>Most bearish positioning</h2>
-<div class="chart-subhead">Highest put/call ratio: heaviest put volume relative to calls. Excludes thinly traded chains (see Methodology).</div>
-<div class="chart-note">With thin chains filtered out, PTC (18.7), Apollo (17.3) and M&amp;T Bank (16.9) lead. Twelve of the 15 have lagged SPY over the past three months, a tilt that doesn&rsquo;t show up across the full index (see the scatter above).</div>
-</div>
-<table>
-<thead><tr><th>Ticker</th><th>Sector</th><th>Put/Call</th><th>3M Rel. Return</th></tr></thead>
-<tbody id="mostBearishTable">
-<tr><td colspan="4" style="text-align:center; color:var(--muted); padding:24px;">Loading&hellip;</td></tr>
-</tbody>
-</table>
-</div>
-
-<div class="table-box">
-<div class="table-box-header">
-<h2>Most bullish positioning</h2>
-<div class="chart-subhead">Lowest put/call ratio: heaviest call volume relative to puts. Excludes thinly traded chains (see Methodology).</div>
-<div class="chart-note">Every name here traded at least 12 calls for every put (ratios of 0.08 or lower). Utilities take six of the 15 spots, in line with the sector having the lowest median ratio on the page (0.44).</div>
-</div>
-<table>
-<thead><tr><th>Ticker</th><th>Sector</th><th>Put/Call</th><th>3M Rel. Return</th></tr></thead>
-<tbody id="mostBullishTable">
-<tr><td colspan="4" style="text-align:center; color:var(--muted); padding:24px;">Loading&hellip;</td></tr>
-</tbody>
-</table>
-</div>
-</div>
-
-<div class="table-box">
-<div class="table-box-header">
-<h2>All companies with an options chain on file</h2>
-<div class="chart-subhead">Full-option-chain put/call ratio for the full S&amp;P 500, as of the latest session, alongside each name's trailing 3-month return relative to SPY.</div>
-</div>
-<details class="full-list-details">
-<summary class="full-list-summary">Show full list</summary>
-<table id="stockTable">
-<thead>
-<tr>
-<th data-key="symbol">Symbol</th>
-<th data-key="sector">Sector</th>
-<th data-key="putCallRatio">Put/Call Ratio<span class="sort-arrow">▾</span></th>
-<th data-key="rel3M">3M Rel. Return<span class="sort-arrow">▾</span></th>
-</tr>
-</thead>
-<tbody id="tableBody">
-<tr><td colspan="4" style="text-align:center; color:var(--muted); padding:30px;">Loading options data&hellip;</td></tr>
-</tbody>
-</table>
-</details>
-<div class="table-footnote">"3M Rel. Return" is blank for names not covered by Relative Strength Leaders/Laggards' latest snapshot (a handful of recent additions/spinoffs). Put/call ratio is blank for names with no active options chain on the latest session.</div>
-</div>
+<p class="pointer-note">The individual stocks with the highest and lowest put/call ratios, with analyst ratings and what followed past extremes, are on <a href="/put-call-ratio.html">Put/Call Ratio Extremes</a>.</p>
 
 <div class="explainer">
 <h2>Methodology</h2>
 <p>The put/call ratio is the volume of put options traded divided by the volume of call options traded, across all of a stock's options on the latest trading day. Above 1.0 means more puts traded than calls. Below 1.0 means more calls than puts.</p>
 <p>Put/call ratios are skewed. A few thinly traded stocks can print a ratio of 3 or 4 on a single low-volume day, while most liquid stocks sit in a narrow range. The market and sector figures use the median for that reason, with the mean shown alongside so the gap is visible.</p>
-<p>The most-bearish and most-bullish tables only include stocks where puts and calls both traded in at least three expiration dates. Below that, the ratio comes from a handful of stray contracts: one expiration with a few puts and no calls can print 35 or more, and a chain where only calls traded reads exactly zero. The market, sector and momentum figures still use every stock.</p>
+<p>The SPY, QQQ and IWM history is the full-chain ratio on the last trading day of every week since January 2008, from Alpha Vantage's historical put/call data. The near- and far-dated lines take the median of the ratios Alpha Vantage reports for each expiration, which is a simpler measure than a volume-weighted ratio because each expiration counts once however much it traded.</p>
+<p>The forward test ranks each week's ratio against the same fund's previous 52 weeks, so a slow change in the ratio's normal level over the years doesn't decide the result. Returns are the fund's total return starting at the next close after the ratio is known. Weekly windows overlap, so the slope of return on the percentile is tested with a Newey-West standard error.</p>
 <p>The momentum test uses Pearson and Spearman correlation between each stock's put/call ratio and its 3-month return relative to the S&amp;P 500. A positive, significant relationship would mean bearish options positioning is concentrated in stocks that have already lagged, which fits put buying as insurance on recent losers rather than a forward-looking signal. A weak or flat relationship would mean positioning isn't just following where the stock has already been.</p>
-<p>A single day's put/call ratio is noisy and reflects hedging as much as conviction. A high ratio ahead of a big event (earnings, an FDA decision) can just mean someone is protecting a bullish position. This page shows positioning as it stood on the date shown, and doesn't claim the ratio predicts future returns.</p>
+<p>A single day's put/call ratio is noisy and reflects hedging as much as conviction. A high ratio ahead of a big event (earnings, an FDA decision) can just mean someone is protecting a bullish position. The forward test above shows how much of a signal the fund-level ratio has carried since 2009.</p>
 
 
 </div>
@@ -998,6 +971,7 @@ tbody td:first-child{
 
 <script>
 const DATA_URL = "/api/options-positioning";
+let etfChart = null, testChart = null, nearFarChart = null, ETF = "SPY", HORIZON = 63;
 
 let RAW = null;
 let SORT_KEY = "putCallRatio";
@@ -1237,16 +1211,13 @@ async function init(){
   if(!res.ok || data.error) throw new Error(data.error || "failed to load");
 
   RAW = data;
-  document.getElementById("updated").textContent =
-   "As of " + new Date(data.generated_at_utc).toLocaleDateString("en-US", { month: "2-digit", day: "2-digit", year: "numeric" }) + " · " + data.loadedCount + "/" + data.universeSize + " constituents covered";
-
+  document.getElementById("updated").textContent = "Week of " + usDate(data.etfs.SPY.latest.date) + " · " + data.market.companyCount + " members with an option chain";
   renderStats(data);
+  renderEtfToggles();
+  renderEtfChart(); renderNowTable(); renderTest(); renderNearFar();
   renderHistoryChart(data);
   renderSectorChart(data);
   renderMomentumScatter(data);
-  renderLeaderboard("mostBearishTable", data.mostBearish);
-  renderLeaderboard("mostBullishTable", data.mostBullish);
-  renderTable();
 
  }catch(e){
   showError("Couldn't load options positioning data (" + e.message + "). The /api/options-positioning function may not have run yet.");
@@ -1254,18 +1225,71 @@ async function init(){
 }
 
 function renderStats(data){
+ const e = data.etfs;
+ [["SPY","statSpy"],["QQQ","statQqq"],["IWM","statIwm"]].forEach(([k, id]) => {
+  if(!e[k]) return;
+  document.getElementById(id).textContent = fmtRatio(e[k].latest.pc);
+  document.getElementById(id + "Note").textContent = ordinal(e[k].percentile52w) + " percentile of the past year, " + ordinal(e[k].percentileSinceStart) + " since 2008";
+ });
  document.getElementById("statMedian").textContent = fmtRatio(data.market.medianPutCallRatio);
- document.getElementById("statMean").textContent = fmtRatio(data.market.meanPutCallRatio);
-
- const sectors = data.sectors || [];
- if(sectors.length){
-  const bearish = [...sectors].sort((a, b) => b.medianPutCallRatio - a.medianPutCallRatio)[0];
-  const bullish = [...sectors].sort((a, b) => a.medianPutCallRatio - b.medianPutCallRatio)[0];
-  document.getElementById("statBearSector").textContent = bearish.sector;
-  document.getElementById("statBearSectorNote").textContent = "Median " + fmtRatio(bearish.medianPutCallRatio);
-  document.getElementById("statBullSector").textContent = bullish.sector;
-  document.getElementById("statBullSectorNote").textContent = "Median " + fmtRatio(bullish.medianPutCallRatio);
- }
+ document.getElementById("statMedianNote").textContent = data.market.companyCount + " members, " + data.market.shareAboveOnePct + "% above 1.0";
+ const l = e.SPY && e.SPY.latest;
+ document.getElementById("statNearFar").textContent = l ? fmtRatio(l.near) + " / " + fmtRatio(l.far) : "n/a";
+}
+function ordinal(n){ if(n === null || n === undefined) return "n/a"; n = Math.round(n); const s = ["th","st","nd","rd"], v = n % 100; return n + (s[(v - 20) % 10] || s[v] || s[0]); }
+function movingAvg(vals, w){ return vals.map((_, i) => { if(i < w - 1) return null; const sl = vals.slice(i - w + 1, i + 1).filter(v => v !== null && isFinite(v)); return sl.length >= w * 0.75 ? sl.reduce((a, b) => a + b, 0) / sl.length : null; }); }
+function renderEtfToggles(){
+ const mk = (id, items, cur, cb) => { const el = document.getElementById(id); el.innerHTML = items.map(([v, l]) => '<button type="button" data-v="' + v + '" class="' + (String(v) === String(cur) ? "on" : "") + '">' + l + "</button>").join(""); el.querySelectorAll("button").forEach(b => b.addEventListener("click", () => { el.querySelectorAll("button").forEach(x => x.classList.toggle("on", x === b)); cb(b.dataset.v); })); };
+ mk("etfToggle", [["SPY","SPY"],["QQQ","QQQ"],["IWM","IWM"]], ETF, v => { ETF = v; renderEtfChart(); renderTest(); });
+ const el = document.getElementById("testToggle");
+ el.innerHTML = '<span class="seg-label">Next</span>' + [[21,"1M"],[63,"3M"],[126,"6M"]].map(([v,l]) => '<button type="button" data-v="' + v + '" class="' + (v === HORIZON ? "on" : "") + '">' + l + "</button>").join("");
+ el.querySelectorAll("button").forEach(b => b.addEventListener("click", () => { el.querySelectorAll("button").forEach(x => x.classList.toggle("on", x === b)); HORIZON = Number(b.dataset.v); renderTest(); }));
+}
+function renderEtfChart(){
+ const h = RAW.etfs[ETF].history;
+ const raw = h.map(r => r[1]);
+ if(etfChart) etfChart.destroy();
+ etfChart = new Chart(document.getElementById("etfChart"), {
+  type: "line",
+  data: { labels: h.map(r => r[0]), datasets: [
+   { label: ETF + " weekly", data: raw, borderColor: ndr("slate") + "88", backgroundColor: ndr("slate"), borderWidth: 1, pointRadius: 0 },
+   { label: "13-week average", data: movingAvg(raw, 13), borderColor: ndr("navy"), backgroundColor: ndr("navy"), borderWidth: 2, pointRadius: 0 },
+  ] },
+  options: { responsive: true, maintainAspectRatio: false, interaction: { mode: "index", intersect: false },
+   plugins: { legend: { display: true, position: "top", align: "start", labels: { boxWidth: 14, color: ndr("axis"), font: { size: 11 } } }, tooltip: { callbacks: { label: c => c.dataset.label + ": " + fmtRatio(c.parsed.y) } } },
+   scales: { x: ndrXScale(), y: ndrYScale({ title: "put/call ratio" }) } },
+ });
+}
+function renderNowTable(){
+ const rows = ["SPY","QQQ","IWM"].filter(k => RAW.etfs[k]).map(k => { const e = RAW.etfs[k]; return "<tr><td>" + k + "</td><td>" + fmtRatio(e.latest.pc) + "</td><td>" + fmtRatio(e.median52w) + "</td><td>" + ordinal(e.percentile52w) + "</td><td>" + fmtRatio(e.medianSinceStart) + "</td><td>" + ordinal(e.percentileSinceStart) + "</td><td>" + fmtRatio(e.latest.near) + "</td><td>" + fmtRatio(e.latest.far) + "</td></tr>"; }).join("");
+ document.getElementById("nowTable").innerHTML = "<thead><tr><th>Fund</th><th>Latest</th><th>Past-year median</th><th>Past-year percentile</th><th>Median since 2008</th><th>Percentile since 2008</th><th>Within 30 days</th><th>Beyond 90 days</th></tr></thead><tbody>" + rows + "</tbody>";
+}
+function renderTest(){
+ const t = RAW.etfs[ETF].test.byHorizon[HORIZON];
+ const lbl = { 21: "next month", 63: "next 3 months", 126: "next 6 months" }[HORIZON];
+ if(testChart) testChart.destroy();
+ testChart = new Chart(document.getElementById("testChart"), {
+  type: "bar",
+  data: { labels: t.buckets.map(b => b.bucket === 1 ? "1 (lowest)" : b.bucket === 5 ? "5 (highest)" : String(b.bucket)), datasets: [{ label: ETF + " return, " + lbl, data: t.buckets.map(b => b.meanPct), backgroundColor: t.buckets.map((b, i) => i === 4 ? ndr("red") : i === 0 ? ndr("green") : ndr("slate")) }] },
+  options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false }, zoom: false, tooltip: { callbacks: { label: c => fmtPct(c.parsed.y, 2) + " average, " + t.buckets[c.dataIndex].weeks + " weeks, positive " + t.buckets[c.dataIndex].hitRatePct + "%" } } },
+   scales: { x: ndrCategoryScale(), y: ndrYScale({ fmt: v => v + "%", title: "average " + ETF + " return, " + lbl }) } },
+ });
+ document.getElementById("testTable").innerHTML = "<thead><tr><th>" + ETF + "</th><th>Weeks</th><th>All weeks</th><th>Highest minus lowest fifth</th><th>Highest fifth minus all</th><th>Slope t-stat</th></tr></thead><tbody>" +
+  [21, 63, 126].map(h => { const x = RAW.etfs[ETF].test.byHorizon[h]; return "<tr><td>" + { 21: "Next month", 63: "Next 3 months", 126: "Next 6 months" }[h] + "</td><td>" + x.weeks + "</td><td>" + fmtPct(x.allMeanPct, 2) + "</td><td>" + fmtPct(x.highMinusLowPct, 2) + "</td><td>" + fmtPct(x.highMinusAllPct, 2) + "</td><td>" + (x.slopeT === null ? "n/a" : x.slopeT.toFixed(1)) + "</td></tr>"; }).join("") + "</tbody>";
+}
+function renderNearFar(){
+ const h = RAW.etfs.SPY.history;
+ if(nearFarChart) nearFarChart.destroy();
+ nearFarChart = new Chart(document.getElementById("nearFarChart"), {
+  type: "line",
+  data: { labels: h.map(r => r[0]), datasets: [
+   { label: "Within 30 days", data: movingAvg(h.map(r => r[2]), 13), borderColor: ndr("navy"), backgroundColor: ndr("navy"), borderWidth: 1.8, pointRadius: 0 },
+   { label: "Beyond 90 days", data: movingAvg(h.map(r => r[3]), 13), borderColor: ndr("gold"), backgroundColor: ndr("gold"), borderWidth: 1.8, pointRadius: 0 },
+  ] },
+  options: { responsive: true, maintainAspectRatio: false, interaction: { mode: "index", intersect: false },
+   plugins: { legend: { display: true, position: "top", align: "start", labels: { boxWidth: 14, color: ndr("axis"), font: { size: 11 } } }, tooltip: { callbacks: { label: c => c.dataset.label + ": " + fmtRatio(c.parsed.y) } } },
+   scales: { x: ndrXScale(), y: ndrYScale({ title: "median put/call by expiration" }) } },
+ });
 }
 
 // ---- Interquartile band behind a median-over-time line ------------------
@@ -1314,8 +1338,8 @@ function renderHistoryChart(data){
  historyChart = new Chart(ctx, {
   type: "line",
   data: {
-   labels: history.map(h => h.week),
-   datasets: [{ label: "Market-median put/call ratio", data: history.map(h => h.medianPutCallRatio), borderColor: ndr("navy"), backgroundColor: ndr("navy"), borderWidth: 2, pointRadius: history.length < 12 ? 3 : 1.5, tension: 0.15 }],
+   labels: history.map(h => h.date),
+   datasets: [{ label: "Market-median put/call ratio", data: history.map(h => h.median), borderColor: ndr("navy"), backgroundColor: ndr("navy"), borderWidth: 2, pointRadius: history.length < 12 ? 3 : 1.5, tension: 0.15 }],
   },
   options: {
    responsive: true,
@@ -1330,8 +1354,8 @@ function renderHistoryChart(data){
    },
   },
  });
- addIqrBand(historyChart, history.map(r => r.p25PutCallRatio), history.map(r => r.p75PutCallRatio), v => fmtRatio(v));
- iqrBandNote("historyBandNote", history.map(r => r.week), history.map(r => r.p25PutCallRatio));
+ addIqrBand(historyChart, history.map(r => r.p25), history.map(r => r.p75), v => fmtRatio(v));
+ iqrBandNote("historyBandNote", history.map(r => r.date), history.map(r => r.p25));
 }
 
 // ---- Distribution strip chart -------------------------------------------
@@ -1598,60 +1622,6 @@ function renderMomentumScatter(data){
  document.getElementById("momentumMethodTable").innerHTML = methodTableHtml(data.momentumTest.pearson, data.momentumTest.spearman,
   "Slope is put/call ratio per 1 percentage point of 3-month relative return. A negative slope means a weaker trailing return goes with a higher (more bearish) put/call ratio.");
 }
-
-function renderLeaderboard(elId, rows){
- const el = document.getElementById(elId);
- if(!rows || !rows.length){
-  el.innerHTML = '<tr><td colspan="4" style="text-align:center; color:var(--muted); padding:24px;">No qualifying companies.</td></tr>';
-  return;
- }
- el.innerHTML = rows.map(r => {
-  return "<tr><td>" + r.symbol + "</td><td>" + r.sector + "</td><td>" + fmtRatio(r.putCallRatio) + "</td><td>" + fmtPct(r.rel3M, 1) + "</td></tr>";
- }).join("");
-}
-
-function sortBy(key){
- if(SORT_KEY === key){
-  SORT_DIR = -SORT_DIR;
- }else{
-  SORT_KEY = key;
-  SORT_DIR = key === "symbol" || key === "sector" ? 1 : -1;
- }
- renderTable();
-}
-
-function renderTable(){
- if(!RAW) return;
- const rows = [...RAW.companies].sort((a, b) => {
-  const av = a[SORT_KEY], bv = b[SORT_KEY];
-  if(av === null || av === undefined) return 1;
-  if(bv === null || bv === undefined) return -1;
-  if(typeof av === "string") return av.localeCompare(bv) * SORT_DIR;
-  return (av - bv) * SORT_DIR;
- });
-
- const tbody = document.getElementById("tableBody");
- tbody.innerHTML = rows.map(r => {
-  return `<tr>
-   <td><span class="sector-name">${r.symbol}</span></td>
-   <td><span class="sector-ticker">${r.sector || "n/a"}</span></td>
-   <td>${fmtRatio(r.putCallRatio)}</td>
-   <td>${fmtPct(r.rel3M, 1)}</td>
-  </tr>`;
- }).join("");
-
- document.querySelectorAll("#stockTable thead th").forEach(th => {
-  const key = th.dataset.key;
-  th.classList.toggle("sorted", key === SORT_KEY);
-  const arrow = th.querySelector(".sort-arrow");
-  if(arrow) arrow.textContent = (key === SORT_KEY && SORT_DIR === 1) ? "▴" : "▾";
- });
-}
-
-document.querySelectorAll("#stockTable thead th").forEach(th => {
- const key = th.dataset.key;
- if(key) th.addEventListener("click", () => sortBy(key));
-});
 
 init();
 </script>
