@@ -880,6 +880,17 @@ tbody td:first-child{
 </div>
 </div>
 
+<section class="commentary" aria-labelledby="commentaryTitle">
+<div class="commentary-head">
+<h2 id="commentaryTitle">Commentary</h2>
+<div class="commentary-date">As of the week ending October 2, 2026, with 20 month-ends tested</div>
+</div>
+<p>PTC, M&amp;T Bank and CBRE have the most put volume relative to calls among S&amp;P 500 members with active option chains, while Synchrony, American Water Works and FirstEnergy have the least. The median member's ratio is 0.59, so calls usually outnumber puts.</p>
+<p>So far, the most put-heavy stocks have lagged. Across 20 month-ends from February 2025 to September 2026, the tenth with the highest ratios trailed all ranked stocks by 2.6% over the following six months (t = -3.0, from 14 month-ends with six months of results) and by 0.6% over three months.</p>
+<p>The stocks with the lowest ratios haven't done better, though. Over three months both ends of the range lagged the middle, and the highest tenth's gap over the lowest isn't significant at any horizon. The backfill reaches back five years as it completes, so treat these early results as provisional.</p>
+</section>
+
+
 <div class="returns-toggle-row">
 <span class="returns-toggle-label">Returns</span>
 <div class="metric-toggle" id="returnsToggle">
@@ -892,6 +903,7 @@ tbody td:first-child{
 <div class="table-box-header">
 <h2>Highest put/call ratios</h2>
 <div class="chart-subhead">The 15 stocks with the most put volume relative to call volume in the latest weekly snapshot, among stocks where puts and calls both traded in at least three expirations.</div>
+<div class="chart-note">Four of the top six are in Information Technology, Energy and Real Estate. Most still carry Buy ratings from analysts.</div>
 </div>
 <table class="pc-table">
 <thead><tr><th>Stock</th><th>Sector</th><th>Put/Call</th><th>Analysts</th><th>Target Upside</th><th>5D</th><th>30D</th><th>3M</th><th>6M</th></tr></thead>
@@ -916,6 +928,7 @@ tbody td:first-child{
 <div>
 <h2>What followed the highest and lowest ratios</h2>
 <div class="chart-subhead">At each month-end, stocks are split into tenths by put/call ratio. Bars show each group's average return over the next 5 trading days, 30 days (21 trading days), 3 months (63) and 6 months (126), averaged across month-ends.</div>
+<div class="chart-note">The highest tenth minus all ranked stocks: -0.29% over 5 days, -0.37% over a month, -0.58% over three months and -2.55% over six.</div>
 </div>
 </div>
 <div class="ndr-panel"><div class="chart-canvas-wrap"><canvas id="forwardChart"></canvas></div></div>
@@ -929,6 +942,7 @@ tbody td:first-child{
 <div>
 <h2>Average return by put/call tenth</h2>
 <div class="chart-subhead">Tenth 1 holds the lowest put/call ratios at each month-end and tenth 10 the highest.</div>
+<div class="chart-note">Over three months the middle tenths did best (+0.3% to +0.5% against the S&amp;P 500) and both ends worst (about -1.3% for the lowest two tenths and -2.0% for the ninth).</div>
 </div>
 <div class="metric-toggle" id="horizonToggle">
 <button type="button" data-h="5">5D</button>
@@ -945,6 +959,7 @@ tbody td:first-child{
 <div>
 <h2>Median put/call ratio at each month-end</h2>
 <div class="chart-subhead">Across S&amp;P 500 members with a ranked option chain, with the number of stocks ranked that month in the tooltip.</div>
+<div class="chart-note">Between 0.56 and 0.84 since February 2025, highest in April 2025 and December 2025.</div>
 </div>
 </div>
 <div class="ndr-panel"><div class="chart-canvas-wrap short-ish"><canvas id="medianChart"></canvas></div></div>
