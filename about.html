@@ -86,8 +86,9 @@ body{
 .about-card{ margin-bottom:28px; }
 .about-card h2{ font-family:var(--serif); font-weight:400; font-size:20px; margin:0 0 4px; }
 .about-card p{ font-size:15px; line-height:1.65; margin:10px 0 0; }
-.about-card .links a{ color:var(--greed); margin-right:24px; text-decoration:none; }
-.about-card .links a:hover{ text-decoration:underline; }
+.about-card .links{ display:flex; gap:18px; align-items:center; }
+.about-card .links a{ color:var(--muted); display:inline-flex; text-decoration:none; }
+.about-card .links a:hover{ color:var(--ink); }
 .disclaimer{ color:var(--muted); font-size:12.5px; line-height:1.6; margin:10px 0 0; }
 
 </style>
@@ -221,7 +222,7 @@ body{
 <p>This website is my platform for developing independent research, building interactive analytical tools, and exploring financial markets through a data-driven approach.</p>
 <p>I believe research should provide context, frame the questions that matter most to investors, and, most importantly, challenge assumptions. My goal is to develop disciplined frameworks for interpreting markets, evaluating evidence, and understanding uncertainty.</p>
 </section>
-<section class="about-card"><p class="links"><a href="https://www.linkedin.com/in/michaeljstevensoncaia" target="_blank" rel="noopener">LinkedIn</a><a href="mailto:michaelj.stevenson@outlook.com">michaelj.stevenson@outlook.com</a></p></section>
+<section class="about-card"><p class="links"><a href="https://www.linkedin.com/in/michaeljstevensoncaia" target="_blank" rel="noopener" aria-label="LinkedIn" title="LinkedIn"><svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor" aria-hidden="true"><path d="M20.45 20.45h-3.56v-5.57c0-1.33-.02-3.04-1.85-3.04-1.85 0-2.14 1.45-2.14 2.94v5.67H9.35V9h3.41v1.56h.05c.48-.9 1.64-1.85 3.37-1.85 3.6 0 4.27 2.37 4.27 5.46v6.28zM5.34 7.43a2.06 2.06 0 1 1 0-4.13 2.06 2.06 0 0 1 0 4.13zM7.12 20.45H3.56V9h3.56v11.45zM22.22 0H1.77C.79 0 0 .77 0 1.73v20.54C0 23.23.79 24 1.77 24h20.45c.98 0 1.78-.77 1.78-1.73V1.73C24 .77 23.2 0 22.22 0z"/></svg></a><a href="mailto:michaelj.stevenson@outlook.com" aria-label="Email" title="michaelj.stevenson@outlook.com"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2.5" y="5" width="19" height="14" rx="2"/><path d="M3 6.5l9 6.5 9-6.5"/></svg></a></p></section>
 <p class="disclaimer">The content on this site is for informational and educational purposes only and does not constitute investment advice or a recommendation to buy or sell any security.</p>
 </main>
 
