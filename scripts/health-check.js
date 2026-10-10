@@ -52,7 +52,7 @@ function lastFire(cron, before) {
 }
 
 const stamp = (j) => {
-  const v = j && (j.generated_at_utc || j.generatedAt || j.fetched_at_utc);
+  const v = j && (j.checked_at_utc || j.generated_at_utc || j.generatedAt || j.fetched_at_utc);
   const d = v ? new Date(v) : null;
   return d && !isNaN(d) ? d : null;
 };
@@ -124,7 +124,14 @@ async function main() {
       if (j.cron) {
         e.manual = false;
         const f = lastFire(j.cron, cutoff);
-        if (f && (!e.due || f < e.due)) e.due = f;
+        // A backup firing minutes after the main one exits at once, so the main firing is the expected stamp.
+        let main = f;
+        while (main) {
+          const prev = lastFire(j.cron, new Date(main - 60e3));
+          if (!prev || main - prev > 30 * 60e3) break;
+          main = prev;
+        }
+        if (main && (!e.due || main < e.due)) e.due = main;
       }
     }
   }

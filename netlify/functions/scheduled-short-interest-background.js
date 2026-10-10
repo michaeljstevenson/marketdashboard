@@ -330,7 +330,7 @@ exports.handler = async () => {
     const store = getShortInterestStore();
     const index = (await store.get(INDEX_KEY, { type: "json" })) || { dates: [] };
     const added = await collect(store, index, started);
-    if (added) await store.setJSON(INDEX_KEY, { ...index, updatedAt: new Date().toISOString() });
+    await store.setJSON(INDEX_KEY, { ...index, updatedAt: added ? new Date().toISOString() : index.updatedAt, checkedAt: new Date().toISOString() });
     const latest = await store.get(LATEST_KEY, { type: "json" });
     const stale = !latest || latest.buildVersion !== BUILD_VERSION || Date.now() - Date.parse(latest.generated_at_utc) > REBUILD_AFTER_MS;
     if ((added || stale) && Date.now() - started < RUN_BUDGET_MS - 5 * 60 * 1000) {

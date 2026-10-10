@@ -2,11 +2,14 @@
 // pre-computed by scheduled-short-interest-background.js and stored in
 // Netlify Blobs. No outbound calls.
 
-const { getShortInterestStore, LATEST_KEY } = require("./short-interest-blob-store");
+const { getShortInterestStore, INDEX_KEY, LATEST_KEY } = require("./short-interest-blob-store");
 
 exports.handler = async () => {
   try {
-    const payload = await getShortInterestStore().get(LATEST_KEY, { type: "json" });
+    const store = getShortInterestStore();
+    const payload = await store.get(LATEST_KEY, { type: "json" });
+    const index = payload && (await store.get(INDEX_KEY, { type: "json" }));
+    if (index && index.checkedAt) payload.checked_at_utc = index.checkedAt;
     if (!payload) {
       throw new Error("Short interest data not yet populated, scheduled-short-interest-background hasn't run yet");
     }

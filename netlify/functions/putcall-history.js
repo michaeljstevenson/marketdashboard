@@ -35,6 +35,7 @@ exports.handler = async () => {
         monthEndsComplete: Object.keys(done).length,
         etfYearsComplete: Object.keys(progress.etfDone || {}).sort(),
         latestWeekly: progress.latestWeekly || null,
+        generated_at_utc: progress.lastRun ? progress.lastRun.at : null,
         lastRun: progress.lastRun || null,
         snapshots,
       }),
