@@ -80,9 +80,10 @@ footer{border-top:1px solid var(--hair)}
 .category-card{margin:0;display:grid;grid-template-columns:220px 1fr;gap:24px;align-items:start;padding:26px 28px}
 .category-card summary{margin:0!important}
 .category-card h4{font-size:22px}
-.category-card ul{columns:3 180px;column-gap:28px}
-.category-card li.group{break-after:avoid;margin-top:0}
-.category-card li.group:not(:first-child){margin-top:16px}
+/* One column per group so a heading never gets separated from its links. auto-fill (not auto-fit)
+   keeps column widths identical across cards with fewer groups. */
+.category-card .groups{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:18px 28px}
+.category-card li.group{margin-top:0}
 @media (max-width:760px){.category-card{grid-template-columns:1fr;gap:14px}}
 
 :root{--serif:'Times New Roman',Times,serif}
