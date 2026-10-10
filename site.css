@@ -139,3 +139,7 @@ body::before{
   .stat-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important}
   .stat-grid > .stat-card:last-child:nth-child(odd){grid-column:1/-1}
 }
+
+.sitenav .navlinks a.navplain{font-size:12.5px;color:var(--muted);padding:8px;border-radius:999px}
+.sitenav .navlinks a.navplain:hover,.sitenav .navlinks a.navplain.active{color:var(--ink)}
+@media (max-width:1024px){.sitenav.nav-open .navlinks a.navplain{display:block;padding:12px 10px;font-size:15px}}

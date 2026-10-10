@@ -10,7 +10,7 @@
 </script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Coming Soon | Michael J. Stevenson</title>
+<title>About | Michael J. Stevenson</title>
 
 <style>
 
@@ -124,6 +124,15 @@ p{
  color:var(--ink);
 }
 
+
+.about{ max-width:760px; margin:0 auto; padding:56px 24px 80px; width:100%; }
+.about .eyebrow{ color:var(--greed); font-size:13px; letter-spacing:.14em; text-transform:uppercase; margin-bottom:10px; }
+.about h1{ font-family:var(--serif); font-weight:400; font-size:42px; margin:0 0 30px; }
+.about .sub{ color:var(--muted); font-size:19px; margin:0 0 36px; }
+.about section{ border-top:1px solid var(--hair); padding:26px 0; }
+.about h2{ font-family:var(--serif); font-weight:400; font-size:24px; margin:0 0 12px; }
+.about p{ font-size:18px; line-height:1.6; margin:0 0 14px; }
+.about .links a{ color:var(--greed); margin-right:22px; font-size:18px; }
 </style>
 <style>
 /* SITE NAV (mega-menu, shared with homepage) */
@@ -241,23 +250,23 @@ p{
 </nav>
 <script src="/nav.js"></script>
 
-<div class="center">
-<div>
-<div class="eyebrow">In Development</div>
-<h1 id="pageTitle">Research Project</h1>
-<p>This project is still in progress. Check back soon for the live dashboard.</p>
-<a class="btn" href="/">← Back to homepage</a>
-</div>
-</div>
-
-<script>
-const params = new URLSearchParams(window.location.search);
-const title = params.get("title");
-if(title){
- document.getElementById("pageTitle").textContent = title;
- document.title = title + " (Coming Soon) | Michael J. Stevenson";
-}
-</script>
+<main class="about">
+<div class="eyebrow">About</div>
+<h1>Michael J. Stevenson, CAIA</h1>
+<section><h2>Background</h2>
+<p>I am based in Tampa, Florida, and have a background in wealth management and a strong interest in financial markets, economic cycles, and investment research.</p>
+<p>My professional experience has centered on helping high-net-worth investors understand their portfolios, navigate changing market environments, and make sense of the forces influencing financial markets.</p>
+</section>
+<section><h2>Research Interests</h2>
+<p>My research focuses on identifying relationships between investor sentiment, market breadth, valuations, and macroeconomic conditions to better understand market leadership and potential shifts in the investment environment. I’m particularly interested in quantifying sentiment, evaluating market participation beyond the largest-capitalization stocks, and examining how economic expectations influence equity markets. I aim to translate market data into accessible insights that challenge prevailing narratives and provide greater context for investment decisions.</p>
+<p>Earning the Chartered Alternative Investment Analyst (CAIA) designation strengthened my understanding of traditional public markets and alternative investments, including their roles in portfolio construction, risk management, and diversification. As alternatives become increasingly accessible to individual investors, I’d like to better understand how these strategies intersect with public equity and debt markets, particularly in areas such as private credit and interval funds.</p>
+</section>
+<section><h2>About This Site</h2>
+<p>This website is a platform for developing independent research, building interactive analytical tools, and exploring financial markets through a data-driven approach.</p>
+<p>I believe research should provide context, frame the questions that matter most to investors, and, most importantly, challenge assumptions. My goal is to develop disciplined frameworks for interpreting markets, evaluating evidence, and understanding uncertainty.</p>
+</section>
+<section><h2>Contact</h2><p class="links"><a href="https://www.linkedin.com/in/michaeljstevensoncaia" target="_blank" rel="noopener">LinkedIn</a><a href="mailto:michaelj.stevenson@outlook.com">michaelj.stevenson@outlook.com</a></p></section>
+</main>
 
 <script>
 (function(){
