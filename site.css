@@ -144,3 +144,4 @@ body::before{
 .sitenav .navlinks a.navplain:hover,.sitenav .navlinks a.navplain.active{color:var(--ink)}
 @media (max-width:1024px){.sitenav.nav-open .navlinks a.navplain{display:block;padding:12px 10px;font-size:15px}}
 @media (min-width:1025px){.sitenav{column-gap:18px}}
+.sitenav .navlinks a.navplain{text-decoration:none}
